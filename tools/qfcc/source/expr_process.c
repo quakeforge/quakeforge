@@ -243,6 +243,13 @@ proc_field (const expr_t *expr, rua_ctx_t *ctx)
 	} else {
 		return error (object, "invalid operand for .");
 	}
+	if (member->type == ex_symbol && member->symbol->sy_type == sy_convert) {
+		auto conv = member->symbol->convert;
+		if (!conv.conv_expr) {
+			internal_error (member, "can't convert symbol for field access");
+		}
+		return conv.conv_expr (member->symbol, conv.data, object);
+	}
 	member = edag_add_expr (member);
 	auto e = new_field_expr (object, member);
 	e->field.type = member->symbol->type;
@@ -549,7 +556,12 @@ proc_assign (const expr_t *expr, rua_ctx_t *ctx)
 		return src;
 	}
 	scoped_src_loc (expr);
-	auto assign = assign_expr (dst, src);
+	const expr_t *assign;
+	if (dst->type == ex_xvalue && dst->xvalue.assign) {
+		assign = dst->xvalue.assign (dst->xvalue.expr, src);
+	} else {
+		assign = assign_expr (dst, src);
+	}
 	if (expr->paren) {
 		assign = paren_expr (assign);
 	}

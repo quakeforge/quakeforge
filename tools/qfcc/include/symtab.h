@@ -48,7 +48,9 @@ typedef enum : unsigned {
 } sy_type_e;
 
 typedef struct symconv_s {
-	const struct expr_s *(*conv) (struct symbol_s *symbol, void *data);
+	const expr_t *(*conv) (struct symbol_s *symbol, void *data);
+	const expr_t *(*conv_expr) (struct symbol_s *symbol, void *data,
+								const expr_t *expr);
 	void       *data;
 } symconv_t;
 

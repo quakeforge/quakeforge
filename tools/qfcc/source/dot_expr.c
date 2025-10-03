@@ -550,6 +550,32 @@ print_process (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
 }
 
 static void
+print_bitfield (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
+				const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->bitfield.src, level, printed, next);
+	_print_expr (dstr, e->bitfield.start, level, printed, next);
+	_print_expr (dstr, e->bitfield.length, level, printed, next);
+	if (e->bitfield.insert) {
+		_print_expr (dstr, e->bitfield.insert, level, printed, next);
+	}
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, e->bitfield.src);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
+			   e->bitfield.start);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
+			   e->bitfield.length);
+	if (e->bitfield.insert) {
+		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
+				   e->bitfield.insert);
+	}
+	dasprintf (dstr, "%*se_%p [label=\"<%s:%s>\\n%d\"];\n", indent, "", e,
+			   "bitfield\n", e->bitfield.insert ? "insert" : "extact",
+			   e->loc.line);
+}
+
+static void
 print_subexpr (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
 			   const expr_t *next)
 {
@@ -1103,6 +1129,7 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
 		[ex_intrinsic] = print_intrinsic,
 		[ex_xvalue] = print_xvalue,
 		[ex_process] = print_process,
+		[ex_bitfield] = print_bitfield,
 	};
 	int         indent = level * 2 + 2;
 

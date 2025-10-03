@@ -246,6 +246,14 @@ edag_add_expr (const expr_t *expr)
 					}
 				}
 				break;
+			case ex_bitfield:
+				if (e->bitfield.src == expr->bitfield.src
+					&& e->bitfield.start == expr->bitfield.start
+					&& e->bitfield.length == expr->bitfield.length
+					&& e->bitfield.insert == expr->bitfield.insert) {
+					return e;
+				}
+				break;
 		}
 	}
 	DARRAY_APPEND (&expr_dag, expr);

@@ -434,6 +434,8 @@ typedef struct {
 
 typedef struct {
 	const expr_t *expr;
+	// use ex_xvalue_t::expr for dst
+	const expr_t *(*assign) (const expr_t *dst, const expr_t *src);
 	bool        lvalue;			///< rvalue if false
 } ex_xvalue_t;
 
@@ -441,6 +443,14 @@ typedef struct {
 	const expr_t *expr;
 	function_t *function;		///< for better reporting in inline functions
 } ex_process_t;
+
+typedef struct {
+	const expr_t *src;			///< value holding the bitfield
+	const expr_t *start;		///< index of first bit to extract
+	const expr_t *length;		///< number of bits to extract
+	const expr_t *insert;		///< value to insert (null for extract)
+	const type_t *type;			///< result type for extract
+} ex_bitfield_t;
 
 typedef struct expr_s {
 	expr_t     *next;
@@ -498,6 +508,7 @@ typedef struct expr_s {
 		ex_caselabel_t caselabel;		///< case label expression
 		ex_xvalue_t xvalue;				///< lvalue/rvalue specific expression
 		ex_process_t process;			///< expression than needs processing
+		ex_bitfield_t bitfield;			///< bitfield insert/extract expression
 	};
 } expr_t;
 

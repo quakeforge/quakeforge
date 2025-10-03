@@ -2522,6 +2522,40 @@ expr_selector (sblock_t *sblock, const expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_xvalue (sblock_t *sblock, const expr_t *e, operand_t **op)
+{
+	return statement_subexpr (sblock, e->xvalue.expr, op);
+}
+
+static sblock_t *
+expr_bitfield (sblock_t *sblock, const expr_t *e, operand_t **op)
+{
+	scoped_src_loc (e);
+	auto bitfield = e->bitfield;
+	auto backing_type = get_type (bitfield.src);
+	auto backing_bits = new_int_expr (type_size (backing_type) * 32, true);
+	auto rshift = binary_expr ('-', backing_bits, bitfield.length);
+	auto lshift = binary_expr ('-', rshift, bitfield.start);
+	if (bitfield.insert) {
+		auto bits = cast_expr (backing_type, new_long_expr (-1, true));
+		auto lmask = binary_expr (QC_SHL, bits, bitfield.start);
+		auto rmask = binary_expr (QC_SHR, bits, lshift);
+		auto ins_mask = binary_expr ('&', lmask, rmask);
+		auto inv_mask = unary_expr ('~', ins_mask);
+		auto masked_src = binary_expr ('&', inv_mask, bitfield.src);
+		auto shift_ins = binary_expr (QC_SHL, bitfield.insert, bitfield.start);
+		auto masked_ins = binary_expr ('&', ins_mask, shift_ins);
+		auto insert = binary_expr ('|', masked_src, masked_ins);
+		return statement_subexpr (sblock, insert, op);
+	} else {
+		auto shift = binary_expr (QC_SHL, bitfield.src, lshift);
+		auto cast = cast_expr (bitfield.type, shift);
+		auto extract = binary_expr (QC_SHR, cast, rshift);
+		return statement_subexpr (sblock, extract, op);
+	}
+}
+
+static sblock_t *
 statement_subexpr (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	static expr_f sfuncs[ex_count] = {
@@ -2546,6 +2580,8 @@ statement_subexpr (sblock_t *sblock, const expr_t *e, operand_t **op)
 		[ex_cond] = expr_cond,
 		[ex_field] = expr_field_array,
 		[ex_array] = expr_field_array,
+		[ex_xvalue] = expr_xvalue,
+		[ex_bitfield] = expr_bitfield,
 	};
 	if (!e) {
 		*op = 0;

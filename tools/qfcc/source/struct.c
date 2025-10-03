@@ -225,14 +225,81 @@ bitdata_sym (struct_state_t *state)
 {
 	auto s = new_symbol_type (va (".bits%d", state->bit_index++),
 							  state->bit_type);
-	s->sy_type = sy_offset;
 	struct_offset (state, s);
+
+	s->sy_type = sy_offset;
+	s->table = state->symtab;
+	s->no_auto_init = true;
+	s->id = state->index++;
+	Hash_Add (state->symtab->tab, s);
 	return s;
+}
+
+typedef struct {
+	int         start;
+	int         length;
+	const expr_t *member;
+} bitfield_t;
+
+static const expr_t *
+bitfield_assign (const expr_t *dst, const expr_t *src)
+{
+	scoped_src_loc (dst);
+	if (dst->type != ex_bitfield) {
+		internal_error (dst, "not a bitfield expression");
+	}
+
+	auto lvalue = dst->bitfield.src;
+	auto rvalue = new_expr ();
+	rvalue->type = ex_bitfield;
+	rvalue->bitfield = dst->bitfield;
+	rvalue->bitfield.insert = src;
+
+	return assign_expr (lvalue, rvalue);
+}
+
+static const expr_t *
+bitfield_expr (symbol_t *symbol, void *data, const expr_t *obj)
+{
+	bitfield_t *bitfield = data;
+	scoped_src_loc (obj);
+
+	auto start = new_int_expr (bitfield->start, false);
+	auto length = new_int_expr (bitfield->length, false);
+	auto field = get_struct_field (get_type (obj), obj, bitfield->member);
+	auto src = new_field_expr (obj, new_symbol_expr (field));
+	src->field.type = field->type;
+	auto expr = new_expr ();
+	expr->type = ex_bitfield;
+	expr->bitfield = (ex_bitfield_t) {
+		.src = edag_add_expr (src),
+		.start = edag_add_expr (start),
+		.length = edag_add_expr (length),
+		// .insert will be filled in for lvalues
+		.type = symbol->type,
+	};
+
+	auto xvalue = new_xvalue_expr (edag_add_expr (expr), true);
+	xvalue->xvalue.assign = bitfield_assign;
+
+	return xvalue;
 }
 
 static symbol_t *
 bitfield_sym (struct_state_t *state, symbol_t *s)
 {
+	auto member = new_symbol (va (".bits%d", state->bit_index));
+	bitfield_t *bitfield = malloc (sizeof (bitfield_t));
+	*bitfield = (bitfield_t) {
+		.start = state->bit_offset,
+		.length = s->offset,
+		.member = new_symbol_expr (member),
+	};
+	s->sy_type = sy_convert;
+	s->convert = (symconv_t) {
+		.conv_expr = bitfield_expr,
+		.data = bitfield,
+	};
 	return s;
 }
 

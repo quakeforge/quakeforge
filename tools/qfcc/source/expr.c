@@ -82,7 +82,6 @@ get_type (const expr_t *e)
 			type = get_type (e->inout.out);
 			break;
 		case ex_xvalue:
-			bug (e, "should xvalue happen here?");
 			return get_type (e->xvalue.expr);
 		case ex_branch:
 			type = e->branch.ret_type;
@@ -197,6 +196,12 @@ get_type (const expr_t *e)
 			break;
 		case ex_intrinsic:
 			type = e->intrinsic.res_type;
+			break;
+		case ex_bitfield:
+			if (e->bitfield.insert) {
+				return get_type (e->bitfield.src);
+			}
+			type = e->bitfield.type;
 			break;
 		case ex_count:
 			internal_error (e, "invalid expression");
@@ -2095,6 +2100,12 @@ has_function_call (const expr_t *e)
 			return has_function_call (e->xvalue.expr);
 		case ex_process:
 			internal_error (e, "unexpected expression type");
+		case ex_bitfield:
+			return (has_function_call (e->bitfield.src)
+					|| has_function_call (e->bitfield.start)
+					|| has_function_call (e->bitfield.length)
+					|| (e->bitfield.insert
+						&& has_function_call (e->bitfield.insert)));
 		case ex_count:
 			break;
 	}
@@ -3073,6 +3084,12 @@ can_inline (const expr_t *expr, symbol_t *fsym)
 				}
 			}
 			return can_inline (xvalue, fsym);
+		case ex_bitfield:
+			return (can_inline (expr->bitfield.src, fsym)
+					&& can_inline (expr->bitfield.start, fsym)
+					&& can_inline (expr->bitfield.length, fsym)
+					&& (!expr->bitfield.insert
+						|| can_inline (expr->bitfield.insert, fsym)));
 		case ex_def:
 		case ex_temp:
 		case ex_nil:
