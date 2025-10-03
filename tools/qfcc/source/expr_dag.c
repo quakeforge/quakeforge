@@ -237,8 +237,8 @@ edag_add_expr (const expr_t *expr)
 				}
 				break;
 			case ex_xvalue:
-				bug (expr, "should xvalue happen here?");
 				if (e->xvalue.expr == expr->xvalue.expr
+					&& e->xvalue.assign == expr->xvalue.assign
 					&& e->xvalue.lvalue == expr->xvalue.lvalue) {
 					// never dag an lvalue
 					if (!e->xvalue.lvalue) {

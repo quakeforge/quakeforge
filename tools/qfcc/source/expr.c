@@ -2098,7 +2098,6 @@ has_function_call (const expr_t *e)
 		case ex_switch:
 			return has_function_call (e->switchblock.test);
 		case ex_xvalue:
-			bug (e, "should xvalue happen here?");
 			return has_function_call (e->xvalue.expr);
 		case ex_process:
 			internal_error (e, "unexpected expression type");
