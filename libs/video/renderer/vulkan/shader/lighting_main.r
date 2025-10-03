@@ -51,7 +51,7 @@ main (void)
 		vec3        incoming = dir / r.y;
 		float       I = (1 - a.w * r.y) / (a • r);
 
-		auto rd = renderer[id];
+		LightRender rd = renderer[id];
 		I *= shadow (rd.map_id, rd.layer, rd.mat_id, p, n, l.position.xyz);
 
 		float       namb = l.axis • l.axis;
