@@ -1702,8 +1702,10 @@ get_name (const expr_t *e)
 symbol_t *
 get_struct_field (const type_t *t1, const expr_t *e1, const expr_t *e2)
 {
-	t1 = unalias_type (t1);
-	symtab_t   *strct = t1->symtab;
+	if (is_reference (t1)) {
+		t1 = dereference_type (t1);
+	}
+	symtab_t   *strct = type_symtab (t1);
 	symbol_t   *sym = get_name (e2);
 	symbol_t   *field;
 
