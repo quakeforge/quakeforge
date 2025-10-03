@@ -499,6 +499,9 @@ spirv_emit_symtab (symtab_t *symtab, spirvctx_t *ctx)
 {
 	int num_members = 0;
 	for (auto s = symtab->symbols; s; s = s->next) {
+		if (s->sy_type != sy_offset) {
+			continue;
+		}
 		num_members++;
 	}
 	if (!num_members) {
@@ -508,6 +511,9 @@ spirv_emit_symtab (symtab_t *symtab, spirvctx_t *ctx)
 	unsigned member_types[num_members];
 	num_members = 0;
 	for (auto s = symtab->symbols; s; s = s->next) {
+		if (s->sy_type != sy_offset) {
+			continue;
+		}
 		int m = num_members++;
 		member_types[m] = spirv_Type (s->type, ctx);
 	}
@@ -522,6 +528,9 @@ spirv_emit_symtab (symtab_t *symtab, spirvctx_t *ctx)
 	int i = 0;
 	num_members = 0;
 	for (auto s = symtab->symbols; s; s = s->next, i++) {
+		if (s->sy_type != sy_offset) {
+			continue;
+		}
 		int m = num_members++;
 		spirv_MemberName (id, m, s->name, ctx);
 		spirv_member_decorate_id (id, m, s->attributes, ctx);
@@ -2332,6 +2341,45 @@ spirv_switch (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_xvalue (const expr_t *e, spirvctx_t *ctx)
+{
+	return spirv_emit_expr (e->xvalue.expr, ctx);
+}
+
+static unsigned
+spirv_bitfield (const expr_t *e, spirvctx_t *ctx)
+{
+	auto bitfield = e->bitfield;
+	auto backing_type = get_type (bitfield.src);
+	unsigned base = spirv_emit_expr (bitfield.src, ctx);
+	unsigned offset = spirv_emit_expr (bitfield.start, ctx);
+	unsigned count = spirv_emit_expr (bitfield.length, ctx);
+	unsigned tid = spirv_Type (backing_type, ctx);
+	unsigned id = spirv_id (ctx);
+	if (bitfield.insert) {
+		unsigned insert = spirv_emit_expr (bitfield.insert, ctx);
+		auto insn = spirv_new_insn (SpvOpBitFieldInsert, 7,
+									ctx->code_space, ctx);
+		INSN (insn, 1) = tid;
+		INSN (insn, 2) = id;
+		INSN (insn, 3) = base;
+		INSN (insn, 4) = insert;
+		INSN (insn, 5) = offset;
+		INSN (insn, 6) = count;
+	} else {
+		SpvOp op = is_unsigned (bitfield.type) ? SpvOpBitFieldUExtract
+											   : SpvOpBitFieldSExtract;
+		auto insn = spirv_new_insn (op, 6, ctx->code_space, ctx);
+		INSN (insn, 1) = tid;
+		INSN (insn, 2) = id;
+		INSN (insn, 3) = base;
+		INSN (insn, 4) = offset;
+		INSN (insn, 5) = count;
+	}
+	return id;
+}
+
+static unsigned
 spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 {
 	static spirv_expr_f funcs[ex_count] = {
@@ -2363,6 +2411,8 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_select] = spirv_select,
 		[ex_intrinsic] = spirv_intrinsic,
 		[ex_switch] = spirv_switch,
+		[ex_xvalue] = spirv_xvalue,
+		[ex_bitfield] = spirv_bitfield,
 	};
 
 	if (e->type >= ex_count) {

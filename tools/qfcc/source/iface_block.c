@@ -251,13 +251,23 @@ block_block_type (const type_t *type, const char *pre_tag)
 		unsigned offset = 0;
 		int alignment = 1;
 		for (auto s = type->symtab->symbols; s; s = s->next) {
+			if (s->sy_type != sy_offset && s->sy_type != sy_convert) {
+				continue;
+			}
 			auto ftype = block_block_type (s->type, tag);
 			auto sym = new_symbol_type (s->name, ftype);
-			sym->sy_type = sy_offset;
-			sym->offset = -1;
+			sym->sy_type = s->sy_type;
+			if (s->sy_type == sy_convert) {
+				sym->convert = s->convert;
+			} else {
+				sym->offset = -1;
+			}
 			sym->id = s->id;
 			sym->attributes = s->attributes;
 			symtab_addsymbol (nt->symtab, sym);
+			if (s->sy_type != sy_offset) {
+				continue;
+			}
 			if (s->offset >= 0 && type->symtab->type == stab_block) {
 				offset = s->offset;
 			}
@@ -295,7 +305,9 @@ finish_block (iface_block_t *block)
 {
 	int index = 0;
 	for (auto s = block->members->symbols; s; s = s->next) {
-		s->id = index++;
+		if (s->sy_type == sy_offset) {
+			s->id = index++;
+		}
 	}
 }
 
