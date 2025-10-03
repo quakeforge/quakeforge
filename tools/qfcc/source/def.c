@@ -660,7 +660,7 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 			while (init->type == ex_alias) {
 				init = init->alias.expr;
 			}
-			if (init->type != ex_value) {	//FIXME enum etc
+			if (init->type != ex_value && !is_nil (init)) {	//FIXME enum etc
 				internal_error (0, "initializier not a value");
 				return;
 			}
