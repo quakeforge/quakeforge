@@ -240,10 +240,7 @@ edag_add_expr (const expr_t *expr)
 				if (e->xvalue.expr == expr->xvalue.expr
 					&& e->xvalue.assign == expr->xvalue.assign
 					&& e->xvalue.lvalue == expr->xvalue.lvalue) {
-					// never dag an lvalue
-					if (!e->xvalue.lvalue) {
-						return e;
-					}
+					return e;
 				}
 				break;
 			case ex_bitfield:
