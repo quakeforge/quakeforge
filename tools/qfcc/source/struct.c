@@ -364,7 +364,9 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 			if (!s->offset) {
 				// 0-width bitfields align to the next bounary, but that
 				// is handled above
-				append_symbol (&state, s);
+				if (s->name) {
+					append_symbol (&state, s);
+				}
 				continue;
 			}
 			if (s->offset > type_size (s->type) * 32) {
@@ -378,7 +380,9 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 				state.bit_type = uint_type (s->type);
 				bit_end = s->offset;
 			}
-			append_symbol (&state, bitfield_sym (&state, s));
+			if (s->name) {
+				append_symbol (&state, bitfield_sym (&state, s));
+			}
 			state.bit_offset = bit_end;
 			continue;
 		}

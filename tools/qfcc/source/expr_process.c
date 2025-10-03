@@ -887,7 +887,7 @@ struct_process (symtab_t *symtab, const expr_t *declaration_list,
 			} else {
 				internal_error (decl, "not a symbol");
 			}
-			if (sym->visibility != vis_anonymous) {
+			if (sym && sym->visibility != vis_anonymous) {
 				sym->visibility = visibility;
 			}
 			auto spec = decl_spec;

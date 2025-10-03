@@ -1828,8 +1828,12 @@ component_declarator
 	| declarator[spec] ':' binding	{ $$ = decl_expr ($spec, nullptr, ctx); }
 	| declarator[spec] ':' expr		{ $spec.bit_size = $expr;
 									  $$ = decl_expr ($spec, nullptr, ctx); }
-	| ':' expr						{ specifier_t spec = { .bit_size = $expr };
-									  $$ = decl_expr (spec, nullptr, ctx); }
+	| ':' expr
+		{
+			auto spec = $<spec>0;
+			spec.bit_size = $expr;
+			$$ = decl_expr (spec, nullptr, ctx);
+		}
 	| ':' binding					{ error (0, "nothing to bind here"); }
 	;
 

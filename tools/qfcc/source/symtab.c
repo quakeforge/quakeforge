@@ -158,9 +158,12 @@ symtab_addsymbol (symtab_t *symtab, symbol_t *symbol)
 		}
 		symtab = symtab->parent;
 	}
-	if ((s = Hash_Find (symtab->tab, symbol->name)))
-		return s;
-	Hash_Add (symtab->tab, symbol);
+	if (symbol->name) {
+		if ((s = Hash_Find (symtab->tab, symbol->name))) {
+			return s;
+		}
+		Hash_Add (symtab->tab, symbol);
+	}
 
 	return symtab_appendsymbol (symtab, symbol);
 }
@@ -375,6 +378,9 @@ symbol_t *
 declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx)
 {
 	symbol_t   *sym = spec.sym;
+	if (!sym) {
+		sym = new_symbol (nullptr);
+	}
 	spec = spec_process (spec, ctx);
 	sym->type = find_type (append_type (sym->type, spec.type));
 	sym->sy_type = sy_offset;
