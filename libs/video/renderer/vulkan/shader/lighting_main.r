@@ -51,19 +51,15 @@ main (void)
 		vec3        incoming = dir / r.y;
 		float       I = (1 - a.w * r.y) / (a • r);
 
-		uint        id_data = renderer[id].id_data;
-		uint        mat_id = bitfieldExtract (id_data, 0, 14);
-		uint        map_id = bitfieldExtract (id_data, 14, 5);
-		uint        layer = bitfieldExtract (id_data, 19, 11);
-
-		I *= shadow (map_id, layer, mat_id, p, n, l.position.xyz);
+		auto rd = renderer[id];
+		I *= shadow (rd.map_id, rd.layer, rd.mat_id, p, n, l.position.xyz);
 
 		float       namb = l.axis • l.axis;
 		I *= spot_cone (unpackSnorm2x16 (l.cone), l.axis, incoming);
 		I *= diffuse (incoming, n);
 		I = mix (1, I, namb);
 		vec4 col = l.color;
-		if (bitfieldExtract(id_data, 31, 1) == 0) {
+		if (rd.no_style == 0) {
 			col *= style[renderer[id].style];
 		}
 		if (fog.w > 0) {

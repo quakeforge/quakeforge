@@ -15,7 +15,11 @@ typedef struct LightData {
 #define ST_CUBE     3   // cubemap (omni, large spotlight)
 
 typedef struct LightRender {
-	uint        id_data;
+	uint        mat_id:14;
+	uint        map_id:5;
+	uint        layer:11;
+	uint             :1;
+	uint        no_style:1;
 	uint        style;
 } LightRender;
 
