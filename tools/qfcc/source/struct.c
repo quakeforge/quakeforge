@@ -225,6 +225,8 @@ bitdata_sym (struct_state_t *state)
 {
 	auto s = new_symbol_type (va (".bits%d", state->bit_index++),
 							  state->bit_type);
+	state->bit_offset = 0;
+	state->bit_type = nullptr;
 	struct_offset (state, s);
 
 	s->sy_type = sy_offset;
