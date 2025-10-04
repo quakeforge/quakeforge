@@ -1201,6 +1201,23 @@ flow_check_move (statement_t *st, set_t *use, set_t *def, function_t *func)
 }
 
 static void
+flow_check_store (statement_t *st, set_t *def, function_t *func)
+{
+	SET_DEFER (def_ptr);
+	SET_DEFER (ptr);
+	SET_DEFER (visited);
+
+	//FIXME addressing modes
+	flowvar_t  *var_a = flow_get_var (st->opa);
+	if (var_a) {
+		set_add (def_ptr, var_a->number);
+	}
+	if (def) {
+		flow_find_ptr (def, def_ptr, st, func, flowvar_add_def);
+	}
+}
+
+static void
 flow_check_load (statement_t *st, set_t *use, function_t *func)
 {
 	SET_DEFER (use_ptr);
@@ -1238,7 +1255,7 @@ flow_check_ambiguous (statement_t *st, set_t *use, set_t *def, function_t *func)
 		check_use = true;
 		check_def = true;
 	} else if (st->type == st_ptrassign) {
-		flow_check_move (st, amb_use, amb_def, func);
+		flow_check_store (st, amb_def, func);
 		check_def = true;
 	} else if (st->type == st_expr && strcmp (st->opcode, "load") == 0) {
 		flow_check_load (st, amb_use, func);
