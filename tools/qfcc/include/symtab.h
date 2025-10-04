@@ -108,7 +108,7 @@ typedef enum {
 
 typedef struct symtab_s {
 	struct symtab_s *parent;	///< points to parent table
-	struct symtab_s *next;		///< next in global collection of symtabs
+	struct symtab_s *next;		///< used by ALLOC
 	stab_type_e type;			///< type of symbol table
 	int         storage;		///< storage class for stab_block
 	int         size;			///< size of structure represented by symtab
