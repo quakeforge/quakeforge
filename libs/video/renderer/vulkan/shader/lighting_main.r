@@ -34,8 +34,8 @@ main (void)
 	vec4        p = subpassLoad (position);
 	vec3        light = vec3 (0);
 
-	uint        start = bitfieldExtract (queue, 0, 16);
-	uint        end = start + bitfieldExtract (queue, 16, 16);
+	uint        start = queue.start;
+	uint        end = start + queue.count;
 
 	for (uint i = start; i < end; i++) {
 		uint        id = lightIds[i];

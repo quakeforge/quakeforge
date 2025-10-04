@@ -54,10 +54,15 @@ typedef struct LightMatData {
 [uniform, set(3), binding(0)] SHADOW_SAMPLER shadow_map[32];
 #endif
 
+typedef struct LightQueue {
+	uint        start:16;
+	uint        count:16;
+} LightQueue;
+
 [push_constant] @block PushConstants {
 	vec4        fog;
 	float       near_plane;
-	uint        queue;
+	LightQueue  queue;
 	uint        num_cascades;
 };
 
