@@ -411,6 +411,11 @@ process_type_def (defref_t *ref, qfo_mspace_t *space, qfo_def_t *old)
 		old_type = QFOTYPE(old->offset);
 		name = WORKSTR (REF (ref)->name);
 		if ((r = Hash_Find (defined_type_defs, name))) {
+			if (QFOTYPE (REF (ref)->offset)->size
+				!= WORKTYPE (REF (r)->offset)->size) {
+				//FIXME better error reporting
+				linker_error ("%s defined differently", name);
+			}
 			// The type has been defined already, so treat this def as if it
 			// were external
 			REF (ref)->flags |= QFOD_EXTERNAL;
