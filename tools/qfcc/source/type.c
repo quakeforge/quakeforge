@@ -781,6 +781,12 @@ auto_type (const type_t *type, const expr_t *init)
 			if (!(type = get_type (init))) {
 				type = type_default;
 			}
+			// auto is used for local variables, so they need the original
+			// type if the type has been cloned for special interface needs
+			// such as spir-v block members.
+			if (type->source) {
+				type = type->source;
+			}
 		} else {
 			error (0, "'auto' requires an initialized data declaration");
 			type = type_default;

@@ -295,6 +295,7 @@ block_block_type (const type_t *type, const char *pre_tag)
 		nt->symtab->size = type->symtab->size;
 		nt->symtab->data = type->symtab->data;
 		((type_t *)nt)->alignment = alignment;
+		((type_t *)nt)->source = type;
 		return nt;
 	}
 	return type;

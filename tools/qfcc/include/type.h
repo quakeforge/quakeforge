@@ -101,6 +101,7 @@ typedef struct type_s {
 		ty_handle_t handle;
 	};
 	attribute_t *attributes;
+	const type_t *source;		///< source type for clones (eg, spir-v)
 	type_t     *next;
 	bool        freeable;
 	bool        allocated;
