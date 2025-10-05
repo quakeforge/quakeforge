@@ -522,6 +522,11 @@ add_operand (function_t *func, operand_t *op)
 			var->flowaddr += func->parameters->space->size;
 		} else if (flowvar_is_local (var)) {
 			var->flowaddr = func->num_statements + def_offset (var->op->def);
+		} else if (flowvar_is_global (var)) {
+			// global vars can be quite big, so they're limited to 1
+			// FIXME find a better way to represent variables for fine control,
+			// though it may not be necessary.
+			var->flowaddr = get_pseudo_address (func, 1);
 		}
 	}
 }
@@ -613,6 +618,10 @@ add_var_addrs (set_t *set, flowvar_t *var)
 	int size = var->op->size;
 	if (size < var->minsize) {
 		size = var->minsize;
+	}
+	// global vars can be quite big, so they're limited to 1 (see add_operand)
+	if (flowvar_is_global (var)) {
+		size = 1;
 	}
 	for (int i = 0; i < size; i++) {
 		set_add (set, var->flowaddr + i);
@@ -770,8 +779,8 @@ flow_build_vars (function_t *func)
 	}
 	func->global_vars = set_new ();
 	func->param_vars = set_new ();
-	// mark all global vars (except .return and .param_N), and param vars
-	for (i = num_flow_params; i < func->num_vars; i++) {
+	// mark all global and param vars
+	for (i = 0; i < func->num_vars; i++) {
 		if (flowvar_is_global (func->vars[i])) {
 			set_add (func->global_vars, i);
 		}
@@ -779,13 +788,10 @@ flow_build_vars (function_t *func)
 			add_var_addrs (func->param_vars, func->vars[i]);
 		}
 	}
-	// Put the local varibals in their place (set var->defined to the addresses
+	// Put the varibals in their place (set var->defined to the addresses
 	// spanned by the var)
 	for (i = 0; i < func->num_vars; i++) {
 		var = func->vars[i];
-		if (flowvar_is_global (var)) {// || flowvar_is_param (var)) {
-			continue;
-		}
 		add_var_addrs (var->define, var);
 	}
 
@@ -1920,6 +1926,12 @@ flow_uninitialized (flowgraph_t *graph)
 	set_assign (uninitialized, node->reaching_defs.out);
 	// parameters are, by definition, initialized
 	set_difference (uninitialized, graph->func->param_vars);
+	// globals are, by definition, initialized
+	auto func = graph->func;
+	for (auto gv = set_first (func->global_vars); gv; gv = set_next (gv)) {
+		auto var = func->vars[gv->element];
+		set_remove (uninitialized, var->flowaddr);
+	}
 
 	for (i = 0; i < graph->num_nodes; i++) {
 		node = graph->nodes[graph->depth_first[i]];
