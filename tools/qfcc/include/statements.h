@@ -183,17 +183,19 @@ void free_sblock (sblock_t *sblock);
 
 statement_t *new_statement (st_type_t type, const char *opcode,
 							const struct expr_s *expr);
-int statement_is_cond (statement_t *s) __attribute__((pure));
-int statement_is_goto (statement_t *s) __attribute__((pure));
-int statement_is_jumpb (statement_t *s) __attribute__((pure));
-int statement_is_call (statement_t *s) __attribute__((pure));
-int statement_is_return (statement_t *s) __attribute__((pure));
-struct ex_label_s **statement_get_labelref (statement_t *s);
+bool statement_is_cond (statement_t *s) __attribute__((pure));
+bool statement_is_goto (statement_t *s) __attribute__((pure));
+// 1 = taken, 0 = not taken, -1 = unknown
+int statement_take_branch (statement_t *s) __attribute__((pure));
+bool statement_is_jumpb (statement_t *s) __attribute__((pure));
+bool statement_is_call (statement_t *s) __attribute__((pure));
+bool statement_is_return (statement_t *s) __attribute__((pure));
+struct ex_label_s **statement_get_labelref (statement_t *s) __attribute__((pure));
 sblock_t *statement_get_target (statement_t *s) __attribute__((pure));
 sblock_t **statement_get_targetlist (statement_t *s);
 void sblock_add_statement (sblock_t *sblock, statement_t *statement);
 void unuse_label (struct ex_label_s *label);
-statement_t *tail_statement (sblock_t *sblock);
+statement_t *tail_statement (sblock_t *sblock) __attribute__((pure));
 sblock_t *sblock_label (sblock_t *sblock, struct ex_label_s *label);
 sblock_t *optimize_jumps (sblock_t *sblock);
 sblock_t *sblock_copy (sblock_t *sblock);

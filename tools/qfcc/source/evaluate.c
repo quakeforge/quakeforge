@@ -229,6 +229,53 @@ get_def (operand_t *op)
 	internal_error (0, "unexpected operand");
 }
 
+ex_value_t *
+evaluate_run_sblock (sblock_t *sblock, operand_t *return_op)
+{
+	auto saved_version = options.code.progsversion;
+	options.code.progsversion = PROG_VERSION;
+
+	value_codespace.size = vf_foldconst * 16;
+	for (auto s = sblock->statements; s; s = s->next) {
+		auto opa = get_def (s->opa);
+		auto opb = get_def (s->opb);
+		auto opc = get_def (s->opc);
+		if (strcmp (s->opcode, "shl") == 0) {
+			s->opa->type = uint_type (opa->type);
+			s->opb->type = uint_type (opb->type);
+			s->opc->type = uint_type (opc->type);
+		}
+		auto inst = opcode_find (s->opcode, s->opa, s->opb, s->opc);
+		if (!inst) {
+			print_statement (s);
+			internal_error (s->expr, "no such instruction");
+		}
+		auto ds = codespace_newstatement (&value_codespace);
+		*ds = (dstatement_t) {
+			.op = opcode_get (inst),
+			.a = opa ? opa->offset : 0,
+			.b = opb ? opb->offset : 0,
+			.c = opc ? opc->offset : 0,
+		};
+	}
+	if (return_op) {
+		auto ret_def = get_def (return_op);
+		auto ds = codespace_newstatement (&value_codespace);
+		*ds = (dstatement_t) {
+			.op = OP_RETURN,
+			.a = ret_def->offset,
+			.c = type_size (return_op->type) - 1,
+		};
+	}
+	options.code.progsversion = saved_version;
+	value_pr.pr_trace = options.verbosity > 1;
+	PR_ExecuteProgram (&value_pr, vf_foldconst);
+	if (return_op) {
+		return new_type_value (return_op->type, value_pr.pr_return_buffer);
+	}
+	return nullptr;
+}
+
 const expr_t *
 evaluate_constexpr (const expr_t *e)
 {
@@ -283,35 +330,11 @@ evaluate_constexpr (const expr_t *e)
 	}
 	free_sblock (sb);
 	sblock.next = 0;
+	options.code.progsversion = saved_version;
 
 	edag_pop_state ();
 
-	value_codespace.size = vf_foldconst * 16;
-	for (auto s = sblock.statements; s; s = s->next) {
-		auto opa = get_def (s->opa);
-		auto opb = get_def (s->opb);
-		auto opc = get_def (s->opc);
-		if (strcmp (s->opcode, "shl") == 0) {
-			s->opa->type = uint_type (opa->type);
-			s->opb->type = uint_type (opb->type);
-			s->opc->type = uint_type (opc->type);
-		}
-		auto inst = opcode_find (s->opcode, s->opa, s->opb, s->opc);
-		if (!inst) {
-			print_statement (s);
-			internal_error (e, "no such instruction");
-		}
-		auto ds = codespace_newstatement (&value_codespace);
-		*ds = (dstatement_t) {
-			.op = opcode_get (inst),
-			.a = opa ? opa->offset : 0,
-			.b = opb ? opb->offset : 0,
-			.c = opc ? opc->offset : 0,
-		};
-	}
-	options.code.progsversion = saved_version;
-	value_pr.pr_trace = options.verbosity > 1;
-	PR_ExecuteProgram (&value_pr, vf_foldconst);
+	evaluate_run_sblock (&sblock, nullptr);
 	auto val = new_type_value (get_type (e), value_pr.pr_return_buffer);
 	e = new_value_expr (val, false);
 	return e;

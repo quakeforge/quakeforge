@@ -49,11 +49,13 @@
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/dot.h"
+#include "tools/qfcc/include/evaluate.h"
 #include "tools/qfcc/include/flow.h"
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 
@@ -2042,6 +2044,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 
 	switch (s->type) {
 		case st_none:
+			break;
 		case st_alias:
 			internal_error (s->expr, "not a statement");
 		case st_address:
@@ -2671,6 +2674,105 @@ check_constant (int stnum, set_t *loop_statements, flowgraph_t *graph)
 	return true;
 }
 
+static operand_t *
+collect_ops (int stnum, sblock_t *sblock, set_t *loop_statements,
+			 function_t *func)
+{
+	SET_DEFER (def_statements);
+	auto st = func->statements[stnum];
+	statement_t s = *st;
+	for (int i = 0; i < st->num_use; i++) {
+		auto ud = func->ud_chains[st->first_use + i];
+
+		if (ud.defst == stnum) {
+			//iterator
+			return nullptr;
+		}
+		if (set_is_member (loop_statements, ud.defst)) {
+			continue;
+		}
+		if (!set_is_member (func->real_statements, ud.defst)) {
+			return nullptr;
+		}
+
+		auto var = func->vars[ud.var];
+		set_assign (def_statements, var->define);
+		set_difference (def_statements, loop_statements);
+		set_intersection (def_statements, func->real_statements);
+		if (set_count (def_statements) != 1) {
+			return nullptr;
+		}
+
+		auto op = collect_ops (ud.defst, sblock, loop_statements, func);
+		if (!op) {
+			return nullptr;
+		}
+		if (flow_get_var (st->opa) == var) {
+			s.opa = op;
+		}
+		if (flow_get_var (st->opb) == var) {
+			s.opb = op;
+		}
+		if (flow_get_var (st->opc) == var) {
+			s.opc = op;
+		}
+	}
+	operand_t *def_op = nullptr;
+	for (int i = 0; i < st->num_def; i++) {
+		// any duplicate vars should be aliases of the one that's wanted
+		auto du = func->du_chains[st->first_def + i];
+		auto var = func->vars[du.var];
+		if (flow_get_var (st->opa) == var) {
+			def_op = s.opa = temp_operand (var->op->type, s.expr);
+		}
+		if (flow_get_var (st->opb) == var) {
+			def_op = s.opb = temp_operand (var->op->type, s.expr);
+		}
+		if (flow_get_var (st->opc) == var) {
+			def_op = s.opc = temp_operand (var->op->type, s.expr);
+		}
+	}
+	if (!def_op) {
+		internal_error (s.expr, "couldn't find def");
+	}
+	auto new_st = new_statement (s.type, s.opcode, s.expr);
+	*new_st = s;
+	sblock_add_statement (sblock, new_st);
+	return def_op;
+}
+
+static void
+set_const_operand (statement_t *st, set_t *loop_statements, function_t *func)
+{
+	if (!statement_is_cond (st) || st->num_use != 1) {
+		return;
+	}
+	auto ud = func->ud_chains[st->first_use];
+	auto sblock = new_sblock ();
+	auto op = collect_ops (ud.defst, sblock, loop_statements, func);
+	if (op) {
+		auto val = evaluate_run_sblock (sblock, op);
+		op = value_operand (val, nullptr);
+	}
+	free_sblock (sblock);
+	st->opc = op;
+	// -1 is unknown, but op is known to be constant so result will be 0 or 1
+	// the dags cse code will take care of the nop and any dead expressions
+	// used for the test (either case).
+	if (statement_take_branch (st)) {
+		// always taken
+		st->opcode = save_string ("jump");
+		st->opc = nullptr;
+	} else {
+		// never taken
+		st->type = st_none;
+		st->opcode = save_string ("nop");
+		st->opa = nullptr;
+		st->opb = nullptr;
+		st->opc = nullptr;
+	}
+}
+
 static bool
 flow_split_loop_heads (flowgraph_t *graph)
 {
@@ -2771,6 +2873,8 @@ flow_split_loop_heads (flowgraph_t *graph)
 			tail_jump->opa = label_operand (split_label);
 			split_label->label.used++;
 		}
+		set_const_operand (graph->func->statements[stnum], loop_statements,
+						   graph->func);
 	}
 	return did_split;
 }

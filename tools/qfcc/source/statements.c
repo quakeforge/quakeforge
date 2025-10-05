@@ -747,7 +747,7 @@ convert_op (int op)
 	}
 }
 
-int
+bool
 statement_is_cond (statement_t *s)
 {
 	if (!s)
@@ -755,7 +755,7 @@ statement_is_cond (statement_t *s)
 	return !strncmp (s->opcode, "if", 2);
 }
 
-int
+bool
 statement_is_goto (statement_t *s)
 {
 	if (!s)
@@ -764,6 +764,37 @@ statement_is_goto (statement_t *s)
 }
 
 int
+statement_take_branch (statement_t *s)
+{
+	if (statement_is_goto (s)) {
+		return 1;
+	}
+	if (!statement_is_cond (s)) {
+		return -1;
+	}
+	auto op = s->opc;
+	if (op->op_type != op_value) {
+		return -1;
+	}
+	int value = op->value->int_val;
+
+	if (!strcmp (s->opcode, "ifnz")) {
+		return value != 0;
+	} else if (!strcmp (s->opcode, "ifz")) {
+		return value == 0;
+	} else if (!strcmp (s->opcode, "ifbe")) {
+		return value <= 0;
+	} else if (!strcmp (s->opcode, "ifb")) {
+		return value < 0;
+	} else if (!strcmp (s->opcode, "ifae")) {
+		return value >= 0;
+	} else if (!strcmp (s->opcode, "ifa")) {
+		return value > 0;
+	}
+	return -1;
+}
+
+bool
 statement_is_jumpb (statement_t *s)
 {
 	if (!s)
@@ -771,7 +802,7 @@ statement_is_jumpb (statement_t *s)
 	return !strcmp (s->opcode, "jump") && s->opb;
 }
 
-int
+bool
 statement_is_call (statement_t *s)
 {
 	if (!s)
@@ -783,7 +814,7 @@ statement_is_call (statement_t *s)
 	return 0;
 }
 
-int
+bool
 statement_is_return (statement_t *s)
 {
 	if (!s)
