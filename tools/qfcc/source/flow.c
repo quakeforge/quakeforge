@@ -2621,6 +2621,9 @@ flow_build_graph (function_t *func)
 	flow_find_predecessors (graph);
 	flow_find_dominators (graph);
 	flow_find_loops (graph);
+	if (options.block_dot.flow) {
+		dump_dot ("flow-loops", graph, dump_dot_flow);
+	}
 #if 0
 	for (int i = 0; i < graph->num_nodes; i++) {
 		auto node = graph->nodes[i];
@@ -2633,31 +2636,177 @@ flow_build_graph (function_t *func)
 	return graph;
 }
 
+static bool
+check_constant (int stnum, set_t *loop_statements, flowgraph_t *graph)
+{
+	auto func = graph->func;
+	auto st = func->statements[stnum];
+	SET_DEFER (def_statements);
+	for (int i = 0; i < st->num_use; i++) {
+		auto ud = func->ud_chains[st->first_use + i];
+
+		if (ud.defst == stnum) {
+			//iterator
+			return false;
+		}
+		if (set_is_member (loop_statements, ud.defst)) {
+			continue;
+		}
+		if (!set_is_member (func->real_statements, ud.defst)) {
+			return false;
+		}
+
+		auto var = func->vars[ud.var];
+		set_assign (def_statements, var->define);
+		set_difference (def_statements, loop_statements);
+		set_intersection (def_statements, func->real_statements);
+		if (set_count (def_statements) != 1) {
+			return false;
+		}
+
+		if (!check_constant (ud.defst, loop_statements, graph)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool
+flow_split_loop_heads (flowgraph_t *graph)
+{
+	bool did_split = false;
+	SET_DEFER (seen);
+	SET_DEFER (multi_loop);
+	SET_DEFER (loop_tails);
+	SET_DEFER (loop_statements);
+	for (auto l = graph->loops; l; l = l->next) {
+		if (set_is_member (seen, l->head)) {
+			set_add (multi_loop, l->head);
+		}
+		set_add (seen, l->head);
+	}
+	for (auto l = graph->loops; l; l = l->next) {
+		if (set_is_member (multi_loop, l->head)) {
+			// head of multiple loops (is that possible?)
+			continue;
+		}
+		auto head = graph->nodes[l->head];
+		if (set_is_member (head->successors, l->head)) {
+			// tight loop, can't split
+			continue;
+		}
+		if (set_is_subset (l->nodes, head->successors)) {
+			// enters loop unconditionally, no need to split
+			continue;
+		}
+		set_empty (loop_statements);
+		for (auto ln = set_first (l->nodes); ln; ln = set_next (ln)) {
+			if (ln->element == l->head) {
+				continue;
+			}
+			auto n = graph->nodes[ln->element];
+			set_add_range (loop_statements, n->first_statement,
+						   n->num_statements);
+		}
+		int stnum = head->first_statement + head->num_statements - 1;
+		if (!check_constant (stnum, loop_statements, graph)) {
+			// can't determine whether loop entry is invariant
+			continue;
+		}
+
+		did_split = true;
+		set_assign (loop_tails, head->predecessors);
+		set_intersection (loop_tails, l->nodes);
+
+		auto head_sb = head->sblock;
+		auto split = sblock_copy (head_sb);
+		auto split_ref = statement_get_labelref (tail_statement (split));
+		if (split_ref) {
+			(*split_ref)->used++;
+		}
+		split->next = new_sblock ();
+		auto label = new_label_expr ();
+		auto split_label = new_label_expr ();
+		sblock_label (head_sb->next, &label->label);
+		sblock_label (split, &split_label->label);
+		auto jump = new_statement (st_flow, "jump",
+								   tail_statement (head_sb)->expr);
+		jump->opa = label_operand (label);
+		label->label.used++;
+		sblock_add_statement (split->next, jump);
+		int last_tail = -1;
+		for (auto tn = set_first (loop_tails); tn; tn = set_next (tn)) {
+			auto tail = graph->nodes[tn->element];
+			auto tail_sb = tail->sblock;
+			if (tail_sb->next == head_sb->next) {
+				// somehow, a tail node fell directly into the head node
+				last_tail = tn->element;
+				break;
+			}
+			auto tail_jump = tail_statement (tail_sb);
+			if (statement_is_goto (tail_jump)) {
+				last_tail = tn->element;
+			}
+		}
+		if (last_tail >= 0) {
+			auto tail = graph->nodes[last_tail];
+			auto tail_sb = tail->sblock;
+			split->next->next = tail_sb->next;
+			tail_sb->next = split;
+		} else {
+			auto sblock = graph->func->sblock;
+			while (sblock->next) {
+				sblock = sblock->next;
+			}
+			sblock->next = split;
+		}
+		for (auto tn = set_first (loop_tails); tn; tn = set_next (tn)) {
+			auto tail = graph->nodes[tn->element];
+			auto tail_sb = tail->sblock;
+			if (tail_sb->next == head_sb->next) {
+				continue;
+			}
+			auto tail_jump = tail_statement (tail_sb);
+			unuse_label (tail_jump->opa->label);
+			tail_jump->opa = label_operand (split_label);
+			split_label->label.used++;
+		}
+	}
+	return did_split;
+}
+
 void
 flow_data_flow (function_t *func)
 {
 	flowgraph_t *graph;
 
-	flow_build_statements (func);
-	flow_build_vars (func);
-	graph = flow_build_graph (func);
-	if (options.block_dot.statements)
-		dump_dot ("statements", graph, dump_dot_flow_statements);
-	flow_reaching_defs (graph);
-	flow_build_chains (graph);
-	if (options.block_dot.reaching) {
-		dump_dot ("reaching", graph, dump_dot_flow_reaching);
-	}
-	if (flow_find_ambiguous (graph)) {
+	while (true) {
+		flow_build_statements (func);
+		flow_build_vars (func);
+		graph = flow_build_graph (func);
+		if (options.block_dot.statements)
+			dump_dot ("statements", graph, dump_dot_flow_statements);
 		flow_reaching_defs (graph);
+		flow_build_chains (graph);
 		if (options.block_dot.reaching) {
 			dump_dot ("reaching", graph, dump_dot_flow_reaching);
 		}
-		flow_build_chains (graph);
+		if (flow_find_ambiguous (graph)) {
+			flow_reaching_defs (graph);
+			if (options.block_dot.reaching) {
+				dump_dot ("reaching", graph, dump_dot_flow_reaching);
+			}
+			flow_build_chains (graph);
+		}
+		if (options.block_dot.reaching) {
+			dump_dot ("reaching", graph, dump_dot_flow_reaching);
+		}
+		if (!flow_split_loop_heads (graph)) {
+			break;
+		}
+		optimize_jumps (func->sblock);
 	}
-	if (options.block_dot.reaching) {
-		dump_dot ("reaching", graph, dump_dot_flow_reaching);
-	}
+
 	flow_live_vars (graph);
 	if (options.block_dot.live)
 		dump_dot ("live", graph, dump_dot_flow_live);

@@ -305,6 +305,28 @@ print_statement (statement_t *s)
 	print_operand_chain ("kill", s->kill);
 }
 
+static void __attribute__((used))
+print_sblock (sblock_t *sblock)
+{
+	printf ("%p\n", sblock);
+	if (!sblock) {
+		return;
+	}
+	printf ("next: %p\n", sblock->next);
+	printf ("relocs: %p\n", sblock->relocs);
+	printf ("labels:\n");
+	for (auto l = sblock->labels; l; l = l->next) {
+		printf ("    %s(%d)\n", l->name, l->used);
+	}
+	printf ("flownode: %p\n", sblock->flownode);
+	printf ("reachable: %s\n", sblock->reachable ? "true" : "false");
+	printf ("number: %d\n", sblock->number);
+	printf ("id: %d\n", sblock->id);
+	for (auto s = sblock->statements; s; s = s->next) {
+		print_statement (s);
+	}
+}
+
 ALLOC_STATE (pseudoop_t, pseudoops);
 ALLOC_STATE (sblock_t, sblocks);
 ALLOC_STATE (statement_t, statements);
@@ -769,7 +791,7 @@ statement_is_return (statement_t *s)
 	return !strncmp (s->opcode, "return", 6);
 }
 
-static ex_label_t **
+ex_label_t **
 statement_get_labelref (statement_t *s)
 {
 	if (statement_is_cond (s)
@@ -2739,6 +2761,15 @@ statement_bool (sblock_t *sblock, const expr_t *e)
 	return sblock;
 }
 
+sblock_t *
+sblock_label (sblock_t *sblock, ex_label_t *label)
+{
+	label->dest = sblock;
+	label->next = sblock->labels;
+	sblock->labels = label;
+	return sblock;
+}
+
 static sblock_t *
 statement_label (sblock_t *sblock, const expr_t *e)
 {
@@ -2747,9 +2778,7 @@ statement_label (sblock_t *sblock, const expr_t *e)
 		sblock = sblock->next;
 	}
 	if (e->label.used) {
-		((expr_t *) e)->label.dest = sblock;
-		((expr_t *) e)->label.next = sblock->labels;
-		sblock->labels = (ex_label_t *) &e->label;
+		sblock_label (sblock, (ex_label_t *) &e->label);
 	} else {
 		if (e->label.symbol) {
 			warning (e, "unused label %s", e->label.symbol->name);
@@ -2987,11 +3016,20 @@ remove_label_from_dest (ex_label_t *label)
 	}
 }
 
-static void
+void
 unuse_label (ex_label_t *label)
 {
 	if (label && !--label->used)
 		remove_label_from_dest (label);
+}
+
+statement_t *
+tail_statement (sblock_t *sblock)
+{
+	if (!sblock->statements) {
+		return nullptr;
+	}
+	return (statement_t *) sblock->tail;
 }
 
 static int
@@ -3006,9 +3044,9 @@ thread_jumps (sblock_t *blocks)
 		statement_t *s;
 		ex_label_t **label, *l;
 
-		if (!sblock->statements)
+		if (!(s = tail_statement (sblock))) {
 			continue;
-		s = (statement_t *) sblock->tail;
+		}
 		if (statement_is_goto (s)) {
 			label = &s->opa->label;
 			if (!(*label)->dest && (*label)->symbol) {
@@ -3221,7 +3259,7 @@ check_final_block (sblock_t *sblock)
 void
 dump_dot_sblock (const void *data, const char *fname)
 {
-	print_sblock ((sblock_t *) data, fname);
+	dot_print_sblock ((sblock_t *) data, fname);
 }
 
 static void
@@ -3231,11 +3269,103 @@ memory_always_initialized (const expr_t *expr, pseudoop_t *op)
 }
 
 sblock_t *
+optimize_jumps (sblock_t *sblock)
+{
+	if (options.block_dot.initial)
+		dump_dot ("initial", sblock, dump_dot_sblock);
+	bool did_something;
+	int         pass = 0;
+	do {
+		did_something = thread_jumps (sblock);
+		if (options.block_dot.thread)
+			dump_dot (va ("thread-%d", pass), sblock, dump_dot_sblock);
+		did_something |= remove_dead_blocks (sblock);
+		if (options.block_dot.dead)
+			dump_dot (va ("premerge-%d", pass), sblock, dump_dot_sblock);
+		did_something |= merge_blocks (&sblock);
+		if (options.block_dot.dead)
+			dump_dot (va ("dead-%d", pass), sblock, dump_dot_sblock);
+		pass++;
+	} while (did_something);
+	return sblock;
+}
+
+static operand_t *
+temp_copy_operand (operand_t *op, operand_t **tempops)
+{
+	if (!op) {
+		return op;
+	}
+	if (op->op_type == op_temp) {
+		if (tempops[op->tempop.id]) {
+			return tempops[op->tempop.id];
+		}
+		return op;
+	}
+	return copy_operand (op);
+}
+
+static operand_t *
+statement_get_write_operand (statement_t *s)
+{
+	operand_t  *op = nullptr;
+	switch (s->type) {
+		case st_none:
+		case st_alias:
+		case st_ptrassign:
+		case st_ptrmove:
+		case st_ptrmemset:
+		case st_state:
+		case st_flow:
+			break;
+		case st_expr:
+		case st_move:
+		case st_memset:
+		case st_address:
+			op = s->opc;
+			break;
+		case st_assign:
+			op = s->opa;
+			break;
+		case st_func:
+			// note: NOT callN (v6, v6p), but ruamoko call
+			if (strcmp (s->opcode, "call")) {
+				op = s->opc;
+			}
+			break;
+	}
+	return op;
+}
+
+sblock_t *
+sblock_copy (sblock_t *sblock)
+{
+	auto copy = new_sblock ();
+	operand_t *tempops[current_func->temp_num + 1] = {};
+	for (auto s = sblock->statements; s; s = s->next) {
+		auto op = statement_get_write_operand (s);
+		if (op && op->op_type == op_temp) {
+			if (!tempops[op->tempop.id]) {
+				tempops[op->tempop.id] = copy_operand (op);
+				tempops[op->tempop.id]->tempop.id = current_func->temp_num++;
+			}
+		}
+	}
+	for (auto s = sblock->statements; s; s = s->next) {
+		auto c = new_statement (st_none, nullptr, nullptr);
+		*c = *s;
+		c->opa = temp_copy_operand (s->opa, tempops);
+		c->opb = temp_copy_operand (s->opb, tempops);
+		c->opc = temp_copy_operand (s->opc, tempops);
+		sblock_add_statement (copy, c);
+	}
+	return copy;
+}
+
+sblock_t *
 make_statements (const expr_t *e)
 {
 	sblock_t   *sblock = new_sblock ();
-	int         did_something;
-	int         pass = 0;
 	class_t    *class;
 
 	if (options.block_dot.expr)
@@ -3245,18 +3375,7 @@ make_statements (const expr_t *e)
 	} else {
 		statement_slist (sblock, &e->block.list);
 	}
-	if (options.block_dot.initial)
-		dump_dot ("initial", sblock, dump_dot_sblock);
-	do {
-		did_something = thread_jumps (sblock);
-		if (options.block_dot.thread)
-			dump_dot (va ("thread-%d", pass), sblock, dump_dot_sblock);
-		did_something |= remove_dead_blocks (sblock);
-		did_something |= merge_blocks (&sblock);
-		if (options.block_dot.dead)
-			dump_dot (va ("dead-%d", pass), sblock, dump_dot_sblock);
-		pass++;
-	} while (did_something);
+	optimize_jumps (sblock);
 	check_final_block (sblock);
 	if (current_class && (class = extract_class (current_class))) {
 		// If the class is a root class, then it is not possible for there

@@ -99,8 +99,8 @@ typedef enum {
 	st_none,		///< not a (valid) statement. Used in dags.
 	st_alias,		///< not a (valid) statement. Used in dags.
 	st_expr,		///< c = a op b; or c = op a;
-	st_assign,		///< b = a
-	st_ptrassign,	///< *b = a; or *(b + c) = a;
+	st_assign,		///< a = c
+	st_ptrassign,	///< *a = c; or *(a + b) = c;
 	st_move,		///< memcpy (c, a, b); c and a are direct def references
 	st_ptrmove,		///< memcpy (c, a, b); c and a are pointers
 	st_memset,		///< memset (c, a, b); c is direct def reference
@@ -188,9 +188,15 @@ int statement_is_goto (statement_t *s) __attribute__((pure));
 int statement_is_jumpb (statement_t *s) __attribute__((pure));
 int statement_is_call (statement_t *s) __attribute__((pure));
 int statement_is_return (statement_t *s) __attribute__((pure));
+struct ex_label_s **statement_get_labelref (statement_t *s);
 sblock_t *statement_get_target (statement_t *s) __attribute__((pure));
 sblock_t **statement_get_targetlist (statement_t *s);
 void sblock_add_statement (sblock_t *sblock, statement_t *statement);
+void unuse_label (struct ex_label_s *label);
+statement_t *tail_statement (sblock_t *sblock);
+sblock_t *sblock_label (sblock_t *sblock, struct ex_label_s *label);
+sblock_t *optimize_jumps (sblock_t *sblock);
+sblock_t *sblock_copy (sblock_t *sblock);
 sblock_t *make_statements (const struct expr_s *expr);
 struct ex_list_s;
 sblock_t *statement_slist (sblock_t *sblock, const struct ex_list_s *slist);
@@ -200,7 +206,7 @@ void print_operand (operand_t *op);
 void print_statement (statement_t *s);
 void dump_dot_sblock (const void *data, const char *fname);
 void dot_sblock (struct dstring_s *dstr, sblock_t *sblock, int blockno);
-void print_sblock (sblock_t *sblock, const char *filename);
+void dot_print_sblock (sblock_t *sblock, const char *filename);
 const char *operand_string (operand_t *op);
 
 #endif//statement_h

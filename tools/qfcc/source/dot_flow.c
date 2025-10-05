@@ -67,9 +67,17 @@ print_flow_node (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 				 int level)
 {
 	int         indent = level * 2 + 2;
+	bool        is_head = false;
 
-	dasprintf (dstr, "%*s\"fn_%p\" [label=\"%d (%d)\"];\n", indent, "",
-			   node, node->id, node->dfn);
+	for (auto l = graph->loops; l; l = l->next) {
+		if (l->head == (unsigned) node->id) {
+			is_head = true;
+			break;
+		}
+	}
+
+	dasprintf (dstr, "%*s\"fn_%p\" [label=\"%d (%d)%s\"];\n", indent, "",
+			   node, node->id, node->dfn, is_head ? "*" : "");
 }
 
 static void
@@ -169,9 +177,9 @@ print_flow_edge_dag (dstring_t *dstr, flowgraph_t *graph, flowedge_t *edge,
 	else
 		dasprintf (dstr, "fn_%p [%sstyle=%s,weight=%d",
 				   h, dir, style, weight);
-	if (t->dag)
+	if (t->dag && t->dag != h->dag)
 		dasprintf (dstr, ",ltail=cluster_dag_%p", t->dag);
-	if (h->dag)
+	if (h->dag && t->dag != h->dag)
 		dasprintf (dstr, ",lhead=cluster_dag_%p", h->dag);
 	dasprintf (dstr, "];\n");
 }

@@ -143,7 +143,7 @@ flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 			dasprintf (dstr, "  sb_%p:e -> sb_%p:s;\n", sblock, sblock->next);
 		if ((target_list = statement_get_targetlist (st))) {
 			for (target = target_list; *target; target++)
-				dasprintf (dstr, "  sb_%p:e -> sb_%p:s [label=\"%s\"];\n",
+				dasprintf (dstr, "  sb_%p:e -> sb_%p:s [label=\"%s\";arrowhead=\"vee\"];\n",
 						   sblock, *target, st->opcode);
 			free (target_list);
 		}
@@ -155,7 +155,7 @@ flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 }
 
 void
-print_sblock (sblock_t *sblock, const char *filename)
+dot_print_sblock (sblock_t *sblock, const char *filename)
 {
 	int         i;
 	dstring_t  *dstr = dstring_newstr();
