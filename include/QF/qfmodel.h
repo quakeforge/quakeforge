@@ -1,8 +1,19 @@
 #ifndef __QF_qfmodel_h
 #define __QF_qfmodel_h
 
-#include "QF/math/vector.h"
-#include "QF/simd/types.h"
+#ifdef __QFCC__
+typedef uint uint32_t;
+typedef uint uint16_t;	//FIXME
+typedef uint uint8_t;	//FIXME
+typedef int  int32_t;
+typedef vec4 vec4f_t;
+typedef vec3 vec3_t;
+#define static_assert(...)
+#define __attribute__(...) @attribute __VA_ARGS__
+#else
+# include "QF/math/vector.h"
+# include "QF/simd/types.h"
+#endif
 
 typedef struct clipdesc_s {
 	uint32_t    firstframe;
@@ -146,6 +157,7 @@ typedef struct qf_model_s {
 	uint32_t    render_data;
 } __attribute__((aligned (16))) qf_model_t;
 
+#ifndef __QFCC__
 #include "QF/simd/vec4f.h"
 #include "QF/simd/mat4f.h"
 
@@ -255,5 +267,6 @@ qfm_motor_to_mat (mat4f_t mat, qfm_motor_t m)
 	mat[2] *= m.s[2];
 	mat[3] = t;
 }
+#endif
 
 #endif//__QF_qfmodel_h
