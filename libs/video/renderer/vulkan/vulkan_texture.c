@@ -554,7 +554,7 @@ texture_startup (exprctx_t *ectx)
 		.name = "texture",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = 3 + 4,
+		.num_objects = 3 + 6,
 		.objects = images,
 	};
 	QFV_ResourceInitTexImage (&images[0], "default_black", true,
