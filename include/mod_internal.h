@@ -59,6 +59,14 @@ typedef struct mod_iqm_ctx_s {
 	float       average_area;
 } mod_iqm_ctx_t;
 
+typedef struct mod_mesh_ctx_s {
+	qf_model_t *qf_model;
+	qf_mesh_t  *qf_meshes;
+	model_t    *mod;
+
+	qf_model_t *in;
+} mod_mesh_ctx_t;
+
 typedef struct mod_sprite_ctx_s {
 	model_t    *mod;
 	dsprite_t  *dsprite;
@@ -71,6 +79,7 @@ typedef struct mod_sprite_ctx_s {
 uint32_t iqm_attr_size (const iqmvertexarray *a) __attribute__((const));
 qfm_attrdesc_t iqm_mesh_attribute (iqmvertexarray a, uint32_t offset) __attribute__((const));
 uint32_t mesh_type_size (qfm_type_t type) __attribute__((const));
+uint32_t mesh_attr_size (qfm_attrdesc_t attr) __attribute__((const));
 qfm_type_t mesh_index_type (uint32_t num_verts) __attribute__((const));
 uint32_t pack_indices (uint32_t *indices, uint32_t num_inds,
 					   qfm_type_t index_type);
@@ -133,6 +142,8 @@ void Mod_LoadSpriteFrame (mspriteframe_t *frame, const dspriteframe_t *dframe);
 void gl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx);
 void glsl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx);
 void sw_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx);
+
+void Mod_LoadMeshModel (model_t *mod, byte *buffer, size_t buf_size);
 
 void Mod_LoadIQM (model_t *mod, void *buffer);
 qfm_blend_t *Mod_IQMBuildBlendPalette (mod_iqm_ctx_t *iqm, uint32_t *size);

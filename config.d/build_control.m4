@@ -93,6 +93,7 @@ if test "x$HAVE_X" = xyes; then
 			QF_NEED(alias, [vulkan])
 			QF_NEED(brush, [vulkan])
 			QF_NEED(iqm, [vulkan])
+			QF_NEED(mesh, [vulkan])
 			QF_NEED(sprite, [vulkan])
 		fi
 		QF_NEED(vid_render, [sw gl glsl])
@@ -363,6 +364,7 @@ QF_PROCESS_NEED_LIBS(models, [gl glsl sw vulkan], [libs/models])
 QF_PROCESS_NEED_LIBS(alias, [gl glsl sw vulkan], [libs/models/alias])
 QF_PROCESS_NEED_LIBS(brush, [gl glsl sw vulkan], [libs/models/brush])
 QF_PROCESS_NEED_LIBS(iqm, [gl glsl sw vulkan], [libs/models/iqm])
+QF_PROCESS_NEED_LIBS(mesh, [gl glsl sw vulkan], [libs/models/mesh])
 QF_PROCESS_NEED_LIBS(sprite, [gl glsl sw vulkan], [libs/models/sprite])
 
 QF_PROCESS_NEED_LIBS(input, [evdev], [libs/input])

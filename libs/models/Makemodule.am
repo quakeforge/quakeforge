@@ -1,6 +1,7 @@
 include libs/models/alias/Makemodule.am
 include libs/models/brush/Makemodule.am
 include libs/models/iqm/Makemodule.am
+include libs/models/mesh/Makemodule.am
 include libs/models/sprite/Makemodule.am
 include libs/models/test/Makemodule.am
 
@@ -86,6 +87,7 @@ vulkan_libs= \
 	libs/models/alias/libalias_vulkan.la \
 	libs/models/brush/libbrush_vulkan.la \
 	libs/models/iqm/libiqm_vulkan.la \
+	libs/models/mesh/libmesh_vulkan.la \
 	libs/models/sprite/libsprite_vulkan.la \
 	libs/image/libQFimage.la
 libs_models_libmodels_vulkan_la_LDFLAGS=

@@ -56,7 +56,7 @@
 #include "compat.h"
 #include "mod_internal.h"
 
-static uint32_t qfm_type_size[] = {
+static const uint32_t qfm_type_size[] = {
 	[qfm_s8]      = 1,
 	[qfm_s16]     = 2,
 	[qfm_s32]     = 4,
@@ -79,9 +79,16 @@ static uint32_t qfm_type_size[] = {
 	[qfm_special] = 0, // unknown
 };
 
-uint32_t mesh_type_size (qfm_type_t type)
+uint32_t
+mesh_type_size (qfm_type_t type)
 {
 	return qfm_type_size[type];
+}
+
+uint32_t
+mesh_attr_size (qfm_attrdesc_t attr)
+{
+	return attr.components * qfm_type_size[attr.type];
 }
 
 qfm_type_t

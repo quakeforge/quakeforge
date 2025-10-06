@@ -86,10 +86,12 @@ typedef struct meshctx_s {
 	struct qfv_dsmanager_s *dsmanager;
 	struct qfv_resource_s *resource;
 	VkBuffer     null_bone;
+	qfv_skin_t   default_skin;
 } meshctx_t;
 
 typedef struct vulkan_ctx_s vulkan_ctx_t;
 typedef struct mod_alias_ctx_s mod_alias_ctx_t;
+typedef struct mod_mesh_ctx_s mod_mesh_ctx_t;
 typedef struct qf_model_s qf_model_t;
 
 void Vulkan_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx);
@@ -100,6 +102,7 @@ void Vulkan_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx,
 void Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx,
 											void *_m, int _s, int extra,
 											vulkan_ctx_t *ctx);
+void Vulkan_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx, vulkan_ctx_t *ctx);
 
 void Vulkan_MeshAddBones (vulkan_ctx_t *ctx, qf_model_t *model);
 void Vulkan_MeshRemoveBones (vulkan_ctx_t *ctx, qf_model_t *model);

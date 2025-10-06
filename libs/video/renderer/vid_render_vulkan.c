@@ -504,6 +504,12 @@ vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 }
 
 static void
+vulkan_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx)
+{
+	Vulkan_Mod_MeshFinish (mesh_ctx, vulkan_ctx);
+}
+
+static void
 vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx)
 {
 	Vulkan_Mod_SpriteLoadFrames (sprite_ctx, vulkan_ctx);
@@ -566,6 +572,7 @@ static vid_model_funcs_t model_funcs = {
 	.Mod_SubdivideSurface = vulkan_Mod_SubdivideSurface,
 	.Mod_ProcessTexture   = vulkan_Mod_ProcessTexture,
 
+	.Mod_LoadMesh        = Mod_LoadMeshModel,
 	.Mod_LoadIQM         = Mod_LoadIQM,
 	.Mod_LoadAliasModel  = Mod_LoadAliasModel,
 	.Mod_LoadSpriteModel = Mod_LoadSpriteModel,
@@ -575,6 +582,7 @@ static vid_model_funcs_t model_funcs = {
 	.Mod_FinalizeAliasModel         = vulkan_Mod_FinalizeAliasModel,
 	.Mod_LoadExternalSkins          = vulkan_Mod_LoadExternalSkins,
 	.Mod_IQMFinish                  = vulkan_Mod_IQMFinish,
+	.Mod_MeshFinish                 = vulkan_Mod_MeshFinish,
 	.alias_cache                    = 0,
 	.Mod_SpriteLoadFrames           = vulkan_Mod_SpriteLoadFrames,
 

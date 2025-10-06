@@ -42,8 +42,11 @@ struct scene_s;
 struct particle_s;
 typedef struct progs_s progs_t;
 
+typedef struct qf_model_s qf_model_t;
+
 struct mod_alias_ctx_s;
 struct mod_iqm_ctx_s;
+typedef struct mod_mesh_ctx_s mod_mesh_ctx_t;
 struct mod_sprite_ctx_s;
 typedef struct skin_s skin_t;
 struct entqueue_s;
@@ -60,6 +63,7 @@ typedef struct vid_model_funcs_s {
 	void (*Mod_LoadLighting) (model_t *mod, bsp_t *bsp);
 	void (*Mod_SubdivideSurface) (model_t *mod, msurface_t *fa);
 	void (*Mod_ProcessTexture) (model_t *mod, struct texture_s *tx);
+	void (*Mod_LoadMesh) (model_t *mod, byte *buffer, size_t buf_size);
 	void (*Mod_LoadIQM) (model_t *mod, void *buffer);
 	void (*Mod_LoadAliasModel) (model_t *mod, void *buffer,
 								cache_allocator_t allocator);
@@ -70,6 +74,7 @@ typedef struct vid_model_funcs_s {
 	void (*Mod_FinalizeAliasModel) (struct mod_alias_ctx_s *alias_ctx);
 	void (*Mod_LoadExternalSkins) (struct mod_alias_ctx_s *alias_ctx);
 	void (*Mod_IQMFinish) (struct mod_iqm_ctx_s *iqm_ctx);
+	void (*Mod_MeshFinish) (mod_mesh_ctx_t *mesh_ctx);
 	int alias_cache;
 	void (*Mod_SpriteLoadFrames) (struct mod_sprite_ctx_s *sprite_ctx);
 

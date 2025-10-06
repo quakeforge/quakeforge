@@ -547,6 +547,9 @@ get_skin (renderer_t *renderer, qf_mesh_t *mesh)
 		if (renderer->skindesc) {
 			skindesc = renderer->skindesc;
 		} else {
+			if (!mesh->skin.numclips) {
+				return nullptr;
+			}
 			uint32_t keyframe = mesh->skin.keyframes;
 			auto skinframe = (keyframe_t *) ((byte *) mesh + keyframe);
 			skindesc = skinframe->data;
@@ -560,6 +563,13 @@ static void
 mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 				renderer_t *renderer)
 {
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto cmd = taskctx->cmd;
+	auto layout = taskctx->pipeline->layout;
+	auto mctx = ctx->mesh_context;
+
 	auto model = renderer->model->model;
 	auto meshes = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 	uint16_t *matrix_base = taskctx->data;
@@ -567,6 +577,9 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	transform_t transform = Entity_Transform (ent);
 
 	auto skin = get_skin (renderer, &meshes[0]);
+	if (!skin) {
+		skin = &mctx->default_skin;
+	}
 	vec4f_t base_color;
 	QuatCopy (renderer->colormod, base_color);
 
@@ -577,12 +590,6 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 		colors[0] = colormap->top * 16 + 8;
 		colors[1] = colormap->bottom * 16 + 8;
 	}
-
-	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto cmd = taskctx->cmd;
-	auto layout = taskctx->pipeline->layout;
 
 	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
 	auto bone_descs = (VkDescriptorSet *) ((byte *) rmesh
@@ -777,6 +784,10 @@ mesh_startup (exprctx_t *ectx)
 	};
 	QFV_CreateResource (device, mctx->resource);
 	mctx->null_bone = mctx->resource[0].objects[0].buffer.buffer;
+	mctx->default_skin = (qfv_skin_t) {
+		.view = ctx->default_white[1],
+	};
+	Vulkan_MeshAddSkin (ctx, &mctx->default_skin);
 }
 
 static void
