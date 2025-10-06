@@ -40,6 +40,9 @@
 #include "QF/model.h"
 #include "QF/progs.h"
 #include "QF/qfmodel.h"
+#include "QF/sizebuf.h"
+
+#include "QF/plugin/vid_render.h"
 
 #include "rua_internal.h"
 
@@ -173,6 +176,24 @@ bi (Model_Load)
 		return;
 	if (!(R_INT (pr) = alloc_handle (res, model)))
 		Mod_UnloadModel (model);
+}
+
+bi (Model_LoadMesh)
+{
+	qfZoneScoped (true);
+	auto res = (rua_model_resources_t *) _res;
+	const char *name = P_GSTRING (pr, 0);
+	int         msgbuf = P_INT (pr, 1);
+	auto        sizebuf = MsgBuf_GetSizebuf (pr, msgbuf);
+
+	auto model = qfm_alloc_model ();
+	*model = (model_t) {};
+	strncpy (model->name, name, sizeof (model->name));
+	model->name[sizeof(model->name) - 1] = 0;
+	mod_funcs->Mod_LoadMesh (model, sizebuf->data, sizebuf->cursize);
+	if (!(R_INT (pr) = alloc_handle (res, model))) {
+		Mod_UnloadModel (model);
+	}
 }
 
 model_t *
@@ -596,6 +617,7 @@ Model_GetAnimstate (progs_t *pr, pr_int_t handle)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
 	bi(Model_Load,             1, p(string)),
+	bi(Model_LoadMesh,         2, p(string), p(int)),
 	bi(Model_Unload,           1, p(int)),
 	bi(Model_Name,             1, p(int)),
 	bi(Model_NumJoints,        1, p(int)),

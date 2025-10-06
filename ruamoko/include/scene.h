@@ -85,6 +85,10 @@ void Light_AddLight (lightingdata_t ldata, light_t light, int style);
 void Light_EnableSun (lightingdata_t ldata);
 
 model_t Model_Load (string path);
+
+typedef @handle msgbuf_h msgbuf_t;
+model_t Model_LoadMesh (string name, msgbuf_t buffer);
+
 void Model_Unload (model_t model);
 string Model_Name (model_t model);
 int Model_NumJoints (model_t model);
