@@ -51,6 +51,8 @@ typedef struct symconv_s {
 	const expr_t *(*conv) (struct symbol_s *symbol, void *data);
 	const expr_t *(*conv_expr) (struct symbol_s *symbol, void *data,
 								const expr_t *expr);
+	initstate_t (*init_element) (element_chain_t *chain, initstate_t state,
+								 int base_offset, const expr_t *expr);
 	void       *data;
 } symconv_t;
 

@@ -156,6 +156,11 @@ get_designated_offset (const type_t *type, const designator_t *des)
 			offset = field->offset;
 			id = field->id;
 			ele_type = field->type;
+			if (field->sy_type != sy_offset
+				&& field->sy_type == sy_convert
+				&& !field->convert.init_element) {
+				error (0, "cannot initialize element %s", field->name);
+			}
 		}
 	} else if (is_array (type)) {
 		int         array_count = type->array.count;
@@ -180,7 +185,8 @@ get_designated_offset (const type_t *type, const designator_t *des)
 		error (0, "invalid initializer");
 	}
 	if (ele_type && des->next) {
-		__auto_type state = get_designated_offset (ele_type, des->next);
+		// handle inline designators, eg .foo.bar = init
+		auto state = get_designated_offset (ele_type, des->next);
 		ele_type = state.type;
 		offset += state.offset;
 	}
@@ -192,16 +198,40 @@ get_designated_offset (const type_t *type, const designator_t *des)
 	};
 }
 
-bool
+static bool
 skip_field (symbol_t *field)
 {
-	if (field->sy_type != sy_offset) {
-		return true;
+	if (field->sy_type == sy_offset) {
+		if (field->no_auto_init) {
+			return true;
+		}
+		return false;
 	}
-	if (field->no_auto_init) {
-		return true;
+	if (field->sy_type == sy_convert) {
+		if (!field->convert.init_element) {
+			return true;
+		}
+		return false;
 	}
-	return false;
+	return true;
+}
+
+initstate_t
+next_field (initstate_t state)
+{
+	state.offset += type_aligned_size (state.type);
+	state.id += 1;
+	if (state.field) {
+		state.field = state.field->next;
+		while (state.field && skip_field (state.field)) {
+			state.field = state.field->next;
+		}
+		if (state.field) {
+			state.type = state.field->type;
+			state.offset = state.field->offset;
+		}
+	}
+	return state;
 }
 
 bool
@@ -266,27 +296,23 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 		if (ele->expr && ele->expr->type == ex_compound) {
 			build_element_chain (element_chain, state.type, ele->expr,
 								 base_offset + state.offset);
+			state = next_field (state);
 		} else {
-			element_t  *element = new_element (0, 0);
-			element->type = state.type;
-			element->offset = base_offset + state.offset;
-			element->id = state.id;
-			element->expr = ele->expr;	// null -> nil
-			append_init_element (element_chain, element);
+			if (state.field && state.field->sy_type == sy_convert) {
+				auto init_element = state.field->convert.init_element;
+				state = init_element (element_chain, state, base_offset,
+									  ele->expr);
+			} else {
+				element_t  *element = new_element (0, 0);
+				element->type = state.type;
+				element->offset = base_offset + state.offset;
+				element->id = state.id;
+				element->expr = ele->expr;	// null -> nil
+				append_init_element (element_chain, element);
+				state = next_field (state);
+			}
 		}
 
-		state.offset += type_aligned_size (state.type);
-		state.id += 1;
-		if (state.field) {
-			state.field = state.field->next;
-			while (state.field && skip_field (state.field)) {
-				state.field = state.field->next;
-			}
-			if (state.field) {
-				state.type = state.field->type;
-				state.offset = state.field->offset;
-			}
-		}
 
 		ele = ele->next;
 	}

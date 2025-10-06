@@ -288,6 +288,67 @@ bitfield_expr (symbol_t *symbol, void *data, const expr_t *obj)
 }
 
 static symbol_t *
+bitfield_get_backing_sym (symbol_t *field)
+{
+	bitfield_t *bitfield = field->convert.data;
+	const char *backing_name = bitfield->member->symbol->name;
+	auto backing_sym = symtab_lookup (field->table, backing_name);
+	if (!backing_sym) {
+		internal_error (0, "backing field %s not found", backing_name);
+	}
+	return backing_sym;
+}
+
+static initstate_t
+bitfield_init (element_chain_t *chain, initstate_t state, int base_offset,
+			   const expr_t *expr)
+{
+	bitfield_t *bitfield = state.field->convert.data;
+	auto backing_sym = bitfield_get_backing_sym (state.field);
+
+	auto element = (element_t *) chain->tail;
+	if (element && (unsigned) element->id != backing_sym->id) {
+		for (element = chain->head; element; element = element->next) {
+			//FIXME find a faster way
+			if ((unsigned) element->id == backing_sym->id
+				&& element->offset == base_offset + backing_sym->offset) {
+				break;
+			}
+		}
+	}
+	auto backing_type = backing_sym->type;
+	auto backing_bits = new_int_expr (type_size (backing_type) * 32, true);
+	auto start = new_int_expr (bitfield->start, true);
+	auto length = new_int_expr (bitfield->length, true);
+	auto bits = cast_expr (backing_type, new_long_expr (-1, true));
+	auto rshift = binary_expr ('-', backing_bits, length);
+	auto ins_mask = binary_expr (QC_SHR, bits, rshift);
+	expr = binary_expr (QC_SHL, binary_expr ('&', expr, ins_mask), start);
+	if (!element) {
+		element = new_element (nullptr, nullptr);
+		element->type = backing_sym->type;
+		element->offset = base_offset + backing_sym->offset;
+		element->id = backing_sym->id;
+		element->expr = expr;
+		append_init_element (chain, element);
+	} else {
+		auto inv_mask = unary_expr ('~', binary_expr (QC_SHL, ins_mask, start));
+		auto insert = binary_expr ('&', inv_mask, element->expr);
+		element->expr = binary_expr ('|', insert, expr);
+	}
+	auto next = state.field->next;
+	if (next
+		&& next->sy_type == sy_convert
+		&& next->convert.init_element == bitfield_init
+		&& bitfield_get_backing_sym (next) == backing_sym) {
+		state.field = next;
+	} else {
+		state = next_field (state);
+	}
+	return state;
+}
+
+static symbol_t *
 bitfield_sym (struct_state_t *state, symbol_t *s)
 {
 	auto member = new_symbol (va (".bits%d", state->bit_index));
@@ -300,6 +361,7 @@ bitfield_sym (struct_state_t *state, symbol_t *s)
 	s->sy_type = sy_convert;
 	s->convert = (symconv_t) {
 		.conv_expr = bitfield_expr,
+		.init_element = bitfield_init,
 		.data = bitfield,
 	};
 	return s;

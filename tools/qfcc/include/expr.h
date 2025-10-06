@@ -665,7 +665,7 @@ expr_t *new_compound_init (void);
 element_t *append_init_element (element_chain_t *element_chain,
 								element_t *element);
 expr_t *append_element (expr_t *compound, element_t *element);
-bool skip_field (symbol_t *field)__attribute__((pure));
+initstate_t next_field (initstate_t state) __attribute__((pure));
 const expr_t *initialized_temp_expr (const type_t *type,
 									 const expr_t *compound);
 void assign_elements (expr_t *local_expr, const expr_t *ptr,
