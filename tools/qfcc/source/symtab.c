@@ -340,6 +340,12 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab,
 		}
 		sym->sy_type = sy_type;
 		sym->type = find_type (sym->type);
+		if (spec.attributes) {
+			auto type = copy_type (sym->type);
+			type->name = sym->type->name;
+			type_set_attrs (type, &spec.attributes);
+			sym->type = find_type (type);
+		}
 		sym->type = find_type (alias_type (sym->type, sym->type, sym->name));
 		symtab_addsymbol (symtab, sym);
 	} else {

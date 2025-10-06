@@ -181,6 +181,7 @@ const type_t *vector_type (const type_t *ele_type, int width) __attribute__((pur
 const type_t *matrix_type (const type_t *ele_type, int cols, int rows) __attribute__((pure));
 const type_t *column_type (const type_t *mat_type) __attribute__((pure));
 const type_t *base_type (const type_t *vec_type) __attribute__((pure));
+void type_set_attrs (type_t *type, attribute_t **attributes);
 
 /** Return an integral type of same size as the provided type.
 

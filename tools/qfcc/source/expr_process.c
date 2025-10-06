@@ -814,7 +814,6 @@ spec_process (specifier_t spec, rua_ctx_t *ctx)
 		type = resolve_type (spec.type_expr, ctx);
 		spec.type_expr = nullptr;
 	}
-	//const type_t *type = nullptr;
 	// other than fields, the type list is built up by appending types
 	// to the list, but it's the final type in the list that takes the
 	// core type, so extract them in reverse for a forward loop

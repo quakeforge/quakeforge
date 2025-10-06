@@ -48,6 +48,7 @@
 #include "QF/va.h"
 
 #include "tools/qfcc/include/algebra.h"
+#include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/diagnostic.h"
@@ -1093,6 +1094,54 @@ alias_type (const type_t *type, const type_t *alias_chain, const char *name)
 	}
 	alias->property = type->property;
 	return alias;
+}
+
+void
+type_set_attrs (type_t *type, attribute_t **attributes)
+{
+	auto attr_tail = &type->attributes;
+	while (*attr_tail) attr_tail = &(*attr_tail)->next;
+	for (auto a = attributes; *a; ) {
+		auto attr = *a;
+
+		int count = 0;
+		if (attr->params) {
+			count = list_count (&attr->params->list);
+		}
+		const expr_t *params[count + 1];
+		params[count] = nullptr;
+		if (attr->params) {
+			list_scatter (&attr->params->list, params);
+		}
+
+		if (strcmp (attr->name, "aligned") == 0) {
+			auto val = params[0];
+			if (!is_integral_val (val)) {
+				error (val, "not a constant integer");
+				return;
+			}
+			// NOTE: alignment is in BYTES for compatibility with C
+			int alignment = expr_integral (val);
+			if (alignment < 4 || (alignment & (alignment - 1))) {
+				error (val, "alignment must be a positive power of 2"
+					   " and at least 4 (alignment is in bytes)");
+				return;
+			}
+			alignment /= sizeof (pr_int_t);
+			if (alignment < type->alignment) {
+				warning (val, "cannot reduce alignment");
+				alignment = type->alignment;
+			}
+			type->alignment = alignment;
+		} else {
+			a = &attr->next;
+			continue;
+		}
+		*a = (*a)->next;
+		*attr_tail = attr;
+		attr_tail = &attr->next;
+	}
+	*attr_tail = nullptr;
 }
 
 const type_t *

@@ -80,6 +80,10 @@ void dump_dot_type (void *_t, const char *filename){}
 char *fubar;
 const char *file_basename(const char *p, int keepdot) { return fubar;}
 __attribute__((const)) const type_t *get_type (const expr_t *e) {return nullptr;}
+bool is_integral_val (const expr_t *e) {return e->type;}
+pr_long_t expr_integral (const expr_t *e) {return e->type;}
+int list_count (const ex_list_t *list) {return (intptr_t)fubar;}
+void list_scatter (const ex_list_t *list, const expr_t **exprs){}
 bool is_image (const type_t *type){return type->type;}
 bool is_sampled_image (const type_t *type){return type->type;}
 bool image_type_demotes (const type_t *dst, const type_t *src){return dst->type;}
