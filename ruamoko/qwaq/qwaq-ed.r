@@ -342,7 +342,7 @@ static gizmo_node_t covered_step[] = {
 
 		auto E = make_motor (Transform_GetWorldPosition (trans),
 							 Transform_GetWorldRotation (trans));
-		qfm_motor_t M;
+		arm_motor_t M;
 		qfa_get_pose_motors (root_anim, &M);
 		M.m = E * M.m;
 		auto cam = Entity_GetTransform ([active_camera entity]);
@@ -997,6 +997,7 @@ arp_end (void)
 	autorelease_pool = nil;
 }
 
+model_t create_ico();
 int
 main (int argc, string *argv)
 {
@@ -1072,12 +1073,14 @@ main (int argc, string *argv)
 	entity_t Octahedron_ent = Scene_CreateEntity ([main_window scene]);
 	entity_t Plane_ent = Scene_CreateEntity ([main_window scene]);
 	entity_t Tetrahedron_ent = Scene_CreateEntity ([main_window scene]);
+	entity_t Icosahedron_ent = Scene_CreateEntity ([main_window scene]);
 
 	add_target (nh_ent);
 	add_target (Capsule_ent);
 	add_target (Cube_ent);
 	add_target (Octahedron_ent);
 	add_target (Tetrahedron_ent);
+	add_target (Icosahedron_ent);
 
 	printf ("Night Heron: %lx\n", nh_ent);
 	printf ("Capsule: %lx\n", Capsule_ent);
@@ -1092,13 +1095,14 @@ main (int argc, string *argv)
 	Entity_SetModel (Octahedron_ent, Model_Load ("progs/Octahedron.mdl"));
 	Entity_SetModel (Plane_ent, Model_Load ("progs/Plane.mdl"));
 	Entity_SetModel (Tetrahedron_ent, Model_Load ("progs/Tetrahedron.mdl"));
-
+	Entity_SetModel (Icosahedron_ent, create_ico());
 	Transform_SetLocalPosition(Entity_GetTransform (nh_ent), {15, 0, 10, 1});
 	Transform_SetLocalRotation(Entity_GetTransform (nh_ent), {0.5, -0.5, 0.5, 0.5});
 	Transform_SetLocalPosition(Entity_GetTransform (Capsule_ent), {5, 2, 1, 1});
 	Transform_SetLocalPosition(Entity_GetTransform (Cube_ent), {5, -2, 0.5, 1});
 	Transform_SetLocalPosition(Entity_GetTransform (Octahedron_ent), {0, -2, 0.5, 1});
 	Transform_SetLocalPosition(Entity_GetTransform (Tetrahedron_ent), {0, 2, 0.5, 1});
+	Transform_SetLocalPosition(Entity_GetTransform (Icosahedron_ent), {-2, 2, 0.5, 1});
 	Transform_SetLocalScale (Entity_GetTransform (Plane_ent), {25, 25, 25, 1});
 
 	id player = [[Player player:[main_window scene]] retain];

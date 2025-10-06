@@ -21,11 +21,11 @@ typedef struct qfm_joint_s {
 	int parent;
 } qfm_joint_t;
 
-typedef struct qfm_motor_s {
+typedef struct arm_motor_s {
 	motor_t m;
 	vec3 scale;
 	uint flags;
-} qfm_motor_t;
+} arm_motor_t;
 
 typedef struct edge_s {
 	int a;
@@ -35,7 +35,7 @@ typedef struct edge_s {
 typedef struct {
 	int         num_joints;
 	qfm_joint_t *joints;
-	qfm_motor_t *pose;
+	arm_motor_t *pose;
 	vec4       *points;
 	int         num_edges;
 	edge_t     *edges;
@@ -45,6 +45,6 @@ typedef struct {
 
 armature_t *make_armature (model_t model);
 void free_armature (armature_t *arm);
-void draw_armature (transform_t camera, armature_t *arm, qfm_motor_t ent_motor);
+void draw_armature (transform_t camera, armature_t *arm, arm_motor_t ent_motor);
 
 #endif//__armature_h

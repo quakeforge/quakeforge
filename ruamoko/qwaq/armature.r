@@ -72,7 +72,7 @@ make_armature (model_t model)
 	*arm = {
 		.num_joints  = num_joints,
 		.joints      = obj_malloc (num_joints * sizeof (qfm_joint_t)),
-		.pose        = obj_malloc (num_joints * sizeof (qfm_motor_t)),
+		.pose        = obj_malloc (num_joints * sizeof (arm_motor_t)),
 		.points      = obj_malloc (num_points * sizeof (vec4)),
 		.num_edges   = num_edges,
 		.edges       = obj_malloc (num_edges * sizeof (edge_t)),
@@ -159,7 +159,7 @@ vec4 do_scale (vec4 p, vec3 s)
 }
 
 void
-draw_armature (transform_t camera, armature_t *arm, qfm_motor_t ent_motor)
+draw_armature (transform_t camera, armature_t *arm, arm_motor_t ent_motor)
 {
 	@algebra (PGA) {
 		auto E = ent_motor.m;
