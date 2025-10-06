@@ -5,6 +5,12 @@
 
 typedef @handle msgbuf_h msgbuf_t;
 
+typedef enum msg_whence_e {
+	msg_set,
+	msg_cur,
+	msg_end,
+} msg_whence_t;
+
 @overload msgbuf_t MsgBuf_New (void *data, int size);
 msgbuf_t MsgBuf_New (int size);
 void MsgBuf_Delete (msgbuf_t msgbuf);
@@ -15,6 +21,7 @@ int MsgBuf_ReadCount (msgbuf_t msgbuf);
 string MsgBuf_DataPtr (msgbuf_t msgbuf);
 
 void MsgBuf_Clear (msgbuf_t msgbuf);
+void MsgBuf_WriteSeek (msgbuf_t msgbuf, int offset, msg_whence_t whence);
 void MsgBuf_WriteByte (msgbuf_t msgbuf, int val);
 void MsgBuf_WriteShort (msgbuf_t msgbuf, int val);
 void MsgBuf_WriteLong (msgbuf_t msgbuf, int val);

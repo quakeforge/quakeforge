@@ -10,6 +10,7 @@ int MsgBuf_ReadCount (msgbuf_t msgbuf) = #0;
 string MsgBuf_DataPtr (msgbuf_t msgbuf) = #0;
 
 void MsgBuf_Clear (msgbuf_t msgbuf) = #0;
+void MsgBuf_WriteSeek (msgbuf_t msgbuf, int offset, msg_whence_t whence) = #0;
 void MsgBuf_WriteByte (msgbuf_t msgbuf, int val) = #0;
 void MsgBuf_WriteShort (msgbuf_t msgbuf, int val) = #0;
 void MsgBuf_WriteLong (msgbuf_t msgbuf, int val) = #0;

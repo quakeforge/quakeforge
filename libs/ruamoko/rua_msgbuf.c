@@ -253,6 +253,17 @@ bi_MsgBuf_Clear (progs_t *pr, void *_res)
 }
 
 static void
+bi_MsgBuf_WriteSeek (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	msgbuf_resources_t *res = _res;
+	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
+	int         offset = P_INT (pr, 1);
+	int         whence = P_INT (pr, 2);
+	R_UINT (pr) = SZ_Seek (&mb->sizebuf, offset, whence);
+}
+
+static void
 bi_MsgBuf_WriteByte (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
@@ -531,6 +542,7 @@ static builtin_t builtins[] = {
 	bi(MsgBuf_DataPtr,          1, p(ptr)),
 
 	bi(MsgBuf_Clear,            1, p(ptr)),
+	bi(MsgBuf_WriteSeek,        2, p(ptr), p(uint)),
 	bi(MsgBuf_WriteByte,        2, p(ptr), p(int)),
 	bi(MsgBuf_WriteShort,       2, p(ptr), p(int)),
 	bi(MsgBuf_WriteLong,        2, p(ptr), p(int)),
