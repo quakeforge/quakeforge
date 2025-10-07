@@ -171,6 +171,8 @@ typedef struct {
 	hashctx_t  *hashctx;
 	hashtab_t  *model_tab;
 	PR_RESMAP (model_t) model_map;
+
+	model_t    *loose_models;	// models allocated loosely
 } model_registry_t;
 
 #define RESMAP_OBJ_TYPE model_t
@@ -186,27 +188,14 @@ static model_registry_t *model_registry;
 model_t *
 qfm_alloc_model (void)
 {
-	return qfm_model_new (model_registry);
-}
-
-void
-qfm_free_model (model_t *mod)
-{
-	qfm_model_free (model_registry, mod);
-}
-
-static void
-mod_shutdown (void *data)
-{
-	qfZoneScoped (true);
-	Mod_ClearAll ();
-
-	qfm_model_reset (model_registry);
-	Hash_DelTable (model_registry->model_tab);
-	free (model_registry);
-	model_registry = nullptr;
-
-	qfa_shutdown ();
+	auto mod = qfm_model_new (model_registry);
+	if (model_registry->loose_models) {
+		model_registry->loose_models->prev = &mod->next;
+	}
+	mod->next = model_registry->loose_models;
+	mod->prev = &model_registry->loose_models;
+	model_registry->loose_models = mod;
+	return mod;
 }
 
 static void
@@ -228,6 +217,39 @@ mod_unload_model (model_t *mod)
 	if (mod->type == mod_sprite) {
 		mod->cache.data = 0;
 	}
+}
+
+void
+qfm_free_model (model_t *mod)
+{
+	if (!mod->prev) {
+		Sys_Error ("freeing non-loose model");
+	}
+	if (mod->next) {
+		mod->next->prev = mod->prev;
+	}
+	*mod->prev = mod->next;
+	mod->prev = nullptr;
+	mod_unload_model (mod);
+	qfm_model_free (model_registry, mod);
+}
+
+static void
+mod_shutdown (void *data)
+{
+	qfZoneScoped (true);
+	Mod_ClearAll ();
+
+	for (auto mod = model_registry->loose_models; mod; mod = mod->next) {
+		mod_unload_model (mod);
+	}
+
+	qfm_model_reset (model_registry);
+	Hash_DelTable (model_registry->model_tab);
+	free (model_registry);
+	model_registry = nullptr;
+
+	qfa_shutdown ();
 }
 
 static const char *

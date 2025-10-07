@@ -351,6 +351,9 @@ typedef struct model_s {
 	void       *data;
 
 	int         render_id;
+
+	struct model_s *next;
+	struct model_s **prev;
 } model_t;
 
 // ============================================================================
