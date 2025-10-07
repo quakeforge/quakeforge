@@ -31,6 +31,25 @@ model_t create_ico ()
 		}
 	}
 
+	vec3 new_verts[60];
+	vec3 normals[60];
+	int new_inds[60];
+	int num_verts = 0;
+	for (int i = 0; i < 20; i++) {
+		int base = num_verts;
+		for (int j = 0; j < 3; j++) {
+			new_inds[num_verts] = num_verts;
+			new_verts[num_verts++] = verts[ico_inds[i * 3 + j]];
+		}
+		vec3 a = new_verts[base + 1] - new_verts[base];
+		vec3 b = new_verts[base + 2] - new_verts[base];
+		vec3 norm = -a × b;
+		norm /= sqrt (norm • norm);
+		for (int j = 0; j < 3; j++) {
+			normals[base + j] = norm;
+		}
+	}
+
 	qf_model_t model = {
 		.meshes = {
 			.offset = sizeof (qf_model_t) * 4,
@@ -42,7 +61,7 @@ model_t create_ico ()
 		.index_type = qfm_u32,
 		.indices = (sizeof (qf_mesh_t)
 					+ 2 * sizeof (qfm_attrdesc_t)
-					+ 2 * sizeof (verts)) * 4,
+					+ 2 * sizeof (new_verts)) * 4,
 		.attributes = {
 			.offset = (sizeof (qf_mesh_t)) * 4,
 			.count = 2,
@@ -50,9 +69,9 @@ model_t create_ico ()
 		.vertices = {
 			.offset = (sizeof (qf_mesh_t)
 						+ 2 * sizeof (qfm_attrdesc_t)) * 4,
-			.count = 12,
+			.count = num_verts,
 		},
-		.vertex_stride = 4 * 2 * sizeof (verts[0]),
+		.vertex_stride = 4 * 2 * sizeof (new_verts[0]),
 		.scale = '1 1 1',
 		.bounds_min = '-2 -2 -2',
 		.bounds_max = ' 2  2  2',
@@ -78,8 +97,8 @@ model_t create_ico ()
 	uint size = sizeof (qf_model_t)
 			  + sizeof (qf_mesh_t)
 			  + sizeof (qfm_attrdesc_t) * 2
-			  + sizeof (verts) * 2
-			  + sizeof (ico_inds);
+			  + sizeof (new_verts) * 2
+			  + sizeof (new_inds);
 	auto msg = MsgBuf_New (size * 4);//size is in ints, msgbuf wants bytes
 	for (int i = 0; i < sizeof (qf_model_t); i++) {
 		MsgBuf_WriteLong (msg, ((int *)&model)[i]);
@@ -90,16 +109,16 @@ model_t create_ico ()
 	for (int i = 0; i < sizeof (attributes); i++) {
 		MsgBuf_WriteLong (msg, ((int *)&attributes)[i]);
 	}
-	for (int i = 0; i < 12; i++) {
+	for (int i = 0; i < num_verts; i++) {
 		for (int j = 0; j < 3; j++) {
-			MsgBuf_WriteFloat (msg, verts[i][j]);
+			MsgBuf_WriteFloat (msg, new_verts[i][j]);
 		}
 		for (int j = 0; j < 3; j++) {
-			MsgBuf_WriteFloat (msg, verts[i][j]/sqrt(verts[i]•verts[i]));
+			MsgBuf_WriteFloat (msg, normals[i][j]);
 		}
 	}
-	for (int i = 0; i < countof (ico_inds); i++) {
-		MsgBuf_WriteLong (msg, ico_inds[i]);
+	for (int i = 0; i < countof (new_inds); i++) {
+		MsgBuf_WriteLong (msg, new_inds[i]);
 	}
 	return Model_LoadMesh ("ico", msg);
 
