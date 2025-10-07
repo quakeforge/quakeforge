@@ -10,7 +10,7 @@ int ico_inds[] = {
 	1,  6, 11,   1,  4,  6,   1, 10,  4,   9, 11,  6,   9,  7, 11,
 	9,  2,  7,   5,  8, 10,   5,  2,  8,   5,  7,  2,   4, 10,  8,
 };
-void printf(string fmt, ...);
+
 model_t create_ico ()
 {
 	float p = (sqrt (5f) + 1) / 2;
@@ -28,7 +28,6 @@ model_t create_ico ()
 			verts[vind][ix] = 0;
 			verts[vind][iy] = my;
 			verts[vind][iz] = mz;
-			printf ("%v\n", verts[vind]);
 		}
 	}
 
