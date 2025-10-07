@@ -688,6 +688,10 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	vec4f_t  light_positions[ST_COUNT][MaxLights];
 	entity_t entids[ST_COUNT][MaxLights];
 
+	//for (int i = 0; i < MaxLights; i++) {
+	//	light_ids[ST_CUBE][i] = ~i;
+	//}
+
 	uint32_t light_count = 0;
 	auto queue = lframe->light_queue;
 
@@ -819,6 +823,8 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		QFV_PacketScatterBuffer (packet, lframe->shadowmat_buffer,
 								 1, &mat_scatter, sb, bb);
 
+		uint32_t dlight_base = queue[ST_CUBE].count;
+
 		auto lights = (light_t *) packet_data;
 		qfv_scatter_t light_scatter = {
 			.srcOffset = packet_data - packet_start,
@@ -863,7 +869,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		};
 		packet_data += RUP (sizeof (qfv_light_matdata_t[ndlight * 6]), 16);
 		for (int i = 0; i < ndlight; i++) {
-			uint32_t id = light_ids[ST_CUBE][i + light_count];
+			uint32_t id = light_ids[ST_CUBE][i + dlight_base];
 			auto r = &lctx->light_control.a[id];
 			for (int j = 0; j < 6; j++) {
 				matdata[i * 6 + j] = (qfv_light_matdata_t) {
