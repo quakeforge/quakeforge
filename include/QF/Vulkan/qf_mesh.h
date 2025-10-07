@@ -63,8 +63,7 @@ typedef struct qfv_mesh_s {
 } qfv_mesh_t;
 
 typedef struct qfv_skin_s {
-	VkDeviceMemory memory;
-	VkImage     image;
+	struct qfv_resource_s *resource;
 	VkImageView view;
 	byte        colors[4];
 	VkDescriptorSet descriptor;

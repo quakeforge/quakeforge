@@ -46,6 +46,7 @@
 #include "QF/sys.h"
 
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/qf_mesh.h"
 #include "QF/Vulkan/qf_model.h"
 
@@ -56,12 +57,9 @@ void
 Vulkan_Skin_Clear (qfv_skin_t *skin, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 
 	Vulkan_MeshRemoveSkin (ctx, skin);
-	dfunc->vkDestroyImageView (device->dev, skin->view, 0);
-	dfunc->vkDestroyImage (device->dev, skin->image, 0);
-	dfunc->vkFreeMemory (device->dev, skin->memory, 0);
+	QFV_DestroyResource (device, skin->resource);
 }
 
 void
@@ -82,7 +80,7 @@ Vulkan_Skin_SetupSkin (skin_t *skin, struct vulkan_ctx_s *ctx)
 		.texels = tex->data,
 		.skindesc = &skindesc,
 	};
-	qfv_skin_t *vskin = malloc (sizeof (*vskin));
+	qfv_skin_t *vskin = Vulkan_Mod_AllocSkins (1, false);
 	skin->tex = (tex_t *) vskin;
 	Vulkan_Mod_LoadSkin (&alias_ctx, &askin, skinsize, vskin, ctx);
 }

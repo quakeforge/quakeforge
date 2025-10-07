@@ -112,7 +112,6 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 	const char *mod_name = alias_ctx->mod->name;
 	qfvPushDebug (ctx, vac (ctx->va_ctx, "mesh.load_skin: %s", mod_name));
 	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	auto mesh = alias_ctx->mesh;
 	int         w = alias_ctx->skinwidth;
 	int         h = alias_ctx->skinheight;
@@ -125,33 +124,39 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 	memcpy (tskin, askin->texels, skinsize);
 	Mod_FloodFillSkin (tskin, w, h);
 
+	tex_t tex = {
+		.width = w,
+		.height = h,
+		.format = tex_rgba,
+	};
+
+	auto resource = vskin->resource;
+	auto image = (qfv_resobj_t *) &resource[1];
+	auto view = &image[1];
+	*resource = (qfv_resource_t) {
+		.name = mod_name,
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = 2,
+		.objects = image,
+	};
 	int         mipLevels = QFV_MipLevels (w, h);
-	VkExtent3D  extent = { w, h, 1 };
-	vskin->image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
-									VK_FORMAT_R8G8B8A8_UNORM, extent,
-									mipLevels, 3, VK_SAMPLE_COUNT_1_BIT,
-									VK_IMAGE_USAGE_SAMPLED_BIT
-									| VK_IMAGE_USAGE_TRANSFER_DST_BIT
-									| VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, vskin->image,
-						 vac (ctx->va_ctx, "image:%s:%d:%d",
-							  mod_name, askin->skin_num, askin->group_num));
-	vskin->memory = QFV_AllocImageMemory (device, vskin->image,
-										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-										 0, 0);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, vskin->memory,
-						 vac (ctx->va_ctx, "memory:%s:%d:%d",
-							  mod_name, askin->skin_num, askin->group_num));
-	QFV_BindImageMemory (device, vskin->image, vskin->memory, 0);
-	vskin->view = QFV_CreateImageView (device, vskin->image,
-									  VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-									  VK_FORMAT_R8G8B8A8_UNORM,
-									  VK_IMAGE_ASPECT_COLOR_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, vskin->view,
-						 vac (ctx->va_ctx, "iview:%s:%d:%d",
-							  mod_name, askin->skin_num, askin->group_num));
+	QFV_ResourceInitTexImage (image, "skin", mipLevels > 1, &tex);
+	image->image.num_layers = SKIN_LAYERS;
+	QFV_ResourceInitImageView (view, 0, image);
+	QFV_CreateResource (device, resource);
+	vskin->view = view->image_view.view;
 
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "alias.skin");
+	// qskin textures use three layers
+	// layer 0: main color. Has "holes" punched in it for the other layers
+	// layer 1: glow map (emissive)
+	// layer 2: team color map. Top color index and mask in red and green,
+	//          bottom color index and mask in blue and alpha. The index is
+	//          used to look up the RGB color in the palette.
+	// The original skin data is 8-bit palette color, with 224-255 being the
+	// fullbright range, 16-31 the top color range and 96-111 the bottom color
+	// range (see QF/skin.h for top/bottom colors).
 	byte       *base_data = QFV_PacketExtend (packet, skinsize * 4 * 3);
 	byte       *glow_data = base_data + skinsize * 4 * 1;
 	byte       *cmap_data = base_data + skinsize * 4 * 2;
@@ -161,43 +166,31 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 						  skinsize);
 	Mod_ClearFullbright (tskin, tskin, skinsize);
 
-	Skin_CalcTopColors    (cmap_data + 0, tskin, skinsize, 4);
-	Skin_CalcTopMask      (cmap_data + 1, tskin, skinsize, 4);
-	Skin_CalcBottomColors (cmap_data + 2, tskin, skinsize, 4);
-	Skin_CalcBottomMask   (cmap_data + 3, tskin, skinsize, 4);
+	Skin_CalcTopColors    (cmap_data + 0, tskin, skinsize, 4);//red
+	Skin_CalcTopMask      (cmap_data + 1, tskin, skinsize, 4);//green
+	Skin_CalcBottomColors (cmap_data + 2, tskin, skinsize, 4);//blue
+	Skin_CalcBottomMask   (cmap_data + 3, tskin, skinsize, 4);//alpha
 	Skin_ClearTopColors (tskin, tskin, skinsize);
 	Skin_ClearBottomColors (tskin, tskin, skinsize);
 
 	Vulkan_ExpandPalette (base_data, tskin, vid.palette, 1, skinsize);
 
-	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	ib.barrier.image = vskin->image;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
-
-	VkBufferImageCopy copy = {
-		packet->offset, 0, 0,
-		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, SKIN_LAYERS},
-		{0, 0, 0}, {w, h, 1},
+	qfv_extent_t extent = {
+		.width = w,
+		.height = h,
+		.depth = 1,
+		.layers = SKIN_LAYERS,
 	};
-	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
-								   vskin->image,
-								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-								   1, &copy);
+	auto sb = &imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	auto db = &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	if (mipLevels > 1) {
+		// transition done by mipmaps
+		db = nullptr;
+	}
+	QFV_PacketCopyImage (packet, image->image.image, extent, 0, sb, db);
 
-	if (mipLevels == 1) {
-		ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-		ib.barrier.image = vskin->image;
-		ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-		ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-		dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-									 0, 0, 0, 0, 0,
-									 1, &ib.barrier);
-	} else {
-		QFV_GenerateMipMaps (device, packet->cmd, vskin->image,
+	if (mipLevels > 1) {
+		QFV_GenerateMipMaps (device, packet->cmd, image->image.image,
 							 mipLevels, w, h, SKIN_LAYERS);
 	}
 	QFV_PacketSubmit (packet);
@@ -210,13 +203,34 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 	return vskin;
 }
 
+qfv_skin_t *
+Vulkan_Mod_AllocSkins (int count, bool use_hunk)
+{
+	size_t res_size = sizeof (qfv_resource_t) + sizeof (qfv_resobj_t[2]);
+	size_t size = sizeof (qfv_skin_t[count]) + res_size * count;
+
+	qfv_skin_t *skins;
+	if (use_hunk) {
+		skins = Hunk_Alloc (nullptr, size);
+	} else {
+		skins = malloc (size);
+	}
+	byte *res_base = (byte *) &skins[count];
+	for (int i = 0; i < count; i++) {
+		skins[i] = (qfv_skin_t) {
+			.resource = (qfv_resource_t *) (res_base + res_size * i),
+		};
+	}
+	return skins;
+}
+
 void
 Vulkan_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 {
 	int         skinsize = alias_ctx->skinwidth * alias_ctx->skinheight;
 	int         numskins = alias_ctx->skins.size;
 
-	qfv_skin_t *vskins = Hunk_Alloc(0,sizeof(qfv_skin_t[numskins]));
+	auto vskins = Vulkan_Mod_AllocSkins (numskins, true);
 	for (int i = 0; i < numskins; i++) {
 		auto askin = alias_ctx->skins.a + i;
 		Vulkan_Mod_LoadSkin (alias_ctx, askin, skinsize, &vskins[i], ctx);

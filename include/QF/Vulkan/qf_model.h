@@ -48,6 +48,7 @@ typedef struct mod_alias_ctx_s mod_alias_ctx_t;
 typedef struct mod_alias_skin_s mod_alias_skin_t;
 typedef struct qfv_skin_s qfv_skin_t;
 typedef struct mframe_s mframe_t;
+qfv_skin_t *Vulkan_Mod_AllocSkins (int count, bool use_hunk);
 qfv_skin_t *
 Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 					 int skinsize, qfv_skin_t *vskin, vulkan_ctx_t *ctx);
