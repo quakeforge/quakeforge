@@ -806,8 +806,6 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	}
 
 	if (ndlight) {
-		light_count += ndlight;
-
 		auto mats = (mat4f_t *) packet_data;
 		qfv_scatter_t mat_scatter = {
 			.srcOffset = packet_data - packet_start,
@@ -819,24 +817,6 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 			cube_mats (&mats[i * 6], dynamic_lights[i]->origin);
 		}
 		QFV_PacketScatterBuffer (packet, lframe->shadowmat_buffer,
-								 1, &mat_scatter, sb, bb);
-
-		auto matdata = (qfv_light_matdata_t *) packet_data;
-		size_t s = sizeof (qfv_light_matdata_t);
-		mat_scatter = (qfv_scatter_t) {
-			.srcOffset = packet_data - packet_start,
-			.dstOffset = s * lctx->dynamic_matrix_base,
-			.length = s * (ndlight * 6),
-		};
-		packet_data += RUP (sizeof (qfv_light_matdata_t[ndlight * 6]), 16);
-		for (int i = 0; i < ndlight * 6; i++) {
-			uint32_t id = light_ids[ST_CUBE][i];
-			auto r = &lctx->light_control.a[id];
-			matdata[i] = (qfv_light_matdata_t) {
-				.texel_size = 2 * lnearclip / r->size,
-			};
-		}
-		QFV_PacketScatterBuffer (packet, lframe->matdata_buffer,
 								 1, &mat_scatter, sb, bb);
 
 		auto lights = (light_t *) packet_data;
@@ -874,6 +854,26 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		QFV_PacketScatterBuffer (packet, lframe->light_buffer,
 								 1, &light_scatter, sb, bb);
 
+		auto matdata = (qfv_light_matdata_t *) packet_data;
+		size_t s = sizeof (qfv_light_matdata_t);
+		mat_scatter = (qfv_scatter_t) {
+			.srcOffset = packet_data - packet_start,
+			.dstOffset = s * lctx->dynamic_matrix_base,
+			.length = s * (ndlight * 6),
+		};
+		packet_data += RUP (sizeof (qfv_light_matdata_t[ndlight * 6]), 16);
+		for (int i = 0; i < ndlight; i++) {
+			uint32_t id = light_ids[ST_CUBE][i + light_count];
+			auto r = &lctx->light_control.a[id];
+			for (int j = 0; j < 6; j++) {
+				matdata[i * 6 + j] = (qfv_light_matdata_t) {
+					.texel_size = 2 * lnearclip / r->size,
+				};
+			}
+		}
+		QFV_PacketScatterBuffer (packet, lframe->matdata_buffer,
+								 1, &mat_scatter, sb, bb);
+
 		auto render = (qfv_light_render_t *) packet_data;
 		qfv_scatter_t render_scatter = {
 			.srcOffset = packet_data - packet_start,
@@ -889,6 +889,8 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		}
 		QFV_PacketScatterBuffer (packet, lframe->render_buffer,
 								 1, &render_scatter, sb, bb);
+
+		light_count += ndlight;
 	}
 	if (developer & SYS_lighting) {
 		Vulkan_Draw_String (vid.width - 32, 8,
