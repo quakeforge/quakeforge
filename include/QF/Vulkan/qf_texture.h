@@ -5,7 +5,7 @@
 #include "QF/Vulkan/qf_vid.h"
 
 typedef struct qfv_tex_s {
-	VkDeviceMemory memory;
+	struct qfv_resource_s *resource;
 	VkImage     image;
 	VkImageView view;
 } qfv_tex_t;

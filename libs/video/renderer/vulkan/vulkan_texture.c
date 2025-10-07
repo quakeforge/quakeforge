@@ -146,12 +146,55 @@ stage_tex_data (qfv_packet_t *packet, tex_t *tex, int bpp)
 	return tex_data;
 }
 
+//NOTE: all textures must have the same dimensions or bad things will happen
+static byte *
+stage_multi_tex_data (qfv_packet_t *packet, tex_t **tex, int count, int bpp)
+{
+	size_t      texels = tex[0]->width * tex[0]->height;
+	byte       *tex_data = QFV_PacketExtend (packet, bpp * texels * count);
+	byte       *out_data = tex_data;
+
+	for (int i = 0; i < count; i++, out_data += bpp * texels) {
+		auto data = tex[i]->data;
+		if (tex[i]->format == tex_palette) {
+			auto palette = tex[i]->palette;
+			Vulkan_ExpandPalette (out_data, data, palette, 1, texels);
+		} else {
+			if (tex[i]->format == 3) {
+				byte       *in = data;
+				byte       *out = out_data;
+				while (texels-- > 0) {
+					*out++ = *in++;
+					*out++ = *in++;
+					*out++ = *in++;
+					*out++ = 255;
+				}
+			} else {
+				memcpy (out_data, data, bpp * texels);
+			}
+		}
+	}
+	return tex_data;
+}
+
+static qfv_tex_t *
+alloc_qfv_tex ()
+{
+	size_t size = sizeof (qfv_tex_t)
+				+ sizeof (qfv_resource_t)
+				+ sizeof (qfv_resobj_t[2]);
+	qfv_tex_t  *qtex = malloc (size);
+	*qtex = (qfv_tex_t) {
+		.resource = (qfv_resource_t *) &qtex[1],
+	};
+	return qtex;
+}
+
 qfv_tex_t *
 Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
 					 const char *name)
 {
 	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	int         bpp;
 	VkFormat    format;
 
@@ -172,69 +215,46 @@ Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
 		mip = 1;
 	}
 
-	//qfv_devfuncs_t *dfunc = device->funcs;
-	//FIXME this whole thing is ineffiecient, especially for small textures
-	qfv_tex_t  *qtex = malloc (sizeof (qfv_tex_t));
+	auto qtex = alloc_qfv_tex ();
+	auto image = (qfv_resobj_t *) &qtex->resource[1];
+	auto view = &image[1];
+	*qtex->resource = (qfv_resource_t) {
+		.name = name,
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = 2,
+		.objects = image,
+	};
 
-	VkExtent3D  extent = { tex[0].width, tex[0].height, 1 };
-	VkImageType itype = layers > 0 ? VK_IMAGE_TYPE_2D : VK_IMAGE_TYPE_2D;
-	VkImageViewType vtype = layers > 0 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY
-									   : VK_IMAGE_VIEW_TYPE_2D;
-	if (layers < 1) {
-		layers = 1;
-	}
-	qtex->image = QFV_CreateImage (device, 0, itype, format, extent,
-								   mip, layers, VK_SAMPLE_COUNT_1_BIT,
-								   VK_IMAGE_USAGE_TRANSFER_DST_BIT
-								   | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-								   | VK_IMAGE_USAGE_SAMPLED_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, qtex->image,
-						 vac (ctx->va_ctx, "image:%s", name));
-	qtex->memory = QFV_AllocImageMemory (device, qtex->image,
-										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-										 0, 0);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, qtex->memory,
-						 vac (ctx->va_ctx, "memory:%s", name));
-	QFV_BindImageMemory (device, qtex->image, qtex->memory, 0);
-	qtex->view = QFV_CreateImageView (device, qtex->image, vtype,
-									  format, VK_IMAGE_ASPECT_COLOR_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, qtex->view,
-						 vac (ctx->va_ctx, "iview:%s", name));
+	QFV_ResourceInitTexImage (image, "tex", mip > 1, &tex[0]);
+	image->image.format = format;
+	image->image.num_layers = layers;
+	QFV_ResourceInitImageView (view, 0, image);
+	QFV_CreateResource (device, qtex->resource);
+	qtex->image = image->image.image;
+	qtex->view = view->image_view.view;
 
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.loadarray");
-
-	VkBufferImageCopy copy[layers];
-	copy[0] = (VkBufferImageCopy) {
-		0, 0, 0,
-		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-		{0, 0, 0}, {tex[0].width, tex[0].height, 1},
-	};
+	tex_t *tex_set[layers];
 	for (int i = 0; i < layers; i++) {
-		auto data = stage_tex_data (packet, &tex[i], bpp);
-		auto offset = QFV_PacketOffset (packet, data);
-		copy[i] = copy[0];
-		copy[i].bufferOffset = packet->offset + offset;
-		copy[i].imageSubresource.baseArrayLayer = i;
+		tex_set[i] = &tex[i];
 	}
+	stage_multi_tex_data (packet, tex_set, layers, bpp);
 
-	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	ib.barrier.image = qtex->image;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
-	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
-								   qtex->image,
-								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-								   layers, copy);
-	if (mip == 1) {
-		ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-		ib.barrier.image = qtex->image;
-		dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-									 0, 0, 0, 0, 0,
-									 1, &ib.barrier);
-	} else {
+	qfv_extent_t extent = {
+		.width = tex[0].width,
+		.height = tex[0].height,
+		.depth = 1,
+		.layers = layers,
+	};
+	auto sb = &imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	auto db = &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	if (mip > 1) {
+		// transition done by mipmaps
+		db = nullptr;
+	}
+	QFV_PacketCopyImage (packet, qtex->image, extent, 0, sb, db);
+	if (mip > 1) {
 		QFV_GenerateMipMaps (device, packet->cmd, qtex->image,
 							 mip, tex->width, tex->height, layers);
 	}
@@ -245,7 +265,7 @@ Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
 qfv_tex_t *
 Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip, const char *name)
 {
-	return Vulkan_LoadTexArray (ctx, tex, 0, mip, name);
+	return Vulkan_LoadTexArray (ctx, tex, 1, mip, name);
 }
 
 static qfv_tex_t *
@@ -254,26 +274,28 @@ create_cubetex (vulkan_ctx_t *ctx, int size, VkFormat format,
 {
 	qfv_device_t *device = ctx->device;
 
-	qfv_tex_t  *qtex = malloc (sizeof (qfv_tex_t));
-
-	VkExtent3D  extent = { size, size, 1 };
-	qtex->image = QFV_CreateImage (device, 1, VK_IMAGE_TYPE_2D, format, extent,
-								   1, 1, VK_SAMPLE_COUNT_1_BIT,
-								   VK_IMAGE_USAGE_SAMPLED_BIT
-								   | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, qtex->image,
-						 vac (ctx->va_ctx, "image:envmap:%s", name));
-	qtex->memory = QFV_AllocImageMemory (device, qtex->image,
-										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-										 0, 0);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, qtex->memory,
-						 vac (ctx->va_ctx, "memory:%s", name));
-	QFV_BindImageMemory (device, qtex->image, qtex->memory, 0);
-	qtex->view = QFV_CreateImageView (device, qtex->image,
-									  VK_IMAGE_VIEW_TYPE_CUBE, format,
-									  VK_IMAGE_ASPECT_COLOR_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, qtex->view,
-						 vac (ctx->va_ctx, "iview:envmap:%s", name));
+	auto qtex = alloc_qfv_tex ();
+	auto image = (qfv_resobj_t *) &qtex->resource[1];
+	auto view = &image[1];
+	*qtex->resource = (qfv_resource_t) {
+		.name = name,
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = 2,
+		.objects = image,
+	};
+	tex_t tex = {
+		.width = size,
+		.height = size,
+	};
+	QFV_ResourceInitTexImage (image, "envmap", false, &tex);
+	image->image.format = format;
+	image->image.num_layers = 6;
+	image->image.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+	QFV_ResourceInitImageView (view, 0, image);
+	QFV_CreateResource (device, qtex->resource);
+	qtex->image = image->image.image;
+	qtex->view = view->image_view.view;
 
 	return qtex;
 }
@@ -349,8 +371,6 @@ Vulkan_LoadEnvMap (vulkan_ctx_t *ctx, tex_t *tex, const char *name)
 qfv_tex_t *
 Vulkan_LoadEnvSides (vulkan_ctx_t *ctx, tex_t **tex, const char *name)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	int         bpp;
 	VkFormat    format;
 
@@ -373,39 +393,18 @@ Vulkan_LoadEnvSides (vulkan_ctx_t *ctx, tex_t **tex, const char *name)
 
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.loadenvsides");
 
-	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	ib.barrier.image = qtex->image;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
+	stage_multi_tex_data (packet, tex, 6, bpp);
 
-	VkBufferImageCopy copy[6] = {
-		{
-			0, 0, 0,
-			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-			{0, 0, 0}, {size, size, 1},
-		},
+	qfv_extent_t extent = {
+		.width = size,
+		.height = size,
+		.depth = 1,
+		.layers = 6,
 	};
-	for (int i = 0; i < 6; i++) {
-		auto data = stage_tex_data (packet, tex[i], bpp);
-		auto offset = QFV_PacketOffset (packet, data);
-		copy[i] = copy[0];
-		copy[i].bufferOffset = packet->offset + offset;
-		copy[i].imageSubresource.baseArrayLayer = i;
-	}
-	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
-								   qtex->image,
-								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-								   6, copy);
-	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	ib.barrier.image = qtex->image;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
+	auto sb = &imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	auto db = &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	QFV_PacketCopyImage (packet, qtex->image, extent, 0, sb, db);
+
 	QFV_PacketSubmit (packet);
 	return qtex;
 }
@@ -477,17 +476,8 @@ Vulkan_UnloadTex (vulkan_ctx_t *ctx, qfv_tex_t *tex)
 		return;
 	}
 	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 
-	if (tex->view) {
-		dfunc->vkDestroyImageView (device->dev, tex->view, 0);
-	}
-	if (tex->image) {
-		dfunc->vkDestroyImage (device->dev, tex->image, 0);
-	}
-	if (tex->memory) {
-		dfunc->vkFreeMemory (device->dev, tex->memory, 0);
-	}
+	QFV_DestroyResource (device, tex->resource);
 	free (tex);
 }
 
