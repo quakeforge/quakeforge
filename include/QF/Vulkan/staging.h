@@ -40,6 +40,13 @@ typedef struct qfv_scatter_s {
 	VkDeviceSize length;
 } qfv_scatter_t;
 
+typedef struct qfv_extent_s {
+	uint32_t    width;
+	uint32_t    height;
+	uint32_t    depth;
+	uint32_t    layers;
+} qfv_extent_t;
+
 qfv_stagebuf_t *QFV_CreateStagingBuffer (struct qfv_device_s *device,
 										 const char *name, size_t size,
 										 VkCommandPool cmdPool);
@@ -60,7 +67,7 @@ void QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 							  const struct qfv_bufferbarrier_s *dstBarrier);
 struct qfv_imagebarrier_s;
 void QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
-						  int width, int height, size_t offset,
+						  qfv_extent_t extent, size_t offset,
 						  const struct qfv_imagebarrier_s *srcBarrier,
 						  const struct qfv_imagebarrier_s *dstBarrier);
 size_t QFV_PacketOffset (qfv_packet_t *packet, void *ptr);

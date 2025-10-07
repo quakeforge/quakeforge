@@ -791,7 +791,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 	palette[255*4 + 2] = 0;
 	Vulkan_ExpandPalette (texels, tex.data, palette, 2, count);
 	QFV_PacketCopyImage (packet, cache_image->image.image,
-						 tex.width, tex.height, 0,
+						 (qfv_extent_t) {tex.width, tex.height, 1, 1}, 0,
 						 &imageBarriers[qfv_LT_Undefined_to_TransferDst],
 						 &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly]);
 	QFV_PacketSubmit (packet);
@@ -1841,7 +1841,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 	byte       *texels = QFV_PacketExtend (packet, tex.width * tex.height);
 	memcpy (texels, tex.data, tex.width * tex.height);
 	QFV_PacketCopyImage (packet, glyph_image->image.image,
-						 tex.width, tex.height, 0,
+						 (qfv_extent_t) {tex.width, tex.height, 1, 1}, 0,
 						 &imageBarriers[qfv_LT_Undefined_to_TransferDst],
 						 &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly]);
 	QFV_PacketSubmit (packet);

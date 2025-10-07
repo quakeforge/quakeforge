@@ -526,7 +526,7 @@ QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 
 void
 QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
-					 int width, int height, size_t offset,
+					 qfv_extent_t extent, size_t offset,
 					 const qfv_imagebarrier_t *srcBarrier,
 					 const qfv_imagebarrier_t *dstBarrier)
 {
@@ -544,8 +544,8 @@ QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 		.bufferOffset = packet->offset + offset,
 		.bufferRowLength = 0,
 		.bufferImageHeight = 0,
-		.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-		{0, 0, 0}, {width, height, 1},
+		.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, extent.layers},
+		{0, 0, 0}, {extent.width, extent.height, extent.depth},
 	};
 	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
 								   dstImage,

@@ -585,11 +585,14 @@ texture_startup (exprctx_t *ectx)
 	auto sb = imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	auto db = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
 
-	QFV_PacketCopyImage (packet, images[0].image.image, 1, 1,
+	QFV_PacketCopyImage (packet, images[0].image.image,
+						 (qfv_extent_t) { 1, 1, 1, 1 },
 						 QFV_PacketOffset (packet, black_bytes), &sb, &db);
-	QFV_PacketCopyImage (packet, images[1].image.image, 1, 1,
+	QFV_PacketCopyImage (packet, images[1].image.image,
+						 (qfv_extent_t) { 1, 1, 1, 1 },
 						 QFV_PacketOffset (packet, white_bytes), &sb, &db);
-	QFV_PacketCopyImage (packet, images[2].image.image, 1, 1,
+	QFV_PacketCopyImage (packet, images[2].image.image,
+						 (qfv_extent_t) { 1, 1, 1, 1 },
 						 QFV_PacketOffset (packet, magenta_bytes), &sb, &db);
 
 	QFV_PacketSubmit (packet);

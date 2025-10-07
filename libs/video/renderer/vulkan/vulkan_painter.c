@@ -105,8 +105,7 @@ typedef struct painterctx_s {
 	qfv_dsmanager_t *dsmanager;
 	qfv_resource_t *resource;
 	painterframeset_t frames;
-	uint32_t    cmd_width;
-	uint32_t    cmd_height;
+	qfv_extent_t cmd_extent;
 	uint32_t    max_queues;
 	uint32_t   *cmd_heads;
 	uint32_t   *cmd_tails;
@@ -173,8 +172,8 @@ painter_startup (exprctx_t *ectx)
 				.type = VK_IMAGE_TYPE_2D,
 				.format = VK_FORMAT_R32_UINT,
 				.extent = {
-					.width = pctx->cmd_width,
-					.height = pctx->cmd_height,
+					.width = pctx->cmd_extent.width,
+					.height = pctx->cmd_extent.height,
 					.depth = 1,
 				},
 				.num_mipmaps = 1,
@@ -265,8 +264,12 @@ painter_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	ctx->painter_context = pctx;
 
 	*pctx = (painterctx_t) {
-		.cmd_width = 240,//FIXME
-		.cmd_height = 135,//FIXME
+		.cmd_extent = {
+			.width = 240,//FIXME
+			.height = 135,//FIXME
+			.depth = 1,
+			.layers = 1,
+		},
 		.max_queues = 32400,//FIXME
 		.cmd_queue = DARRAY_STATIC_INIT (1024),
 	};
@@ -286,11 +289,12 @@ painter_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto packet = QFV_PacketAcquire (ctx->staging, "painter.flush1");
 	auto frame = &pctx->frames.a[ctx->curFrame];
 
-	uint32_t size = pctx->cmd_width * pctx->cmd_height * sizeof (uint32_t);
+	uint32_t size = (pctx->cmd_extent.width * pctx->cmd_extent.height
+					 * sizeof (uint32_t));
 	auto data = QFV_PacketExtend (packet, size);
 	memcpy (data, pctx->cmd_heads, size);
 	QFV_PacketCopyImage (packet, frame->cmd_heads_image,
-						 pctx->cmd_width, pctx->cmd_height, 0,
+						 pctx->cmd_extent, 0,
 						 &imageBarriers[qfv_LT_Undefined_to_TransferDst],
 						 &imageBarriers[qfv_LT_TransferDst_to_General]);
 	QFV_PacketSubmit (packet);
@@ -361,7 +365,7 @@ static void
 painter_queue_cmd (int x, int y, uip_cmd_t *cmd, uint32_t size,
 				   painterctx_t *pctx)
 {
-	uint32_t    queue_ind = y * pctx->cmd_width + x;
+	uint32_t    queue_ind = y * pctx->cmd_extent.width + x;
 	auto head_ptr = &pctx->cmd_heads[queue_ind];
 	auto tail_ptr = &pctx->cmd_tails[queue_ind];
 	uint32_t    tail = *tail_ptr;
@@ -390,8 +394,8 @@ painter_add_command (vec2f_t tl, vec2f_t br, uip_cmd_t *cmd, uint32_t size,
 
 	if (x1 < 0) x1 = 0;
 	if (y1 < 0) y1 = 0;
-	if (x2 > (int) pctx->cmd_width) x2 = pctx->cmd_width;
-	if (y2 > (int) pctx->cmd_height) y2 = pctx->cmd_height;
+	if (x2 > (int) pctx->cmd_extent.width) x2 = pctx->cmd_extent.width;
+	if (y2 > (int) pctx->cmd_extent.height) y2 = pctx->cmd_extent.height;
 	for (int y = y1; y < y2; y++) {
 		for (int x = x1; x < x2; x++) {
 			painter_queue_cmd (x, y, cmd, size, pctx);
