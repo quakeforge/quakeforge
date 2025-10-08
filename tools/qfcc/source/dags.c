@@ -541,15 +541,9 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 		dagnode_t  *child = n->children[i];
 		if (child) {
 			if (child->label->op) {
-				dagnode_t  *node = child->label->dagnode;
 				operand_t  *op = child->label->op;
-				if (node != child && node != n) {
-					set_add (node->edges, n->number);
-				}
 				leafnode_set_edges (op, n);
 			}
-			if (n != child)
-				set_add (n->edges, child->number);
 		}
 	}
 	for (operand_t *use = s->use; use; use = use->next) {
