@@ -100,26 +100,14 @@ model_t create_ico ()
 			  + sizeof (new_verts) * 2
 			  + sizeof (new_inds);
 	auto msg = MsgBuf_New (size * 4);//size is in ints, msgbuf wants bytes
-	for (int i = 0; i < sizeof (qf_model_t); i++) {
-		MsgBuf_WriteLong (msg, ((int *)&model)[i]);
-	}
-	for (int i = 0; i < sizeof (qf_mesh_t); i++) {
-		MsgBuf_WriteLong (msg, ((int *)&mesh)[i]);
-	}
-	for (int i = 0; i < sizeof (attributes); i++) {
-		MsgBuf_WriteLong (msg, ((int *)&attributes)[i]);
-	}
+	MsgBuf_WriteBytes (msg, &model, sizeof (model) * 4);//FIXME 4
+	MsgBuf_WriteBytes (msg, &mesh, sizeof (mesh) * 4);
+	MsgBuf_WriteBytes (msg, &attributes, sizeof (attributes) * 4);
 	for (int i = 0; i < num_verts; i++) {
-		for (int j = 0; j < 3; j++) {
-			MsgBuf_WriteFloat (msg, new_verts[i][j]);
-		}
-		for (int j = 0; j < 3; j++) {
-			MsgBuf_WriteFloat (msg, normals[i][j]);
-		}
+		MsgBuf_WriteBytes (msg, &new_verts[i], sizeof (new_verts[i]) * 4);
+		MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]) * 4);
 	}
-	for (int i = 0; i < countof (new_inds); i++) {
-		MsgBuf_WriteLong (msg, new_inds[i]);
-	}
+	MsgBuf_WriteBytes (msg, &new_inds, sizeof (new_inds) * 4);
 	return Model_LoadMesh ("ico", msg);
 
 	//for (int i = 0; i < sizeof (verts); i++) {
