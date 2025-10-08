@@ -16,6 +16,7 @@ void MsgBuf_WriteShort (msgbuf_t msgbuf, int val) = #0;
 void MsgBuf_WriteLong (msgbuf_t msgbuf, int val) = #0;
 void MsgBuf_WriteFloat (msgbuf_t msgbuf, float val) = #0;
 void MsgBuf_WriteString (msgbuf_t msgbuf, string str) = #0;
+void MsgBuf_WriteBytes (msgbuf_t msgbuf, void *buf, int bytecount) = #0;
 void MsgBuf_WriteCoord (msgbuf_t msgbuf, float coord) = #0;
 void MsgBuf_WriteCoordV (msgbuf_t msgbuf, vector coord) = #0;
 void MsgBuf_WriteCoordAngleV (msgbuf_t msgbuf, vector coords,
@@ -32,6 +33,7 @@ int MsgBuf_ReadShort (msgbuf_t msgbuf) = #0;
 int MsgBuf_ReadLong (msgbuf_t msgbuf) = #0;
 float MsgBuf_ReadFloat (msgbuf_t msgbuf) = #0;
 string MsgBuf_ReadString (msgbuf_t msgbuf) = #0;
+void MsgBuf_ReadBytes (msgbuf_t msgbuf, void *buf, int bytecount) = #0;
 float MsgBuf_ReadCoord (msgbuf_t msgbuf) = #0;
 vector MsgBuf_ReadCoordV (msgbuf_t msgbuf) = #0;
 void MsgBuf_ReadCoordAngleV (msgbuf_t msgbuf, vector *coords,

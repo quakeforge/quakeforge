@@ -307,16 +307,18 @@ bi_MsgBuf_WriteString (progs_t *pr, void *_res)
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteString (&mb->sizebuf, P_GSTRING (pr, 1));
 }
-#if 0
+
 static void
 bi_MsgBuf_WriteBytes (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
-	MSG_WriteBytes (&mb->sizebuf, P_INT (pr, 1));
+	pr_type_t  *buf = P_GPOINTER (pr, 1);
+	int         count = P_INT (pr, 2);
+	MSG_WriteBytes (&mb->sizebuf, buf, count);
 }
-#endif
+
 static void
 bi_MsgBuf_WriteCoord (progs_t *pr, void *_res)
 {
@@ -446,16 +448,20 @@ bi_MsgBuf_ReadString (progs_t *pr, void *_res)
 	str = MSG_ReadString (&mb->msg);
 	RETURN_STRING (pr, str);
 }
-#if 0
+
 static void
 bi_MsgBuf_ReadBytes (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
-	MSG_ReadBytes (&mb->msg);
+	pr_type_t  *buf = P_GPOINTER (pr, 1);
+	int         count = P_INT (pr, 2);
+
+	//check_buffer (pr, buf, count, "MsgBuf_ReadBytes");
+	MSG_ReadBytes (&mb->msg, buf, count);
 }
-#endif
+
 static void
 bi_MsgBuf_ReadCoord (progs_t *pr, void *_res)
 {
@@ -548,7 +554,7 @@ static builtin_t builtins[] = {
 	bi(MsgBuf_WriteLong,        2, p(ptr), p(int)),
 	bi(MsgBuf_WriteFloat,       2, p(ptr), p(float)),
 	bi(MsgBuf_WriteString,      2, p(ptr), p(string)),
-//	bi(MsgBuf_WriteBytes,       _, _),
+	bi(MsgBuf_WriteBytes,       3, p(ptr), p(ptr), p(int)),
 	bi(MsgBuf_WriteCoord,       2, p(ptr), p(float)),
 	bi(MsgBuf_WriteCoordV,      2, p(ptr), p(vector)),
 	bi(MsgBuf_WriteCoordAngleV, 2, p(ptr), p(vector)),
@@ -564,7 +570,7 @@ static builtin_t builtins[] = {
 	bi(MsgBuf_ReadLong,         1, p(ptr)),
 	bi(MsgBuf_ReadFloat,        1, p(ptr)),
 	bi(MsgBuf_ReadString,       1, p(ptr)),
-//	bi(MsgBuf_ReadBytes,        _, _),
+	bi(MsgBuf_ReadBytes,        3, p(ptr), p(ptr), p(int)),
 	bi(MsgBuf_ReadCoord,        1, p(ptr)),
 	bi(MsgBuf_ReadCoordV,       1, p(ptr)),
 	bi(MsgBuf_ReadCoordAngleV,  2, p(ptr), p(ptr)),
