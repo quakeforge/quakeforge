@@ -11,15 +11,9 @@
 #include <scene.h>
 #include <qfs.h>
 
-#include "pga3d.h"
+#include <QF/qfmodel.h>
 
-typedef struct qfm_joint_s {
-	vector translate;
-	string name;
-	quaternion rotate;
-	vector scale;
-	int parent;
-} qfm_joint_t;
+#include "pga3d.h"
 
 typedef struct arm_motor_s {
 	motor_t m;

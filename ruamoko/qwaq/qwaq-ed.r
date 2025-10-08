@@ -445,7 +445,8 @@ static gizmo_node_t covered_step[] = {
 
 	[bones removeAllObjects];
 	for (int i = 0; i < arm.num_joints; i++) {
-		[bones addObject:[ListItem item:arm.joints[i].name ctx:IMUI_context]];
+		string name = *(string*)&arm.joints[i].name;//FIXME
+		[bones addObject:[ListItem item:name ctx:IMUI_context]];
 	}
 	[bonesView setItems:bones];
 
@@ -962,12 +963,6 @@ setup_bindings (void)
 	IN_LoadConfig (config);
 	PL_Release (config);
 }
-
-typedef struct qfm_channel_s {
-	uint data;
-	float base;
-	float scale;
-} qfm_channel_t;
 
 string field_names[] = {
 	"translate.x",

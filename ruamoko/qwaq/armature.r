@@ -87,9 +87,10 @@ make_armature (model_t model)
 		if (arm.joints[i].parent >= 0) {
 			arm.pose[i].m = arm.pose[arm.joints[i].parent].m * arm.pose[i].m;
 		}
-		bool IK = str_str (arm.joints[i].name, "IK") >= 0;
-		bool Null = str_str (arm.joints[i].name, "Null") >= 0;
-		bool Goal = str_str (arm.joints[i].name, "Goal") >= 0;
+		string name = *(string *)&arm.joints[i].name;//FIXME
+		bool IK = str_str (name, "IK") >= 0;
+		bool Null = str_str (name, "Null") >= 0;
+		bool Goal = str_str (name, "Goal") >= 0;
 		bool root = arm.joints[i].parent == -1;
 		for (int j = 0; j < JOINT_EDGES; j++) {
 			arm.edges[i * JOINT_EDGES + j] = {
