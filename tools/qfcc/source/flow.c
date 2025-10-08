@@ -68,15 +68,15 @@ static struct {
 	const char *name;
 	operand_t   op;
 } flow_params[] = {
-	{".return",		{0, op_def}},
-	{".param_0",	{0, op_def}},
-	{".param_1",	{0, op_def}},
-	{".param_2",	{0, op_def}},
-	{".param_3",	{0, op_def}},
-	{".param_4",	{0, op_def}},
-	{".param_5",	{0, op_def}},
-	{".param_6",	{0, op_def}},
-	{".param_7",	{0, op_def}},
+	{".return",		{ .op_type = op_def, .type = &type_param }},
+	{".param_0",	{ .op_type = op_def, .type = &type_param }},
+	{".param_1",	{ .op_type = op_def, .type = &type_param }},
+	{".param_2",	{ .op_type = op_def, .type = &type_param }},
+	{".param_3",	{ .op_type = op_def, .type = &type_param }},
+	{".param_4",	{ .op_type = op_def, .type = &type_param }},
+	{".param_5",	{ .op_type = op_def, .type = &type_param }},
+	{".param_6",	{ .op_type = op_def, .type = &type_param }},
+	{".param_7",	{ .op_type = op_def, .type = &type_param }},
 };
 static const int num_flow_params = sizeof(flow_params)/sizeof(flow_params[0]);
 
@@ -1530,6 +1530,7 @@ flow_record_end (statement_t *st, reaching_t *r)
 
 typedef struct {
 	set_t      *set;
+	int         size;
 	flowvar_t  *found;
 } phantom_t;
 
@@ -1537,7 +1538,9 @@ static int
 tempop_find_phantom (tempop_t *tempop, void *data)
 {
 	phantom_t *phantom = data;
-	if (!tempop->alias) {
+	// not a phantom use if the alias is the same size because it's a full
+	// write
+	if (!tempop->alias && type_size (tempop->type) != phantom->size) {
 		set_union (phantom->set, tempop->flowvar->define);
 		phantom->found = tempop->flowvar;
 	}
@@ -1548,7 +1551,9 @@ static int
 def_find_phantom (def_t *def, void *data)
 {
 	phantom_t *phantom = data;
-	if (!def->alias) {
+	// not a phantom use if the alias is the same size because it's a full
+	// write
+	if (!def->alias && type_size (def->type) != phantom->size) {
 		set_union (phantom->set, def->flowvar->define);
 		phantom->found = def->flowvar;
 	}
@@ -1559,7 +1564,7 @@ static flowvar_t *
 find_phantom (set_t *defs, flowvar_t *var)
 {
 	auto op = var->op;
-	phantom_t ph = { .set = defs, };
+	phantom_t ph = { .set = defs, .size = type_size (op->type) };
 	set_empty (defs);
 	if (op->op_type == op_temp && op->tempop.alias) {
 		tempop_visit_all (&op->tempop, dol_none, tempop_find_phantom, &ph);
