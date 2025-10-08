@@ -87,12 +87,14 @@ static_assert (sizeof (qfm_attrdesc_t) == 2 * sizeof (uint32_t),
 			   "qfm_attrdesc_t wrong size");
 
 typedef struct qfm_joint_s {
-	float       translate[3];
+	vec3_t      translate;
 	uint32_t    name;
 	vec4f_t     rotate;
-	float       scale[3];
+	vec3_t      scale;
 	int32_t     parent;
 } qfm_joint_t;
+static_assert (sizeof (qfm_joint_t) == 12 * sizeof (uint32_t),
+			   "qfm_joint_t wrong size");
 
 typedef enum : uint32_t {
 	qfm_nonuniform = 1,
@@ -105,6 +107,8 @@ typedef struct qfm_motor_s {
 	vec3_t      s;
 	qfm_mflag_t flags;
 } qfm_motor_t;
+static_assert (sizeof (qfm_motor_t) == 12 * sizeof (uint32_t),
+			   "qfm_motor_t wrong size");
 
 typedef struct qfm_blend_s {
 	uint8_t     indices[4];
