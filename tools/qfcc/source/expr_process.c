@@ -73,7 +73,18 @@ proc_expr (const expr_t *expr, rua_ctx_t *ctx)
 		auto e = expr_process (expr->expr.e2, ctx);
 		return cast_expr (type, e);
 	}
+	bool short_circuit = false;
+	if (options.code.short_circuit
+		&& current_target.short_circuit
+		&& ctx->language->short_circuit) {
+		if (expr->expr.op == QC_AND || expr->expr.op == QC_OR) {
+			short_circuit = true;
+		}
+	}
 	auto e1 = expr_process (expr->expr.e1, ctx);
+	if (short_circuit) {
+		edag_flush ();
+	}
 	auto e2 = expr_process (expr->expr.e2, ctx);
 	if (is_error (e1)) {
 		return e1;
@@ -82,13 +93,9 @@ proc_expr (const expr_t *expr, rua_ctx_t *ctx)
 		return e2;
 	}
 
-	if (options.code.short_circuit
-		&& current_target.short_circuit
-		&& ctx->language->short_circuit) {
-		if (expr->expr.op == QC_AND || expr->expr.op == QC_OR) {
-			auto label = new_label_expr ();
-			return bool_expr (expr->expr.op, label, e1, e2);
-		}
+	if (short_circuit) {
+		auto label = new_label_expr ();
+		return bool_expr (expr->expr.op, label, e1, e2);
 	}
 
 	auto e = binary_expr (expr->expr.op, e1, e2);
