@@ -153,7 +153,9 @@ new_def (const char *name, const type_t *type, defspace_t *space,
 	}
 
 	if (storage != sc_extern) {
-		int         size = type_size (type);
+		// Need to use aligned size when allocating user defs to ensure
+		// they can be used safely with sizeof for anything accessing memory.
+		int         size = type_aligned_size (type);
 		int         alignment = type->alignment;
 
 		if (!size && is_array (type) && !deferred_size (storage)) {
