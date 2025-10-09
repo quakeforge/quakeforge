@@ -133,8 +133,7 @@ typedef struct qf_mesh_s {
 	uint32_t    triangle_count;
 	qfm_type_t  index_type;
 	uint32_t    indices;
-	qfm_type_t  adjacency_type;
-	uint32_t    adjacency;
+	qfm_loc_t   adjacency;
 	qfm_loc_t   attributes;
 	qfm_loc_t   vertices;			// count is per morph
 	qfm_loc_t   morph_attributes;
