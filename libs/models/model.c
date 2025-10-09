@@ -167,15 +167,21 @@ static cvar_t gl_textures_external_cvar = {
 
 static void Mod_CallbackLoad (void *object, cache_allocator_t allocator);
 
+typedef struct res_mod_s {
+	model_t     mod;
+	struct res_mod_s *next;
+	struct res_mod_s **prev;
+} res_mod_t;
+
 typedef struct {
 	hashctx_t  *hashctx;
 	hashtab_t  *model_tab;
-	PR_RESMAP (model_t) model_map;
+	PR_RESMAP (res_mod_t) model_map;
 
-	model_t    *loose_models;	// models allocated loosely
+	res_mod_t  *loose_models;	// models allocated loosely
 } model_registry_t;
 
-#define RESMAP_OBJ_TYPE model_t
+#define RESMAP_OBJ_TYPE res_mod_t
 #define RESMAP_PREFIX qfm_model
 #define RESMAP_MAP_PARAM model_registry_t *reg
 #define RESMAP_MAP reg->model_map
@@ -195,7 +201,7 @@ qfm_alloc_model (void)
 	mod->next = model_registry->loose_models;
 	mod->prev = &model_registry->loose_models;
 	model_registry->loose_models = mod;
-	return mod;
+	return &mod->mod;
 }
 
 static void
@@ -220,17 +226,15 @@ mod_unload_model (model_t *mod)
 }
 
 void
-qfm_free_model (model_t *mod)
+qfm_free_model (model_t *model)
 {
-	if (!mod->prev) {
-		Sys_Error ("freeing non-loose model");
-	}
+	auto mod = (res_mod_t *) model;
 	if (mod->next) {
 		mod->next->prev = mod->prev;
 	}
 	*mod->prev = mod->next;
 	mod->prev = nullptr;
-	mod_unload_model (mod);
+	mod_unload_model (model);
 	qfm_model_free (model_registry, mod);
 }
 
@@ -241,7 +245,7 @@ mod_shutdown (void *data)
 	Mod_ClearAll ();
 
 	for (auto mod = model_registry->loose_models; mod; mod = mod->next) {
-		mod_unload_model (mod);
+		mod_unload_model (&mod->mod);
 	}
 
 	qfm_model_reset (model_registry);
@@ -264,7 +268,7 @@ qfm_model_free_model (void *m, void *data)
 {
 	model_t *mod = m;
 	mod_unload_model (mod);
-	qfm_model_free (model_registry, mod);
+	qfm_model_free (model_registry, (res_mod_t *) mod);
 }
 
 VISIBLE void
@@ -339,7 +343,7 @@ Mod_FindName (const char *name)
 
 	model_t *mod = Hash_Find (model_registry->model_tab, name);
 	if (!mod) {
-		mod = qfm_model_new (model_registry);
+		mod = &qfm_model_new (model_registry)->mod;
 		memset (mod, 0, sizeof (model_t));
 		strncpy (mod->path, name, sizeof (mod->path) - 1);
 		mod->needload = true;
