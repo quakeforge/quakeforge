@@ -402,6 +402,17 @@ bi_MsgBuf_BeginReading (progs_t *pr, void *_res)
 }
 
 static void
+bi_MsgBuf_ReadSeek (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	msgbuf_resources_t *res = _res;
+	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
+	int         offset = P_INT (pr, 1);
+	int         whence = P_INT (pr, 2);
+	R_UINT (pr) = MSG_Seek (&mb->msg, offset, whence);
+}
+
+static void
 bi_MsgBuf_ReadByte (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
@@ -565,6 +576,7 @@ static builtin_t builtins[] = {
 	bi(MsgBuf_WriteUTF8,        2, p(ptr), p(int)),
 
 	bi(MsgBuf_BeginReading,     1, p(ptr)),
+	bi(MsgBuf_ReadSeek,         2, p(ptr), p(uint)),
 	bi(MsgBuf_ReadByte,         1, p(ptr)),
 	bi(MsgBuf_ReadShort,        1, p(ptr)),
 	bi(MsgBuf_ReadLong,         1, p(ptr)),

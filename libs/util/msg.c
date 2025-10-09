@@ -310,6 +310,32 @@ MSG_BeginReading (qmsg_t *msg)
 }
 
 VISIBLE unsigned
+MSG_Seek (qmsg_t *msg, int offset, int whence)
+{
+	unsigned offs;
+
+	switch (whence) {
+		case 0:
+			offs = offset;
+			break;
+		case 1:
+			offs = msg->readcount + offset;
+			break;
+		case 2:
+			offs = msg->message->cursize + offset;
+			break;
+		default:
+			Sys_Error ("MSG_Seek: invalid whence: %d", whence);
+	};
+	if (offs > msg->message->cursize) {
+		offs = msg->message->cursize;
+	}
+	msg->readcount = offs;
+	msg->badread = false;
+	return msg->readcount;
+}
+
+VISIBLE unsigned
 MSG_GetReadCount (qmsg_t *msg)
 {
 	return msg->readcount;

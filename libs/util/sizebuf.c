@@ -76,11 +76,13 @@ SZ_Seek (sizebuf_t *buf, int offset, int whence)
 		default:
 			Sys_Error ("SZ_Seek: invalid whence: %d", whence);
 	};
-	if (offs > buf->cursize) {
-		//FIXME behave more like lseek?
-		offs = buf->cursize;
+	if (offs > buf->maxsize) {
+		Sys_Error ("SZ_Seek: invalid seek: %d (max %d)", offs, buf->maxsize);
 	}
 	buf->write_offset = offs;
+	if (buf->cursize < buf->write_offset) {
+		buf->cursize = buf->write_offset;
+	}
 	return buf->write_offset;
 }
 

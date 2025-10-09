@@ -82,6 +82,8 @@ void MSG_BeginReading (qmsg_t *msg);
 */
 unsigned MSG_GetReadCount(qmsg_t *msg) __attribute__((pure));
 
+unsigned MSG_Seek (qmsg_t *msg, int offset, int whence);
+
 /** Read a single byte from the message.
 
 	Advances the read index.

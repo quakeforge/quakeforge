@@ -21,7 +21,7 @@ int MsgBuf_ReadCount (msgbuf_t msgbuf);
 string MsgBuf_DataPtr (msgbuf_t msgbuf);
 
 void MsgBuf_Clear (msgbuf_t msgbuf);
-void MsgBuf_WriteSeek (msgbuf_t msgbuf, int offset, msg_whence_t whence);
+uint MsgBuf_WriteSeek (msgbuf_t msgbuf, int offset, msg_whence_t whence);
 void MsgBuf_WriteByte (msgbuf_t msgbuf, int val);
 void MsgBuf_WriteShort (msgbuf_t msgbuf, int val);
 void MsgBuf_WriteLong (msgbuf_t msgbuf, int val);
@@ -39,6 +39,7 @@ void MsgBuf_WriteAngle16V (msgbuf_t msgbuf, vector angles);
 void MsgBuf_WriteUTF8 (msgbuf_t msgbuf, int val);
 
 void MsgBuf_BeginReading (msgbuf_t msgbuf);
+uint MsgBuf_ReadSeek (msgbuf_t msgbuf, int offset, msg_whence_t whence);
 int MsgBuf_ReadByte (msgbuf_t msgbuf);
 int MsgBuf_ReadShort (msgbuf_t msgbuf);
 int MsgBuf_ReadLong (msgbuf_t msgbuf);
