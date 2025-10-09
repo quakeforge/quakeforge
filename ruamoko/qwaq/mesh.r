@@ -4,6 +4,10 @@
 
 #include <QF/qfmodel.h>
 
+#include "armature.h"//for edge_t
+
+void printf(string fmt, ...);
+
 int ico_inds[] = {
 	0,  6,  4,   0,  9,  6,   0,  2,  9,   0,  8,  2,   0,  4,  8,
 	3, 10,  1,   3,  5, 10,   3,  7,  5,   3, 11,  7,   3,  1, 11,
@@ -109,13 +113,544 @@ model_t create_ico ()
 	}
 	MsgBuf_WriteBytes (msg, &new_inds, sizeof (new_inds) * 4);
 	return Model_LoadMesh ("ico", msg);
-
-	//for (int i = 0; i < sizeof (verts); i++) {
-	//	MsgBuf_WriteLong (msg, ((int *)&verts)[i]);
-	//}
 }
 
-//int foo(qfm_attrdesc_t x)
-//{
-//	return x.set;
-//}
+typedef struct halfedge_s {
+	int         twin;
+	int         next;
+	int         prev;
+	int         vert;
+	int         edge;
+	int         face;
+} halfedge_t;
+
+typedef struct anhalfedge_s {
+	int         twin;
+	int         vert;
+	int         edge;
+} anhalfedge_t;
+
+static int
+find_edge (int v1, int v2, edge_t *edges, @inout int edge_count)
+{
+	for (int i = 0; i < edge_count; i++) {
+		if ((edges[i].a == v1 && edges[i].b == v2)
+			|| (edges[i].a == v2 && edges[i].b == v1)) {
+			return i;
+		}
+	}
+	edges[edge_count] = { v1, v2 };
+	return edge_count++;
+}
+
+#define TWIN(h) he_in[h].twin
+#define NEXT(h) he_in[h].next
+#define PREV(h) he_in[h].prev
+#define VERT(h) he_in[h].vert
+#define FACE(h) he_in[h].face
+#define EDGE(h) he_in[h].edge
+
+@overload void
+refine_halfedges (anhalfedge_t *he_out, halfedge_t *he_in, int num_halfedges,
+				  int Vd, int Fd, int Ed)
+{
+	for (int h = 0; h < num_halfedges; h++) {
+		he_out[h * 4 + 0].twin = 4 * NEXT (TWIN(h)) + 3;
+		he_out[h * 4 + 1].twin = 4 * NEXT (h) + 2;
+		he_out[h * 4 + 2].twin = 4 * PREV (h) + 1;
+		he_out[h * 4 + 3].twin = 4 * TWIN (PREV(h)) + 0;
+		he_out[h * 4 + 0].vert = VERT(h),
+		he_out[h * 4 + 1].vert = Vd + Fd + EDGE(h),
+		he_out[h * 4 + 2].vert = Vd + FACE(h),
+		he_out[h * 4 + 3].vert = Vd + Fd + EDGE(PREV(h)),
+		he_out[h * 4 + 0].edge = 2 * EDGE(h) + ((h < TWIN(h)) & 1);
+		he_out[h * 4 + 1].edge = 2 * Ed + h;
+		he_out[h * 4 + 2].edge = 2 * Ed + PREV(h);
+		he_out[h * 4 + 3].edge = 2 * EDGE(PREV(h)) + ((PREV(h) > TWIN(PREV(h))) & 1);
+	}
+}
+
+@overload int
+valence (halfedge_t *he_in, int h)
+{
+	int n = 1;
+	int h1 = NEXT(TWIN(h));
+	while (h1 != h) {
+		n++;
+		h1 = NEXT(TWIN(h1));
+	}
+	return n;
+}
+
+@overload int
+cycle_length (halfedge_t *he_in, int h)
+{
+	int m = 1;
+	int h1 = NEXT(h);
+	while (h1 != h) {
+		m++;
+		h1 = NEXT(h1);
+	}
+	return m;
+}
+
+@overload void
+face_points (vec3 *v_out, vec3 *v_in, halfedge_t *he_in, int hd, int vd)
+{
+	for (int h = 0; h < hd; h++) {
+		int m = cycle_length (he_in, h);
+		int v = VERT(h);
+		int i = vd + FACE(h);
+		v_out[i] += v_in[v] / m;
+	}
+}
+
+@overload void
+edge_points (vec3 *v_out, vec3 *v_in, halfedge_t *he_in,
+			 int hd, int vd, int fd)
+{
+	for (int h = 0; h < hd; h++) {
+		int v = VERT(h);
+		int i = vd + FACE(h);
+		int j = vd + fd + EDGE(h);
+		if (TWIN(h) >= 0) {
+			v_out[j] += (v_in[v] + v_out[i]) / 4;
+		} else {
+			v_out[j] += v_in[v] / 2;
+		}
+	}
+}
+
+@overload void
+vert_points (vec3 *v_out, vec3 *v_in, halfedge_t *he_in, int hd, int vd, int fd)
+{
+	for (int h = 0; h < hd; h++) {
+		int n = valence (he_in, h);
+		int v = VERT(h);
+		int i = vd + FACE(h);
+		int j = vd + fd + EDGE(h);
+		v_out[v] += (4 * v_out[j] - v_out[i] + (n - 3) * v_in[v]) / (n * n);
+	}
+}
+#undef TWIN
+#undef NEXT
+#undef PREV
+#undef VERT
+#undef FACE
+#undef EDGE
+
+#define TWIN(h) he_in[h].twin
+#define NEXT(h) (((h) & ~3) | (((h)+1) & 3))
+#define PREV(h) (((h) & ~3) | (((h)+3) & 3))
+#define VERT(h) he_in[h].vert
+#define FACE(h) ((int)((uint)(h) >> 2))
+#define EDGE(h) he_in[h].edge
+@overload void
+refine_halfedges (anhalfedge_t *he_out, anhalfedge_t *he_in, int num_halfedges,
+				  int Vd, int Fd, int Ed)
+{
+	for (int h = 0; h < num_halfedges; h++) {
+		he_out[h * 4 + 0].twin = 4 * NEXT (TWIN(h)) + 3;
+		he_out[h * 4 + 1].twin = 4 * NEXT (h) + 2;
+		he_out[h * 4 + 2].twin = 4 * PREV (h) + 1;
+		he_out[h * 4 + 3].twin = 4 * TWIN (PREV(h)) + 0;
+		he_out[h * 4 + 0].vert = VERT(h),
+		he_out[h * 4 + 1].vert = Vd + Fd + EDGE(h),
+		he_out[h * 4 + 2].vert = Vd + FACE(h),
+		he_out[h * 4 + 3].vert = Vd + Fd + EDGE(PREV(h)),
+		he_out[h * 4 + 0].edge = 2 * EDGE(h) + ((h < TWIN(h)) & 1);
+		he_out[h * 4 + 1].edge = 2 * Ed + h;
+		he_out[h * 4 + 2].edge = 2 * Ed + PREV(h);
+		he_out[h * 4 + 3].edge = 2 * EDGE(PREV(h)) + ((PREV(h) > TWIN(PREV(h))) & 1);
+	}
+}
+
+@overload int
+valence (anhalfedge_t *he_in, int h)
+{
+	int n = 1;
+	int h1 = NEXT(TWIN(h));
+	while (h1 != h) {
+		n++;
+		h1 = NEXT(TWIN(h1));
+	}
+	return n;
+}
+
+@overload int
+cycle_length (anhalfedge_t *he_in, int h)
+{
+	return 4;
+}
+
+@overload void
+face_points (vec3 *v_out, vec3 *v_in, anhalfedge_t *he_in, int hd, int vd)
+{
+	for (int h = 0; h < hd; h++) {
+		int m = cycle_length (he_in, h);
+		int v = VERT(h);
+		int i = vd + FACE(h);
+		v_out[i] += v_in[v] / m;
+	}
+}
+
+@overload void
+edge_points (vec3 *v_out, vec3 *v_in, anhalfedge_t *he_in,
+			 int hd, int vd, int fd)
+{
+	for (int h = 0; h < hd; h++) {
+		int v = VERT(h);
+		int i = vd + FACE(h);
+		int j = vd + fd + EDGE(h);
+		if (TWIN(h) >= 0) {
+			v_out[j] += (v_in[v] + v_out[i]) / 4;
+		} else {
+			v_out[j] += v_in[v] / 2;
+		}
+	}
+}
+
+@overload void
+vert_points (vec3 *v_out, vec3 *v_in, anhalfedge_t *he_in,
+			 int hd, int vd, int fd)
+{
+	for (int h = 0; h < hd; h++) {
+		int n = valence (he_in, h);
+		int v = VERT(h);
+		int i = vd + FACE(h);
+		int j = vd + fd + EDGE(h);
+		v_out[v] += (4 * v_out[j] - v_out[i] + (n - 3) * v_in[v]) / (n * n);
+	}
+}
+#undef TWIN
+#undef NEXT
+#undef PREV
+#undef VERT
+#undef FACE
+#undef EDGE
+
+int
+calc_num_halfedges (int h0, uint d)
+{
+	return (1 << (2 * d)) * h0;
+}
+
+int
+calc_num_edges (int h0, int e0, uint d)
+{
+	if (d < 1) {
+		return e0;
+	}
+	return (1 << (d - 1)) * (2 * e0 + ((1 << d) - 1) * h0);
+}
+
+int
+calc_num_faces (int h0, int f0, uint d)
+{
+	if (d < 1) {
+		return f0;
+	}
+	return (1 << (2*(d - 1))) * h0;
+}
+
+int
+calc_num_vertices (int h0, int v0, int f0, int e0, uint d)
+{
+	if (d < 1) {
+		return v0;
+	}
+	int v1 = v0 + f0 + e0;
+	if (d < 2) {
+		return v1;
+	}
+	int f1 = calc_num_faces (h0, f0, 1);
+	int e1 = calc_num_edges (h0, e0, 1);
+	return ((1 << (d - 1)) - 1) * e1
+		 + ((1 << d) * ((1 << (d - 2)) - 1) + 1) * f1 + v1;
+}
+
+int
+calc_extra_halfedges (int h0, uint D)
+{
+	int h1 = 4 * h0;
+	return ((1 << (2 * D)) - 1) * h1 / 3;
+}
+
+int
+calc_extra_vertices (int h0, int v0, int f0, int e0, uint D)
+{
+	int f1 = calc_num_faces (h0, f0, 1);
+	int e1 = calc_num_edges (h0, e0, 1);
+	int v1 = calc_num_vertices (h0, v0, f0, e0, 1);
+	return ((1 << D) - 1) * (e1 - 2 * f1)
+		 + ((1 << (2 * D)) - 1) * f1 / 3
+		 + D * (f1 - e1 + v1);
+}
+
+int
+calc_extra_faces (int h0, uint D)
+{
+	return ((1 << (2 * D)) - 1) * h0 / 3;
+}
+
+msgbuf_t
+create_quadsphere ()
+{
+	// start with a simple cube
+	const int num_verts = 8;
+	const int num_faces = 6;	// quad faces
+	const int num_edges = 12;
+	const int num_halfedges = 24;
+
+	vec3 verts[num_verts];
+	vec3 normals[num_verts];
+	halfedge_t halfedges[num_halfedges];
+	int edge_count = 0;
+	edge_t edges[num_edges];
+
+	for (int i = 0; i < num_verts; i++) {
+		for (int j = 0; j < 3; j++) {
+			verts[i][j] = i & (1 << j) ? 1 : -1;
+		}
+		normals[i] = verts[i] / sqrt (verts[i] • verts[i]);
+	}
+	static const int axes[] = { -1, -2, -3, 2, 1, 0 };//ones complement
+	static const int face[][4] = {
+#if 0
+#define R
+		{1, 3, 4, 2},
+		{2, 5, 3, 0},
+		{0, 4, 5, 1},
+		{4, 0, 1, 5},
+		{5, 2, 0, 3},
+		{3, 1, 2, 4},
+#else
+#define R !
+		{2, 4, 3, 1},
+		{0, 3, 5, 2},
+		{1, 5, 4, 0},
+		{5, 1, 0, 4},
+		{3, 0, 2, 5},
+		{4, 2, 1, 3},
+#endif
+	};
+	for (int i = 0; i < num_faces; i++) {
+		bool neg = axes[i] < 0;
+		int axis = neg ? ~axes[i] : axes[i];
+		int flip = 7 ^ (1 << axis);
+		int xor = 7 & (9 >> (2 - axis)) ^ ((R neg) & flip);//neg is 0 or -1
+		int v = (!neg) & 7;
+		for (int j = 0; j < 4; j++) {
+			bool mid = bool ((j ^ (j>>1)) & 1);
+			halfedges[i * 4 + j] = {
+				.twin = face[i][j] * 4 + (mid ? j : 3 - j),
+				.next = i * 4 + ((j + 1) & 3),
+				.prev = i * 4 + ((j - 1) & 3),
+				.vert = v,
+				.edge = find_edge (v ^ xor, v, edges, edge_count),
+				.face = i,
+			};
+			v ^= xor;
+			xor ^= flip;
+		}
+	}
+
+	qf_model_t model = {
+		.meshes = {
+			.offset = sizeof (qf_model_t) * 4,
+			.count = 6,
+		},
+	};
+	qf_mesh_t mesh_template = {
+		.index_type = qfm_u32,
+		.attributes = {
+			.count = 2,
+		},
+		.vertex_stride = 4 * 2 * sizeof (verts[0]),
+		.scale = '1 1 1',
+		.bounds_min = '-1 -1 -1',
+		.bounds_max = ' 1  1  1',
+	};
+
+	qfm_attrdesc_t attributes[] = {
+		{
+			.offset = 0,
+			.stride = 2 * sizeof (vec3) * 4,
+			.attr = qfm_position,
+			.type = qfm_f32,
+			.components = 3,
+		},
+		{
+			.offset = sizeof (vec3) * 4,
+			.stride = 2 * sizeof (vec3) * 4,
+			.attr = qfm_normal,
+			.type = qfm_f32,
+			.components = 3,
+		},
+	};
+
+	int max_halfedges = calc_num_halfedges (num_halfedges, 5);
+	int max_vertices = calc_num_vertices (num_halfedges, num_verts,
+										  num_faces, num_edges, 5);
+	int extra_halfedges = calc_extra_halfedges (num_halfedges, 5);
+	int extra_verts = calc_extra_vertices (num_halfedges, num_verts,
+										   num_faces, num_edges, 5);
+	int extra_faces = calc_extra_faces (num_halfedges, 5);
+	uint size = sizeof (qf_model_t)
+			  + sizeof (qf_mesh_t) * 6
+			  + sizeof (qfm_attrdesc_t) * 2// need only one copy
+			  + sizeof (halfedge_t) * num_halfedges
+			  + sizeof (anhalfedge_t) * extra_halfedges
+			  + sizeof (vec3) * 2 * (num_verts + extra_verts)
+			  + sizeof (uint) * 6 * (num_faces + extra_faces);
+	anhalfedge_t *subdiv_halfedges[2] = {
+		obj_malloc (sizeof (anhalfedge_t) * max_halfedges),
+		obj_malloc (sizeof (anhalfedge_t) * max_halfedges),
+	};
+	vec3 *subdiv_verts[2] = {
+		obj_malloc (sizeof (anhalfedge_t) * max_halfedges),
+		obj_malloc (sizeof (anhalfedge_t) * max_halfedges),
+	};
+	auto msg = MsgBuf_New (size * 4);//size is in ints, msgbuf wants bytes
+	MsgBuf_WriteBytes (msg, &model, sizeof (model) * 4);
+	int offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
+	int mesh_offsets[] = {
+		offset + sizeof (qf_mesh_t) * 0 * 4,
+		offset + sizeof (qf_mesh_t) * 1 * 4,
+		offset + sizeof (qf_mesh_t) * 2 * 4,
+		offset + sizeof (qf_mesh_t) * 3 * 4,
+		offset + sizeof (qf_mesh_t) * 4 * 4,
+		offset + sizeof (qf_mesh_t) * 5 * 4,
+	};
+	printf ("offset: %d\n", offset);
+	for (int i = 0; i < 6; i++) {
+		printf ("  %d:offset: %d\n", i, mesh_offsets[i]);
+	}
+	MsgBuf_WriteSeek (msg, sizeof (qf_mesh_t) * 6 * 4, msg_cur);
+
+	int attributes_offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
+	printf ("attributes_offset: %d\n", attributes_offset);
+	mesh_template.attributes.offset = attributes_offset;
+	mesh_template.attributes.offset -= mesh_offsets[0];
+	MsgBuf_WriteBytes (msg, attributes, sizeof (attributes) * 4);
+
+	mesh_template.adjacency.offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
+	mesh_template.adjacency.offset -= mesh_offsets[0];
+	mesh_template.adjacency.count = num_halfedges;
+	MsgBuf_WriteBytes (msg, halfedges, sizeof (halfedges) * 4);
+
+	mesh_template.vertices.offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
+	mesh_template.vertices.offset -= mesh_offsets[0];
+	mesh_template.vertices.count = num_verts;
+	for (int i = 0; i < num_verts; i++) {
+		MsgBuf_WriteBytes (msg, &verts[i], sizeof (verts[i]) * 4);
+		MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]) * 4);
+	}
+
+	mesh_template.indices = MsgBuf_WriteSeek (msg, 0, msg_cur);
+	mesh_template.indices -= mesh_offsets[0];
+	mesh_template.triangle_count = num_faces * 2;
+	for (int i = 0; i < num_faces; i++) {
+		uint indices[6];
+		// the half-edges are always contiguous for a face: the initial
+		// set-up of the cube ensured that for subdivision level 0, and
+		// the subdivision algorithm ensures it for all subsequent
+		// subdivisions
+		for (int j = 0; j < 4; j++) {
+			indices[j] = halfedges[i * 4 + j].vert;
+		}
+		indices[4] = indices[0];
+		indices[5] = indices[2];
+		MsgBuf_WriteBytes (msg, indices, sizeof (indices) * 4);
+	}
+
+	offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
+	MsgBuf_WriteSeek (msg, mesh_offsets[0], msg_set);
+	MsgBuf_WriteBytes (msg, &mesh_template, sizeof (mesh_template) * 4);
+	MsgBuf_WriteSeek (msg, offset, msg_set);
+
+	for (int d = 1; d < 6; d++) {
+		int hd = calc_num_halfedges (num_halfedges, d - 1);
+		int vd = calc_num_vertices (num_halfedges, num_verts,
+									num_faces, num_edges, d - 1);
+		int fd = calc_num_faces (num_halfedges, num_faces, d - 1);
+		int ed = calc_num_edges (num_halfedges, num_edges, d - 1);
+		int hd_1 = calc_num_halfedges (num_halfedges, d);
+		int vd_1 = calc_num_vertices (num_halfedges, num_verts,
+									  num_faces, num_edges, d);
+		int fd_1 = calc_num_faces (num_halfedges, num_faces, d);
+		int ind = d & 1;
+
+		for (int i = 0; i < vd_1; i++) {
+			subdiv_verts[ind][i] = '0 0 0';
+		}
+		if (d > 1) {
+			refine_halfedges (subdiv_halfedges[ind],
+							  subdiv_halfedges[ind^1], hd, vd, fd, ed);
+			face_points (subdiv_verts[ind], subdiv_verts[ind^1],
+						 subdiv_halfedges[ind^1], hd, vd);
+			edge_points (subdiv_verts[ind], subdiv_verts[ind^1],
+						 subdiv_halfedges[ind^1], hd, vd, fd);
+			vert_points (subdiv_verts[ind], subdiv_verts[ind^1],
+						 subdiv_halfedges[ind^1], hd, vd, fd);
+		} else {
+			refine_halfedges (subdiv_halfedges[ind],
+							  halfedges, hd, vd, fd, ed);
+			face_points (subdiv_verts[ind], verts, halfedges, hd, vd);
+			edge_points (subdiv_verts[ind], verts, halfedges, hd, vd, fd);
+			vert_points (subdiv_verts[ind], verts, halfedges, hd, vd, fd);
+		}
+		for (int i = 0; i < vd_1; i++) {
+			vec3 v = subdiv_verts[ind][i];
+			subdiv_verts[ind][i] /= sqrt (v • v);
+		}
+
+		mesh_template.attributes.offset = attributes_offset;
+		mesh_template.attributes.offset -= mesh_offsets[d];
+
+		mesh_template.adjacency.offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
+		mesh_template.adjacency.offset -= mesh_offsets[d];
+		mesh_template.adjacency.count = hd_1;
+		MsgBuf_WriteBytes (msg, subdiv_halfedges[ind],
+						   sizeof (anhalfedge_t) * hd_1 * 4);
+
+		mesh_template.vertices.offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
+		mesh_template.vertices.offset -= mesh_offsets[d];
+		mesh_template.vertices.count = vd_1;
+		for (int i = 0; i < vd_1; i++) {
+			MsgBuf_WriteBytes (msg, &subdiv_verts[ind][i],
+							   sizeof (subdiv_verts[ind][i]) * 4);
+			// normals (verts are normalized)
+			MsgBuf_WriteBytes (msg, &subdiv_verts[ind][i],
+							   sizeof (subdiv_verts[ind][i]) * 4);
+		}
+
+		mesh_template.indices = MsgBuf_WriteSeek (msg, 0, msg_cur);
+		mesh_template.indices -= mesh_offsets[d];
+		mesh_template.triangle_count = fd_1 * 2;
+		for (int i = 0; i < fd_1; i++) {
+			uint indices[6];
+			// the half-edges are always contiguous for a face: the initial
+			// set-up of the cube ensured that for subdivision level 0, and
+			// the subdivision algorithm ensures it for all subsequent
+			// subdivisions
+			for (int j = 0; j < 4; j++) {
+				indices[j] = subdiv_halfedges[ind][i * 4 + j].vert;
+			}
+			indices[4] = indices[0];
+			indices[5] = indices[2];
+			MsgBuf_WriteBytes (msg, indices, sizeof (indices) * 4);
+		}
+
+		offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
+		MsgBuf_WriteSeek (msg, mesh_offsets[d], msg_set);
+		MsgBuf_WriteBytes (msg, &mesh_template, sizeof (mesh_template) * 4);
+		MsgBuf_WriteSeek (msg, offset, msg_set);
+	}
+
+	//QFile f = Qopen ("foo.qfm", "wb");
+	//MsgBuf_ToFile (f, msg);
+	//Qclose (f);
+
+	return msg;
+}

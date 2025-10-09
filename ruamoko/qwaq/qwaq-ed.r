@@ -993,6 +993,22 @@ arp_end (void)
 }
 
 model_t create_ico();
+msgbuf_t create_quadsphere();
+
+typedef struct halfedge_s {
+	int         twin;
+	int         next;
+	int         prev;
+	int         vert;
+	int         edge;
+	int         face;
+} halfedge_t;
+typedef struct anhalfedge_s {
+	int         twin;
+	int         vert;
+	int         edge;
+} anhalfedge_t;
+
 int
 main (int argc, string *argv)
 {
@@ -1026,6 +1042,7 @@ main (int argc, string *argv)
 	int lctrl_key = IN_GetButtonNumber (key_devid, "Control_L");
 	int rctrl_key = IN_GetButtonNumber (key_devid, "Control_R");
 	int q_key = IN_GetButtonNumber (key_devid, "q");
+	int bspace = IN_GetButtonNumber (key_devid, "BackSpace");
 
 #if 0
 	uint count = clipinfo.num_frames * clipinfo.num_channels;
@@ -1091,6 +1108,7 @@ main (int argc, string *argv)
 	Entity_SetModel (Plane_ent, Model_Load ("progs/Plane.mdl"));
 	Entity_SetModel (Tetrahedron_ent, Model_Load ("progs/Tetrahedron.mdl"));
 	Entity_SetModel (Icosahedron_ent, create_ico());
+
 	Transform_SetLocalPosition(Entity_GetTransform (nh_ent), {15, 0, 10, 1});
 	Transform_SetLocalRotation(Entity_GetTransform (nh_ent), {0.5, -0.5, 0.5, 0.5});
 	Transform_SetLocalPosition(Entity_GetTransform (Capsule_ent), {5, 2, 1, 1});
@@ -1107,6 +1125,20 @@ main (int argc, string *argv)
 
 	//id camtest = [[CamTest camtest:[main_window scene]] retain];
 
+	#define SUBDIV 1
+	auto quadsphere = create_quadsphere();
+	qf_mesh_t qsmesh;
+	vec4 stuff = {};
+	{
+		qf_model_t model;
+		vec4 stuff = {};
+		MsgBuf_ReadBytes (quadsphere, &model, sizeof (model) * 4);
+		int offset = model.meshes.offset + sizeof(qsmesh) * SUBDIV * 4;
+		MsgBuf_ReadSeek (quadsphere, offset, msg_set);
+		MsgBuf_ReadBytes (quadsphere, &qsmesh, sizeof (qsmesh) * 4);
+		qsmesh.adjacency.offset += offset;
+		qsmesh.vertices.offset += offset;
+	}
 	while (true) {
 		arp_end ();
 		arp_start ();
@@ -1132,6 +1164,52 @@ main (int argc, string *argv)
 		[main_window nextClip:frametime];
 
 		[main_window updateCamera];
+		{
+			static uint base = 0;
+			static double inc_time = -1;
+			static double key_time = -1;
+			in_buttoninfo_t info = {};
+			IN_GetButtonInfo (key_devid, bspace, &info);
+			if (realtime > key_time && info.state) {
+				key_time = realtime + 0.2;
+				base += 4 * (1 << (2 * SUBDIV));
+			}
+			if (0&&realtime > inc_time) {
+				inc_time = realtime + 3;
+				base += 4 * (1 << (2 * SUBDIV));
+			}
+			if (base >= qsmesh.adjacency.count) {
+				base = 0;
+			}
+			//for (uint i = 0; i < 4u * (1 << (2 * SUBDIV)); i++) {
+			for (uint i = 0; i < qsmesh.adjacency.count; i++) {
+				int adjacency = qsmesh.adjacency.offset;
+				int verts = qsmesh.vertices.offset;
+				int offset = adjacency + (i + base) * sizeof (anhalfedge_t) * 4;
+				anhalfedge_t h[2];
+				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
+				MsgBuf_ReadBytes (quadsphere, &h[0], sizeof (anhalfedge_t) * 4);
+				//printf ("%d: %d %d %d\n", i + base, h[0].twin, h[0].vert, h[0].edge);
+//#define NEXT(i) h[0].next
+#define NEXT(i) (((i) & ~3) | (((i)+1) & 3))
+				offset = adjacency + NEXT(i + base) * sizeof (anhalfedge_t) * 4;
+				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
+				MsgBuf_ReadBytes (quadsphere, &h[1], sizeof (anhalfedge_t) * 4);
+				vec4 v[2] = {};
+				vec4 n = {};
+				offset = verts + h[0].vert * sizeof (vec3) * 2 * 4;
+				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
+				MsgBuf_ReadBytes (quadsphere, &v[0], sizeof (vec3) * 4);
+				MsgBuf_ReadBytes (quadsphere, &n, sizeof (vec3) * 4);
+				offset = verts + h[1].vert * sizeof (vec3) * 2 * 4;
+				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
+				MsgBuf_ReadBytes (quadsphere, &v[1], sizeof (vec3) * 4);
+				v[0] += '-20 20 0 0';
+				v[1] += '-20 20 0 0';
+				Gizmo_AddCapsule (v[0], v[1], 0.005,// { 1, 0, 0, 0});
+								  vec4( i & 1, (i>>1)&1, (i>>2)&1, -1) * 0.5 + 0.5);
+			}
+		}
 		//set_transform ([playercam state].M, camera);
 		//{
 		//	auto p = (vec4)[player pos];
