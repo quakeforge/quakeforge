@@ -207,6 +207,25 @@ bi_MsgBuf_FromFile (progs_t *pr, void *_res)
 }
 
 static void
+bi_MsgBuf_ToFile (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	msgbuf_resources_t *res = _res;
+	QFile      *file = QFile_GetFile (pr, P_INT (pr, 0));
+	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 1));
+	int         bytes;
+
+	if (mb->msg.badread) {
+		return;
+	}
+
+	bytes = Qwrite (file, mb->sizebuf.data + mb->msg.readcount,
+					mb->sizebuf.cursize - mb->msg.readcount);
+	mb->sizebuf.cursize = bytes;
+	MSG_BeginReading (&mb->msg);
+}
+
+static void
 bi_MsgBuf_MaxSize (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
@@ -553,6 +572,7 @@ static builtin_t builtins[] = {
 	{"MsgBuf_New|i",	bi_MsgBuf_New,		-1, 1, {p(ptr)}},
 	bi(MsgBuf_Delete,           1, p(ptr)),
 	bi(MsgBuf_FromFile,         2, p(ptr), p(ptr)),
+	bi(MsgBuf_ToFile,           2, p(ptr), p(ptr)),
 	bi(MsgBuf_MaxSize,          1, p(ptr)),
 	bi(MsgBuf_CurSize,          1, p(ptr)),
 	bi(MsgBuf_ReadCount,        1, p(ptr)),

@@ -15,6 +15,7 @@ typedef enum msg_whence_e {
 msgbuf_t MsgBuf_New (int size);
 void MsgBuf_Delete (msgbuf_t msgbuf);
 void MsgBuf_FromFile (msgbuf_t msgbuf, QFile file);
+void MsgBuf_ToFile (QFile file, msgbuf_t msgbuf);
 int MsgBuf_MaxSize (msgbuf_t msgbuf);
 int MsgBuf_CurSize (msgbuf_t msgbuf);
 int MsgBuf_ReadCount (msgbuf_t msgbuf);

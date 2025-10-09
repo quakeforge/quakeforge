@@ -4,6 +4,7 @@ msgbuf_t MsgBuf_New (void *data, int size) = #0;
 msgbuf_t MsgBuf_New (int size) = #0;
 void MsgBuf_Delete (msgbuf_t msgbuf) = #0;
 void MsgBuf_FromFile (msgbuf_t msgbuf, QFile file) = #0;
+void MsgBuf_ToFile (QFile file, msgbuf_t msgbuf) = #0;
 int MsgBuf_MaxSize (msgbuf_t msgbuf) = #0;
 int MsgBuf_CurSize (msgbuf_t msgbuf) = #0;
 int MsgBuf_ReadCount (msgbuf_t msgbuf) = #0;
