@@ -677,6 +677,9 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 		}
 	}
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
+		if (renderer->submesh_mask & (1 << i)) {
+			continue;
+		}
 		if (!shadow && pass && i) {
 			skin = get_skin (renderer, &meshes[i]);
 			if (skin && skin != bound_skin) {

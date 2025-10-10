@@ -9,6 +9,7 @@ void Scene_SetCamera (scene_t scene, entity_t ent) = #0;
 
 transform_t Entity_GetTransform (entity_t ent) = #0;
 void Entity_SetModel (entity_t ent, model_t model) = #0;
+void Entity_SetSubmeshMask (entity_t ent, uint submesh_mask) = #0;
 int Entity_GetPoseMotors (entity_t ent, void *motors, double time) = #0;
 animation_t *Entity_GetAnimation (entity_t ent) = #0;
 void Entity_SetAnimation (entity_t ent, animation_t *anim) = #0;

@@ -337,6 +337,18 @@ bi (Entity_SetModel)
 	R_AddEfrags (&scene->scene->worldmodel->brush, ent);
 }
 
+bi (Entity_SetSubmeshMask)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	pr_uint_t   submesh_mask = P_UINT (pr, 1);
+	entity_t    ent = rua_entity_get (res, ent_id);
+
+	auto renderer = Entity_GetRenderer (ent);
+	renderer->submesh_mask = submesh_mask;
+}
+
 bi (Entity_GetPoseMotors)
 {
 	qfZoneScoped (true);
@@ -714,6 +726,7 @@ static builtin_t builtins[] = {
 
 	bi(Entity_GetTransform,         1, p(ulong)),
 	bi(Entity_SetModel,             2, p(ulong), p(int)),
+	bi(Entity_SetSubmeshMask,       2, p(ulong), p(uint)),
 	bi(Entity_GetPoseMotors,		3, p(ulong), p(ptr), p(double)),
 	bi(Entity_GetAnimation,         1, p(ulong)),
 	bi(Entity_SetAnimation,         1, p(ulong), p(ptr)),

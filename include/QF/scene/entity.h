@@ -100,6 +100,7 @@ typedef struct visibility_s {
 
 typedef struct renderer_s {
 	struct model_s *model;			// NULL = no model
+	uint32_t    submesh_mask;
 	uint32_t    skin;				//FIXME these two likely to be confusing
 	uint32_t    skindesc;			//FIXME ^^
 	struct trail_s *trail;
