@@ -95,34 +95,49 @@ attribs_ptr (const qf_mesh_t *mesh)
 	return (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
 }
 
+static uint32_t *
+indices_ptr (const qf_mesh_t *mesh)
+{
+	return (uint32_t *) ((byte *) mesh + mesh->indices);
+}
+
 static void
 vulkan_mesh_load_arrays (mod_mesh_ctx_t *mesh_ctx, qfv_mesh_t *rmesh,
 						 qfm_attrdesc_t *attribs, uint32_t strides[3],
-						 uint32_t num_vertices,
-						 uint32_t *indices, uint32_t index_bytes,
+						 uint32_t num_vertices, qfm_type_t index_type,
 						 vulkan_ctx_t *ctx)
 {
 	auto packet = QFV_PacketAcquire (ctx->staging, "mesh.vdata");
 
-	size_t vsizes[3] = { VectorExpand (strides) };
+	auto meshes = meshes_ptr (mesh_ctx->in);
+	size_t vsizes[4] = { VectorExpand (strides) };
 	VectorScale (vsizes, num_vertices, vsizes);
+	size_t psize = vsizes[0] + vsizes[2];
+	for (uint32_t i = 0; i < mesh_ctx->in->meshes.count; i++) {
+		psize += meshes[i].triangle_count * 3 * mesh_type_size (index_type);
+	}
 	byte *vdata[3] = {};
-	vdata[0] = QFV_PacketExtend (packet, vsizes[0] + vsizes[2] + index_bytes);
+	vdata[0] = QFV_PacketExtend (packet, psize);
 	vdata[2] = vdata[0] + vsizes[0];
 	byte *idata = vdata[2] + vsizes[2];
 
-	auto meshes = meshes_ptr (mesh_ctx->in);
-	auto mesh_data = (byte *) meshes + meshes[0].vertices.offset;
-	auto va = attribs_ptr (&meshes[0]);
-	for (uint32_t i = 0; i < num_vertices; i++) {
-		for (uint32_t j = 0; j < meshes[0].attributes.count; j++) {
-			uint32_t size = mesh_attr_size (va[j]);
-			memcpy (vdata[attribs[j].set] + attribs[j].offset,
-					mesh_data + va[j].offset + i * va[j].stride, size);
+	for (uint32_t i = 0; i < mesh_ctx->in->meshes.count; i++) {
+		auto mesh_data = (byte *) &meshes[i] + meshes[i].vertices.offset;
+		auto va = attribs_ptr (&meshes[i]);
+		for (uint32_t j = 0; j < meshes[i].vertices.count; j++) {
+			for (uint32_t k = 0; k < meshes[i].attributes.count; k++) {
+				uint32_t size = mesh_attr_size (va[k]);
+				memcpy (vdata[attribs[k].set] + attribs[k].offset,
+						mesh_data + va[k].offset + j * va[k].stride, size);
+			}
+			VectorAdd (vdata, strides, vdata);
 		}
-		VectorAdd (vdata, strides, vdata);
+		auto indices = indices_ptr (&meshes[i]);
+		uint32_t num_indices = meshes[i].triangle_count * 3;
+		auto index_bytes = pack_indices (idata + vsizes[3], indices,
+										 num_indices, index_type);
+		vsizes[3] += index_bytes;
 	}
-	memcpy (idata, indices, index_bytes);
 	VectorSubtract (vdata, vsizes, vdata);
 
 	qfv_scatter_t scatter[] = {
@@ -139,7 +154,7 @@ vulkan_mesh_load_arrays (mod_mesh_ctx_t *mesh_ctx, qfv_mesh_t *rmesh,
 		{
 			.srcOffset = QFV_PacketOffset (packet, idata),
 			.dstOffset = 0,
-			.length = index_bytes,
+			.length = vsizes[3],
 		},
 	};
 	auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
@@ -319,19 +334,22 @@ Vulkan_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx, vulkan_ctx_t *ctx)
 
 	auto index_type = mesh_index_type (num_vertices);
 	auto qf_meshes = mesh_ctx->qf_meshes;
+	uint32_t vert_offset = 0;
+	uint32_t ind_offset = 0;
 	for (uint32_t i = 0; i < qf_model->meshes.count; i++) {
 		qf_meshes[i].index_type = index_type,
-		qf_meshes[i].indices = 0,
+		qf_meshes[i].indices = ind_offset,
 		qf_meshes[i].attributes = (qfm_loc_t) {
 			.offset = (byte *) attribs - (byte *) &qf_meshes[i],
 			.count = in_attributes->count,
 		};
+		qf_meshes[i].vertices.offset = vert_offset;
+		ind_offset += qf_meshes[i].triangle_count * 3;
+		vert_offset += qf_meshes[i].vertices.count;
 	}
 
-	auto indices = (uint32_t *) ((byte *) &in_meshes[0] + in_meshes[0].indices);
-	auto index_bytes = pack_indices (indices, num_indices, index_type);
 	vulkan_mesh_load_arrays (mesh_ctx, rmesh, attribs, offsets,
-							 num_vertices, indices, index_bytes, ctx);
+							 num_vertices, index_type, ctx);
 	vulkan_mesh_init_bones (mesh_ctx, bones, ctx);
 
 	for (int i = 0; i < 2; i++) {

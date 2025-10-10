@@ -635,8 +635,8 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	VkDeviceSize offsets[] = { 0, 0, 0 };
 	//FIXME per mesh, also allow mixing with bones
 	if (meshes[0].morph.numclips) {
-		offsets[0] = anim->pose1;
-		offsets[1] = anim->pose2;
+		offsets[0] = anim ? anim->pose1 : 0;
+		offsets[1] = anim ? anim->pose2 : 0;
 	}
 	VkBuffer    buffers[] = {
 		rmesh->geom_buffer,
@@ -689,7 +689,8 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 		}
 		uint32_t num_tris = meshes[i].triangle_count;
 		uint32_t indices = meshes[i].indices;
-		dfunc->vkCmdDrawIndexed (cmd, 3 * num_tris, 1, indices, 0, 0);
+		int32_t voffset = meshes[i].vertices.offset;
+		dfunc->vkCmdDrawIndexed (cmd, 3 * num_tris, 1, indices, voffset, 0);
 	}
 	QFV_CmdEndLabel (device, cmd);
 }

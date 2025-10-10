@@ -292,7 +292,7 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		.components = 2,
 	};
 
-	uint32_t indices_size = pack_indices (indices, numtris * 3,
+	uint32_t indices_size = pack_indices (indices, indices, numtris * 3,
 										  mesh->index_type);
 
 	qfeglBindBuffer (GL_ARRAY_BUFFER, rmesh->vertices);

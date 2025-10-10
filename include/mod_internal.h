@@ -81,7 +81,7 @@ qfm_attrdesc_t iqm_mesh_attribute (iqmvertexarray a, uint32_t offset) __attribut
 uint32_t mesh_type_size (qfm_type_t type) __attribute__((const));
 uint32_t mesh_attr_size (qfm_attrdesc_t attr) __attribute__((const));
 qfm_type_t mesh_index_type (uint32_t num_verts) __attribute__((const));
-uint32_t pack_indices (uint32_t *indices, uint32_t num_inds,
+uint32_t pack_indices (void *out, const uint32_t *in, uint32_t num_inds,
 					   qfm_type_t index_type);
 
 

@@ -531,7 +531,7 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 
 	uint32_t index_count = iqm->num_triangles * 3;
 	auto indices = (uint32_t *) ((byte *) iqm + iqm->ofs_triangles);
-	auto index_bytes = pack_indices (indices, index_count, index_type);
+	auto index_bytes = pack_indices (indices, indices, index_count, index_type);
 	vulkan_iqm_load_arrays (iqm_ctx, rmesh, attribs, offsets,
 							indices, index_bytes, ctx);
 	vulkan_iqm_init_bones (iqm_ctx, bones, ctx);

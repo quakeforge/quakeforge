@@ -200,7 +200,7 @@ glsl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 	auto vertices = (byte *) iqm + min_offs;
 	uint32_t vertex_size = max_offs - min_offs;
 	auto indices = (uint32_t *) ((byte *) iqm + iqm->ofs_triangles);
-	auto index_bytes = pack_indices (indices, index_count, index_type);
+	auto index_bytes = pack_indices (indices, indices, index_count, index_type);
 	glsl_iqm_load_arrays (model, vertices, vertex_size, indices, index_bytes);
 
 	glsl_iqm_load_textures (model);

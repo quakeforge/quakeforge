@@ -374,7 +374,9 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 			.name = m->name + text_base,
 			.triangle_count = m->num_triangles,
 			.vertices = (qfm_loc_t) {
-				.offset = iqm.meshes[i].first_vertex,
+				// iqm models have unified indices: all meshes use the same
+				// index array and vertex arrays
+				.offset = 0,
 				.count = iqm.meshes[i].num_vertexes,
 			},
 			.material = m->material + text_base,

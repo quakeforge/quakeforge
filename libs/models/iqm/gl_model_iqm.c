@@ -133,7 +133,8 @@ gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 
 	memcpy (blend, blend_palette, sizeof (qfm_blend_t) * palette_size);
 	auto iqm_indices = (uint32_t *) ((byte *) iqm + iqm->ofs_triangles);
-	auto index_bytes = pack_indices (iqm_indices, index_count, index_type);
+	auto index_bytes = pack_indices (iqm_indices, iqm_indices, index_count,
+									 index_type);
 	memcpy (indices, iqm_indices, index_bytes);
 
 	attribs[0] = (qfm_attrdesc_t) {

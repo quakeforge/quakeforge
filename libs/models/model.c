@@ -104,20 +104,21 @@ mesh_index_type (uint32_t num_verts)
 }
 
 uint32_t
-pack_indices (uint32_t *indices, uint32_t num_inds, qfm_type_t index_type)
+pack_indices (void *out, const uint32_t *in, uint32_t num_inds,
+			  qfm_type_t index_type)
 {
 	if (index_type == qfm_u32) {
 		return num_inds * sizeof (uint32_t);
 	} else if (index_type == qfm_u16) {
-		auto inds = (uint16_t *) indices;
+		auto inds = (uint16_t *) out;
 		for (uint32_t i = 0; i < num_inds; i++) {
-			inds[i] = indices[i];
+			inds[i] = in[i];
 		}
 		return num_inds * sizeof (*inds);
 	} else if (index_type == qfm_u8) {
-		auto inds = (uint8_t *) indices;
+		auto inds = (uint8_t *) out;
 		for (uint32_t i = 0; i < num_inds; i++) {
-			inds[i] = indices[i];
+			inds[i] = in[i];
 		}
 		return num_inds * sizeof (*inds);
 	}
