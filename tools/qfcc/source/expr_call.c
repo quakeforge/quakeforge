@@ -423,6 +423,16 @@ build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
 				}
 				if (param_qual == pq_inout) {
 					inout->inout.in = cast_expr (arg_types[i], e);
+					if (inout->inout.in != e &&
+						inout->inout.in->type != ex_alias) {
+						// inout is *NOT* a reference, so it will implicity
+						// alter values when passed to a function even if the
+						// function does nothing. Apprarently GLSL does allow
+						// this, but it's considered to be bad (and I do not
+						// disagree). Aliases are bit-casts and they're
+						// considered to be ok because there's no loss of data.
+						error (e, "shape changing cast for inout param");
+					}
 				}
 				inout->inout.out = e;
 				e = inout;
