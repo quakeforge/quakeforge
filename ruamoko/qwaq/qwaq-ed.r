@@ -1127,6 +1127,10 @@ main (int argc, string *argv)
 
 	#define SUBDIV 1
 	auto quadsphere = create_quadsphere();
+	entity_t QuadSphere_ent = Scene_CreateEntity ([main_window scene]);
+	add_target (QuadSphere_ent);
+	Entity_SetModel (QuadSphere_ent, Model_LoadMesh ("quadsphere", quadsphere));
+	Transform_SetLocalPosition(Entity_GetTransform (QuadSphere_ent), {-20, 20, 00, 1});
 	qf_mesh_t qsmesh;
 	vec4 stuff = {};
 	{
