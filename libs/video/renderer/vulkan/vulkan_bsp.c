@@ -322,7 +322,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			if (tx != textures[i]) {
 				Sys_Error ("infinite cycle");
 			}
-		};
+		}
 		map_index += bctx->texdata.anim_main[i].count;
 	}
 	for (int i = 0; i < num_tex; i++) {
