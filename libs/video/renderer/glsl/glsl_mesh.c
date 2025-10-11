@@ -44,6 +44,7 @@
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "QF/scene/entity.h"
 
@@ -212,6 +213,30 @@ set_arrays (const qfm_attrdesc_t *attrs, uint32_t num_attr, int attr_offs,
 	}
 }
 
+static GLuint
+glsl_get_skin (renderer_t *renderer, qf_mesh_t *mesh)
+{
+	GLuint skin_tex = 0;
+	if (renderer->skin) {
+		skin_t     *skin = Skin_Get (renderer->skin);
+		if (skin) {
+			skin_tex = skin->id;
+		}
+	}
+	if (!skin_tex) {
+		skin_tex = renderer->skindesc;
+		if (!skin_tex) {
+			if (!mesh->skin.numclips) {
+				return 0;
+			}
+			auto skinframe = (keyframe_t *) ((byte *) mesh
+											 + mesh->skin.keyframes);
+			skin_tex = skinframe->data;
+		}
+	}
+	return skin_tex;
+}
+
 void
 glsl_R_DrawMesh (entity_t ent)
 {
@@ -269,6 +294,9 @@ glsl_R_DrawMesh (entity_t ent)
 			continue;
 		}
 		auto mesh_name = text + meshes[i].name;
+		if (!meshes[i].name) {
+			mesh_name = va ("meshes[%d]", i);
+		}
 		qfeglPushDebugGroup (GL_DEBUG_SOURCE_APPLICATION, 0,
 							 strlen (mesh_name), mesh_name);
 		mat4f_t     mvp_mat = {
@@ -287,21 +315,8 @@ glsl_R_DrawMesh (entity_t ent)
 		if (colormap) {
 			cmap_tex = glsl_Skin_Colormap (colormap);
 		}
-		GLuint skin_tex = 0;
-		if (renderer->skin) {
-			skin_t     *skin = Skin_Get (renderer->skin);
-			if (skin) {
-				skin_tex = skin->id;
-			}
-		}
-		if (!skin_tex) {
-			skin_tex = renderer->skindesc;
-			if (!skin_tex) {
-				auto skinframe = (keyframe_t *) ((byte *) &meshes[i]
-												 + meshes[i].skin.keyframes);
-				skin_tex = skinframe->data;
-			}
-		}
+
+		GLuint skin_tex = glsl_get_skin (renderer, &meshes[i]);;
 
 		skin_size[0] = rmesh->skinwidth;
 		skin_size[1] = rmesh->skinheight;
