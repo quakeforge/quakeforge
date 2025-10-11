@@ -311,8 +311,6 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 		mod_funcs->Mod_ProcessTexture (mod, 0);
 	}
 
-	int             max[2] = {0, 0};
-	texture_t	   *anims[2][10] = {};
 	// sequence the animations
 	for (uint32_t i = 0; i < m->nummiptex; i++) {
 		tx = brush->textures[i];
@@ -320,6 +318,9 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 			continue;
 		if (tx->anim_next)
 			continue;					// already sequenced
+
+		int             max[2] = {0, 0};
+		texture_t	   *anims[2][10] = {};
 
 		// find the number of frames in the animation
 		auto texanim = get_texanim (tx);
@@ -330,7 +331,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 			tx2 = brush->textures[j];
 			if (!tx2 || tx2->name[0] != '+')
 				continue;
-			if (strcmp (tx2->name + 2, tx->name + 2))
+			if (strncmp (tx2->name + 2, tx->name + 2, sizeof (tx->name) - 2))
 				continue;
 
 			texanim = get_texanim (tx2);
