@@ -200,8 +200,11 @@ transfer_texture (texture_t *tx, VkImage image, qfv_packet_t *packet,
 	} else if (tx->name[0] == '{') {
 		transfer_mip_level (dst, tx + 1, tx, 0, palette, (vprocess_t) memcpy);
 		copy_mips (packet, tx, dst, image, 0, 1, dfunc);
-		QFV_GenerateMipMaps (device, packet->cmd, image, MIPLEVELS,
-							 tx->width, tx->height, 1);
+		//FIXME it would be nice to generate all the mips, but the mix of
+		//copy_mips and QFV_GenerateMipMaps for the remainder get the
+		//image transitions messed up
+		//QFV_GenerateMipMaps (device, packet->cmd, image, MIPLEVELS,
+		//					 tx->width, tx->height, 1);
 	} else {
 		transfer_mips (dst, tx + 1, tx, palette, Mod_ClearFullbright);
 		copy_mips (packet, tx, dst, image, 0, MIPLEVELS, dfunc);
@@ -310,6 +313,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	// transparent textures want transparent black
 	memset (trans_palette + 255*4, 0, 4);
 
+	//FIXME ad_tears has a LOT of texture data and the buffer runs out
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "brush.tex");
 	for (unsigned i = 0; i < brush->numtextures; i++) {
 		auto tx = brush->textures[i];
@@ -327,6 +331,8 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 		int tex_ind = tex_map[i];
 		auto image = images[tex_ind].image.image;
 		transfer_texture (tx, image, packet, palette, ctx->device);
+		QFV_PacketSubmit (packet);
+		packet = QFV_PacketAcquire (ctx->staging, "brush.tex");
 	}
 	QFV_PacketSubmit (packet);
 	qfvPopDebug (ctx);
