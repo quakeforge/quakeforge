@@ -161,26 +161,6 @@ glsl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 		.skinheight = 1,
 	};
 
-	uint32_t index_count = iqm->num_triangles * 3;
-	auto index_type = mesh_index_type (iqm->num_vertexes);
-	uint32_t index_size = mesh_type_size (index_type);
-	for (uint32_t i = 0; i < model->meshes.count; i++) {
-		meshes[i].triangle_count = iqm_ctx->meshes[i].num_triangles;
-		meshes[i].index_type = index_type;
-		meshes[i].indices = iqm_ctx->meshes[i].first_triangle * index_size * 3;
-		meshes[i].attributes = (qfm_loc_t) {
-			.offset = (byte *) attribs - (byte *) &meshes[i],
-			.count = 4,
-		};
-		meshes[i].skin = (anim_t) {
-			.numclips = 1,
-			.clips = (byte *) skinclips - (byte *) &meshes[i],
-			.keyframes = (byte *) skinframes - (byte *) &meshes[i],
-		};
-		skinclips[i] = (clipdesc_t) {
-			.numframes = 1,
-		};
-	}
 	uint32_t max_offs =  0u;
 	uint32_t min_offs = ~0u;
 	uint32_t num_verts = iqm->num_vertexes;
@@ -197,8 +177,31 @@ glsl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 	for (uint32_t i = 0; i < iqm->num_vertexarrays; i++) {
 		attribs[i].offset -= min_offs;
 	}
-	auto vertices = (byte *) iqm + min_offs;
 	uint32_t vertex_size = max_offs - min_offs;
+
+	uint32_t index_count = iqm->num_triangles * 3;
+	auto index_type = mesh_index_type (iqm->num_vertexes);
+	uint32_t index_size = mesh_type_size (index_type);
+	for (uint32_t i = 0; i < model->meshes.count; i++) {
+		meshes[i].triangle_count = iqm_ctx->meshes[i].num_triangles;
+		meshes[i].index_type = index_type;
+		meshes[i].indices = iqm_ctx->meshes[i].first_triangle * index_size * 3;
+		meshes[i].attributes = (qfm_loc_t) {
+			.offset = (byte *) attribs - (byte *) &meshes[i],
+			.count = 4,
+		};
+		meshes[i].vertex_stride = vertex_size;
+		meshes[i].skin = (anim_t) {
+			.numclips = 1,
+			.clips = (byte *) skinclips - (byte *) &meshes[i],
+			.keyframes = (byte *) skinframes - (byte *) &meshes[i],
+		};
+		skinclips[i] = (clipdesc_t) {
+			.numframes = 1,
+		};
+	}
+
+	auto vertices = (byte *) iqm + min_offs;
 	auto indices = (uint32_t *) ((byte *) iqm + iqm->ofs_triangles);
 	auto index_bytes = pack_indices (indices, indices, index_count, index_type);
 	glsl_iqm_load_arrays (model, vertices, vertex_size, indices, index_bytes);

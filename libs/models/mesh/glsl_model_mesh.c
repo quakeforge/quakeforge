@@ -170,15 +170,7 @@ glsl_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx)
 		auto a = attribs_ptr (&in_meshes[0]);
 		attribs[i] = a[i];
 		attribs[i].stride = mesh_attr_size (a[i]);
-		if (attribs[i].attr == qfm_position
-			|| attribs[i].attr == qfm_joints
-			|| attribs[i].attr == qfm_weights) {
-			// geometry set
-			attribs[i].set = 0;
-		} else {
-			// render set
-			attribs[i].set = 2;
-		}
+		attribs[i].set = 0;
 		attribs[i].offset = offsets[attribs[i].set];
 		offsets[attribs[i].set] += attribs[i].stride;
 	}
@@ -201,6 +193,7 @@ glsl_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx)
 			.offset = (byte *) attribs - (byte *) &qf_meshes[i],
 			.count = in_attributes->count,
 		};
+		qf_meshes[i].vertex_stride = attribs[0].stride;
 		qf_meshes[i].vertices.offset = vert_offset;
 		ind_offset += qf_meshes[i].triangle_count * 3;
 		vert_offset += qf_meshes[i].vertices.count;

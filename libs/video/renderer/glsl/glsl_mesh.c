@@ -354,8 +354,10 @@ glsl_R_DrawMesh (entity_t ent)
 		qfeglActiveTexture (GL_TEXTURE0 + 0);
 		qfeglBindTexture (GL_TEXTURE_2D, skin_tex);
 
-		void *pose1 = nullptr;
-		void *pose2 = nullptr;
+		intptr_t voffset = meshes[i].vertices.offset;
+		voffset *= meshes[i].vertex_stride;
+		void *pose1 = (void *) voffset;
+		void *pose2 = (void *) voffset;
 
 		if (meshes[i].morph.numclips) {
 			pose1 = (void *) (intptr_t) animation->pose1;
