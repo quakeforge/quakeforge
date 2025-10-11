@@ -265,6 +265,9 @@ glsl_R_DrawMesh (entity_t ent)
 	}
 	// ent model scaling and offset
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
+		if (renderer->submesh_mask & (1 << i)) {
+			continue;
+		}
 		auto mesh_name = text + meshes[i].name;
 		qfeglPushDebugGroup (GL_DEBUG_SOURCE_APPLICATION, 0,
 							 strlen (mesh_name), mesh_name);
