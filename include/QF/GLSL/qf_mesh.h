@@ -45,6 +45,10 @@ typedef struct mesh_vrt_s {
 	GLushort    vertex[3];
 } mesh_vrt_t;
 
+typedef struct mod_mesh_ctx_s mod_mesh_ctx_t;
+
+void glsl_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx);
+
 void glsl_R_InitMesh (void);
 struct entity_s;
 void glsl_R_DrawMesh (struct entity_s ent);

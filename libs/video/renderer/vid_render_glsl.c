@@ -40,6 +40,7 @@
 #include "QF/GLSL/qf_draw.h"
 #include "QF/GLSL/qf_fisheye.h"
 #include "QF/GLSL/qf_main.h"
+#include "QF/GLSL/qf_mesh.h"
 #include "QF/GLSL/qf_particles.h"
 #include "QF/GLSL/qf_vid.h"
 #include "QF/GLSL/qf_warp.h"
@@ -70,6 +71,7 @@ static vid_model_funcs_t model_funcs = {
 	//.Mod_SubdivideSurface = 0,
 	.Mod_ProcessTexture = glsl_Mod_ProcessTexture,
 
+	.Mod_LoadMesh        = Mod_LoadMeshModel,
 	.Mod_LoadIQM         = Mod_LoadIQM,
 	.Mod_LoadAliasModel  = Mod_LoadAliasModel,
 	.Mod_LoadSpriteModel = Mod_LoadSpriteModel,
@@ -79,6 +81,7 @@ static vid_model_funcs_t model_funcs = {
 	.Mod_FinalizeAliasModel         = glsl_Mod_FinalizeAliasModel,
 	.Mod_LoadExternalSkins          = glsl_Mod_LoadExternalSkins,
 	.Mod_IQMFinish                  = glsl_Mod_IQMFinish,
+	.Mod_MeshFinish                 = glsl_Mod_MeshFinish,
 	.alias_cache                    = 0,
 	.Mod_SpriteLoadFrames           = glsl_Mod_SpriteLoadFrames,
 

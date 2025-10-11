@@ -1,10 +1,13 @@
 noinst_LTLIBRARIES += @mesh_libs@
 EXTRA_LTLIBRARIES += \
+	libs/models/mesh/libmesh_glsl.la \
 	libs/models/mesh/libmesh_vulkan.la
 
 mod_mesh_src= libs/models/mesh/model_mesh.c
+mesh_glsl_src= libs/models/mesh/glsl_model_mesh.c
 mesh_vulkan_src= libs/models/mesh/vulkan_model_mesh.c
 
+libs_models_mesh_libmesh_glsl_la_SOURCES= $(mesh_glsl_src) $(mod_mesh_src)
 libs_models_mesh_libmesh_vulkan_la_SOURCES= $(mesh_vulkan_src) $(mod_mesh_src)
 
 EXTRA_DIST += \

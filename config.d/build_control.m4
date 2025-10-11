@@ -102,6 +102,7 @@ if test "x$HAVE_X" = xyes; then
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
 		QF_NEED(iqm, [sw gl glsl])
+		QF_NEED(mesh, [glsl])
 		QF_NEED(sprite, [sw gl glsl])
 		if test "x$ASM_ARCH" = "xyes"; then
 			QF_NEED(swrend, [asm])

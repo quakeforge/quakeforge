@@ -56,6 +56,7 @@ glsl_libs= \
 	libs/models/alias/libalias_glsl.la \
 	libs/models/brush/libbrush_glsl.la \
 	libs/models/iqm/libiqm_glsl.la \
+	libs/models/mesh/libmesh_glsl.la \
 	libs/models/sprite/libsprite_glsl.la \
 	libs/image/libQFimage.la
 libs_models_libmodels_glsl_la_LDFLAGS=
