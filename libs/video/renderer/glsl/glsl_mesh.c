@@ -147,6 +147,7 @@ static struct {
 };
 
 static mat4f_t mesh_vp;
+static uint32_t attr_state;
 
 void
 glsl_R_InitMesh (void)
@@ -184,11 +185,12 @@ glsl_R_InitMesh (void)
 	GLSL_FreeShader (frag_shader);
 }
 
-static void
+static uint32_t
 set_arrays (const qfm_attrdesc_t *attrs, uint32_t num_attr, int attr_offs,
 		    mesh_vrt_t *pose)
 {
 	byte       *pose_offs = (byte *) pose;
+	uint32_t    attr_mask = 0;
 
 	if (developer & SYS_glsl) {
 		GLint size;
@@ -201,16 +203,41 @@ set_arrays (const qfm_attrdesc_t *attrs, uint32_t num_attr, int attr_offs,
 	}
 
 	for (uint32_t i = 0; i < num_attr; i++) {
-		if (!mesh_attr_map[attrs[i].attr]) {
+		if (attrs[i].attr >= qfm_attr_count || !mesh_attr_map[attrs[i].attr]) {
 			// unsupported attribute
 			continue;
 		}
+		attr_mask |= 1 << attrs[i].attr;
 		auto param = mesh_attr_map[attrs[i].attr][attr_offs];
 		auto type = mesh_type_map[attrs[i].type];
 		qfeglVertexAttribPointer (param.location, attrs[i].components,
 								  type.type, type.norm, attrs[i].stride,
 								  pose_offs + attrs[i].offset);
 	}
+	return attr_mask;
+}
+
+static void
+enable_attributes (uint32_t attr_mask)
+{
+	uint32_t diff = attr_mask ^ attr_state;
+	if (!diff) {
+		return;
+	}
+
+	for (uint32_t i = 0; i < qfm_attr_count; i++) {
+		if (diff & (1 << i)) {
+			auto param = mesh_attr_map[i];
+			if (attr_mask & (1 << i)) {
+				qfeglEnableVertexAttribArray (param[0].location);
+				qfeglEnableVertexAttribArray (param[1].location);
+			} else {
+				qfeglDisableVertexAttribArray (param[0].location);
+				qfeglDisableVertexAttribArray (param[1].location);
+			}
+		}
+	}
+	attr_state = attr_mask;
 }
 
 static GLuint
@@ -337,8 +364,11 @@ glsl_R_DrawMesh (entity_t ent)
 
 		auto attr = (qfm_attrdesc_t *) ((byte *) &meshes[i]
 										+ meshes[i].attributes.offset);
-		set_arrays (attr, meshes[i].attributes.count, 0, pose1);
-		set_arrays (attr, meshes[i].attributes.count, 1, pose2);
+		uint32_t attr_mask = 0;
+		attr_mask |= set_arrays (attr, meshes[i].attributes.count, 0, pose1);
+		attr_mask |= set_arrays (attr, meshes[i].attributes.count, 1, pose2);
+		enable_attributes (attr_mask);
+
 		uint32_t index_count = 3 * meshes[i].triangle_count;
 		uint32_t first_index = meshes[i].indices;
 		qfeglDrawElements (GL_TRIANGLES, index_count, index_type,
@@ -359,14 +389,15 @@ glsl_R_MeshBegin (void)
 	mmulf (mesh_vp, glsl_projection, glsl_view);
 
 	qfeglUseProgram (meshprog.program);
-	qfeglEnableVertexAttribArray (meshprog.vertexa.location);
-	qfeglEnableVertexAttribArray (meshprog.vertexb.location);
-	qfeglEnableVertexAttribArray (meshprog.normala.location);
-	qfeglEnableVertexAttribArray (meshprog.normalb.location);
-	qfeglEnableVertexAttribArray (meshprog.sta.location);
-	qfeglEnableVertexAttribArray (meshprog.stb.location);
+	qfeglDisableVertexAttribArray (meshprog.vertexa.location);
+	qfeglDisableVertexAttribArray (meshprog.vertexb.location);
+	qfeglDisableVertexAttribArray (meshprog.normala.location);
+	qfeglDisableVertexAttribArray (meshprog.normalb.location);
+	qfeglDisableVertexAttribArray (meshprog.sta.location);
+	qfeglDisableVertexAttribArray (meshprog.stb.location);
 	qfeglDisableVertexAttribArray (meshprog.colora.location);
 	qfeglDisableVertexAttribArray (meshprog.colorb.location);
+	attr_state = 0;
 
 	Fog_GetColor (fog);
 	fog[3] = Fog_GetDensity () / 64.0;
