@@ -1,6 +1,16 @@
 #include "gizmo.h"
 #include "pga3d.h"
 
+typedef struct dleaf_s {
+	int         contents;
+	int         visofs;
+	vector      mins;
+	vector      maxs;
+	uint        firstmarksurface;
+	uint        nummarksurfaces;
+	uint        _ambient_level;		//FIXME add byte
+} dleaf_t;
+
 typedef struct dnode_s {
 	uint        planenum;
 	int         children[2];
@@ -16,6 +26,24 @@ typedef struct dplane_s {
 	int     type;
 } dplane_t;
 
+static dleaf_t leafs[] = {
+	[0] = {
+		.contents = -2,
+		.visofs = 0,
+		.mins = { 0, 0, 0 },
+		.maxs = { 0, 0, 0 },
+		.firstmarksurface = 0,
+		.nummarksurfaces = 0,
+	},
+	[1] = {
+		.contents = -1,
+		.visofs = 7798458,
+		.mins = { -4032, -4032, -3968 },
+		.maxs = { -3056, -3360, -3530.68872 },
+		.firstmarksurface = 239662,
+		.nummarksurfaces = 0,
+	},
+};
 static dnode_t nodes[] = {
 	[0] = {
 		.planenum = 0,
@@ -247,35 +275,76 @@ void
 leafnode ()
 {
 	@algebra (PGA) {
-		point_t point = e123;
-		line_t  dir = nil;
-		int inside = -2;
-		for (int i = 0; i < countof (planes); i++) {
-			auto plane = convert_plane (&planes[i]);
-			float dist = plane ∨ point;
-			if (inside == nodes[i].children[1]) {
-				dist = -dist;
-			}
-			point_t P = (point • plane) * ~plane;
-			if (dist < 0) {
-				point = P;
-			} else {
-				line_t d = point ∨ P;
-				if (d • ~dir > 0) {
-					point = (point + P) / 2;
+		auto C = convert_point ((leafs[1].mins + leafs[1].maxs) / 2);
+		motor_t T =  ~(-1280 * e032 + 1280 * e013 + 1280 * e021 + e123) * C;
+		T = sqrt (T);
+
+		point_t points[3][2] = {};
+		for (int j = 0; j < 3; j++) {
+			static point_t dirs[] = { e032, e013, e021 };
+			auto l = C ∨ dirs[j];
+			for (int i = 0; i < countof (planes); i++) {
+				auto plane = convert_plane (&planes[i]);
+				auto P = l ∧ plane;
+				float w1 = ⋆(e0 * P);
+				if (w1 * w1 > 0.0001) {
+					auto d1 = C ∨ P;
+					float x1 = d1 • l;
+					int ind = (w1 * x1 < 0) & 1;
+					float w2 = ⋆(e0 * points[j][ind]);
+					auto d2 = C ∨ points[j][ind];
+					float x2 = d2 • l;
+
+					if (!w2
+						|| (!ind && (w2 * x1 < w1 * x2))
+						|| (ind && (w2 * x1 > w1 * x2))) {
+						points[j][ind] = P;
+					}
 				}
 			}
-			dir = e123 ∨ point;
-			printf ("%2d %2d %2d %q %q %g\n", inside,
-				    nodes[i].children[0], nodes[i].children[1],
-					plane, point, dist);
-			Gizmo_AddSphere ((vec4)point / 128, 0.1, { 0, 1, 0, 0});
-			inside = i;
 		}
-		printf ("%q\n", point);
+		point_t origin = nil;
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 2; j++) {
+				points[i][j] /= ⋆(e0 * points[i][j]);
+			}
+			auto P = (points[i][0] + points[i][1]) / 2;
+			auto a = (T * P * ~T) / 128;
+			a += 127 * e123 / 128;
+			Gizmo_AddSphere ((vec4)a, 0.1, { 1, 0, 0, 0});
+			origin += P;
+		}
+		origin /= 3;
+		{
+			auto a = (T * origin * ~T) / 128;
+			a += 127 * e123 / 128;
+			Gizmo_AddSphere ((vec4)a, 0.025, { 0, 0, 1, 0.1});
+		}
+		for (int i = 0; i < 3; i++) {
+			auto a = (T * points[i][0] * ~T) / 128;
+			auto b = (T * points[i][1] * ~T) / 128;
+			a += 127 * e123 / 128;
+			b += 127 * e123 / 128;
+			Gizmo_AddCapsule ((vec4)a, (vec4)b, 0.1, { 0.5, 1, i*0.25f, 0.2 });
+		}
 
-		motor_t T =  ~e123 * point;
-		T = sqrt (T);
+
+		motor_t To =  ~e123 * origin;
+		To = sqrt (To);
+		for (int i = 0; i < countof (planes); i++) {
+			auto plane = convert_plane (&planes[nodes[i].planenum]);
+			plane = To * plane * ~To;
+			auto P = ⋆plane;
+			P /= ⋆(e0 * P);
+			P *= 65536;
+			P -= 65535 * e123;
+			printf ("%d %q\n", i, P);
+			P = (~To * P * To).tvec;
+
+			auto a = (T * P * ~T) / 128;
+			a += 127 * e123 / 128;
+			Gizmo_AddSphere ((vec4)a, 0.05, { 1, 1, 1, 0.2});
+		}
 
 		gizmo_node_t brush[countof(nodes)];
 		const int top = countof(nodes) - 1;
@@ -292,8 +361,8 @@ leafnode ()
 			};
 			brush[top -i].plane.w /= 128;
 		}
-		auto mins = (point_t) vec4(nodes[4].mins, 1);
-		auto maxs = (point_t) vec4(nodes[4].maxs, 1);
+		auto mins = (point_t) vec4(leafs[1].mins, 1);
+		auto maxs = (point_t) vec4(leafs[1].maxs, 1);
 		mins = T * mins * ~T;
 		maxs = T * maxs * ~T;
 		Gizmo_AddBrush ({0,0,0,1}, (vec4) mins / 128, (vec4) maxs / 128,
