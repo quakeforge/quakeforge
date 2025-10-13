@@ -79,6 +79,7 @@ qwaq_ed_dat_src= \
 	ruamoko/qwaq/gui/listview.r \
 	ruamoko/qwaq/armature.r \
 	ruamoko/qwaq/camera.r \
+	ruamoko/qwaq/leafnode.r \
 	ruamoko/qwaq/mesh.r \
 	ruamoko/qwaq/pga3d.r \
 	ruamoko/qwaq/player.r \

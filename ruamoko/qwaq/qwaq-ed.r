@@ -994,6 +994,7 @@ arp_end (void)
 
 model_t create_ico();
 msgbuf_t create_quadsphere();
+void leafnode();
 
 typedef struct halfedge_s {
 	int         twin;
@@ -1215,6 +1216,7 @@ main (int argc, string *argv)
 								  vec4( i & 1, (i>>1)&1, (i>>2)&1, -1) * 0.5 + 0.5);
 			}
 		}
+		leafnode ();
 		//set_transform ([playercam state].M, camera);
 		//{
 		//	auto p = (vec4)[player pos];
