@@ -55,6 +55,7 @@ enum {
 	extract_entities,
 	extract_hull,
 	extract_model,
+	extract_leaf_node,
 	smart_leak,
 };
 
@@ -74,6 +75,7 @@ static struct option const long_options[] = {
 	{"extract-entities",	no_argument,		0, extract_entities},
 	{"extract-hull",		no_argument,		0, extract_hull},
 	{"extract-model",		no_argument,		0, extract_model},
+	{"extract-leaf-node",	required_argument,	0, extract_leaf_node},
 	{"smart-leak",			no_argument,		0, smart_leak},
 	{"usehulls",			no_argument,		0, 'u'},
 	{"hullnum",				required_argument,	0, 'H'},
@@ -200,6 +202,14 @@ DecodeArgs (int argc, char **argv)
 			case extract_model:
 				options.extract = true;
 				options.extract_model = true;
+				break;
+			case extract_leaf_node:
+				options.extract = true;
+				options.extract_leaf_node = true;
+				options.leaf_num = atoi (optarg);
+				if (options.leaf_num < 0) {
+					options.leaf_num = ~options.leaf_num;
+				}
 				break;
 			case smart_leak:
 				options.smart_leak = true;

@@ -49,9 +49,11 @@ typedef struct {
 	bool        extract_entities;
 	bool        extract_hull;
 	bool        extract_model;
+	bool        extract_leaf_node;
 	bool        smart_leak;
 	bool        usehulls;
 	bool        watervis;
+	int         leaf_num;
 	int         hullnum;
 	int         subdivide_size;
 	char       *mapfile;
