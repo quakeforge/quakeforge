@@ -489,7 +489,6 @@ setparent (int32_t node_id, int32_t parent_id,
 void
 extract_model (void)
 {
-//	hullfile = output_file (".c");
 	const char *hullfile;
 	QFile      *hf;
 
@@ -576,6 +575,76 @@ extract_model (void)
 		Qprintf (hf, "\t},\n");
 	}
 	Qprintf (hf, "};\n");
+}
+
+void
+extract_leaf_node (void)
+{
+	if ((uint32_t) options.leaf_num > bsp->numleafs) {
+		Sys_Error ("invalid leaf: %d (%zd)", options.leaf_num, bsp->numleafs);
+	}
+
+	const char *hullfile = output_file (".c");
+	QFile      *hf;
+	if (strcmp (hullfile, "-") == 0)
+		hf = Qdopen (1, "wt");
+	else
+		hf = Qopen (hullfile, "wt");
+
+	int32_t *leaf_parents = malloc (sizeof (int32_t[bsp->numleafs]));
+	int32_t *node_parents = malloc (sizeof (int32_t[bsp->numnodes]));
+	for (uint32_t i = 0; i < bsp->nummodels; i++) {
+		int32_t root = bsp->models[i].headnode[0];
+		setparent (root, -1, leaf_parents, node_parents);
+	}
+
+	int depth = 0;
+	int inside = ~options.leaf_num;
+	Qprintf (hf, "static dnode_t nodes[] = {\n");
+	for (int node_id = leaf_parents[options.leaf_num]; node_id >= 0;
+		 node_id = node_parents[node_id], depth++) {
+		auto node = bsp->nodes[node_id];
+		node.planenum = depth;
+		for (int i = 0; i < 2; i++) {
+			if (node.children[i] == inside) {
+				node.children[i] = inside < 0 ? -2 : depth - 1;
+			} else {
+				node.children[i] = -1;
+			}
+		}
+		Qprintf (hf, "\t[%d] = {\n", depth);
+		Qprintf (hf, "\t\t.planenum = %d,\n", node.planenum);
+		Qprintf (hf, "\t\t.children = { %d, %d },\n",
+				 node.children[0], node.children[1]);
+		Qprintf (hf, "\t\t.mins = { %.9g, %.9g, %.9g },\n",
+				 VectorExpand (node.mins));
+		Qprintf (hf, "\t\t.maxs = { %.9g, %.9g, %.9g },\n",
+				 VectorExpand (node.maxs));
+		Qprintf (hf, "\t\t.firstface = %d,\n", node.firstface);
+		Qprintf (hf, "\t\t.numfaces = %d,\n", node.numfaces);
+		Qprintf (hf, "\t},\n");
+		inside = node_id;
+	}
+	Qprintf (hf, "};\n");
+
+	depth = 0;
+	Qprintf (hf, "static dplane_t planes[] = {\n");
+	for (int node_id = leaf_parents[options.leaf_num]; node_id >= 0;
+		 node_id = node_parents[node_id], depth++) {
+		auto node = bsp->nodes[node_id];
+		auto plane = bsp->planes[node.planenum];
+		Qprintf (hf, "\t[%d] = {\n", depth);
+		Qprintf (hf, "\t\t.normal = { %.9g, %.9g, %.9g },\n",
+				 VectorExpand (plane.normal));
+		Qprintf (hf, "\t\t.dist = %.9g,\n", plane.dist);
+		Qprintf (hf, "\t\t.type = %d,\n", plane.type);
+		Qprintf (hf, "\t},\n");
+	}
+	Qprintf (hf, "};\n");
+
+	Qclose (hf);
+	free (node_parents);
+	free (leaf_parents);
 }
 
 //@}

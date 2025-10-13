@@ -51,6 +51,11 @@ void extract_hull (void);
 */
 void extract_model (void);
 
+/**	Write a branch from the map's bsp to a C file, leading to a specific
+	leaf node.
+*/
+void extract_leaf_node (void);
+
 ///@}
 
 #endif//qfbsp_readbsp_h
