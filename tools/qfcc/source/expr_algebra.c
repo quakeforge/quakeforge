@@ -3282,6 +3282,12 @@ algebra_cast_expr (const type_t *dstType, const expr_t *e)
 	}
 
 	auto algebra = algebra_get (dstType);
+	auto srcAlgebra = algebra_get (srcType);
+	if (!algebra && srcAlgebra) {
+		e = algebra_optimize (e);
+		srcType = get_type (e);
+		srcAlgebra = algebra_get (srcType);
+	}
 	if (type_width (dstType) == type_width (srcType)) {
 		if (type_same (base_type (dstType), base_type (srcType))) {
 			auto alias = new_alias_expr (dstType, e);
@@ -3299,7 +3305,6 @@ algebra_cast_expr (const type_t *dstType, const expr_t *e)
 		}
 	}
 
-	auto srcAlgebra = algebra_get (srcType);
 	if (!algebra || !srcAlgebra) {
 		return cast_error (e, srcType, dstType);
 	}
