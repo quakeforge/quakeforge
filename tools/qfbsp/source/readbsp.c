@@ -598,6 +598,26 @@ extract_leaf_node (void)
 		setparent (root, -1, leaf_parents, node_parents);
 	}
 
+	dleaf_t leafs[2] = {
+		bsp->leafs[0],
+		bsp->leafs[options.leaf_num],
+	};
+	Qprintf (hf, "static dleaf_t leafs[] = {\n");
+	for (int i = 0; i < 2; i++) {
+		Qprintf (hf, "\t[%d] = {\n", i);
+		Qprintf (hf, "\t\t.contents = %d,\n", leafs[i].contents);
+		Qprintf (hf, "\t\t.visofs = %d,\n", leafs[i].visofs);
+		Qprintf (hf, "\t\t.mins = { %.9g, %.9g, %.9g },\n",
+				 VectorExpand (leafs[i].mins));
+		Qprintf (hf, "\t\t.maxs = { %.9g, %.9g, %.9g },\n",
+				 VectorExpand (leafs[i].maxs));
+		Qprintf (hf, "\t\t.firstmarksurface = %d,\n",
+				 leafs[i].firstmarksurface);
+		Qprintf (hf, "\t\t.nummarksurfaces = %d,\n", leafs[i].nummarksurfaces);
+		Qprintf (hf, "\t},\n");
+	}
+	Qprintf (hf, "};\n");
+
 	int depth = 0;
 	int inside = ~options.leaf_num;
 	Qprintf (hf, "static dnode_t nodes[] = {\n");
