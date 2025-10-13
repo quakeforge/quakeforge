@@ -235,50 +235,47 @@ void printf (string fmt, ...);
 
 plane_t convert_plane (dplane_t *plane)
 {
-	return (plane_t) vec4(plane.normal, -plane.dist);;
+	return (plane_t) vec4(plane.normal, -plane.dist);
+}
+
+point_t convert_point (vector p)
+{
+	return (point_t) vec4(p, 1);
 }
 
 void
 leafnode ()
 {
 	@algebra (PGA) {
-		const int S = 0;
-		line_t lines[4] = {};
-		int num_lines = 0;
-		line_t line = nil;
-		for (int i = S + 1; i < countof (planes) && num_lines < 4; i++) {
+		point_t point = e123;
+		line_t  dir = nil;
+		int inside = -2;
+		for (int i = 0; i < countof (planes); i++) {
 			auto plane = convert_plane (&planes[i]);
-			for (int j = i - 1; j >= 0; j--) {
-				auto p = convert_plane (&planes[j]);
-				auto l = plane ∧ p;
-				if (l • ~l > 0.01) {
-					lines[num_lines++] = l;
-					break;
+			float dist = plane ∨ point;
+			if (inside == nodes[i].children[1]) {
+				dist = -dist;
+			}
+			point_t P = (point • plane) * ~plane;
+			if (dist < 0) {
+				point = P;
+			} else {
+				line_t d = point ∨ P;
+				if (d • ~dir > 0) {
+					point = (point + P) / 2;
 				}
 			}
+			dir = e123 ∨ point;
+			printf ("%2d %2d %2d %q %q %g\n", inside,
+				    nodes[i].children[0], nodes[i].children[1],
+					plane, point, dist);
+			Gizmo_AddSphere ((vec4)point / 128, 0.1, { 0, 1, 0, 0});
+			inside = i;
 		}
-		point_t points[8] = {};
-		for (int i = 0; i < num_lines; i++) {
-			auto l = lines[i];
-			int num_points = 0;
-			for (int j = 0; j < countof(planes) && num_points < 2; j++) {
-				auto p = convert_plane (&planes[j]);
-				auto P = l ∧ p;
-				if (P • ~P > 0.01) {
-					points[i * 2 + num_points++] = P / ⋆(e0 * P);
-				}
-			}
-		}
+		printf ("%q\n", point);
 
-		motor_t T =  ~e123 * points[0];
+		motor_t T =  ~e123 * point;
 		T = sqrt (T);
-		for (int i = 0; i < countof (points) / 2; i++) {
-			auto a = (T * points[i * 2 + 0] * ~T) / 128;
-			auto b = (T * points[i * 2 + 1] * ~T) / 128;
-			a += 127 * e123 / 128;
-			b += 127 * e123 / 128;
-			Gizmo_AddCapsule ((vec4)a, (vec4)b, 0.1, { 0.5, 1, i*0.25f, 0.2 });
-		}
 
 		gizmo_node_t brush[countof(nodes)];
 		const int top = countof(nodes) - 1;
