@@ -1205,7 +1205,12 @@ bool is_anticommute (const expr_t *expr) __attribute__((pure));
 bool is_commutative (const expr_t *expr) __attribute__((pure));
 bool is_associative (const expr_t *expr) __attribute__((pure));
 
+bool ext_compat (const ex_extend_t *a, const ex_extend_t *b)
+	__attribute__((const));
+bool is_ext (const expr_t *e) __attribute__((const));
+
 const expr_t *neg_expr (const expr_t *e);
+const expr_t *sum_expr (const expr_t *a, const expr_t *b);
 const expr_t *ext_expr (const expr_t *src, const type_t *type, int extend,
 						bool reverse);
 const expr_t *scale_expr (const expr_t *a, const expr_t *b);
@@ -1225,6 +1230,7 @@ const expr_t *gather_terms (const type_t *type,
 int count_factors (const expr_t *expr) __attribute__((pure));
 void scatter_factors (const expr_t *prod, const expr_t **factors);
 const expr_t *gather_factors (int op, const expr_t **factors, int count);
+void merge_extends (const expr_t **adds, const expr_t **subs);
 
 typedef struct rua_ctx_s rua_ctx_t;
 void decl_process (const expr_t *expr, rua_ctx_t *ctx);

@@ -177,14 +177,14 @@ ext_expr (const expr_t *src, const type_t *type, int extend, bool reverse)
 	return ext;
 }
 
-static bool __attribute__((const))
+bool __attribute__((const))
 ext_compat (const ex_extend_t *a, const ex_extend_t *b)
 {
 	return (a->extend == b->extend && a->reverse == b->reverse
 			&& a->type == b->type);
 }
 
-static bool __attribute__((const))
+bool __attribute__((const))
 is_ext (const expr_t *e)
 {
 	return e && e->type == ex_extend;
@@ -747,41 +747,7 @@ gather_terms (const type_t *type, const expr_t **adds, const expr_t **subs)
 	return sum;
 }
 
-static const expr_t *sum_expr (const expr_t *a, const expr_t *b);
-
-static void
-merge_extends (const expr_t **adds, const expr_t **subs)
-{
-	for (auto scan = adds; *scan; scan++) {
-		if (!is_ext (*scan)) {
-			continue;
-		}
-		auto extend = (*scan)->extend;
-		auto dst = scan + 1;
-		for (auto src = dst; *src; src++) {
-			if (is_ext (*src) && ext_compat (&extend, &(*src)->extend)) {
-				extend.src = sum_expr (extend.src, (*src)->extend.src);
-			} else {
-				*dst++ = *src;
-			}
-		}
-		*dst = 0;
-		dst = subs;
-		for (auto src = dst; *src; src++) {
-			if (is_ext (*src) && ext_compat (&extend, &(*src)->extend)) {
-				extend.src = sum_expr (extend.src,
-									   neg_expr ((*src)->extend.src));
-			} else {
-				*dst++ = *src;
-			}
-		}
-		*scan = ext_expr (extend.src, extend.type,
-						  extend.extend, extend.reverse);
-		*dst = 0;
-	}
-}
-
-static const expr_t *
+const expr_t *
 sum_expr (const expr_t *a, const expr_t *b)
 {
 	if (!a && !b) {
