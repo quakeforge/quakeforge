@@ -610,6 +610,45 @@ optimize_extends (const expr_t **expr_list)
 	}
 }
 
+void
+merge_extends (const expr_t **adds, const expr_t **subs)
+{
+	for (auto scan = adds; *scan; scan++) {
+		if (!is_ext (*scan)) {
+			continue;
+		}
+		auto extend = (*scan)->extend;
+		auto dst = scan + 1;
+		for (auto src = dst; *src; src++) {
+			if (is_ext (*src) && ext_compat (&extend, &(*src)->extend)) {
+				extend.src = sum_expr (extend.src, (*src)->extend.src);
+			} else {
+				*dst++ = *src;
+			}
+		}
+		*dst = 0;
+		dst = subs;
+		for (auto src = dst; *src; src++) {
+			if (is_ext (*src) && ext_compat (&extend, &(*src)->extend)) {
+				extend.src = sum_expr (extend.src,
+									   neg_expr ((*src)->extend.src));
+			} else {
+				*dst++ = *src;
+			}
+		}
+		if (extend.src) {
+			*scan = ext_expr (extend.src, extend.type,
+							  extend.extend, extend.reverse);
+		} else {
+			*scan = &skip;
+		}
+		*dst = 0;
+	}
+
+	clean_skips (adds);
+	clean_skips (subs);
+}
+
 static void
 optimize_cross_products (const expr_t **adds, const expr_t **subs)
 {

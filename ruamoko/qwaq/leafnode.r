@@ -339,7 +339,7 @@ leafnode ()
 			P *= 65536;
 			P -= 65535 * e123;
 			printf ("%d %q\n", i, P);
-			P = (~To * P * To).tvec;
+			P = ~To * P * To;
 
 			auto a = (T * P * ~T) / 128;
 			a += 127 * e123 / 128;
