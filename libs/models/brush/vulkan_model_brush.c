@@ -323,7 +323,6 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 
 		byte       *palette = vid.palette32;
 		if (tx->name[0] == '{') {
-			printf ("%s\n", tx->name);
 			palette = trans_palette;
 		} else if (strncmp (tx->name, "sky", 3) == 0) {
 			palette = sky_palette;

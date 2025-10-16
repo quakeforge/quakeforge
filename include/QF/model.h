@@ -188,7 +188,6 @@ typedef struct mnode_s {
 typedef struct mleaf_s {
 // common with node
 	int			contents;		// wil be a negative contents number
-	int			cluster;		// cluster to which this leaf bleongs XXX
 
 	// for bounding box culling
 	float		mins[3];
@@ -214,6 +213,22 @@ typedef struct hull_s {
 	struct nodeleaf_s *nodeleafs;
 	int         depth;				///< maximum depth of the tree
 } hull_t;
+
+typedef struct {
+	uint32_t    visoffs;
+	uint32_t    leafnum;
+} leafvis_t;
+
+typedef struct {
+	uint32_t    first_leaf;
+	uint32_t    num_leafs;
+} leafmap_t;
+
+typedef struct {
+	// index into array of surface ids
+	uint32_t    firstsurface;
+	uint32_t    numsurfaces;
+} cluster_t;
 
 typedef struct mod_brush_s {
 	unsigned    firstmodelsurface, nummodelsurfaces;
@@ -259,6 +274,16 @@ typedef struct mod_brush_s {
 	unsigned    numtextures;
 	texture_t **textures;
 	texture_t  *skytexture;
+
+	uint32_t    vis_clusters;
+	leafmap_t  *leaf_map;
+	uint32_t   *cluster_map;
+	uint32_t   *cluster_offs;// cluster offset into cluster_vis
+	mnode_t    *cluster_nodes;
+	int         cluster_depth;
+	byte       *cluster_vis;
+	uint32_t   *cluster_surfs;
+	cluster_t  *clusters;
 
 	byte       *visdata;
 	byte       *lightdata;
