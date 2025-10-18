@@ -123,6 +123,9 @@ wssched_explore_task (wssched_t *sched, worker_t *worker)
 			task = deque_steal (victim->queue);
 		}
 		if (task == DEQUE_ABORT) {
+			// Ensure DEQUE_ABORT never escapes the loop, and thus the task
+			// pointer is always a valid task, or no task.
+			task = nullptr;
 			continue;
 		}
 		if (task) {
