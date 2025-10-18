@@ -39,6 +39,9 @@
 #endif
 
 #include <math.h>
+#include <pthread.h>
+#include <stdatomic.h>
+#include <sys/time.h>
 
 #include "QF/checksum.h"
 #include "QF/cvar.h"
@@ -54,6 +57,7 @@
 
 #include "QF/plugin/vid_render.h"
 #include "QF/simd/vec4f.h"
+#include "QF/thread/schedule.h"
 
 #include "compat.h"
 #include "mod_internal.h"
@@ -395,9 +399,98 @@ leaf_compare (const void *_la, const void *_lb)
 	return la->visoffs - lb->visoffs;
 }
 
+typedef struct {
+	set_t      *base_pvs;
+	set_t      *worker_pvs;
+	uint32_t   *vis_rows;
+	uint32_t    num_clusters;
+
+	set_pool_t *set_pools;
+
+	const task_t     *tasks;
+	const bsp_t      *bsp;
+	const mod_brush_t *brush;
+
+	pthread_mutex_t fence_mut;
+	pthread_cond_t fence_cond;
+	bool        done;
+} cluster_data_t;
 
 static void
-Mod_LoadVisibility (model_t *mod, bsp_t *bsp)
+cluster_vis_wait (task_t *task, int worker_id)
+{
+	auto cluster_data = (cluster_data_t *) task->data;
+
+	pthread_mutex_lock (&cluster_data->fence_mut);
+	cluster_data->done = true;
+	pthread_cond_signal (&cluster_data->fence_cond);
+	pthread_mutex_unlock (&cluster_data->fence_mut);
+}
+
+static void
+cluster_vis_task (task_t *task, int worker_id)
+{
+	auto cluster_data = (cluster_data_t *) task->data;
+	auto base_pvs = cluster_data->base_pvs;
+	auto vis = &cluster_data->worker_pvs[worker_id];
+	auto set_pool = &cluster_data->set_pools[worker_id];
+	auto vis_rows = cluster_data->vis_rows;
+
+	auto bsp = cluster_data->bsp;
+	auto brush = cluster_data->brush;
+	auto cluster_map = brush->cluster_map;
+	auto leaf_map = brush->leaf_map;
+	int i = task - cluster_data->tasks;
+
+	auto leaf = &bsp->leafs[leaf_map[i].first_leaf + 1];
+	byte *visdata = nullptr;
+	if (leaf->visofs >= 0) {
+		visdata = bsp->visdata + leaf->visofs;
+	}
+	Mod_DecompressVis_set (visdata, brush->visleafs, 0xff, vis);
+
+	set_empty (&base_pvs[i]);
+	for (auto iter = set_first_r (set_pool, vis); iter;
+		 iter = set_next_r (set_pool, iter)) {
+		set_add (&base_pvs[i], cluster_map[iter->element]);
+	}
+	vis_rows[i] = Mod_CompressVis ((byte *) base_pvs[i].map,
+								   (byte *) base_pvs[i].map,
+								   cluster_data->num_clusters);
+}
+
+static void
+init_timeout (struct timespec *timeout, int64_t time)
+{
+	#define SEC 1000000000L
+	struct timeval now;
+	gettimeofday(&now, 0);
+	timeout->tv_sec = now.tv_sec;
+	timeout->tv_nsec = now.tv_usec * 1000L + time;
+	if (timeout->tv_nsec >= SEC) {
+		timeout->tv_sec += timeout->tv_nsec / SEC;
+		timeout->tv_nsec %= SEC;
+	}
+}
+
+
+static void
+cluster_wait_complete (cluster_data_t *cluster_data)
+{
+	struct timespec timeout;
+	init_timeout (&timeout, 50 * 1000000);
+	pthread_mutex_lock (&cluster_data->fence_mut);
+	while (!cluster_data->done) {
+		pthread_cond_timedwait (&cluster_data->fence_cond,
+								&cluster_data->fence_mut, &timeout);
+		//pthread_cond_wait (&fence_cond, &fence_mut);
+		init_timeout (&timeout, 50 * 1000000);
+	}
+	pthread_mutex_unlock (&cluster_data->fence_mut);
+}
+
+static void
+Mod_LoadVisibility (model_t *mod, bsp_t *bsp, wssched_t *sched)
 {
 	if (!bsp->visdatasize) {
 		mod->brush.visdata = NULL;
@@ -461,39 +554,79 @@ Mod_LoadVisibility (model_t *mod, bsp_t *bsp)
 	}
 
 	mod->brush.visleafs = bsp->models[0].visleafs;
-	uint32_t cvisbytes = (num_clusters + 7) / 8;
-	cvisbytes = (cvisbytes * 3) / 2 + 1;
+	uint32_t cluster_visbytes = (num_clusters + 7) / 8;
+	uint32_t leaf_visbytes = (num_leafs + 7) / 8;
+	int num_workers = wssched_worker_count (sched);
+	cluster_visbytes = (cluster_visbytes * 3) / 2 + 1;
 	size = sizeof (set_t[num_clusters])
-		 + sizeof (byte[cvisbytes * num_clusters])
-		 + sizeof (byte[(num_leafs + 7) / 8]);
+		 + sizeof (set_t[num_workers])
+		 + sizeof (set_pool_t[num_workers])
+		 + sizeof (task_t[1])
+		 + sizeof (task_t[num_clusters])
+		 + sizeof (byte[cluster_visbytes * num_clusters])
+		 + sizeof (byte[leaf_visbytes * num_workers]);
 	auto base_pvs = (set_t *) Hunk_TempAlloc (0, size);
-	auto cvisdata = (byte *) &base_pvs[num_clusters];
-#define vis_alloc(x) (set_bits_t *) (cvisdata + num_clusters * cvisbytes)
-	set_t vis = SET_STATIC_INIT (num_leafs - 1, vis_alloc);
-#undef vis_alloc
+	auto worker_pvs = &base_pvs[num_clusters];
+	auto set_pools = (set_pool_t *) &worker_pvs[num_workers];
+	auto wait_task = (task_t *) &set_pools[num_workers];
+	auto cluster_tasks = &wait_task[1];
+	auto cluster_visdata = (byte *) &cluster_tasks[num_clusters];
 
-	int cluster_visible = 0;
 	uint32_t vis_rows[num_clusters];
-	uint32_t total_bytes = 0;
-	for (uint32_t i = 0; i < num_clusters; i++) {
-#define vis_alloc(x) (set_bits_t *) (cvisdata + i * cvisbytes)
-		base_pvs[i] = (set_t) SET_STATIC_INIT (num_clusters - 1, vis_alloc);
+	cluster_data_t cluster_data = {
+		.base_pvs = base_pvs,
+		.worker_pvs = &base_pvs[num_clusters],
+		.set_pools = set_pools,
+		.vis_rows = vis_rows,
+		.num_clusters = num_clusters,
+
+		.tasks = cluster_tasks,
+		.bsp = bsp,
+		.brush = &mod->brush,
+
+		.fence_mut = PTHREAD_MUTEX_INITIALIZER,
+		.fence_cond = PTHREAD_COND_INITIALIZER,
+	};
+
+	*wait_task = (task_t) {
+		.dependency_count = num_clusters,
+		.execute = cluster_vis_wait,
+		.data = &cluster_data,
+	};
+	for (int i = 0; i < num_workers; i++) {
+#define vis_alloc(x) (set_bits_t *) (cluster_visdata \
+									 + num_clusters * cluster_visbytes \
+									 + i * leaf_visbytes)
+		cluster_data.worker_pvs[i] =
+			(set_t) SET_STATIC_INIT (num_leafs - 1, vis_alloc);
 #undef vis_alloc
+		set_pool_init (&cluster_data.set_pools[i]);
+	};
 
-		auto leaf = &bsp->leafs[leafmap[i].first_leaf + 1];
-		byte *visdata = nullptr;
-		if (leaf->visofs >= 0) {
-			visdata = bsp->visdata + leaf->visofs;
-		}
-		Mod_DecompressVis_set (visdata, mod->brush.visleafs, 0xff, &vis);
+	uint32_t total_bytes = 0;
+	task_t *cluster_task_set[num_clusters];
+	for (uint32_t i = 0; i < num_clusters; i++) {
+#define vis_alloc(x) (set_bits_t *) (cluster_visdata + i * cluster_visbytes)
+		cluster_data.base_pvs[i] =
+			(set_t) SET_STATIC_INIT (num_clusters - 1, vis_alloc);
+#undef vis_alloc
+		cluster_tasks[i] = (task_t) {
+			.child_count = 1,
+			.children = &wait_task,
+			.execute = cluster_vis_task,
+			.data = &cluster_data,
+		};
+		cluster_task_set[i] = &cluster_tasks[i];
+	};
+	wssched_insert (sched, num_clusters, cluster_task_set);
 
-		set_empty (&base_pvs[i]);
-		for (auto iter = set_first (&vis); iter; iter = set_next (iter)) {
-			set_add (&base_pvs[i], leafcluster[iter->element]);
-		}
-		cluster_visible += set_count (&base_pvs[i]);
-		vis_rows[i] = Mod_CompressVis ((byte *) base_pvs[i].map,
-									   (byte *) base_pvs[i].map, num_clusters);
+	cluster_wait_complete (&cluster_data);
+
+	for (int i = 0; i < num_workers; i++) {
+		set_pool_clear (&cluster_data.set_pools[i]);
+	};
+
+	for (uint32_t i = 0; i < num_clusters; i++) {
 		total_bytes += vis_rows[i];
 	}
 
@@ -1343,7 +1476,7 @@ Mod_MakeClusters (model_t *mod, bsp_t *bsp)
 }
 
 void
-Mod_LoadBrushModel (model_t *mod, void *buffer)
+Mod_LoadBrushModel (model_t *mod, void *buffer, wssched_t *sched)
 {
 	dmodel_t   *bm;
 	unsigned    i, j;
@@ -1352,6 +1485,8 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 	mod->type = mod_brush;
 
 	bsp = LoadBSPMem (buffer, qfs_filesize, do_checksums, mod);
+
+	mod->brush = (mod_brush_t) {};
 
 	// load into heap
 	Mod_LoadVertexes (mod, bsp);
@@ -1365,7 +1500,7 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 	Mod_LoadTexinfo (mod, bsp);
 	Mod_LoadFaces (mod, bsp);
 	Mod_LoadMarksurfaces (mod, bsp);
-	Mod_LoadVisibility (mod, bsp);
+	Mod_LoadVisibility (mod, bsp, sched);
 	Mod_LoadLeafs (mod, bsp);
 	Mod_LoadNodes (mod, bsp);
 	Mod_LoadClipnodes (mod, bsp);

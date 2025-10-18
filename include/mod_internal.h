@@ -91,7 +91,8 @@ void Mod_FloodFillSkin (byte *skin, int skinwidth, int skinheight);
 //FIXME gl specific. rewrite to use above
 int Mod_Fullbright (byte * skin, int width, int height, const char *name);
 
-void Mod_LoadBrushModel (model_t *mod, void *buffer);
+typedef struct wssched_s wssched_t;
+void Mod_LoadBrushModel (model_t *mod, void *buffer, wssched_t *sched);
 void Mod_FindClipDepth (hull_t *hull);
 
 model_t	*Mod_FindName (const char *name);

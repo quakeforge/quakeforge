@@ -52,6 +52,7 @@
 #include "QF/sys.h"
 
 #include "QF/plugin/vid_render.h"
+#include "QF/thread/schedule.h"
 
 #include "compat.h"
 #include "mod_internal.h"
@@ -180,6 +181,8 @@ typedef struct {
 	PR_RESMAP (res_mod_t) model_map;
 
 	res_mod_t  *loose_models;	// models allocated loosely
+
+	wssched_t  *sched;			//FIXME shouldn't be here
 } model_registry_t;
 
 #define RESMAP_OBJ_TYPE res_mod_t
@@ -249,6 +252,7 @@ mod_shutdown (void *data)
 		mod_unload_model (&mod->mod);
 	}
 
+	wssched_destroy (model_registry->sched);
 	qfm_model_reset (model_registry);
 	Hash_DelTable (model_registry->model_tab);
 	free (model_registry);
@@ -306,6 +310,7 @@ Mod_Init (void)
 
 	model_registry = malloc (sizeof (model_registry_t));
 	*model_registry = (model_registry_t) {
+		.sched = wssched_create (Sys_ProcessorCount ()),
 	};
 	model_registry->model_tab = Hash_NewTable (1021, qfm_model_get_key,
 											   qfm_model_free_model,
@@ -420,7 +425,7 @@ Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator)
 			break;
 		default:					// Version 29: Quake 1 .bsp
 									// Version 38: Quake 2 .bsp
-			Mod_LoadBrushModel (mod, buf);
+			Mod_LoadBrushModel (mod, buf, model_registry->sched);
 			break;
 	}
 	free (buf);
