@@ -93,6 +93,7 @@ list_tasks (void)
 static void
 dump_dag (void)
 {
+	return;
 	FILE       *out = fopen ("dag.dot", "wt");
 	fprintf (out, "digraph dag_%p {\n", tasks);
 	fprintf (out, "  graph [label=\"%s\"];\n", "tasks");
