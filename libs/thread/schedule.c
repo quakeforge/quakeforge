@@ -35,6 +35,8 @@ struct wssched_s {
 	int          worker_count;
 	bool         running;
 
+	pthread_mutex_t insert_mut;
+
 	_Atomic int  num_actives;
 	_Atomic int  num_thieves;
 	_Atomic int  next_index;
@@ -66,13 +68,12 @@ wssched_task_complete (worker_t *worker, task_t *task)
 void
 wssched_insert (wssched_t *sched, int count, task_t **tasks)
 {
-	static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
-	pthread_mutex_lock (&mut);
+	pthread_mutex_lock (&sched->insert_mut);
 	// lock
 	for (int i = 0; i < count; i++) {
 		deque_pushBottom (sched->main_queue, tasks[i]);
 	}
-	pthread_mutex_unlock (&mut);
+	pthread_mutex_unlock (&sched->insert_mut);
 	// unlock
 	notifier_notify_one (sched->notifier);
 }
@@ -220,6 +221,7 @@ wssched_create (int num_threads)
 		.main_queue = deque_new (DEQUE_DEF_SIZE),
 		.worker_count = num_threads,
 		.running = true,
+		.insert_mut = PTHREAD_MUTEX_INITIALIZER,
 	};
 	sched->waiters = (waiter_t *) &sched[1];
 	sched->worker_queues = (deque_t **) &sched->waiters[num_threads];
