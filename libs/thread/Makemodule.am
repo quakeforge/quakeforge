@@ -1,0 +1,36 @@
+thread_libs=\
+	libs/thread/libQFthread.la
+
+lib_LTLIBRARIES += \
+	libs/thread/libQFthread.la
+
+noinst_PROGRAMS += \
+    libs/thread/thread$(EXEEXT) \
+	libs/thread/test_deque$(EXEEXT) \
+	libs/thread/test_notifier$(EXEEXT)
+
+libs_thread_libQFthread_la_LDFLAGS=			$(lib_ldflags)
+libs_thread_libQFthread_la_LIBADD=
+libs_thread_libQFthread_la_DEPENDENCIES=
+libs_thread_libQFthread_la_SOURCES= \
+	libs/thread/deque.c \
+	libs/thread/notifier.c \
+	libs/thread/schedule.c
+
+libs_thread_thread_SOURCES= \
+	libs/thread/thread.c
+libs_thread_thread_LDFLAGS= $(PTHREAD_LDFLAGS)
+libs_thread_thread_LDADD= $(thread_libs)
+libs_thread_thread_DEPENDENCIES= $(thread_libs)
+
+libs_thread_test_deque_SOURCES= \
+	libs/thread/test_deque.c
+libs_thread_test_deque_LDFLAGS= $(PTHREAD_LDFLAGS)
+libs_thread_test_deque_LDADD= $(thread_libs)
+libs_thread_test_deque_DEPENDENCIES= $(thread_libs)
+
+libs_thread_test_notifier_SOURCES= \
+	libs/thread/test_notifier.c
+libs_thread_test_notifier_LDFLAGS= $(PTHREAD_LDFLAGS)
+libs_thread_test_notifier_LDADD= $(thread_libs)
+libs_thread_test_notifier_DEPENDENCIES= $(thread_libs)
