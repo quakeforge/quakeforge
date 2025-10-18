@@ -13,7 +13,7 @@ task_t *tasks;
 task_t **children;
 
 static void
-test_exec (task_t *task)
+test_exec (task_t *task, int worker_id)
 {
 	//printf ("task: %7"PRIi64"\n", (int64_t) (task - tasks));
 	for (int i = 0; i < 1<<8; i++) {
@@ -29,7 +29,7 @@ static pthread_cond_t fence_cond = PTHREAD_COND_INITIALIZER;
 #define task_count ((1 << 4) - 1)
 
 static void
-test_done (task_t *task)
+test_done (task_t *task, int worker_id)
 {
 	printf ("final task: %7"PRIi64"\n", (int64_t) (task - tasks));
 	task->data = (void *) 1;

@@ -77,6 +77,12 @@ wssched_insert (wssched_t *sched, int count, task_t **tasks)
 	notifier_notify_one (sched->notifier);
 }
 
+int
+wssched_worker_count (const wssched_t *sched)
+{
+	return sched->worker_count;
+}
+
 static void
 wssched_exploit_task (wssched_t *sched, task_t *task, worker_t *worker)
 {
@@ -86,7 +92,7 @@ wssched_exploit_task (wssched_t *sched, task_t *task, worker_t *worker)
 			notifier_notify_one (sched->notifier);
 		}
 		do {
-			task->execute (task);
+			task->execute (task, worker - sched->workers);
 			wssched_task_complete (worker, task);
 			task = deque_popBottom (worker->queue);
 		} while (task);
@@ -185,7 +191,7 @@ explore_task:
 }
 
 static void
-wssched_control_flow (worker_t *worker )
+wssched_control_flow (worker_t *worker)
 {
 	wssched_t  *sched = worker->sched;
 	task_t     *task = nullptr;
