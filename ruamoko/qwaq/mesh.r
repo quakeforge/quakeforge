@@ -115,21 +115,6 @@ model_t create_ico ()
 	return Model_LoadMesh ("ico", msg);
 }
 
-typedef struct halfedge_s {
-	int         twin;
-	int         next;
-	int         prev;
-	int         vert;
-	int         edge;
-	int         face;
-} halfedge_t;
-
-typedef struct anhalfedge_s {
-	int         twin;
-	int         vert;
-	int         edge;
-} anhalfedge_t;
-
 static int
 find_edge (int v1, int v2, edge_t *edges, @inout int edge_count)
 {
@@ -151,7 +136,7 @@ find_edge (int v1, int v2, edge_t *edges, @inout int edge_count)
 #define EDGE(h) he_in[h].edge
 
 @overload void
-refine_halfedges (anhalfedge_t *he_out, halfedge_t *he_in, int num_halfedges,
+refine_halfedges (quarteredge_t *he_out, halfedge_t *he_in, int num_halfedges,
 				  int Vd, int Fd, int Ed)
 {
 	for (int h = 0; h < num_halfedges; h++) {
@@ -246,8 +231,8 @@ vert_points (vec3 *v_out, vec3 *v_in, halfedge_t *he_in, int hd, int vd, int fd)
 #define FACE(h) ((int)((uint)(h) >> 2))
 #define EDGE(h) he_in[h].edge
 @overload void
-refine_halfedges (anhalfedge_t *he_out, anhalfedge_t *he_in, int num_halfedges,
-				  int Vd, int Fd, int Ed)
+refine_halfedges (quarteredge_t *he_out, quarteredge_t *he_in,
+				  int num_halfedges, int Vd, int Fd, int Ed)
 {
 	for (int h = 0; h < num_halfedges; h++) {
 		he_out[h * 4 + 0].twin = 4 * NEXT (TWIN(h)) + 3;
@@ -266,7 +251,7 @@ refine_halfedges (anhalfedge_t *he_out, anhalfedge_t *he_in, int num_halfedges,
 }
 
 @overload int
-valence (anhalfedge_t *he_in, int h)
+valence (quarteredge_t *he_in, int h)
 {
 	int n = 1;
 	int h1 = NEXT(TWIN(h));
@@ -278,13 +263,13 @@ valence (anhalfedge_t *he_in, int h)
 }
 
 @overload int
-cycle_length (anhalfedge_t *he_in, int h)
+cycle_length (quarteredge_t *he_in, int h)
 {
 	return 4;
 }
 
 @overload void
-face_points (vec3 *v_out, vec3 *v_in, anhalfedge_t *he_in, int hd, int vd)
+face_points (vec3 *v_out, vec3 *v_in, quarteredge_t *he_in, int hd, int vd)
 {
 	for (int h = 0; h < hd; h++) {
 		int m = cycle_length (he_in, h);
@@ -295,7 +280,7 @@ face_points (vec3 *v_out, vec3 *v_in, anhalfedge_t *he_in, int hd, int vd)
 }
 
 @overload void
-edge_points (vec3 *v_out, vec3 *v_in, anhalfedge_t *he_in,
+edge_points (vec3 *v_out, vec3 *v_in, quarteredge_t *he_in,
 			 int hd, int vd, int fd)
 {
 	for (int h = 0; h < hd; h++) {
@@ -311,7 +296,7 @@ edge_points (vec3 *v_out, vec3 *v_in, anhalfedge_t *he_in,
 }
 
 @overload void
-vert_points (vec3 *v_out, vec3 *v_in, anhalfedge_t *he_in,
+vert_points (vec3 *v_out, vec3 *v_in, quarteredge_t *he_in,
 			 int hd, int vd, int fd)
 {
 	for (int h = 0; h < hd; h++) {
@@ -500,16 +485,16 @@ create_quadsphere ()
 			  + sizeof (qf_mesh_t) * 6
 			  + sizeof (qfm_attrdesc_t) * 2// need only one copy
 			  + sizeof (halfedge_t) * num_halfedges
-			  + sizeof (anhalfedge_t) * extra_halfedges
+			  + sizeof (quarteredge_t) * extra_halfedges
 			  + sizeof (vec3) * 2 * (num_verts + extra_verts)
 			  + sizeof (uint) * 6 * (num_faces + extra_faces);
-	anhalfedge_t *subdiv_halfedges[2] = {
-		obj_malloc (sizeof (anhalfedge_t) * max_halfedges),
-		obj_malloc (sizeof (anhalfedge_t) * max_halfedges),
+	quarteredge_t *subdiv_halfedges[2] = {
+		obj_malloc (sizeof (quarteredge_t) * max_halfedges),
+		obj_malloc (sizeof (quarteredge_t) * max_halfedges),
 	};
 	vec3 *subdiv_verts[2] = {
-		obj_malloc (sizeof (anhalfedge_t) * max_halfedges),
-		obj_malloc (sizeof (anhalfedge_t) * max_halfedges),
+		obj_malloc (sizeof (quarteredge_t) * max_halfedges),
+		obj_malloc (sizeof (quarteredge_t) * max_halfedges),
 	};
 	auto msg = MsgBuf_New (size * 4);//size is in ints, msgbuf wants bytes
 	MsgBuf_WriteBytes (msg, &model, sizeof (model) * 4);
@@ -612,7 +597,7 @@ create_quadsphere ()
 		mesh_template.adjacency.offset -= mesh_offsets[d];
 		mesh_template.adjacency.count = hd_1;
 		MsgBuf_WriteBytes (msg, subdiv_halfedges[ind],
-						   sizeof (anhalfedge_t) * hd_1 * 4);
+						   sizeof (quarteredge_t) * hd_1 * 4);
 
 		mesh_template.vertices.offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
 		mesh_template.vertices.offset -= mesh_offsets[d];
