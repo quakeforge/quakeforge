@@ -128,6 +128,31 @@ typedef struct qfm_frame_s {
 	vec3_t      bounds_max;
 } qfm_frame_t;
 
+typedef struct halfedge_s {
+	int         twin;
+	int         next;
+	int         prev;
+	int         vert;
+	int         edge;
+	int         face;
+} halfedge_t;
+
+/* Analytic half-edge. Useful when next, prev and face can be calculated from
+   the half-edge index (eg, for levels 1+ Catmull-Clark subdivision, face is
+   index/4, and next and previous are index+1 and index-1 wrapped at the
+   multiple of 4 boundary because each subdivision level always has exactly
+   4 times the faces as the previous level, and all faces are quads regardless
+   of the level-0 topology).
+   https://onrendering.com/data/papers/catmark/HalfedgeCatmullClark.pdf
+
+   quater-edge because it's half the size of a half-edge.
+*/
+typedef struct quarteredge_s {
+	int         twin;
+	int         vert;
+	int         edge;
+} quarteredge_t;
+
 typedef struct qf_mesh_s {
 	uint32_t    name;
 	uint32_t    triangle_count;

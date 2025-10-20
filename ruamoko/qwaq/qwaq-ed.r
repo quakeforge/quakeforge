@@ -996,20 +996,6 @@ model_t create_ico();
 msgbuf_t create_quadsphere();
 void leafnode();
 
-typedef struct halfedge_s {
-	int         twin;
-	int         next;
-	int         prev;
-	int         vert;
-	int         edge;
-	int         face;
-} halfedge_t;
-typedef struct anhalfedge_s {
-	int         twin;
-	int         vert;
-	int         edge;
-} anhalfedge_t;
-
 int
 main (int argc, string *argv)
 {
@@ -1191,16 +1177,16 @@ main (int argc, string *argv)
 			for (uint i = 0; i < qsmesh.adjacency.count; i++) {
 				int adjacency = qsmesh.adjacency.offset;
 				int verts = qsmesh.vertices.offset;
-				int offset = adjacency + (i + base) * sizeof (anhalfedge_t) * 4;
-				anhalfedge_t h[2];
+				int offset = adjacency + (i + base) * sizeof (quarteredge_t)*4;
+				quarteredge_t h[2];
 				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
-				MsgBuf_ReadBytes (quadsphere, &h[0], sizeof (anhalfedge_t) * 4);
+				MsgBuf_ReadBytes (quadsphere, &h[0], sizeof (quarteredge_t)*4);
 				//printf ("%d: %d %d %d\n", i + base, h[0].twin, h[0].vert, h[0].edge);
 //#define NEXT(i) h[0].next
 #define NEXT(i) (((i) & ~3) | (((i)+1) & 3))
-				offset = adjacency + NEXT(i + base) * sizeof (anhalfedge_t) * 4;
+				offset = adjacency + NEXT(i + base) * sizeof (quarteredge_t)*4;
 				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
-				MsgBuf_ReadBytes (quadsphere, &h[1], sizeof (anhalfedge_t) * 4);
+				MsgBuf_ReadBytes (quadsphere, &h[1], sizeof (quarteredge_t)*4);
 				vec4 v[2] = {};
 				vec4 n = {};
 				offset = verts + h[0].vert * sizeof (vec3) * 2 * 4;
@@ -1213,7 +1199,7 @@ main (int argc, string *argv)
 				v[0] += '-20 20 0 0';
 				v[1] += '-20 20 0 0';
 				Gizmo_AddCapsule (v[0], v[1], 0.005,// { 1, 0, 0, 0});
-								  vec4( i & 1, (i>>1)&1, (i>>2)&1, -1) * 0.5 + 0.5);
+								  vec4 (i & 1, (i>>1)&1, (i>>2)&1, -1)*0.5+0.5);
 			}
 		}
 		leafnode ();
