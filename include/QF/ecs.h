@@ -110,7 +110,7 @@ typedef struct ecs_groups_s {
 	ecs_pool_t  component_groups;
 
 	ecs_subpool_t nonown_groups;
-	ecs_pool_t  nonown_entities;;
+	ecs_pool_t  nonown_entities;
 } ecs_groups_t;
 
 typedef struct ecs_registry_s {
