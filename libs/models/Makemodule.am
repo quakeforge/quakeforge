@@ -19,6 +19,7 @@ models_sources = \
 	libs/models/clip_hull.c \
 	libs/models/model.c \
 	libs/models/portal.c \
+	libs/models/quickhull.c \
 	libs/models/trace.c \
 	libs/models/winding.c
 
