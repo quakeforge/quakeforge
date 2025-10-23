@@ -45,3 +45,4 @@ vector MsgBuf_ReadAngleV (msgbuf_t msgbuf) = #0;
 float MsgBuf_ReadAngle16 (msgbuf_t msgbuf) = #0;
 vector MsgBuf_ReadAngle16V (msgbuf_t msgbuf) = #0;
 int MsgBuf_ReadUTF8 (msgbuf_t msgbuf) = #0;
+void MsgBuf_ReadSet (msgbuf_t msgbuf, set_t *set) = #0;

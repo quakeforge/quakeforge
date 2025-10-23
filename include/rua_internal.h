@@ -36,6 +36,7 @@
 struct progs_s;
 struct dstring_s;
 typedef struct sizebuf_s sizebuf_t;
+typedef struct set_s set_t;
 
 void RUA_Secured (progs_t *pr, void *_res)__attribute__((noreturn));
 void RUA_Cbuf_Init (struct progs_s *pr, int secure);
@@ -50,10 +51,13 @@ void RUA_Plist_Init (struct progs_s *pr, int secure);
 void RUA_Runtime_Init (struct progs_s *pr, int secure);
 void RUA_Script_Init (progs_t *pr, int secure);
 void RUA_Set_Init (progs_t *pr, int secure);
+
 void RUA_Stdlib_Init (struct progs_s *pr, int secure);
 void RUA_String_Init (struct progs_s *pr, int secure);
 void RUA_QFile_Init (struct progs_s *pr, int secure);
 void RUA_QFS_Init (struct progs_s *pr, int secure);
+
+set_t *Set_GetSet (progs_t *pr, int setid);
 
 int MsgBuf_New (struct progs_s *pr);
 sizebuf_t *MsgBuf_GetSizebuf (struct progs_s *pr, int msgbuf);

@@ -57,4 +57,7 @@ float MsgBuf_ReadAngle16 (msgbuf_t msgbuf);
 vector MsgBuf_ReadAngle16V (msgbuf_t msgbuf);
 int MsgBuf_ReadUTF8 (msgbuf_t msgbuf);
 
+typedef struct set_s set_t;
+void MsgBuf_ReadSet (msgbuf_t msgbuf, set_t *set);
+
 #endif//__ruamoko_msgbuf_h

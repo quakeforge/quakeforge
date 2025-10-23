@@ -157,6 +157,13 @@ get_set (progs_t *pr, set_resources_t *res, const char *name, int index)
 	return set;
 }
 
+set_t *
+Set_GetSet (progs_t *pr, int setid)
+{
+	set_resources_t *res = PR_Resources_Find (pr, "Set");
+	return get_set (pr, res, "   Set_GetSet", setid)->set;
+}
+
 static bi_set_iter_t * __attribute__((pure))
 get_set_iter (progs_t *pr, set_resources_t *res, const char *name, int index)
 {

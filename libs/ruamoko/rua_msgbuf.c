@@ -41,6 +41,7 @@
 
 #include "QF/msg.h"
 #include "QF/progs.h"
+#include "QF/set.h"
 
 #include "rua_internal.h"
 
@@ -564,6 +565,21 @@ bi_MsgBuf_ReadUTF8 (progs_t *pr, void *_res)
 	R_INT (pr) = MSG_ReadUTF8 (&mb->msg);
 }
 
+static void
+bi_MsgBuf_ReadSet (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	msgbuf_resources_t *res = _res;
+	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
+	set_t      *set = Set_GetSet (pr, P_INT (pr, 1));
+	int         inverted = MSG_ReadLong (&mb->msg);
+	int         size = MSG_ReadLong (&mb->msg);
+	set_empty (set);
+	set_expand (set, size - 1);
+	set->inverted = inverted;
+	MSG_ReadBytes (&mb->msg, set->map, size / 8);
+}
+
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
@@ -611,6 +627,7 @@ static builtin_t builtins[] = {
 	bi(MsgBuf_ReadAngle16,      1, p(ptr)),
 	bi(MsgBuf_ReadAngle16V,     1, p(ptr)),
 	bi(MsgBuf_ReadUTF8,         1, p(ptr)),
+	bi(MsgBuf_ReadSet,          2, p(ptr), p(ptr)),
 	{0}
 };
 
