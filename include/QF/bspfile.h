@@ -366,6 +366,7 @@ typedef struct dedge_s { //BSP2 version (bsp 29 version is in bspfile.c)
 ///@{
 typedef struct dface_s { //BSP2 version (bsp 29 version is in bspfile.c)
 	uint32_t    planenum;		///< Index of the plane containing this face
+								///< \ref bsp_planes
 	/// Indicates the side of the plane considered to be the front for this
 	/// face. 0 indicates the postive normal side, 1 indicates the negative
 	/// normal side (ie, the face is on the back side of the plane).
@@ -619,10 +620,11 @@ typedef struct dleaf_s { //BSP2 version (bsp 29 version is in bspfile.c)
 typedef struct bsp_s {
 	int         own_header;			///< \a header is owned by the structure
 	dheader_t  *header;				///< the bsp header block
+									///< \ref bsp_header
 
 	int         own_models;			///< \a models is owned by the structure
 	size_t      nummodels;			///< number of models
-	dmodel_t   *models;				///< Array of sub-models
+	dmodel_t   *models;				///< \rep bsp_model
 
 	int         own_visdata;		///< \a visdata is owned by the structure
 	size_t      visdatasize;		///< number of bytes in visdata
@@ -642,43 +644,43 @@ typedef struct bsp_s {
 
 	int         own_leafs;			///< \a leafs is owned by the structure
 	size_t      numleafs;			///< number of leafs
-	dleaf_t    *leafs;				///< array of leafs
+	dleaf_t    *leafs;				///< \ref bsp_leafs
 
 	int         own_planes;			///< \a planes is owned by the structure
 	size_t      numplanes;			///< number of planes
-	dplane_t   *planes;				///< array of planes
+	dplane_t   *planes;				///< \ref bsp_planes
 
 	int         own_vertexes;		///< \a vertexes is owned by the structure
 	size_t      numvertexes;		///< number of vertices
-	dvertex_t  *vertexes;			///< array of vertices
+	dvertex_t  *vertexes;			///< \ref bsp_vertices
 
 	int         own_nodes;			///< \a nodes is owned by the structure
 	size_t      numnodes;			///< number of nodes
-	dnode_t    *nodes;				///< array of nodes
+	dnode_t    *nodes;				///< \ref bsp_nodes
 
 	int         own_texinfo;		///< \a texinfo is owned by the structure
 	size_t      numtexinfo;			///< number of texinfo blocks
-	texinfo_t  *texinfo;			///< array of texinfo blocks
+	texinfo_t  *texinfo;			///< \ref bsp_texinfo
 
 	int         own_faces;			///< \a faces is owned by the structure
 	size_t      numfaces;			///< number of faces
-	dface_t    *faces;				///< array of faces
+	dface_t    *faces;				///< \ref bsp_face
 
 	int         own_clipnodes;		///< \a clipnodes is owned by the structure
 	size_t      numclipnodes;		///< number of clipnodes
-	dclipnode_t *clipnodes;			///< array of clipnodes
+	dclipnode_t *clipnodes;			///< \ref bsp_clipnodes
 
 	int         own_edges;			///< \a edges is owned by the structure
 	size_t      numedges;			///< number of edges
-	dedge_t    *edges;				///< array of edges
+	dedge_t    *edges;				///< \ref bsp_edges;
 
 	int         own_marksurfaces;///< \a marksurfaces is owned by the structure
 	size_t      nummarksurfaces;	///< number of marksurface indices
-	uint32_t   *marksurfaces;		///< array of marksurfaces indices
+	uint32_t   *marksurfaces;		///< \ref bsp_marksurfaces
 
 	int         own_surfedges;		///< \a surfedge is owned by the structure
 	size_t      numsurfedges;		///< number of surfedge indices
-	int32_t    *surfedges;			///< array of surfedge indices
+	int32_t    *surfedges;			///< \ref bsp_surfedges
 } bsp_t;
 
 /**	Create a bsp structure from a memory buffer.
