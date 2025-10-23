@@ -187,7 +187,7 @@ typedef struct mnode_s {
 
 typedef struct mleaf_s {
 // common with node
-	int			contents;		// wil be a negative contents number
+	int			contents;		// will be a negative contents number
 
 	// for bounding box culling
 	float		mins[3];
@@ -285,6 +285,7 @@ typedef struct mod_brush_s {
 	uint32_t   *cluster_surfs;
 	cluster_t  *clusters;
 
+	int         lightmap_bytes;
 	byte       *visdata;
 	byte       *lightdata;
 	char       *entities;	//FIXME should not be here
@@ -403,7 +404,5 @@ extern int gl_mesh_cache;
 extern float gl_subdivide_size;
 extern int gl_alias_render_tri;
 extern int gl_textures_external;
-extern int mod_sky_divide;
-extern int mod_lightmap_bytes;
 
 #endif//__QF_model_h

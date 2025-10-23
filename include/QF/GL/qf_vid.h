@@ -51,6 +51,7 @@ extern int						gl_use_bgra;
 extern int						gl_tess;
 
 extern int						gl_max_lights;
+extern int gl_sky_divide;
 
 void GL_Init_Common (void);
 

@@ -143,11 +143,13 @@ glsl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 }
 
 void
-glsl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
+glsl_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
 	// a bit hacky, but it's as good a place as any
 	mod->clear = glsl_brush_clear;
-	mod_lightmap_bytes = 1;
+	mod->brush.lightmap_bytes = 1;
 	if (!bsp->lightdatasize) {
 		mod->brush.lightdata = NULL;
 		return;

@@ -62,9 +62,6 @@
 #include "compat.h"
 #include "mod_internal.h"
 
-VISIBLE int mod_sky_divide; //FIXME visibility?
-VISIBLE int mod_lightmap_bytes = 1;	//FIXME should this be visible?
-
 VISIBLE mleaf_t *
 Mod_PointInLeaf (vec4f_t p, const mod_brush_t *brush)
 {
@@ -274,13 +271,15 @@ get_texanim (const texture_t *tx)
 
 
 static void
-Mod_LoadTextures (model_t *mod, bsp_t *bsp)
+Mod_LoadTextures (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 	dmiptexlump_t  *m;
 	int				pixels;
 	miptex_t	   *mt;
 	texture_t	   *tx, *tx2;
-	mod_brush_t    *brush = &mod->brush;
 
 	if (!bsp->texdatasize) {
 		brush->textures = NULL;
@@ -490,14 +489,17 @@ cluster_wait_complete (cluster_data_t *cluster_data)
 }
 
 static void
-Mod_LoadVisibility (model_t *mod, bsp_t *bsp, wssched_t *sched)
+Mod_LoadVisibility (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 	if (!bsp->visdatasize) {
-		mod->brush.visdata = NULL;
+		brush->visdata = NULL;
 		return;
 	}
-	mod->brush.visdata = Hunk_AllocName (0, bsp->visdatasize, mod->name);
-	memcpy (mod->brush.visdata, bsp->visdata, bsp->visdatasize);
+	brush->visdata = Hunk_AllocName (0, bsp->visdatasize, mod->name);
+	memcpy (brush->visdata, bsp->visdata, bsp->visdatasize);
 
 	int64_t start = Sys_LongTime ();
 
@@ -535,11 +537,11 @@ Mod_LoadVisibility (model_t *mod, bsp_t *bsp, wssched_t *sched)
 	size_t size = sizeof (leafmap_t[num_clusters])
 				+ sizeof (uint32_t[num_leafs])
 				+ sizeof (uint32_t[num_clusters]);
-	mod->brush.leaf_map = Hunk_AllocName (0, size, mod->name);
-	mod->brush.cluster_map = (uint32_t *) &mod->brush.leaf_map[num_clusters];
-	mod->brush.cluster_offs = (uint32_t *) &mod->brush.cluster_map[num_leafs];
-	leafmap_t *leafmap = mod->brush.leaf_map;
-	uint32_t *leafcluster = mod->brush.cluster_map;
+	brush->leaf_map = Hunk_AllocName (0, size, mod->name);
+	brush->cluster_map = (uint32_t *) &brush->leaf_map[num_clusters];
+	brush->cluster_offs = (uint32_t *) &brush->cluster_map[num_leafs];
+	leafmap_t *leafmap = brush->leaf_map;
+	uint32_t *leafcluster = brush->cluster_map;
 
 	auto lm = leafmap;
 	uint32_t offs = leafvis[0].visoffs;
@@ -553,10 +555,10 @@ Mod_LoadVisibility (model_t *mod, bsp_t *bsp, wssched_t *sched)
 		lm->num_leafs++;
 	}
 
-	mod->brush.visleafs = bsp->models[0].visleafs;
+	brush->visleafs = bsp->models[0].visleafs;
 	uint32_t cluster_visbytes = (num_clusters + 7) / 8;
 	uint32_t leaf_visbytes = (num_leafs + 7) / 8;
-	int num_workers = wssched_worker_count (sched);
+	int num_workers = wssched_worker_count (brush_ctx->sched);
 	cluster_visbytes = (cluster_visbytes * 3) / 2 + 1;
 	size = sizeof (set_t[num_clusters])
 		 + sizeof (set_t[num_workers])
@@ -582,7 +584,7 @@ Mod_LoadVisibility (model_t *mod, bsp_t *bsp, wssched_t *sched)
 
 		.tasks = cluster_tasks,
 		.bsp = bsp,
-		.brush = &mod->brush,
+		.brush = brush,
 
 		.fence_mut = PTHREAD_MUTEX_INITIALIZER,
 		.fence_cond = PTHREAD_COND_INITIALIZER,
@@ -618,7 +620,7 @@ Mod_LoadVisibility (model_t *mod, bsp_t *bsp, wssched_t *sched)
 		};
 		cluster_task_set[i] = &cluster_tasks[i];
 	};
-	wssched_insert (sched, num_clusters, cluster_task_set);
+	wssched_insert (brush_ctx->sched, num_clusters, cluster_task_set);
 
 	cluster_wait_complete (&cluster_data);
 
@@ -630,12 +632,12 @@ Mod_LoadVisibility (model_t *mod, bsp_t *bsp, wssched_t *sched)
 		total_bytes += vis_rows[i];
 	}
 
-	mod->brush.vis_clusters = num_clusters;
-	mod->brush.cluster_vis = Hunk_AllocName (0, total_bytes, mod->name);
+	brush->vis_clusters = num_clusters;
+	brush->cluster_vis = Hunk_AllocName (0, total_bytes, mod->name);
 	uint32_t offset = 0;
 	for (uint32_t i = 0; i < num_clusters; i++) {
-		memcpy (mod->brush.cluster_vis + offset, base_pvs[i].map, vis_rows[i]);
-		mod->brush.cluster_offs[i] = offset;
+		memcpy (brush->cluster_vis + offset, base_pvs[i].map, vis_rows[i]);
+		brush->cluster_offs[i] = offset;
 		offset += vis_rows[i];
 	}
 
@@ -644,19 +646,25 @@ Mod_LoadVisibility (model_t *mod, bsp_t *bsp, wssched_t *sched)
 }
 
 static void
-Mod_LoadEntities (model_t *mod, bsp_t *bsp)
+Mod_LoadEntities (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 	if (!bsp->entdatasize) {
-		mod->brush.entities = NULL;
+		brush->entities = NULL;
 		return;
 	}
-	mod->brush.entities = Hunk_AllocName (0, bsp->entdatasize, mod->name);
-	memcpy (mod->brush.entities, bsp->entdata, bsp->entdatasize);
+	brush->entities = Hunk_AllocName (0, bsp->entdatasize, mod->name);
+	memcpy (brush->entities, bsp->entdata, bsp->entdatasize);
 }
 
 static void
-Mod_LoadVertexes (model_t *mod, bsp_t *bsp)
+Mod_LoadVertexes (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 	dvertex_t  *in;
 	int         count, i;
 	mvertex_t  *out;
@@ -665,19 +673,21 @@ Mod_LoadVertexes (model_t *mod, bsp_t *bsp)
 	count = bsp->numvertexes;
 	out = Hunk_AllocName (0, count * sizeof (*out), mod->name);
 
-	mod->brush.vertexes = out;
-	mod->brush.numvertexes = count;
+	brush->vertexes = out;
+	brush->numvertexes = count;
 
 	for (i = 0; i < count; i++, in++, out++)
 		VectorCopy (in->point, out->position);
 }
 
 static void
-Mod_LoadSubmodels (model_t *mod, bsp_t *bsp)
+Mod_LoadSubmodels (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 	dmodel_t   *in, *out;
 	int         count, i, j;
-	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->models;
 	count = bsp->nummodels;
@@ -708,8 +718,11 @@ Mod_LoadSubmodels (model_t *mod, bsp_t *bsp)
 }
 
 static void
-Mod_LoadEdges (model_t *mod, bsp_t *bsp)
+Mod_LoadEdges (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 	dedge_t    *in;
 	int         count, i;
 	medge_t    *out;
@@ -718,8 +731,8 @@ Mod_LoadEdges (model_t *mod, bsp_t *bsp)
 	count = bsp->numedges;
 	out = Hunk_AllocName (0, (count + 1) * sizeof (*out), mod->name);
 
-	mod->brush.edges = out;
-	mod->brush.numedges = count;
+	brush->edges = out;
+	brush->numedges = count;
 
 	for (i = 0; i < count; i++, in++, out++) {
 		out->v[0] = in->v[0];
@@ -728,8 +741,11 @@ Mod_LoadEdges (model_t *mod, bsp_t *bsp)
 }
 
 static void
-Mod_LoadTexinfo (model_t *mod, bsp_t *bsp)
+Mod_LoadTexinfo (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 	float       len1, len2;
 	unsigned    count, miptex, i, j;
 	mtexinfo_t *out;
@@ -739,8 +755,8 @@ Mod_LoadTexinfo (model_t *mod, bsp_t *bsp)
 	count = bsp->numtexinfo;
 	out = Hunk_AllocName (0, count * sizeof (*out), mod->name);
 
-	mod->brush.texinfo = out;
-	mod->brush.numtexinfo = count;
+	brush->texinfo = out;
+	brush->numtexinfo = count;
 
 	for (i = 0; i < count; i++, in++, out++) {
 		for (j = 0; j < 4; j++) {
@@ -763,13 +779,13 @@ Mod_LoadTexinfo (model_t *mod, bsp_t *bsp)
 		miptex = in->miptex;
 		out->flags = in->flags;
 
-		if (!mod->brush.textures) {
+		if (!brush->textures) {
 			out->texture = r_notexture_mip;	// checkerboard texture
 			out->flags = 0;
 		} else {
-			if (miptex >= mod->brush.numtextures)
-				Sys_Error ("miptex >= mod->brush.numtextures");
-			out->texture = mod->brush.textures[miptex];
+			if (miptex >= brush->numtextures)
+				Sys_Error ("miptex >= brush->numtextures");
+			out->texture = brush->textures[miptex];
 			if (!out->texture) {
 				out->texture = r_notexture_mip;	// texture not found
 				out->flags = 0;
@@ -830,12 +846,15 @@ CalcSurfaceExtents (model_t *mod, msurface_t *s)
 }
 
 static void
-Mod_LoadFaces (model_t *mod, bsp_t *bsp)
+Mod_LoadFaces (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
+
 	dface_t    *in;
 	int			count, planenum, side, surfnum, i;
 	msurface_t *out;
-	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->faces;
 	count = bsp->numfaces;
@@ -873,7 +892,7 @@ Mod_LoadFaces (model_t *mod, bsp_t *bsp)
 		if (i == -1)
 			out->samples = NULL;
 		else
-			out->samples = brush->lightdata + (i * mod_lightmap_bytes);
+			out->samples = brush->lightdata + (i * brush->lightmap_bytes);
 
 		// set the drawing flags flag
 		if (!out->texinfo->texture) {
@@ -883,7 +902,7 @@ Mod_LoadFaces (model_t *mod, bsp_t *bsp)
 
 		if (!strncmp (out->texinfo->texture->name, "sky", 3)) {	// sky
 			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
-			if (mod_sky_divide) {
+			if (brush_ctx->sky_divide) {
 				if (mod_funcs && mod_funcs->Mod_SubdivideSurface) {
 					mod_funcs->Mod_SubdivideSurface (mod, out);
 				}
@@ -975,12 +994,14 @@ Mod_SetLeafFlags (mod_brush_t *brush)
 }
 
 static void
-Mod_LoadNodes (model_t *mod, bsp_t *bsp)
+Mod_LoadNodes (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 	dnode_t    *in;
 	int			count, i, j, p;
 	mnode_t    *out;
-	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->nodes;
 	count = bsp->numnodes;
@@ -1038,12 +1059,14 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 }
 
 static void
-Mod_LoadLeafs (model_t *mod, bsp_t *bsp)
+Mod_LoadLeafs (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 	dleaf_t    *in;
 	int			count, i, j, p;
 	mleaf_t    *out;
-	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->leafs;
 	count = bsp->numleafs;
@@ -1076,13 +1099,15 @@ Mod_LoadLeafs (model_t *mod, bsp_t *bsp)
 }
 
 static void
-Mod_LoadClipnodes (model_t *mod, bsp_t *bsp)
+Mod_LoadClipnodes (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 	dclipnode_t *in;
 	dclipnode_t *out;
 	hull_t		*hull;
 	int         count, i;
-	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->clipnodes;
 	count = bsp->numclipnodes;
@@ -1150,13 +1175,15 @@ Mod_LoadClipnodes (model_t *mod, bsp_t *bsp)
 	Replicate the drawing hull structure as a clipping hull
 */
 static void
-Mod_MakeHull0 (model_t *mod, bsp_t *bsp)
+Mod_MakeHull0 (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 	dclipnode_t *out;
 	hull_t		*hull;
 	int			 count, i, j;
 	mnode_t		*in;
-	mod_brush_t *brush = &mod->brush;
 
 	hull = &brush->hulls[0];
 	brush->hull_list[0] = hull;
@@ -1184,12 +1211,14 @@ Mod_MakeHull0 (model_t *mod, bsp_t *bsp)
 }
 
 static void
-Mod_LoadMarksurfaces (model_t *mod, bsp_t *bsp)
+Mod_LoadMarksurfaces (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 	unsigned    count, i, j;
 	msurface_t **out;
 	uint32_t    *in;
-	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->marksurfaces;
 	count = bsp->nummarksurfaces;
@@ -1213,12 +1242,14 @@ Mod_LoadMarksurfaces (model_t *mod, bsp_t *bsp)
 }
 
 static void
-Mod_LoadSurfedges (model_t *mod, bsp_t *bsp)
+Mod_LoadSurfedges (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 	int          count, i;
 	int32_t     *in;
 	int         *out;
-	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->surfedges;
 	count = bsp->numsurfedges;
@@ -1232,12 +1263,14 @@ Mod_LoadSurfedges (model_t *mod, bsp_t *bsp)
 }
 
 static void
-Mod_LoadPlanes (model_t *mod, bsp_t *bsp)
+Mod_LoadPlanes (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 	dplane_t   *in;
 	int			bits, count, i, j;
 	plane_t    *out;
-	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->planes;
 	count = bsp->numplanes;
@@ -1351,9 +1384,11 @@ cluster_surf_cmp (const void *_sa, const void *_sb, void *_bsp)
 }
 
 static void
-Mod_MakeClusters (model_t *mod, bsp_t *bsp)
+Mod_MakeClusters (mod_brush_ctx_t *brush_ctx)
 {
-	mod_brush_t *brush = &mod->brush;
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
 
 	if (brush->cluster_map) {
 		size_t size = sizeof (int32_t[brush->numnodes]);
@@ -1480,42 +1515,49 @@ Mod_LoadBrushModel (model_t *mod, void *buffer, wssched_t *sched)
 {
 	dmodel_t   *bm;
 	unsigned    i, j;
-	bsp_t      *bsp;
 
 	mod->type = mod_brush;
-
-	bsp = LoadBSPMem (buffer, qfs_filesize, do_checksums, mod);
-
 	mod->brush = (mod_brush_t) {};
 
-	// load into heap
-	Mod_LoadVertexes (mod, bsp);
-	Mod_LoadEdges (mod, bsp);
-	Mod_LoadSurfedges (mod, bsp);
-	Mod_LoadTextures (mod, bsp);
-	if (mod_funcs && mod_funcs->Mod_LoadLighting) {
-		mod_funcs->Mod_LoadLighting (mod, bsp);
-	}
-	Mod_LoadPlanes (mod, bsp);
-	Mod_LoadTexinfo (mod, bsp);
-	Mod_LoadFaces (mod, bsp);
-	Mod_LoadMarksurfaces (mod, bsp);
-	Mod_LoadVisibility (mod, bsp, sched);
-	Mod_LoadLeafs (mod, bsp);
-	Mod_LoadNodes (mod, bsp);
-	Mod_LoadClipnodes (mod, bsp);
-	Mod_LoadEntities (mod, bsp);
-	Mod_LoadSubmodels (mod, bsp);
+	mod_brush_ctx_t brush_ctx = {
+		.mod = mod,
+		.brush = &mod->brush,
+		.bsp = LoadBSPMem (buffer, qfs_filesize, do_checksums, mod),
+		.sched = sched,
+	};
 
-	Mod_MakeHull0 (mod, bsp);
+	if (mod_funcs->Mod_BrushContext) {
+		mod_funcs->Mod_BrushContext (&brush_ctx);
+	}
+
+	// load into heap
+	Mod_LoadVertexes (&brush_ctx);
+	Mod_LoadEdges (&brush_ctx);
+	Mod_LoadSurfedges (&brush_ctx);
+	Mod_LoadTextures (&brush_ctx);
+	if (mod_funcs && mod_funcs->Mod_LoadLighting) {
+		mod_funcs->Mod_LoadLighting (&brush_ctx);
+	}
+	Mod_LoadPlanes (&brush_ctx);
+	Mod_LoadTexinfo (&brush_ctx);
+	Mod_LoadFaces (&brush_ctx);
+	Mod_LoadMarksurfaces (&brush_ctx);
+	Mod_LoadVisibility (&brush_ctx);
+	Mod_LoadLeafs (&brush_ctx);
+	Mod_LoadNodes (&brush_ctx);
+	Mod_LoadClipnodes (&brush_ctx);
+	Mod_LoadEntities (&brush_ctx);
+	Mod_LoadSubmodels (&brush_ctx);
+
+	Mod_MakeHull0 (&brush_ctx);
 
 	Mod_FindDrawDepth (&mod->brush);
 	for (i = 0; i < MAX_MAP_HULLS; i++)
 		Mod_FindClipDepth (&mod->brush.hulls[i]);
 
-	Mod_MakeClusters (mod, bsp);
+	Mod_MakeClusters (&brush_ctx);
 
-	BSP_Free(bsp);
+	BSP_Free(brush_ctx.bsp);
 
 	mod->numframes = 2;					// regular and alternate animation
 

@@ -446,7 +446,7 @@ loop:
 		if (!surf->samples)
 			return 0;
 
-		if (mod_lightmap_bytes == 1)
+		if (brush->lightmap_bytes == 1)
 			return calc_lighting_1 (surf, ds, dt);
 		else
 			return calc_lighting_3 (surf, ds, dt);

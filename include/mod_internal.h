@@ -20,6 +20,16 @@ typedef struct dtriangleset_s DARRAY_TYPE (dtriangle_t) dtriangleset_t;
 typedef struct trivertxset_s DARRAY_TYPE (trivertx_t *) trivertxset_t;
 typedef struct askinset_s DARRAY_TYPE (mod_alias_skin_t) askinset_t;
 
+typedef struct wssched_s wssched_t;
+
+typedef struct mod_brush_ctx_s {
+	model_t    *mod;
+	mod_brush_t *brush;
+	bsp_t      *bsp;
+	wssched_t  *sched;
+	bool        sky_divide;
+} mod_brush_ctx_t;
+
 typedef struct mod_alias_ctx_s {
 	qf_model_t *model;
 	qf_mesh_t  *mesh;
@@ -122,17 +132,18 @@ void sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx);
 void sw_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx);
 void sw_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx);
 
-void gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp);
+void gl_Mod_BrushContext (mod_brush_ctx_t *brush_ctx);
+void gl_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx);
 void gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa);
 struct texture_s;
 void gl_Mod_ProcessTexture (model_t *mod, struct texture_s *tx);
 
-void glsl_Mod_LoadLighting (model_t *mod, bsp_t *bsp);
+void glsl_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx);
 void glsl_Mod_ProcessTexture (model_t *mod, struct texture_s *tx);
 
-void sw_Mod_LoadLighting (model_t *mod, bsp_t *bsp);
+void sw_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx);
 
-void Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp,
+void Vulkan_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx,
 							  struct vulkan_ctx_s *ctx);
 void Vulkan_Mod_SubdivideSurface (model_t *mod, msurface_t *fa,
 								  struct vulkan_ctx_s *ctx);

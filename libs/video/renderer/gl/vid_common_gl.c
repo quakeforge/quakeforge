@@ -586,12 +586,6 @@ gl_vaelements_max_f (void *data, const cvar_t *cvar)
 }
 
 static void
-gl_sky_divide_f (void *data, const cvar_t *cvar)
-{
-	mod_sky_divide = gl_sky_divide;
-}
-
-static void
 GL_Common_Init_Cvars (void)
 {
 	Cvar_Register (&vid_use8bit_cvar, 0, 0);
@@ -634,7 +628,7 @@ GL_Common_Init_Cvars (void)
 	Cvar_Register (&gl_reporttjunctions_cvar, 0, 0);
 	Cvar_Register (&gl_sky_clip_cvar, 0, 0);
 	Cvar_Register (&gl_sky_debug_cvar, 0, 0);
-	Cvar_Register (&gl_sky_divide_cvar, gl_sky_divide_f, 0);
+	Cvar_Register (&gl_sky_divide_cvar, 0, 0);
 	Cvar_Register (&gl_sky_multipass_cvar, 0, 0);
 	Cvar_Register (&gl_texsort_cvar, 0, 0);
 	Cvar_Register (&gl_triplebuffer_cvar, gl_triplebuffer_f, 0);

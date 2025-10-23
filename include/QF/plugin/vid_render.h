@@ -44,6 +44,7 @@ typedef struct progs_s progs_t;
 
 typedef struct qf_model_s qf_model_t;
 
+typedef struct mod_brush_ctx_s mod_brush_ctx_t;
 struct mod_alias_ctx_s;
 struct mod_iqm_ctx_s;
 typedef struct mod_mesh_ctx_s mod_mesh_ctx_t;
@@ -60,7 +61,8 @@ struct texture_s;
 
 typedef struct vid_model_funcs_s {
 	size_t      texture_render_size;// size of renderer specific texture data
-	void (*Mod_LoadLighting) (model_t *mod, bsp_t *bsp);
+	void (*Mod_BrushContext) (mod_brush_ctx_t *brush_ctx);
+	void (*Mod_LoadLighting) (mod_brush_ctx_t *brush_ctx);
 	void (*Mod_SubdivideSurface) (model_t *mod, msurface_t *fa);
 	void (*Mod_ProcessTexture) (model_t *mod, struct texture_s *tx);
 	void (*Mod_LoadMesh) (model_t *mod, byte *buffer, size_t buf_size);

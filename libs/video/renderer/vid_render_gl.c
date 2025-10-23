@@ -155,6 +155,7 @@ gl_vid_render_create_context (void *data)
 static vid_model_funcs_t model_funcs = {
 	.texture_render_size = sizeof (gltex_t),
 
+	.Mod_BrushContext     = gl_Mod_BrushContext,
 	.Mod_LoadLighting     = gl_Mod_LoadLighting,
 	.Mod_SubdivideSurface = gl_Mod_SubdivideSurface,
 	.Mod_ProcessTexture   = gl_Mod_ProcessTexture,

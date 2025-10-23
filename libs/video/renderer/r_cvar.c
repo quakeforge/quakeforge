@@ -493,21 +493,6 @@ crosshaircolor_f (void *data, const cvar_t *cvar)
 }
 
 static void
-r_lightmap_components_f (void *data, const cvar_t *cvar)
-{
-	switch (r_lightmap_components) {
-		case 1:
-			mod_lightmap_bytes = 1;
-			break;
-		case 3:
-		case 4:
-		default:
-			mod_lightmap_bytes = 3;
-			break;
-	}
-}
-
-static void
 r_farclip_f (void *data, const cvar_t *cvar)
 {
 	r_farclip = bound (8.0, r_farclip, Q_MAXFLOAT);
@@ -586,7 +571,7 @@ R_Init_Cvars (void)
 	Cvar_Register (&r_firecolor_cvar, 0, 0);
 	Cvar_Register (&r_flatlightstyles_cvar, 0, 0);
 	Cvar_Register (&r_graphheight_cvar, 0, 0);
-	Cvar_Register (&r_lightmap_components_cvar, r_lightmap_components_f, 0);
+	Cvar_Register (&r_lightmap_components_cvar, 0, 0);
 	Cvar_Register (&r_maxedges_cvar, 0, 0);
 	Cvar_Register (&r_maxsurfs_cvar, 0, 0);
 	Cvar_Register (&r_mirroralpha_cvar, 0, 0);

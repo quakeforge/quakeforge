@@ -41,9 +41,11 @@
 #include "mod_internal.h"
 
 void
-sw_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
+sw_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 {
-	mod_lightmap_bytes = 1;
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	mod->brush.lightmap_bytes = 1;
 	if (!bsp->lightdatasize) {
 		mod->brush.lightdata = NULL;
 		return;

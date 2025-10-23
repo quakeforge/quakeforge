@@ -47,6 +47,7 @@
 #include "QF/va.h"
 #include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_textures.h"
+#include "QF/GL/qf_vid.h"
 
 #include "compat.h"
 #include "mod_internal.h"
@@ -140,8 +141,10 @@ gl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 }
 
 void
-gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
+gl_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
 	byte        d;
 	byte       *in, *out, *data;
 	dstring_t  *litfilename = dstring_new ();
@@ -149,10 +152,11 @@ gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 	int         ver;
 	QFile      *lit_file;
 	mod_brush_t *brush = &mod->brush;
+	int lightmap_bytes = brush->lightmap_bytes;
 
 	dstring_copystr (litfilename, mod->path);
 	brush->lightdata = NULL;
-	if (mod_lightmap_bytes > 1) {
+	if (lightmap_bytes > 1) {
 		// LordHavoc: check for a .lit file to load
 		QFS_StripExtension (litfilename->str, litfilename->str);
 		dstring_appendstr (litfilename, ".lit");
@@ -178,13 +182,12 @@ gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 		dstring_delete (litfilename);
 		return;
 	}
-	brush->lightdata = Hunk_AllocName (0,
-									   bsp->lightdatasize * mod_lightmap_bytes,
+	brush->lightdata = Hunk_AllocName (0, bsp->lightdatasize * lightmap_bytes,
 									   litfilename->str);
 	in = bsp->lightdata;
 	out = brush->lightdata;
 
-	if (mod_lightmap_bytes > 1)
+	if (lightmap_bytes > 1)
 		for (i = 0; i < bsp->lightdatasize ; i++) {
 			d = vid.gammatable[*in++];
 			*out++ = d;
@@ -326,4 +329,11 @@ gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa)
 	if (numverts > 3) {
 		SubdividePolygon (numverts, verts[0]);
 	}
+}
+
+void
+gl_Mod_BrushContext (mod_brush_ctx_t *brush_ctx)
+{
+	brush_ctx->sky_divide = gl_sky_divide;
+	brush_ctx->brush->lightmap_bytes = r_lightmap_components == 1 ? 1 : 3;
 }

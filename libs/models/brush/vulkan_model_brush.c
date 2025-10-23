@@ -348,11 +348,13 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
+Vulkan_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx, vulkan_ctx_t *ctx)
 {
-	mod_brush_t *brush = &mod->brush;
+	auto mod = brush_ctx->mod;
+	auto brush = brush_ctx->brush;
+	auto bsp = brush_ctx->bsp;
 
-	mod_lightmap_bytes = 3;
+	brush->lightmap_bytes = 3;
 	if (!bsp->lightdatasize) {
 		brush->lightdata = NULL;
 		return;
@@ -365,7 +367,7 @@ Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
 	QFile      *lit_file;
 
 	brush->lightdata = 0;
-	if (mod_lightmap_bytes > 1) {
+	if (brush->lightmap_bytes > 1) {
 		// LordHavoc: check for a .lit file to load
 		dstring_t  *litfilename = dstring_new ();
 		dstring_copystr (litfilename, mod->name);

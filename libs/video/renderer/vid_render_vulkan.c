@@ -456,9 +456,9 @@ vulkan_debug_ui (struct imui_ctx_s *imui_ctx)
 }
 
 static void
-vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
+vulkan_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 {
-	Vulkan_Mod_LoadLighting (mod, bsp, vulkan_ctx);
+	Vulkan_Mod_LoadLighting (brush_ctx, vulkan_ctx);
 }
 
 static void
