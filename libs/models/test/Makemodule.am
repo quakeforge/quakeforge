@@ -2,7 +2,8 @@ libs_model_tests = \
 	libs/models/test/testclip \
 	libs/models/test/testcontents \
 	libs/models/test/testportals \
-	libs/models/test/test-motor
+	libs/models/test/test-motor \
+	libs/models/test/test-quickhull
 
 TESTS += $(libs_model_tests)
 
@@ -16,6 +17,7 @@ EXTRA_DIST += \
 
 test_libs= \
 	libs/models/libQFmodels.la \
+	libs/ecs/libQFecs.la \
 	libs/util/libQFutil.la
 
 libs_models_test_testclip_SOURCES= \
@@ -44,3 +46,9 @@ libs_models_test_test_motor_SOURCES= \
 	$(tracy_src)
 libs_models_test_test_motor_LDADD=			$(test_libs)
 libs_models_test_test_motor_DEPENDENCIES=	$(test_libs)
+
+libs_models_test_test_quickhull_SOURCES= \
+	libs/models/test/test-quickhull.c \
+	$(tracy_src)
+libs_models_test_test_quickhull_LDADD=			$(test_libs)
+libs_models_test_test_quickhull_DEPENDENCIES=	$(test_libs)
