@@ -78,6 +78,7 @@ test_progs_dat=\
 	tools/qfcc/test/ptrincinout2.dat \
 	tools/qfcc/test/ptrstructcast.dat \
 	tools/qfcc/test/ptrstructinit.dat \
+	tools/qfcc/test/mirror.dat \
 	tools/qfcc/test/motor-point.dat \
 	tools/qfcc/test/motor-xform.dat \
 	tools/qfcc/test/quaternion.dat \
@@ -944,6 +945,16 @@ tools/qfcc/test/ptrstructinit.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(ptrstructinit_dep) # am--include-marker
 r_depfiles_remade += $(ptrstructinit_dep)
+
+tools_qfcc_test_mirror_dat_SOURCES=tools/qfcc/test/mirror.r
+mirror_obj=$(tools_qfcc_test_mirror_dat_SOURCES:.r=.o)
+mirror_dep=$(call qcautodep,$(tools_qfcc_test_mirror_dat_SOURCES))
+tools/qfcc/test/mirror.dat$(EXEEXT): $(mirror_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(mirror_obj)
+tools/qfcc/test/mirror.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(mirror_dep) # am--include-marker
+r_depfiles_remade += $(mirror_dep)
 
 tools_qfcc_test_motor_point_dat_SOURCES=tools/qfcc/test/motor-point.r
 motor_point_obj=$(tools_qfcc_test_motor_point_dat_SOURCES:.r=.o)

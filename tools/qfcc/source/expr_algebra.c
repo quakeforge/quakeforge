@@ -1680,7 +1680,7 @@ vga3_xyz_scale (const expr_t **c,
 				const expr_t *b, int gb,
 				algebra_t *alg)
 {
-	c[1] = do_mult (a, b);
+	c[1] = mult_expr (b, a);
 }
 
 static void
