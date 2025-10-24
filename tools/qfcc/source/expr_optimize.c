@@ -979,8 +979,8 @@ simp_rcross_add_dot_scale (const expr_t **a, const expr_t **adds)
 			auto ac = (*a)->expr.e2->expr.e2;
 			for (auto b = adds; *b; b++) {
 				if (b != a && is_scale (*b) && is_dot ((*b)->expr.e2)) {
-					if (check_dot_pair ((*b)->expr.e2, aa, ac)
-						&& (*b)->expr.e1 == ab) {
+					if (check_dot_pair ((*b)->expr.e2, aa, ab)
+						&& (*b)->expr.e1 == ac) {
 						*a = scale_expr (ab, dot_expr (aa, ac));
 						*b = &skip;
 						return true;
