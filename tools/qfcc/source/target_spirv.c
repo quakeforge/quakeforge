@@ -1173,6 +1173,13 @@ spirv_generate_qmul (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_generate_qvmul (const expr_t *e, spirvctx_t *ctx)
 {
+	//NOTE this assumes the quaternion is normalized a quaternion that
+	//isn't normalized will not result in correct scaling
+	//  vec3 uv = cross (q.xyz, v);
+	//  vec3 uuv = cross (q.xyz, uv);
+	//  return v + ((uv * q.w) + uuv) * 2;
+	// not assuming normalized would require scaling v (in the return) by
+	// (q.w * q.w + dot (u, u)), which adds 4 instructions
 	scoped_src_loc (e);
 	auto q = e->expr.e1;
 	auto v = e->expr.e2;
@@ -1189,6 +1196,8 @@ spirv_generate_qvmul (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_generate_vqmul (const expr_t *e, spirvctx_t *ctx)
 {
+	//NOTE this assumes the quaternion is normalized
+	//see spirv_generate_qvmul
 	scoped_src_loc (e);
 	auto v = e->expr.e1;
 	auto q = e->expr.e2;
