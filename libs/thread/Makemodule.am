@@ -18,19 +18,22 @@ libs_thread_libQFthread_la_SOURCES= \
 	libs/thread/schedule.c
 
 libs_thread_thread_SOURCES= \
-	libs/thread/thread.c
+	libs/thread/thread.c \
+	$(tracy_src)
 libs_thread_thread_LDFLAGS= $(PTHREAD_LDFLAGS)
 libs_thread_thread_LDADD= $(thread_libs)
 libs_thread_thread_DEPENDENCIES= $(thread_libs)
 
 libs_thread_test_deque_SOURCES= \
-	libs/thread/test_deque.c
+	libs/thread/test_deque.c \
+	$(tracy_src)
 libs_thread_test_deque_LDFLAGS= $(PTHREAD_LDFLAGS)
 libs_thread_test_deque_LDADD= $(thread_libs)
 libs_thread_test_deque_DEPENDENCIES= $(thread_libs)
 
 libs_thread_test_notifier_SOURCES= \
-	libs/thread/test_notifier.c
+	libs/thread/test_notifier.c \
+	$(tracy_src)
 libs_thread_test_notifier_LDFLAGS= $(PTHREAD_LDFLAGS)
 libs_thread_test_notifier_LDADD= $(thread_libs)
 libs_thread_test_notifier_DEPENDENCIES= $(thread_libs)
