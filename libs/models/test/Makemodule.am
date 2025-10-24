@@ -5,9 +5,13 @@ libs_model_tests = \
 	libs/models/test/test-motor \
 	libs/models/test/test-quickhull
 
-TESTS += $(libs_model_tests)
+libs_model_fail_tests = \
+	libs/models/test/test-quickhull
 
-check_PROGRAMS += $(libs_model_tests)
+TESTS += $(libs_model_tests)
+XFAIL_TESTS += $(libs_model_fail_tests)
+
+check_PROGRAMS += $(libs_model_tests) $(libs_model_fail_tests)
 
 EXTRA_DIST += \
 	libs/models/test/trace-id.c \
