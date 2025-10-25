@@ -524,6 +524,7 @@ gl_overbright_f (void *data, const cvar_t *cvar)
 static void
 GL_CreateSurfaceLightmap (mod_brush_t *brush, msurface_t *surf)
 {
+	qfZoneScoped (true);
 	int         smax, tmax;
 
 	if (surf->flags & (SURF_DRAWSKY | SURF_DRAWTURB))
@@ -552,6 +553,7 @@ GL_CreateSurfaceLightmap (mod_brush_t *brush, msurface_t *surf)
 void
 GL_BuildLightmaps (model_t **models, int num_models)
 {
+	qfZoneScoped (true);
 	model_t    *m;
 	mod_brush_t *brush;
 

@@ -75,6 +75,7 @@ R_ScrapDelete (rscrap_t *scrap)
 VISIBLE vrect_t *
 R_ScrapAlloc (rscrap_t *scrap, int width, int height)
 {
+	qfZoneScoped (true);
 	vrect_t   **t, **best;
 	vrect_t    *old, *frags, *rect;
 

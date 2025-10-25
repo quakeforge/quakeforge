@@ -421,6 +421,7 @@ GLSL_ScrapTexture (scrap_t *scrap)
 subpic_t *
 GLSL_ScrapSubpic (scrap_t *scrap, int width, int height)
 {
+	qfZoneScoped (true);
 	vrect_t    *rect;
 	subpic_t   *subpic;
 

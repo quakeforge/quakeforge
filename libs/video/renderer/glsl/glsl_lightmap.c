@@ -133,6 +133,7 @@ static void
 R_BuildLightMap_1 (const vec4f_t *transform, mod_brush_t *brush,
 				   msurface_t *surf)
 {
+	qfZoneScoped (true);
 	int         smax, tmax, size;
 	unsigned    scale;
 	int         i, t;
@@ -189,6 +190,7 @@ R_BuildLightMap_1 (const vec4f_t *transform, mod_brush_t *brush,
 static void
 create_surf_lightmap (msurface_t *surf)
 {
+	qfZoneScoped (true);
 	int        smax, tmax;
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
@@ -204,6 +206,7 @@ create_surf_lightmap (msurface_t *surf)
 void
 glsl_R_BuildLightmaps (model_t **models, int num_models)
 {
+	qfZoneScoped (true);
 	int         size;
 	model_t    *m;
 	mod_brush_t *brush;

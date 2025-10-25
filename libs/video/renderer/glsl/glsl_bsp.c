@@ -431,6 +431,7 @@ glsl_R_ClearTextures (void)
 void
 glsl_R_RegisterTextures (model_t **models, int num_models)
 {
+	qfZoneScoped (true);
 	int         i;
 	model_t    *m;
 	mod_brush_t *brush;
@@ -544,6 +545,7 @@ build_surf_displist (model_t **models, msurface_t *surf, int base,
 void
 glsl_R_BuildDisplayLists (model_t **models, int num_models)
 {
+	qfZoneScoped (true);
 	int         vertex_index_base;
 	model_t    *m;
 	dmodel_t   *dm;
