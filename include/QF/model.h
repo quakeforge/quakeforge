@@ -384,7 +384,8 @@ typedef struct model_s {
 model_t *qfm_alloc_model (void);
 void qfm_free_model (model_t *mod);
 
-void Mod_Init (void);
+struct wssched_s;
+void Mod_Init (struct wssched_s *sched);
 void Mod_Init_Cvars (void);
 void Mod_ClearAll (void);
 model_t *Mod_ForName (const char *name, bool crash);

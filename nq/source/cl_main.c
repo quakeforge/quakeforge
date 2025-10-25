@@ -56,6 +56,7 @@
 #include "QF/scene/light.h"
 #include "QF/scene/scene.h"
 #include "QF/ui/font.h"//FIXME
+#include "QF/thread/schedule.h"
 
 #include "compat.h"
 

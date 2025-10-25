@@ -76,6 +76,7 @@
 #include "QF/zone.h"
 
 #include "QF/plugin/console.h"
+#include "QF/thread/schedule.h"
 
 #include "buildnum.h"
 #include "compat.h"
@@ -96,6 +97,8 @@ SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
 	SERVER_PLUGIN_LIST
 };
+
+wssched_t *sv_sched;
 
 cbuf_t     *sv_cbuf;
 cbuf_args_t *sv_args;
@@ -563,6 +566,8 @@ SV_Shutdown (void *data)
 	}
 	if (sv.recording_demo)
 		SV_Stop (0);
+
+	wssched_destroy (sv_sched);
 }
 
 /*
@@ -2664,6 +2669,8 @@ SV_Init (void)
 
 	Sys_RegisterShutdown (SV_Shutdown, 0);
 
+	sv_sched = wssched_create (Sys_ProcessorCount ());
+
 	Sys_Init ();
 	GIB_Init (true);
 	COM_ParseConfig (sv_cbuf);
@@ -2709,7 +2716,7 @@ SV_Init (void)
 	Game_Init ();
 
 	SV_Progs_Init ();
-	Mod_Init ();
+	Mod_Init (sv_sched);
 
 	SV_InitNet ();
 

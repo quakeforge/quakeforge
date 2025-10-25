@@ -64,6 +64,8 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/ui/font.h"
 #include "QF/ui/text.h"
 
+#include "QF/thread/schedule.h"
+
 #include "rua_internal.h"
 
 #include "ruamoko/qwaq/qwaq.h"
@@ -97,6 +99,8 @@ static canvas_system_t canvas_sys;
 static view_t screen_view;
 static uint32_t canvas;
 
+static wssched_t *bi_sched;
+
 static void
 bi_2d (void)
 {
@@ -123,7 +127,7 @@ bi_init_graphics (progs_t *pr, void *_res)
 {
 	VID_Init (default_palette[0], default_colormap);
 	IN_Init ();
-	Mod_Init ();
+	Mod_Init (bi_sched);
 	int plitem_id = P_INT (pr, 0);
 	plitem_t *plitem = nullptr;
 	if (plitem_id) {
@@ -359,6 +363,8 @@ BI_shutdown (void *data)
 	printf ("BI_shutdown\n");
 	ECS_DelRegistry (canvas_sys.reg);
 	ColorCache_Shutdown ();
+	wssched_destroy (bi_sched);
+	bi_sched = nullptr;
 }
 
 static byte *
@@ -549,6 +555,8 @@ BI_Graphics_Init (progs_t *pr)
 	PI_RegisterPlugins (client_plugin_list);
 
 	Sys_RegisterShutdown (BI_shutdown, pr);
+
+	bi_sched = wssched_create (Sys_ProcessorCount ());
 
 	R_Progs_Init (pr);
 	RUA_Game_Init (pr, thread->rua_security);

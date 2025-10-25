@@ -54,6 +54,8 @@ extern	int			host_in_game;		// input focus goes to the game
 extern	double		realtime;			// not bounded in any way, changed at
 										// start of every frame, never reset
 
+extern struct wssched_s *host_sched;
+
 extern struct cbuf_s *host_cbuf;
 
 void Host_ClearMemory (void);

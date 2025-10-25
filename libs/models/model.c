@@ -252,7 +252,7 @@ mod_shutdown (void *data)
 		mod_unload_model (&mod->mod);
 	}
 
-	wssched_destroy (model_registry->sched);
+	model_registry->sched = nullptr;
 	qfm_model_reset (model_registry);
 	Hash_DelTable (model_registry->model_tab);
 	free (model_registry);
@@ -277,7 +277,7 @@ qfm_model_free_model (void *m, void *data)
 }
 
 VISIBLE void
-Mod_Init (void)
+Mod_Init (wssched_t *sched)
 {
 	qfZoneScoped (true);
 	byte   *dest;
@@ -310,7 +310,7 @@ Mod_Init (void)
 
 	model_registry = malloc (sizeof (model_registry_t));
 	*model_registry = (model_registry_t) {
-		.sched = wssched_create (Sys_ProcessorCount ()),
+		.sched = sched,
 	};
 	model_registry->model_tab = Hash_NewTable (1021, qfm_model_get_key,
 											   qfm_model_free_model,

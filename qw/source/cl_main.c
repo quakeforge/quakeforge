@@ -94,6 +94,7 @@
 #include "QF/scene/light.h"
 #include "QF/scene/transform.h"
 #include "QF/ui/font.h"//FIXME
+#include "QF/thread/schedule.h"
 
 #include "buildnum.h"
 #include "compat.h"
@@ -137,6 +138,8 @@ bool        noclip_anglehack;			// remnant from old quake
 
 cbuf_t     *cl_cbuf;
 cbuf_t     *cl_stbuf;
+
+wssched_t *cl_sched;
 
 float cl_mem_size;
 static cvar_t cl_mem_size_cvar = {
@@ -1472,7 +1475,7 @@ CL_Init (void)
 	W_LoadWadFile ("gfx.wad");
 	VID_Init (basepal, colormap);
 	IN_Init ();
-	Mod_Init ();
+	Mod_Init (cl_sched);
 	R_Init (nullptr);
 	r_data->lightstyle = cl.lightstyle;
 	Font_Init ();	//FIXME not here
@@ -2064,6 +2067,12 @@ CL_Autoexec (int phase, void *data)
 	}
 }
 
+static void
+Host_Shutdown (void *data)
+{
+	wssched_destroy (cl_sched);
+}
+
 void
 Host_Init (void)
 {
@@ -2083,6 +2092,10 @@ Host_Init (void)
 	QFS_Init (hunk, "qw");
 	QFS_GamedirCallback (CL_Autoexec, 0);
 	PI_Init ();
+
+	Sys_RegisterShutdown (Host_Shutdown, 0);
+
+	cl_sched = wssched_create (Sys_ProcessorCount ());
 
 	Sys_RegisterShutdown (Net_LogStop, 0);
 
