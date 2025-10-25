@@ -205,6 +205,7 @@ glsl_R_Shutdown (void)
 void
 glsl_R_NewScene (scene_t *scene)
 {
+	qfZoneScoped (true);
 	int         i;
 
 	for (i = 0; i < 256; i++)

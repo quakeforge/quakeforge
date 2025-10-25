@@ -148,6 +148,7 @@ gl_R_Init (struct plitem_s *config)
 static void
 register_textures (mod_brush_t *brush)
 {
+	qfZoneScoped (true);
 	texture_t  *tex;
 
 	for (unsigned i = 0; i < brush->numtextures; i++) {
@@ -161,6 +162,7 @@ register_textures (mod_brush_t *brush)
 void
 gl_R_NewScene (scene_t *scene)
 {
+	qfZoneScoped (true);
 	texture_t  *tex;
 	mod_brush_t *brush;
 

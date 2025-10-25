@@ -145,6 +145,7 @@ release_instsurfs (void)
 void
 gl_R_AddTexture (texture_t *tx)
 {
+	qfZoneScoped (true);
 	int         i;
 	if (r_num_texture_chains == max_texture_chains) {
 		max_texture_chains += 64;
@@ -162,6 +163,7 @@ gl_R_AddTexture (texture_t *tx)
 void
 gl_R_InitSurfaceChains (mod_brush_t *brush)
 {
+	qfZoneScoped (true);
 	if (static_chains)
 		free (static_chains);
 	static_chains = calloc (brush->nummodelsurfaces, sizeof (instsurf_t));
@@ -794,6 +796,7 @@ model_t    *gl_currentmodel;
 void
 GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 {
+	qfZoneScoped (true);
 	float       s, t;
 	float      *vec;
 	int         lindex, lnumverts, i;

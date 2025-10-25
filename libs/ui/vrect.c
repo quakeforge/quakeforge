@@ -49,6 +49,7 @@ static struct DARRAY_TYPE(vrect_t *) rect_sets = DARRAY_STATIC_INIT (32);
 VISIBLE vrect_t *
 VRect_New (int x, int y, int width, int height)
 {
+	qfZoneScoped (true);
 	vrect_t    *r;
 #ifndef TEST_MEMORY
 	if (!free_rects) {
@@ -76,6 +77,7 @@ VRect_New (int x, int y, int width, int height)
 VISIBLE void
 VRect_Delete (vrect_t *rect)
 {
+	qfZoneScoped (true);
 #ifndef TEST_MEMORY
 	rect->next = free_rects;
 	free_rects = rect;
@@ -265,6 +267,7 @@ cleanup:
 VISIBLE vrect_t *
 VRect_SubRect (const vrect_t *rect, int width, int height)
 {
+	qfZoneScoped (true);
 	if (width > rect->width) {
 		width = rect->width;
 	}
