@@ -216,6 +216,7 @@ wssched_create (int num_threads)
 				+ sizeof (waiter_t[num_threads])
 				+ sizeof (deque_t *[num_threads])
 				+ sizeof (worker_t[num_threads]);
+	size = (size + 127) & ~127;
 	wssched_t  *sched = aligned_alloc (128, size);
 	*sched = (wssched_t) {
 		.main_queue = deque_new (DEQUE_DEF_SIZE),
