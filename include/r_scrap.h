@@ -31,11 +31,21 @@
 #ifndef __r_scrap_h
 #define __r_scrap_h
 
+typedef struct vrect_s vrect_t;
+typedef struct set_s set_t;
+typedef struct scrapset_s scrapset_t;
+
 typedef struct rscrap_s {
-	struct vrect_s *free_rects;			///< linked list of free areas
-	struct vrect_s *rects;				///< linked list of allocated rects
-	int         width;					///< overall width of scrap
-	int         height;					///< overall height of scrap
+	/// For a free region of size width,height, that size will be a member of
+	/// the x set for width, and y set for height.
+	set_t      *free_x;			///< set of free regions by width
+	set_t      *free_y;			///< set of free regions by height
+	int        *w_counts;
+	int        *h_counts;
+	scrapset_t *free_rects;		///< set of width sets
+	vrect_t    *rects;
+	int         width;			///< overall width of scrap
+	int         height;			///< overall height of scrap
 } rscrap_t;
 
 void R_ScrapInit (rscrap_t *scrap, int width, int height);

@@ -83,7 +83,7 @@ Font_Free (font_t *font)
 	if (font->face) {
 		FT_Done_Face (font->face);
 	}
-	if (font->scrap.rects || font->scrap.free_rects) {
+	if (font->scrap.free_rects) {
 		R_ScrapDelete (&font->scrap);
 	}
 	free (font->glyph_rects);

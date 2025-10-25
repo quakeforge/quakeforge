@@ -31,12 +31,21 @@
 # include "config.h"
 #endif
 
+#include "QF/set.h"
 #include "QF/sys.h"
 
 #include "QF/ui/vrect.h"
 
 #include "compat.h"
 #include "r_scrap.h"
+
+typedef struct scrapset_s {
+	int         users;
+	union {
+		scrapset_t *sets[256];
+		vrect_t    *rects[16][16];
+	};
+} scrapset_t;
 
 static unsigned
 pow2rup (unsigned x)
@@ -51,15 +60,91 @@ pow2rup (unsigned x)
 	return x;
 }
 
+static vrect_t *
+r_scrap_pull_rect (rscrap_t *scrap, int width, int height)
+{
+	auto col = &scrap->free_rects->sets[width / 16];
+	if (!*col) {
+		return nullptr;
+	}
+	auto row = &(*col)->sets[height / 16];
+	if (!*row) {
+		return nullptr;
+	}
+	auto cell = &(*row)->rects[width % 16][height % 16];
+	auto rect = *cell;
+	if (!rect) {
+		return nullptr;
+	}
+	if (!(*cell = rect->next)) {
+		if (!--(*row)->users) {
+			free (*row);
+			*row = nullptr;
+			if (!--(*col)->users) {
+				free (*col);
+				*col = nullptr;
+				--scrap->free_rects->users;
+			}
+		}
+	}
+	if (!--scrap->w_counts[width]) {
+		set_remove (scrap->free_x, width);
+	}
+	if (!--scrap->h_counts[height]) {
+		set_remove (scrap->free_y, height);
+	}
+	rect->next = nullptr;
+	return rect;
+}
+
+static void
+r_scrap_push_rect (rscrap_t *scrap, vrect_t *rect)
+{
+	int width = rect->width - 1;
+	int height = rect->height - 1;
+	if (!scrap->free_rects) {
+		scrap->free_rects = calloc (1, sizeof (scrapset_t));
+	}
+	auto col = &scrap->free_rects->sets[width / 16];
+	if (!*col) {
+		scrap->free_rects->users++;
+		*col = calloc (1, sizeof (scrapset_t));
+	}
+	auto row = &(*col)->sets[height / 16];
+	if (!*row) {
+		(*col)->users++;
+		*row = calloc (1, sizeof (scrapset_t));
+	}
+	auto cell = &(*row)->rects[width % 16][height % 16];
+	if (!*cell) {
+		(*row)->users++;
+	}
+	rect->next = *cell;
+	*cell = rect;
+
+	set_add (scrap->free_x, width);
+	set_add (scrap->free_y, height);
+	scrap->w_counts[width]++;
+	scrap->h_counts[height]++;
+}
+
 VISIBLE void
 R_ScrapInit (rscrap_t *scrap, int width, int height)
 {
 	width = pow2rup (width);
 	height = pow2rup (height);
-	scrap->width = width;
-	scrap->height = height;
-	scrap->rects = 0;
-	scrap->free_rects = VRect_New (0, 0, width, height);
+	if (width > 4096 || height > 4096) {
+		Sys_Printf ("%dx%d scrap not supported", width, height);
+	}
+	*scrap = (rscrap_t) {
+		.width = width,
+		.height = height,
+		.free_x = set_new (),
+		.free_y = set_new (),
+		.w_counts = calloc (width, sizeof (int)),
+		.h_counts = calloc (height, sizeof (int)),
+	};
+	r_scrap_push_rect (scrap, VRect_New (0, 0, width, height));
 }
 
 VISIBLE void
@@ -69,55 +154,92 @@ R_ScrapDelete (rscrap_t *scrap)
 		return;
 	}
 	R_ScrapClear (scrap);
-	VRect_Delete (scrap->free_rects);
 }
 
 VISIBLE vrect_t *
 R_ScrapAlloc (rscrap_t *scrap, int width, int height)
 {
 	qfZoneScoped (true);
-	vrect_t   **t, **best;
-	vrect_t    *old, *frags, *rect;
 
-	best = 0;
-	for (t = &scrap->free_rects; *t; t = &(*t)->next) {
-		if ((*t)->width < width || (*t)->height < height)
-			continue;						// won't fit
-		if (!best) {
-			best = t;
-			continue;
-		}
-		if ((*t)->width == width && (*t)->height == height) {
-			// exact fit
-			best = t;
-			break;
-		}
-		if ((*best)->height == height) {
-			if ((*t)->height == height && (*t)->width < (*best)->width) {
-				best = t;
+	auto avail_x = set_start (scrap->free_x, width - 1);
+	auto avail_y = set_start (scrap->free_y, height - 1);
+	if (!avail_x || !avail_y) {
+		// no large enough region is available
+		return nullptr;
+	}
+
+	const unsigned w = width - 1;
+	const unsigned h = height - 1;
+	auto old = r_scrap_pull_rect (scrap, avail_x->element, avail_y->element);
+	if (!old) {
+		if (avail_y->element == h) {
+			// perfect fit for height, check all the widths
+			for (avail_x = set_next (avail_x); avail_x;
+				 avail_x = set_next (avail_x)) {
+				old = r_scrap_pull_rect (scrap, avail_x->element,
+										 avail_y->element);
+				if (old) {
+					break;
+				}
 			}
-		} else if ((*best)->width == width) {
-			if ((*t)->width == width && (*t)->height < (*best)->height) {
-				best = t;
+			if (!old) {
+				avail_x = set_start (scrap->free_x, w);
+				avail_y = set_next (avail_y);
+			}
+		} else if (avail_x->element == w) {
+			// perfect fit for width, check all the heights
+			for (avail_y = set_next (avail_y); avail_y;
+				 avail_y = set_next (avail_y)) {
+				old = r_scrap_pull_rect (scrap, avail_x->element,
+										 avail_y->element);
+				if (old) {
+					break;
+				}
+			}
+			if (!old) {
+				avail_x = set_next (avail_x);
+				avail_y = set_start (scrap->free_y, h);
 			}
 		}
-		if ((*t)->width <= (*best)->width || (*t)->height <= (*best)->height) {
-			best = t;
+		if (!old) {
+			// there's no perfect fit, so find the smallest region... or at
+			// least try to. Things get a little wierd sometimes for the quake
+			// 2d pic set, but lightmaps seem to behave nicely.
+			do {
+				old = r_scrap_pull_rect (scrap, avail_x->element,
+										 avail_y->element);
+				if (old) {
+					break;
+				}
+				if (avail_y->element < avail_x->element) {
+					avail_y = set_next (avail_y);
+					if (!avail_y && (avail_x = set_next (avail_x))) {
+						avail_y = set_start (scrap->free_y, h);
+					}
+				} else {
+					avail_x = set_next (avail_x);
+					if (!avail_x && (avail_y = set_next (avail_y))) {
+						avail_x = set_start (scrap->free_x, w);
+					}
+				}
+			} while (avail_x && avail_y);
 		}
 	}
-	if (!best)
-		return 0;							// couldn't find a spot
-	old = *best;
-	*best = old->next;
-	rect = VRect_SubRect (old, width, height);
-	frags = rect->next;
-	VRect_Delete (old);
-	if (frags) {
-		// old was bigger than the requested size
-		for (old = frags; old->next; old = old->next)
-			;
-		old->next = scrap->free_rects;
-		scrap->free_rects = frags;
+	if (!old) {
+		Sys_Error ("the bits lied!");
+	}
+
+	auto rect = old;
+	if (old->width > width || old->height > height) {
+		rect = VRect_SubRect (old, width, height);
+		VRect_Delete (old);
+		auto frags = rect->next;
+		while (frags) {
+			// old was bigger than the requested size
+			auto next = frags->next;
+			r_scrap_push_rect (scrap, frags);
+			frags = next;
+		}
 	}
 	rect->next = scrap->rects;
 	scrap->rects = rect;
@@ -128,7 +250,6 @@ R_ScrapAlloc (rscrap_t *scrap, int width, int height)
 VISIBLE void
 R_ScrapFree (rscrap_t *scrap, vrect_t *rect)
 {
-	vrect_t    *old, *merge;
 	vrect_t   **t;
 
 	for (t = &scrap->rects; *t; t = &(*t)->next)
@@ -138,53 +259,88 @@ R_ScrapFree (rscrap_t *scrap, vrect_t *rect)
 		Sys_Error ("R_ScrapFree: broken rect");
 	*t = rect->next;
 
+#if 0
+	vrect_t *merge;
 	do {
-		merge = 0;
-		for (t = &scrap->free_rects; *t; t = &(*t)->next) {
-			merge = VRect_Merge (*t, rect);
-			if (merge) {
-				old = *t;
-				*t = (*t)->next;
-				VRect_Delete (old);
-				VRect_Delete (rect);
-				rect = merge;
-				break;
+		merge = nullptr;
+		int h = rect->height - 1;
+		for (int i = 0; i < 256; i++) {
+			scrapset_t **row;
+			if (!scrap->free_rects->sets[i]
+				|| !*(row = &scrap->free_rects->sets[i]->sets[h / 16])) {
+				continue;
+			}
+			for (int j = 0; j < 16; j++) {
+				for (t = &(*row)->rects[j][h % 16]; *t; t = &(*t)->next) {
+					merge = VRect_Merge (*t, rect);
+					if (merge) {
+						auto old = *t;
+						*t = (*t)->next;
+						VRect_Delete (old);
+						VRect_Delete (rect);
+						rect = merge;
+						break;
+					}
+				}
 			}
 		}
 	} while (merge);
-	rect->next = scrap->free_rects;
-	scrap->free_rects = rect;
+#endif
+	r_scrap_push_rect (scrap, rect);
 }
 
 VISIBLE void
 R_ScrapClear (rscrap_t *scrap)
 {
-	vrect_t    *t;
-
-	while (scrap->free_rects) {
-		t = scrap->free_rects;
-		scrap->free_rects = t->next;
-		VRect_Delete (t);
+	if (scrap->free_rects) {
+		scrap->free_rects->users = 0;
+		for (int i = 0; i < 256; i++) {
+			auto col = scrap->free_rects->sets[i];
+			if (col) {
+				for (int j = 0; j < 256; j++) {
+					auto row = col->sets[j];
+					if (row) {
+						free (row);
+					}
+				}
+				free (col);
+			}
+		}
+		free (scrap->free_rects);
+		scrap->free_rects = nullptr;
 	}
 	while (scrap->rects) {
-		t = scrap->rects;
+		auto t = scrap->rects;
 		scrap->rects = t->next;
 		VRect_Delete (t);
 	}
 
-	scrap->free_rects = VRect_New (0, 0, scrap->width, scrap->height);
+	r_scrap_push_rect (scrap, VRect_New (0, 0, scrap->width, scrap->height));
 }
 
 VISIBLE size_t
 R_ScrapArea (rscrap_t *scrap, int *count)
 {
-	vrect_t    *rect;
-	size_t      area;
+	size_t      area = 0;
 	int         c = 0;
 
-	for (rect = scrap->free_rects, area = 0; rect; rect = rect->next) {
-		area += rect->width * rect->height;
-		c++;
+	if (scrap->free_rects) {
+		scrap->free_rects->users = 0;
+		for (int i = 0; i < 256; i++) {
+			auto col = scrap->free_rects->sets[i];
+			for (int j = 0; col && j < 256; j++) {
+				auto row = col->sets[j];
+				for (int k = 0; row && k < 16; k++) {
+					for (int l = 0; l < 16; l++) {
+						for (auto rect = row->rects[k][l]; rect;
+							 rect = rect->next) {
+							area += rect->width * rect->height;
+							c++;
+						}
+					}
+				}
+			}
+		}
 	}
 	if (count) {
 		*count = c;
@@ -195,10 +351,46 @@ R_ScrapArea (rscrap_t *scrap, int *count)
 VISIBLE void
 R_ScrapDump (rscrap_t *scrap)
 {
-	vrect_t    *rect;
-
-	for (rect = scrap->rects; rect; rect = rect->next) {
+	if (scrap->rects) {
+		Sys_Printf ("allocated:\n");
+	}
+	for (auto rect = scrap->rects; rect; rect = rect->next) {
 		Sys_Printf ("%d %d %d %d\n", rect->x, rect->y,
 					rect->width, rect->height);
+	}
+	if (scrap->free_rects && scrap->free_rects->users) {
+		Sys_Printf ("free:\n");
+		Sys_Printf ("widths : %s\n", set_as_string (scrap->free_x));
+		for (auto wi = set_first (scrap->free_x); wi; wi = set_next (wi)) {
+			Sys_Printf (" %d", scrap->w_counts[wi->element]);
+		}
+		Sys_Printf ("\nheights: %s\n", set_as_string (scrap->free_y));
+		for (auto hi = set_first (scrap->free_y); hi; hi = set_next (hi)) {
+			Sys_Printf (" %d", scrap->h_counts[hi->element]);
+		}
+		Sys_Printf ("\n");
+		for (int i = 0; i < 256; i++) {
+			auto col = scrap->free_rects->sets[i];
+			if (!col) {
+				continue;
+			}
+			for (int j = 0; j < 256; j++) {
+				auto row = col->sets[j];
+				if (!row) {
+					continue;
+				}
+				for (int k = 0; k < 16; k++) {
+					for (int l = 0; l < 16; l++) {
+						for (auto rect = row->rects[k][l]; rect;
+							 rect = rect->next) {
+							Sys_Printf ("%d:%d:%d:%d %d %d %d %d\n",
+										i, j, k, l,
+										rect->x, rect->y,
+										rect->width, rect->height);
+						}
+					}
+				}
+			}
+		}
 	}
 }
