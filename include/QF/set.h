@@ -436,6 +436,21 @@ unsigned set_count (const set_t *set) __attribute__((pure));
 set_iter_t *set_first (const set_t *set);
 set_iter_t *set_first_r (set_pool_t *set_pool, const set_t *set);
 
+/** Find the first "member" of the set inclusively after x.
+
+	\warning	For normal sets, the set iterator represents a member of the
+				set, but for inverted sets, the set iterator represetns a
+				<em>non</em>-member of the set.
+
+	\param set		The set to scan.
+	\param x		The "member" at which to start scanning.
+	\return			A pointer to a set iterator indicating the first
+					(non-)member of the set including or after x, or null if
+					there are no remaining (non-)members.
+*/
+set_iter_t *set_start (const set_t *set, unsigned x);
+set_iter_t *set_start_r (set_pool_t *set_pool, const set_t *set, unsigned x);
+
 /** Find the next "member" of the set.
 
 	\warning	For normal sets, the set iterator represents a member of the

@@ -715,12 +715,11 @@ set_count (const set_t *set)
 }
 
 set_iter_t *
-set_first_r (set_pool_t *set_pool, const set_t *set)
+set_start_r (set_pool_t *set_pool, const set_t *set, unsigned x)
 {
-	unsigned    x;
 	set_iter_t *set_iter;
 
-	for (x = 0; x < set->size; x++) {
+	for (; x < set->size; x++) {
 		if (_set_is_member (set, x)) {
 			set_iter = new_setiter (set_pool);
 			set_iter->set = set;
@@ -732,9 +731,21 @@ set_first_r (set_pool_t *set_pool, const set_t *set)
 }
 
 set_iter_t *
+set_start (const set_t *set, unsigned x)
+{
+	return set_start_r (&static_set_pool, set, x);
+}
+
+set_iter_t *
+set_first_r (set_pool_t *set_pool, const set_t *set)
+{
+	return set_start_r (set_pool, set, 0);
+}
+
+set_iter_t *
 set_first (const set_t *set)
 {
-	return set_first_r (&static_set_pool, set);
+	return set_start (set, 0);
 }
 
 set_iter_t *
