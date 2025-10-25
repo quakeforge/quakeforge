@@ -1526,7 +1526,7 @@ Mod_LoadBrushModel (model_t *mod, void *buffer, wssched_t *sched)
 		.sched = sched,
 	};
 
-	if (mod_funcs->Mod_BrushContext) {
+	if (mod_funcs && mod_funcs->Mod_BrushContext) {
 		mod_funcs->Mod_BrushContext (&brush_ctx);
 	}
 
