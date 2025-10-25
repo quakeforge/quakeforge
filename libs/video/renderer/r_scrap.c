@@ -296,15 +296,21 @@ R_ScrapClear (rscrap_t *scrap)
 		scrap->free_rects->users = 0;
 		for (int i = 0; i < 256; i++) {
 			auto col = scrap->free_rects->sets[i];
-			if (col) {
-				for (int j = 0; j < 256; j++) {
-					auto row = col->sets[j];
-					if (row) {
-						free (row);
+			for (int j = 0; col && j < 256; j++) {
+				auto row = col->sets[j];
+				for (int k = 0; row && k < 16; k++) {
+					for (int l = 0; l < 16; l++) {
+						auto cell = &row->rects[k][l];
+						while (*cell) {
+							auto rect = *cell;
+							*cell = rect->next;
+							VRect_Delete (rect);
+						}
 					}
 				}
-				free (col);
+				free (row);
 			}
+			free (col);
 		}
 		free (scrap->free_rects);
 		scrap->free_rects = nullptr;
