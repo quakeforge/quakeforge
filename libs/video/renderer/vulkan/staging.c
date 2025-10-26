@@ -319,8 +319,25 @@ acquire_space (qfv_packet_t *packet, size_t size)
 		// utterly impossible allocation
 		return nullptr;
 	}
-	if (!stage->num_free) {
+	if (packet->length
+		&& packet->offset + packet->length + size > stage->size) {
+		// the packet needs to grow past the end of the staging buffer, which
+		// must not happen
 		return nullptr;
+	}
+	if (false) {
+wait_for_space:
+		if (RB_DATA_AVAILABLE (stage->packets) > 1) {
+			auto p = RB_PEEK_DATA (stage->packets, 0);
+			if (p == packet) {
+				// can't wait on packet as it hasn't been submitted
+				return nullptr;
+			}
+			dfunc->vkWaitForFences (device->dev, 1, &p->fence, VK_TRUE, ~0ull);
+			release_space (stage, p);
+			RB_RELEASE (stage->packets, 1);
+			check_invariants (stage);
+		}
 	}
 	if (!packet->length) {
 		auto fs = &stage->free[0];
@@ -331,7 +348,7 @@ acquire_space (qfv_packet_t *packet, size_t size)
 			}
 		}
 		if (fs->length < size) {
-			return nullptr;
+			goto wait_for_space;
 		}
 		packet->offset = fs->offset;
 		packet->length = size;
@@ -344,7 +361,7 @@ acquire_space (qfv_packet_t *packet, size_t size)
 	qfvs_space_t *fs = bsearch (&end, stage->free, stage->num_free,
 								sizeof (*fs), stage_space_cmp);
 	if (!fs) {
-		return nullptr;
+		goto wait_for_space;
 	}
 	if (fs->offset + fs->length >= packet->offset + packet->length + size) {
 		// enough space available
@@ -354,7 +371,7 @@ acquire_space (qfv_packet_t *packet, size_t size)
 		check_invariants (stage);
 		return data;
 	}
-	return nullptr;
+	goto wait_for_space;
 }
 
 qfv_packet_t *
