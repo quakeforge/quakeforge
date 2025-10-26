@@ -65,6 +65,7 @@
 VISIBLE mleaf_t *
 Mod_PointInLeaf (vec4f_t p, const mod_brush_t *brush)
 {
+	qfZoneScoped (true);
 	float       d;
 
 	if (!brush || !brush->nodes)
@@ -85,6 +86,7 @@ Mod_PointInLeaf (vec4f_t p, const mod_brush_t *brush)
 static inline uint32_t
 Mod_CompressVis (byte *out, const byte *vis, uint32_t num_vis)
 {
+	qfZoneScoped (true);
 	byte *start = out;
 	uint32_t vis_row = (num_vis + 7) >> 3;
 	for (uint32_t j = 0; j < vis_row; j++) {
@@ -110,6 +112,7 @@ static inline void
 Mod_DecompressVis_set (const byte *in, uint32_t num_vis, byte defvis,
 					   set_t *pvs)
 {
+	qfZoneScoped (true);
 	byte       *out = (byte *) pvs->map;
 	byte       *start = out;
 	int			row, c;
@@ -145,6 +148,7 @@ static inline void
 Mod_DecompressVis_mix (const byte *in, uint32_t num_vis, byte defvis,
 					   set_t *pvs)
 {
+	qfZoneScoped (true);
 	byte       *out = (byte *) pvs->map;
 	byte       *start = out;
 	int			row, c;
@@ -177,6 +181,7 @@ VISIBLE void
 Mod_LeafPVS_set (const mleaf_t *leaf, const mod_brush_t *brush, byte defvis,
 				 set_t *out)
 {
+	qfZoneScoped (true);
 	unsigned    numvis = brush->visleafs;
 	unsigned    excess = SET_SIZE (numvis) - numvis;
 
@@ -194,6 +199,7 @@ VISIBLE void
 Mod_LeafPVS_mix (const mleaf_t *leaf, const mod_brush_t *brush, byte defvis,
 				 set_t *out)
 {
+	qfZoneScoped (true);
 	unsigned    numvis = brush->visleafs;
 	unsigned    excess = SET_SIZE (numvis) - numvis;
 
@@ -216,6 +222,7 @@ Mod_LeafPVS_mix (const mleaf_t *leaf, const mod_brush_t *brush, byte defvis,
 static void
 mod_unique_miptex_name (texture_t **textures, texture_t *tx, int ind)
 {
+	qfZoneScoped (true);
 	constexpr const int maxlen = sizeof (tx->name) - 1;
 	char        name[maxlen + 1];
 	int         num = 0, i;
@@ -248,6 +255,7 @@ typedef struct {
 static texanim_t
 get_texanim (const texture_t *tx)
 {
+	qfZoneScoped (true);
 	int code = tx->name[1];
 	if (code >= 'a' && code <= 'z') {
 		// convert to uppercase, avoiding toupper (table lookup,
@@ -273,6 +281,7 @@ get_texanim (const texture_t *tx)
 static void
 Mod_LoadTextures (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -390,6 +399,7 @@ Mod_LoadTextures (mod_brush_ctx_t *brush_ctx)
 static int
 leaf_compare (const void *_la, const void *_lb)
 {
+	qfZoneScoped (true);
 	const leafvis_t *la = _la;
 	const leafvis_t *lb = _lb;
 	if (la->visoffs == lb->visoffs) {
@@ -418,6 +428,7 @@ typedef struct {
 static void
 cluster_vis_wait (task_t *task, int worker_id)
 {
+	qfZoneScoped (true);
 	auto cluster_data = (cluster_data_t *) task->data;
 
 	pthread_mutex_lock (&cluster_data->fence_mut);
@@ -429,6 +440,7 @@ cluster_vis_wait (task_t *task, int worker_id)
 static void
 cluster_vis_task (task_t *task, int worker_id)
 {
+	qfZoneScoped (true);
 	auto cluster_data = (cluster_data_t *) task->data;
 	auto base_pvs = cluster_data->base_pvs;
 	auto vis = &cluster_data->worker_pvs[worker_id];
@@ -491,6 +503,7 @@ cluster_wait_complete (cluster_data_t *cluster_data)
 static void
 Mod_LoadVisibility (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -648,6 +661,7 @@ Mod_LoadVisibility (mod_brush_ctx_t *brush_ctx)
 static void
 Mod_LoadEntities (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -662,6 +676,7 @@ Mod_LoadEntities (mod_brush_ctx_t *brush_ctx)
 static void
 Mod_LoadVertexes (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -683,6 +698,7 @@ Mod_LoadVertexes (mod_brush_ctx_t *brush_ctx)
 static void
 Mod_LoadSubmodels (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -720,6 +736,7 @@ Mod_LoadSubmodels (mod_brush_ctx_t *brush_ctx)
 static void
 Mod_LoadEdges (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -743,6 +760,7 @@ Mod_LoadEdges (mod_brush_ctx_t *brush_ctx)
 static void
 Mod_LoadTexinfo (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -802,6 +820,7 @@ Mod_LoadTexinfo (mod_brush_ctx_t *brush_ctx)
 static void
 CalcSurfaceExtents (model_t *mod, msurface_t *s)
 {
+	qfZoneScoped (true);
 	float		mins[2], maxs[2], val;
 	int			e, i, j;
 	int			bmins[2], bmaxs[2];
@@ -848,6 +867,7 @@ CalcSurfaceExtents (model_t *mod, msurface_t *s)
 static void
 Mod_LoadFaces (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -934,6 +954,7 @@ Mod_LoadFaces (mod_brush_ctx_t *brush_ctx)
 static void
 Mod_SetParent (mod_brush_t *brush, int node_id, int parent_id)
 {
+	qfZoneScoped (true);
 	if (node_id < 0) {
 		brush->leaf_parents[~node_id] = parent_id;
 		return;
@@ -947,6 +968,7 @@ Mod_SetParent (mod_brush_t *brush, int node_id, int parent_id)
 static int
 Mod_PropagateClusters (mod_brush_t *brush, int node_id, int32_t *node_cluster)
 {
+	qfZoneScoped (true);
 	if (node_id < 0) {
 		return 0;
 	}
@@ -981,6 +1003,7 @@ Mod_PropagateClusters (mod_brush_t *brush, int node_id, int32_t *node_cluster)
 static void
 Mod_SetLeafFlags (mod_brush_t *brush)
 {
+	qfZoneScoped (true);
 	for (unsigned i = 0; i < brush->modleafs; i++) {
 		int         flags = 0;
 		mleaf_t    *leaf = &brush->leafs[i];
@@ -996,6 +1019,7 @@ Mod_SetLeafFlags (mod_brush_t *brush)
 static void
 Mod_LoadNodes (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -1061,6 +1085,7 @@ Mod_LoadNodes (mod_brush_ctx_t *brush_ctx)
 static void
 Mod_LoadLeafs (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -1101,6 +1126,7 @@ Mod_LoadLeafs (mod_brush_ctx_t *brush_ctx)
 static void
 Mod_LoadClipnodes (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -1177,6 +1203,7 @@ Mod_LoadClipnodes (mod_brush_ctx_t *brush_ctx)
 static void
 Mod_MakeHull0 (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -1213,6 +1240,7 @@ Mod_MakeHull0 (mod_brush_ctx_t *brush_ctx)
 static void
 Mod_LoadMarksurfaces (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -1244,6 +1272,7 @@ Mod_LoadMarksurfaces (mod_brush_ctx_t *brush_ctx)
 static void
 Mod_LoadSurfedges (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -1265,6 +1294,7 @@ Mod_LoadSurfedges (mod_brush_ctx_t *brush_ctx)
 static void
 Mod_LoadPlanes (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -1296,6 +1326,7 @@ Mod_LoadPlanes (mod_brush_ctx_t *brush_ctx)
 static void
 do_checksums (const bsp_t *bsp, void *_mod)
 {
+	qfZoneScoped (true);
 	int         i;
 	model_t    *mod = (model_t *) _mod;
 	byte       *base;
@@ -1336,6 +1367,7 @@ recurse_draw_tree (mod_brush_t *brush, int node_id, int depth)
 static void
 Mod_FindDrawDepth (mod_brush_t *brush)
 {
+	qfZoneScoped (true);
 	brush->depth = 0;
 	recurse_draw_tree (brush, 0, 1);
 }
@@ -1386,6 +1418,7 @@ cluster_surf_cmp (const void *_sa, const void *_sb, void *_bsp)
 static void
 Mod_MakeClusters (mod_brush_ctx_t *brush_ctx)
 {
+	qfZoneScoped (true);
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
 	auto brush = brush_ctx->brush;
@@ -1513,6 +1546,7 @@ Mod_MakeClusters (mod_brush_ctx_t *brush_ctx)
 void
 Mod_LoadBrushModel (model_t *mod, void *buffer, wssched_t *sched)
 {
+	qfZoneScoped (true);
 	dmodel_t   *bm;
 	unsigned    i, j;
 
