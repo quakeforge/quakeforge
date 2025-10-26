@@ -338,7 +338,7 @@ leafnode ()
 			P /= ⋆(e0 * P);
 			P *= 65536;
 			P -= 65535 * e123;
-			printf ("%d %q\n", i, P);
+			//printf ("%d %q\n", i, P);
 			P = ~To * P * To;
 
 			auto a = (T * P * ~T) / 128;
