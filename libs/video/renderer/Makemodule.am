@@ -321,8 +321,6 @@ bsp_depth_src = $(vkshaderpath)/bsp_depth.vert
 bsp_depth_c = $(vkshaderpath)/bsp_depth.vert.spv
 bsp_gbufv_src = $(vkshaderpath)/bsp_gbuf.vert
 bsp_gbufv_c = $(vkshaderpath)/bsp_gbuf.vert.spv
-bsp_gbufg_src = $(vkshaderpath)/bsp_gbuf.geom
-bsp_gbufg_c = $(vkshaderpath)/bsp_gbuf.geom.spv
 bsp_gbuff_src = $(vkshaderpath)/bsp_gbuf.frag
 bsp_gbuff_c = $(vkshaderpath)/bsp_gbuf.frag.spv
 bsp_shadow_src = $(vkshaderpath)/bsp_shadow.vert
@@ -433,8 +431,6 @@ $(bsp_depth_c): $(bsp_depth_src) $(entity_h) $(matrices_h)
 
 $(bsp_gbufv_c): $(bsp_gbufv_src) $(entity_h) $(matrices_h)
 
-$(bsp_gbufg_c): $(bsp_gbufg_src) $(matrices_h)
-
 $(bsp_gbuff_c): $(bsp_gbuff_src)
 
 $(bsp_shadow_c): $(bsp_shadow_src) $(entity_h)
@@ -523,7 +519,6 @@ vkshader_src_vert = \
 	$(fstrianglest_src)
 
 vkshader_src_geom = \
-	$(bsp_gbufg_src) \
 	$(particleg_src)
 
 vkshader_src_frag = \
@@ -640,7 +635,6 @@ EXTRA_DIST += \
 	$(quakebspf_src) \
 	$(bsp_depth_src) \
 	$(bsp_gbufv_src) \
-	$(bsp_gbufg_src) \
 	$(bsp_gbuff_src) \
 	$(bsp_shadow_src) \
 	$(bsp_skyf_src) \

@@ -462,11 +462,6 @@ render_graph = {
 					name = main;
 					module = $builtin/bsp_gbuf.vert;
 				};
-				gbuf_geometry = {
-					stage = geometry;
-					name = main;
-					module = $builtin/bsp_gbuf.geom;
-				};
 				gbuf_fragment = {
 					stage = fragment;
 					name = main;
@@ -513,13 +508,14 @@ render_graph = {
 			};
 			vertexInput = {
 				bindings = (
-					{ binding = 0; stride = "2 * 4 * 4"; inputRate = vertex; },
+					{ binding = 0; stride = "2 * 3 * 4 + 1 * 4"; inputRate = vertex; },
 					{ binding = 1; stride = "4"; inputRate = instance; },
 				);
 				attributes = (
-					{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
-					{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
-					{ location = 2; binding = 1; format = r32_uint; offset = 0; },
+					{ location = 0; binding = 0; format = r32g32b32_sfloat; offset = 0;  },
+					{ location = 1; binding = 0; format = r32g32b32_sfloat; offset = 12;  },
+					{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 24; },
+					{ location = 3; binding = 1; format = r32_uint; offset = 0; },
 				);
 			};
 			inputAssembly = {
@@ -1583,7 +1579,7 @@ render_graph = {
 								);
 								attributes = (
 									"$brush.vertexInput.attributes[0]",
-									"$brush.vertexInput.attributes[2]",
+									"$brush.vertexInput.attributes[3]",
 								);
 							};
 							inputAssembly = $brush.inputAssembly;
@@ -1797,7 +1793,7 @@ render_graph = {
 								);
 								attributes = (
 									"$brush.vertexInput.attributes[0]",
-									"$brush.vertexInput.attributes[2]",
+									"$brush.vertexInput.attributes[3]",
 								);
 							};
 							inputAssembly = $brush.inputAssembly;
@@ -1997,7 +1993,6 @@ render_graph = {
 
 							stages = (
 								$brush.shader.gbuf_vertex,
-								$brush.shader.gbuf_geometry,
 								$brush.shader.gbuf_fragment,
 							);
 							vertexInput = $brush.vertexInput;
@@ -2200,7 +2195,7 @@ render_graph = {
 								);
 								attributes = (
 									"$brush.vertexInput.attributes[0]",
-									"$brush.vertexInput.attributes[2]",
+									"$brush.vertexInput.attributes[3]",
 								);
 							};
 							inputAssembly = $brush.inputAssembly;
@@ -2531,7 +2526,7 @@ render_graph = {
 								);
 								attributes = (
 									"$brush.vertexInput.attributes[0]",
-									"$brush.vertexInput.attributes[2]",
+									"$brush.vertexInput.attributes[3]",
 								);
 							};
 							inputAssembly = $brush.inputAssembly;
