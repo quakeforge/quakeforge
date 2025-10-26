@@ -293,7 +293,6 @@ VISIBLE void
 R_ScrapClear (rscrap_t *scrap)
 {
 	if (scrap->free_rects) {
-		scrap->free_rects->users = 0;
 		for (int i = 0; i < 256; i++) {
 			auto col = scrap->free_rects->sets[i];
 			for (int j = 0; col && j < 256; j++) {
@@ -331,7 +330,6 @@ R_ScrapArea (rscrap_t *scrap, int *count)
 	int         c = 0;
 
 	if (scrap->free_rects) {
-		scrap->free_rects->users = 0;
 		for (int i = 0; i < 256; i++) {
 			auto col = scrap->free_rects->sets[i];
 			for (int j = 0; col && j < 256; j++) {
