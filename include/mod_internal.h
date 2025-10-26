@@ -145,8 +145,6 @@ void sw_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx);
 
 void Vulkan_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx,
 							  struct vulkan_ctx_s *ctx);
-void Vulkan_Mod_SubdivideSurface (model_t *mod, msurface_t *fa,
-								  struct vulkan_ctx_s *ctx);
 void Vulkan_Mod_ProcessTexture (model_t *mod, struct texture_s *tx,
 								struct vulkan_ctx_s *ctx);
 

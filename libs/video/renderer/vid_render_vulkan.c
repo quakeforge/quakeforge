@@ -462,11 +462,6 @@ vulkan_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 }
 
 static void
-vulkan_Mod_SubdivideSurface (model_t *mod, msurface_t *fa)
-{
-}
-
-static void
 vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 {
 	Vulkan_Mod_ProcessTexture (mod, tx, vulkan_ctx);
@@ -569,7 +564,6 @@ static vid_model_funcs_t model_funcs = {
 	.texture_render_size  = sizeof (vulktex_t) + 2 * sizeof (qfv_tex_t),
 
 	.Mod_LoadLighting     = vulkan_Mod_LoadLighting,
-	.Mod_SubdivideSurface = vulkan_Mod_SubdivideSurface,
 	.Mod_ProcessTexture   = vulkan_Mod_ProcessTexture,
 
 	.Mod_LoadMesh        = Mod_LoadMeshModel,

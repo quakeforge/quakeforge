@@ -68,7 +68,6 @@ static vid_model_funcs_t model_funcs = {
 	.texture_render_size = sizeof (glsltex_t),
 
 	.Mod_LoadLighting   = glsl_Mod_LoadLighting,
-	//.Mod_SubdivideSurface = 0,
 	.Mod_ProcessTexture = glsl_Mod_ProcessTexture,
 
 	.Mod_LoadMesh        = Mod_LoadMeshModel,
