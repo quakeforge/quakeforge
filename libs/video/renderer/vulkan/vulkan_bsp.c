@@ -359,7 +359,8 @@ count_verts_inds (const faceref_t *faceref, uint32_t *verts, uint32_t *inds)
 }
 
 typedef struct bspvert_s {
-	quat_t      vertex;
+	vec3_t      vertex;
+	vec3_t      normal;
 	quat_t      tlst;
 } bspvert_t;
 
@@ -374,6 +375,21 @@ typedef struct {
 	int         tex_id;
 } buildctx_t;
 
+static vec_t *
+vbsp_get_vertex (mod_brush_t *brush, int edge_index)
+{
+	auto vertices = brush->vertexes;
+	auto edges = brush->edges;
+	if (edge_index > 0) {
+		// forward edge
+		return vertices[edges[edge_index].v[0]].position;
+	} else {
+		// reverse edge
+		return vertices[edges[-edge_index].v[1]].position;
+	}
+}
+
+// Build the vertices for a single polygon face
 static void
 build_surf_displist (const faceref_t *faceref, buildctx_t *build)
 {
@@ -401,21 +417,17 @@ build_surf_displist (const faceref_t *faceref, buildctx_t *build)
 	bspvert_t  *verts = build->vertices + build->vertex_base;
 	build->vertex_base += numverts;
 	mtexinfo_t *texinfo = surf->texinfo;
-	mvertex_t  *vertices = brush->vertexes;
-	medge_t    *edges     = brush->edges;
 	int        *surfedges = brush->surfedges;
+	vec3_t      normal;
+	VectorCopy(surf->plane->normal, normal);
+	if (surf->flags & SURF_PLANEBACK) {
+		VectorNegate (normal, normal);
+	}
 	for (int i = 0; i < numverts; i++) {
-		vec_t      *vec;
 		int         index = surfedges[surf->firstedge + i];
-		if (index > 0) {
-			// forward edge
-			vec = vertices[edges[index].v[0]].position;
-		} else {
-			// reverse edge
-			vec = vertices[edges[-index].v[1]].position;
-		}
+		vec_t      *vec = vbsp_get_vertex (brush, index);;
 		VectorCopy (vec, verts[i].vertex);
-		verts[i].vertex[3] = 1;	// homogeneous coord
+		VectorCopy (normal, verts[i].normal);
 
 		vec2f_t     st = {
 			DotProduct (vec, texinfo->vecs[0]) + texinfo->vecs[0][3],

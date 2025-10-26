@@ -12,9 +12,10 @@ layout (set = 1, binding = 0) readonly buffer Entities {
 	Entity      entities[];
 };
 
-layout (location = 0) in vec4 vertex;
-layout (location = 1) in vec4 tl_uv;
-layout (location = 2) in uint entid;
+layout (location = 0) in vec3 vertex;
+layout (location = 1) in vec3 vnormal;
+layout (location = 2) in vec4 tl_uv;
+layout (location = 3) in uint entid;
 
 layout (location = 0) out vec4 tl_st;
 layout (location = 1) out vec3 direction;
@@ -23,9 +24,9 @@ layout (location = 2) out vec4 color;
 void
 main (void)
 {
-	vec3        vert = vertex * entities[entid].transform;
+	vec3        vert = vec4(vertex,1) * entities[entid].transform;
 	gl_Position = Projection3d * (View[gl_ViewIndex] * vec4 (vert, 1));
-	direction = (Sky * vertex).xyz;
+	direction = (Sky * vec4(vertex,1)).xyz;
 	tl_st = tl_uv;
 	color = entities[entid].color;
 }

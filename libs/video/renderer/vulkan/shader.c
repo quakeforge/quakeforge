@@ -98,9 +98,6 @@ static const byte alignas(uint32_t) bsp_depth_vert[] = {
 static const byte alignas(uint32_t) bsp_gbuf_vert[] = {
 #embed "libs/video/renderer/vulkan/shader/bsp_gbuf.vert.spv"
 };
-static const byte alignas(uint32_t) bsp_gbuf_geom[] = {
-#embed "libs/video/renderer/vulkan/shader/bsp_gbuf.geom.spv"
-};
 static const byte alignas(uint32_t) bsp_gbuf_frag[] = {
 #embed "libs/video/renderer/vulkan/shader/bsp_gbuf.frag.spv"
 };
@@ -225,7 +222,6 @@ static shaderdata_t builtin_shaders[] = {
 	{ "quakebsp.frag", quakebsp_frag, sizeof (quakebsp_frag) },
 	{ "bsp_depth.vert", bsp_depth_vert, sizeof (bsp_depth_vert) },
 	{ "bsp_gbuf.vert", bsp_gbuf_vert, sizeof (bsp_gbuf_vert) },
-	{ "bsp_gbuf.geom", bsp_gbuf_geom, sizeof (bsp_gbuf_geom) },
 	{ "bsp_gbuf.frag", bsp_gbuf_frag, sizeof (bsp_gbuf_frag) },
 	{ "bsp_shadow.vert", bsp_shadow_vert, sizeof (bsp_shadow_vert) },
 	{ "bsp_sky.frag", bsp_sky_frag, sizeof (bsp_sky_frag) },

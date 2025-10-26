@@ -391,11 +391,6 @@ render_graph = {
 					name = main;
 					module = $builtin/bsp_depth.vert;
 				};
-				geometry = {
-					stage = geometry;
-					name = main;
-					module = $builtin/bsp_gbuf.geom;
-				};
 				fragment = {
 					stage = fragment;
 					name = main;
@@ -447,13 +442,14 @@ render_graph = {
 			};
 			vertexInput = {
 				bindings = (
-					{ binding = 0; stride = "2 * 4 * 4"; inputRate = vertex; },
+					{ binding = 0; stride = "2 * 3 * 4 + 1 * 4"; inputRate = vertex; },
 					{ binding = 1; stride = "4"; inputRate = instance; },
 				);
 				attributes = (
-					{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
-					{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
-					{ location = 2; binding = 1; format = r32_uint; offset = 0; },
+					{ location = 0; binding = 0; format = r32g32b32_sfloat; offset = 0;  },
+					{ location = 1; binding = 0; format = r32g32b32_sfloat; offset = 12;  },
+					{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 24; },
+					{ location = 3; binding = 1; format = r32_uint; offset = 0; },
 				);
 			};
 			inputAssembly = {
@@ -803,6 +799,43 @@ render_graph = {
 				descriptorSets = (painter_set);
 			};
 		};
+		gizmo = {
+			shader = {
+				expand = {
+					stage = vertex;
+					name = main;
+					module = $builtin/expand.r;
+				};
+				queueobj = {
+					stage = fragment;
+					name = main;
+					module = $builtin/queueobj.r;
+				};
+				fragment = {
+					stage = fragment;
+					name = main;
+					module = $builtin/gizmo.r;
+				};
+			};
+			vertexInput = {
+				bindings = (
+					{ binding = 0; stride = "4"; inputRate = instance; },
+				);
+				attributes = (
+					// obj_id
+					{ location = 0; binding = 0; format = r32_uint; offset = 0; },
+				);
+			};
+			inputAssembly = {
+				topology = triangle_list;
+			};
+			layout = {
+				descriptorSets = (matrix_set, gizmo_set);
+				pushConstants = {
+					vertex = { frag_size = vec2; };
+				};
+			};
+		};
 		slice = {
 			shader = {
 				vertex = {
@@ -910,6 +943,34 @@ render_graph = {
 					descriptorType = storage_buffer;
 					descriptorCount = 1;
 					stageFlags = fragment;
+				},
+			);
+		};
+		gizmo_set = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 1;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 2;
+					descriptorType = storage_image;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 3;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = vertex|fragment;
 				},
 			);
 		};
@@ -1294,7 +1355,6 @@ render_graph = {
 
 							stages = (
 								$brush.shader.vertex,
-								$brush.shader.geometry,
 								$brush.shader.fragment,
 							);
 							vertexInput = $brush.vertexInput;
@@ -1481,12 +1541,28 @@ render_graph = {
 								);
 								attributes = (
 									"$brush.vertexInput.attributes[0]",
-									"$brush.vertexInput.attributes[2]",
+									"$brush.vertexInput.attributes[3]",
 								);
 							};
 							inputAssembly = $brush.inputAssembly;
 							layout = $brush.layout;
 							rasterization = $debug_poly_lines;
+							depthStencil = $depth_disable;
+						};
+						gizmo = {
+							@inherit = $compose_base;
+							disabled = false;
+
+							color = $color.painter;
+							tasks = (
+								{ func = gizmo_draw; },
+							);
+
+							stages = (
+								$fstriangle.shader.vertexst,
+								$gizmo.shader.fragment,
+							);
+							layout = $gizmo.layout;
 							depthStencil = $depth_disable;
 						};
 					};
@@ -1643,6 +1719,70 @@ render_graph = {
 				};
 			};
 		};
+		gizmo = {
+			color = "[0, 1, 0, 1]";
+			framebuffer = {
+				width = "($render_output.extent.width + 7u) / 8u";
+				height = "($render_output.extent.height + 7u) / 8u";
+				layers = 1;
+				attachments = { };
+			};
+			subpasses = {
+				gizmo_cmd = {
+					color = "[ 0.5,  0.5,  0.5, 1]";
+					attachments = { };
+
+					base_pipeline = {
+						@inherit = $pipeline_base;
+						depthStencil = $depth_disable;
+						rasterization = $cw_cull_back;
+					};
+					pipelines = {
+						gizmo_cmd = {
+							color = $color.bsp;
+							tasks = (
+								{ func = gizmo_draw_cmd; },
+							);
+
+							stages = (
+								$gizmo.shader.expand,
+								$gizmo.shader.queueobj,
+							);
+							vertexInput = $gizmo.vertexInput;
+							inputAssembly = $gizmo.inputAssembly;
+							layout = $gizmo.layout;
+						};
+					};
+				};
+				$external = {
+					dependencies = {
+						gizmo_cmd = {
+							src = {
+								stage = color_attachment_output;
+								access = color_attachment_write;
+							};
+							dst = {
+								stage = fragment_shader;
+								access = shader_read;
+							};
+						}
+					};
+				};
+			};
+		};
+		gizmo_cube = {
+			@inherit = $renderpasses.gizmo;
+			@next = (VkRenderPassMultiviewCreateInfo, {
+				viewMasks   = (0x3fu);
+			});
+			framebuffer = {
+				width = "(min($render_output.extent.width,$render_output.extent.height) + 7u) / 8u";
+				height = "(min($render_output.extent.width,$render_output.extent.height) + 7u) / 8u";
+				layers = 1;
+				attachments = {
+				};
+			};
+		};
 	};
 	steps = {
 		start_frame = {
@@ -1685,7 +1825,7 @@ render_graph = {
 			};
 		};
 		world = {
-			dependencies = (wait_on_fence);
+			dependencies = (start_frame);
 			process = {
 				tasks = (
 					{ func = bsp_reset_queues; },
@@ -1701,16 +1841,31 @@ render_graph = {
 				tasks = (
 					{ func = output_select_renderpass;
 					  params = ("\"main\""); },
+					{ func = output_select_renderpass;
+					  params = ("\"gizmo_cmd\""); },
 					{ func = update_framebuffer;
 					  params = ("\"main\""); },
+					{ func = gizmo_update_framebuffer;
+					  params = ("\"gizmo_cmd\"", "\"main\""); },
 					{ func = clear_translucent;
 					  params = ("\"main\""); },
 					{ func = particle_wait_physics; },
+					{ func = gizmo_flush; },
 				);
 			};
 		};
+		gizmo_cmd = {
+			color = "[0.4, 0.8, 0.3]";
+			dependencies = (setup_main);
+			render = {
+				renderpasses = {
+					gizmo = $renderpasses.gizmo;
+					gizmo_cube = $renderpasses.gizmo_cube;
+				};
+			};
+		};
 		main = {
-			dependencies = (setup_main, particles, world, translucent);
+			dependencies = (gizmo_cmd, particles, world, translucent);
 			render = {
 				renderpasses = {
 					forward = $renderpasses.forward;
@@ -1722,6 +1877,7 @@ render_graph = {
 			dependencies = (wait_on_fence);
 			process = {
 				tasks = (
+					{ func = submit_render; },
 					{ func = acquire_output;
 					  params = ("\"output\""); },
 					{ func = update_input;
@@ -1741,11 +1897,14 @@ render_graph = {
 				};
 			};
 		};
-		capture = {
+		end_frame = {
+			color = "[0.0, 0.8, 0.4]";
 			dependencies = (output);
 			process = {
 				tasks = (
 					{ func = capture_initiate; },
+					{ func = submit_output; },
+					{ func = present_output; },
 				);
 			};
 		};
@@ -1767,6 +1926,7 @@ render_graph = {
 		{ func = compose_init; },
 		{ func = draw_init; },
 		{ func = painter_init; },
+		{ func = gizmo_init; },
 		{ func = particle_init; },
 		{ func = planes_init; },
 		{ func = translucent_init; },

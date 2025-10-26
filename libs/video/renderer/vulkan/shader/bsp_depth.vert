@@ -13,7 +13,7 @@ layout (set = 1, binding = 0) readonly buffer Entities {
 };
 
 layout (location = 0) in vec4 vertex;
-layout (location = 2) in uint entind;
+layout (location = 3) in uint entind;
 
 void
 main (void)
