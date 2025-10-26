@@ -360,6 +360,7 @@ typedef struct bspctx_s {
 	struct scrap_s *light_scrap;
 	VkDescriptorSet lightmap_descriptor;
 
+	unsigned    max_edges;
 	int         num_models;			///< number of loaded brush models
 	uint32_t    num_faces;
 	bsp_model_t *models;			///< all loaded brush models

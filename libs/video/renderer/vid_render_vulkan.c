@@ -468,6 +468,12 @@ vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 }
 
 static void
+vulkan_Mod_FinalizeBrushModel (mod_brush_ctx_t *brush_ctx)
+{
+	Vulkan_Mod_FinalizeBrushModel (brush_ctx, vulkan_ctx);
+}
+
+static void
 vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx,
 									   void *_m, int _s, int extra)
 {
@@ -563,8 +569,9 @@ vulkan_vid_render_create_context (void *data)
 static vid_model_funcs_t model_funcs = {
 	.texture_render_size  = sizeof (vulktex_t) + 2 * sizeof (qfv_tex_t),
 
-	.Mod_LoadLighting     = vulkan_Mod_LoadLighting,
-	.Mod_ProcessTexture   = vulkan_Mod_ProcessTexture,
+	.Mod_LoadLighting       = vulkan_Mod_LoadLighting,
+	.Mod_ProcessTexture     = vulkan_Mod_ProcessTexture,
+	.Mod_FinalizeBrushModel = vulkan_Mod_FinalizeBrushModel,
 
 	.Mod_LoadMesh        = Mod_LoadMeshModel,
 	.Mod_LoadIQM         = Mod_LoadIQM,

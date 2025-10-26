@@ -407,3 +407,13 @@ Vulkan_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx, vulkan_ctx_t *ctx)
 		*out++ = d;
 	}
 }
+
+void
+Vulkan_Mod_FinalizeBrushModel (mod_brush_ctx_t *brush_ctx, vulkan_ctx_t *ctx)
+{
+	auto bctx = ctx->bsp_context;
+
+	if (brush_ctx->max_edges > bctx->max_edges) {
+		bctx->max_edges = brush_ctx->max_edges;
+	}
+}

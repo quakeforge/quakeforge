@@ -888,10 +888,16 @@ Mod_LoadFaces (mod_brush_ctx_t *brush_ctx)
 	brush->surfaces = out;
 	brush->numsurfaces = count;
 
+	unsigned max_edges = 0;
+
 	for (surfnum = 0; surfnum < count; surfnum++, in++, out++) {
 		out->firstedge = in->firstedge;
 		out->numedges = in->numedges;
 		out->flags = 0;
+
+		if (in->numedges > max_edges) {
+			max_edges = in->numedges;
+		}
 
 		planenum = in->planenum;
 		side = in->side;
@@ -949,6 +955,7 @@ Mod_LoadFaces (mod_brush_ctx_t *brush_ctx)
 				break;
 		}
 	}
+	brush_ctx->max_edges = max_edges;
 }
 
 static void

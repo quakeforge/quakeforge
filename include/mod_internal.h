@@ -27,6 +27,7 @@ typedef struct mod_brush_ctx_s {
 	mod_brush_t *brush;
 	bsp_t      *bsp;
 	wssched_t  *sched;
+	unsigned    max_edges;	// largest polygon
 	bool        sky_divide;
 } mod_brush_ctx_t;
 
@@ -147,6 +148,8 @@ void Vulkan_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx,
 							  struct vulkan_ctx_s *ctx);
 void Vulkan_Mod_ProcessTexture (model_t *mod, struct texture_s *tx,
 								struct vulkan_ctx_s *ctx);
+void Vulkan_Mod_FinalizeBrushModel (mod_brush_ctx_t *brush_ctx,
+									struct vulkan_ctx_s *ctx);
 
 void Mod_LoadSpriteFrame (mspriteframe_t *frame, const dspriteframe_t *dframe);
 void gl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx);

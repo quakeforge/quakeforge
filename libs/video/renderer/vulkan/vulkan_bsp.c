@@ -1560,6 +1560,17 @@ bsp_startup (exprctx_t *ectx)
 }
 
 static void
+bsp_clearstate (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto bctx = ctx->bsp_context;
+
+	bctx->max_edges = 0;
+}
+
+static void
 bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneScoped (true);
@@ -1568,6 +1579,7 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	QFV_Render_AddShutdown (ctx, bsp_shutdown);
 	QFV_Render_AddStartup (ctx, bsp_startup);
+	QFV_Render_AddClearState (ctx, bsp_clearstate);
 
 	bspctx_t   *bctx = calloc (1, sizeof (bspctx_t));
 	ctx->bsp_context = bctx;

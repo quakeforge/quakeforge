@@ -65,6 +65,8 @@ typedef struct vid_model_funcs_s {
 	void (*Mod_LoadLighting) (mod_brush_ctx_t *brush_ctx);
 	void (*Mod_SubdivideSurface) (model_t *mod, msurface_t *fa);
 	void (*Mod_ProcessTexture) (model_t *mod, struct texture_s *tx);
+	void (*Mod_FinalizeBrushModel) (mod_brush_ctx_t *brush_ctx);
+
 	void (*Mod_LoadMesh) (model_t *mod, byte *buffer, size_t buf_size);
 	void (*Mod_LoadIQM) (model_t *mod, void *buffer);
 	void (*Mod_LoadAliasModel) (model_t *mod, void *buffer,
