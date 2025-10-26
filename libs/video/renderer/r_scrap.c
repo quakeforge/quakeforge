@@ -30,6 +30,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#include <string.h>
 
 #include "QF/set.h"
 #include "QF/sys.h"
@@ -319,6 +320,9 @@ R_ScrapClear (rscrap_t *scrap)
 		scrap->rects = t->next;
 		VRect_Delete (t);
 	}
+
+	memset (scrap->w_counts, 0, sizeof (int[scrap->width]));
+	memset (scrap->h_counts, 0, sizeof (int[scrap->height]));
 
 	r_scrap_push_rect (scrap, VRect_New (0, 0, scrap->width, scrap->height));
 }
