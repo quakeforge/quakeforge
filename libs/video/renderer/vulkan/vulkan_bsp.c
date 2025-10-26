@@ -1509,7 +1509,7 @@ bsp_startup (exprctx_t *ectx)
 
 	bctx->sampler = QFV_Render_Sampler (ctx, "quakebsp_sampler");
 
-	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 2048,
+	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 4096,
 										 tex_frgba, ctx->staging);
 
 	create_base_resources (ctx);
