@@ -442,7 +442,7 @@ render_graph = {
 			};
 			vertexInput = {
 				bindings = (
-					{ binding = 0; stride = "2 * 3 * 4 + 1 * 4"; inputRate = vertex; },
+					{ binding = 0; stride = "2 * 3 * 4 + 4 * 4"; inputRate = vertex; },
 					{ binding = 1; stride = "4"; inputRate = instance; },
 				);
 				attributes = (
