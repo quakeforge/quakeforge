@@ -300,6 +300,7 @@ int         sv_numareanodes;
 static areanode_t *
 SV_CreateAreaNode (int depth, const vec3_t mins, const vec3_t maxs)
 {
+	qfZoneScoped (true);
 	areanode_t *anode;
 	vec3_t      mins1, maxs1, mins2, maxs2, size;
 
@@ -338,6 +339,7 @@ SV_CreateAreaNode (int depth, const vec3_t mins, const vec3_t maxs)
 void
 SV_ClearWorld (void)
 {
+	qfZoneScoped (true);
 	SV_InitBoxHull ();
 
 	memset (sv_areanodes, 0, sizeof (sv_areanodes));

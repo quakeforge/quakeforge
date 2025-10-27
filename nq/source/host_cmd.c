@@ -263,6 +263,7 @@ nice_time (float time)
 static void
 Host_Map_f (void)
 {
+	qfZoneScoped (true);
 	char        name[MAX_QPATH];
 	const char *expanded;
 	QFile      *f;

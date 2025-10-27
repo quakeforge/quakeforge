@@ -666,6 +666,7 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 VISIBLE int
 PR_LoadDebug (progs_t *pr)
 {
+	qfZoneScoped (true);
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	char       *sym_path;
 	const char *path_end, *sym_file;

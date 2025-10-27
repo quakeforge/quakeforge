@@ -65,6 +65,7 @@ PR_Opcode (pr_ushort_t opcode)
 int
 PR_Check_Opcodes (progs_t *pr)
 {
+	qfZoneScoped (true);
 	if (pr->progs->version < PROG_VERSION) {
 		return PR_Check_v6p_Opcodes (pr);
 	}

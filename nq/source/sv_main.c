@@ -1085,6 +1085,7 @@ SV_SaveSpawnparms (void)
 void
 SV_SpawnServer (const char *server)
 {
+	qfZoneScoped (true);
 	byte       *buf;
 	QFile      *ent_file;
 	edict_t    *ent;

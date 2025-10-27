@@ -194,6 +194,7 @@ PR_FindBuiltinNum (progs_t *pr, pr_int_t num)
 VISIBLE int
 PR_RelocateBuiltins (progs_t *pr)
 {
+	qfZoneScoped (true);
 	pr_uint_t   i;
 	pr_int_t    ind;
 	int         bad = 0;

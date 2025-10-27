@@ -206,6 +206,7 @@ static int sv_range;
 static unsigned
 bi_map (progs_t *pr, unsigned binum)
 {
+	qfZoneScoped (true);
 	unsigned    range;
 
 	if (sv_range != PR_RANGE_NONE) {
@@ -220,6 +221,7 @@ bi_map (progs_t *pr, unsigned binum)
 static int
 prune_edict (progs_t *pr, edict_t *ent)
 {
+	qfZoneScoped (true);
 	// remove things from different skill levels or deathmatch
 	if (deathmatch) {
 		if (((int) SVfloat (ent, spawnflags)
@@ -299,6 +301,7 @@ print_f (void)
 static int
 parse_field (progs_t *pr, const char *key, const char *value)
 {
+	qfZoneScoped (true);
 	if (strequal (key, "sky")
 		|| strequal (key, "skyname")
 		|| strequal (key, "qlsky")
@@ -465,6 +468,7 @@ static const pr_uint_t nq_crc = 5927;
 static void
 set_address (sv_def_t *def, void *address)
 {
+	qfZoneScoped (true);
 	switch (def->type) {
 		case ev_void:
 		case ev_short:
@@ -499,6 +503,7 @@ set_address (sv_def_t *def, void *address)
 static int
 resolve_globals (progs_t *pr, sv_def_t *def, int mode)
 {
+	qfZoneScoped (true);
 	pr_def_t   *ddef;
 	int         ret = 1;
 
@@ -522,6 +527,7 @@ resolve_globals (progs_t *pr, sv_def_t *def, int mode)
 static int
 resolve_functions (progs_t *pr, sv_def_t *def, int mode)
 {
+	qfZoneScoped (true);
 	dfunction_t *dfunc;
 	int         ret = 1;
 
@@ -545,6 +551,7 @@ resolve_functions (progs_t *pr, sv_def_t *def, int mode)
 static int
 resolve_fields (progs_t *pr, sv_def_t *def, int mode)
 {
+	qfZoneScoped (true);
 	pr_def_t   *ddef;
 	int         ret = 1;
 
@@ -569,6 +576,7 @@ resolve_fields (progs_t *pr, sv_def_t *def, int mode)
 static int
 resolve (progs_t *pr)
 {
+	qfZoneScoped (true);
 	int         ret = 1;
 	if (pr->progs->crc == nq_crc) {
 		resolve_globals (pr, nq_self, 2);
@@ -597,6 +605,7 @@ resolve (progs_t *pr)
 static int
 sv_init_edicts (progs_t *pr)
 {
+	qfZoneScoped (true);
 	int         i;
 
 	memset (sv_edicts, 0, sizeof (sv_edicts));
@@ -618,6 +627,7 @@ sv_init_edicts (progs_t *pr)
 void
 SV_LoadProgs (void)
 {
+	qfZoneScoped (true);
 	const char *progs_name = "progs.dat";
 	const char *range;
 
@@ -654,6 +664,7 @@ SV_LoadProgs (void)
 static void
 SV_Progs_Shutdown (void *data)
 {
+	qfZoneScoped (true);
 	PR_Shutdown (&sv_pr_state);
 }
 
@@ -694,6 +705,7 @@ SV_Progs_Init (void)
 void
 SV_Progs_Init_Cvars (void)
 {
+	qfZoneScoped (true);
 	PR_Init_Cvars ();
 	Cvar_Register (&sv_progs_cvar, 0, 0);
 	Cvar_Register (&sv_progs_zone_cvar, 0, 0);
