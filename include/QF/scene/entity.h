@@ -95,7 +95,6 @@ typedef struct visibility_s {
 								// splits bmodel, or NULL if not split
 								// applies to other models, too
 								// found in an active leaf
-	int         trivial_accept;	// view clipping (frustum and depth)
 } visibility_t;
 
 typedef struct renderer_s {
