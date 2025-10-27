@@ -151,6 +151,14 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	}
 	fprintf (stderr, "validation layer: %s%s\n", msgSev,
 			 callbackData->pMessage);
+	for (uint32_t i = 0; i < callbackData->objectCount; i++) {
+		fprintf (stderr, "    Object Handle[%d] = 0x%" PRIu64, i,
+				 callbackData->pObjects[i].objectHandle);
+		if (callbackData->pObjects[i].pObjectName) {
+			fprintf (stderr, " [%s]", callbackData->pObjects[i].pObjectName);
+		}
+		fprintf (stderr, " %d\n", callbackData->pObjects[i].objectType);
+	}
 	for (size_t i = instance->debug_stack.size; i-- > 0; ) {
 		fprintf (stderr, "    %s\n", instance->debug_stack.a[i]);
 	}
