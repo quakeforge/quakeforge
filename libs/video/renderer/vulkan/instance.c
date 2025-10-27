@@ -31,12 +31,15 @@
 
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
+#include "QF/va.h"
 
 #include "QF/Vulkan/instance.h"
 
 #include "vid_vulkan.h"
 
 #include "util.h"
+#include "vkparse.h"
+#include "libs/video/renderer/vulkan/vkparse.hinc"
 
 int vulkan_use_validation;
 int vulkan_validation_feature;
@@ -157,7 +160,13 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		if (callbackData->pObjects[i].pObjectName) {
 			fprintf (stderr, " [%s]", callbackData->pObjects[i].pObjectName);
 		}
-		fprintf (stderr, " %d\n", callbackData->pObjects[i].objectType);
+		exprval_t val = {
+			.type = &VkObjectType_type,
+			.value = (void *) &callbackData->pObjects[i].objectType,
+		};
+		auto vactx = va_create_context (4);
+		fprintf (stderr, " %s\n", val.type->get_string (&val, vactx));
+		va_destroy_context (vactx);
 	}
 	for (size_t i = instance->debug_stack.size; i-- > 0; ) {
 		fprintf (stderr, "    %s\n", instance->debug_stack.a[i]);

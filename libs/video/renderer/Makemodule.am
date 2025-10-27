@@ -257,6 +257,10 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vulkan_translucent.c \
 	libs/video/renderer/vulkan/vulkan_vid_common.c
 
+libs/video/renderer/vulkan/instance.lo: \
+	libs/video/renderer/vulkan/instance.c \
+	$(vkparse_hinc)
+
 libs/video/renderer/vulkan/vkparse.lo: \
 	libs/video/renderer/vulkan/vkparse.c \
 	$(vkparse_src) \
