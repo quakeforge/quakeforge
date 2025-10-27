@@ -189,8 +189,14 @@ qf_req=ok
 m4_foreach([pkgvar], [$1], [
 m4_ifnblank(m4_argn(1, pkgvar), [
 if test "x[$]m4_argn(2, pkgvar)" != "xyes"; then
+	if test "x$qf_req" = "xok"; then
+		echo
+	fi
 	qf_req=missing
-	echo m4_argn(1, pkgvar)
+	m4_ifnblank(m4_argn(3, pkgvar),
+		[echo m4_argn(1, pkgvar) or m4_argn(3, pkgvar)],
+		[echo m4_argn(1, pkgvar)]
+	)
 fi])])
 if test "x$qf_req" != "xok"; then
 	AC_MSG_ERROR(The above required packages are missing)

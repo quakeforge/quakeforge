@@ -75,6 +75,7 @@ The following is the list of relevant package names in debian.
 \li vulkan-tools
 \li vulkan-validationlayers
 \li glslang-tools
+\li or, instead, the vulkan sdk from https://vulkan.lunarg.com/sdk/home
 
 \li libfreetype-dev
 \li libfontconfig-dev
