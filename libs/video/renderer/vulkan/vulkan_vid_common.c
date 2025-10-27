@@ -106,7 +106,7 @@ static const char *device_extensions[] = {
 	"VK_EXT_vertex_input_dynamic_state",
 	"VK_EXT_fragment_shader_interlock",
 //	"VK_EXT_present_mode_fifo_latest_ready",
-//	"VK_KHR_shader_non_semantic_info",
+	"VK_KHR_shader_non_semantic_info",
 //	"VK_EXT_vertex_attribute_robustness",
 #ifdef TRACY_ENABLE
 	"VK_EXT_calibrated_timestamps",

@@ -3,6 +3,10 @@
 
 #define GLSL(op) @intrinsic(OpExtInst, "GLSL.std.450", op)
 #define SPV(op) @intrinsic(op)
+
+void printf (string fmt, ...)
+	= @intrinsic(OpExtInst, "NonSemantic.DebugPrintf", DebugPrintf);
+
 @generic (genFType = @vector (float),
 		  genDType = @vector (double),
 		  genIType = @vector (int),
