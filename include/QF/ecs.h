@@ -57,6 +57,7 @@ typedef struct ecs_pool_s {
 	void       *data;		// component data
 	uint32_t    count;		// number of components/dense entity ids
 	uint32_t    max_count;	// current capacity for components/entity ids
+	uint32_t    max_entind;	// maximum possible entity id in sparse
 } ecs_pool_t;
 
 typedef struct DARRAY_TYPE(component_t) componentset_t;
@@ -254,7 +255,11 @@ ECSINLINE int
 Ent_HasComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 {
 	ecs_pool_t *pool = &reg->comp_pools[comp];
-	uint32_t    ind = pool->sparse[Ent_Index (ent)];
+	uint32_t    entind = Ent_Index (ent);
+	if (entind >= pool->max_entind) {
+		return false;
+	}
+	uint32_t    ind = pool->sparse[entind];
 	return ind < pool->count && pool->dense[ind] == ent;
 }
 

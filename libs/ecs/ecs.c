@@ -253,20 +253,7 @@ ECS_DelId (ecs_idpool_t *idpool, uint32_t id)
 VISIBLE uint32_t
 ECS_NewEntity (ecs_registry_t *registry)
 {
-	uint32_t    old_max_ids = registry->entities.max_ids;
 	uint32_t    ent = ECS_NewId (&registry->entities);
-	// The id pool grew, so grow the sparse arrays in the component pools
-	// to match
-	if (old_max_ids != registry->entities.max_ids) {
-		size_t      size = registry->entities.max_ids * sizeof (uint32_t);
-		for (uint32_t i = 0; i < registry->components.size; i++) {
-			uint32_t   *sparse = registry->comp_pools[i].sparse;
-			sparse = realloc (sparse, size);
-			memset (sparse + registry->entities.max_ids - ENT_GROW, nullent,
-					ENT_GROW * sizeof (uint32_t));
-			registry->comp_pools[i].sparse = sparse;
-		}
-	}
 	return ent;
 }
 
