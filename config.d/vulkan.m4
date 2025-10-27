@@ -10,21 +10,19 @@ if test "x$HAVE_VULKAN" != xno; then
 		AC_CHECK_PROG([glslangvalidator], [glslangValidator],
 					  [$VULKAN_SDK/bin/glslangValidator],
 					  [$VULKAN_SDK/bin], [])
-	  ],
-	  [AC_CHECK_PROG([glslangvalidator], [glslangValidator],
-					 [glslangValidator],, [])
-	  ]
-	)
-	AC_CHECK_HEADER([vulkan/vulkan.h], [
-		HAVE_VULKAN=yes
-		AS_IF([test x"$VULKAN_SDK" != x], [
+	    AC_CHECK_HEADER([vulkan/vulkan.h], [
+			HAVE_VULKAN=yes
 			VULKAN_CPPFLAGS="-I$VULKAN_SDK/include"
 			VULKAN_QCFLAGS="-I$VULKAN_SDK/include"
 			VULKAN_LDFLAGS="-L$VULKAN_SDK/lib"
-		],[
-			VULKAN_QCFLAGS="-I${QCSYSPREFIX-/usr}/include"
-		])
-	  ], [HAVE_VULKAN=no])
+		], [HAVE_VULKAN=no])
+	  ],
+	  [AC_CHECK_PROG([glslangvalidator], [glslangValidator],
+					 [glslangValidator],, [])
+		AC_CHECK_HEADER([vulkan/vulkan.h], [HAVE_VULKAN=yes ], [HAVE_VULKAN=no])
+		VULKAN_QCFLAGS="-I${QCSYSPREFIX-/usr}/include"
+	  ]
+	)
 	CPPFLAGS="$save_CPPFLAGS"
 fi
 if test "x$HAVE_VULKAN" = xyes; then
