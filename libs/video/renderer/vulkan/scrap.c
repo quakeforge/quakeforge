@@ -298,15 +298,6 @@ QFV_ScrapFlush (scrap_t *scrap)
 
 	qfv_packet_t *packet = scrap->packet;
 	qfv_stagebuf_t *stage = packet->stage;
-	size_t      i;
-	__auto_type copy = QFV_AllocBufferImageCopy (128, alloca);
-	memset (copy->a, 0, 128 * sizeof (copy->a[0]));
-
-	for (i = 0; i < scrap->batch_count && i < 128; i++) {
-		copy->a[i].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		copy->a[i].imageSubresource.layerCount = 1;
-		copy->a[i].imageExtent.depth = 1;
-	}
 
 	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_ShaderReadOnly_to_TransferDst];
 	ib.barrier.image = scrap->image;
@@ -319,15 +310,27 @@ QFV_ScrapFlush (scrap_t *scrap)
 
 	size_t      offset = packet->offset;
 	vrect_t    *batch = scrap->batch;
+	__auto_type copy = QFV_AllocBufferImageCopy (128, alloca);
 	while (scrap->batch_count) {
+		size_t i;
 		for (i = 0; i < scrap->batch_count && i < 128; i++) {
 			size_t      size = batch->width * batch->height * scrap->bpp;
-
-			copy->a[i].bufferOffset = offset;
-			copy->a[i].imageOffset.x = batch->x;
-			copy->a[i].imageOffset.y = batch->y;
-			copy->a[i].imageExtent.width = batch->width;
-			copy->a[i].imageExtent.height = batch->height;
+			copy->a[i] = (VkBufferImageCopy) {
+				.bufferOffset = offset,
+				.imageSubresource = {
+					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+					.layerCount = 1,
+				},
+				.imageOffset = {
+					.x = batch->x,
+					.y = batch->y,
+				},
+				.imageExtent = {
+					.width = batch->width,
+					.height = batch->height,
+					.depth = 1,
+				},
+			};
 
 			offset += (size + 3) & ~3;
 			batch = batch->next;
