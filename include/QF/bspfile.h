@@ -78,7 +78,7 @@
 	\ingroup formats_bsp
 
 	All data in a BSP file is separated into lumps. The lump structure gives
-	the file relative offset of the beginning of the data lump, and the size
+	the file-relative offset of the beginning of the data lump, and the size
 	of the lump in bytes.
 */
 ///@{
@@ -295,7 +295,7 @@ typedef struct dnode_s { //BSP2 version (bsp 29 version is in bspfile.c)
 	/// List of \ref bsp_face faces on the node's plane. Used for
 	/// depth-sorting the faces while traversing the visible BSP tree.
 	///@{
-	uint32_t    firstface;	///< index of first face on nonde plane
+	uint32_t    firstface;	///< index of first face on node plane
 	uint32_t    numfaces;	///< numer of faces on node plane (both sides)
 	///@}
 } dnode_t;
@@ -392,7 +392,7 @@ typedef struct dface_s { //BSP2 version (bsp 29 version is in bspfile.c)
 	/// List of lighting styles affecting the lightmaps affecting this face.
 	/// 255 indicates both no style thus no lightmap and the end of the list.
 	byte        styles[MAXLIGHTMAPS];
-	/// Offset into the lighting data (ref bsp_lighting) of the first lightmap
+	/// Offset into the lighting data (\ref bsp_lighting) of the first lightmap
 	/// affecting this face. The number of lightmaps affecting this face is
 	/// inferred from the \a styles array. The size of each lightmap is
 	/// determined from the texture extents of the face as (E / 16 + 1)
@@ -559,7 +559,7 @@ typedef struct dleaf_s { //BSP2 version (bsp 29 version is in bspfile.c)
 
 	The primary culling data in a Quake BSP. Conceptually, it is just an
 	array of bit-sets representing the leafs visible from each leaf.
-	However, leaf 0 is not represented in the data at all: there is now row
+	However, leaf 0 is not represented in the data at all: there is no row
 	for leaf 0 (first row is for leaf 1's visible leafs), and the first bit
 	in each row represents leaf 1.
 
