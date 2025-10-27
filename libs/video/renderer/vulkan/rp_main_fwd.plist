@@ -1351,7 +1351,7 @@ renderpasses = {
 				};
 			};
 		};
-		output = cube_color;
+		output = cube_output;
 	};
 	output = {
 		color = "[0, 1, 1, 1]";
