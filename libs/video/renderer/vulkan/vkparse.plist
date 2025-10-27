@@ -1,6 +1,7 @@
 search = (
 	VkDebugUtilsMessageSeverityFlagBitsEXT,
 	VkValidationFeatureEnableEXT,
+	VkObjectType,
 	VkPresentModeKHR,
 	VkSpecializationInfo,
 	VkPipelineShaderStageCreateInfo,
