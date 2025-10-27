@@ -163,7 +163,7 @@ void R_DrawSolidClippedSubmodelPolygons (uint32_t render_id, mod_brush_t *brush,
 void R_AddPolygonEdges (emitpoint_t *pverts, int numverts, int miplevel);
 surf_t *R_GetSurf (void);
 void R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av);
-void R_AliasDrawModel (entity_t ent, alight_t *plighting);
+void R_AliasDrawModel (entity_t ent, alight_t *plighting, int trivial_accept);
 void R_IQMDrawModel (entity_t ent, alight_t *plighting);
 
 float R_IQMGetLerpedFrames (double time, animation_t *animation,
@@ -240,7 +240,7 @@ extern auxvert_t		*pauxverts;
 extern float            ziscale;
 extern float            aliastransform[3][4];
 
-bool R_AliasCheckBBox (entity_t ent);
+bool R_AliasCheckBBox (entity_t ent, int *trivial_accept);
 
 // turbulence stuff =======================================
 

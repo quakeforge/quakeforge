@@ -205,18 +205,14 @@ check_bounds (bool *zclipped, unsigned *anyclip, int *minz, qfm_frame_t *frame)
 }
 
 bool
-R_AliasCheckBBox (entity_t ent)
+R_AliasCheckBBox (entity_t ent, int *trivial_accept)
 {
 	bool        zclipped = false;
 	unsigned    anyclip = 0;
 	int         minz = 9999;
 	bool        accept = true;
 
-	// expand, rotate, and translate points into worldspace
-	visibility_t *visibility = Ent_GetComponent (ent.id,
-												 ent.base + scene_visibility,
-												 ent.reg);
-	visibility->trivial_accept = 0;
+	*trivial_accept = 0;
 
 	auto renderer = Entity_GetRenderer (ent);
 	pmodel = renderer->model;
@@ -261,12 +257,12 @@ R_AliasCheckBBox (entity_t ent)
 		}
 	}
 
-	visibility->trivial_accept = !anyclip & !zclipped;
+	*trivial_accept = !anyclip & !zclipped;
 
-	if (visibility->trivial_accept) {
+	if (*trivial_accept) {
 		auto rmesh = (sw_mesh_t *) ((byte *) model + model->render_data);
 		if (minz > (r_aliastransition + (rmesh->size * r_resfudge))) {
-			visibility->trivial_accept |= 2;
+			*trivial_accept |= 2;
 		}
 	}
 release:
@@ -1094,20 +1090,18 @@ R_AliasSetupFrame (entity_t ent, qf_mesh_t *mesh)
 
 static void
 draw_mesh (entity_t ent, alight_t *lighting, qf_mesh_t *mesh,
-		   finalvert_t *fv, auxvert_t *av, mat4f_t *palette)
+		   finalvert_t *fv, auxvert_t *av, mat4f_t *palette,
+		   int trivial_accept)
 {
 	R_AliasSetupSkin (ent, mesh);
-	visibility_t *visibility = Ent_GetComponent (ent.id,
-												 ent.base + scene_visibility,
-												 ent.reg);
-	R_AliasSetUpTransform (ent, visibility->trivial_accept, mesh);
+	R_AliasSetUpTransform (ent, trivial_accept, mesh);
 	R_AliasSetupLighting (lighting);
 	uint32_t verts_offs = mesh->vertices.offset * mesh->vertex_stride;
 	if (mesh->morph.numclips) {
 		verts_offs = R_AliasSetupFrame (ent, mesh);
 	}
 
-	r_affinetridesc.drawtype = ((visibility->trivial_accept == 3)
+	r_affinetridesc.drawtype = ((trivial_accept == 3)
 								&& r_recursiveaffinetriangles);
 
 	acolormap = r_colormap;
@@ -1130,7 +1124,7 @@ draw_mesh (entity_t ent, alight_t *lighting, qf_mesh_t *mesh,
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (visibility->trivial_accept) {
+	if (trivial_accept) {
 		R_AliasPrepareUnclippedPoints (fv, mesh, verts_offs, palette);
 	} else {
 		R_AliasPreparePoints (fv, av, mesh, verts_offs, palette);
@@ -1139,7 +1133,7 @@ draw_mesh (entity_t ent, alight_t *lighting, qf_mesh_t *mesh,
 }
 
 void
-R_AliasDrawModel (entity_t ent, alight_t *lighting)
+R_AliasDrawModel (entity_t ent, alight_t *lighting, int trivial_accept)
 {
 	r_amodels_drawn++;
 
@@ -1190,7 +1184,7 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
 		auto fv = pfinalverts + meshes[i].vertices.offset;
 		auto av = pauxverts + meshes[i].vertices.offset;
-		draw_mesh (ent, lighting, &meshes[i], fv, av, palette);
+		draw_mesh (ent, lighting, &meshes[i], fv, av, palette, trivial_accept);
 	}
 
 	if (!renderer->model->model) {

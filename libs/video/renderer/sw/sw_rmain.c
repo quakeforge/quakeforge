@@ -273,28 +273,12 @@ draw_mesh_entity (entity_t ent)
 {
 	// see if the bounding box lets us trivially reject, also
 	// sets trivial accept status
-	visibility_t *visibility = Ent_GetComponent (ent.id, ent.base + scene_visibility,
-												 ent.reg);
-	visibility->trivial_accept = 0;	//FIXME
-	if (R_AliasCheckBBox (ent)) {
+	int trivial_accept = 0;
+	if (R_AliasCheckBBox (ent, &trivial_accept)) {
 		alight_t    lighting;
 		R_Setup_Lighting (ent, &lighting);
-		R_AliasDrawModel (ent, &lighting);
+		R_AliasDrawModel (ent, &lighting, trivial_accept);
 	}
-}
-
-static inline void
-draw_iqm_entity (entity_t ent)
-{
-	// see if the bounding box lets us trivially reject, also
-	// sets trivial accept status
-	visibility_t *visibility = Ent_GetComponent (ent.id, ent.base + scene_visibility,
-												 ent.reg);
-	visibility->trivial_accept = 0;	//FIXME
-
-	alight_t    lighting;
-	R_Setup_Lighting (ent, &lighting);
-	R_IQMDrawModel (ent, &lighting);
 }
 
 void
@@ -383,7 +367,7 @@ R_DrawViewModel (void)
 	if (lighting.ambientlight + lighting.shadelight > 192)
 		lighting.shadelight = 192 - lighting.ambientlight;
 
-	R_AliasDrawModel (viewent, &lighting);
+	R_AliasDrawModel (viewent, &lighting, 0);
 }
 
 static int
