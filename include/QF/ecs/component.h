@@ -197,6 +197,7 @@ Component_DestroyElements (const component_t *component, void *array,
 						   uint32_t index, uint32_t count,
 						   struct ecs_registry_s *reg)
 {
+	qfZoneScoped (true);
 	if (component->destroy) {
 		for (uint32_t i = index; count-- > 0; i++) {
 			auto dst = Component_Address (component, array, i);

@@ -38,6 +38,7 @@ Light_CreateLightingData (scene_t *scene)
 void
 Light_DestroyLightingData (lightingdata_t *ldata)
 {
+	qfZoneScoped (true);
 	if (ldata->sun_pvs) {
 		set_delete (ldata->sun_pvs);
 	}

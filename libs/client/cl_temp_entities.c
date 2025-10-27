@@ -225,6 +225,7 @@ free_tent_object (tent_obj_t *tobj)
 void
 CL_ClearTEnts (void)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (temp_entities);
 	PR_RESRESET (tent_objects);
 	cl_beams = 0;

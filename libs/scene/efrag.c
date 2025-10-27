@@ -53,6 +53,7 @@ entqueue_t *r_ent_queue;
 static inline void
 init_efrag_list (t_efrag_list *efl)
 {
+	qfZoneScoped (true);
 	int i;
 
 	for (i = 0; i < MAX_EFRAGS - 1; i++)
@@ -63,6 +64,7 @@ init_efrag_list (t_efrag_list *efl)
 static efrag_t *
 new_efrag (void)
 {
+	qfZoneScoped (true);
 	efrag_t    *ef;
 
 	if (__builtin_expect (!r_free_efrags, 0)) {
@@ -82,6 +84,7 @@ new_efrag (void)
 void
 R_ClearEfrags (void)
 {
+	qfZoneScoped (true);
 	t_efrag_list *efl;
 
 	if (!efrag_list)
@@ -98,6 +101,7 @@ R_ClearEfrags (void)
 void
 R_ShutdownEfrags (void)
 {
+	qfZoneScoped (true);
 	while (efrag_list) {
 		t_efrag_list *efl = efrag_list->next;
 		free (efrag_list);
@@ -108,6 +112,7 @@ R_ShutdownEfrags (void)
 void
 R_ClearEfragChain (efrag_t *ef)
 {
+	qfZoneScoped (true);
 	efrag_t    *old, *walk, **prev;
 
 	while (ef) {
@@ -133,6 +138,7 @@ R_ClearEfragChain (efrag_t *ef)
 efrag_t **
 R_LinkEfrag (mleaf_t *leaf, entity_t ent, uint32_t queue, efrag_t **lastlink)
 {
+	qfZoneScoped (true);
 	efrag_t    *ef = new_efrag ();	// ensures ef->entnext is 0
 
 	// add the link to the chain of links on the entity
@@ -152,6 +158,7 @@ static void
 R_SplitEntityOnNode (mod_brush_t *brush, entity_t ent, uint32_t queue,
 					 visibility_t *visibility, vec3_t emins, vec3_t emaxs)
 {
+	qfZoneScoped (true);
 	plane_t    *splitplane;
 	mleaf_t    *leaf;
 	int         sides;
@@ -210,6 +217,7 @@ R_SplitEntityOnNode (mod_brush_t *brush, entity_t ent, uint32_t queue,
 void
 R_AddEfrags (mod_brush_t *brush, entity_t ent)
 {
+	qfZoneScoped (true);
 	model_t    *entmodel;
 	vec3_t      emins, emaxs;
 	transform_t transform = Entity_Transform (ent);
@@ -241,6 +249,7 @@ R_AddEfrags (mod_brush_t *brush, entity_t ent)
 void
 R_StoreEfrags (const efrag_t *efrag)
 {
+	qfZoneScoped (true);
 	while (efrag) {
 		entity_t    ent = efrag->entity;
 		EntQueue_AddEntity (r_ent_queue, ent, efrag->queue_num);

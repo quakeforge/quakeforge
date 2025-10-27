@@ -73,6 +73,7 @@ ECS_NewRegistry (const char *name)
 VISIBLE void
 ECS_DelRegistry (ecs_registry_t *registry)
 {
+	qfZoneScoped (true);
 	if (!registry) {
 		return;
 	}

@@ -311,6 +311,7 @@ Scene_NewScene (scene_system_t *extra_systems)
 void
 Scene_DeleteScene (scene_t *scene)
 {
+	qfZoneScoped (true);
 	if (scene) {
 		ECS_DelRegistry (scene->reg);
 
@@ -348,8 +349,12 @@ Scene_DestroyEntity (scene_t *scene, entity_t ent)
 void
 Scene_FreeAllEntities (scene_t *scene)
 {
+	qfZoneScoped (true);
 	auto reg = scene->reg;
-	for (uint32_t i = 0; i < reg->entities.num_ids; i++) {
+	//FIXME it shouldn't matter which order entities are freed, but
+	//efags is a linked list and all those lights make a nasty difference
+	for (uint32_t i = reg->entities.num_ids; i-- > 0; ) {//38ms ad_tears
+	//for (uint32_t i = 0; i < reg->entities.num_ids; i++) {//2.2s
 		uint32_t    ent = reg->entities.ids[i];
 		uint32_t    ind = Ent_Index (ent);
 		if (ind == i) {
