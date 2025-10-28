@@ -222,7 +222,7 @@ void Ent_AddGroup (uint32_t ent, uint32_t group, ecs_registry_t *reg)
 			pool->sparse[id] = ind;
 			pool->dense[ind] = ent;
 			// FIXME: optionally supply data?
-			Component_CreateElements (c, pool->data, ind, 1);
+			Component_CreateElements (c, pool->data, ind, 1, reg);
 		}
 		ecs_move_component (pool, subpool, gc[i].rangeid, ind, c);
 	}

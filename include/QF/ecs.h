@@ -308,7 +308,7 @@ Ent_SetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry,
 									   dst, 0, data, 0, 1);
 	} else {
 		return Component_CreateElements (&registry->components.a[comp],
-										 dst, 0, 1);
+										 dst, 0, 1, registry);
 	}
 }
 

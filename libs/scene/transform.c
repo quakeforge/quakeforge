@@ -41,28 +41,28 @@
 #include "QF/scene/transform.h"
 
 static void
-transform_mat4f_identity (void *_mat)
+transform_mat4f_identity (void *_mat, ecs_registry_t *reg)
 {
 	vec4f_t    *mat = _mat;
 	mat4fidentity (mat);
 }
 
 static void
-transform_rotation_identity (void *_rot)
+transform_rotation_identity (void *_rot, ecs_registry_t *reg)
 {
 	vec4f_t    *rot = _rot;
 	*rot = (vec4f_t) { 0, 0, 0, 1 };
 }
 
 static void
-transform_scale_identity (void *_scale)
+transform_scale_identity (void *_scale, ecs_registry_t *reg)
 {
 	vec4f_t    *scale = _scale;
 	*scale = (vec4f_t) { 1, 1, 1, 1 };
 }
 
 static void
-transform_modified_init (void *_modified)
+transform_modified_init (void *_modified, ecs_registry_t *reg)
 {
 	byte       *modified = _modified;
 	*modified = 1;

@@ -24,21 +24,21 @@ static uint32_t comp_base;
 #define t_rotation (comp_base + test_rotation)
 
 static void
-create_position (void *data)
+create_position (void *data, ecs_registry_t *reg)
 {
 	vec4f_t    *pos = data;
 	*pos = (vec4f_t) { 0, 0, 0, 1 };
 }
 
 static void
-create_scale (void *data)
+create_scale (void *data, ecs_registry_t *reg)
 {
 	vec_t     *scale = data;
 	VectorSet (1, 1, 1, scale);
 }
 
 static void
-create_rotation (void *data)
+create_rotation (void *data, ecs_registry_t *reg)
 {
 	vec4f_t    *rot = data;
 	*rot = (vec4f_t) { 0, 0, 0, 1 };

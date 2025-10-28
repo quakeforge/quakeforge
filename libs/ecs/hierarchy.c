@@ -271,7 +271,8 @@ hierarchy_init (hierarchy_t *dst, uint32_t index,
 	if (dst->type) {
 		for (uint32_t i = 0; i < dst->type->num_components; i++) {
 			Component_CreateElements (&dst->type->components[i],
-									  dst->components[i], index, count);
+									  dst->components[i], index, count,
+									  dst->reg);
 		}
 	}
 }
