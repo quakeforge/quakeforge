@@ -261,6 +261,10 @@ get_dyn_descriptor (descpool_t *pool, qpic_t *pic, VkBufferView buffer_view,
 	pool->users[descid] = id;
 	if (!pool->sets[descid]) {
 		pool->sets[descid] = QFV_DSManager_AllocSet (dctx->dsmanager);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
+							 pool->sets[descid],
+							 vac (ctx->va_ctx, "draw:dyn:%d:%d", ctx->curFrame,
+								  descid));
 	}
 	VkWriteDescriptorSet write[] = {
 		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
