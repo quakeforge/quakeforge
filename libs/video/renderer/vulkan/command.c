@@ -196,33 +196,6 @@ QFV_CreateFence (qfv_device_t *device, int signaled)
 	return fence;
 }
 
-int
-QFV_QueueSubmit (qfv_queue_t *queue, qfv_semaphoreset_t *waitSemaphores,
-				 VkPipelineStageFlags *stages,
-				 qfv_cmdbufferset_t *buffers,
-				 qfv_semaphoreset_t *signalSemaphores, VkFence fence)
-{
-	qfv_device_t *device = queue->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	VkSubmitInfo submitInfo = {
-		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
-		waitSemaphores->size, waitSemaphores->a, stages,
-		buffers->size, buffers->a,
-		signalSemaphores->size, signalSemaphores->a
-	};
-	//FIXME multi-batch
-	return dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, fence)
-			== VK_SUCCESS;
-}
-
-int
-QFV_QueueWaitIdle (qfv_queue_t *queue)
-{
-	qfv_device_t *device = queue->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	return dfunc->vkQueueWaitIdle (queue->queue) == VK_SUCCESS;
-}
-
 void
 QFV_PushConstants (qfv_device_t *device, VkCommandBuffer cmd,
 				   VkPipelineLayout layout, uint32_t numPC,
