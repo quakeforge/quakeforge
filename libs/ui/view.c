@@ -84,7 +84,7 @@ static exprenum_t grav_t_enum = {
 };
 
 static void
-view_modified_init (void *_modified)
+view_modified_init (void *_modified, ecs_registry_t *reg)
 {
 	byte       *modified = _modified;
 	*modified = 1;

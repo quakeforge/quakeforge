@@ -35,7 +35,7 @@
 #include "QF/ecs.h"
 
 static void
-ecs_hierarchy_create (void *hierarchy)
+ecs_hierarchy_create (void *hierarchy, ecs_registry_t *reg)
 {
 	Hierarchy_Create (hierarchy);
 }

@@ -49,21 +49,21 @@
 #include "QF/scene/transform.h"
 
 static void
-create_active (void *_active)
+create_active (void *_active, ecs_registry_t *reg)
 {
 	byte       *active = _active;
 	*active = 1;
 }
 
 static void
-create_old_origin (void *_old_origin)
+create_old_origin (void *_old_origin, ecs_registry_t *reg)
 {
 	vec4f_t    *old_origin = _old_origin;
 	*old_origin = (vec4f_t) {0, 0, 0, 1};
 }
 
 static void
-create_colormap (void *_colormap)
+create_colormap (void *_colormap, ecs_registry_t *reg)
 {
 	colormap_t *colormap = _colormap;
 	*colormap = (colormap_t) {1, 6};
@@ -91,21 +91,21 @@ destroy_efrags (void *_efrags, ecs_registry_t *reg)
 }
 
 static void
-sw_identity_matrix (void *_mat)
+sw_identity_matrix (void *_mat, ecs_registry_t *reg)
 {
 	mat4f_t    *mat = _mat;
 	mat4fidentity (*mat);
 }
 
 static void
-sw_frame_0 (void *_frame)
+sw_frame_0 (void *_frame, ecs_registry_t *reg)
 {
 	byte       *frame = _frame;
 	*frame = 0;
 }
 
 static void
-sw_null_brush (void *_brush)
+sw_null_brush (void *_brush, ecs_registry_t *reg)
 {
 	struct mod_brush_s **brush = _brush;
 	*brush = 0;

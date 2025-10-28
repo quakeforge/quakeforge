@@ -52,7 +52,7 @@ text_passage_glyphs_destroy (void *_glyphset, ecs_registry_t *reg)
 }
 
 static void
-text_features_create (void *_features)
+text_features_create (void *_features, ecs_registry_t *reg)
 {
 	featureset_t *features = _features;
 	*features = (featureset_t) DARRAY_STATIC_INIT (4);

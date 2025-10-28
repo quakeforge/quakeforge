@@ -45,7 +45,7 @@ struct imui_ctx_s;
 struct ecs_registry_s;
 typedef struct component_s {
 	size_t      size;
-	void      (*create) (void *);
+	void      (*create) (void *, struct ecs_registry_s *reg);
 	void      (*destroy) (void *, struct ecs_registry_s *reg);
 	// comp is the registry component id (base + system component id)
 	uint32_t  (*rangeid) (struct ecs_registry_s *reg, uint32_t ent,
@@ -77,7 +77,8 @@ COMPINLINE void *Component_CopyElements (const component_t *component,
 										 uint32_t count);
 COMPINLINE void *Component_CreateElements (const component_t *component,
 										   void *array,
-										   uint32_t index, uint32_t count);
+										   uint32_t index, uint32_t count,
+										   struct ecs_registry_s *reg);
 COMPINLINE void Component_DestroyElements (const component_t *component,
 										   void *array,
 										   uint32_t index, uint32_t count,
@@ -178,12 +179,13 @@ Component_CopyElements (const component_t *component,
 
 COMPINLINE void *
 Component_CreateElements (const component_t *component, void *array,
-						  uint32_t index, uint32_t count)
+						  uint32_t index, uint32_t count,
+						  struct ecs_registry_s *reg)
 {
 	if (component->create) {
 		for (uint32_t i = index; count-- > 0; i++) {
 			auto dst = Component_Address (component, array, i);
-			component->create (dst);
+			component->create (dst, reg);
 		}
 	} else {
 		auto dst = Component_Address (component, array, index);
