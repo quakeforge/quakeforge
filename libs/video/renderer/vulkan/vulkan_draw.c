@@ -160,6 +160,7 @@ typedef struct cachepic_s {
 
 typedef struct descpool_s {
 	VkDescriptorSet sets[MAX_DESCIPTORS];
+	VkBufferView buffers[MAX_DESCIPTORS];
 	struct drawctx_s *dctx;
 	uint32_t    users[MAX_DESCIPTORS];// picdata_t.descid
 	int         in_use;
@@ -244,7 +245,6 @@ get_dyn_descriptor (descpool_t *pool, qpic_t *pic, VkBufferView buffer_view,
 					vulkan_ctx_t *ctx)
 {
 	auto device = ctx->device;
-	auto dfunc = device->funcs;
 	auto dctx = ctx->draw_context;
 	auto pd = (picdata_t *) pic->data;
 	uint32_t    id = pd->descid;
@@ -266,19 +266,48 @@ get_dyn_descriptor (descpool_t *pool, qpic_t *pic, VkBufferView buffer_view,
 							 vac (ctx->va_ctx, "draw:dyn:%d:%d", ctx->curFrame,
 								  descid));
 	}
-	VkWriteDescriptorSet write[] = {
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  pool->sets[descid], 1, 0, 1,
-		  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
-		  0, 0, &buffer_view },
-	};
-	VkCopyDescriptorSet copy[] = {
-		{ VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET, 0,
-		  pool->dctx->fonts.a[id].set, 0, 0,
-		  pool->sets[descid], 0, 0, 1 },
-	};
-	dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 1, copy);
+	pool->buffers[descid] = buffer_view;
 	return ~descid;
+};
+
+static void
+update_dyn_descriptors (descpool_t *pool, vulkan_ctx_t *ctx)
+{
+	if (!pool->in_use) {
+		return;
+	}
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+
+	int count = pool->in_use;
+	VkWriteDescriptorSet write[count];
+	VkCopyDescriptorSet copy[count];
+	for (int i = 0; i < count; i++) {
+		write[i] = (VkWriteDescriptorSet) {
+			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = pool->sets[i],
+			.dstBinding = 1,
+			.dstArrayElement = 0,
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+			.pTexelBufferView = &pool->buffers[i],
+		};
+
+		uint32_t id = pool->users[i];
+		auto set = pool->dctx->fonts.a[id].set;
+		copy[i] = (VkCopyDescriptorSet) {
+			.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET,
+			.srcSet = set,
+			.srcBinding = 0,
+			.srcArrayElement = 0,
+			.dstSet = pool->sets[i],
+			.dstBinding = 0,
+			.dstArrayElement = 0,
+			.descriptorCount = 1,
+		};
+	}
+	dfunc->vkUpdateDescriptorSets (device->dev, count, write, count, copy);
 }
 
 static void
@@ -1136,6 +1165,9 @@ flush_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+	update_dyn_descriptors (&frame->dyn_descs, ctx);
 	flush_draw_scrap (ctx);
 }
 
