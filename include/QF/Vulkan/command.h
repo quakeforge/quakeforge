@@ -64,12 +64,6 @@ int QFV_AllocateCommandBuffers (struct qfv_device_s *device,
 
 VkSemaphore QFV_CreateSemaphore (struct qfv_device_s *device);
 VkFence QFV_CreateFence (struct qfv_device_s *device, int signaled);
-int QFV_QueueSubmit (struct qfv_queue_s *queue,
-					 qfv_semaphoreset_t *waitSemaphores,
-					 VkPipelineStageFlags *stages,
-					 qfv_cmdbufferset_t *buffers,
-					 qfv_semaphoreset_t *signalSemaphores, VkFence fence);
-int QFV_QueueWaitIdle (struct qfv_queue_s *queue);
 
 typedef struct qfv_push_constants_s {
 	VkShaderStageFlags stageFlags;
