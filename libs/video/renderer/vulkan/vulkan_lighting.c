@@ -1201,9 +1201,9 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 	lframe->stage_queue[LIGHTING_STAGES - 1].count = 0;
 
 	size_t packet_size = 0;
-	packet_size += sizeof (uint32_t[light_count]);
-	packet_size += sizeof (float[light_count]);
-	packet_size += sizeof (uint32_t[matrix_id_count]);
+	packet_size += sizeof (uint32_t[light_count]);		//light_ids
+	packet_size += sizeof (float[light_count]);			//light_radii
+	packet_size += sizeof (uint32_t[matrix_id_count]);	//matrix_ids
 
 	if (!packet_size) {
 		return;
@@ -1237,8 +1237,8 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 	auto matrix_ids = (uint32_t *) packet_data;
 	packet_data += matrix_id_scater.length;
 
-	memcpy (id_data, light_ids, packet_size);
-	memcpy (radius_data, light_radii, packet_size);
+	memcpy (id_data, light_ids, sizeof(uint32_t[light_count]));
+	memcpy (radius_data, light_radii, sizeof(float[light_count]));
 	for (uint32_t i = 0; i < light_count; i++) {
 		auto r = &lctx->light_control.a[light_ids[i]];
 		enqueue_map (matrix_ids, lframe, r);
