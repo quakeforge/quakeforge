@@ -123,6 +123,7 @@ typedef struct ecs_registry_s {
 	ecs_subpool_t *subpools;
 	componentset_t components;
 	ecs_groups_t groups;
+	void       *data;
 } ecs_registry_t;
 
 /** Tie an ECS system to a registry.
