@@ -48,6 +48,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "QF/scene/efrags.h"
 #include "QF/scene/entity.h"
 
 #include "QF/GLSL/defines.h"
@@ -728,8 +729,7 @@ static inline void
 visit_leaf (mleaf_t *leaf)
 {
 	// deal with model fragments in this leaf
-	if (leaf->efrags)
-		R_StoreEfrags (leaf->efrags);
+	R_StoreEfrags (r_refdef.scene, leaf);
 }
 
 // 1 = back side, 0 = front side

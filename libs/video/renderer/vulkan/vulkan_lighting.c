@@ -52,6 +52,7 @@
 #include "QF/va.h"
 
 #include "QF/scene/scene.h"
+#include "QF/scene/efrags.h"
 #include "QF/ui/imui.h"
 #define IMUI_context imui_ctx
 
@@ -2982,9 +2983,9 @@ show_leaves (vulkan_ctx_t *ctx, uint32_t leafnum, efrag_t *efrags)
 	if (leafnum) {
 		set_add (&pvs, leafnum - 1);
 	} else {
-		for (auto e = efrags; e; e = e->entnext) {
-			set_add (&pvs, e->leaf - brush->leafs - 1);
-		}
+		//for (auto e = efrags; e; e = e->entnext) {
+		//	set_add (&pvs, e->leaf - brush->leafs - 1);
+		//}
 	}
 	mark_leaves (pass, &pvs);
 }
@@ -3062,9 +3063,9 @@ scene_efrags_ui (void *comp, imui_ctx_t *imui_ctx,
 	auto efrags = *(efrag_t **) comp;
 	uint32_t len = 0;
 	bool valid = true;
-	for (auto e = efrags; e; e = e->entnext, len++) {
-		valid &= e->entity.id == ent;
-	}
+	//for (auto e = efrags; e; e = e->entnext, len++) {
+	//	valid &= e->entity.id == ent;
+	//}
 	UI_Horizontal {
 		if (UI_Button (vac (ctx->va_ctx, "Show##lightefrags_ui.%08x", ent))) {
 			show_leaves (ctx, 0, efrags);
@@ -3143,7 +3144,7 @@ Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 		auto reg = lctx->scene->reg;
 		reg->components.a[lctx->scene->base + scene_dynlight].ui = light_dyn_light_ui;
 		reg->components.a[lctx->scene->base + scene_light].ui = light_light_ui;
-		reg->components.a[lctx->scene->base + scene_efrags].ui = scene_efrags_ui;
+		reg->components.a[lctx->scene->base + scene_efrag].ui = scene_efrags_ui;
 		reg->components.a[lctx->scene->base + scene_lightstyle].ui = scene_lightstyle_ui;
 		reg->components.a[lctx->scene->base + scene_lightleaf].ui = scene_lightleaf_ui;
 		reg->components.a[lctx->scene->base + scene_lightid].ui = scene_lightid_ui;

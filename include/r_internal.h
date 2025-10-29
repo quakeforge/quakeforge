@@ -75,8 +75,6 @@ void R_SetVrect (const vrect_t *pvrect, vrect_t *pvrectin, int lineadj);
 
 void R_LoadSkys (const char *);
 
-void R_ClearEfrags (void);
-
 int R_FindNearLights (vec4f_t pos, int count, dlight_t **lights);
 
 int R_InitGraphTextures (int base);

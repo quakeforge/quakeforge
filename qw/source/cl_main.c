@@ -769,7 +769,7 @@ CL_Disconnect (void)
 			Info_Destroy (cl.players[i].userinfo);
 		memset (&cl.players[i], 0, sizeof (cl.players[i]));
 	}
-	cl_world.scene->worldmodel = NULL;
+	CL_World_Clear ();
 	cl.validsequence = 0;
 }
 

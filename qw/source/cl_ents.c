@@ -41,6 +41,7 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 
+#include "QF/scene/efrags.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/light.h"
 
@@ -241,7 +242,7 @@ CL_LinkPacketEntities (void)
 			CL_TransformEntity (ent, new->scale / 16, new->angles,
 								new->origin);
 			if (i != cl.viewentity || chase_active) {
-				R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
+				R_AddEfrags (cl_world.scene, ent);
 			}
 		} else {
 			vec4f_t     delta = new->origin - old->origin;
@@ -270,7 +271,7 @@ CL_LinkPacketEntities (void)
 			if (i != cl.viewentity || chase_active) {
 				vec4f_t     org = Transform_GetWorldPosition (transform);
 				if (!VectorCompare (org, *old_origin)) {//FIXME
-					R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
+					R_AddEfrags (cl_world.scene, ent);
 				}
 			}
 		}
@@ -547,11 +548,11 @@ CL_LinkPlayers (void)
 		}
 
 		// stuff entity in map
-		R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
+		R_AddEfrags (cl_world.scene, ent);
 		if (Entity_Valid (player->flag_ent)) {
 			CL_UpdateFlagModels (ent, j);
 			entity_t    fent = player->flag_ent;
-			R_AddEfrags (&cl_world.scene->worldmodel->brush, fent);
+			R_AddEfrags (cl_world.scene, fent);
 		}
 	}
 }

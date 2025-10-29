@@ -45,6 +45,7 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "QF/scene/efrags.h"
 #include "QF/scene/entity.h"
 
 #include "QF/GL/defines.h"
@@ -582,8 +583,7 @@ static inline void
 visit_leaf (mleaf_t *leaf)
 {
 	// deal with model fragments in this leaf
-	if (leaf->efrags)
-		R_StoreEfrags (leaf->efrags);
+	R_StoreEfrags (r_refdef.scene, leaf);
 }
 
 static inline int

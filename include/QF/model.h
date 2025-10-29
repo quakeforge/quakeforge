@@ -195,7 +195,6 @@ typedef struct mleaf_s {
 
 // leaf specific
 	byte		*compressed_vis;
-	struct efrag_s *efrags;
 
 	int         firstmarksurface;
 	int			nummarksurfaces;

@@ -46,7 +46,8 @@
 #include "QF/sound.h"
 
 #include "QF/plugin/vid_render.h"	//FIXME
-									//
+
+#include "QF/scene/efrags.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/light.h"
 #include "QF/scene/scene.h"
@@ -293,7 +294,7 @@ beam_setup (beam_t *b, bool settransform, double time, TEntContext_t *ctx)
 		} else {
 			Transform_SetLocalPosition (transform, position);
 		}
-		R_AddEfrags (&cl_world.scene->worldmodel->brush, tent->ent);
+		R_AddEfrags (cl_world.scene, tent->ent);
 	}
 }
 
@@ -671,7 +672,7 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 		to = &(*to)->next;
 
 		animation->frame = f;
-		R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
+		R_AddEfrags (cl_world.scene, ent);
 	}
 }
 
@@ -756,7 +757,7 @@ CL_ParseProjectiles (qmsg_t *net_message, bool nail2, TEntContext_t *ctx)
 		angles[2] = 0;
 		CL_TransformEntity (tent->ent, 1, angles, position);
 
-		R_AddEfrags (&cl_world.scene->worldmodel->brush, pr);
+		R_AddEfrags (cl_world.scene, pr);
 	}
 
 	*tail = cl_projectiles;

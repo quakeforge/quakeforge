@@ -45,6 +45,7 @@
 
 #include "QF/plugin/vid_render.h"
 
+#include "QF/scene/efrags.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/light.h"
 #include "QF/scene/scene.h"
@@ -334,7 +335,7 @@ bi (Entity_SetModel)
 
 	auto renderer = Entity_GetRenderer (ent);
 	renderer->model = model;
-	R_AddEfrags (&scene->scene->worldmodel->brush, ent);
+	R_AddEfrags (scene->scene, ent);
 }
 
 bi (Entity_SetSubmeshMask)

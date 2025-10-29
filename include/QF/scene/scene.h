@@ -40,6 +40,9 @@
 */
 ///@{
 
+typedef struct model_s model_t;
+typedef struct efrag_db_s efrag_db_t;
+
 enum scene_components {
 	scene_href,			//hierarchical transform
 	scene_mesh_lerp,
@@ -57,7 +60,7 @@ enum scene_components {
 	scene_dynlight,
 
 	scene_light,
-	scene_efrags,
+	scene_efrag,
 	scene_lightstyle,
 	scene_lightleaf,
 	scene_lightid,
@@ -80,9 +83,10 @@ typedef struct scene_s {
 	struct ecs_registry_s *reg;
 	uint32_t base;
 
-	struct model_s *worldmodel;
+	efrag_db_t *efrag_db;
+	model_t    *worldmodel;
 	int         num_models;
-	struct model_s **models;
+	model_t   **models;
 	struct mleaf_s *viewleaf;
 	struct lightingdata_s *lights;
 
@@ -101,6 +105,7 @@ struct entity_s Scene_CreateEntity (scene_t *scene);
 void Scene_DestroyEntity (scene_t *scene, struct entity_s entity);
 void Scene_FreeAllEntities (scene_t *scene);
 
+void Scene_SetWorld (scene_t *scene, model_t *worldmodel);
 
 ///@}
 

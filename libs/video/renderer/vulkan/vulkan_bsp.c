@@ -47,6 +47,7 @@
 #include "QF/va.h"
 
 #include "QF/math/bitop.h"
+#include "QF/scene/efrags.h"
 #include "QF/scene/entity.h"
 
 #include "QF/Vulkan/qf_bsp.h"
@@ -719,9 +720,7 @@ visit_leaf (bsp_pass_t *pass, mleaf_t *leaf)
 	qfZoneScoped (true);
 	// since this leaf will be rendered, any entities in the leaf also need
 	// to be rendered (the bsp tree doubles as an entity cull structure)
-	for (auto efrag = leaf->efrags; efrag; efrag = efrag->leafnext) {
-		EntQueue_AddEntity (pass->entqueue, efrag->entity, efrag->queue_num);
-	}
+	R_StoreEfrags (r_refdef.scene, leaf);
 }
 
 // 1 = back side, 0 = front side

@@ -8,6 +8,7 @@
 #include "QF/render.h"
 #include "QF/set.h"
 #include "QF/scene/scene.h"
+#include "QF/scene/efrags.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/light.h"
 #include "QF/scene/scene.h"
@@ -119,22 +120,21 @@ link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 	}
 	Ent_SetComponent (ent.id, ent.base + scene_lightleaf, ent.reg, &leafnum);
 
-	efrag_t *efrags = 0;
-	efrag_t **lastlink = &efrags;
 	//FIXME this costs about 8us on demo1 test_light_leaf itself is cheap
 	//enough per call, but at around 200 tests, that adds up. There might
 	//be a better way of knowing which leaf nodes to test, or even a better
 	//way to cull lights.
+	if (Ent_HasComponent (ent.id, ent.base + scene_efrag, ent.reg)) {
+		Ent_RemoveComponent (ent.id, ent.base + scene_efrag, ent.reg);
+	}
+	uint32_t efrag = nullent;
 	for (auto li = set_first (pvs); li; li = set_next (li)) {
 		mleaf_t    *leaf = model->brush.leafs + li->element + 1;
 		if (test_light_leaf (light, leaf)) {
-			lastlink = R_LinkEfrag (leaf, ent, mod_light, lastlink);
+			efrag = R_LinkEfrag (scene, leaf, ent, mod_light, efrag);
 		}
 	}
-	if (Ent_HasComponent (ent.id, ent.base + scene_efrags, ent.reg)) {
-		Ent_RemoveComponent (ent.id, ent.base + scene_efrags, ent.reg);
-	}
-	Ent_SetComponent (ent.id, ent.base + scene_efrags, ent.reg, &efrags);
+	Ent_SetComponent (ent.id, ent.base + scene_efrag, ent.reg, &efrag);
 }
 
 void
@@ -218,10 +218,10 @@ Light_DecayLights (lightingdata_t *ldata, float frametime, double realtime)
 		if (dlight->radius <= 0 || dlight->die < realtime) {
 			uint32_t ent = dlight_pool->dense[i];
 			Ent_RemoveComponent (ent, scene->base + scene_dynlight, reg);
-			if (!Ent_HasComponent (ent, scene->base + scene_efrags, reg)) {
-				Sys_Error ("dlight with no efrags");
+			if (!Ent_HasComponent (ent, scene->base + scene_efrag, reg)) {
+				Sys_Error ("dlight with no efrag");
 			}
-			Ent_RemoveComponent (ent, scene->base + scene_efrags, reg);
+			Ent_RemoveComponent (ent, scene->base + scene_efrag, reg);
 			i--;
 		}
 	}
