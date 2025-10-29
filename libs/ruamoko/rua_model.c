@@ -188,7 +188,9 @@ bi (Model_LoadMesh)
 
 	auto model = qfm_alloc_model ();
 	*model = (model_t) {};
-	strncpy (model->name, name, sizeof (model->name));
+	int len = sizeof (model->name) - 1;
+	strncpy (model->name, name, len);
+	model->name[len] = 0;
 	model->name[sizeof(model->name) - 1] = 0;
 	mod_funcs->Mod_LoadMesh (model, sizebuf->data, sizebuf->cursize);
 	if (!(R_INT (pr) = alloc_handle (res, model))) {

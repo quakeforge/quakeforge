@@ -310,7 +310,7 @@ dagnode_match (const dagnode_t *n, const dagnode_t *search)
 	return true;
 }
 
-static dagnode_t *
+static dagnode_t * __attribute__((pure))
 dagnode_search (dag_t *dag, const dagnode_t *search)
 {
 	int         i;

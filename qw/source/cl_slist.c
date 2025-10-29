@@ -294,7 +294,7 @@ SL_Get_By_Num (server_entry_t *start, int n)
 	return (start);
 }
 
-static int
+static int __attribute__((pure))
 SL_Len (server_entry_t *start)
 {
 	int         i;

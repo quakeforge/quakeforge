@@ -118,7 +118,7 @@ EXP_FindIndexByFunc (opfunc func)
 }
 */
 
-static optable_t *
+static optable_t * __attribute__((pure))
 EXP_FindOpByStr (const char *str)
 {
 	size_t      i, len;
@@ -136,7 +136,7 @@ EXP_FindOpByStr (const char *str)
 		return 0;
 }
 
-static functable_t *
+static functable_t * __attribute__((pure))
 EXP_FindFuncByStr (const char *str)
 {
 	size_t      i, len;

@@ -158,7 +158,7 @@ GrabPic (script_t *script)
 
 /* COLORMAP GRABBING */
 
-static byte
+static byte __attribute__((pure))
 BestColor (int r, int g, int b, int start, int stop)
 {
 	int         i;

@@ -225,7 +225,7 @@ wad_add (wad_t *wad, const char *filename, const char *lumpname, byte type)
 	char        buffer[16384];
 	int         bytes;
 
-	strncpy (dummy.name, lumpname, 16);
+	strncpy (dummy.name, lumpname, 15);
 	dummy.name[15] = 0;
 
 	pf = Hash_FindElement (wad->lump_hash, &dummy);
@@ -278,7 +278,7 @@ wad_add_data (wad_t *wad, const char *lumpname, byte type, const void *data,
 	lumpinfo_t *pf;
 	lumpinfo_t  dummy;
 
-	strncpy (dummy.name, lumpname, 16);
+	strncpy (dummy.name, lumpname, 15);
 	dummy.name[15] = 0;
 
 	pf = Hash_FindElement (wad->lump_hash, &dummy);
@@ -322,7 +322,7 @@ VISIBLE lumpinfo_t *
 wad_find_lump (wad_t *wad, const char *lumpname)
 {
 	lumpinfo_t  dummy;
-	strncpy (dummy.name, lumpname, 16);
+	strncpy (dummy.name, lumpname, 15);
 	dummy.name[15] = 0;
 	return Hash_FindElement (wad->lump_hash, &dummy);
 }

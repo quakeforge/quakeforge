@@ -103,7 +103,7 @@ CF_ValidDesc (int desc)
 	Returns 1 if mode == 'r' and the file is already open for
 	writing, or if if mode == 'w' or 'a' and the file's already open at all.
 */
-static int
+static int __attribute__((pure))
 CF_AlreadyOpen (const char * path, char mode)
 {
 	int i;
