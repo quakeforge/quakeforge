@@ -33,143 +33,200 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "QF/scene/efrags.h"
 #include "QF/scene/entity.h"
 
 #include "qfalloca.h"
-#include "r_internal.h"
 
-typedef struct s_efrag_list {
-	struct s_efrag_list *next;
-	efrag_t     efrags[MAX_EFRAGS];
-} t_efrag_list;
+/* Efrag database
 
-static efrag_t    *r_free_efrags;
-static t_efrag_list *efrag_list;
+   Entities in the scene get an efrag id (which is itself an entity id in
+   the efrag database). An efrag has a cluster_group_t component, which is
+   a list of cluster_ref_t references to the clusters a scene entity
+   occupies.
+
+   Each cluster is a cluster_frags_t with a list of efrag_t elements
+   holding the scene entity id and its queue type, as well as a list of
+   cluster_ref_t references to the reference in the group that refers to
+   the efrag (yeah, that's confusing).
+
+	clusters: (find entities in an efrag)
+	    efrags      group_refs
+	a  |1B|4L|      |A0|D0|
+	b  |2M|3B|4L    |B0|C0|D1|
+	c  |4L|         |D2|
+	d  |3B|4L|      |C1|D3|
+	e  |5S|         |E0|
+
+	NOTE: group ids in group_refs are the efrag id, so need to go through
+	the groups.sparse array for lookup.
+
+	groups: (find efrags on an entity)
+	A  |a0|
+	B  |b0|
+	C  |b1|d0|
+	D  |a1|b2|c0|d1
+	E  |e0|
+*/
+
+static void
+destroy_cluster_group (void *_grp, ecs_registry_t *reg)
+{
+	qfZoneScoped (true);
+	auto db = (efrag_db_t *) reg;
+	cluster_group_t *grp = _grp;
+	cluster_group_t *groups = db->groups.data;
+	for (uint32_t i = 0; db->clusters && i < grp->num_refs; i++) {
+		auto ref = &grp->refs[i];
+		auto frags = &db->clusters[ref->id];
+		if (ref->index + 1 < frags->num_efrags) {
+			uint32_t dst = ref->index;
+			uint32_t src = frags->num_efrags - 1;
+			frags->efrags[dst] = frags->efrags[src];
+			auto grp_ref = &frags->group_refs[dst];
+			*grp_ref = frags->group_refs[src];
+			uint32_t gind = db->groups.sparse[Ent_Index (grp_ref->id)];
+			groups[gind].refs[grp_ref->index].index = dst;
+		}
+		frags->num_efrags--;
+	}
+	free (grp->refs);
+}
+
+static component_t cluster_group_component = {
+	.size = sizeof (cluster_group_t),
+	.destroy = destroy_cluster_group,
+};
+
+void
+Efrags_InitDB (efrag_db_t *db, int num_clusters)
+{
+	qfZoneScoped (true);
+	*db = (efrag_db_t) {
+		.num_clusters = num_clusters,
+		.clusters = calloc (num_clusters, sizeof (cluster_frags_t)),
+	};
+}
+
+void
+Efrags_ClearDB (efrag_db_t *db)
+{
+	qfZoneScoped (true);
+	if (db->clusters) {
+		for (int i = 0; i < db->num_clusters; i++) {
+			free (db->clusters[i].efrags);
+			free (db->clusters[i].group_refs);
+		}
+	}
+	free (db->clusters);
+	db->clusters = nullptr;
+	Component_DestroyElements (&cluster_group_component, db->groups.data,
+							   0, db->groups.count, (ecs_registry_t *) db);
+	free (db->groups.sparse);
+	free (db->groups.dense);
+	free (db->groups.data);
+	free (db->idpool.ids);
+	*db = (efrag_db_t) {};
+};
+
+void
+Efrags_DelEfrag (efrag_db_t *db, uint32_t efragid)
+{
+	qfZoneScoped (true);
+	if (!ECS_IdValid (&db->idpool, efragid)) {
+		return;
+	}
+
+	auto pool = &db->groups;
+	auto c = &cluster_group_component;
+
+	uint32_t    id = Ent_Index (efragid);
+	uint32_t    ind = pool->sparse[id];
+	uint32_t    last = pool->count - 1;
+	Component_DestroyElements (c, pool->data, ind, 1, (ecs_registry_t *) db);
+	if (last > ind) {
+		pool->sparse[Ent_Index (pool->dense[last])] = ind;
+		pool->dense[ind] = pool->dense[last];
+		Component_MoveElements (c, pool->data, ind, last, 1);
+	}
+	pool->count--;
+	pool->sparse[id] = nullent;
+
+	ECS_DelId (&db->idpool, efragid);
+}
 
 entqueue_t *r_ent_queue;
 
-/* ENTITY FRAGMENT FUNCTIONS */
-
-static inline void
-init_efrag_list (t_efrag_list *efl)
+uint32_t
+R_LinkEfrag (scene_t *scene, mleaf_t *leaf, entity_t ent, uint32_t queue,
+			 uint32_t efrag)
 {
 	qfZoneScoped (true);
-	int i;
-
-	for (i = 0; i < MAX_EFRAGS - 1; i++)
-		efl->efrags[i].entnext = &efl->efrags[i + 1];
-	efl->efrags[i].entnext = 0;
-}
-
-static efrag_t *
-new_efrag (void)
-{
-	qfZoneScoped (true);
-	efrag_t    *ef;
-
-	if (__builtin_expect (!r_free_efrags, 0)) {
-		t_efrag_list *efl = calloc (1, sizeof (t_efrag_list));
-		SYS_CHECKMEM (efl);
-		efl->next = efrag_list;
-		efrag_list = efl;
-		init_efrag_list (efl);
-		r_free_efrags = &efl->efrags[0];
+	if (leaf->contents == CONTENTS_SOLID) {
+		return efrag;
 	}
-	ef = r_free_efrags;
-	r_free_efrags = ef->entnext;
-	ef->entnext = 0;
-	return ef;
-}
-
-void
-R_ClearEfrags (void)
-{
-	qfZoneScoped (true);
-	t_efrag_list *efl;
-
-	if (!efrag_list)
-		efrag_list = calloc (1, sizeof (t_efrag_list));
-
-	r_free_efrags = efrag_list->efrags;
-	for (efl = efrag_list; efl; efl = efl->next) {
-		init_efrag_list (efl);
-		if (efl->next)
-			efl->efrags[MAX_EFRAGS - 1].entnext = &efl->next->efrags[0];
+	uint32_t cluster = leaf - scene->worldmodel->brush.leafs;
+	auto db = scene->efrag_db;
+	if (efrag == nullent) {
+		efrag = ECS_NewId (&db->idpool);
 	}
-}
-
-void
-R_ShutdownEfrags (void)
-{
-	qfZoneScoped (true);
-	while (efrag_list) {
-		t_efrag_list *efl = efrag_list->next;
-		free (efrag_list);
-		efrag_list = efl;
+	auto pool = &db->groups;
+	uint32_t    id = Ent_Index (efrag);
+	ecs_expand_sparse (pool, id);
+	uint32_t    ind = pool->sparse[id];
+	if (ind >= pool->count || pool->dense[ind] != efrag) {
+		ind = ecs_expand_pool (&db->groups, 1, &cluster_group_component);
+		pool->sparse[id] = ind;
+		pool->dense[ind] = efrag;
+		Component_CreateElements (&cluster_group_component, db->groups.data,
+								  ind, 1, (ecs_registry_t *) db);
 	}
-}
-
-void
-R_ClearEfragChain (efrag_t *ef)
-{
-	qfZoneScoped (true);
-	efrag_t    *old, *walk, **prev;
-
-	while (ef) {
-		prev = &ef->leaf->efrags;
-		while ((walk = *prev)) {
-			if (walk == ef) {			// remove this fragment
-				*prev = ef->leafnext;
-				break;
-			} else {
-				prev = &walk->leafnext;
-			}
-		}
-
-		old = ef;
-		ef = ef->entnext;
-
-		// put it on the free list
-		old->entnext = r_free_efrags;
-		r_free_efrags = old;
+	cluster_group_t *grp = Component_Address (&cluster_group_component,
+											  db->groups.data, ind);
+	cluster_ref_t grpref = {
+		.id = efrag,
+		.index = grp->num_refs,
+	};
+	if (grp->num_refs == grp->max_refs) {
+		uint32_t    new_max = grp->max_refs + 8;
+		grp->refs = realloc (grp->refs, sizeof (cluster_ref_t[new_max]));
+		grp->max_refs = new_max;
 	}
-}
-
-efrag_t **
-R_LinkEfrag (mleaf_t *leaf, entity_t ent, uint32_t queue, efrag_t **lastlink)
-{
-	qfZoneScoped (true);
-	efrag_t    *ef = new_efrag ();	// ensures ef->entnext is 0
-
-	// add the link to the chain of links on the entity
-	ef->entity = ent;
-	ef->queue_num = queue;
-	*lastlink = ef;
-
-	// add the link too the chain of links on the leaf
-	ef->leaf = leaf;
-	ef->leafnext = leaf->efrags;
-	leaf->efrags = ef;
-
-	return &ef->entnext;
+	auto frags = &db->clusters[cluster];
+	if (frags->num_efrags == frags->max_efrags) {
+		uint32_t    new_max = frags->max_efrags + 8;
+		frags->efrags = realloc (frags->efrags, sizeof (efrag_t[new_max]));
+		frags->group_refs = realloc (frags->group_refs,
+									 sizeof (cluster_ref_t[new_max]));
+		frags->max_efrags = new_max;
+	}
+	grp->refs[grp->num_refs++] = (cluster_ref_t) {
+		.id = cluster,
+		.index = frags->num_efrags,
+	};
+	frags->efrags[frags->num_efrags] = (efrag_t) {
+		.entity = ent.id,
+		.queue_num = queue,
+	};
+	frags->group_refs[frags->num_efrags] = grpref;
+	frags->num_efrags++;
+	return efrag;
 }
 
 static void
-R_SplitEntityOnNode (mod_brush_t *brush, entity_t ent, uint32_t queue,
+R_SplitEntityOnNode (scene_t *scene, entity_t ent, uint32_t queue,
 					 visibility_t *visibility, vec3_t emins, vec3_t emaxs)
 {
 	qfZoneScoped (true);
 	plane_t    *splitplane;
-	mleaf_t    *leaf;
 	int         sides;
-	efrag_t   **lastlink;
 	int        *node_stack;
 	int32_t    *node_ptr;
 
+	auto brush = &scene->worldmodel->brush;
+
 	node_stack = alloca ((brush->depth + 2) * sizeof (int32_t *));
 	node_ptr = node_stack;
-
-	lastlink = &visibility->efrag;
 
 	*node_ptr++ = brush->numnodes;
 
@@ -181,9 +238,10 @@ R_SplitEntityOnNode (mod_brush_t *brush, entity_t ent, uint32_t queue,
 				visibility->topnode_id = node_id;
 			}
 
-			leaf = brush->leafs + ~node_id;
+			auto leaf = brush->leafs + ~node_id;
 
-			lastlink = R_LinkEfrag (leaf, ent, queue, lastlink);
+			visibility->efrag = R_LinkEfrag (scene, leaf, ent, queue,
+											 visibility->efrag);
 
 			node_id = *--node_ptr;
 		} else {
@@ -215,7 +273,7 @@ R_SplitEntityOnNode (mod_brush_t *brush, entity_t ent, uint32_t queue,
 }
 
 void
-R_AddEfrags (mod_brush_t *brush, entity_t ent)
+R_AddEfrags (scene_t *scene, entity_t ent)
 {
 	qfZoneScoped (true);
 	model_t    *entmodel;
@@ -230,11 +288,12 @@ R_AddEfrags (mod_brush_t *brush, entity_t ent)
 	visibility_t *vis;
 	if (Ent_HasComponent (ent.id, ent.base + scene_visibility, ent.reg)) {
 		vis = Ent_GetComponent (ent.id, ent.base + scene_visibility, ent.reg);
-		R_ClearEfragChain (vis->efrag);
+		Efrags_DelEfrag (scene->efrag_db, vis->efrag);
 	} else {
 		vis = Ent_AddComponent (ent.id, ent.base + scene_visibility, ent.reg);
 	}
-	vis->efrag = 0;
+	vis->efrag = nullent;
+	vis->topnode_id = -1;	// leaf 0 (solid space)
 
 	entmodel = rend->model;
 
@@ -242,17 +301,23 @@ R_AddEfrags (mod_brush_t *brush, entity_t ent)
 	VectorAdd (org, entmodel->mins, emins);
 	VectorAdd (org, entmodel->maxs, emaxs);
 
-	vis->topnode_id = -1;	// leaf 0 (solid space)
-	R_SplitEntityOnNode (brush, ent, rend->model->type, vis, emins, emaxs);
+	R_SplitEntityOnNode (scene, ent, rend->model->type, vis, emins, emaxs);
 }
 
 void
-R_StoreEfrags (const efrag_t *efrag)
+R_StoreEfrags (scene_t *scene, mleaf_t *leaf)
 {
 	qfZoneScoped (true);
-	while (efrag) {
-		entity_t    ent = efrag->entity;
+	uint32_t cluster = leaf - scene->worldmodel->brush.leafs;
+	auto db = scene->efrag_db;
+	auto frags = &db->clusters[cluster];
+	for (uint32_t i = 0; i < frags->num_efrags; i++) {
+		auto efrag = &frags->efrags[i];
+		entity_t    ent = {
+			.reg = scene->reg,
+			.id = efrag->entity,
+			.base = scene->base,
+		};
 		EntQueue_AddEntity (r_ent_queue, ent, efrag->queue_num);
-		efrag = efrag->leafnext;
 	}
 }

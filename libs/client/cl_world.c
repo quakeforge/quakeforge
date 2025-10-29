@@ -45,6 +45,7 @@
 #include "QF/plist.h"
 #include "QF/progs.h"
 
+#include "QF/scene/efrags.h"
 #include "QF/scene/light.h"
 
 #include "QF/plugin/vid_render.h"	//FIXME
@@ -152,7 +153,7 @@ CL_ParseStatic (qmsg_t *msg, int version)
 
 	CL_TransformEntity (ent, es.scale / 16.0, es.angles, es.origin);
 
-	R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
+	R_AddEfrags (cl_world.scene, ent);
 }
 
 static void
@@ -240,8 +241,7 @@ void
 CL_World_NewMap (const char *mapname, const char *skyname)
 {
 	qfZoneScoped (true);
-	model_t    *worldmodel = cl_world.models.a[1];
-	cl_world.scene->worldmodel = worldmodel;
+	Scene_SetWorld (cl_world.scene, cl_world.models.a[1]);
 
 	cl_static_entities.size = 0;
 
@@ -268,6 +268,7 @@ void
 CL_World_Clear (void)
 {
 	qfZoneScoped (true);
+	Scene_SetWorld (cl_world.scene, nullptr);
 	Scene_FreeAllEntities (cl_world.scene);
 	CL_ClearTEnts ();
 }

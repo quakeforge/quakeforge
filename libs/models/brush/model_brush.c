@@ -761,7 +761,6 @@ Mod_LoadLeafs (model_t *mod, bsp_t *bsp)
 			out->compressed_vis = NULL;
 		else
 			out->compressed_vis = brush->visdata + p;
-		out->efrags = NULL;
 
 		for (j = 0; j < 4; j++)
 			out->ambient_sound_level[j] = in->ambient_level[j];

@@ -19,12 +19,12 @@
 #include "client/world.h"
 
 static void
-dump_light (light_t *light, efrag_t *efrags)
+dump_light (light_t *light, uint32_t efrag)
 {
 	int leafcount = 0;
-	for (auto e = efrags; e; e = e->leafnext) {
-		leafcount++;
-	}
+	//for (auto e = efrags; e; e = e->leafnext) {
+	//	leafcount++;
+	//}
 	Sys_MaskPrintf (SYS_lighting,
 					"[%g, %g, %g] %g, "
 					"[%g, %g, %g, %g], [%g %g %g] (%g, %g), "
@@ -337,11 +337,11 @@ CL_LoadLights (plitem_t *entities, scene_t *scene)
 	PL_Release (targets);
 
 	auto lights = &scene->reg->comp_pools[scene->base + scene_light];
-	auto lefrags = &scene->reg->comp_pools[scene->base + scene_efrags];
+	auto lefrags = &scene->reg->comp_pools[scene->base + scene_efrag];
 	for (uint32_t i = 0; i < lights->count; i++) {
 		auto light = &((light_t *)lights->data)[i];
-		auto efrags = ((efrag_t **)lefrags->data)[i];
-		dump_light (light, efrags);
+		auto efrag = ((uint32_t *)lefrags->data)[i];
+		dump_light (light, efrag);
 	}
 	Sys_MaskPrintf (SYS_lighting, "loaded %d lights\n", lights->count);
 }

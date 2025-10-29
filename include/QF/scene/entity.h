@@ -90,7 +90,7 @@ typedef struct animation_s {
 } animation_t;
 
 typedef struct visibility_s {
-	struct efrag_s *efrag;		// linked list of efrags
+	uint32_t    efrag;			// efrag id (entity in cluster db)
 	int         topnode_id;		// bmodels, first world node that
 								// splits bmodel, or NULL if not split
 								// applies to other models, too
@@ -114,14 +114,6 @@ typedef struct renderer_s {
 } renderer_t;
 
 typedef struct entityset_s DARRAY_TYPE (entity_t) entityset_t;
-
-typedef struct efrag_s {
-	struct mleaf_s *leaf;
-	struct efrag_s *leafnext;
-	entity_t    entity;
-	uint32_t    queue_num;
-	struct efrag_s *entnext;
-} efrag_t;
 
 typedef struct entqueue_s {
 	set_t      *queued_ents;
@@ -252,13 +244,6 @@ Entity_SetRenderer (entity_t ent, renderer_t *renderer)
 {
 	Ent_SetComponent (ent.id, ent.base + scene_renderer, ent.reg, renderer);
 }
-
-struct mod_brush_s;
-efrag_t **R_LinkEfrag (struct mleaf_s *leaf, entity_t ent, uint32_t queue,
-					   efrag_t **lastlink);
-void R_AddEfrags (struct mod_brush_s *, entity_t ent);
-void R_ShutdownEfrags (void);
-void R_ClearEfragChain (efrag_t *ef);
 
 typedef struct ecs_pool_s ecs_pool_t;
 void Anim_Update (double time, const ecs_pool_t *animpool,

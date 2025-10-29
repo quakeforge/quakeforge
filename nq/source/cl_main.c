@@ -361,7 +361,7 @@ CL_Disconnect (void)
 			Host_ShutdownServer (false);
 	}
 
-	cl_world.scene->worldmodel = NULL;
+	CL_World_Clear ();
 	Sbar_Intermission (cl.intermission = 0, cl.time);
 	cl.viewstate.intermission = 0;
 }

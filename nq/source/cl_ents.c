@@ -43,6 +43,7 @@
 #include "QF/va.h"
 
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/efrags.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 
@@ -260,7 +261,7 @@ CL_RelinkEntities (void)
 			CL_TransformEntity (ent, new->scale / 16.0, new->angles,
 								new->origin);
 			if (i != cl.viewentity || chase_active || cl_player_shadows) {
-				R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
+				R_AddEfrags (cl_world.scene, ent);
 			}
 			*old_origin = new->origin;
 		} else {
@@ -293,7 +294,7 @@ CL_RelinkEntities (void)
 			if (i != cl.viewentity || chase_active || cl_player_shadows) {
 				vec4f_t     org = Transform_GetWorldPosition (transform);
 				if (!VectorCompare (org, *old_origin)) {//FIXME
-					R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
+					R_AddEfrags (cl_world.scene, ent);
 				}
 			}
 		}

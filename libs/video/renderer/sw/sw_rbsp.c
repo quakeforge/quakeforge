@@ -36,6 +36,7 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "QF/scene/efrags.h"
 #include "QF/scene/entity.h"
 
 #include "r_internal.h"
@@ -355,8 +356,7 @@ static inline void
 visit_leaf (mleaf_t *leaf)
 {
 	// deal with model fragments in this leaf
-	if (leaf->efrags)
-		R_StoreEfrags (leaf->efrags);
+	R_StoreEfrags (r_refdef.scene, leaf);
 	leaf->key = r_currentkey;
 	r_currentkey++;				// all bmodels in a leaf share the same key
 }

@@ -294,8 +294,6 @@ struct dlight_s;
 
 extern vec3_t lightspot;
 
-struct efrag_s;
-void R_StoreEfrags (const struct efrag_s *efrag);
 void R_TimeRefresh_f (void);
 void R_PrintAliasStats (void);
 void R_PrintTimes (void);

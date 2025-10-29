@@ -43,6 +43,7 @@
 
 #include "QF/plugin/vid_render.h"
 
+#include "QF/scene/efrags.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/light.h"
 #include "QF/scene/scene.h"
@@ -70,12 +71,22 @@ create_colormap (void *_colormap, ecs_registry_t *reg)
 }
 
 static void
+create_visibility (void *_visibility, ecs_registry_t *reg)
+{
+	visibility_t *vis = _visibility;
+	*vis = (visibility_t) {
+		.efrag = nullent,
+		.topnode_id = -1,
+	};
+}
+
+static void
 destroy_visibility (void *_visibility, ecs_registry_t *reg)
 {
-	visibility_t *visibility = _visibility;
-	if (visibility->efrag) {
-		R_ClearEfragChain (visibility->efrag);
-	}
+	visibility_t *vis = _visibility;
+	scene_t    *scene = reg->data;
+
+	Efrags_DelEfrag (scene->efrag_db, vis->efrag);
 }
 
 static void
@@ -84,10 +95,20 @@ destroy_renderer (void *_renderer, ecs_registry_t *reg)
 }
 
 static void
-destroy_efrags (void *_efrags, ecs_registry_t *reg)
+create_efrag (void *_efrag, ecs_registry_t *reg)
 {
-	efrag_t **efrags = _efrags;
-	R_ClearEfragChain (*efrags);
+	uint32_t   *efrag = _efrag;
+
+	*efrag = nullent;
+}
+
+static void
+destroy_efrag (void *_efrag, ecs_registry_t *reg)
+{
+	uint32_t   *efrag = _efrag;
+	scene_t    *scene = reg->data;
+
+	Efrags_DelEfrag (scene->efrag_db, *efrag);
 }
 
 static void
@@ -150,7 +171,7 @@ static const component_t scene_components[scene_comp_count] = {
 	},
 	[scene_visibility] = {
 		.size = sizeof (visibility_t),
-		.create = 0,//create_visibility,
+		.create = create_visibility,
 		.destroy = destroy_visibility,
 		.name = "visibility",
 	},
@@ -187,9 +208,10 @@ static const component_t scene_components[scene_comp_count] = {
 		.name = "light",
 //		.ui = Light_light_ui,
 	},
-	[scene_efrags] = {
-		.size = sizeof (efrag_t *),
-		.destroy = destroy_efrags,
+	[scene_efrag] = {
+		.size = sizeof (uint32_t),
+		.create = create_efrag,
+		.destroy = destroy_efrag,
 		.name = "efrags",
 	},
 	[scene_lightstyle] = {
@@ -291,6 +313,7 @@ Scene_NewScene (scene_system_t *extra_systems)
 	scene_t    *scene = calloc (1, sizeof (scene_t));
 
 	scene->reg = ECS_NewRegistry ("scene");
+	scene->reg->data = scene;
 	scene->base = ECS_RegisterComponents (scene->reg, scene_components,
 										  scene_comp_count);
 	for (auto extra = extra_systems; extra && extra->system; extra++) {
@@ -305,7 +328,25 @@ Scene_NewScene (scene_system_t *extra_systems)
 	scene->worldmodel = &empty_world;
 	scene->camera = nullent;
 
+	scene->efrag_db = malloc (sizeof (efrag_db_t));
+	Efrags_InitDB (scene->efrag_db, empty_world.brush.visleafs + 1);
+
 	return scene;
+}
+
+void
+Scene_SetWorld (scene_t *scene, model_t *worldmodel)
+{
+	if (worldmodel && worldmodel->type != mod_brush) {
+		Sys_Error ("%s is not a brush model", worldmodel->name);
+	}
+	Efrags_ClearDB (scene->efrag_db);
+	if (worldmodel) {
+		scene->worldmodel = worldmodel;
+	} else {
+		scene->worldmodel = &empty_world;
+	}
+	Efrags_InitDB (scene->efrag_db, scene->worldmodel->brush.visleafs + 1);
 }
 
 void
