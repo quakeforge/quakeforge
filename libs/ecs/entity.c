@@ -36,6 +36,21 @@
 
 #include "compat.h"
 
+void
+ecs_expand_sparse (ecs_pool_t *pool, uint32_t id)
+{
+	if (id >= pool->max_entind) {
+		// no - 1 because want id + 1
+		uint32_t new_max = (id + ENT_GROW) & ~(ENT_GROW - 1);
+		uint32_t   *sparse = pool->sparse;
+		sparse = realloc (sparse, sizeof (uint32_t[new_max]));
+		memset (sparse + pool->max_entind, nullent,
+				sizeof (uint32_t[new_max - pool->max_entind]));
+		pool->sparse = sparse;
+		pool->max_entind = new_max;
+	}
+}
+
 uint32_t
 ecs_expand_pool (ecs_pool_t *pool, uint32_t count, const component_t *comp)
 {
@@ -88,16 +103,7 @@ Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 	ecs_subpool_t *subpool = &registry->subpools[comp];
 	component_t *c = &registry->components.a[comp];
 	uint32_t    id = Ent_Index (ent);
-	if (id >= pool->max_entind) {
-		// no - 1 because want id + 1
-		uint32_t new_max = (id + ENT_GROW) & ~(ENT_GROW - 1);
-		uint32_t   *sparse = pool->sparse;
-		sparse = realloc (sparse, sizeof (uint32_t[new_max]));
-		memset (sparse + pool->max_entind, nullent,
-				sizeof (uint32_t[new_max - pool->max_entind]));
-		pool->sparse = sparse;
-		pool->max_entind = new_max;
-	}
+	ecs_expand_sparse (pool, id);
 	uint32_t    ind = pool->sparse[id];
 	if (ind >= pool->count || pool->dense[ind] != ent) {
 		uint32_t    ind = ecs_expand_pool (pool, 1, c);
@@ -176,6 +182,9 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 	}
 	uint32_t    id = Ent_Index (ent);
 	ecs_pool_t *pool = &registry->comp_pools[comp];
+	if (id >= pool->max_entind) {
+		return;
+	}
 	ecs_subpool_t *subpool = &registry->subpools[comp];
 	uint32_t    ind = pool->sparse[id];
 	component_t *c = &registry->components.a[comp];
