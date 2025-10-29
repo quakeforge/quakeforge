@@ -282,6 +282,7 @@ Ent_SafeGetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 	return Ent_GetComponent (ent, comp, reg);
 }
 
+void ecs_expand_sparse (ecs_pool_t *pool, uint32_t id);
 uint32_t ecs_expand_pool (ecs_pool_t *pool, uint32_t count,
 						  const component_t *comp);
 uint32_t ecs_move_component (ecs_pool_t *pool, ecs_subpool_t *subpool,
