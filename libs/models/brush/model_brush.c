@@ -195,7 +195,7 @@ mod_unique_miptex_name (texture_t **textures, texture_t *tx, int ind)
 	int         num = 0, i;
 	const char *tag;
 
-	strncpy (name, tx->name, maxlen);
+	memcpy (name, tx->name, maxlen);
 	name[maxlen] = 0;
 	do {
 		for (i = 0; i < ind; i++)

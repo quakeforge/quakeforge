@@ -64,7 +64,7 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-static int
+static int __attribute__((pure))
 count_relocs (reloc_t *r)
 {
 	int         count;

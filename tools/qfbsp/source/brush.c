@@ -296,7 +296,7 @@ face_t     *brush_faces;
 	\param targetname The target name for which to search.
 	\return			The matching entity or NULL if not found.
 */
-static entity_t *
+static entity_t * __attribute__((pure))
 FindTargetEntity (const char *targetname)
 {
 	int         entnum;

@@ -61,7 +61,7 @@ bool        usemidsplit;
 							<dd>The face is on or cut by the plane.</dd>
 					</dl>
 */
-static int
+static int __attribute__((pure))
 FaceSide (const face_t *in, const plane_t *split)
 {
 	int         frontcount, backcount, i;
