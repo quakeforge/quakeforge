@@ -957,3 +957,6 @@ main (int argc, char **argv)
 		printf ("Compilation time: %0.3g seconds.\n", (stop - start));
 	return 0;
 }
+
+const char* __asan_default_options() __attribute__((const));
+const char* __asan_default_options() { return "detect_leaks=0"; }
