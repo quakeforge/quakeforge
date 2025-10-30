@@ -162,72 +162,67 @@ R_ScrapAlloc (rscrap_t *scrap, int width, int height)
 {
 	qfZoneScoped (true);
 
-	auto avail_x = set_start (scrap->free_x, width - 1);
-	auto avail_y = set_start (scrap->free_y, height - 1);
+	const unsigned w = width - 1;
+	const unsigned h = height - 1;
+
+	auto avail_x = set_start (scrap->free_x, w);
+	auto avail_y = set_start (scrap->free_y, h);
 	if (!avail_x || !avail_y) {
 		// no large enough region is available
 		return nullptr;
 	}
 
-	const unsigned w = width - 1;
-	const unsigned h = height - 1;
 	auto old = r_scrap_pull_rect (scrap, avail_x->element, avail_y->element);
-	if (!old) {
-		if (avail_y->element == h) {
-			// perfect fit for height, check all the widths
-			for (avail_x = set_next (avail_x); avail_x;
-				 avail_x = set_next (avail_x)) {
-				old = r_scrap_pull_rect (scrap, avail_x->element,
-										 avail_y->element);
-				if (old) {
-					break;
-				}
-			}
-			if (!old) {
-				avail_x = set_start (scrap->free_x, w);
-				avail_y = set_next (avail_y);
-			}
-		} else if (avail_x->element == w) {
-			// perfect fit for width, check all the heights
-			for (avail_y = set_next (avail_y); avail_y;
-				 avail_y = set_next (avail_y)) {
-				old = r_scrap_pull_rect (scrap, avail_x->element,
-										 avail_y->element);
-				if (old) {
-					break;
-				}
-			}
-			if (!old) {
-				avail_x = set_next (avail_x);
-				avail_y = set_start (scrap->free_y, h);
+	if (avail_y->element == h) {
+		// perfect fit for height, check all the widths
+		for (avail_x = set_next (avail_x); avail_x;
+			 avail_x = set_next (avail_x)) {
+			old = r_scrap_pull_rect (scrap, avail_x->element,
+									 avail_y->element);
+			if (old) {
+				goto found;
 			}
 		}
-		if (!old) {
-			// there's no perfect fit, so find the smallest region... or at
-			// least try to. Things get a little wierd sometimes for the quake
-			// 2d pic set, but lightmaps seem to behave nicely.
-			do {
-				old = r_scrap_pull_rect (scrap, avail_x->element,
-										 avail_y->element);
-				if (old) {
-					break;
-				}
-				if (avail_y->element < avail_x->element) {
-					avail_y = set_next (avail_y);
-					if (!avail_y && (avail_x = set_next (avail_x))) {
-						avail_y = set_start (scrap->free_y, h);
-					}
-				} else {
-					avail_x = set_next (avail_x);
-					if (!avail_x && (avail_y = set_next (avail_y))) {
-						avail_x = set_start (scrap->free_x, w);
-					}
-				}
-			} while (avail_x && avail_y);
+		avail_x = set_start (scrap->free_x, w);
+		avail_y = set_next (avail_y);
+		if (avail_x && avail_y) {
+			old = r_scrap_pull_rect (scrap, avail_x->element,
+									 avail_y->element);
+		}
+	} else if (avail_x->element == w) {
+		// perfect fit for width, check all the heights
+		for (avail_y = set_next (avail_y); avail_y;
+			 avail_y = set_next (avail_y)) {
+			old = r_scrap_pull_rect (scrap, avail_x->element,
+									 avail_y->element);
+			if (old) {
+				goto found;
+			}
+		}
+		avail_x = set_next (avail_x);
+		avail_y = set_start (scrap->free_y, h);
+		if (avail_x && avail_y) {
+			old = r_scrap_pull_rect (scrap, avail_x->element,
+									 avail_y->element);
 		}
 	}
+	while (!old && avail_x && avail_y) {
+		avail_x = set_next (avail_x);
+		if (!avail_x && (avail_y = set_next (avail_y))) {
+			avail_x = set_start (scrap->free_x, w);
+		}
+		if (avail_x && avail_y) {
+			old = r_scrap_pull_rect (scrap, avail_x->element,
+									 avail_y->element);
+		}
+	}
+found:
 	if (!old) {
-		Sys_Error ("the bits lied!");
+		R_ScrapDump (scrap);
+		int count;
+		size_t area = R_ScrapArea (scrap, &count);
+		Sys_Error ("the bits lied! [%d, %d], %zd %d",
+				   width, height, area, count);
 	}
 
 	auto rect = old;
