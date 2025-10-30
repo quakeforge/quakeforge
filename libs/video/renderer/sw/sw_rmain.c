@@ -168,7 +168,7 @@ SW_AddEntity (entity_t ent)
 	auto animation = Entity_GetAnimation (ent);
 	Ent_SetComponent (ent.id, ent.base + scene_sw_frame, reg, &animation->frame);
 	auto renderer = Entity_GetRenderer (ent);
-	mod_brush_t *brush = &renderer->model->brush;
+	mod_brush_t *brush = renderer->model->brush;
 	Ent_SetComponent (ent.id, ent.base + scene_sw_brush, reg, &brush);
 
 	return render_id;
@@ -202,7 +202,7 @@ void
 R_NewScene (scene_t *scene)
 {
 	model_t    *worldmodel = scene->worldmodel;
-	mod_brush_t *brush = &worldmodel->brush;
+	mod_brush_t *brush = worldmodel->brush;
 
 	r_refdef.worldmodel = worldmodel;
 
@@ -344,7 +344,7 @@ R_DrawViewModel (void)
 
 	minlight = max (renderer->min_light, renderer->model->min_light);
 
-	j = max (R_LightPoint (&r_refdef.worldmodel->brush,
+	j = max (R_LightPoint (r_refdef.worldmodel->brush,
 						   r_entorigin), minlight * 128);
 
 	lighting.ambientlight = j;
@@ -459,7 +459,7 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 		clipflags = R_BmodelCheckBBox (transform, model->radius, minmaxs);
 
 		if (clipflags != BMODEL_FULLY_CLIPPED) {
-			mod_brush_t *brush = &model->brush;
+			mod_brush_t *brush = model->brush;
 			VectorCopy (origin, r_entorigin);
 			VectorSubtract (r_refdef.frame.position, r_entorigin, modelorg);
 
@@ -491,7 +491,7 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 															 scene_visibility,
 															 ent.reg);
 				int         topnode_id = visibility->topnode_id;
-				mod_brush_t *world_brush = &r_refdef.worldmodel->brush;
+				mod_brush_t *world_brush = r_refdef.worldmodel->brush;
 
 				if (topnode_id >= 0) {
 					// not a leaf; has to be clipped to the world
@@ -578,7 +578,7 @@ R_RenderView_ (void)
 	}
 
 	reset_sw_components (r_refdef.registry);
-	*(mod_brush_t **) SW_COMP (scene_sw_brush, 0) = &r_refdef.worldmodel->brush;
+	*(mod_brush_t **) SW_COMP (scene_sw_brush, 0) = r_refdef.worldmodel->brush;
 	R_SetupFrame ();
 
 // make FDIV fast. This reduces timing precision after we've been running for a

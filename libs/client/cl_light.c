@@ -288,7 +288,7 @@ CL_LoadLights (plitem_t *entities, scene_t *scene)
 	model_t    *model = scene->worldmodel;
 
 	Light_ClearLights (ldata);
-	ldata->sun_pvs = set_new_size (model->brush.visleafs);
+	ldata->sun_pvs = set_new_size (model->brush->visleafs);
 	if (!entities) {
 		return;
 	}

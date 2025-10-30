@@ -63,7 +63,7 @@
 static void
 glsl_brush_clear (model_t *m, void *data)
 {
-	mod_brush_t *brush = &m->brush;
+	mod_brush_t *brush = m->brush;
 
 	m->needload = true;
 	for (unsigned i = 0; i < brush->numtextures; i++) {
@@ -149,11 +149,11 @@ glsl_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 	auto bsp = brush_ctx->bsp;
 	// a bit hacky, but it's as good a place as any
 	mod->clear = glsl_brush_clear;
-	mod->brush.lightmap_bytes = 1;
+	mod->brush->lightmap_bytes = 1;
 	if (!bsp->lightdatasize) {
-		mod->brush.lightdata = NULL;
+		mod->brush->lightdata = NULL;
 		return;
 	}
-	mod->brush.lightdata = Hunk_AllocName (0, bsp->lightdatasize, mod->name);
-	memcpy (mod->brush.lightdata, bsp->lightdata, bsp->lightdatasize);
+	mod->brush->lightdata = Hunk_AllocName (0, bsp->lightdatasize, mod->name);
+	memcpy (mod->brush->lightdata, bsp->lightdata, bsp->lightdatasize);
 }

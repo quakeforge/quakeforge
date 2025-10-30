@@ -165,7 +165,7 @@ R_LinkEfrag (scene_t *scene, mleaf_t *leaf, entity_t ent, uint32_t queue,
 	if (leaf->contents == CONTENTS_SOLID) {
 		return efrag;
 	}
-	uint32_t cluster = leaf - scene->worldmodel->brush.leafs;
+	uint32_t cluster = leaf - scene->worldmodel->brush->leafs;
 	auto db = scene->efrag_db;
 	if (efrag == nullent) {
 		efrag = ECS_NewId (&db->idpool);
@@ -223,7 +223,7 @@ R_SplitEntityOnNode (scene_t *scene, entity_t ent, uint32_t queue,
 	int        *node_stack;
 	int32_t    *node_ptr;
 
-	auto brush = &scene->worldmodel->brush;
+	auto brush = scene->worldmodel->brush;
 
 	node_stack = alloca ((brush->depth + 2) * sizeof (int32_t *));
 	node_ptr = node_stack;
@@ -308,7 +308,7 @@ void
 R_StoreEfrags (scene_t *scene, mleaf_t *leaf)
 {
 	qfZoneScoped (true);
-	uint32_t cluster = leaf - scene->worldmodel->brush.leafs;
+	uint32_t cluster = leaf - scene->worldmodel->brush->leafs;
 	auto db = scene->efrag_db;
 	auto frags = &db->clusters[cluster];
 	for (uint32_t i = 0; i < frags->num_efrags; i++) {

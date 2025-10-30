@@ -347,14 +347,16 @@ typedef struct model_s {
 	char		 path[MAX_QPATH];
 	char		 name[MAX_QPATH];
 	const struct vpath_s *vpath;// virtual path where this model was found
-	bool		 needload;		// bmodels and sprites don't cache normally
 	qf_model_t  *model;			// if not null, alias model is not cached
+	bool		 needload;		// bmodels and sprites don't cache normally
 
 	modtype_t	 type;
 	int			 numframes;
 	synctype_t	 synctype;
 
 	modeffects_t effects;
+
+	int         render_id;
 
 // lighting info
 	float		 min_light;
@@ -367,15 +369,12 @@ typedef struct model_s {
 	vec3_t		 mins, maxs;
 
 // brush model
-	//FIXME should be a pointer (submodels make things tricky)
-	mod_brush_t brush;
+	mod_brush_t *brush;
 
 // additional model data
 	cache_user_t cache;
 	void      (*clear) (struct model_s *m, void *data);
 	void       *data;
-
-	int         render_id;
 } model_t;
 
 // ============================================================================

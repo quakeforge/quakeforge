@@ -256,7 +256,7 @@ SV_CalcPHS (void)
 
 	SV_Printf ("Building PHS...\n");
 
-	auto brush = &sv.worldmodel->brush;
+	auto brush = sv.worldmodel->brush;
 	num = brush->modleafs;
 	sv.pvs = sv_alloc_vis_array (num);
 	vcount = 0;
@@ -406,7 +406,7 @@ SV_SpawnServer (const char *server)
 	sv.model_precache[0] = sv_pr_state.pr_strings;
 	sv.model_precache[1] = sv.modelname;
 	sv.models[1] = sv.worldmodel;
-	for (unsigned i = 1; i < sv.worldmodel->brush.numsubmodels; i++) {
+	for (unsigned i = 1; i < sv.worldmodel->brush->numsubmodels; i++) {
 		sv.model_precache[1 + i] = localmodels[i];
 		sv.models[i + 1] = Mod_ForName (localmodels[i], false);
 	}
@@ -447,7 +447,7 @@ SV_SpawnServer (const char *server)
 		ED_LoadFromFile (&sv_pr_state, (char *) buf);
 		free (buf);
 	} else {
-		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->brush.entities);
+		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->brush->entities);
 	}
 
 	// look up some model indexes for specialized message compression

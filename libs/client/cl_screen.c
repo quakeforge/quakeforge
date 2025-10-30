@@ -152,7 +152,7 @@ SCR_CShift (view_pos_t abs, view_pos_t len, void *data)
 	if (_vs->active && cl_world.scene->worldmodel) {
 		vec4f_t     origin;
 		origin = Transform_GetWorldPosition (_vs->camera_transform);
-		leaf = Mod_PointInLeaf (origin, &cl_world.scene->worldmodel->brush);
+		leaf = Mod_PointInLeaf (origin, cl_world.scene->worldmodel->brush);
 		contents = leaf->contents;
 	}
 	V_SetContentsColor (_vs, contents);

@@ -166,7 +166,7 @@ R_BuildLightMap (uint32_t render_id)
 	size = smax * tmax;
 	lightmap = surf->samples;
 
-	if (!r_refdef.worldmodel->brush.lightdata) {
+	if (!r_refdef.worldmodel->brush->lightdata) {
 		for (i = 0; i < size; i++)
 			blocklights[i] = 0;
 		return;

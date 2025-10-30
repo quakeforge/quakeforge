@@ -170,7 +170,7 @@ gl_R_NewScene (scene_t *scene)
 		d_lightstylevalue[i] = 264;		// normal light value
 
 	r_refdef.worldmodel = scene->worldmodel;
-	brush = &scene->worldmodel->brush;
+	brush = scene->worldmodel->brush;
 
 	R_ClearParticles ();
 
@@ -197,6 +197,6 @@ gl_R_NewScene (scene_t *scene)
 			continue;
 		if (scene->models[i] != r_refdef.worldmodel
 			&& scene->models[i]->type == mod_brush)
-			register_textures (&scene->models[i]->brush);
+			register_textures (scene->models[i]->brush);
 	}
 }

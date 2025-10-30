@@ -45,11 +45,12 @@ sw_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 {
 	auto mod = brush_ctx->mod;
 	auto bsp = brush_ctx->bsp;
-	mod->brush.lightmap_bytes = 1;
+	auto brush = mod->brush;
+	brush->lightmap_bytes = 1;
 	if (!bsp->lightdatasize) {
-		mod->brush.lightdata = NULL;
+		brush->lightdata = NULL;
 		return;
 	}
-	mod->brush.lightdata = Hunk_AllocName (0, bsp->lightdatasize, mod->name);
-	memcpy (mod->brush.lightdata, bsp->lightdata, bsp->lightdatasize);
+	brush->lightdata = Hunk_AllocName (0, bsp->lightdatasize, mod->name);
+	memcpy (brush->lightdata, bsp->lightdata, bsp->lightdatasize);
 }

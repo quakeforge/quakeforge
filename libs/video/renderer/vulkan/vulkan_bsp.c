@@ -133,7 +133,7 @@ static void
 init_visstate (bspctx_t *bctx)
 {
 	qfZoneScoped (true);
-	mod_brush_t *brush = &r_refdef.worldmodel->brush;
+	mod_brush_t *brush = r_refdef.worldmodel->brush;
 	int     count = brush->numnodes + brush->modleafs
 					+ brush->numsurfaces;
 	int         size = count * sizeof (int);
@@ -246,7 +246,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	{
 		// FIXME make worldmodel non-special. needs smarter handling of
 		// textures on sub-models but not on main model.
-		mod_brush_t *brush = &r_refdef.worldmodel->brush;
+		mod_brush_t *brush = r_refdef.worldmodel->brush;
 		register_textures (brush, ctx);
 	}
 	for (int i = 0; i < num_models; i++) {
@@ -260,7 +260,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		// FIXME see above
 		if (m == r_refdef.worldmodel || m->type != mod_brush)
 			continue;
-		mod_brush_t *brush = &m->brush;
+		mod_brush_t *brush = m->brush;
 		brush->numsubmodels = 1; // no support for submodels in non-world model
 		register_textures (brush, ctx);
 	}
@@ -276,7 +276,10 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (!m || *m->path == '*') {
 			continue;
 		}
-		mod_brush_t *brush = &m->brush;
+		mod_brush_t *brush = m->brush;
+		if (!brush) {
+			continue;
+		}
 		for (unsigned j = 0; j < brush->numtextures; j++) {
 			if (brush->textures[j]) {
 				textures[t++] = brush->textures[j];
@@ -395,7 +398,7 @@ static void
 build_surf_displist (const faceref_t *faceref, buildctx_t *build)
 {
 	msurface_t *surf = faceref->face;
-	mod_brush_t *brush = &faceref->model->brush;
+	mod_brush_t *brush = faceref->model->brush;
 
 	int         facenum = (surf - brush->surfaces) + faceref->model_face_base;
 	bsp_face_t *face = &build->faces[facenum];
@@ -495,7 +498,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (*m->path == '*') {
 			continue;
 		}
-		mod_brush_t *brush = &m->brush;
+		mod_brush_t *brush = m->brush;
 		dmodel_t    *dm = brush->submodels;
 		for (unsigned j = 0; j < brush->numsurfaces; j++) {
 			if (j == dm->firstface + dm->numfaces) {
@@ -572,16 +575,16 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (!models[i] || models[i]->type != mod_brush) {
 			continue;
 		}
-		int         num_faces = models[i]->brush.numsurfaces;
+		int         num_faces = models[i]->brush->numsurfaces;
 		bsp_model_t *m = &bctx->models[models[i]->render_id];
-		m->first_face = face_base + models[i]->brush.firstmodelsurface;
-		m->face_count = models[i]->brush.nummodelsurfaces;
+		m->first_face = face_base + models[i]->brush->firstmodelsurface;
+		m->face_count = models[i]->brush->nummodelsurfaces;
 		while (i < num_models - 1 && models[i + 1]
 			   && models[i + 1]->path[0] == '*') {
 			i++;
 			m = &bctx->models[models[i]->render_id];
-			m->first_face = face_base + models[i]->brush.firstmodelsurface;
-			m->face_count = models[i]->brush.nummodelsurfaces;
+			m->first_face = face_base + models[i]->brush->firstmodelsurface;
+			m->face_count = models[i]->brush->nummodelsurfaces;
 		}
 		face_base += num_faces;
 	}
@@ -696,7 +699,7 @@ R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 
 	auto animation = Entity_GetAnimation (ent);
 	pass->transform = Transform_GetWorldMatrixPtr (Entity_Transform (ent));
-	pass->brush = &model->brush;
+	pass->brush = model->brush;
 	pass->ent_frame = animation->frame & 1;
 	pass->inst_id = model->render_id;
 	pass->inst_id |= renderer->colormod[3] < 1 ? INST_ALPHA : 0;
@@ -1345,7 +1348,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 	pass->brush = nullptr;
 	if (r_refdef.worldmodel) {
-		pass->brush = &r_refdef.worldmodel->brush;
+		pass->brush = r_refdef.worldmodel->brush;
 	}
 
 	EntQueue_Clear (pass->entqueue);
@@ -1798,7 +1801,7 @@ Vulkan_Bsp_GetPass (struct vulkan_ctx_s *ctx, QFV_BspPass pass_ind)
 	auto bframe = &bctx->frames.a[ctx->curFrame];
 	pass->entid_data = bframe->entid_data;
 	pass->entid_count = bframe->entid_count;
-	pass->brush = &r_refdef.worldmodel->brush;
+	pass->brush = r_refdef.worldmodel->brush;
 
 	return pass;
 }

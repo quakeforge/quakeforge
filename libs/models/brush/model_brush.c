@@ -826,7 +826,7 @@ CalcSurfaceExtents (model_t *mod, msurface_t *s)
 	int			bmins[2], bmaxs[2];
 	mtexinfo_t *tex;
 	mvertex_t  *v;
-	mod_brush_t *brush = &mod->brush;
+	mod_brush_t *brush = mod->brush;
 
 	mins[0] = mins[1] = 999999;
 	maxs[0] = maxs[1] = -99999;
@@ -1336,7 +1336,7 @@ do_checksums (const bsp_t *bsp, void *_mod)
 	int         i;
 	model_t    *mod = (model_t *) _mod;
 	byte       *base;
-	mod_brush_t *brush = &mod->brush;
+	mod_brush_t *brush = mod->brush;
 
 	base = (byte *) bsp->header;
 
@@ -1553,15 +1553,14 @@ void
 Mod_LoadBrushModel (model_t *mod, void *buffer, wssched_t *sched)
 {
 	qfZoneScoped (true);
-	dmodel_t   *bm;
 	unsigned    i, j;
 
 	mod->type = mod_brush;
-	mod->brush = (mod_brush_t) {};
+	mod->brush = Hunk_AllocName (0, sizeof (mod_brush_t), mod->name);
 
 	mod_brush_ctx_t brush_ctx = {
 		.mod = mod,
-		.brush = &mod->brush,
+		.brush = mod->brush,
 		.bsp = LoadBSPMem (buffer, qfs_filesize, do_checksums, mod),
 		.sched = sched,
 	};
@@ -1591,9 +1590,9 @@ Mod_LoadBrushModel (model_t *mod, void *buffer, wssched_t *sched)
 
 	Mod_MakeHull0 (&brush_ctx);
 
-	Mod_FindDrawDepth (&mod->brush);
+	Mod_FindDrawDepth (mod->brush);
 	for (i = 0; i < MAX_MAP_HULLS; i++)
-		Mod_FindClipDepth (&mod->brush.hulls[i]);
+		Mod_FindClipDepth (&mod->brush->hulls[i]);
 
 	Mod_MakeClusters (&brush_ctx);
 
@@ -1601,45 +1600,51 @@ Mod_LoadBrushModel (model_t *mod, void *buffer, wssched_t *sched)
 
 	mod->numframes = 2;					// regular and alternate animation
 
-	// set up the submodels (FIXME: this is confusing)
-	for (i = 0; i < mod->brush.numsubmodels; i++) {
-		bm = &mod->brush.submodels[i];
-
-		mod->brush.hulls[0].firstclipnode = bm->headnode[0];
-		mod->brush.hull_list[0] = &mod->brush.hulls[0];
-		for (j = 1; j < MAX_MAP_HULLS; j++) {
-			mod->brush.hulls[j].firstclipnode = bm->headnode[j];
-			mod->brush.hulls[j].lastclipnode = mod->brush.numclipnodes - 1;
-			mod->brush.hull_list[j] = &mod->brush.hulls[j];
-		}
-
-		mod->brush.firstmodelsurface = bm->firstface;
-		mod->brush.nummodelsurfaces = bm->numfaces;
-
-		VectorCopy (bm->maxs, mod->maxs);
-		VectorCopy (bm->mins, mod->mins);
-
-		mod->radius = RadiusFromBounds (mod->mins, mod->maxs);
-
-		mod->brush.visleafs = bm->visleafs;
-		// The bsp file has leafs for all submodes and hulls, so update the
-		// leaf count for this model to be the correct number (which is one
-		// more than the number of visible leafs)
-		mod->brush.modleafs = bm->visleafs + 1;
-
-		if (i < mod->brush.numsubmodels - 1) {
+	// set up the submodels
+	// Have to do the world model (submodel 0), too
+	for (i = 0; i < mod->brush->numsubmodels; i++) {
+		dmodel_t   *bm = &mod->brush->submodels[i];
+		model_t    *m = mod;
+		if (i > 0) {
+			// Create a new model for all non-world submodels
+			const char *name = va ("*%i", i);
+			m = Mod_FindName (name);
 			// duplicate the basic information
-			char	name[12];
-
-			snprintf (name, sizeof (name), "*%i", i + 1);
-			model_t    *m = Mod_FindName (name);
 			*m = *mod;
-			strcpy (m->path, name);
-			strcpy (m->name, name);
-			mod = m;
+			strncpy (m->path, name, sizeof (m->path) - 1);
+			strncpy (m->name, name, sizeof (m->name) - 1);
+			m->path[sizeof (m->path) - 1] = 0;
+			m->name[sizeof (m->name) - 1] = 0;
+			m->brush = Hunk_AllocName (0, sizeof (mod_brush_t), m->name);
+			*m->brush = *mod->brush;
+			m->brush->submodels = bm;
+			m->brush->numsubmodels = 1;
+
 			// make sure clear is called only for the main model
 			m->clear = 0;
 			m->data = 0;
 		}
+
+		m->brush->hulls[0].firstclipnode = bm->headnode[0];
+		m->brush->hull_list[0] = &m->brush->hulls[0];
+		for (j = 1; j < MAX_MAP_HULLS; j++) {
+			m->brush->hulls[j].firstclipnode = bm->headnode[j];
+			m->brush->hulls[j].lastclipnode = m->brush->numclipnodes - 1;
+			m->brush->hull_list[j] = &m->brush->hulls[j];
+		}
+
+		m->brush->firstmodelsurface = bm->firstface;
+		m->brush->nummodelsurfaces = bm->numfaces;
+
+		VectorCopy (bm->maxs, m->maxs);
+		VectorCopy (bm->mins, m->mins);
+
+		m->radius = RadiusFromBounds (m->mins, m->maxs);
+
+		m->brush->visleafs = bm->visleafs;
+		// The bsp file has leafs for all submodes and hulls, so update the
+		// leaf count for this model to be the correct number (which is one
+		// more than the number of visible leafs)
+		m->brush->modleafs = bm->visleafs + 1;
 	}
 }

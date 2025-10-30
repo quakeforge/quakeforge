@@ -492,7 +492,7 @@ R_Setup_Lighting (entity_t ent, alight_t *lighting)
 	minlight = max (renderer->model->min_light, renderer->min_light);
 
 	// 128 instead of 255 due to clamping below
-	j = max (R_LightPoint (&r_refdef.worldmodel->brush, origin),
+	j = max (R_LightPoint (r_refdef.worldmodel->brush, origin),
 			 minlight * 128);
 
 	lighting->ambientlight = j;

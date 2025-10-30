@@ -227,7 +227,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 {
 	qfvPushDebug (ctx, vac (ctx->va_ctx, "brush.load_textures: %s", mod->name));
 
-	auto brush = &mod->brush;
+	auto brush = mod->brush;
 	int num_tex = 0;
 	int tex_map[brush->numtextures + 1] = {};
 	for (unsigned i = 0; i < brush->numtextures; i++) {

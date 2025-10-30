@@ -204,7 +204,7 @@ map_ent (const char *mapname)
 		edicts = ED_Parse (&edpr, buf);
 		free (buf);
 	} else {
-		edicts = ED_Parse (&edpr, cl_world.models.a[1]->brush.entities);
+		edicts = ED_Parse (&edpr, cl_world.models.a[1]->brush->entities);
 	}
 	free (name);
 	return edicts;
@@ -245,7 +245,7 @@ CL_World_NewMap (const char *mapname, const char *skyname)
 
 	cl_static_entities.size = 0;
 
-	if (cl_world.models.a[1] && cl_world.models.a[1]->brush.entities) {
+	if (cl_world.models.a[1] && cl_world.models.a[1]->brush->entities) {
 		if (cl_world.edicts) {
 			PL_Release (cl_world.edicts);
 		}

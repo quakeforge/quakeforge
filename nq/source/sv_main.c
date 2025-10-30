@@ -385,13 +385,13 @@ SV_AddToFatPVS (vec4f_t org, int node_id)
 	while (1) {
 		// if this is a leaf, accumulate the pvs bits
 		if (node_id < 0) {
-			mleaf_t    *leaf = sv.worldmodel->brush.leafs + ~node_id;
+			mleaf_t    *leaf = sv.worldmodel->brush->leafs + ~node_id;
 			if (leaf->contents != CONTENTS_SOLID) {
-				Mod_LeafPVS_mix (leaf, &sv.worldmodel->brush, 0xff, fatpvs);
+				Mod_LeafPVS_mix (leaf, sv.worldmodel->brush, 0xff, fatpvs);
 			}
 			return;
 		}
-		mnode_t    *node = sv.worldmodel->brush.nodes + node_id;
+		mnode_t    *node = sv.worldmodel->brush->nodes + node_id;
 
 		d = dotf (node->plane, org)[0];
 		if (d > 8)
@@ -415,9 +415,9 @@ static set_t *
 SV_FatPVS (vec4f_t org)
 {
 	if (!fatpvs) {
-		fatpvs = set_new_size (sv.worldmodel->brush.visleafs);
+		fatpvs = set_new_size (sv.worldmodel->brush->visleafs);
 	}
-	set_expand (fatpvs, sv.worldmodel->brush.visleafs);
+	set_expand (fatpvs, sv.worldmodel->brush->visleafs);
 	set_empty (fatpvs);
 	SV_AddToFatPVS (org, 0);
 	return fatpvs;
@@ -1173,7 +1173,7 @@ SV_SpawnServer (const char *server)
 
 	sv.model_precache[0] = sv_pr_state.pr_strings;
 	sv.model_precache[1] = sv.modelname;
-	for (unsigned i = 1; i < sv.worldmodel->brush.numsubmodels; i++) {
+	for (unsigned i = 1; i < sv.worldmodel->brush->numsubmodels; i++) {
 		sv.model_precache[1 + i] = localmodels[i];
 		sv.models[i + 1] = Mod_ForName (localmodels[i], false);
 	}
@@ -1204,7 +1204,7 @@ SV_SpawnServer (const char *server)
 		ED_LoadFromFile (&sv_pr_state, (char *) buf);
 		free (buf);
 	} else {
-		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->brush.entities);
+		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->brush->entities);
 	}
 
 	sv.active = true;

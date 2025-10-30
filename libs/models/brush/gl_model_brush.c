@@ -151,7 +151,7 @@ gl_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 	size_t      i;
 	int         ver;
 	QFile      *lit_file;
-	mod_brush_t *brush = &mod->brush;
+	mod_brush_t *brush = mod->brush;
 	int lightmap_bytes = brush->lightmap_bytes;
 
 	dstring_copystr (litfilename, mod->path);
@@ -309,7 +309,7 @@ gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa)
 	float      *vec;
 	int         lindex, numverts, i;
 	vec3_t      verts[64];
-	mod_brush_t *brush = &mod->brush;
+	mod_brush_t *brush = mod->brush;
 
 	warpface = fa;
 

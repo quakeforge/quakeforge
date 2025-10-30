@@ -498,7 +498,7 @@ gl_R_DrawBrushModel (entity_t e)
 	mat4f_t     worldMatrix;
 	auto renderer = Entity_GetRenderer (e);
 	model_t    *model = renderer->model;
-	mod_brush_t *brush = &model->brush;
+	mod_brush_t *brush = model->brush;
 	glbspctx_t  bspctx = {
 		brush,
 		Entity_GetAnimation (e),
@@ -704,7 +704,7 @@ gl_R_DrawWorld (void)
 		gl_R_DrawSky ();
 	}
 
-	bctx.brush = &r_refdef.worldmodel->brush;
+	bctx.brush = r_refdef.worldmodel->brush;
 	bctx.animation = &animation;
 
 	R_VisitWorldNodes (&bctx);
@@ -805,7 +805,7 @@ GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 	mvertex_t  *vertex_base = brush->vertexes;
 
 	// reconstruct the polygon
-	pedges = gl_currentmodel->brush.edges;
+	pedges = gl_currentmodel->brush->edges;
 	lnumverts = surf->numedges;
 
 	// draw texture
@@ -817,7 +817,7 @@ GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 
 	mtexinfo_t *texinfo = surf->texinfo;
 	for (i = 0; i < lnumverts; i++) {
-		lindex = gl_currentmodel->brush.surfedges[surf->firstedge + i];
+		lindex = gl_currentmodel->brush->surfedges[surf->firstedge + i];
 
 		if (lindex > 0) {
 			r_pedge = &pedges[lindex];
