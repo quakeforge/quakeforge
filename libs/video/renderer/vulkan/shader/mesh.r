@@ -105,6 +105,7 @@ main (void)
 		m += mat3x4(1,0,0,0, 0,1,0,0, 0,0,1,0) * (1 - weights • vec4(1,1,1,1));
 		position = vec4(position, 1) * m;
 		if (enabled_mask & attrmask(qfm_normal)) {
+			// transpose because m is transposed
 			auto mat = mat3 (m[0][0], m[1][0], m[2][0],
 							 m[0][1], m[1][1], m[2][1],
 							 m[0][2], m[1][2], m[2][2]);
