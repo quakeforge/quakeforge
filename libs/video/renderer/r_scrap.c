@@ -219,7 +219,7 @@ R_ScrapAlloc (rscrap_t *scrap, int width, int height)
 found:
 	if (!old) {
 		R_ScrapDump (scrap);
-		int count;
+		int count = 0;
 		size_t area = R_ScrapArea (scrap, &count);
 		Sys_Error ("the bits lied! [%d, %d], %zd %d",
 				   width, height, area, count);
