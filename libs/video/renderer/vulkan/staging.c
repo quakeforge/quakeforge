@@ -50,19 +50,19 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 	size = (size + atom_mask) & ~atom_mask;
 
 	qfv_devfuncs_t *dfunc = device->funcs;
-	dstring_t  *str = dstring_new ();
+	dstring_t  *dstr = dstring_new ();
 
 	auto buffer = QFV_CreateBuffer (device, size,
 									VK_BUFFER_USAGE_TRANSFER_SRC_BIT
 									//FIXME make a param
 									| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, buffer,
-						 dsprintf (str, "staging:buffer:%s", name));
+						 dsprintf (dstr, "staging:buffer:%s", name));
 	auto memory = QFV_AllocBufferMemory (device, buffer,
 										 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
 										 size, 0);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, memory,
-						 dsprintf (str, "staging:memory:%s", name));
+						 dsprintf (dstr, "staging:memory:%s", name));
 	QFV_BindBufferMemory (device, buffer, memory, 0);
 
 	qfv_stagebuf_t *stage = malloc (sizeof (qfv_stagebuf_t));
@@ -75,6 +75,7 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 		.free = { [0] = { .offset = 0, .length = size } },
 		.num_free = 1,
 		.size = size,
+		.dstr = dstr,
 		.name = strdup (name),
 	};
 	dfunc->vkMapMemory (device->dev, memory, 0, size, 0, &stage->data);
@@ -91,14 +92,13 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 		};
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
 							 packet->cmd,
-							 dsprintf (str, "staging:packet:cmd:%s:%d",
+							 dsprintf (dstr, "staging:packet:cmd:%s:%d",
 									   name, i));
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_FENCE,
 							 packet->fence,
-							 dsprintf (str, "staging:packet:fence:%s:%d",
+							 dsprintf (dstr, "staging:packet:fence:%s:%d",
 									   name, i));
 	}
-	dstring_delete (str);
 	return stage;
 }
 
@@ -120,12 +120,10 @@ QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 #if 0
 		auto stat = dfunc->vkGetFenceStatus (device->dev, fences->a[i]);
 		if (stat != VK_SUCCESS) {
-			dstring_t  *str = dstring_newstr ();
 			auto packet = &stage->packets.buffer[i];
-			BT_pcInfo (str, (intptr_t) packet->owner);
+			BT_pcInfo (stage->dstr, (intptr_t) packet->owner);
 			Sys_Printf ("QFV_DestroyStagingBuffer: %d live packet in %p:%s\n",
-						stat, stage, str->str);
-			dstring_delete (str);
+						stat, stage, stage->dstr->str);
 		}
 #endif
 	}
@@ -140,6 +138,7 @@ QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 	dfunc->vkUnmapMemory (device->dev, stage->memory);
 	dfunc->vkDestroyBuffer (device->dev, stage->buffer, 0);
 	dfunc->vkFreeMemory (device->dev, stage->memory, 0);
+	dstring_delete (stage->dstr);
 	free ((char *) stage->name);
 	free (stage);
 }
@@ -395,11 +394,9 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage, const char *name)
 		qfMessageL ("got fence");
 		auto end = Sys_LongTime ();
 		if (end - start > 500) {
-			dstring_t  *str = dstring_newstr ();
-			BT_pcInfo (str, (intptr_t) packet->owner);
+			BT_pcInfo (stage->dstr, (intptr_t) packet->owner);
 			Sys_Printf ("QFV_PacketAcquire: long acquire %'d for %p:%s\n",
-						(int) (end - start), stage, str->str);
-			dstring_delete (str);
+						(int) (end - start), stage, stage->dstr->str);
 		}
 		release_space (stage, packet);
 		RB_RELEASE (stage->packets, 1);
@@ -411,12 +408,10 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage, const char *name)
 	packet->owner = __builtin_return_address (0);
 
 	int id = packet - stage->packets.buffer;
-	dstring_t  *str = dstring_newstr ();
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
 						 packet->cmd,
-						 dsprintf (str, "staging:packet:cmd:%s:%d:%s",
+						 dsprintf (stage->dstr, "staging:packet:cmd:%s:%d:%s",
 								   stage->name, id, name));
-	dstring_delete (str);
 
 	dfunc->vkResetFences (device->dev, 1, &packet->fence);
 	dfunc->vkResetCommandBuffer (packet->cmd, 0);

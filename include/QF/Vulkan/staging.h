@@ -3,6 +3,8 @@
 
 #include "QF/ringbuffer.h"
 
+typedef struct dstring_s dstring_t;
+
 typedef struct qfv_packet_s {
 	struct qfv_stagebuf_s *stage;	///< staging buffer that owns this packet
 	VkCommandBuffer cmd;
@@ -30,6 +32,7 @@ typedef struct qfv_stagebuf_s {
 	int         num_free;	///< number of free spaces
 	size_t      atom_mask;	///< for flush size rounding
 	size_t      size;		///< actual size of the buffer
+	dstring_t  *dstr;
 	void       *data;
 	const char *name;
 } qfv_stagebuf_t;
