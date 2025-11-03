@@ -230,10 +230,12 @@ typedef struct {
 } cluster_t;
 
 typedef struct mod_brush_s {
-	unsigned    firstmodelsurface, nummodelsurfaces;
+	unsigned    firstface;		///< index into main model's face list
+	unsigned    numfaces;
 
-	unsigned    numsubmodels;
-	dmodel_t   *submodels;
+	unsigned    numsubmodels;	///< always 1 for submodel brush instances
+	dmodel_t   *submodels;		///< this brush's submodel (in full list for
+								///< world model's submodels)
 
 	unsigned    numplanes;
 	plane_t    *planes;
@@ -250,7 +252,7 @@ typedef struct mod_brush_s {
 
 	unsigned    numnodes;
 	mnode_t    *nodes;
-	int         depth;				///< maximum depth of the tree
+	int         depth;			///< maximum depth of the tree
 
 	unsigned    numtexinfo;
 	mtexinfo_t *texinfo;

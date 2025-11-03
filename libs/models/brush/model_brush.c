@@ -1633,8 +1633,8 @@ Mod_LoadBrushModel (model_t *mod, void *buffer, wssched_t *sched)
 			m->brush->hull_list[j] = &m->brush->hulls[j];
 		}
 
-		m->brush->firstmodelsurface = bm->firstface;
-		m->brush->nummodelsurfaces = bm->numfaces;
+		m->brush->firstface = bm->firstface;
+		m->brush->numfaces = bm->numfaces;
 
 		VectorCopy (bm->maxs, m->maxs);
 		VectorCopy (bm->mins, m->mins);

@@ -329,7 +329,7 @@ glsl_R_InitSurfaceChains (mod_brush_t *brush)
 	release_static_instsurfs ();
 	release_instsurfs ();
 
-	for (unsigned i = 0; i < brush->nummodelsurfaces; i++) {
+	for (unsigned i = 0; i < brush->numfaces; i++) {
 		brush->surfaces[i].instsurf = get_static_instsurf ();
 		brush->surfaces[i].instsurf->surface = &brush->surfaces[i];
 	}
@@ -698,7 +698,7 @@ R_DrawBrushModel (entity_t e)
 	// calculate dynamic lighting for bmodel if it's not an instanced model
 	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
-	if (brush->firstmodelsurface != 0 && r_dlight_lightmap) {
+	if (brush->firstface != 0 && r_dlight_lightmap) {
 		for (uint32_t i = 0; i < dlight_pool->count; i++) {
 			auto dlight = &dlight_data[i];
 			vec4f_t     lightorigin;
@@ -709,9 +709,9 @@ R_DrawBrushModel (entity_t e)
 		}
 	}
 
-	surf = &brush->surfaces[brush->firstmodelsurface];
+	surf = &brush->surfaces[brush->firstface];
 
-	for (unsigned i = 0; i < brush->nummodelsurfaces; i++, surf++) {
+	for (unsigned i = 0; i < brush->numfaces; i++, surf++) {
 		// find the node side on which we are
 		plane = surf->plane;
 

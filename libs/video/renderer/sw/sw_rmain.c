@@ -468,9 +468,11 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 			// FIXME: stop transforming twice
 			R_RotateBmodel (transform);
 
-			// calculate dynamic lighting for bmodel if it's not an
-			// instanced model
-			if (brush->firstmodelsurface != 0) {
+			// calculate dynamic lighting for bmodel if it is a submodel
+			// of the world model (instanced models don't have submodels
+			// and both instanced models and the world model always have
+			// firstface = 0)
+			if (brush->firstface != 0) {
 				for (k = 0; k < dlight_pool->count; k++) {
 					auto dlight = &dlight_data[k];
 					vec4f_t     lightorigin;

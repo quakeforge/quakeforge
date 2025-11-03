@@ -167,8 +167,8 @@ gl_R_InitSurfaceChains (mod_brush_t *brush)
 	qfZoneScoped (true);
 	if (static_chains)
 		free (static_chains);
-	static_chains = calloc (brush->nummodelsurfaces, sizeof (instsurf_t));
-	for (unsigned i = 0; i < brush->nummodelsurfaces; i++)
+	static_chains = calloc (brush->numfaces, sizeof (instsurf_t));
+	for (unsigned i = 0; i < brush->numfaces; i++)
 		brush->surfaces[i].instsurf = static_chains + i;
 
 	release_instsurfs ();
@@ -542,7 +542,7 @@ gl_R_DrawBrushModel (entity_t e)
 	}
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
-	if (brush->firstmodelsurface != 0 && r_dlight_lightmap) {
+	if (brush->firstface != 0 && r_dlight_lightmap) {
 		auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 		auto dlight_data = (dlight_t *) dlight_pool->data;
 		for (uint32_t i = 0; i < dlight_pool->count; i++) {
@@ -560,10 +560,10 @@ gl_R_DrawBrushModel (entity_t e)
 	qfglGetFloatv (GL_MODELVIEW_MATRIX, (vec_t*)&bspctx.transform[0]);
 	qfglPopMatrix ();
 
-	surf = &brush->surfaces[brush->firstmodelsurface];
+	surf = &brush->surfaces[brush->firstface];
 
 	// draw texture
-	for (unsigned i = 0; i < brush->nummodelsurfaces; i++, surf++) {
+	for (unsigned i = 0; i < brush->numfaces; i++, surf++) {
 		// find which side of the node we are on
 		plane_t    *plane = surf->plane;
 

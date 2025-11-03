@@ -577,14 +577,14 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		}
 		int         num_faces = models[i]->brush->numsurfaces;
 		bsp_model_t *m = &bctx->models[models[i]->render_id];
-		m->first_face = face_base + models[i]->brush->firstmodelsurface;
-		m->face_count = models[i]->brush->nummodelsurfaces;
+		m->first_face = face_base + models[i]->brush->firstface;
+		m->face_count = models[i]->brush->numfaces;
 		while (i < num_models - 1 && models[i + 1]
 			   && models[i + 1]->path[0] == '*') {
 			i++;
 			m = &bctx->models[models[i]->render_id];
-			m->first_face = face_base + models[i]->brush->firstmodelsurface;
-			m->face_count = models[i]->brush->nummodelsurfaces;
+			m->first_face = face_base + models[i]->brush->firstface;
+			m->face_count = models[i]->brush->numfaces;
 		}
 		face_base += num_faces;
 	}
