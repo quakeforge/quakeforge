@@ -1496,8 +1496,7 @@ Mod_MakeClusters (mod_brush_ctx_t *brush_ctx)
 			}
 			cluster->numsurfaces = count;
 			if (count > 1) {
-				// sort the surface ids by texinfo so drawing can be batched
-				// by texture
+				// sort the surface ids by texture so drawing can be batched
 				heapsort_r (brush->cluster_surfs + cluster->firstsurface,
 							count, sizeof (uint32_t), cluster_surf_cmp,
 							bsp);
