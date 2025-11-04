@@ -19,7 +19,7 @@ void printf(string, ...);
 	window_name = str_hold ("*" + filePath);
 	window = IMUI_NewWindow (str_mid (window_name, 1));
 
-	string evname = sprintf ("EditView:%0x8", window);
+	string evname = sprintf ("EditView:%08x", window);
 	editView = [[EditView edit:evname file:filePath ctx:ctx] retain];
 
 	IMUI_Window_SetSize (window, {400, 300});
