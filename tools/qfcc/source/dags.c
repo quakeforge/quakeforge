@@ -496,7 +496,7 @@ dag_find_node (def_t *def, void *_daglabel)
 }
 
 static void
-leafnode_set_edges (operand_t *op, dagnode_t *n)
+operand_set_edges (operand_t *op, dagnode_t *n)
 {
 	if (n->type == st_alias) {
 		// don't need edges on alias nodes as they're actually no-ops and
@@ -535,14 +535,14 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 		return;
 	if (n->label->op) {
 		// leaf node
-		leafnode_set_edges (n->label->op, n);
+		operand_set_edges (n->label->op, n);
 	}
 	for (i = 0; i < 3; i++) {
 		dagnode_t  *child = n->children[i];
 		if (child) {
 			if (child->label->op) {
 				operand_t  *op = child->label->op;
-				leafnode_set_edges (op, n);
+				operand_set_edges (op, n);
 			}
 		}
 	}
@@ -556,7 +556,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 		if (label->dagnode) {
 			set_add (n->edges, label->dagnode->number);
 		}
-		leafnode_set_edges (use, n);
+		operand_set_edges (use, n);
 	}
 	if (n->type == st_func) {
 		const char *num_params = nullptr;
