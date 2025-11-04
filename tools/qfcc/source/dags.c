@@ -554,6 +554,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 		u->label->live = true;
 		dag_live_aliases (use);
 		set_add (n->edges, u->number);
+		leafnode_set_edges (use, n);
 	}
 	if (n->type == st_func) {
 		const char *num_params = nullptr;
