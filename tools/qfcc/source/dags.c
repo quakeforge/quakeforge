@@ -550,10 +550,12 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 		if (use->op_type == op_pseudo) {
 			continue;
 		}
-		auto u = dag_make_child (dag, use, s);
-		u->label->live = true;
+		daglabel_t *label = operand_label (dag, use);
+		label->live = 1;
 		dag_live_aliases (use);
-		set_add (n->edges, u->number);
+		if (label->dagnode) {
+			set_add (n->edges, label->dagnode->number);
+		}
 		leafnode_set_edges (use, n);
 	}
 	if (n->type == st_func) {
