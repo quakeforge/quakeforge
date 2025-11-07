@@ -47,6 +47,7 @@ typedef struct {
 	const expr_t *(*process) (int op, const expr_t *e1, const expr_t *e2);
 	bool        promote;
 	bool        no_implicit;
+	bool        product_sign;
 	bool      (*commutative) (void);
 	bool      (*anticommute) (void);
 	bool      (*associative) (void);
@@ -639,45 +640,87 @@ static expr_type_t sub_ops[] = {
 static expr_type_t mul_ops[] = {
 	{   .match_a = is_matrix,     .match_b = is_matrix,
 			.match_shape = shape_matrix,
-			.process = matrix_binary_expr, },
+			.process = matrix_binary_expr,
+			.product_sign = true,
+	},
 	{   .match_a = is_matrix,     .match_b = is_nonscalar,
 			.match_shape = shape_matvec,
-			.process = matrix_binary_expr, },
+			.process = matrix_binary_expr,
+			.product_sign = true,
+	},
 	{   .match_a = is_nonscalar,  .match_b = is_matrix,
 			.match_shape = shape_vecmat,
-			.process = matrix_binary_expr, },
+			.process = matrix_binary_expr,
+			.product_sign = true,
+	},
 	{   .match_a = is_matrix,     .match_b = is_scalar,
 			.match_shape = shape_always,
-			.promote = true, .process = matrix_scalar_mul, },
+			.process = matrix_scalar_mul,
+			.promote = true,
+			.product_sign = true,
+	},
 	{   .match_a = is_scalar,     .match_b = is_matrix,
 			.match_shape = shape_always,
-			.promote = true, .process = matrix_scalar_mul, },
+			.process = matrix_scalar_mul,
+			.promote = true,
+			.product_sign = true,
+	},
 	{   .match_a = is_nonscalar,  .match_b = is_scalar,
 			.match_shape = shape_always,
-			.promote = true, .process = matrix_scalar_mul, },
+			.process = matrix_scalar_mul,
+			.promote = true,
+			.product_sign = true,
+	},
 	{   .match_a = is_scalar,     .match_b = is_nonscalar,
 			.match_shape = shape_always,
-			.promote = true, .process = matrix_scalar_mul, },
+			.process = matrix_scalar_mul,
+			.promote = true,
+			.product_sign = true,
+	},
 	{	.match_a = is_vector,     .match_b = is_vector,
-			.process = vector_vector_mul, },
+			.process = vector_vector_mul,
+			.product_sign = true,
+	},
 	{	.match_a = is_vector,     .match_b = is_vector_compat,
-			.promote = true, .process = vector_vector_mul, },
+			.process = vector_vector_mul,
+			.promote = true,
+			.product_sign = true,
+	},
 	{	.match_a = is_vector_compat, .match_b = is_vector,
-			.promote = true, .process = vector_vector_mul, },
+			.process = vector_vector_mul,
+			.promote = true,
+			.product_sign = true,
+	},
 	{	.match_a = is_quaternion, .match_b = is_quaternion,
-			.process = quaternion_quaternion_expr, },
+			.process = quaternion_quaternion_expr,
+			.product_sign = true,
+	},
 	{	.match_a = is_quaternion, .match_b = is_quaternion_compat,
-			.promote = true, .process = quaternion_quaternion_expr, },
+			.process = quaternion_quaternion_expr,
+			.promote = true,
+			.product_sign = true,
+	},
 	{	.match_a = is_quaternion_compat, .match_b = is_quaternion,
-			.promote = true, .process = quaternion_quaternion_expr, },
+			.process = quaternion_quaternion_expr,
+			.promote = true,
+			.product_sign = true,
+	},
 	{	.match_a = is_quaternion, .match_b = is_vector_compat,
 			.match_shape = shape_always,
-			.promote = true, .process = quaternion_vector_expr, },
+			.process = quaternion_vector_expr,
+			.promote = true,
+			.product_sign = true,
+	},
 	{	.match_a = is_vector_compat,     .match_b = is_quaternion,
 			.match_shape = shape_always,
-			.promote = true, .process = vector_quaternion_expr, },
+			.process = vector_quaternion_expr,
+			.promote = true,
+			.product_sign = true,
+	},
 	{   .match_a = is_math,       .match_b = is_math,
-			.promote = true },
+			.promote = true,
+			.product_sign = true,
+	},
 
 	{}
 };
@@ -708,12 +751,20 @@ static expr_type_t dot_ops[] = {
 static expr_type_t div_ops[] = {
 	{   .match_a = is_matrix,     .match_b = is_scalar,
 			.match_shape = shape_always,
-			.promote = true, .process = matrix_scalar_div, },
+			.process = matrix_scalar_div,
+			.promote = true,
+			.product_sign = true,
+	},
 	{   .match_a = is_nonscalar,  .match_b = is_scalar,
 			.match_shape = shape_always,
-			.promote = true, .process = matrix_scalar_div, },
+			.process = matrix_scalar_div,
+			.promote = true,
+			.product_sign = true,
+	},
 	{   .match_a = is_math,     .match_b = is_math,
-			.promote = true },
+			.promote = true,
+			.product_sign = true,
+	},
 
 	{}
 };
@@ -980,9 +1031,25 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		}
 	}
 
+	bool neg = false;
+	if (expr_type->product_sign) {
+		if (is_neg (e1)) {
+			e1 = neg_expr (e1);
+			neg = !neg;
+		}
+		if (is_neg (e2)) {
+			e2 = neg_expr (e2);
+			neg = !neg;
+		}
+	}
+
 	if (expr_type->process) {
 		auto e = expr_type->process (op, e1, e2);
-		return edag_add_expr (fold_constants (e));
+		e = edag_add_expr (fold_constants (e));
+		if (neg) {
+			e = neg_expr (e);
+		}
+		return e;
 	}
 
 	auto type = t1;
@@ -993,8 +1060,13 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		}
 	}
 
-	if ((e = reimplement_binary_expr (op, e1, e2)))
-		return edag_add_expr (fold_constants (e));
+	if ((e = reimplement_binary_expr (op, e1, e2))) {
+		e = edag_add_expr (fold_constants (e));
+		if (neg) {
+			e = neg_expr (e);
+		}
+		return e;
+	}
 
 	if (expr_type->true_op) {
 		op = expr_type->true_op;
@@ -1011,5 +1083,9 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	if (expr_type->associative) {
 		ne->expr.associative = expr_type->associative ();
 	}
-	return edag_add_expr (fold_constants (ne));
+	e = edag_add_expr (fold_constants (ne));
+	if (neg) {
+		e = neg_expr (e);
+	}
+	return e;
 }

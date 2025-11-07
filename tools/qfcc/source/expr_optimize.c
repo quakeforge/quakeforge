@@ -93,7 +93,8 @@ remult (const expr_t *expr, const expr_t *remove)
 		}
 	}
 	clean_skips (factors);
-	auto new = gather_factors (expr->expr.op, factors, count - 1);
+	auto type = get_type (expr);
+	auto new = gather_factors (expr->expr.op, type, factors, count - 1);
 	return new;
 }
 
@@ -283,6 +284,13 @@ optimize_dot (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 {
 	auto l = expr->expr.e1;
 	auto r = expr->expr.e2;
+	if (l == r) {
+		l = optimize_core (l);
+		auto type = get_type (expr);
+		auto e = typed_binary_expr (type, QC_DOT, l, l);
+		e = fold_constants (e);
+		return edag_add_expr (e);
+	}
 	int factor = 1;
 	const expr_t *a[3] = {
 		is_cross (l) ? l->expr.e1 : l,
@@ -457,6 +465,9 @@ optimize_scale (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	} else {
 		factors[0] = mult;
 	}
+	for (auto f = factors; *f; f++) {
+		*f = optimize_core (*f);
+	}
 
 	for (auto search = adds; *search; search++) {
 		if (is_scale (*search)) {
@@ -534,6 +545,9 @@ optimize_mult (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	} else {
 		factors[0] = expr;
 	}
+	for (auto f = factors; *f; f++) {
+		*f = optimize_core (*f);
+	}
 
 	for (auto search = adds; *search; search++) {
 		if (is_mult (*search)) {
@@ -555,7 +569,9 @@ optimize_mult (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 			}
 		}
 	}
+	auto type = get_type (expr);
 	if (!total) {
+		expr = gather_factors ('*', type, factors, num_factors);
 		return expr;
 	}
 
@@ -587,7 +603,6 @@ optimize_mult (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 		}
 	}
 
-	auto type = get_type (expr);
 	auto col = gather_terms (type, com_adds, com_subs);
 	if (!col || !(col = optimize_core (col))) {
 		return &skip;
@@ -602,7 +617,7 @@ static void
 optimize_extends (const expr_t **expr_list)
 {
 	for (auto scan = expr_list; *scan; scan++) {
-		if ((*scan)->type == ex_extend) {
+		if (is_ext (*scan)) {
 			auto ext = (*scan)->extend;
 			ext.src = optimize_core (ext.src);
 			*scan = ext_expr (ext.src, ext.type, ext.extend, ext.reverse);
@@ -1078,7 +1093,16 @@ optimize_core (const expr_t *expr)
 	if (is_neg (expr)) {
 		auto neg = optimize_core (expr->expr.e1);
 		return neg_expr (neg);
-	} else if (expr->type == ex_extend) {
+	} else if (expr->type == ex_swizzle) {
+		auto src = optimize_core (expr->swizzle.src);
+		auto new = new_expr_copy (expr);
+		new->swizzle.src = src;
+		auto swiz = edag_add_expr (new);
+		if (is_ext (src)) {
+			swiz = ext_swizzle (src, swiz);
+		}
+		return swiz;
+	} else if (is_ext (expr)) {
 		auto new = optimize_core (expr->extend.src);
 		if (new) {
 			auto ext = new_expr_copy (expr);
@@ -1110,8 +1134,8 @@ optimize_core (const expr_t *expr)
 		expr = gather_terms (type, adds, subs);
 	} else if (is_quot (expr)) {
 		auto type = get_type (expr);
-		auto num = expr->expr.e1;
-		auto den = expr->expr.e2;
+		auto num = optimize_core (expr->expr.e1);
+		auto den = optimize_core (expr->expr.e2);
 		auto num_type = get_type (num);
 		int num_count = count_factors (num) + 1;
 		int den_count = count_factors (den) + 1;
@@ -1160,16 +1184,16 @@ optimize_core (const expr_t *expr)
 
 		if (num_count) {
 			if (den_count) {
-				num = gather_factors ('*', num_fac, num_count);
+				num = gather_factors ('*', type, num_fac, num_count);
 			} else {
-				expr = gather_factors ('*', num_fac, num_count);
+				expr = gather_factors ('*', type, num_fac, num_count);
 			}
 		} else {
 			num = edag_add_expr (new_int_expr (1, true));
 			num = cast_expr (num_type, num);
 		}
 		if (den_count) {
-			den = gather_factors ('*', den_fac, den_count);
+			den = gather_factors ('*', type, den_fac, den_count);
 			expr = typed_binary_expr (type, '/', num, den);
 		}
 		expr = fold_constants (expr);

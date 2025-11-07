@@ -184,6 +184,48 @@ ext_compat (const ex_extend_t *a, const ex_extend_t *b)
 			&& a->type == b->type);
 }
 
+const expr_t *
+ext_swizzle (const expr_t *ext, const expr_t *swizzle)
+{
+	int dst_width = type_width (ext->extend.type);
+	int src_width = type_width (get_type (ext->extend.src));
+	unsigned nonzero = (1 << dst_width) - 1;
+	unsigned extmask = (1 << src_width) - 1;
+	if (ext->extend.reverse) {
+		extmask <<= dst_width - src_width;
+	}
+	if (ext->extend.extend == 0) {
+		nonzero &= extmask;
+	}
+
+	int swiz_width = type_width (swizzle->swizzle.type);
+	unsigned swizmask = 0;
+	bool ordered = true;
+	for (int i = 0; i < swiz_width; i++) {
+		auto comps = swizzle->swizzle.source;
+		swizmask |= 1 << comps[i];
+		if (i && comps[i] != comps[i - 1] + 1) {
+			ordered = false;
+		}
+	}
+	if (!(swizmask & nonzero)) {
+		// extracted components are guaranteed to be 0
+		return nullptr;
+	}
+	if (swizmask & ~extmask) {
+		// swizzle crosses extend boundary
+		return swizzle;
+	}
+	auto src = ext->extend.src;
+	if (swiz_width == src_width && ordered) {
+		// trivial swizzle
+		return src;
+	}
+	auto new = new_expr_copy (swizzle);
+	new->swizzle.src = src;
+	return edag_add_expr (new);
+}
+
 bool __attribute__((const))
 is_ext (const expr_t *e)
 {
@@ -233,7 +275,7 @@ offset_cast (const type_t *type, const expr_t *expr, int offset)
 		auto cast = typed_binary_expr (type, op, e1, e2);
 		return edag_add_expr (cast);
 	}
-	if (expr->type == ex_extend) {
+	if (is_ext (expr)) {
 		auto ext = expr->extend;
 		if (type_width (get_type (ext.src)) == type_width (type)) {
 			return offset_cast (type, ext.src, 0);
@@ -600,7 +642,7 @@ scatter_factors (const expr_t *prod, const expr_t **factors)
 }
 
 const expr_t *
-gather_factors (int op, const expr_t **factors, int count)
+gather_factors (int op, const type_t *type, const expr_t **factors, int count)
 {
 	if (!count) {
 		internal_error (0, "no factors to collect");
@@ -614,11 +656,14 @@ gather_factors (int op, const expr_t **factors, int count)
 		b = factors[1];
 	} else {
 		int mid = (count + 1) / 2;
-		a = gather_factors (op, factors, mid);
-		b = gather_factors (op, factors + mid, count - mid);
+		a = gather_factors (op, type, factors, mid);
+		b = gather_factors (op, type, factors + mid, count - mid);
 	}
-	auto type = get_type (a);
+	if (!a || !b) {
+		return nullptr;
+	}
 	auto prod = typed_binary_expr (type, op, a, b);
+	prod = fold_constants (prod);
 	return edag_add_expr (prod);
 }
 
@@ -652,7 +697,7 @@ sort_factors (const type_t *type, const expr_t *e)
 	const expr_t *factors[count + 1] = {};
 	scatter_factors (e, factors);
 	heapsort (factors, count, sizeof (factors[0]), expr_ptr_cmp);
-	auto mult = gather_factors ('*', factors, count);
+	auto mult = gather_factors ('*', type, factors, count);
 	return mult;
 }
 
