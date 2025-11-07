@@ -3140,6 +3140,12 @@ multivector_divide (const expr_t *e1, const expr_t *e2)
 			sign = !sign;
 			a[i] = neg_expr (a[i]);
 		}
+		auto ext = a[i];
+		if (is_ext (a[i])) {
+			a[i] = a[i]->extend.src;
+		} else {
+			ext = nullptr;
+		}
 		if (is_half && a[i]->type == ex_expr && a[i]->expr.op == '+'
 			&& a[i]->expr.e1 == a[i]->expr.e2) {
 			a[i] = a[i]->expr.e1;
@@ -3151,6 +3157,11 @@ multivector_divide (const expr_t *e1, const expr_t *e2)
 			}
 			a[i] = typed_binary_expr (ct, '/', a[i], den);
 			a[i] = edag_add_expr (a[i]);
+		}
+		if (ext) {
+			auto e = new_expr_copy (ext);
+			e->extend.src = a[i];
+			a[i] = e;
 		}
 		if (sign) {
 			a[i] = neg_expr (a[i]);
