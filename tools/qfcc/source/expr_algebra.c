@@ -3005,11 +3005,20 @@ multivector_divide (const expr_t *e1, const expr_t *e2)
 	e2 = promote_scalar (algebra->type, e2);
 	mvec_scatter (a, e1, algebra);
 
+	bool neg = is_neg (e2);
+	if (neg) {
+		e2 = neg_expr (e2);
+	}
 	for (int i = 0; i < layout->count; i++) {
 		if (!a[i]) {
 			continue;
 		}
 		auto den = e2;
+		bool sign = neg;
+		if (is_neg (a[i])) {
+			sign = !sign;
+			a[i] = neg_expr (a[i]);
+		}
 		if (is_half && a[i]->type == ex_expr && a[i]->expr.op == '+'
 			&& a[i]->expr.e1 == a[i]->expr.e2) {
 			a[i] = a[i]->expr.e1;
@@ -3021,6 +3030,9 @@ multivector_divide (const expr_t *e1, const expr_t *e2)
 			}
 			a[i] = typed_binary_expr (ct, '/', a[i], den);
 			a[i] = edag_add_expr (a[i]);
+		}
+		if (sign) {
+			a[i] = neg_expr (a[i]);
 		}
 	}
 	return mvec_gather (a, algebra);
