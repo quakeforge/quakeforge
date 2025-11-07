@@ -994,9 +994,12 @@ static void
 print_swizzle (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
 			   const expr_t *next)
 {
-	static char swizzle_components[] = "xyzw";
 	int         indent = level * 2 + 2;
 	ex_swizzle_t swiz = e->swizzle;
+	_print_expr (dstr, swiz.src, level, printed, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, swiz.src);
+
+	static char swizzle_components[] = "xyzw";
 	int         count = type_width (swiz.type);
 	const char *swizzle = "";
 
@@ -1010,8 +1013,6 @@ print_swizzle (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
 		}
 	}
 
-	_print_expr (dstr, swiz.src, level, printed, next);
-	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, swiz.src);
 	dasprintf (dstr, "%*se_%p [label=\"swizzle %s\\n%d\"];\n", indent, "", e,
 			   swizzle, e->loc.line);
 }
