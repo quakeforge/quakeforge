@@ -64,6 +64,8 @@ options_t   options = {
 		.commute_float_dot = true,
 		.anticom_float_cross = true,
 		.anticom_float_sub = true,
+		.assoc_float_add = false,
+		.assoc_float_mul = true,
 	},
 	.warnings = {
 		.uninited_variable = true,

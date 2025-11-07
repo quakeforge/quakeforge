@@ -36,6 +36,7 @@
 #include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/target.h"
@@ -89,6 +90,13 @@ op_commute (int op)
 }
 
 static bool __attribute__((const))
+op_associate (int op)
+{
+	return ((op == '+' && options.code.assoc_float_add)
+			|| op == '*' || op == QC_HADAMARD || op == QC_DOT);
+}
+
+static bool __attribute__((const))
 op_anti_com (int op)
 {
 	return (op == '-' || op == QC_CROSS || op == QC_WEDGE);
@@ -101,6 +109,7 @@ typed_binary_expr (const type_t *type, int op, const expr_t *e1, const expr_t *e
 	e->expr.type = type;
 	e->expr.commutative = is_math (type) && op_commute (op);
 	e->expr.anticommute = is_math (type) && op_anti_com (op);
+	e->expr.associative = is_math (type) && op_associate (op);
 	return e;
 }
 
@@ -571,6 +580,18 @@ count_terms (const expr_t *expr)
 	return terms;
 }
 
+static bool
+can_factor (const expr_t *expr)
+{
+	if (!is_mult (expr) || expr->paren) {
+		return false;
+	}
+	if (expr->expr.commutative && expr->expr.associative) {
+		return true;
+	}
+	return false;
+}
+
 int __attribute__((pure))
 count_factors (const expr_t *expr)
 {
@@ -579,14 +600,14 @@ count_factors (const expr_t *expr)
 	}
 	auto e1 = expr->expr.e1;
 	auto e2 = expr->expr.e2;
-	int terms = !is_mult (e1) + !is_mult (e2);
-	if (is_mult (e1)) {
-		terms += count_factors (expr->expr.e1);
+	int factors = !can_factor (e1) + !can_factor (e2);
+	if (can_factor (e1)) {
+		factors += count_factors (expr->expr.e1);
 	}
-	if (is_mult (e2)) {
-		terms += count_factors (expr->expr.e2);
+	if (can_factor (e2)) {
+		factors += count_factors (expr->expr.e2);
 	}
-	return terms;
+	return factors;
 }
 
 bool __attribute__((pure))
@@ -618,12 +639,12 @@ scatter_factors_core (const expr_t *prod, const expr_t **factors, int *ind)
 {
 	auto e1 = prod->expr.e1;
 	auto e2 = prod->expr.e2;
-	if (is_mult (e1)) {
+	if (can_factor (e1)) {
 		scatter_factors_core (e1, factors, ind);
 	} else {
 		factors[(*ind)++] = e1;
 	}
-	if (is_mult (e2)) {
+	if (can_factor (e2)) {
 		scatter_factors_core (e2, factors, ind);
 	} else {
 		factors[(*ind)++] = e2;
@@ -641,8 +662,9 @@ scatter_factors (const expr_t *prod, const expr_t **factors)
 	scatter_factors_core (prod, factors, &ind);
 }
 
-const expr_t *
-gather_factors (int op, const type_t *type, const expr_t **factors, int count)
+static const expr_t *
+gather_factors_core (int op, const type_t *type, const expr_t **factors,
+					 int count)
 {
 	if (!count) {
 		internal_error (0, "no factors to collect");
@@ -656,8 +678,8 @@ gather_factors (int op, const type_t *type, const expr_t **factors, int count)
 		b = factors[1];
 	} else {
 		int mid = (count + 1) / 2;
-		a = gather_factors (op, type, factors, mid);
-		b = gather_factors (op, type, factors + mid, count - mid);
+		a = gather_factors_core (op, type, factors, mid);
+		b = gather_factors_core (op, type, factors + mid, count - mid);
 	}
 	if (!a || !b) {
 		return nullptr;
@@ -665,6 +687,52 @@ gather_factors (int op, const type_t *type, const expr_t **factors, int count)
 	auto prod = typed_binary_expr (type, op, a, b);
 	prod = fold_constants (prod);
 	return edag_add_expr (prod);
+}
+
+static int
+expr_const_cmp (const void *_a, const void *_b)
+{
+	auto a = *(const expr_t **) _a;
+	auto b = *(const expr_t **) _b;
+	int cmp = is_constant (a) - is_constant (b);
+	if (cmp == 0) {
+		return a - b;
+	}
+	return cmp;
+}
+
+const expr_t *
+gather_factors (int op, const type_t *type, const expr_t **factors, int count)
+{
+	if (!count) {
+		internal_error (0, "no factors to collect");
+	}
+	for (int i = 0; i < count; i++) {
+		if (!factors[i]) {
+			return nullptr;
+		}
+	}
+	if (count > 1) {
+		heapsort (factors, count, sizeof (factors[0]), expr_const_cmp);
+	}
+	if (is_constant (factors[count - 1])) {
+		for (int i = count - 1; i-- > 0; ) {
+			if (!is_constant (factors[i])) {
+				break;
+			}
+			auto e = typed_binary_expr (type, op, factors[i], factors[i + 1]);
+			e = fold_constants (e);
+			factors[i] = edag_add_expr (e);
+			factors[i + 1] = 0;
+			count--;
+		}
+		if (count > 1) {
+			auto prod = gather_factors_core (op, type, factors, count - 1);
+			prod = typed_binary_expr (type, op, prod, factors[count - 1]);
+			return edag_add_expr (prod);
+		}
+	}
+	return gather_factors_core (op, type, factors, count);
 }
 
 static int

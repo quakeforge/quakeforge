@@ -811,20 +811,6 @@ static void
 optimize_mult_products (const expr_t **adds, const expr_t **subs)
 {
 	for (auto scan = adds; *scan; scan++) {
-		if (is_mult (*scan) && has_const_factor (*scan)) {
-			auto e = *scan;
-			*scan = &skip;
-			*scan = optimize_mult (e, adds, subs);
-		}
-	}
-	for (auto scan = subs; *scan; scan++) {
-		if (is_mult (*scan) && has_const_factor (*scan)) {
-			auto e = *scan;
-			*scan = &skip;
-			*scan = optimize_mult (e, subs, adds);
-		}
-	}
-	for (auto scan = adds; *scan; scan++) {
 		if (is_mult (*scan)) {
 			auto e = *scan;
 			*scan = &skip;
