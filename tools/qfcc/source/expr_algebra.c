@@ -84,20 +84,24 @@ is_associative (const expr_t *e)
 }
 
 static bool __attribute__((const))
-op_commute (int op)
+op_commute (int op, const type_t *l, const type_t *r)
 {
+	if ((is_matrix (l) && !is_scalar (r))
+		|| (!is_scalar (l) && is_matrix (r))) {
+		return false;
+	}
 	return (op == '+' || op == '*' || op == QC_HADAMARD || op == QC_DOT);
 }
 
 static bool __attribute__((const))
-op_associate (int op)
+op_associate (int op, const type_t *l, const type_t *r)
 {
 	return ((op == '+' && options.code.assoc_float_add)
 			|| op == '*' || op == QC_HADAMARD || op == QC_DOT);
 }
 
 static bool __attribute__((const))
-op_anti_com (int op)
+op_anti_com (int op, const type_t *l, const type_t *r)
 {
 	return (op == '-' || op == QC_CROSS || op == QC_WEDGE);
 }
@@ -105,11 +109,13 @@ op_anti_com (int op)
 const expr_t *
 typed_binary_expr (const type_t *type, int op, const expr_t *e1, const expr_t *e2)
 {
+	auto l = get_type (e1);
+	auto r = get_type (e2);
 	auto e = new_binary_expr (op, e1, e2);
 	e->expr.type = type;
-	e->expr.commutative = is_math (type) && op_commute (op);
-	e->expr.anticommute = is_math (type) && op_anti_com (op);
-	e->expr.associative = is_math (type) && op_associate (op);
+	e->expr.commutative = is_math (type) && op_commute (op, l, r);
+	e->expr.anticommute = is_math (type) && op_anti_com (op, l, r);
+	e->expr.associative = is_math (type) && op_associate (op, l, r);
 	return e;
 }
 
@@ -663,8 +669,7 @@ scatter_factors (const expr_t *prod, const expr_t **factors)
 }
 
 static const expr_t *
-gather_factors_core (int op, const type_t *type, const expr_t **factors,
-					 int count)
+gather_factors_core (int op, const expr_t **factors, int count)
 {
 	if (!count) {
 		internal_error (0, "no factors to collect");
@@ -678,15 +683,13 @@ gather_factors_core (int op, const type_t *type, const expr_t **factors,
 		b = factors[1];
 	} else {
 		int mid = (count + 1) / 2;
-		a = gather_factors_core (op, type, factors, mid);
-		b = gather_factors_core (op, type, factors + mid, count - mid);
+		a = gather_factors_core (op, factors, mid);
+		b = gather_factors_core (op, factors + mid, count - mid);
 	}
 	if (!a || !b) {
 		return nullptr;
 	}
-	auto prod = typed_binary_expr (type, op, a, b);
-	prod = fold_constants (prod);
-	return edag_add_expr (prod);
+	return binary_expr (op, a, b);
 }
 
 static int
@@ -707,12 +710,17 @@ gather_factors (int op, const type_t *type, const expr_t **factors, int count)
 	if (!count) {
 		internal_error (0, "no factors to collect");
 	}
+	bool commutative = true;
 	for (int i = 0; i < count; i++) {
 		if (!factors[i]) {
 			return nullptr;
 		}
+		if (i) {
+			commutative &= op_commute (op, get_type (factors[i - 1]),
+									   get_type (factors[i]));
+		}
 	}
-	if (count > 1) {
+	if (commutative && count > 1) {
 		heapsort (factors, count, sizeof (factors[0]), expr_const_cmp);
 	}
 	if (is_constant (factors[count - 1])) {
@@ -727,12 +735,12 @@ gather_factors (int op, const type_t *type, const expr_t **factors, int count)
 			count--;
 		}
 		if (count > 1) {
-			auto prod = gather_factors_core (op, type, factors, count - 1);
+			auto prod = gather_factors_core (op, factors, count - 1);
 			prod = typed_binary_expr (type, op, prod, factors[count - 1]);
 			return edag_add_expr (prod);
 		}
 	}
-	return gather_factors_core (op, type, factors, count);
+	return gather_factors_core (op, factors, count);
 }
 
 static int
