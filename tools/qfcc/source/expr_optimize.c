@@ -1078,7 +1078,14 @@ optimize_core (const expr_t *expr)
 {
 	if (is_neg (expr)) {
 		auto neg = optimize_core (expr->expr.e1);
-		return neg_expr (neg);
+		if (neg && has_const_factor (neg)) {
+			auto mone = new_int_expr (-1, true);
+			neg = binary_expr ('*', neg, mone);
+			neg = optimize_core (neg);
+			return neg;
+		} else {
+			return neg_expr (neg);
+		}
 	} else if (expr->type == ex_swizzle) {
 		auto src = optimize_core (expr->swizzle.src);
 		auto new = new_expr_copy (expr);
