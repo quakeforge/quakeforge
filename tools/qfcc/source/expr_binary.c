@@ -48,11 +48,74 @@ typedef struct {
 	bool        promote;
 	bool        no_implicit;
 	bool        product_sign;
-	bool      (*commutative) (void);
-	bool      (*anticommute) (void);
-	bool      (*associative) (void);
+	bool      (*commutative) (const type_t *type);
+	bool      (*anticommute) (const type_t *type);
+	bool      (*associative) (const type_t *type);
 	int         true_op;
 } expr_type_t;
+
+static bool
+commute_add (const type_t *type)
+{
+	if (is_real (type)) {
+		return options.code.commute_float_add;
+	}
+	return is_integral (type);
+}
+
+static bool
+commute_mul (const type_t *type)
+{
+	if (is_real (type)) {
+		return options.code.commute_float_mul;
+	}
+	return is_integral (type);
+}
+
+static bool
+commute_dot (const type_t *type)
+{
+	if (is_real (type)) {
+		return options.code.commute_float_dot;
+	}
+	return is_integral (type);
+}
+
+static bool
+anticom_cross (const type_t *type)
+{
+	if (is_real (type)) {
+		return options.code.anticom_float_cross;
+	}
+	return is_integral (type);
+}
+
+static bool
+anticom_sub (const type_t *type)
+{
+	if (is_real (type)) {
+		return options.code.anticom_float_sub;
+	}
+	return is_integral (type);
+}
+
+static bool
+assoc_add (const type_t *type)
+{
+	if (is_real (type)) {
+		return options.code.assoc_float_add;
+	}
+	return is_integral (type);
+}
+
+static bool
+assoc_mul (const type_t *type)
+{
+	if (is_real (type)) {
+		return options.code.assoc_float_mul;
+	}
+	return is_integral (type);
+}
 
 static bool
 is_vector_compat (const type_t *type)
@@ -595,18 +658,33 @@ static expr_type_t add_ops[] = {
 	{   .match_a = is_string,   .match_b = is_string,   },
 	{   .match_a = is_matrix,   .match_b = is_scalar,
 			.match_shape = shape_always,
-			.process = matrix_scalar_expr, },
+			.process = matrix_scalar_expr,
+			.commutative = commute_add,
+			.associative = assoc_add,
+	},
 	{   .match_a = is_scalar,   .match_b = is_matrix,
 			.match_shape = shape_always,
-			.process = matrix_scalar_expr, },
+			.process = matrix_scalar_expr,
+			.commutative = commute_add,
+			.associative = assoc_add,
+	},
 	{   .match_a = is_nonscalar,.match_b = is_scalar,
 			.match_shape = shape_always,
-			.process = vector_scalar_expr, },
+			.process = vector_scalar_expr,
+			.commutative = commute_add,
+			.associative = assoc_add,
+	},
 	{   .match_a = is_scalar,   .match_b = is_nonscalar,
 			.match_shape = shape_always,
-			.process = vector_scalar_expr, },
+			.process = vector_scalar_expr,
+			.commutative = commute_add,
+			.associative = assoc_add,
+	},
 	{   .match_a = is_math,     .match_b = is_math,
-			.promote = true },
+			.promote = true,
+			.commutative = commute_add,
+			.associative = assoc_add,
+	},
 
 	{}
 };
@@ -621,18 +699,28 @@ static expr_type_t sub_ops[] = {
 			.process = pointer_arithmetic, },
 	{   .match_a = is_matrix,   .match_b = is_scalar,
 			.match_shape = shape_always,
-			.process = matrix_scalar_expr, },
+			.process = matrix_scalar_expr,
+			.anticommute = anticom_sub,
+	},
 	{   .match_a = is_scalar,   .match_b = is_matrix,
 			.match_shape = shape_always,
-			.process = matrix_scalar_expr, },
+			.process = matrix_scalar_expr,
+			.anticommute = anticom_sub,
+	},
 	{   .match_a = is_nonscalar,.match_b = is_scalar,
 			.match_shape = shape_always,
-			.process = vector_scalar_expr, },
+			.process = vector_scalar_expr,
+			.anticommute = anticom_sub,
+	},
 	{   .match_a = is_scalar,   .match_b = is_nonscalar,
 			.match_shape = shape_always,
-			.process = vector_scalar_expr, },
+			.process = vector_scalar_expr,
+			.anticommute = anticom_sub,
+	},
 	{   .match_a = is_math,     .match_b = is_math,
-			.promote = true },
+			.promote = true,
+			.anticommute = anticom_sub,
+	},
 
 	{}
 };
@@ -642,84 +730,105 @@ static expr_type_t mul_ops[] = {
 			.match_shape = shape_matrix,
 			.process = matrix_binary_expr,
 			.product_sign = true,
+			.associative = assoc_mul,
 	},
 	{   .match_a = is_matrix,     .match_b = is_nonscalar,
 			.match_shape = shape_matvec,
 			.process = matrix_binary_expr,
 			.product_sign = true,
+			.associative = assoc_mul,
 	},
 	{   .match_a = is_nonscalar,  .match_b = is_matrix,
 			.match_shape = shape_vecmat,
 			.process = matrix_binary_expr,
 			.product_sign = true,
+			.associative = assoc_mul,
 	},
 	{   .match_a = is_matrix,     .match_b = is_scalar,
 			.match_shape = shape_always,
 			.process = matrix_scalar_mul,
 			.promote = true,
 			.product_sign = true,
+			.commutative = commute_mul,
+			.associative = assoc_mul,
 	},
 	{   .match_a = is_scalar,     .match_b = is_matrix,
 			.match_shape = shape_always,
 			.process = matrix_scalar_mul,
 			.promote = true,
 			.product_sign = true,
+			.commutative = commute_mul,
+			.associative = assoc_mul,
 	},
 	{   .match_a = is_nonscalar,  .match_b = is_scalar,
 			.match_shape = shape_always,
 			.process = matrix_scalar_mul,
 			.promote = true,
 			.product_sign = true,
+			.commutative = commute_mul,
+			.associative = assoc_mul,
 	},
 	{   .match_a = is_scalar,     .match_b = is_nonscalar,
 			.match_shape = shape_always,
 			.process = matrix_scalar_mul,
 			.promote = true,
 			.product_sign = true,
+			.commutative = commute_mul,
+			.associative = assoc_mul,
 	},
 	{	.match_a = is_vector,     .match_b = is_vector,
 			.process = vector_vector_mul,
 			.product_sign = true,
+			.associative = assoc_mul,
 	},
 	{	.match_a = is_vector,     .match_b = is_vector_compat,
 			.process = vector_vector_mul,
 			.promote = true,
 			.product_sign = true,
+			.associative = assoc_mul,
 	},
 	{	.match_a = is_vector_compat, .match_b = is_vector,
 			.process = vector_vector_mul,
 			.promote = true,
 			.product_sign = true,
+			.associative = assoc_mul,
 	},
 	{	.match_a = is_quaternion, .match_b = is_quaternion,
 			.process = quaternion_quaternion_expr,
 			.product_sign = true,
+			.associative = assoc_mul,
 	},
 	{	.match_a = is_quaternion, .match_b = is_quaternion_compat,
 			.process = quaternion_quaternion_expr,
 			.promote = true,
 			.product_sign = true,
+			.associative = assoc_mul,
 	},
 	{	.match_a = is_quaternion_compat, .match_b = is_quaternion,
 			.process = quaternion_quaternion_expr,
 			.promote = true,
 			.product_sign = true,
+			.associative = assoc_mul,
 	},
 	{	.match_a = is_quaternion, .match_b = is_vector_compat,
 			.match_shape = shape_always,
 			.process = quaternion_vector_expr,
 			.promote = true,
 			.product_sign = true,
+			.associative = assoc_mul,
 	},
 	{	.match_a = is_vector_compat,     .match_b = is_quaternion,
 			.match_shape = shape_always,
 			.process = vector_quaternion_expr,
 			.promote = true,
 			.product_sign = true,
+			.associative = assoc_mul,
 	},
 	{   .match_a = is_math,       .match_b = is_math,
 			.promote = true,
 			.product_sign = true,
+			.commutative = commute_mul,
+			.associative = assoc_mul,
 	},
 
 	{}
@@ -734,16 +843,23 @@ static expr_type_t outer_ops[] = {
 
 static expr_type_t cross_ops[] = {
 	{   .match_a = is_vector_compat, .match_b = is_vector_compat,
-			.promote = true },
+			.promote = true,
+			.anticommute = anticom_cross,
+	},
 
 	{}
 };
 
 static expr_type_t dot_ops[] = {
 	{   .match_a = is_nonscalar, .match_b = is_nonscalar,
-			.process = dot_product_expr, },
+			.process = dot_product_expr,
+			.commutative = commute_dot,
+	},
 	{   .match_a = is_scalar, .match_b = is_scalar,
-			.promote = true, .process = scalar_dot_product_expr, },
+			.process = scalar_dot_product_expr,
+			.promote = true,
+			.commutative = commute_dot,
+	},
 
 	{}
 };
@@ -1075,13 +1191,13 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	auto ne = new_binary_expr (op, e1, e2);
 	ne->expr.type = type;
 	if (expr_type->commutative) {
-		ne->expr.commutative = expr_type->commutative ();
+		ne->expr.commutative = expr_type->commutative (type);
 	}
 	if (expr_type->anticommute) {
-		ne->expr.anticommute = expr_type->anticommute ();
+		ne->expr.anticommute = expr_type->anticommute (type);
 	}
 	if (expr_type->associative) {
-		ne->expr.associative = expr_type->associative ();
+		ne->expr.associative = expr_type->associative (type);
 	}
 	e = edag_add_expr (fold_constants (ne));
 	if (neg) {
