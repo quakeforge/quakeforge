@@ -1209,6 +1209,8 @@ bool ext_compat (const ex_extend_t *a, const ex_extend_t *b)
 	__attribute__((const));
 bool is_ext (const expr_t *e) __attribute__((const));
 
+const expr_t *expr_optimize (const expr_t *expr);
+
 const expr_t *ext_swizzle (const expr_t *ext, const expr_t *swizzle);
 const expr_t *neg_expr (const expr_t *e);
 const expr_t *sum_expr (const expr_t *a, const expr_t *b);

@@ -2991,7 +2991,7 @@ spirv_initialized_temp (const type_t *type, const expr_t *src)
 		if (is_reference (get_type (src))) {
 			src = pointer_deref (src);
 		}
-		src = algebra_optimize (src);
+		src = expr_optimize (src);
 		src = algebra_compound_expr (type, src);
 		if (src->type != ex_compound) {
 			return src;

@@ -430,7 +430,7 @@ initialized_temp_expr (const type_t *type, const expr_t *expr)
 		if (is_reference (get_type (expr))) {
 			expr = pointer_deref (expr);
 		}
-		expr = algebra_optimize (expr);
+		expr = expr_optimize (expr);
 		expr = algebra_compound_expr (type, expr);
 		if (expr->type != ex_compound) {
 			return expr;

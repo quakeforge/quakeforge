@@ -279,9 +279,9 @@ assign_expr (const expr_t *dst, const expr_t *src)
 		}
 		src = new_nil_expr ();
 	}
-	src = algebra_optimize (src);
+	src = expr_optimize (src);
 	if (is_error (src)) {
-		// this shouldn't happen (algebra_optimize broke something), but avoids
+		// this shouldn't happen (expr_optimize broke something), but avoids
 		// segfault
 		return src;
 	}

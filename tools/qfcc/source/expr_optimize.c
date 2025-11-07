@@ -1129,6 +1129,15 @@ optimize_core (const expr_t *expr)
 		auto type = get_type (expr);
 		auto num = optimize_core (expr->expr.e1);
 		auto den = optimize_core (expr->expr.e2);
+		if (!num) {
+			if (!den) {
+				return binary_expr ('/', num, den);
+			}
+			return nullptr;
+		}
+		if (!den) {
+			return binary_expr ('/', num, den);
+		}
 		auto num_type = get_type (num);
 		int num_count = count_factors (num) + 1;
 		int den_count = count_factors (den) + 1;
@@ -1139,6 +1148,9 @@ optimize_core (const expr_t *expr)
 
 		for (auto n = num_fac; *n; n++) {
 			for (auto d = den_fac; *d; d++) {
+				if (*d == &skip) {
+					continue;
+				}
 				if (*n == *d) {
 					*n = &skip;
 					*d = &skip;
@@ -1230,6 +1242,9 @@ algebra_optimize (const expr_t *expr)
 	if (expr->type == ex_alias) {
 		auto alias = expr->alias;
 		alias.expr = optimize_core (alias.expr);
+		if (!alias.expr) {
+			return nullptr;
+		}
 		auto a = new_expr ();
 		a->type = ex_alias;
 		a->alias = alias;
@@ -1251,5 +1266,19 @@ algebra_optimize (const expr_t *expr)
 		expr = mvec_gather (groups, algebra);
 	}
 
+	return expr;
+}
+
+const expr_t *
+expr_optimize (const expr_t *expr)
+{
+	if (is_error (expr)) {
+		return expr;
+	}
+	auto type = get_type (expr);
+	expr = algebra_optimize (expr);
+	if (!expr) {
+		expr = new_zero_expr (type);
+	}
 	return expr;
 }

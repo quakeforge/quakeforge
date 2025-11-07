@@ -936,9 +936,9 @@ proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 			if (is_error (init)) {
 				init = new_nil_expr ();
 			} else {
-				init = algebra_optimize (init);
+				init = expr_optimize (init);
 				if (is_error (init)) {
-					// shouldn't happen, but algebra_optimize broke
+					// shouldn't happen, but expr_optimize broke
 					init = nullptr;
 				}
 			}

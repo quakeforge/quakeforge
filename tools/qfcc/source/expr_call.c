@@ -92,7 +92,7 @@ optimize_arguments (const expr_t **arguments, int arg_count)
 		if (is_error (arguments[i])) {
 			err = arguments[i];
 		} else if (arguments[i]->type != ex_compound) {
-			arguments[i] = algebra_optimize (arguments[i]);
+			arguments[i] = expr_optimize (arguments[i]);
 		}
 	}
 
@@ -631,7 +631,7 @@ return_expr (function_t *f, const expr_t *e)
 		}
 		e = current_target.initialized_temp (t, e);
 	} else {
-		e = algebra_optimize (e);
+		e = expr_optimize (e);
 	}
 
 	t = get_type (e);
