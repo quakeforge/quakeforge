@@ -1145,7 +1145,7 @@ mult_expr (const expr_t *a, const expr_t *b)
 	return mult;
 }
 
-static bool __attribute__((pure))
+bool __attribute__((pure))
 reject_dot (const expr_t *a, const expr_t *b)
 {
 	a = traverse_scale (a);

@@ -290,6 +290,12 @@ optimize_dot (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 		auto e = typed_binary_expr (type, QC_DOT, l, l);
 		e = fold_constants (e);
 		return edag_add_expr (e);
+	} else {
+		l = optimize_core (l);
+		r = optimize_core (r);
+		if (!l || !r || reject_dot (l, r)) {
+			return &skip;
+		}
 	}
 	int factor = 1;
 	const expr_t *a[3] = {
@@ -406,6 +412,12 @@ optimize_dot (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 		auto fact = cast_expr (base_type (type),
 							   new_int_expr (factor, false));
 		expr = typed_binary_expr (type, '*', expr, fact);
+		expr = fold_constants (expr);
+		expr = edag_add_expr (expr);
+	} else {
+		auto type = get_type (expr);
+		expr = typed_binary_expr (type, QC_DOT, l, r);
+		expr = fold_constants (expr);
 		expr = edag_add_expr (expr);
 	}
 	if (neg) {
