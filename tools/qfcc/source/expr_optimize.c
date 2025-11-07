@@ -1137,6 +1137,24 @@ optimize_core (const expr_t *expr)
 					*d = &skip;
 					break;
 				}
+				if (is_scalar (get_type (*n)) && is_constant (*n)
+					&& is_scalar (get_type (*d)) && is_constant (*d)) {
+					auto gt_expr = binary_expr (QC_GT, *n, *d);
+					const expr_t *div;
+					bool gt = expr_integral (gt_expr);
+					if (gt) {
+						div = binary_expr ('/', *n, *d);
+					} else {
+						div = binary_expr ('/', *d, *n);
+					}
+					auto mul = binary_expr ('*', div, gt ? *d : *n);
+					auto eq = binary_expr (QC_EQ, mul, gt ? *n : *d);
+					if (expr_integral (eq)) {
+						*n = gt ?  div  : &skip;
+						*d = gt ? &skip :  div ;
+						break;
+					}
+				}
 				if (is_scale (*n)) {
 					auto n_scale = (*n)->expr.e2;
 					if (is_scale (*d) && n_scale == (*d)->expr.e2) {
