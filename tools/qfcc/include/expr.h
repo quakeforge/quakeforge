@@ -1219,6 +1219,7 @@ const expr_t *ext_expr (const expr_t *src, const type_t *type, int extend,
 const expr_t *scale_expr (const expr_t *a, const expr_t *b);
 const expr_t *dot_expr (const expr_t *a, const expr_t *b);
 
+const expr_t *offset_cast (const type_t *type, const expr_t *expr, int offset);
 bool reject_dot (const expr_t *a, const expr_t *b) __attribute__((pure));
 const expr_t *traverse_scale (const expr_t *expr) __attribute__((pure));
 

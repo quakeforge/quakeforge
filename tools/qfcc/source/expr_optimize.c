@@ -279,6 +279,32 @@ check_dot_anticom (const expr_t *a, const expr_t *b)
 	return true;
 }
 
+static bool
+is_axial (const expr_t *vec, bool *sign, int *ind)
+{
+	auto type = base_type (get_type (vec));
+	int width = type_width (get_type (vec));
+	*ind = -1;
+	for (int i = 0; i < width; i++) {
+		auto comp = offset_cast (type, vec, i);
+		if (!comp) {
+			// component is 0
+			continue;
+		}
+		double c = expr_floating (comp);
+		if (c != 1 && c != -1) {
+			return false;
+		}
+		if (*ind != -1) {
+			// more than one
+			return false;
+		}
+		*ind = i;
+		*sign = c < 0;
+	}
+	return *ind != -1;
+}
+
 static const expr_t *
 optimize_dot (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 {
@@ -441,10 +467,20 @@ optimize_dot (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 				r = binary_expr (QC_CROSS, b, c);
 			}
 		}
+		bool sign;
+		int ind;
 		auto type = get_type (expr);
-		expr = typed_binary_expr (type, QC_DOT, l, r);
-		expr = fold_constants (expr);
-		expr = edag_add_expr (expr);
+		if (is_constant (l) && is_axial (l, &sign, &ind)) {
+			neg ^= sign;
+			expr = offset_cast (type, r, ind);
+		} else if (is_constant (r) && is_axial (r, &sign, &ind)) {
+			neg ^= sign;
+			expr = offset_cast (type, l, ind);
+		} else {
+			expr = typed_binary_expr (type, QC_DOT, l, r);
+			expr = fold_constants (expr);
+			expr = edag_add_expr (expr);
+		}
 	}
 	if (neg) {
 		expr = neg_expr (expr);

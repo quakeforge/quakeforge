@@ -264,7 +264,7 @@ is_zero (const expr_t *e)
 	return true;
 }
 
-static const expr_t *
+const expr_t *
 offset_cast (const type_t *type, const expr_t *expr, int offset)
 {
 	if (type->meta != ty_basic) {
