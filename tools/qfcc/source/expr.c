@@ -1464,7 +1464,7 @@ expr_floating (const expr_t *e)
 			return expr_double (e);
 		}
 	}
-	internal_error (e, "not an integral constant");
+	internal_error (e, "not a floating constant");
 }
 
 bool
