@@ -47,6 +47,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/dags.h"
 #include "tools/qfcc/include/defspace.h"
@@ -399,6 +400,15 @@ new_pseudoop (const char *name)
 
 }
 
+static const type_t *
+operand_type (const type_t *type)
+{
+	if (is_algebra (type) && type_count (type) == 1) {
+		return vector_type (base_type (type), type_width (type));
+	}
+	return type;
+}
+
 static operand_t *
 new_operand (op_type_e op, const expr_t *expr, void *return_addr)
 {
@@ -617,6 +627,7 @@ offset_alias_operand (const type_t *type, int offset, operand_t *aop,
 		}
 		return aop;
 	}
+	type = operand_type (type);
 	if (aop->op_type == op_temp) {
 		while (aop->tempop.alias) {
 			offset += aop->tempop.offset;
