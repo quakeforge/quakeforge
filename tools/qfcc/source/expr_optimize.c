@@ -1291,6 +1291,7 @@ expr_optimize (const expr_t *expr)
 	expr = algebra_optimize (expr);
 	if (!expr) {
 		expr = new_zero_expr (type);
+		expr = edag_add_expr (expr);
 	}
 	return expr;
 }
