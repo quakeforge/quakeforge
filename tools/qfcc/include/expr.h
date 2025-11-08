@@ -1233,7 +1233,7 @@ void scatter_terms (const expr_t *sum,
 const expr_t *gather_terms (const type_t *type,
 							const expr_t **adds, const expr_t **subs);
 int count_factors (const expr_t *expr) __attribute__((pure));
-void scatter_factors (const expr_t *prod, const expr_t **factors);
+bool scatter_factors (const expr_t *prod, const expr_t **factors);
 const expr_t *gather_factors (int op, const type_t *type,
 							  const expr_t **factors, int count);
 void merge_extends (const expr_t **adds, const expr_t **subs);

@@ -1217,8 +1217,9 @@ optimize_core (const expr_t *expr)
 		int den_count = count_factors (den) + 1;
 		const expr_t *num_fac[num_count + 1] = {};
 		const expr_t *den_fac[den_count + 1] = {};
-		scatter_factors (num, num_fac);
-		scatter_factors (den, den_fac);
+		bool neg = false;
+		neg ^= scatter_factors (num, num_fac);
+		neg ^= scatter_factors (den, den_fac);
 
 		for (auto n = num_fac; *n; n++) {
 			for (auto d = den_fac; *d; d++) {
@@ -1276,6 +1277,9 @@ optimize_core (const expr_t *expr)
 
 		if (!num_count && !den_count) {
 			expr = edag_add_expr (new_int_expr (1, true));
+			if (neg) {
+				expr = neg_expr (expr);
+			}
 			return cast_expr (type, expr);
 		}
 
@@ -1295,6 +1299,9 @@ optimize_core (const expr_t *expr)
 		}
 		expr = fold_constants (expr);
 		expr = edag_add_expr (expr);
+		if (neg) {
+			expr = neg_expr (expr);
+		}
 	} else if (expr->type == ex_expr || expr->type == ex_uexpr) {
 		auto type = get_type (expr);
 		const expr_t *pos[2] = { expr };

@@ -601,11 +601,20 @@ can_factor (const expr_t *expr)
 int __attribute__((pure))
 count_factors (const expr_t *expr)
 {
+	if (is_neg (expr)) {
+		expr = neg_expr (expr);
+	}
 	if (!is_mult (expr)) {
 		return 0;
 	}
 	auto e1 = expr->expr.e1;
 	auto e2 = expr->expr.e2;
+	if (is_neg (e1)) {
+		e1 = neg_expr (e1);
+	}
+	if (is_neg (e2)) {
+		e2 = neg_expr (e2);
+	}
 	int factors = !can_factor (e1) + !can_factor (e2);
 	if (can_factor (e1)) {
 		factors += count_factors (expr->expr.e1);
@@ -640,32 +649,47 @@ is_ortho (const expr_t *expr)
 	return c[0] == 1 && c[1] == 0 && (neg == 1 || neg == 2);
 }
 
-static void
+static bool
 scatter_factors_core (const expr_t *prod, const expr_t **factors, int *ind)
 {
+	bool neg = false;
 	auto e1 = prod->expr.e1;
 	auto e2 = prod->expr.e2;
+	if (is_neg (e1)) {
+		neg = !neg;
+		e1 = neg_expr (e1);
+	}
+	if (is_neg (e2)) {
+		neg = !neg;
+		e2 = neg_expr (e2);
+	}
 	if (can_factor (e1)) {
-		scatter_factors_core (e1, factors, ind);
+		neg ^= scatter_factors_core (e1, factors, ind);
 	} else {
 		factors[(*ind)++] = e1;
 	}
 	if (can_factor (e2)) {
-		scatter_factors_core (e2, factors, ind);
+		neg ^= scatter_factors_core (e2, factors, ind);
 	} else {
 		factors[(*ind)++] = e2;
 	}
+	return neg;
 }
 
-void
+bool
 scatter_factors (const expr_t *prod, const expr_t **factors)
 {
+	bool neg = false;
+	if (is_neg (prod)) {
+		neg = true;
+		prod = neg_expr (prod);
+	}
 	if (!is_mult (prod)) {
 		factors[0] = prod;
-		return;
+		return neg;
 	}
 	int         ind = 0;
-	scatter_factors_core (prod, factors, &ind);
+	return neg ^ scatter_factors_core (prod, factors, &ind);
 }
 
 static const expr_t *
