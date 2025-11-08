@@ -75,16 +75,13 @@ get_value (const expr_t *e, int i, int j)
 }
 
 static const expr_t *
-construct_by_components (const type_t *type, const expr_t *params,
+construct_by_components (const type_t *type,
+						 const expr_t **param_exprs, int num_param,
 						 const expr_t *e)
 {
 	auto base = base_type (type);
 	int num_comp = type_rows (type) * type_cols (type);
 	const expr_t *components[num_comp] = {};
-
-	int num_param = list_count (&params->list);
-	const expr_t *param_exprs[num_param + 1] = {};
-	list_scatter_rev (&params->list, param_exprs);
 
 	bool all_constant = true;
 	bool all_implicit = true;
@@ -102,6 +99,7 @@ construct_by_components (const type_t *type, const expr_t *params,
 				pexpr = pointer_deref (pexpr);
 				ptype = dereference_type (ptype);
 			}
+			pexpr = expr_optimize (pexpr);
 			if (!is_math (ptype) && !is_nil (pexpr)) {
 				err = cind++;
 				components[err] = error (pexpr, "invalid type for conversion");
@@ -185,9 +183,7 @@ construct_diagonal (const type_t *type, const expr_t *scalar, const expr_t *e)
 			components[i * rows + j] = i == j ? scalar : zero;
 		}
 	}
-	auto params = new_list_expr (nullptr);
-	list_gather (&params->list, components, cols * rows);
-	return construct_by_components (type, params, e);
+	return construct_by_components (type, components, cols * rows, e);
 }
 
 static const expr_t *
@@ -239,9 +235,7 @@ construct_matrix (const type_t *type, const expr_t *matrix, const expr_t *e)
 				components[i * rows + j] = val;
 			}
 		}
-		auto params = new_list_expr (nullptr);
-		list_gather (&params->list, components, cols * rows);
-		return construct_by_components (type, params, e);
+		return construct_by_components (type, components, cols * rows, e);
 	}
 }
 
@@ -255,9 +249,7 @@ construct_broadcast (const type_t *type, const expr_t *scalar, const expr_t *e)
 	for (int i = 0; i < width; i++) {
 		components[i] = scalar;
 	}
-	auto params = new_list_expr (nullptr);
-	list_gather (&params->list, components, width);
-	return construct_by_components (type, params, e);
+	return construct_by_components (type, components, width, e);
 }
 
 static const expr_t *
@@ -271,6 +263,7 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 		if (is_reference (get_type (param_exprs[i]))) {
 			param_exprs[i] = pointer_deref (param_exprs[i]);
 		}
+		param_exprs[i] = expr_optimize (param_exprs[i]);
 	}
 
 	if (num_param == 1 && is_scalar (get_type (param_exprs[0]))) {
@@ -301,7 +294,7 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 			return new_vector_list_gather (type, param_exprs, type_cols (type));
 		}
 	}
-	return construct_by_components (type, params, e);
+	return construct_by_components (type, param_exprs, num_param, e);
 }
 
 static const expr_t *
@@ -316,7 +309,7 @@ struct_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 	auto comp = new_compound_init ();
 	comp->compound.type = type;
 	for (int i = 0; i < num_param; i++) {
-		auto param = param_exprs[i];
+		auto param = expr_optimize (param_exprs[i]);
 		append_element (comp, new_element (param, nullptr));
 	}
 	return comp;
