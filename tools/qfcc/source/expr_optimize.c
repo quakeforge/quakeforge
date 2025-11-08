@@ -415,6 +415,32 @@ optimize_dot (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 		expr = fold_constants (expr);
 		expr = edag_add_expr (expr);
 	} else {
+		// a•bxc where a and either b or c are constant
+		if (is_constant (l) && is_cross (r)) {
+			auto a = l;
+			auto b = r->expr.e1;
+			auto c = r->expr.e2;
+			if (is_constant (b)) {
+				l = binary_expr (QC_CROSS, a, b);
+				r = c;
+			} else if (is_constant (c)) {
+				l = binary_expr (QC_CROSS, c, a);
+				r = b;
+			}
+		}
+		// axb•c where c and either a or b are constant
+		if (is_cross (l) && is_constant (r)) {
+			auto a = l->expr.e1;
+			auto b = l->expr.e2;
+			auto c = r;
+			if (is_constant (a)) {
+				l = binary_expr (QC_CROSS, c, a);
+				r = b;
+			} else if (is_constant (b)) {
+				l = a;
+				r = binary_expr (QC_CROSS, b, c);
+			}
+		}
 		auto type = get_type (expr);
 		expr = typed_binary_expr (type, QC_DOT, l, r);
 		expr = fold_constants (expr);
