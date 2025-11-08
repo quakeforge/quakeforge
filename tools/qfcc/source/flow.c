@@ -407,6 +407,21 @@ count_operand (operand_t *op)
 	if (op->op_type == op_label)
 		return 0;
 
+	int count = 0;
+
+	// Ensure the main variable for an alias operand gets counted as all
+	// flowvars need to be accounted for.
+	if (op->op_type == op_temp && op->tempop.alias) {
+		count = count_operand (op->tempop.alias);
+	} else if (op->op_type == op_def && op->def->alias) {
+		auto adef = op->def->alias;
+		if (!adef->flowvar) {
+			auto dop = def_operand (adef, adef->type, op->expr);
+			count = count_operand (dop);
+			adef->flowvar->op = dop;
+		}
+	}
+
 	var = flow_get_var (op);
 	/**	Flowvars are initialized with number == 0, and any global flowvar
 	 *	used by a function will always have a number >= 0 after flow analysis,
@@ -421,9 +436,9 @@ count_operand (operand_t *op)
 		set_empty (var->use);
 		set_empty (var->define);
 		var->number = -1;
-		return 1;
+		count += 1;
 	}
-	return 0;
+	return count;
 }
 
 static int
@@ -494,6 +509,17 @@ add_operand (function_t *func, operand_t *op)
 		return;
 	if (op->op_type == op_label)
 		return;
+
+	// Ensure the main variable for an alias gets initialized to ensure
+	// all flowvars have unique numbers
+	if (op->op_type == op_temp && op->tempop.alias) {
+		add_operand (func, op->tempop.alias);
+	} else if (op->op_type == op_def && op->def->alias) {
+		auto adef = op->def->alias;
+		// the flowvar for the main def was created in count_operand
+		auto dop = adef->flowvar->op;
+		add_operand (func, dop);
+	}
 
 	var = flow_get_var (op);
 	/**	If the flowvar number is still -1, then the flowvar has not yet been
@@ -728,7 +754,7 @@ flow_build_vars (function_t *func)
 	if (!num_vars)
 		return;
 
-	func->vars = malloc (num_vars * sizeof (flowvar_t *));
+	func->vars = malloc (sizeof (flowvar_t *[num_vars]));
 
 	stuse = set_new ();
 	stdef = set_new ();
