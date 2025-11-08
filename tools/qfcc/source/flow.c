@@ -2205,12 +2205,14 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 					// -1 is void
 					// FIXME size and addressing
 					if (ret_mode >= 0) {
-						flow_add_op_var (use, s->opa, dol_partial);
+						flow_add_op_var (use, s->opa,
+										 dol_partial | dol_only_alias);
 					}
 				} else {
 					// v6/v6p
 					if (s->opa) {
-						flow_add_op_var (use, s->opa, dol_partial);
+						flow_add_op_var (use, s->opa,
+										 dol_partial | dol_only_alias);
 					}
 					if (use) {
 						flow_add_op_var (use, &flow_params[0].op, dol_partial);
