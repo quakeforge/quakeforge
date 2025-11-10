@@ -24,6 +24,7 @@ test_progs_dat=\
 	tools/qfcc/test/arraytypedef.dat \
 	tools/qfcc/test/assignchain.dat \
 	tools/qfcc/test/anonstruct.dat \
+	tools/qfcc/test/brokenalias.dat \
 	tools/qfcc/test/brokenkill.dat \
 	tools/qfcc/test/brokenline.dat \
 	tools/qfcc/test/brokenplane.dat \
@@ -339,6 +340,16 @@ tools/qfcc/test/assignchain.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(assignchain_dep) # am--include-marker
 r_depfiles_remade += $(assignchain_dep)
+
+tools_qfcc_test_brokenalias_dat_SOURCES=tools/qfcc/test/brokenalias.r
+brokenalias_obj=$(tools_qfcc_test_brokenalias_dat_SOURCES:.r=.o)
+brokenalias_dep=$(call qcautodep,$(tools_qfcc_test_brokenalias_dat_SOURCES))
+tools/qfcc/test/brokenalias.dat$(EXEEXT): $(brokenalias_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(brokenalias_obj)
+tools/qfcc/test/brokenalias.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(brokenalias_dep) # am--include-marker
+r_depfiles_remade += $(brokenalias_dep)
 
 tools_qfcc_test_brokenkill_dat_SOURCES=tools/qfcc/test/brokenkill.r
 brokenkill_obj=$(tools_qfcc_test_brokenkill_dat_SOURCES:.r=.o)
