@@ -1699,7 +1699,7 @@ rua_init_scanner (rua_extra_t *extra, rua_parser_t *parser)
 		.cond_stack = DARRAY_STATIC_INIT (8),
 		.include_stack = DARRAY_STATIC_INIT (8),
 		.dstr = dstring_new (),
-		.macro_tab = cpp_macros ? cpp_macros : new_symtab (0, stab_global),
+		.macro_tab = new_symtab (cpp_macros, stab_global),
 		.location = { 1, 1, 1, 1, pr.loc.file },
 	};
 	yyscan_t    scanner;
