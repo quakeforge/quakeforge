@@ -155,13 +155,17 @@ op_alias_offset (operand_t *op)
 	if (!op_is_alias (op)) {
 		internal_error (op->expr, "not an alias op");
 	}
+	if (op->op_type == op_alias) {
+		// alias operands never have offsets
+		return 0;
+	}
 	if (op->op_type == op_temp) {
 		return op->tempop.offset;
 	}
 	if (op->op_type == op_def) {
 		return op->def->offset;
 	}
-	internal_error (op->expr, "eh? how?");
+	internal_error (op->expr, "eh? how? %d", op->op_type);
 }
 
 static int
@@ -200,7 +204,10 @@ unalias_op (operand_t *op)
 		internal_error (op->expr, "not an alias op");
 	}
 	if (op->op_type == op_alias) {
-		return op->alias;
+		while (op->op_type == op_alias) {
+			op = op->alias;
+		}
+		return op;
 	}
 	if (op->op_type == op_temp) {
 		return op->tempop.alias;

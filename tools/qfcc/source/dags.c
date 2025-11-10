@@ -1656,15 +1656,11 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			auto value = dagnode->children[0]->value;
 			int offset = 0;
 			if (op_is_alias (value)) {
-				//FIXME? this check shouldn't be necessary, but aliased defs
-				//stay as aliased defs in the dag. I'm not sure this is the
-				//right fix, or even in the right direction
-				if (value->op_type == op_def) {
-					offset = op_alias_offset (value);
-				}
+				offset = op_alias_offset (value);
 				value = unalias_op (value);
 			}
-			dst = offset_alias_operand (dagnode->types[0], dagnode->offset + offset,
+			dst = offset_alias_operand (dagnode->types[0],
+										dagnode->offset + offset,
 										value, dagnode->label->expr);
 			if ((var_iter = set_first (dagnode->identifiers))) {
 				type = dst->type;
