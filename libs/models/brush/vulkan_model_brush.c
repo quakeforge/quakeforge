@@ -177,14 +177,23 @@ copy_mips (qfv_packet_t *packet, texture_t *tx, byte *dst, VkImage image,
 								   num_copies, copies);
 }
 
-static void
+static qfv_packet_t *
 transfer_texture (texture_t *tx, VkImage image, qfv_packet_t *packet,
-				  byte *palette, qfv_device_t *device)
+				  byte *palette, vulkan_ctx_t *ctx)
 {
+	auto device = ctx->device;
 	auto dfunc = device->funcs;
 
 	size_t layer_size = mipsize (tx->width * tx->height * 4);
 	byte  *dst = QFV_PacketExtend (packet, layer_size);
+	if (!dst) {
+		QFV_PacketSubmit (packet);
+		packet = QFV_PacketAcquire (ctx->staging, "brush.tex");
+		dst = QFV_PacketExtend (packet, layer_size);
+		if (!dst) {
+			Sys_Error ("could not acquire %zd bytes for packet", layer_size);
+		}
+	}
 
 	auto sb = imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	sb.barrier.image = image;
@@ -194,14 +203,18 @@ transfer_texture (texture_t *tx, VkImage image, qfv_packet_t *packet,
 								 0, 0, 0, 0, 0,
 								 1, &sb.barrier);
 
+	uint32_t baseMipLevel = 0;
 	if (strncmp (tx->name, "sky", 3) == 0) {
 		transfer_mips (dst, tx + 1, tx, palette, (vprocess_t) memcpy);
 		copy_mips (packet, tx, dst, image, 0, MIPLEVELS, dfunc);
 	} else if (tx->name[0] == '{') {
 		transfer_mip_level (dst, tx + 1, tx, 0, palette, (vprocess_t) memcpy);
 		copy_mips (packet, tx, dst, image, 0, 1, dfunc);
-		QFV_GenerateMipMaps (device, packet->cmd, image, MIPLEVELS,
+		unsigned mip = QFV_MipLevels (tx->width, tx->height);
+		QFV_GenerateMipMaps (device, packet->cmd, image, mip,
 							 tx->width, tx->height, 1);
+		// QFV_GenerateMipMaps does the transition to ShaderReadOnly
+		return packet;
 	} else {
 		transfer_mips (dst, tx + 1, tx, palette, Mod_ClearFullbright);
 		copy_mips (packet, tx, dst, image, 0, MIPLEVELS, dfunc);
@@ -212,11 +225,13 @@ transfer_texture (texture_t *tx, VkImage image, qfv_packet_t *packet,
 
 	auto db = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
 	db.barrier.image = image;
+	db.barrier.subresourceRange.baseMipLevel = baseMipLevel;
 	db.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
 	db.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 	dfunc->vkCmdPipelineBarrier (packet->cmd, db.srcStages, db.dstStages,
 								 0, 0, 0, 0, 0,
 								 1, &db.barrier);
+	return packet;
 }
 
 static void
@@ -326,7 +341,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 		}
 		int tex_ind = tex_map[i];
 		auto image = images[tex_ind].image.image;
-		transfer_texture (tx, image, packet, palette, ctx->device);
+		packet = transfer_texture (tx, image, packet, palette, ctx);
 	}
 	QFV_PacketSubmit (packet);
 	qfvPopDebug (ctx);
