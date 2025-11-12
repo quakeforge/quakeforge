@@ -142,6 +142,9 @@ neg_expr (const expr_t *e)
 		&& expr_floating (e->expr.e2) == -1) {
 		return e->expr.e1;
 	}
+	if (is_scale (e) && is_constant (e->expr.e1)) {
+		return scale_expr (neg_expr (e->expr.e1), e->expr.e2);
+	}
 	auto type = get_type (e);
 	if (e->type == ex_alias
 		&& (!e->alias.offset || !expr_integral (e->alias.offset))
