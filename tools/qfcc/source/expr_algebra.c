@@ -116,7 +116,8 @@ typed_binary_expr (const type_t *type, int op, const expr_t *e1, const expr_t *e
 	e->expr.commutative = is_math (type) && op_commute (op, l, r);
 	e->expr.anticommute = is_math (type) && op_anti_com (op, l, r);
 	e->expr.associative = is_math (type) && op_associate (op, l, r);
-	return e;
+	auto f = fold_constants (e);
+	return edag_add_expr (f);
 }
 
 const expr_t *
@@ -288,7 +289,7 @@ offset_cast (const type_t *type, const expr_t *expr, int offset)
 			return e1;
 		}
 		auto cast = typed_binary_expr (type, op, e1, e2);
-		return edag_add_expr (cast);
+		return cast;
 	}
 	if (is_ext (expr)) {
 		auto ext = expr->extend;
@@ -753,15 +754,14 @@ gather_factors (int op, const type_t *type, const expr_t **factors, int count)
 				break;
 			}
 			auto e = typed_binary_expr (type, op, factors[i], factors[i + 1]);
-			e = fold_constants (e);
-			factors[i] = edag_add_expr (e);
+			factors[i] = e;
 			factors[i + 1] = 0;
 			count--;
 		}
 		if (count > 1) {
 			auto prod = gather_factors_core (op, factors, count - 1);
 			prod = typed_binary_expr (type, op, prod, factors[count - 1]);
-			return edag_add_expr (prod);
+			return prod;
 		}
 	}
 	return gather_factors_core (op, factors, count);
@@ -822,8 +822,6 @@ sum_expr_low (int op, const expr_t *a, const expr_t *b)
 
 	auto type = get_type (a);
 	auto sum = typed_binary_expr (type, op, a, b);
-	sum = fold_constants (sum);
-	sum = edag_add_expr (sum);
 	return sum;
 }
 
@@ -908,6 +906,10 @@ sum_expr (const expr_t *a, const expr_t *b)
 	auto type = get_type (a);
 	auto sum = typed_binary_expr (type, '+', a, b);
 	int num_terms = count_terms (sum);
+	if (!num_terms) {
+		// the sum was optimized out
+		return sum;
+	}
 	const expr_t *adds[num_terms + 1] = {};
 	const expr_t *subs[num_terms + 1] = {};
 	scatter_terms (sum, adds, subs);
@@ -1101,7 +1103,7 @@ do_mult (const expr_t *a, const expr_t *b)
 {
 	auto type = get_type (a);
 	auto mult = typed_binary_expr (type, '*', a, b);
-	return edag_add_expr (mult);
+	return mult;
 }
 
 static const expr_t *
@@ -1113,7 +1115,7 @@ do_scale (const expr_t *a, const expr_t *b)
 	}
 	auto type = get_type (a);
 	auto scale = typed_binary_expr (type, QC_SCALE, a, b);
-	return edag_add_expr (scale);
+	return scale;
 }
 
 const expr_t *
@@ -1212,7 +1214,6 @@ do_dot (const expr_t *a, const expr_t *b)
 
 	auto type = base_type (get_type (a));
 	auto dot = typed_binary_expr (type, QC_DOT, a, b);
-	dot = edag_add_expr (dot);
 	dot = apply_scale (type, dot, prod);
 	return dot;
 }
@@ -1248,7 +1249,6 @@ do_cross (const expr_t *a, const expr_t *b)
 
 	auto type = get_type (a);
 	auto cross = typed_binary_expr (type, QC_CROSS, a, b);
-	cross = edag_add_expr (cross);
 	cross = apply_scale (type, cross, prod);
 	return cross;
 }
@@ -1284,7 +1284,6 @@ do_wedge (const expr_t *a, const expr_t *b)
 
 	auto type = base_type (get_type (a));
 	auto wedge = typed_binary_expr (type, QC_WEDGE, a, b);
-	wedge = edag_add_expr (wedge);
 	wedge = apply_scale (type, wedge, prod);
 	return wedge;
 }
@@ -3180,7 +3179,6 @@ multivector_divide (const expr_t *e1, const expr_t *e2)
 				den = ext_expr (den, vector_type (stype, width), 2, false);
 			}
 			a[i] = typed_binary_expr (ct, '/', a[i], den);
-			a[i] = edag_add_expr (a[i]);
 		}
 		if (ext) {
 			auto e = new_expr_copy (ext);
@@ -3395,8 +3393,6 @@ algebra_reverse (const expr_t *e)
 			}
 			if (neg) {
 				auto rev = new_value_expr (new_type_value (ct, ones), false);
-				rev = edag_add_expr (rev);
-				r[i] = typed_binary_expr (ct, QC_HADAMARD, r[i], rev);
 				r[i] = edag_add_expr (rev);
 			}
 		}

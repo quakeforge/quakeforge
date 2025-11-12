@@ -108,7 +108,7 @@ remult_scale (const expr_t *expr, const expr_t *remove)
 	}
 	auto type = get_type (expr);
 	auto new = typed_binary_expr (type, QC_SCALE, scalee, mult);
-	return edag_add_expr (new);
+	return new;
 }
 
 static const expr_t *
@@ -218,7 +218,6 @@ optimize_cross (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	} else {
 		cross = typed_binary_expr (type, QC_CROSS, com, col);
 	}
-	cross = edag_add_expr (cross);
 	return cross;
 }
 
@@ -314,8 +313,7 @@ optimize_dot (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 		l = optimize_core (l);
 		auto type = get_type (expr);
 		auto e = typed_binary_expr (type, QC_DOT, l, l);
-		e = fold_constants (e);
-		return edag_add_expr (e);
+		return e;
 	} else {
 		l = optimize_core (l);
 		r = optimize_core (r);
@@ -438,8 +436,6 @@ optimize_dot (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 		auto fact = cast_expr (base_type (type),
 							   new_int_expr (factor, false));
 		expr = typed_binary_expr (type, '*', expr, fact);
-		expr = fold_constants (expr);
-		expr = edag_add_expr (expr);
 	} else {
 		// a•bxc where a and either b or c are constant
 		if (is_constant (l) && is_cross (r)) {
@@ -481,8 +477,6 @@ optimize_dot (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 			expr = offset_cast (type, l, ind);
 		} else {
 			expr = typed_binary_expr (type, QC_DOT, l, r);
-			expr = fold_constants (expr);
-			expr = edag_add_expr (expr);
 		}
 	}
 	if (neg) {
@@ -606,7 +600,6 @@ optimize_scale (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	}
 
 	scale = typed_binary_expr (type, QC_SCALE, col, common);
-	scale = edag_add_expr (scale);
 	return scale;
 }
 
@@ -686,7 +679,6 @@ optimize_mult (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	}
 
 	auto mult = typed_binary_expr (type, expr->expr.op, col, common);
-	mult = edag_add_expr (mult);
 	return mult;
 }
 
@@ -813,7 +805,6 @@ raise_scale (const expr_t *expr)
 		b = b->expr.e1;
 	}
 	expr = typed_binary_expr (type, op, a, b);
-	expr = edag_add_expr (expr);
 	if (a_mult || b_mult) {
 		if (op == QC_CROSS) {
 			const expr_t *mult;
@@ -823,8 +814,6 @@ raise_scale (const expr_t *expr)
 				mult = a_mult ? a_mult : b_mult;
 			}
 			expr = typed_binary_expr (type, QC_SCALE, expr, mult);
-			expr = fold_constants (expr);
-			expr = edag_add_expr (expr);
 		} else {
 			if (a_mult) {
 				expr = typed_binary_expr (type, '*', expr, a_mult);
@@ -832,7 +821,6 @@ raise_scale (const expr_t *expr)
 			if (b_mult) {
 				expr = typed_binary_expr (type, '*', expr, b_mult);
 			}
-			expr = edag_add_expr (expr);
 		}
 	}
 	return expr;
@@ -1300,8 +1288,6 @@ optimize_core (const expr_t *expr)
 			den = gather_factors ('*', type, den_fac, den_count);
 			expr = typed_binary_expr (type, '/', num, den);
 		}
-		expr = fold_constants (expr);
-		expr = edag_add_expr (expr);
 		if (neg) {
 			expr = neg_expr (expr);
 		}
