@@ -616,6 +616,7 @@ return_expr (function_t *f, const expr_t *e)
 		}
 	}
 
+	e = expr_optimize (e);
 	const type_t *t = get_type (e);
 	if (e->type == ex_compound || e->type == ex_multivec
 		|| ((is_algebra (t = get_type (e))
