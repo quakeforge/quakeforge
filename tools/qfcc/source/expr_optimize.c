@@ -467,6 +467,9 @@ optimize_dot (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 				r = binary_expr (QC_CROSS, b, c);
 			}
 		}
+		if (is_zero (l) || is_zero (r)) {
+			return &skip;
+		}
 		bool sign;
 		int ind;
 		auto type = get_type (expr);

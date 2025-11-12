@@ -247,11 +247,11 @@ is_ext (const expr_t *e)
 	return e && e->type == ex_extend;
 }
 
-static bool __attribute__((const))
+bool
 is_zero (const expr_t *e)
 {
 	if (e->type != ex_value) {
-		return false;
+		return is_nil (e);
 	}
 	auto type = get_type (e);
 	pr_type_t val[type_size (type)];

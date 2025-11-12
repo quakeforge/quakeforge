@@ -1208,6 +1208,7 @@ bool is_associative (const expr_t *expr) __attribute__((pure));
 bool ext_compat (const ex_extend_t *a, const ex_extend_t *b)
 	__attribute__((const));
 bool is_ext (const expr_t *e) __attribute__((const));
+bool is_zero (const expr_t *e) __attribute__((const));
 
 const expr_t *expr_optimize (const expr_t *expr);
 
