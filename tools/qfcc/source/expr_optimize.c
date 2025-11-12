@@ -773,6 +773,147 @@ optimize_dot_products (const expr_t **adds, const expr_t **subs)
 		}
 	}
 
+	for (auto scan = adds; *scan; scan++) {
+		if (is_dot (*scan)) {
+			auto e = *scan;
+			auto a = e->expr.e1;
+			auto b = e->expr.e2;
+			int a_count = 0;
+			int b_count = 0;
+			for (auto s = adds; *s; s++) {
+				if (s != scan && is_dot (*s)) {
+					a_count += ((*s)->expr.e1 == a) + ((*s)->expr.e2 == a);
+					b_count += ((*s)->expr.e1 == b) + ((*s)->expr.e2 == b);
+				}
+			}
+			for (auto s = subs; *s; s++) {
+				if (s != scan && is_dot (*s)) {
+					a_count += ((*s)->expr.e1 == a) + ((*s)->expr.e2 == a);
+					b_count += ((*s)->expr.e1 == b) + ((*s)->expr.e2 == b);
+				}
+			}
+			if (b_count > a_count) {
+				// swap a and b
+				a = e->expr.e2;
+				b = e->expr.e1;
+				a_count = b_count;
+			}
+			if (!a_count) {
+				continue;
+			}
+			*scan = &skip;
+			const expr_t *com_adds[a_count + 2] = {};
+			const expr_t *com_subs[a_count + 2] = {};
+			a_count = 0;
+			com_adds[a_count++] = b;
+			for (auto s = adds; *s; s++) {
+				if (s != scan && is_dot (*s)) {
+					if ((*s)->expr.e1 == a) {
+						com_adds[a_count++] = (*s)->expr.e2;
+						*s = &skip;
+					} else if ((*s)->expr.e2 == a) {
+						com_adds[a_count++] = (*s)->expr.e1;
+						*s = &skip;
+					}
+				}
+			}
+			a_count = 0;
+			for (auto s = subs; *s; s++) {
+				if (s != scan && is_dot (*s)) {
+					if ((*s)->expr.e1 == a) {
+						com_subs[a_count++] = (*s)->expr.e2;
+						*s = &skip;
+					} else if ((*s)->expr.e2 == a) {
+						com_subs[a_count++] = (*s)->expr.e1;
+						*s = &skip;
+					}
+				}
+			}
+			clean_skips (com_adds);
+			clean_skips (com_subs);
+			auto vec_type = get_type (a);
+			auto sum = gather_terms (vec_type, com_adds, com_subs);
+			if (is_zero (sum)) {
+				sum = nullptr;
+			}
+			if (sum) {
+				sum = optimize_core (sum);
+			}
+			if (sum) {
+				auto type = base_type (vec_type);
+				auto e = typed_binary_expr (type, QC_DOT, a, sum);
+				*scan = e;
+			}
+		}
+	}
+	for (auto scan = subs; *scan; scan++) {
+		if (is_dot (*scan)) {
+			auto e = *scan;
+			auto a = e->expr.e1;
+			auto b = e->expr.e2;
+			int a_count = 0;
+			int b_count = 0;
+			for (auto s = adds; *s; s++) {
+				if (s != scan && is_dot (*s)) {
+					a_count += ((*s)->expr.e1 == a) + ((*s)->expr.e2 == a);
+					b_count += ((*s)->expr.e1 == b) + ((*s)->expr.e2 == b);
+				}
+			}
+			for (auto s = subs; *s; s++) {
+				if (s != scan && is_dot (*s)) {
+					a_count += ((*s)->expr.e1 == a) + ((*s)->expr.e2 == a);
+					b_count += ((*s)->expr.e1 == b) + ((*s)->expr.e2 == b);
+				}
+			}
+			if (b_count > a_count) {
+				// swap a and b
+				a = e->expr.e2;
+				b = e->expr.e1;
+				a_count = b_count;
+			}
+			if (!a_count) {
+				continue;
+			}
+			*scan = &skip;
+			const expr_t *com_adds[a_count + 2] = {};
+			const expr_t *com_subs[a_count + 2] = {};
+			a_count = 0;
+			com_adds[a_count++] = b;
+			for (auto s = adds; *s; s++) {
+				if (s != scan && is_dot (*s)) {
+					if ((*s)->expr.e1 == a) {
+						com_adds[a_count++] = (*s)->expr.e2;
+						*s = &skip;
+					} else if ((*s)->expr.e2 == a) {
+						com_adds[a_count++] = (*s)->expr.e1;
+						*s = &skip;
+					}
+				}
+			}
+			a_count = 0;
+			for (auto s = subs; *s; s++) {
+				if (s != scan && is_dot (*s)) {
+					if ((*s)->expr.e1 == a) {
+						com_subs[a_count++] = (*s)->expr.e2;
+						*s = &skip;
+					} else if ((*s)->expr.e2 == a) {
+						com_subs[a_count++] = (*s)->expr.e1;
+						*s = &skip;
+					}
+				}
+			}
+			clean_skips (com_adds);
+			clean_skips (com_subs);
+			auto vec_type = get_type (a);
+			auto sum = gather_terms (vec_type, com_subs, com_adds);
+			if (sum && !is_zero (sum)) {
+				auto type = base_type (vec_type);
+				auto e = typed_binary_expr (type, QC_DOT, a, sum);
+				*scan = e;
+			}
+		}
+	}
+
 	clean_skips (adds);
 	clean_skips (subs);
 }
