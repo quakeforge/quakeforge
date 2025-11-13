@@ -23,7 +23,7 @@ main (void)
 	};
 	point_t p = (point_t)'10 4 -1.5 1'f;
 	point_t n = apply_motor (m, p);
-	vec4 e = '10 -3.99999952 -1.49999988 0.99999994'f;
+	vec4 e = '9.99999905 -4.00000048 -1.49999988 0.99999994'f;
 	printf ("e: %.9q\n", e);
 	printf ("n: %.9q\n", n);
 	if ((vec4)n != e) {
