@@ -665,13 +665,19 @@ count_factors (const expr_t *expr)
 	return factors;
 }
 
-bool __attribute__((pure))
+bool
+is_swizzle (const expr_t *expr)
+{
+	return (expr && expr->type == ex_swizzle);
+}
+
+bool
 is_cross (const expr_t *expr)
 {
 	return (expr && expr->type == ex_expr && (expr->expr.op == QC_CROSS));
 }
 
-bool __attribute__((pure))
+bool
 is_dot (const expr_t *expr)
 {
 	return (expr && expr->type == ex_expr && (expr->expr.op == QC_DOT));
@@ -680,7 +686,7 @@ is_dot (const expr_t *expr)
 static bool __attribute__((pure))
 is_ortho (const expr_t *expr)
 {
-	if (!expr || expr->type != ex_swizzle
+	if (!expr || !is_swizzle (expr)
 		|| type_width (get_type (expr->swizzle.src)) != 2) {
 		return false;
 	}
@@ -1264,8 +1270,20 @@ dot_expr (const expr_t *a, const expr_t *b)
 		// propagated zero
 		return 0;
 	}
+	bool neg = false;
+	if (is_neg_const (a)) {
+		neg = !neg;
+		a = neg_expr (a);
+	}
+	if (is_neg_const (b)) {
+		neg = !neg;
+		b = neg_expr (b);
+	}
 
 	auto dot = distribute_product (a, b, do_dot, false);
+	if (neg) {
+		dot = neg_expr (dot);
+	}
 	return dot;
 }
 

@@ -112,6 +112,98 @@ remult_scale (const expr_t *expr, const expr_t *remove)
 }
 
 static const expr_t *
+reswizzle (const expr_t *src, const expr_t *swiz)
+{
+	auto new = new_expr_copy (swiz);
+	new->swizzle.src = src;
+	auto f = fold_constants (new);
+	return edag_add_expr (f);
+}
+
+static bool
+is_permute (const expr_t *swiz)
+{
+	if (!is_swizzle (swiz)) {
+		return false;
+	}
+	int width = type_width (swiz->swizzle.type);
+	if (width != type_width (get_type (swiz->swizzle.src))) {
+		return false;
+	}
+	auto source = swiz->swizzle.source;
+	for (int i = 1; i < width; i++) {
+		for (int j = 0; j < i; j++) {
+			if (source[i] == source[j]) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+static bool
+is_mirror (const expr_t *swiz)
+{
+	if (!is_swizzle (swiz)) {
+		return false;
+	}
+	int width = type_width (swiz->swizzle.type);
+	if (width != type_width (get_type (swiz->swizzle.src))) {
+		return false;
+	}
+	int source[width];
+	for (int i = 0; i < width; i++) {
+		source[i] = swiz->swizzle.source[i];
+	}
+	bool done;
+	int count = 0;
+	do {
+		done = true;
+		for (int i = 1; i < width; i++) {
+			for (int j = 0; j < i; j++) {
+				if (source[j] > source[i]) {
+					int t = source[j];
+					source[j] = source[i];
+					source[i] = t;
+					done = false;
+					count++;
+				}
+			}
+		}
+	} while (!done);
+	return count & 1;
+}
+
+static bool
+is_triaxial (const expr_t *vec)
+{
+	if (vec->type != ex_value) {
+		return false;
+	}
+	auto type = base_type (get_type (vec));
+	int width = type_width (get_type (vec));
+	for (int i = 0; i < width; i++) {
+		auto comp = offset_cast (type, vec, i);
+		if (!comp) {
+			// component is 0
+			return false;
+		}
+		if (is_integral (type)) {
+			long c = expr_integral (comp);
+			if (c != 1) {
+				return false;
+			}
+		} else {
+			double c = expr_floating (comp);
+			if (c != 1) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+static const expr_t *
 optimize_cross (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 {
 	auto l = traverse_scale (expr)->expr.e1;
@@ -967,6 +1059,152 @@ raise_scale (const expr_t *expr)
 	return expr;
 }
 
+static const expr_t *
+build_cyclic (const expr_t *src, int ind)
+{
+	auto type = get_type (src);
+	auto e = new_expr ();
+	e->type = ex_swizzle;
+	e->swizzle = (ex_swizzle_t) {
+		.src = src,
+		.type = type,
+	};
+	for (int i = 0; i < type_width (type); i++) {
+		e->swizzle.source[i] = (i + ind) % type_width (type);
+	}
+	auto f = fold_constants (e);
+	return edag_add_expr (f);
+}
+
+static const expr_t *
+build_fanout (const expr_t *src)
+{
+	scoped_src_loc (src);
+	auto type = get_type (src);
+	const expr_t *terms[type_width (type) + 1] = {};
+	const expr_t *null_subs[1] = {};
+	for (int i = 0; i < type_width (type); i++) {
+		terms[i] = build_cyclic (src, i);
+	}
+	return gather_terms (type, terms, null_subs);
+}
+
+static const expr_t *
+build_swizzle_cross (const expr_t *src, bool rev)
+{
+	const expr_t *a[2] = { build_cyclic (src, 1) };
+	const expr_t *b[2] = { build_cyclic (src, 2) };
+	if (rev) {
+		return gather_terms (get_type (src), b, a);
+	} else {
+		return gather_terms (get_type (src), a, b);
+	}
+}
+
+static const expr_t *
+optimize_swizzle (const expr_t *expr)
+{
+	auto src = expr->swizzle.src;
+	if (is_ext (src)) {
+		return ext_swizzle (src, expr);
+	}
+	if (is_swizzle (src)) {
+		src = optimize_swizzle (src);
+	}
+	if (is_swizzle (src)) {
+		auto pswiz = expr->swizzle;
+		auto cswiz = src->swizzle;
+		int width = type_width (pswiz.type);
+		ex_swizzle_t nswiz = (ex_swizzle_t) {
+			.src = cswiz.src,
+			.neg = pswiz.neg & ((1 << width) - 1),
+			.zero = pswiz.zero & ((1 << width) - 1),
+			.type = pswiz.type,
+		};
+
+		for (int i = 0; i < width; i++) {
+			int ind = cswiz.source[pswiz.source[i]];
+			nswiz.source[i] = ind;
+			nswiz.neg ^= ((cswiz.neg >> ind) & 1) << i;
+			nswiz.zero |= ((cswiz.zero >> ind) & 1) << i;
+		}
+
+		auto new = new_expr_copy (expr);
+		new->swizzle = nswiz;
+		expr = fold_constants (new);
+		expr = edag_add_expr (expr);
+	}
+	if (is_swizzle (expr)
+		&& expr->swizzle.type == get_type (expr->swizzle.src)) {
+		int width = type_width (expr->swizzle.type);
+		bool ident = true;
+		for (int i = 0; i < width; i++) {
+			ident &= expr->swizzle.source[i] == (unsigned) i;
+			ident &= !expr->swizzle.neg;
+			ident &= !expr->swizzle.zero;
+		}
+		if (ident) {
+			expr = expr->swizzle.src;
+		}
+	}
+	return expr;
+}
+
+static bool
+optimize_swizzles (const expr_t **exprs)
+{
+	bool did_something = false;
+	for (auto scan = exprs; *scan; scan++) {
+		// recognize expressions like [1,1,1]*(p•[1,1,1])
+		if (is_scale (*scan) && is_triaxial((*scan)->expr.e1)
+			&& is_dot ((*scan)->expr.e2)) {
+			auto dot = (*scan)->expr.e2;
+			const expr_t *src = nullptr;
+			if (is_constant (dot->expr.e1) && is_triaxial (dot->expr.e1)) {
+				src = dot->expr.e2;
+			}
+			if (is_constant (dot->expr.e2) && is_triaxial (dot->expr.e2)) {
+				src = dot->expr.e1;
+			}
+			if (src) {
+				*scan = build_fanout (src);
+				did_something = true;
+			}
+		}
+		if (is_cross (*scan) && is_triaxial((*scan)->expr.e2)) {
+			*scan = build_swizzle_cross ((*scan)->expr.e1, false);
+			did_something = true;
+		}
+		if (is_cross (*scan) && is_triaxial((*scan)->expr.e1)) {
+			*scan = build_swizzle_cross ((*scan)->expr.e2, true);
+			did_something = true;
+		}
+		if (is_swizzle (*scan) && is_permute (*scan)
+			&& is_cross ((*scan)->swizzle.src)) {
+			auto cross = (*scan)->swizzle.src;
+			bool mirror = is_mirror (*scan);
+			const expr_t *swiz = nullptr;
+			if (is_triaxial (cross->expr.e1)) {
+				swiz = reswizzle (cross->expr.e2, *scan);
+				mirror = !mirror;
+			}
+			if (is_triaxial (cross->expr.e2)) {
+				swiz = reswizzle (cross->expr.e1, *scan);
+			}
+			if (swiz) {
+				*scan = build_swizzle_cross (swiz, mirror);
+				did_something = true;
+			}
+		}
+		if (is_swizzle (*scan)) {
+			auto new = optimize_swizzle (*scan);
+			did_something |= *scan != new;
+			*scan = new;
+		}
+	}
+	return did_something;
+}
+
 static void
 optimize_scale_products (const expr_t **adds, const expr_t **subs)
 {
@@ -1292,15 +1530,12 @@ optimize_core (const expr_t *expr)
 		} else {
 			return neg_expr (neg);
 		}
-	} else if (expr->type == ex_swizzle) {
+	} else if (is_swizzle (expr)) {
 		auto src = optimize_core (expr->swizzle.src);
 		auto new = new_expr_copy (expr);
 		new->swizzle.src = src;
 		auto swiz = edag_add_expr (new);
-		if (is_ext (src)) {
-			swiz = ext_swizzle (src, swiz);
-		}
-		return swiz;
+		return optimize_swizzle (swiz);
 	} else if (is_ext (expr)) {
 		auto new = optimize_core (expr->extend.src);
 		if (new) {
@@ -1311,26 +1546,51 @@ optimize_core (const expr_t *expr)
 		return new;
 	} else if (is_sum (expr)) {
 		auto type = get_type (expr);
-		int count = count_terms (expr);
-		const expr_t *adds[count + 1] = {};
-		const expr_t *subs[count + 1] = {};
-		scatter_terms (expr, adds, subs);
+		{
+			int count = count_terms (expr);
+			const expr_t *adds[count + 1] = {};
+			const expr_t *subs[count + 1] = {};
+			scatter_terms (expr, adds, subs);
 
-		optimize_extends (adds);
-		optimize_extends (subs);
-
-		if (expr->expr.commutative) {
-			optimize_adds (adds);
-			optimize_adds (subs);
+			optimize_extends (adds);
+			optimize_extends (subs);
 		}
-		cancel_terms (adds, subs);
 
-		optimize_cross_products (adds, subs);
-		optimize_dot_products (adds, subs);
-		optimize_scale_products (adds, subs);
-		optimize_mult_products (adds, subs);
+		while (true) {
+			int count = count_terms (expr);
+			const expr_t *adds[count + 1] = {};
+			const expr_t *subs[count + 1] = {};
+			scatter_terms (expr, adds, subs);
 
-		expr = gather_terms (type, adds, subs);
+			bool did_something = false;
+			did_something |= optimize_swizzles (adds);
+			did_something |= optimize_swizzles (subs);
+			if (!did_something) {
+				break;
+			}
+
+			expr = gather_terms (type, adds, subs);
+		}
+
+		{
+			int count = count_terms (expr);
+			const expr_t *adds[count + 1] = {};
+			const expr_t *subs[count + 1] = {};
+			scatter_terms (expr, adds, subs);
+
+			if (expr->expr.commutative) {
+				optimize_adds (adds);
+				optimize_adds (subs);
+			}
+			cancel_terms (adds, subs);
+
+			optimize_cross_products (adds, subs);
+			optimize_dot_products (adds, subs);
+			optimize_scale_products (adds, subs);
+			optimize_mult_products (adds, subs);
+
+			expr = gather_terms (type, adds, subs);
+		}
 	} else if (is_quot (expr)) {
 		auto type = get_type (expr);
 		auto num = optimize_core (expr->expr.e1);

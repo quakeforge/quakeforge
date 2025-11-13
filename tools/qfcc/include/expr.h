@@ -1194,6 +1194,7 @@ void edag_pop_state (void);
 void edag_flush (void);
 const expr_t *edag_add_expr (const expr_t *e);
 
+bool is_swizzle (const expr_t *expr) __attribute__((pure));
 bool is_scale (const expr_t *expr) __attribute__((pure));
 bool is_cross (const expr_t *expr) __attribute__((pure));
 bool is_dot (const expr_t *expr) __attribute__((pure));
