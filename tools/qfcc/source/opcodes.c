@@ -265,6 +265,9 @@ operand_type (const operand_t *op, const char *name)
 		return ev_invalid;
 	}
 	etype_t     type = low_level_type (op->type);
+	if (!strcmp (name, "swizzle")) {
+		type = low_level_type (uint_type (op->type));
+	}
 	if (type == ev_vector || type == ev_quaternion) {
 		return ev_float;
 	}
