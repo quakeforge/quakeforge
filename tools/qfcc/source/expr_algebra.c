@@ -59,6 +59,49 @@ get_group_mask (const type_t *type, algebra_t *algebra)
 	}
 }
 
+static const expr_t *
+indexed_swizzle (const type_t *type, const expr_t *expr, int offset)
+{
+	char swizzle_str[] = "xyzw";
+	swizzle_str[offset + type_width (type)] = 0;
+	auto swizzle = new_swizzle_expr (expr, swizzle_str + offset);
+	swizzle = fold_constants (swizzle);
+	if (is_error (swizzle) || is_zero (swizzle)) {
+		return nullptr;
+	}
+	return edag_add_expr (swizzle);
+}
+
+static bool
+is_neg_const (const expr_t *e)
+{
+	if (!is_math (get_type (e))) {
+		return false;
+	}
+	if (is_constant (e)) {
+		auto type = base_type (get_type (e));
+		int width = type_width (get_type (e));
+		for (int i = 0; i < width; i++) {
+			auto comp = indexed_swizzle (type, e, i);
+			if (!comp) {
+				// component is 0
+				return false;
+			}
+			if (is_integral (type)) {
+				if (expr_integral (e) >= 0) {
+					return false;
+				}
+			} else {
+				if (expr_floating (e) >= 0) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
 bool
 is_neg (const expr_t *e)
 {
@@ -330,14 +373,7 @@ offset_cast (const type_t *type, const expr_t *expr, int offset)
 		return neg_expr (offset_cast (type, e, offset));
 	}
 
-	char swizzle_str[] = "xyzw";
-	swizzle_str[offset + type_width (type)] = 0;
-	auto swizzle = new_swizzle_expr (expr, swizzle_str + offset);
-	swizzle = fold_constants (swizzle);
-	if (is_error (swizzle) || is_zero (swizzle)) {
-		return nullptr;
-	}
-	return edag_add_expr (swizzle);
+	return indexed_swizzle (type, expr, offset);
 }
 
 static symbol_t *
@@ -1262,6 +1298,20 @@ cross_expr (const expr_t *a, const expr_t *b)
 	if (!a || !b) {
 		// propagated zero
 		return 0;
+	}
+	bool neg = false;
+	if (is_neg_const (a)) {
+		neg = !neg;
+		a = neg_expr (a);
+	}
+	if (is_neg_const (b)) {
+		neg = !neg;
+		b = neg_expr (b);
+	}
+	if (neg) {
+		auto t = a;
+		a = b;
+		b = t;
 	}
 
 	auto cross = distribute_product (a, b, do_cross, true);
