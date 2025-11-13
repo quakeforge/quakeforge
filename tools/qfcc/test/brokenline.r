@@ -112,7 +112,9 @@ main ()
 		printf ("Tm:%g %v %v %g\n", Tm.scalar, Tm.bvect, Tm.bvecp, Tm.qvec);
 		printf ("R:%g %v %v %g\n", R.scalar, R.bvect, R.bvecp, R.qvec);
 		printf ("e:%.9q\n", e);
+		auto E = (point_t)'-2.87867975 -2.12132001 1.5 1.00000012';
+		printf ("E:%.9q\n", E);
 		//FIXME conversion of bvec always uses |
-		return (e != (point_t)'-2.87867975 -2.12132001 1.5 1.00000012') ? 1 : 0;
+		return (e != E) ? 1 : 0;
 	}
 }

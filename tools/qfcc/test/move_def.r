@@ -91,10 +91,10 @@ int main ()
 
 	camera_first_person (&state);
 	printf ("e:0.999998868 '0.000872663571 0.000872663571 0.000872663571' '2.00068855 0.00505431555 -1.4997437' 0.000441567507\n");
-	printf ("e:'-0.0872664601 -0.0872664601 -0.0872664601' '-0.199999988 -0.199999988 -0.199999988'\n");
 	printf ("g:%.9g %.9v %.9v %.9g\n", state.M.scalar,
 	        state.M.bvect, state.M.bvecp,
 	        state.M.qvec);
+	printf ("e:'-0.0872664601 -0.0872664601 -0.0872664601' '-0.199999988 -0.199999988 -0.199999988'\n");
 	printf ("g:%.9v %.9v\n", state.B.bvect, state.B.bvecp);
 	bool ok = true;
 	if (state.M.scalar != 0.999998868
