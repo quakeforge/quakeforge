@@ -2044,7 +2044,7 @@ flow_analyze_pointer_operand (operand_t *ptrop, set_t *def)
 			op = ptrop->value->pointer.tempop;
 		}
 		if (op) {
-			flow_add_op_var (def, op, dol_only_alias | dol_full);
+			flow_add_op_var (def, op, dol_full);
 		}
 	}
 	return op;
@@ -2071,13 +2071,13 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 	if (def) {
 		set_empty (def);
 		for (operand_t *op = s->def; op; op = op->next) {
-			flow_add_op_var (def, op, dol_only_alias | dol_full);
+			flow_add_op_var (def, op, dol_full);
 		}
 	}
 	if (kill) {
 		set_empty (kill);
 		for (operand_t *op = s->kill; op; op = op->next) {
-			flow_add_op_var (kill, op, dol_only_alias | dol_full);
+			flow_add_op_var (kill, op, dol_full);
 		}
 	}
 	if (operands) {
@@ -2095,7 +2095,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				flow_add_op_var (use, s->opa, dol_partial);
 				flow_add_op_var (use, s->opb, dol_partial);
 			}
-			flow_add_op_var (def, s->opc, dol_only_alias | dol_full);
+			flow_add_op_var (def, s->opc, dol_full);
 			if (operands) {
 				operands[0] = s->opc;
 				operands[1] = s->opa;
@@ -2103,10 +2103,10 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_expr:
-			flow_add_op_var (def, s->opc, dol_only_alias | dol_full);
-			flow_add_op_var (use, s->opa, dol_partial);
+			flow_add_op_var (def, s->opc, dol_full);
+			flow_add_op_var (use, s->opa, dol_full);
 			if (s->opb)
-				flow_add_op_var (use, s->opb, dol_partial);
+				flow_add_op_var (use, s->opb, dol_full);
 			if (operands) {
 				operands[0] = s->opc;
 				operands[1] = s->opa;
@@ -2114,8 +2114,8 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_assign:
-			flow_add_op_var (def, s->opa, dol_only_alias | dol_full);
-			flow_add_op_var (use, s->opc, dol_partial);
+			flow_add_op_var (def, s->opa, dol_full);
+			flow_add_op_var (use, s->opc, dol_full);
 			if (operands) {
 				operands[0] = s->opa;
 				operands[1] = s->opc;
@@ -2166,7 +2166,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				src_op = s->opa;
 				aux_op2 = s->opc;
 			} else if (!strcmp (s->opcode, "store")) {
-				flow_add_op_var (use, s->opc, dol_partial);
+				flow_add_op_var (use, s->opc, dol_full);
 				res_op = flow_analyze_pointer_operand (s->opa, def);
 				src_op = s->opc;
 				aux_op2 = s->opa;
@@ -2186,10 +2186,10 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_state:
-			flow_add_op_var (use, s->opa, dol_partial);
-			flow_add_op_var (use, s->opb, dol_partial);
+			flow_add_op_var (use, s->opa, dol_full);
+			flow_add_op_var (use, s->opb, dol_full);
 			if (s->opc)
-				flow_add_op_var (use, s->opc, dol_partial);
+				flow_add_op_var (use, s->opc, dol_full);
 			//FIXME entity members
 			if (operands) {
 				operands[1] = s->opa;
@@ -2226,30 +2226,29 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				// call uses opc to specify the destination of the return value
 				// parameter usage is taken care of by the statement's use
 				// list
-				flow_add_op_var (def, s->opc, dol_only_alias | dol_full);
+				flow_add_op_var (def, s->opc, dol_full);
 				// don't want old argument processing
 				calln = -1;
 				if (operands && s->opc->op_type != op_value) {
 					operands[0] = s->opc;
 				}
-				flow_add_op_var (use, s->opa, dol_partial);
+				flow_add_op_var (use, s->opa, dol_full);
 				func_use_memory = true;
 			} else if (strncmp (s->opcode, "call", 4) == 0) {
 				calln = s->opcode[4] - '0';
-				flow_add_op_var (use, s->opa, dol_partial);
+				flow_add_op_var (use, s->opa, dol_full);
 				func_use_memory = true;
 			} else if (strncmp (s->opcode, "rcall", 5) == 0) {
 				calln = s->opcode[5] - '0';
-				flow_add_op_var (use, s->opa, dol_partial);
-				flow_add_op_var (use, s->opb, dol_partial);
+				flow_add_op_var (use, s->opa, dol_full);
+				flow_add_op_var (use, s->opb, dol_full);
 				if (s->opc)
-					flow_add_op_var (use, s->opc, dol_partial);
+					flow_add_op_var (use, s->opc, dol_full);
 				func_use_memory = true;
 			}
 			if (calln >= 0) {
 				if (def) {
-					flow_add_op_var (def, &flow_params[0].op,
-									 dol_only_alias | dol_full);
+					flow_add_op_var (def, &flow_params[0].op, dol_full);
 				}
 				if (kill) {
 					for (i = 1; i < num_flow_params; i++) {
