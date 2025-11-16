@@ -724,12 +724,14 @@ flow_build_vars (function_t *func)
 		clear_operand_chain (s->def);
 		clear_operand_chain (s->kill);
 	}
-	// count .return and .param_[0-7] as they are always needed
-	for (i = 0; i < num_flow_params; i++) {
-		def_t      *def = param_symbol (flow_params[i].name)->def;
-		def_visit_all (def, dol_all, flow_def_clear_flowvars, 0);
-		flow_params[i].op.def = def;
-		num_vars += count_operand (&flow_params[i].op);
+	if (options.code.progsversion < PROG_VERSION) {
+		// count .return and .param_[0-7] as they are always needed
+		for (i = 0; i < num_flow_params; i++) {
+			def_t      *def = param_symbol (flow_params[i].name)->def;
+			def_visit_all (def, dol_all, flow_def_clear_flowvars, 0);
+			flow_params[i].op.def = def;
+			num_vars += count_operand (&flow_params[i].op);
+		}
 	}
 	// then run through the statements in the function looking for accessed
 	// variables
@@ -769,9 +771,11 @@ flow_build_vars (function_t *func)
 	}
 
 	func->num_vars = 0;	// incremented by add_operand
-	// first, add .return and .param_[0-7] as they are always needed
-	for (i = 0; i < num_flow_params; i++)
-		add_operand (func, &flow_params[i].op);
+	if (options.code.progsversion < PROG_VERSION) {
+		// first, add .return and .param_[0-7] as they are always needed
+		for (i = 0; i < num_flow_params; i++)
+			add_operand (func, &flow_params[i].op);
+	}
 	// then run through the statements in the function adding accessed
 	// variables
 	for (i = 0; i < func->num_statements; i++) {
