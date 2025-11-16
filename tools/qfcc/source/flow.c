@@ -2138,11 +2138,13 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 					print_type (s->opb->type);
 					internal_error (s->expr, "unexpected type for memset/move");
 				}
-				if (s->type == st_move) {
-					flow_set_minsize (s->opa, size);
-				}
-				if (s->type == st_move || s->type == st_memset) {
-					flow_set_minsize (s->opc, size);
+				if (def) {
+					if (s->type == st_move) {
+						flow_set_minsize (s->opa, size);
+					}
+					if (s->type == st_move || s->type == st_memset) {
+						flow_set_minsize (s->opc, size);
+					}
 				}
 			} else {
 				size = -1;
