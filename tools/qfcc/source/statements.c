@@ -2141,6 +2141,25 @@ expr_expr (sblock_t *sblock, const expr_t *e, operand_t **op)
 			opcode = "qdot";
 		}
 	}
+	if (is_matrix (get_type (e->expr.e1)) && strcmp (opcode, "scale") == 0) {
+		scoped_src_loc (e);
+		auto mat = e->expr.e1;
+		auto scale = e->expr.e2;
+		auto mat_type = get_type (mat);
+		auto col_type = column_type (mat_type);
+		int width = type_width (col_type);
+		if (!*op) {
+			*op = temp_operand (e->expr.type, e);
+		}
+		for (int i = 0; i < type_cols (mat_type); i++) {
+			auto col = new_array_expr (mat, new_int_expr (i, true));
+			col->array.type = col_type;
+			auto scl = new_binary_expr (QC_SCALE, col, scale);
+			auto t = offset_alias_operand (get_type (col), i * width, *op, e);
+			sblock = statement_subexpr (sblock, scl, &t);
+		}
+		return sblock;
+	}
 	s = new_statement (st_expr, opcode, e);
 	sblock = statement_subexpr (sblock, e->expr.e1, &s->opa);
 	sblock = statement_subexpr (sblock, e->expr.e2, &s->opb);
