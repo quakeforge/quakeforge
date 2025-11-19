@@ -889,6 +889,7 @@ typedef struct fmt_state_s {
 	fmt_item_t *fmt_items;
 	fmt_item_t **fi;
 	int         fmt_count;
+	int         argc;
 	prstr_at_handler_t at_handler;
 	void       *at_handler_data;
 } fmt_state_t;
@@ -1074,12 +1075,16 @@ static void
 fmt_state_conversion (fmt_state_t *state)
 {
 	progs_t    *pr = state->pr;
-	char        conv;
-	pr_ptr_t    at_param;
-	switch ((conv = *state->c++)) {
+	if (state->fmt_count >= state->argc) {
+		// avoid accessing outside the supplied args pointers
+		state->fmt_count++;		// increment so "too many" check is done
+		state->state = 0;
+		return;
+	}
+	switch (char conv = *state->c++) {
 		case '@':
 			// object
-			at_param = P_UINT (pr, state->fmt_count);
+			pr_ptr_t at_param = P_UINT (pr, state->fmt_count);
 			if (state->at_handler) {
 				const char *at_str = state->at_handler (pr, at_param,
 														state->at_handler_data);
@@ -1273,6 +1278,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 	state.pr = pr;
 	state.res = res;
 	state.args = args;
+	state.argc = count;
 	state.fi = &state.fmt_items;
 	*state.fi = new_fmt_item (res);
 	state.c = format;
