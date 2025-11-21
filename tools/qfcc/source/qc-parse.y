@@ -1504,11 +1504,13 @@ attribute_list
 
 attribute
 	: NAME %prec LOW			{ $$ = new_attribute ($1->name, 0, ctx); }
+	| NAME '(' ')'				{ $$ = new_attribute ($1->name, 0, ctx); }
 	| NAME '(' expr_list ')'	{ $$ = new_attribute ($1->name, $3, ctx); }
 	;
 
 attrfunc
 	: NAME %prec LOW			{ $$ = new_attrfunc ($1->name, 0); }
+	| NAME '(' ')'				{ $$ = new_attrfunc ($1->name, 0); }
 	| NAME '(' expr_list ')'	{ $$ = new_attrfunc ($1->name, $3); }
 	;
 
