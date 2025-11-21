@@ -1723,7 +1723,7 @@ algebra_optimize (const expr_t *expr)
 	} else if (expr->type != ex_multivec) {
 		return optimize_core (expr);
 	} else {
-		auto algebra = algebra_get (get_type (expr));
+		auto algebra = expr->multivec.algebra;
 		auto layout = &algebra->layout;
 		const expr_t *groups[layout->count] = {};
 		expr = mvec_expr (expr, algebra);
