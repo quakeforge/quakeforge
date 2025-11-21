@@ -463,7 +463,10 @@ proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
 			break;
 		}
 	}
+	auto space = symtab->space;
+	symtab->space = pr.error_space;
 	ctx->language->parse_declaration (spec, sym, nullptr, symtab, nullptr, ctx);
+	symtab->space = space;
 	return error (expr, "undefined symbol `%s`", sym->name);
 }
 

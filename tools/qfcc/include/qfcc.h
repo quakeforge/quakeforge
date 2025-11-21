@@ -73,6 +73,7 @@ typedef struct pr_info_s {
 										///< data is stored in the progs file
 	struct defspace_s *type_data;		///< encoded type information.
 	struct defspace_s *debug_data;		///< additional debug data.
+	struct defspace_s *error_space;		///< for undefined variable auto-decls
 	struct strpool_s *comp_file_set;
 	struct DARRAY_TYPE (const char *) comp_files;
 	const char *comp_dir;

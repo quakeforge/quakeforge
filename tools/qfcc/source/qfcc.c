@@ -137,6 +137,7 @@ InitData (void)
 		defspace_delete (pr.entity_data);
 		defspace_delete (pr.type_data);
 		defspace_delete (pr.debug_data);
+		defspace_delete (pr.error_space);
 		strpool_delete (pr.comp_file_set);
 	}
 
@@ -170,6 +171,7 @@ InitData (void)
 	line->line = -1;
 
 	pr.far_data = defspace_new (ds_backed);
+	pr.error_space = defspace_new (ds_virtual);
 
 	pr.near_data = defspace_new (ds_backed);
 	pr.near_data->data = calloc (65536, sizeof (pr_type_t));
