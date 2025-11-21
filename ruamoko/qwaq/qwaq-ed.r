@@ -993,6 +993,7 @@ arp_end (void)
 }
 
 model_t create_ico();
+model_t create_block();
 msgbuf_t create_quadsphere();
 void leafnode();
 
@@ -1073,6 +1074,7 @@ main (int argc, string *argv)
 	entity_t Plane_ent = Scene_CreateEntity ([main_window scene]);
 	entity_t Tetrahedron_ent = Scene_CreateEntity ([main_window scene]);
 	entity_t Icosahedron_ent = Scene_CreateEntity ([main_window scene]);
+	entity_t block_ent = Scene_CreateEntity ([main_window scene]);
 
 	add_target (nh_ent);
 	add_target (Capsule_ent);
@@ -1080,6 +1082,7 @@ main (int argc, string *argv)
 	add_target (Octahedron_ent);
 	add_target (Tetrahedron_ent);
 	add_target (Icosahedron_ent);
+	add_target (block_ent);
 
 	printf ("Night Heron: %lx\n", nh_ent);
 	printf ("Capsule: %lx\n", Capsule_ent);
@@ -1095,6 +1098,7 @@ main (int argc, string *argv)
 	Entity_SetModel (Plane_ent, Model_Load ("progs/Plane.mdl"));
 	Entity_SetModel (Tetrahedron_ent, Model_Load ("progs/Tetrahedron.mdl"));
 	Entity_SetModel (Icosahedron_ent, create_ico());
+	Entity_SetModel (block_ent, create_block());
 
 	Transform_SetLocalPosition(Entity_GetTransform (nh_ent), {15, 0, 10, 1});
 	Transform_SetLocalRotation(Entity_GetTransform (nh_ent), {0.5, -0.5, 0.5, 0.5});
@@ -1103,6 +1107,7 @@ main (int argc, string *argv)
 	Transform_SetLocalPosition(Entity_GetTransform (Octahedron_ent), {0, -2, 0.5, 1});
 	Transform_SetLocalPosition(Entity_GetTransform (Tetrahedron_ent), {0, 2, 0.5, 1});
 	Transform_SetLocalPosition(Entity_GetTransform (Icosahedron_ent), {-2, 2, 0.5, 1});
+	Transform_SetLocalPosition(Entity_GetTransform (block_ent), {-2, -2, 4.5, 1});
 	Transform_SetLocalScale (Entity_GetTransform (Plane_ent), {25, 25, 25, 1});
 
 	id player = [[Player player:[main_window scene]] retain];

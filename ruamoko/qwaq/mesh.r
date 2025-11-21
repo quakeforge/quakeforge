@@ -8,11 +8,181 @@
 
 void printf(string fmt, ...);
 
+float sign (float x)
+{
+	return x < 0 ? -1 : 1;
+}
+
+typedef PGA.vec pga_vec_t;
+vec3
+calc_inertia_tensor (msgbuf_t model_buf)
+{
+	qf_model_t model;
+	qf_mesh_t mesh;
+	MsgBuf_ReadBytes (model_buf, &model, sizeof (model) * 4);
+	int offset = model.meshes.offset + sizeof(mesh) * 0 * 4;
+	MsgBuf_ReadSeek (model_buf, offset, msg_set);
+	MsgBuf_ReadBytes (model_buf, &mesh, sizeof (mesh) * 4);
+
+	int indices = mesh.indices + offset;
+	int vertices = mesh.vertices.offset + offset;
+
+	point_t C = nil;
+	for (uint i = 0; i < mesh.triangle_count; i++) {
+		uint inds[3];
+		MsgBuf_ReadSeek (model_buf, indices + i * sizeof (inds) * 4, msg_set);
+		MsgBuf_ReadBytes (model_buf, inds, sizeof (inds) * 4);
+		vec4 v[3];
+		for (int j = 0; j < 3; j++) {
+			MsgBuf_ReadSeek (model_buf, vertices + inds[j] * mesh.vertex_stride,
+							 msg_set);
+			MsgBuf_ReadBytes (model_buf, &v[j], sizeof(vec3) * 4);
+			v[j].w = 1;
+		}
+
+		@algebra (PGA) {
+			auto p0 = (point_t)v[0];
+			auto p1 = (point_t)v[1];
+			auto p2 = (point_t)v[2];
+			//auto vol = e123 ∨ p0 ∨ p1 ∨ p2;
+			auto vol = p0 ∨ p1 ∨ p2 ∨ e123;
+			C += (p0 + p1 + p2 + e123) * vol;
+		}
+	}
+	C /= 24;//4!
+
+	vec4 com;
+	@algebra (PGA) {
+		com = vec4(vec3(C / (e0 ∨ C)), 0);
+	}
+
+	mat3 I = {};
+	for (uint i = 0; i < mesh.triangle_count; i++) {
+		uint inds[3];
+		MsgBuf_ReadSeek (model_buf, indices + i * sizeof (inds) * 4, msg_set);
+		MsgBuf_ReadBytes (model_buf, inds, sizeof (inds) * 4);
+		vec4 v[3];
+		for (int j = 0; j < 3; j++) {
+			MsgBuf_ReadSeek (model_buf, vertices + inds[j] * mesh.vertex_stride,
+							 msg_set);
+			MsgBuf_ReadBytes (model_buf, &v[j], sizeof(vec3) * 4);
+			v[j].w = 1;
+			v[j] -= com;
+		}
+
+		auto X = vec3(v[0].x, v[1].x, v[2].x);
+		auto Y = vec3(v[0].y, v[1].y, v[2].y);
+		auto Z = vec3(v[0].z, v[1].z, v[2].z);
+		float Ix = X•(X + X.yzx);
+		float Iy = Y•(Y + Y.yzx);
+		float Iz = Z•(Z + Z.yzx);
+		float Ixy = -X•Y - (X•Y.yzx + Y•X.yzx) / 2;
+		float Ixz = -X•Z - (X•Z.yzx + Z•X.yzx) / 2;
+		float Iyz = -Y•Z - (Y•Z.yzx + Z•Y.yzx) / 2;
+		@algebra (PGA) {
+			auto p0 = (point_t)v[0];
+			auto p1 = (point_t)v[1];
+			auto p2 = (point_t)v[2];
+			//auto vol = e123 ∨ p0 ∨ p1 ∨ p2;
+			auto vol = p0 ∨ p1 ∨ p2 ∨ e123;
+			I[0] += vec3 (Iy + Iz, Ixy, Ixz) * vol;
+			I[1] += vec3 (Ixy, Iz + Ix, Iyz) * vol;
+			I[2] += vec3 (Ixz, Iyz, Ix + Iy) * vol;
+		}
+	}
+
+	@algebra (PGA) {
+		I /= 60 * (e0 ∨ C);// assumes mass of 1
+	}
+	printf ("C=%q\n", C);
+	printf ("com=%q\n", com);
+	printf ("  %v\n", I[0]);
+	printf ("I=%v\n", I[1]);
+	printf ("  %v\n", I[2]);
+
+	motor_t R = { .scalar = 1, };
+	@algebra (PGA) {
+		for (int iter = 0; iter < 10; iter++) {
+			bool changed = false;
+			for (int i = 0; i < 3; i++) {
+				static const int p_set[] = { 0, 2, 1 };
+				static const int q_set[] = { 1, 0, 2 };
+				static const PGA.bvect B_set[] = { e12, e31, e23 };
+				static const PGA.vec basis[] = { e1, e2, e3 };
+
+				int p = p_set[i];
+				int q = q_set[i];
+				auto B = B_set[i];
+
+				float apq = PGA.vec()(I[p], 0) • basis[q];
+				float app = PGA.vec()(I[p], 0) • basis[p];
+				float aqq = PGA.vec()(I[q], 0) • basis[q];
+
+				if (fabs(apq) < 1e-10) {
+					continue;
+				}
+
+				vec2 tau = [aqq - app, 2 * apq];
+				if (tau.x < 0) {
+					tau = -tau;
+				}
+				float th = atan2 (tau.y, tau.x + sqrt(tau•tau));
+				auto Rk = exp (-0.5 * th * B);
+				PGA.vec rba[] = {
+					~Rk * e1 * Rk,
+					~Rk * e2 * Rk,
+					~Rk * e3 * Rk,
+				};
+				mat3 a = nil;
+				for (int j = 0; j < 3; j++) {
+					//var rba = ~rotor >>> basis;
+					//a = basis.map( (ej,j)=> (rotor >>> (
+					//				(1e1|rba[j])*a[0]
+					//			  + (1e2|rba[j])*a[1]
+					//			  + (1e3|rba[j])*a[2] )).Grade(1))
+					a[j] = (e1 • rba[j]) * I[0]
+						 + (e2 • rba[j]) * I[1]
+						 + (e3 • rba[j]) * I[2];
+					auto ax = Rk * pga_vec_t(a[j], 0) * ~Rk;
+					//a[j] = vec3(ax);
+					a[j] = ((vec4)ax).xyz;
+				}
+				R = Rk * R;
+				I = a;
+				changed = true;
+			}
+			if (!changed) break;
+		}
+	}
+	printf ("  %v\n", I[0]);
+	printf ("I=%v\n", I[1]);
+	printf ("  %v\n", I[2]);
+	auto c = @dual(pga_vec_t(com.xyz, 1));
+	@algebra (PGA) {
+		R = R * (0.5 - 0.5 * e123 * c);
+	}
+	printf ("%g %v %v %g\n", R.scalar, R.bvect, R.bvecp, R.qvec);
+	auto Ivec = vec3 (I[0][0], I[1][1], I[2][2]);
+	printf ("%v\n", Ivec);
+
+	MsgBuf_ReadSeek (model_buf, 0, msg_set);
+	return Ivec;
+}
+
 int ico_inds[] = {
 	0,  6,  4,   0,  9,  6,   0,  2,  9,   0,  8,  2,   0,  4,  8,
 	3, 10,  1,   3,  5, 10,   3,  7,  5,   3, 11,  7,   3,  1, 11,
 	1,  6, 11,   1,  4,  6,   1, 10,  4,   9, 11,  6,   9,  7, 11,
 	9,  2,  7,   5,  8, 10,   5,  2,  8,   5,  7,  2,   4, 10,  8,
+};
+
+int cube_inds[] = {
+	0,  5,  1,   0,  4,  5,
+	0,  3,  2,   0,  1,  3,
+	0,  6,  4,   0,  2,  6,
+	7,  4,  6,   7,  5,  4,
+	7,  1,  5,   7,  3,  1,
+	7,  2,  3,   7,  6,  2,
 };
 
 model_t create_ico ()
@@ -112,7 +282,113 @@ model_t create_ico ()
 		MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]) * 4);
 	}
 	MsgBuf_WriteBytes (msg, &new_inds, sizeof (new_inds) * 4);
+	calc_inertia_tensor (msg);
 	return Model_LoadMesh ("ico", msg);
+}
+
+quaternion exp(vector x)
+{
+	float l = x • x;
+	if (l < 1e-8) {
+		return '0 0 0 1';
+	}
+	float a = sqrt(l);
+	auto sc = sincos (a);
+	sc[0] /= a;
+	return [x * sc[0], sc[1]];
+}
+
+model_t create_block ()
+{
+	vec3 verts[8];
+	//quaternion q = exp('0.4 0.3 -0.2');//'20 15 0 60'f/65;
+	//printf ("%q\n", q);
+	for (int i = 0; i < 8; i++) {
+		verts[i][0] = (((i & 1) >> 0) - 0.5f) * 1;
+		verts[i][1] = (((i & 2) >> 1) - 0.5f) * 0.3;
+		verts[i][2] = (((i & 4) >> 2) - 0.5f) * 0.5;
+		//verts[i] = q * verts[i];
+	}
+
+	vec3 new_verts[36];
+	vec3 normals[36];
+	int new_inds[36];
+	int num_verts = 0;
+	for (int i = 0; i < 12; i++) {
+		int base = num_verts;
+		for (int j = 0; j < 3; j++) {
+			new_inds[num_verts] = num_verts;
+			new_verts[num_verts++] = verts[cube_inds[i * 3 + j]];
+		}
+		vec3 a = new_verts[base + 1] - new_verts[base];
+		vec3 b = new_verts[base + 2] - new_verts[base];
+		vec3 norm = -a × b;
+		norm /= sqrt (norm • norm);
+		for (int j = 0; j < 3; j++) {
+			normals[base + j] = norm;
+		}
+	}
+
+	qf_model_t model = {
+		.meshes = {
+			.offset = sizeof (qf_model_t) * 4,
+			.count = 1,
+		},
+	};
+	qf_mesh_t mesh = {
+		.triangle_count = 12,
+		.index_type = qfm_u32,
+		.indices = (sizeof (qf_mesh_t)
+					+ 2 * sizeof (qfm_attrdesc_t)
+					+ 2 * sizeof (new_verts)) * 4,
+		.attributes = {
+			.offset = (sizeof (qf_mesh_t)) * 4,
+			.count = 2,
+		},
+		.vertices = {
+			.offset = (sizeof (qf_mesh_t)
+						+ 2 * sizeof (qfm_attrdesc_t)) * 4,
+			.count = num_verts,
+		},
+		.vertex_stride = 4 * 2 * sizeof (new_verts[0]),
+		.scale = '1 1 1',
+		.bounds_min = '-0.5 -2 -4.5',
+		.bounds_max = ' 0.5  2  4.5',
+	};
+
+	qfm_attrdesc_t attributes[] = {
+		{
+			.offset = 0,
+			.stride = 2 * sizeof (vec3) * 4,
+			.attr = qfm_position,
+			.type = qfm_f32,
+			.components = 3,
+		},
+		{
+			.offset = sizeof (vec3) * 4,
+			.stride = 2 * sizeof (vec3) * 4,
+			.attr = qfm_normal,
+			.type = qfm_f32,
+			.components = 3,
+		},
+	};
+
+	uint size = sizeof (qf_model_t)
+			  + sizeof (qf_mesh_t)
+			  + sizeof (qfm_attrdesc_t) * 2
+			  + sizeof (new_verts) * 2
+			  + sizeof (new_inds);
+	auto msg = MsgBuf_New (size * 4);//size is in ints, msgbuf wants bytes
+	MsgBuf_WriteBytes (msg, &model, sizeof (model) * 4);//FIXME 4
+	MsgBuf_WriteBytes (msg, &mesh, sizeof (mesh) * 4);
+	MsgBuf_WriteBytes (msg, &attributes, sizeof (attributes) * 4);
+	for (int i = 0; i < num_verts; i++) {
+		MsgBuf_WriteBytes (msg, &new_verts[i], sizeof (new_verts[i]) * 4);
+		MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]) * 4);
+	}
+	MsgBuf_WriteBytes (msg, &new_inds, sizeof (new_inds) * 4);
+	calc_inertia_tensor (msg);
+	return Model_LoadMesh ("cube", msg);
 }
 
 static int
