@@ -1274,11 +1274,15 @@ optimize_mult_products (const expr_t **adds, const expr_t **subs)
 }
 
 static int
-expr_ptr_cmp (const void *_a, const void *_b)
+expr_id_cmp (const void *_a, const void *_b)
 {
 	auto a = *(const expr_t **) _a;
 	auto b = *(const expr_t **) _b;
-	return a - b;
+	int diff = (int)a->id - (int)b->id;
+	if (!diff) {
+		diff = a - b;
+	}
+	return diff;
 }
 
 static void
@@ -1286,7 +1290,7 @@ optimize_adds (const expr_t **expr_list)
 {
 	int count = 0;
 	for (auto scan = expr_list; *scan; scan++, count++) continue;
-	heapsort (expr_list, count, sizeof (expr_list[0]), expr_ptr_cmp);
+	heapsort (expr_list, count, sizeof (expr_list[0]), expr_id_cmp);
 
 	for (auto scan = expr_list; *scan; scan++) {
 		if (*scan == &skip) {
