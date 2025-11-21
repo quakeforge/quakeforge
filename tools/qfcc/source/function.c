@@ -711,15 +711,16 @@ check_type (const type_t *type, callparm_t param, unsigned *cost, bool promote)
 	if (!type_promotes (type, param.type)) {
 		bool demotes = type_demotes (type, param.type);
 		if (demotes) {
-			*cost += 1;
+			*cost += 1 + abs (type_width (type) - type_width (param.type));
 			return true;
 		}
 		// allow any final checks
-		if (is_math (type) || !type_assignable (type, param.type)) {
+		if ((is_math (type) && !param.implicit)
+			|| !type_assignable (type, param.type)) {
 			return false;
 		}
 	}
-	*cost += 2;
+	*cost += 2 + 2 * abs (type_width (type) - type_width (param.type));
 	return true;
 }
 
