@@ -50,6 +50,28 @@ exp (bivector_t b)
 	};
 }
 
+rotor_t
+exp (PGA.bvect b)
+{
+	auto l = b * ~b;
+	if (l == 0) {
+		return { .scalar = 1 };
+	}
+	auto a = sqrt (l);
+	auto sc = sincos (a);
+	sc[0] /= a;
+	return {
+		.scalar = sc[1],
+		.bvect = sc[0] * b.bvect,
+	};
+}
+
+translator_t
+exp (PGA.bvecp b)
+{
+	return { .scalar = 1, .bvecp = b.bvecp };
+}
+
 bivector_t
 log (motor_t m)
 {

@@ -6,12 +6,16 @@
 typedef @algebra(float(3,0,1)) PGA;
 typedef PGA.group_mask(0xa) bivector_t;
 typedef PGA.group_mask(0x1e) motor_t;
+typedef PGA.group_mask(0x6) rotor_t;
+typedef PGA.group_mask(0xc) translator_t;
 typedef PGA.tvec point_t;
 typedef PGA.vec plane_t;
 
 @overload motor_t normalize (motor_t m);
 @overload motor_t sqrt (motor_t m);
 @overload motor_t exp (bivector_t b);
+@overload rotor_t exp (PGA.bvect b);
+@overload translator_t exp (PGA.bvecp b);
 @overload bivector_t log (motor_t m);
 motor_t make_motor (vec4 translation, vec4 rotation);
 void set_transform (motor_t m, transform_t transform);
