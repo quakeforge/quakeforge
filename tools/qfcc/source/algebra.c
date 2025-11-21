@@ -920,6 +920,21 @@ is_mono_grade (const type_t *type)
 	return true;
 }
 
+bool
+is_mono_group (const type_t *type)
+{
+	if (!is_algebra (type)) {
+		return true;
+	}
+	type = unalias_type (type);
+	if (type->type == ev_invalid) {
+		return false;
+	}
+	auto multivec = type->multivec;
+	pr_uint_t mask = multivec->group_mask;
+	return (mask & (mask - 1)) == 0;
+}
+
 int
 algebra_get_grade (const type_t *type)
 {

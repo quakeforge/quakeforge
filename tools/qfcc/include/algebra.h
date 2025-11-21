@@ -117,6 +117,7 @@ bool algebra_type_assignable (const type_t *dst, const type_t *src) __attribute_
 const type_t *algebra_base_type (const type_t *type) __attribute__((pure));
 const type_t *algebra_struct_type (const type_t *type) __attribute__((pure));
 bool is_mono_grade (const type_t *type) __attribute__((pure));
+bool is_mono_group (const type_t *type) __attribute__((pure));
 int algebra_get_grade (const type_t *type) __attribute__((pure));
 int algebra_blade_grade (basis_blade_t blade) __attribute__((const));
 

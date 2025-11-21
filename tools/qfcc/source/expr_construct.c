@@ -323,6 +323,9 @@ constructor_expr (const expr_t *e, const expr_t *params)
 		return error (e, "cannot construct the void");
 	}
 	if (is_algebra (type)) {
+		if (is_mono_group (type)) {
+			return math_constructor (type, params, e);
+		}
 		return error (e, "algebra not implemented");
 	}
 	if (is_math (type)) {
