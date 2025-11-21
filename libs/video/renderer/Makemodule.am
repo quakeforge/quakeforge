@@ -259,7 +259,10 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 
 libs/video/renderer/vulkan/instance.lo: \
 	libs/video/renderer/vulkan/instance.c \
-	$(vkparse_hinc)
+	$(vkparse_hinc) \
+	$(rp_main_def_gen) \
+	$(rp_main_fwd_gen) \
+	$(smp_quake_gen)
 
 libs/video/renderer/vulkan/vkparse.lo: \
 	libs/video/renderer/vulkan/vkparse.c \
@@ -582,13 +585,10 @@ V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)
 V_VKGEN_0 = @echo "  VKGEN   " $@;
 V_VKGEN_1 =
 
-$(vkparse_cinc): $(vkgen) $(qwaq_cmd) $(vkparse_plist)
+$(vkparse_cinc) $(vkparse_hinc)&: $(vkgen) $(qwaq_cmd) $(vkparse_plist)
 	$(V_VKGEN)$(QWAQ) $(vkgen) -- $(vkparse_plist) $(vkparse_cinc).t $(vkparse_hinc).t &&\
 	$(am__mv) $(vkparse_cinc).t $(vkparse_cinc) &&\
 	$(am__mv) $(vkparse_hinc).t $(vkparse_hinc)
-
-$(vkparse_hinc): $(vkparse_cinc)
-# do nothing: hinc generated at the same time as cinc
 
 CLEANFILES += \
 	libs/video/renderer/glsl/*.vc \
