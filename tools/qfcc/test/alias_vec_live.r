@@ -1,5 +1,6 @@
 ivec2 vec_func1();
 void vec_func2(ivec2 x);
+void printf (string fmt, ...) = #0;
 
 bool ok = false;
 
@@ -23,6 +24,8 @@ ivec2 vec_func1 ()
 
 void vec_func2 (ivec2 x)
 {
+	printf ("42 138\n");
+	printf ("%d %d\n", x.x, x.y);
 	ok = x.x == 42 && x.y == 138;
 }
 
