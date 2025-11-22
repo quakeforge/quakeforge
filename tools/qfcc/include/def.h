@@ -297,7 +297,8 @@ typedef enum {
 	dol_none,		// visit only the main def
 	dol_all,		// visit all defs
 	dol_partial,	// visit only (at least) partially overlapping defs
-	dol_full,		// visit only fully overlapped (smaller or same size) defs
+	dol_sub,		// visit only smaller or same size defs
+	dol_super,		// visit only larger or same size defs
 	dol_exact,		// visit only matching defs (same size and offset)
 
 	dol_only_alias = 8	// don't visit main def

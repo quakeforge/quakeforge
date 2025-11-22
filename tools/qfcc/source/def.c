@@ -727,7 +727,7 @@ declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab,
 	set_def_attributes (sym->def, spec.attributes);
 }
 
-static def_overlap_t
+static unsigned
 def_overlap (def_t *d, int offset, int size)
 {
 	// offset is relative to the main def, so if d is the main def, then
@@ -736,15 +736,18 @@ def_overlap (def_t *d, int offset, int size)
 	int         d_size = type_size (d->type);
 
 	if (d_offset == offset && d_size == size) {
-		return dol_exact;
+		return 0b00001;
 	}
 	if (d_offset >= offset && d_offset + d_size <= offset + size) {
-		return dol_full;
+		return 0b00010;
+	}
+	if (d_offset <= offset && d_offset + d_size >= offset + size) {
+		return 0b00100;
 	}
 	if (d_offset < offset + size && offset < d_offset + d_size) {
-		return dol_partial;
+		return 0b01000;
 	}
-	return dol_all;
+	return 0b10000;
 }
 
 int
@@ -762,16 +765,26 @@ def_size (def_t *def)
 	return type_size (def->type);
 }
 
+static const unsigned dol_mask[] = {
+	0b11111,	// dol_none
+	0b00000,	// dol_all
+	0b10000,	// dol_partial
+	0b11100,	// dol_sub
+	0b11010,	// dol_super
+	0b11110,	// dol_exact
+};
+
 int
 def_visit_overlaps (def_t *def, int offset, int size, def_overlap_t overlap,
 					def_t *skip, int (*visit) (def_t *, void *), void *data)
 {
 	int         ret;
+	unsigned    mask = dol_mask [overlap & ~dol_only_alias];
 
 	for (def = def->alias_defs; def; def = def->next) {
 		if (def == skip)
 			continue;
-		if (overlap && def_overlap (def, offset, size) < overlap)
+		if (overlap && (def_overlap (def, offset, size) & mask))
 			continue;
 		if ((ret = visit (def, data)))
 			return ret;
@@ -796,9 +809,10 @@ def_visit_all (def_t *def, def_overlap_t overlap,
 		return ret;
 	int         offset = start_def->offset;
 	int         size = start_def->type ? type_size (start_def->type) : 0;
+	unsigned    mask = dol_mask [overlap & ~dol_only_alias];
 	if (def->alias) {
 		def = def->alias;
-		if (!only_alias && def_overlap (def, offset, size) >= overlap
+		if (!only_alias && !(def_overlap (def, offset, size) & mask)
 			&& (ret = visit (def, data))) {
 			return ret;
 		}

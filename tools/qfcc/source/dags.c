@@ -762,12 +762,12 @@ dag_collect_alias_nodes (daglabel_t *l, set_t *node_set)
 
 	if (op->op_type == op_temp) {
 		if (op->tempop.alias || op->tempop.alias_ops) {
-			tempop_visit_all (&op->tempop, dol_only_alias | dol_full,
+			tempop_visit_all (&op->tempop, dol_only_alias | dol_sub,
 							  dag_tempop_collect_aliases_visit, node_set);
 		}
 	} else if (op->op_type == op_def) {
 		if (op->def->alias || op->def->alias_defs) {
-			def_visit_all (op->def, dol_only_alias | dol_full,
+			def_visit_all (op->def, dol_only_alias | dol_sub,
 						   dag_def_collect_aliases_visit, node_set);
 		}
 	} else {

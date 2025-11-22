@@ -187,11 +187,11 @@ op_aliases_op (operand_t *op, operand_t *tgt)
 		return false;
 	}
 	if (op->op_type == op_temp) {
-		return tempop_visit_all (&op->tempop, dol_only_alias | dol_full,
+		return tempop_visit_all (&op->tempop, dol_only_alias | dol_sub,
 								 op_aliases_op_visit_temp, &tgt->tempop);
 	}
 	if (op->op_type == op_def) {
-		return def_visit_all (op->def, dol_only_alias | dol_full,
+		return def_visit_all (op->def, dol_only_alias | dol_sub,
 							  op_aliases_op_visit_def, tgt->def);
 	}
 	return false;
@@ -562,7 +562,7 @@ tempop_overlap (tempop_t *t1, tempop_t *t2)
 		return dol_exact;
 	}
 	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2)
-		return dol_full;
+		return dol_sub;
 	if (offs1 < offs2 + size2 && offs2 < offs1 + size1)
 		return dol_partial;
 	return dol_all;
