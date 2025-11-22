@@ -72,7 +72,7 @@ print_node_def (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 	for (id_iter = set_first (node->identifiers); id_iter;
 		 id_iter = set_next (id_iter)) {
 		id = dag->labels[id_iter->element];
-		dasprintf (dstr, "\\n%s %c", daglabel_string(id), id->live ? 'l' : 'd');
+		dasprintf (dstr, "\\n%s %c", daglabel_string(id), id->live ? 'l' : ' ');
 	}
 	if (strcmp (daglabel_string (node->label), "lea") == 0
 		&& strcmp (daglabel_string (node->children[0]->label),

@@ -335,6 +335,100 @@ dagnode_set_reachable (dag_t *dag, dagnode_t *node)
 	}
 }
 
+typedef struct {
+	dagnode_t  *node;
+	int         offset;
+} dagalias_t;
+
+static bool
+dag_get_alias_node (daglabel_t *label, dagnode_t **node)
+{
+	if (label && label->dagnode) {
+		if (!label->dagnode->killed) {
+			*node = label->dagnode;
+			return true;
+		}
+	}
+	return false;
+}
+
+static int
+dag_def_find_alias_node (def_t *def, void *_dagalias)
+{
+	dagalias_t *dagalias = _dagalias;
+	if (dag_get_alias_node (def->daglabel, &dagalias->node)) {
+		if (def->alias) {
+			dagalias->offset = def->offset;
+		}
+		return true;
+	}
+	return false;
+}
+
+static int
+dag_tempop_find_alias_node (tempop_t *tempop, void *_dagalias)
+{
+	dagalias_t *dagalias = _dagalias;
+	if (dag_get_alias_node (tempop->daglabel, &dagalias->node)) {
+		if (tempop->alias) {
+			dagalias->offset = tempop->offset;
+		}
+		return true;
+	}
+	return false;
+}
+
+static dagalias_t
+dag_find_alias_node (operand_t *op)
+{
+	dagalias_t dagalias = {};
+	if (op->op_type == op_def) {
+		def_visit_all (op->def, dol_super, dag_def_find_alias_node, &dagalias);
+	}
+	if (op->op_type == op_temp) {
+		tempop_visit_all (&op->tempop, dol_super,
+						  dag_tempop_find_alias_node, &dagalias);
+	}
+	return dagalias;
+}
+
+static dagnode_t *dag_make_child (dag_t *dag, operand_t *op, statement_t *s);
+
+static dagnode_t *
+dag_make_alias_node (dag_t *dag, operand_t *op, operand_t *uop, statement_t *s)
+{
+	auto dagalias = dag_find_alias_node (op);
+	if (!dagalias.node) {
+		dagalias.node = dag_make_child (dag, uop, s);
+	}
+	dagnode_t *n;
+	dagnode_t search = {
+		.type = st_alias,
+		.label = opcode_label (dag, save_string ("alias"), s->expr),
+		.vtype = op->type,
+		.children = { dagalias.node },
+		.types = { op->type },
+		.offset = op_alias_offset (op) - dagalias.offset,
+	};
+	if (!(n = dagnode_search (dag, &search))) {
+		n = new_node (dag);
+		n->type = st_alias;
+		n->label = search.label;
+		n->children[0] = dagalias.node;
+		n->types[0] = op->type;
+		n->offset = search.offset;
+		set_remove (dag->roots, dagalias.node->number);
+		set_add (dagalias.node->parents, n->number);
+		dagnode_set_edges (dag, n, s);
+		dagnode_set_reachable (dag, n);
+
+		auto l = operand_label (dag, op);
+		l->expr = s->expr;
+		l->dagnode = n;
+	}
+	return n;
+}
+
 static dagnode_t *
 dag_make_child (dag_t *dag, operand_t *op, statement_t *s)
 {
@@ -369,35 +463,10 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s)
 
 	if (!node && op_is_alias (op)) {
 		operand_t  *uop = unalias_op (op);
-		if (uop != op) {
-			node = dag_make_child (dag, uop, s);
-			dagnode_t *n;
-			dagnode_t search = {
-				.type = st_alias,
-				.label = opcode_label (dag, save_string ("alias"), s->expr),
-				.vtype = op->type,
-				.children = { node },
-				.types = { op->type },
-				.offset = op_alias_offset (op),
-			};
-			if (!(n = dagnode_search (dag, &search))) {
-				n = new_node (dag);
-				n->type = st_alias;
-				n->label = search.label;
-				n->children[0] = node;
-				n->types[0] = op->type;
-				n->offset = search.offset;
-				set_remove (dag->roots, node->number);
-				set_add (node->parents, n->number);
-				dagnode_set_edges (dag, n, s);
-				dagnode_set_reachable (dag, n);
-
-				auto l = operand_label (dag, op);
-				l->expr = s->expr;
-				l->dagnode = n;
-			}
-			node = n;
+		if (uop == op) {
+			internal_error (op->expr, "unalias op gave op");
 		}
+		node = dag_make_alias_node (dag, op, uop, s);
 	}
 
 	if (!node) {
