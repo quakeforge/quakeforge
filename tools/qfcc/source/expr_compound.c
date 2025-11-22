@@ -167,6 +167,12 @@ get_designated_offset (const type_t *type, const designator_t *des)
 		ele_type = dereference_type (type);
 		offset = designator_index (des, type_size (ele_type), array_count);
 		id++;
+	} else if (is_algebra (type)) {
+		field = designator_field (des, type);
+		if (field) {
+			offset = field->offset;
+			ele_type = field->type;
+		}
 	} else if (is_nonscalar (type)) {
 		ele_type = ev_types[type->type];
 		if (type_symtab (type) && des->field) {
