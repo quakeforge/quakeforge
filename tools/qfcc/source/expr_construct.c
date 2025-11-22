@@ -148,8 +148,13 @@ construct_by_components (const type_t *type,
 			return new_matrix_value (base, type_cols (type), type_rows (type),
 									 cind, components, all_implicit);
 		} else {
-			return new_vector_value (base, type_width (type),
-									 cind, components, all_implicit);
+			auto vec = new_vector_value (base, type_width (type),
+										 cind, components, all_implicit);
+			// if vec is already the right type, cast_expr is a no-op. vec
+			// being the wrong type is most likely due to type being an
+			// algebra type thus the type constructed from base and width is
+			// incorrect at the semantic level.
+			return cast_expr (type, vec);
 		}
 	}
 
