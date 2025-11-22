@@ -3264,6 +3264,30 @@ multivector_divide (const expr_t *e1, const expr_t *e2)
 }
 
 static const expr_t *
+multivector_hadamard (const expr_t *e1, const expr_t *e2)
+{
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
+	auto algebra = is_algebra (t1) ? algebra_get (t1) : algebra_get (t2);
+	auto layout = &algebra->layout;
+	const expr_t *a[layout->count] = {};
+	const expr_t *b[layout->count] = {};
+	const expr_t *c[layout->count] = {};
+	e1 = mvec_expr (e1, algebra);
+	e2 = mvec_expr (e2, algebra);
+	mvec_scatter (a, e1, algebra);
+	mvec_scatter (b, e2, algebra);
+
+	for (int i = 0; i < layout->count; i++) {
+		if (a[i] && b[i]) {
+			c[i] = typed_binary_expr (get_type (a[i]), QC_HADAMARD, a[i], b[i]);
+		}
+	}
+	auto mvec = mvec_gather (c, algebra);
+	return mvec;
+}
+
+static const expr_t *
 component_compare (int op, const expr_t *e1, const expr_t *e2, algebra_t *alg)
 {
 	auto t = get_type (e1 ? e1 : e2);
@@ -3340,6 +3364,8 @@ algebra_binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		case '*':
 		case QC_GEOMETRIC:
 			return geometric_product (e1, e2);
+		case QC_HADAMARD:
+			return multivector_hadamard (e1, e2);
 	}
 	return error (e1, "invalid operator");
 }
