@@ -812,7 +812,9 @@ def_visit_all (def_t *def, def_overlap_t overlap,
 	unsigned    mask = dol_mask [overlap & ~dol_only_alias];
 	if (def->alias) {
 		def = def->alias;
-		if (!only_alias && !(def_overlap (def, offset, size) & mask)
+		if (!only_alias
+			&& (overlap == dol_none
+				|| !(def_overlap (def, offset, size) & mask))
 			&& (ret = visit (def, data))) {
 			return ret;
 		}
