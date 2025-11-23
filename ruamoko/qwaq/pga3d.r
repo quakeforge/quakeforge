@@ -175,6 +175,15 @@ dState (state_t s, bivector_t f)
 	};
 }
 
+state_t
+dState (state_t s, body_t *body)
+{
+	return {
+		.M = -0.5f * s.M * s.B,
+		.B = -@undual(body.Ii @hadamard (s.B × (body.I @hadamard ⋆s.B))),
+	};
+}
+
 void
 draw_3dline (transform_t camera, vec4 p1, vec4 p2, int color)
 {
@@ -210,7 +219,11 @@ draw_3dline (transform_t camera, vec4 p1, vec4 p2, int color)
 	sp2 = sp2 * size + center;
 	Draw_Line (sp1[0], sp1[1], sp2[0], sp2[1], color);
 }
-#if 0
+#if 1
+typedef struct edge_s {
+	int a;
+	int b;
+} edge_t;
 point_t points[10];
 point_t cur_points[10];
 edge_t edges[14];

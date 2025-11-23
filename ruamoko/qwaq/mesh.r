@@ -14,7 +14,7 @@ float sign (float x)
 }
 
 typedef PGA.vec pga_vec_t;
-vec3
+body_t
 calc_inertia_tensor (msgbuf_t model_buf)
 {
 	qf_model_t model;
@@ -166,7 +166,13 @@ calc_inertia_tensor (msgbuf_t model_buf)
 	printf ("%v\n", Ivec);
 
 	MsgBuf_ReadSeek (model_buf, 0, msg_set);
-	return Ivec;
+	return {
+		.R = R,
+		.I.bvect = PGA.bvect()(1,1,1),
+		.I.bvecp = (PGA.bvecp)Ivec,
+		.Ii.bvect = PGA.bvect()(1,1,1),
+		.Ii.bvecp = (PGA.bvecp)(1/Ivec),
+	};
 }
 
 int ico_inds[] = {
@@ -185,7 +191,7 @@ int cube_inds[] = {
 	7,  2,  3,   7,  6,  2,
 };
 
-model_t create_ico ()
+msgbuf_t create_ico ()
 {
 	float p = (sqrt (5f) + 1) / 2;
 	float a = sqrt (3f) / p;
@@ -282,8 +288,7 @@ model_t create_ico ()
 		MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]) * 4);
 	}
 	MsgBuf_WriteBytes (msg, &new_inds, sizeof (new_inds) * 4);
-	calc_inertia_tensor (msg);
-	return Model_LoadMesh ("ico", msg);
+	return msg;
 }
 
 quaternion exp(vector x)
@@ -298,7 +303,7 @@ quaternion exp(vector x)
 	return [x * sc[0], sc[1]];
 }
 
-model_t create_block ()
+msgbuf_t create_block ()
 {
 	vec3 verts[8];
 	//quaternion q = exp('0.4 0.3 -0.2');//'20 15 0 60'f/65;
@@ -387,8 +392,7 @@ model_t create_block ()
 		MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]) * 4);
 	}
 	MsgBuf_WriteBytes (msg, &new_inds, sizeof (new_inds) * 4);
-	calc_inertia_tensor (msg);
-	return Model_LoadMesh ("cube", msg);
+	return msg;
 }
 
 static int

@@ -21,6 +21,9 @@
 #include "player.h"
 #include "playercam.h"
 
+void traceon() = #0;
+void traceoff() = #0;
+
 static string render_graph_cfg =
 #embed "config/qwaq-ed-rg.plist"
 ;
@@ -992,9 +995,10 @@ arp_end (void)
 	autorelease_pool = nil;
 }
 
-model_t create_ico();
-model_t create_block();
+msgbuf_t create_ico();
+msgbuf_t create_block();
 msgbuf_t create_quadsphere();
+body_t calc_inertia_tensor (msgbuf_t model_buf);
 void leafnode();
 
 int
@@ -1097,8 +1101,16 @@ main (int argc, string *argv)
 	Entity_SetModel (Octahedron_ent, Model_Load ("progs/Octahedron.mdl"));
 	Entity_SetModel (Plane_ent, Model_Load ("progs/Plane.mdl"));
 	Entity_SetModel (Tetrahedron_ent, Model_Load ("progs/Tetrahedron.mdl"));
-	Entity_SetModel (Icosahedron_ent, create_ico());
-	Entity_SetModel (block_ent, create_block());
+	auto ico_mesh = create_ico ();
+	auto block_mesh = create_block ();
+	auto block_body = calc_inertia_tensor (block_mesh);
+	printf ("R:[%g %v %v %g] I:[%v %v] Ii:[%v %v]\n",
+			block_body.R.scalar, block_body.R.bvect,
+			block_body.R.bvecp,  block_body.R.qvec,
+			block_body.I.bvect,  block_body.I.bvecp,
+			block_body.Ii.bvect, block_body.Ii.bvecp);
+	Entity_SetModel (Icosahedron_ent, Model_LoadMesh ("ico", ico_mesh));
+	Entity_SetModel (block_ent, Model_LoadMesh ("block", block_mesh));
 
 	Transform_SetLocalPosition(Entity_GetTransform (nh_ent), {15, 0, 10, 1});
 	Transform_SetLocalRotation(Entity_GetTransform (nh_ent), {0.5, -0.5, 0.5, 0.5});
@@ -1107,7 +1119,6 @@ main (int argc, string *argv)
 	Transform_SetLocalPosition(Entity_GetTransform (Octahedron_ent), {0, -2, 0.5, 1});
 	Transform_SetLocalPosition(Entity_GetTransform (Tetrahedron_ent), {0, 2, 0.5, 1});
 	Transform_SetLocalPosition(Entity_GetTransform (Icosahedron_ent), {-2, 2, 0.5, 1});
-	Transform_SetLocalPosition(Entity_GetTransform (block_ent), {-2, -2, 4.5, 1});
 	Transform_SetLocalScale (Entity_GetTransform (Plane_ent), {25, 25, 25, 1});
 
 	id player = [[Player player:[main_window scene]] retain];
@@ -1136,6 +1147,16 @@ main (int argc, string *argv)
 		qsmesh.adjacency.offset += offset;
 		qsmesh.vertices.offset += offset;
 	}
+	//create_cube ();
+	state_t block_state = {
+		.M = make_motor ({-20, 20, 5, 1}, {0, 0, 0, 1}),
+		.B.bvect = (PGA.bvect)'0 0.1 5',
+	};
+	printf ("block_state M:[%g %v %v %g] B:[%v %v]\n",
+			block_state.M.scalar, block_state.M.bvect,
+			block_state.M.bvecp,  block_state.M.qvec,
+			block_state.B.bvect,  block_state.B.bvecp);
+	auto block_xform = Entity_GetTransform (block_ent);
 	while (true) {
 		arp_end ();
 		arp_start ();
@@ -1154,6 +1175,23 @@ main (int argc, string *argv)
 		    realtime += frametime;
 		}
 
+		//update_cube(frametime);
+		//draw_cube();
+		auto bs = block_state;
+		bs.M = block_body.R * bs.M;
+		bs.B = block_body.R * bs.B * ~block_body.R;
+
+		float h = frametime / 100;
+		for (int i = 0; i < 100; i++) {
+			auto ds = dState (bs, &block_body);
+			bs.M += h * ds.M;
+			bs.B += h * ds.B;
+			bs.M = normalize (bs.M);
+		}
+		bs.M = bs.M * ~block_body.R;
+		bs.B = ~block_body.R * bs.B * block_body.R;
+		block_state = bs;
+		set_transform (block_state.M, block_xform);
 
 		[player think:frametime];
 		[playercam think:frametime];

@@ -25,9 +25,19 @@ typedef struct state_s {
 	bivector_t  B;
 } state_t;
 
+typedef struct body_s {
+	motor_t     R;
+	bivector_t  I;
+	bivector_t  Ii;
+} body_t;
+
 @overload state_t dState (state_t s);
 @overload state_t dState (state_t s, bivector_t f);
+@overload state_t dState (state_t s, body_t *body);
 
 void draw_3dline (transform_t camera, vec4 p1, vec4 p2, int color);
+void create_cube ();
+void update_cube (float dt);
+void draw_cube ();
 
 #endif//__pga3d_h
