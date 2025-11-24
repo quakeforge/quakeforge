@@ -137,5 +137,14 @@ Mod_LoadMeshModel (model_t *mod, byte *buffer, size_t buf_size)
 	m_funcs->Mod_MeshFinish (&mesh_ctx);
 
 	memset (&mod->cache, 0, sizeof (mod->cache));
+
+	vec4f_t model_min = { INFINITY, INFINITY, INFINITY };
+	vec4f_t model_max = {-INFINITY,-INFINITY,-INFINITY };
+	for (uint32_t i = 0; i < model->meshes.count; i++) {
+		model_min = minv4f (model_min, loadvec3f (meshes[i].bounds_min));
+		model_max = maxv4f (model_max, loadvec3f (meshes[i].bounds_max));
+	}
 	mod->model = model;
+	storevec3f (mod->mins, model_min);
+	storevec3f (mod->maxs, model_max);
 }
