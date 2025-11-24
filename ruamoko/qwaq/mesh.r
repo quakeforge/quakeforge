@@ -309,9 +309,9 @@ msgbuf_t create_block ()
 	//quaternion q = exp('0.4 0.3 -0.2');//'20 15 0 60'f/65;
 	//printf ("%q\n", q);
 	for (int i = 0; i < 8; i++) {
-		verts[i][0] = (((i & 1) >> 0) - 0.5f) * 1;
-		verts[i][1] = (((i & 2) >> 1) - 0.5f) * 0.3;
-		verts[i][2] = (((i & 4) >> 2) - 0.5f) * 0.5;
+		verts[i][0] = (((i & 1) >> 0) - 0.5f) * 9;
+		verts[i][1] = (((i & 2) >> 1) - 0.5f) * 1;
+		verts[i][2] = (((i & 4) >> 2) - 0.5f) * 4;
 		//verts[i] = q * verts[i];
 	}
 

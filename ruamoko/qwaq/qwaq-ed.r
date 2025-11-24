@@ -1164,7 +1164,7 @@ main (int argc, string *argv)
 	//create_cube ();
 	state_t block_state = {
 		.M = make_motor ({-20, 20, 5, 1}, {0, 0, 0, 1}),
-		.B.bvect = (PGA.bvect)'0 0.1 5',
+		.B.bvect = (PGA.bvect)'0 0.0005 1',
 	};
 	printf ("block_state M:[%g %v %v %g] B:[%v %v]\n",
 			block_state.M.scalar, block_state.M.bvect,
