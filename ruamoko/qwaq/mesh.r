@@ -357,8 +357,8 @@ msgbuf_t create_block ()
 		},
 		.vertex_stride = 4 * 2 * sizeof (new_verts[0]),
 		.scale = '1 1 1',
-		.bounds_min = '-0.5 -2 -4.5',
-		.bounds_max = ' 0.5  2  4.5',
+		.bounds_min = '-4.5 -0.5 -2',
+		.bounds_max = ' 4.5  0.5  2',
 	};
 
 	qfm_attrdesc_t attributes[] = {
