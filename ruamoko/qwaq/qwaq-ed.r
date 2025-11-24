@@ -1001,6 +1001,20 @@ msgbuf_t create_quadsphere();
 body_t calc_inertia_tensor (msgbuf_t model_buf);
 void leafnode();
 
+static void
+draw_principle_axes (motor_t M, bivector_t I)
+{
+	@algebra(PGA) {
+		auto o = M * e123 * ~M;
+		auto p1 = M * (e123 + e032 * I.bvecp[0]) * ~M;
+		auto p2 = M * (e123 + e013 * I.bvecp[1]) * ~M;
+		auto p3 = M * (e123 + e021 * I.bvecp[2]) * ~M;
+		Gizmo_AddCapsule ((vec4) o, (vec4) p1, 0.25, {1, 0, 0, 0.5});
+		Gizmo_AddCapsule ((vec4) o, (vec4) p2, 0.25, {0, 1, 0, 0.5});
+		Gizmo_AddCapsule ((vec4) o, (vec4) p3, 0.25, {0, 0, 1, 0.5});
+	}
+}
+
 int
 main (int argc, string *argv)
 {
@@ -1192,6 +1206,7 @@ main (int argc, string *argv)
 		bs.B = ~block_body.R * bs.B * block_body.R;
 		block_state = bs;
 		set_transform (block_state.M, block_xform);
+		draw_principle_axes (block_state.M, block_body.I);
 
 		[player think:frametime];
 		[playercam think:frametime];
