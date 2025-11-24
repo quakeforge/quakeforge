@@ -162,7 +162,7 @@ dState (state_t s)
 {
 	return {
 		.M = -0.5f * s.M * s.B,
-		.B = -@undual(s.B × ⋆s.B),
+		.B = -@undual(⋆s.B × s.B),
 	};
 }
 
@@ -171,7 +171,7 @@ dState (state_t s, bivector_t f)
 {
 	return {
 		.M = -0.5f * s.M * s.B,
-		.B = @undual(f - s.B × ⋆s.B),
+		.B = @undual(f - ⋆s.B × s.B),
 	};
 }
 
@@ -180,7 +180,7 @@ dState (state_t s, body_t *body)
 {
 	return {
 		.M = -0.5f * s.M * s.B,
-		.B = -@undual(body.Ii @hadamard (s.B × (body.I @hadamard ⋆s.B))),
+		.B = -@undual(body.Ii @hadamard ((body.I @hadamard ⋆s.B) × s.B)),
 	};
 }
 
