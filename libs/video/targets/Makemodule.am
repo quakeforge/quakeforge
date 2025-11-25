@@ -55,7 +55,7 @@ EXTRA_libs_video_targets_libvid_win_la_SOURCES= $(win_vulkan_src)
 # MS Windows
 #
 win_libs=libs/video/targets/libvid_common.la libs/video/targets/libvid_win.la
-libs_video_targets_libQFwin_la_CFLAGS=			@PREFER_NON_PIC@ $(WGL_CFLAGS)
+libs_video_targets_libQFwin_la_CFLAGS=			$(AM_CFLAGS) @PREFER_NON_PIC@ $(WGL_CFLAGS)
 libs_video_targets_libQFwin_la_SOURCES=		libs/video/targets/vid_win.c
 libs_video_targets_libQFwin_la_LDFLAGS=		@STATIC@
 libs_video_targets_libQFwin_la_LIBADD=			$(win_libs)
