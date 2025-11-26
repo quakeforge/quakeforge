@@ -452,13 +452,13 @@ typedef enum {
 	pr_branch_call,
 } pr_branch_e;
 
-#define OP_A_SHIFT (9)
-#define OP_B_SHIFT (11)
-#define OP_C_SHIFT (13)
-#define OP_A_BASE (3 << OP_A_SHIFT)
-#define OP_B_BASE (3 << OP_B_SHIFT)
-#define OP_C_BASE (3 << OP_C_SHIFT)
-#define OP_MASK (~(OP_BREAK|OP_A_BASE|OP_B_BASE|OP_C_BASE))
+#define OP_a_SHIFT (9)
+#define OP_b_SHIFT (11)
+#define OP_c_SHIFT (13)
+#define OP_a_BASE (3 << OP_a_SHIFT)
+#define OP_b_BASE (3 << OP_b_SHIFT)
+#define OP_c_BASE (3 << OP_c_SHIFT)
+#define OP_MASK (~(OP_BREAK|OP_a_BASE|OP_b_BASE|OP_c_BASE))
 
 typedef enum {
 	OP_with_zero,

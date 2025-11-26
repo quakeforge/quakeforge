@@ -1798,8 +1798,8 @@ exit_program:;
 static pr_type_t *
 pr_address_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 {
-	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
-	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
+	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, a);
+	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, b);
 	pr_ptr_t    mm_offs = 0;
 	pr_ptr_t    edict_area = 0;
 
@@ -1836,8 +1836,8 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 static pr_type_t *
 pr_call_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 {
-	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
-	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
+	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, a);
+	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, b);
 	pr_ptr_t    mm_offs = 0;
 	pr_ptr_t    edict_area = 0;
 
@@ -1866,8 +1866,8 @@ pr_call_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 static pr_ptr_t __attribute__((pure))
 pr_jump_mode (progs_t *pr, const dstatement_t *st, int jump_ind)
 {
-	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
-	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
+	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, a);
+	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, b);
 	pr_ptr_t    jump_offs = pr->pr_xstatement;
 
 	switch (jump_ind) {
@@ -1939,7 +1939,7 @@ static void
 pr_with (progs_t *pr, const dstatement_t *st)
 {
 	pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
-	pr_type_t  *op_b = pr->pr_globals + PR_BASE (pr, st, B) + st->b;
+	pr_type_t  *op_b = pr->pr_globals + PR_BASE (pr, st, b) + st->b;
 	pr_type_t  *stk;
 
 	switch (st->a) {
@@ -1950,7 +1950,7 @@ pr_with (progs_t *pr, const dstatement_t *st)
 			return;
 		case 1:
 			// relative to current base (-ve offset)
-			pr->pr_bases[st->c & 3] = PR_BASE (pr, st, B) + st->b;
+			pr->pr_bases[st->c & 3] = PR_BASE (pr, st, b) + st->b;
 			return;
 		case 2:
 			// relative to stack (-ve offset)
@@ -2146,9 +2146,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			}
 		}
 
-		pr_ptr_t    st_a = st->a + PR_BASE (pr, st, A);
-		pr_ptr_t    st_b = st->b + PR_BASE (pr, st, B);
-		pr_ptr_t    st_c = st->c + PR_BASE (pr, st, C);
+		pr_ptr_t    st_a = st->a + PR_BASE (pr, st, a);
+		pr_ptr_t    st_b = st->b + PR_BASE (pr, st, b);
+		pr_ptr_t    st_c = st->c + PR_BASE (pr, st, c);
 
 
 		pr_type_t  *op_a = pr->pr_globals + st_a;

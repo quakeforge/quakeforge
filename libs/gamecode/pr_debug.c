@@ -1847,11 +1847,11 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 		} else {
 			dasprintf (res->line, "%04x %s %s %s\t",
 						s->op,
-						print_raw_op (pr, s->a, PR_BASE_IND (s->op, A),
+						print_raw_op (pr, s->a, PR_BASE_IND (s->op, a),
 									  op_type[0], op_width[0], op_columns[0]),
-						print_raw_op (pr, s->b, PR_BASE_IND (s->op, B),
+						print_raw_op (pr, s->b, PR_BASE_IND (s->op, b),
 									  op_type[1], op_width[1], op_columns[1]),
-						print_raw_op (pr, s->c, PR_BASE_IND (s->op, C),
+						print_raw_op (pr, s->c, PR_BASE_IND (s->op, c),
 									  op_type[2], op_width[2], op_columns[2]));
 		}
 	} else if (op_width[0] > 1 || op_width[1] > 1 || op_width[2] > 1) {
@@ -1895,21 +1895,21 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 
 				switch (opchar) {
 					case 'a':
-						opreg = PR_BASE_IND (s->op, A);
+						opreg = PR_BASE_IND (s->op, a);
 						opval = get_opval (pr, s->a);
 						basic_type = *res->type_encodings[op_type[0]];
 						basic_type.basic.width = op_width[0];
 						basic_type.basic.columns = op_columns[0];
 						break;
 					case 'b':
-						opreg = PR_BASE_IND (s->op, B);
+						opreg = PR_BASE_IND (s->op, b);
 						opval = get_opval (pr, s->b);
 						basic_type = *res->type_encodings[op_type[1]];
 						basic_type.basic.width = op_width[1];
 						basic_type.basic.columns = op_columns[1];
 						break;
 					case 'c':
-						opreg = PR_BASE_IND (s->op, C);
+						opreg = PR_BASE_IND (s->op, c);
 						opval = get_opval (pr, s->c);
 						basic_type = *res->type_encodings[op_type[2]];
 						basic_type.basic.width = op_width[2];
@@ -2023,19 +2023,19 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 							pr_int_t    offs = 0;
 							switch ((opval >> shift) & 3) {
 								case 0:
-									ptr = s->a + PR_BASE (pr, s, A);
+									ptr = s->a + PR_BASE (pr, s, a);
 									break;
 								case 1:
 									break;
 								case 2:
-									ptr = s->a + PR_BASE (pr, s, A);
+									ptr = s->a + PR_BASE (pr, s, a);
 									ptr = G_POINTER (pr, ptr);
 									offs = s->b;
 									break;
 								case 3:
-									ptr = s->a + PR_BASE (pr, s, A);
+									ptr = s->a + PR_BASE (pr, s, a);
 									ptr = G_POINTER (pr, ptr);
-									offs = s->b + PR_BASE (pr, s, B);
+									offs = s->b + PR_BASE (pr, s, b);
 									offs = G_INT (pr, offs);
 									break;
 							}

@@ -532,10 +532,10 @@ static pr_string_t compute_str (const char *, comp_ctx_t *ctx);
 static def_t *compute_type (const expr_t *arg, comp_ctx_t *ctx);
 static def_t *compute_val (const expr_t *arg, comp_ctx_t *ctx);
 
-#define BASE(b, base) (((base) & 3) << OP_##b##_SHIFT)
-#define DBASE(b, d) ((d) ? BASE(b, ((def_t*)(d))->reg) : 0)
+#define BASE(_b, base) (((base) & 3) << OP_##_b##_SHIFT)
+#define DBASE(_b, d) ((d) ? BASE(_b, ((def_t*)(d))->reg) : 0)
 #define DOFFSET(d) ((d) ? ((def_t*)(d))->offset : 0)
-#define OP(a, b, c, op) ((op) | DBASE(A, a) | DBASE(B, b) | DBASE(C, c))
+#define OP(_a, _b, _c, op) ((op) | DBASE(a, _a) | DBASE(b, _b) | DBASE(c, _c))
 #define I(_op, _a, _b, _c) &(dstatement_t){ \
 	.op = OP(_a,_b,_c,_op),                 \
 	.a = DOFFSET(_a),                       \

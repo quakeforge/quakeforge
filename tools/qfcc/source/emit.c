@@ -245,15 +245,15 @@ emit_statement (statement_t *statement)
 	s->op = opcode_get (inst);
 	if (def_a) {
 		s->a = def_a->offset;
-		s->op |= ((def_a->reg) << OP_A_SHIFT) & OP_A_BASE;
+		s->op |= ((def_a->reg) << OP_a_SHIFT) & OP_a_BASE;
 	}
 	if (def_b) {
 		s->b = def_b->offset;
-		s->op |= ((def_b->reg) << OP_B_SHIFT) & OP_B_BASE;
+		s->op |= ((def_b->reg) << OP_b_SHIFT) & OP_b_BASE;
 	}
 	if (def_c) {
 		s->c = def_c->offset;
-		s->op |= ((def_c->reg) << OP_C_SHIFT) & OP_C_BASE;
+		s->op |= ((def_c->reg) << OP_c_SHIFT) & OP_c_BASE;
 	}
 
 	if (options.verbosity >= 2) {

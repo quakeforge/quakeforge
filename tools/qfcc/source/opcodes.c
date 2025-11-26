@@ -538,7 +538,7 @@ opcode_print_statement (pr_uint_t addr, dstatement_t *st)
 	}
 	printf ("%04x (%03x)%-8s %d:%04hx %d:%04hx %d:%04hx\n",
 			addr, st_op & 0x1ff, mnemonic,
-			(st->op & OP_A_BASE) >> OP_A_SHIFT, st->a,
-			(st->op & OP_B_BASE) >> OP_B_SHIFT, st->b,
-			(st->op & OP_C_BASE) >> OP_C_SHIFT, st->c);
+			(st->op & OP_a_BASE) >> OP_a_SHIFT, st->a,
+			(st->op & OP_b_BASE) >> OP_b_SHIFT, st->b,
+			(st->op & OP_c_BASE) >> OP_c_SHIFT, st->c);
 }

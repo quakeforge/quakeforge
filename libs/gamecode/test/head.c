@@ -17,15 +17,15 @@ static int verbose = 0;
 		(void) 0\
 	)
 
-// calculate the numver of statements in the test
+// calculate the number of statements in the test
 #define num_statements(statements) \
 		(sizeof (statements) / sizeof (statements[0]))
 
 #define num_functions(functions) \
 		(sizeof (functions) / sizeof (functions[0]))
 
-#define BASE(b, base) (((base) & 3) << OP_##b##_SHIFT)
-#define OP(a, b, c, op) ((op) | BASE(A, a) | BASE(B, b) | BASE(C, c))
+#define BASE(_b, base) (((base) & 3) << OP_##_b##_SHIFT)
+#define OP(_a, _b, _c, op) ((op) | BASE(a, _a) | BASE(b, _b) | BASE(c, _c))
 
 typedef struct {
 	const char *desc;

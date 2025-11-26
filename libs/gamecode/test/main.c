@@ -53,9 +53,9 @@ test_debug_handler (prdebug_t event, void *param, void *data)
 						pr->globals.stack ? va (" %05x", *pr->globals.stack)
 										  : "");
 				printf ("                        %04x %04x %04x\n",
-						st->a + PR_BASE (pr, st, A),
-						st->b + PR_BASE (pr, st, B),
-						st->c + PR_BASE (pr, st, C));
+						st->a + PR_BASE (pr, st, a),
+						st->b + PR_BASE (pr, st, b),
+						st->c + PR_BASE (pr, st, c));
 			}
 			if (verbose > 0) {
 				PR_PrintStatement (&test_pr, st, 0);
