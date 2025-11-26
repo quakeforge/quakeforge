@@ -2674,27 +2674,20 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 1 0110
 			OP_op_T (SHL, u, uint, ivec2, ivec4, <<);
 			OP_op_T (SHL, U, ulong, lvec2, lvec4, <<);
-			case OP_EQ_S:
-			case OP_LT_S:
-			case OP_GT_S:
-			case OP_CMP_S:
-			case OP_GE_S:
-			case OP_LE_S:
-				{
-					int         cmp = strcmp (PR_GetString (pr, OPA(string)),
-											  PR_GetString (pr, OPB(string)));
-					switch (st_op) {
-						case OP_EQ_S: cmp = -(cmp == 0); break;
-						case OP_LT_S: cmp = -(cmp <  0); break;
-						case OP_GT_S: cmp = -(cmp >  0); break;
-						case OP_GE_S: cmp = -(cmp >= 0); break;
-						case OP_LE_S: cmp = -(cmp <= 0); break;
-						case OP_CMP_S: break;
-						default: break;
-					}
-					OPC(int) = cmp;
-				}
-				break;
+#define OP_op_str(OP, s, op) \
+			case OP_##OP##_S: \
+				{ \
+					int         cmp = strcmp (PR_GetString (pr, OPA(string)), \
+											  PR_GetString (pr, OPB(string)));\
+					OPC(int) = s(cmp op 0); \
+				} \
+				break
+			OP_op_str(EQ, -, ==);
+			OP_op_str(LT, -, <);
+			OP_op_str(GT, -, >);
+			OP_op_str(CMP, , +);//effectively just copy the result
+			OP_op_str(GE, -, >=);
+			OP_op_str(LE, -, <=);
 			case OP_ADD_S:
 				OPC(string) = PR_CatStrings(pr, PR_GetString (pr, OPA(string)),
 											PR_GetString (pr, OPB(string)));
