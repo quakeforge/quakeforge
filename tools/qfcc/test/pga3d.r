@@ -23,7 +23,6 @@ typedef union {
 } bivector_t;
 typedef union {
 	PGA.group_mask(0x1e) mvec;
-	bivector_t bvec;
 	struct {
 		PGA.group_mask(0x02) dir;
 		scalar_t   scalar;
@@ -277,16 +276,14 @@ test_geom (void)
 	if ((vec3)e.dir != '-6 4 -8' || (vec3)e.mom != '30 17 -14'
 		|| e.scalar || (scalar_t)e.qvec != 21) {
 		error ("vec * tvec != 0 '-6 4 -8' '30 17 -14' 21: %g %v %v %g\n",
-			   e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
+			   e.scalar, e.dir, e.mom, e.qvec);
 	}
-
 	e.mvec = bvec.bvec * bvec.bvec;
-	if (e.scalar != -141 || (vec3)e.bvec.dir || (vec3)e.bvec.mom
+	if (e.scalar != -141 || (vec3)e.dir || (vec3)e.mom
 		|| (scalar_t)e.qvec != -78) {
 		error ("bvec * bvec != -141 '0 0 0' '0 0 0' -78: %g %v %v %g\n",
-			   e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
+			   e.scalar, e.dir, e.mom, e.qvec);
 	}
-
 	d = { .mvec = vec * bvec.bvec };
 	if ((vec4)d.vec != '-12 -38 -10 -9' || (vec4)d.tvec != '-45 -29 7 49') {
 		error ("vec * bvec != '-12 -38 -10 -9' '-45 -29 7 49': %v %v\n",
@@ -295,9 +292,9 @@ test_geom (void)
 
 	e.mvec = vec * vecb;
 	if (e.scalar != -9 || (scalar_t)e.qvec
-		|| (vec3)e.bvec.dir != '-48 20 46' || (vec3)e.bvec.mom != '44 -14 52') {
+		|| (vec3)e.dir != '-48 20 46' || (vec3)e.mom != '44 -14 52') {
 		error ("(vec * vecb) != -9 '-48 20 46' '44 -14 52' 0': %g %v %v %g\n",
-			   e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
+			   e.scalar, e.dir, e.mom, e.qvec);
 	}
 
 	a = qvec * tvec;
@@ -307,9 +304,9 @@ test_geom (void)
 
 	e.mvec = qvec * bvec.bvec;
 	if (e.scalar || (scalar_t)e.qvec
-		|| (vec3)e.bvec.dir || (vec3)e.bvec.mom != '-88 32 -16') {
+		|| (vec3)e.dir || (vec3)e.mom != '-88 32 -16') {
 		error ("(vec * vecb) != 0 '0 0 0' '-88 32 -16' 0': %g %v %v %g\n",
-			   e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
+			   e.scalar, e.dir, e.mom, e.qvec);
 	}
 
 	c = qvec * vec;
@@ -325,9 +322,9 @@ test_geom (void)
 
 	e.mvec = tvec * vec;
 	if (e.scalar || (scalar_t)e.qvec != -21
-		|| (vec3)e.bvec.dir != '-6 4 -8' || (vec3)e.bvec.mom != '30 17 -14') {
+		|| (vec3)e.dir != '-6 4 -8' || (vec3)e.mom != '30 17 -14') {
 		error ("tvec * vec != 0 '-6 4 -8' '30 17 -14' -21: %g %v %v %g\n",
-			   e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
+			   e.scalar, e.dir, e.mom, e.qvec);
 	}
 
 	d.mvec = bvec.bvec * vec;
@@ -528,8 +525,7 @@ main (void)
 	if (sizeof (vector_t) != 4 * sizeof (scalar_t)) {
 		error ("bivector has wrong size: %d\n", sizeof (vector_t));
 	}
-	// the pair of vec3s in a bivector have an alignment of 4
-	if (sizeof (bivector_t) != 8 * sizeof (scalar_t)) {
+	if (sizeof (bivector_t) != 6 * sizeof (scalar_t)) {
 		error ("bivector has wrong size: %d\n", sizeof (bivector_t));
 	}
 	if (sizeof (bivector_t) != sizeof (PGA.group_mask(0x0a))) {
@@ -542,15 +538,14 @@ main (void)
 	if (sizeof (quadvector_t) != sizeof (scalar_t)) {
 		error ("quadvector has wrong size: %d\n", sizeof (quadvector_t));
 	}
-	if (sizeof (evengrades_t) != sizeof (bivector_t)) {
+	if (sizeof (evengrades_t) != 8 * sizeof (scalar_t)) {
 		evengrades_t e;
 		#define offsetof(s,f) ((int)(&((s*)0).f))
 		printf ("evengrades has wrong size: %d\n", sizeof (evengrades_t));
-		printf ("mvec: %d, bvec: %d, scalar: %d, qvec: %d\n",
-				sizeof (e.mvec), sizeof (e.bvec),
-				sizeof (e.scalar), sizeof (e.qvec));
-		printf ("mvec: %d, bvec: %d, scalar: %d, qvec: %d\n",
-				offsetof (evengrades_t, mvec), offsetof (evengrades_t, bvec),
+		printf ("mvec: %d, scalar: %d, qvec: %d\n",
+				sizeof (e.mvec), sizeof (e.scalar), sizeof (e.qvec));
+		printf ("mvec: %d, scalar: %d, qvec: %d\n",
+				offsetof (evengrades_t, mvec),
 				offsetof (evengrades_t, scalar), offsetof (evengrades_t, qvec));
 		ret = 1;
 	}

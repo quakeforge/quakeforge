@@ -41,7 +41,8 @@ typedef struct basis_blade_s {
 } basis_blade_t;
 
 typedef struct basis_group_s {
-	int         count;			///< number of blades
+	short       count;			///< number of blades
+	short       alignment;		///< alignment of group
 	pr_uint_t   group_mask;
 	pr_uvec2_t  range;			///< min, max of basis blade masks
 	basis_blade_t *blades;

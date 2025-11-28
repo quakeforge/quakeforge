@@ -259,10 +259,10 @@ main (void)
 	if (sizeof (scalar_t) != sizeof (float)) {
 		error ("scalar has wrong size: %d\n", sizeof (scalar_t));
 	}
-	if (sizeof (vector_t) != 4 * sizeof (scalar_t)) {
+	if (sizeof (vector_t) != 3 * sizeof (scalar_t)) {
 		error ("vector has wrong size: %d\n", sizeof (vector_t));
 	}
-	if (sizeof (bivector_t) != 4 * sizeof (scalar_t)) {
+	if (sizeof (bivector_t) != 3 * sizeof (scalar_t)) {
 		error ("bivector has wrong size: %d\n", sizeof (bivector_t));
 	}
 	if (sizeof (trivector_t) != sizeof (scalar_t)) {
