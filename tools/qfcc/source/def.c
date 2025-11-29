@@ -235,7 +235,6 @@ alias_def (def_t *def, const type_t *type, int offset)
 def_t *
 temp_def (const type_t *type)
 {
-	def_t      *temp;
 	defspace_t *space = current_func->locals->space;
 	int         size = type_size (type);
 	int         alignment = type_align (type);
@@ -249,10 +248,19 @@ temp_def (const type_t *type)
 	if (type_width (type) == 3) {
 		alignment = 2 * type_align (base_type (type));
 	}
-	if ((temp = current_func->temp_defs[size - 1])) {
-		current_func->temp_defs[size - 1] = temp->temp_next;
-		temp->temp_next = 0;
-	} else {
+	def_t      *temp = nullptr;
+	if (current_func->temp_defs[size - 1]) {
+		auto t = &current_func->temp_defs[size - 1];
+		while (*t && ((*t)->offset & (alignment - 1))) {
+			t = &(*t)->temp_next;
+		}
+		temp = *t;
+		if (temp) {
+			*t = temp->temp_next;
+			temp->temp_next = 0;
+		}
+	}
+	if (!temp) {
 		ALLOC (16384, def_t, defs, temp);
 		temp->offset = defspace_alloc_aligned_loc (space, size, alignment);
 		*space->def_tail = temp;
