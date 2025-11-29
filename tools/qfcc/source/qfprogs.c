@@ -201,7 +201,7 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 static void *
 allocate_progs_mem (progs_t *pr, int size)
 {
-	return malloc (size);
+	return calloc (1, size);
 }
 
 static void
