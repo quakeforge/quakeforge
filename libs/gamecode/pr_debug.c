@@ -1151,10 +1151,10 @@ pr_debug_find_def (progs_t *pr, pr_ptr_t *ofs)
 	if (pr_debug && res->debug) {
 		def = PR_Get_Local_Def (pr, ofs);
 	}
-	if (*ofs >= pr->progs->globals.count) {
-		return 0;
-	}
 	if (!def) {
+		if (*ofs >= pr->progs->globals.count) {
+			return 0;
+		}
 		def = PR_GlobalAtOfs (pr, *ofs);
 		if (def) {
 			*ofs -= def->ofs;
