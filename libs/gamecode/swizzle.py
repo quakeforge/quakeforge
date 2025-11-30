@@ -16,7 +16,7 @@ def label(i, j, k, l):
     return f"swizzle_{coord[l]}{coord[k]}{coord[j]}{coord[i]}"
 
 def print_ref(i, j, k, l):
-    print(f"\t\t&&{label(i, j, k, l)},")
+    print(f"\t\t&&{label(i, j, k, l)} - &&{label(0, 0, 0, 0)},")
 
 def print_op(i, j, k, l):
     print(f"\t{label(i, j, k, l)}: vec = ({optype}) {{ vec[{l}], vec[{k}], vec[{j}], vec[{i}] }}; goto negate;")
@@ -83,7 +83,7 @@ if sys.argv[1] == "case":
     elif sys.argv[2] == "long":
         optype = "pr_lvec4_t"
     iter(print_op)
-    print("\tstatic void *swizzle_table[256] = {")
+    print("\tstatic const int swizzle_table[256] = {")
     iter(print_ref)
     print("\t};")
 elif sys.argv[1] == "test":

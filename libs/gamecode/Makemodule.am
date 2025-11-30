@@ -29,9 +29,11 @@ noinst_PYTHON += \
 	$(swizzle_py)
 
 opcodes_py = $(srcdir)/libs/gamecode/opcodes.py
+pr_jump_cinc = $(top_builddir)/libs/gamecode/pr_jump.cinc
 pr_opcode_cinc = $(top_builddir)/libs/gamecode/pr_opcode.cinc
 pr_opcode_hinc = $(top_builddir)/include/QF/progs/pr_opcode.hinc
 pr_opcode_src = \
+	${pr_jump_cinc} \
 	${pr_opcode_cinc} \
 	${pr_opcode_hinc}
 libs/gamecode/pr_opcode.lo: libs/gamecode/pr_opcode.c ${pr_opcode_src}
@@ -50,6 +52,7 @@ pr_swizzle32_cinc = $(top_builddir)/libs/gamecode/pr_swizzle32.cinc
 pr_swizzle64_cinc = $(top_builddir)/libs/gamecode/pr_swizzle64.cinc
 
 BUILT_SOURCES += \
+	$(pr_jump_cinc) \
 	$(pr_opcode_cinc) \
 	$(pr_opcode_hinc) \
 	$(pr_convert_cinc) \
@@ -59,6 +62,7 @@ BUILT_SOURCES += \
 	$(pr_swizzle64_cinc)
 
 CLEANFILES += \
+	$(pr_jump_cinc) \
 	$(pr_opcode_cinc) \
 	$(pr_opcode_hinc) \
 	$(pr_convert_cinc) \
@@ -66,6 +70,10 @@ CLEANFILES += \
 	$(pr_hops_cinc) \
 	$(pr_swizzle32_cinc) \
 	$(pr_swizzle64_cinc)
+
+$(pr_jump_cinc): $(opcodes_py)
+	$(V_PY)$(PYTHON) $(opcodes_py) jump > $(pr_jump_cinc).t && \
+	$(am__mv) $(pr_jump_cinc).t $(pr_jump_cinc)
 
 $(pr_opcode_cinc): $(opcodes_py)
 	$(V_PY)$(PYTHON) $(opcodes_py) table > $(pr_opcode_cinc).t && \

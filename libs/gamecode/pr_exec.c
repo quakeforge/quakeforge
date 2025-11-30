@@ -2055,7 +2055,7 @@ pr_swizzle_f (pr_ivec4_t vec, pr_ushort_t swiz)
 	};
 
 do_swizzle:
-	goto *swizzle_table[swiz & 0xff];
+	goto *(&&swizzle_xxxx + swizzle_table[swiz & 0xff]);
 negate:
 	vec ^= neg[(swiz >> 8) & 0xf];
 	vec &= zero[(swiz >> 12) & 0xf];
@@ -2111,7 +2111,7 @@ pr_swizzle_d (pr_lvec4_t vec, pr_ushort_t swiz)
 	};
 
 do_swizzle:
-	goto *swizzle_table[swiz & 0xff];
+	goto *(&&swizzle_xxxx + swizzle_table[swiz & 0xff]);
 negate:
 	vec ^= neg[(swiz >> 8) & 0xf];
 	vec &= zero[(swiz >> 12) & 0xf];
@@ -2151,22 +2151,58 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			}
 		}
 
-		if (st->op & OP_BREAK) {
-			if (pr->debug_handler) {
-				pr->debug_handler (prd_breakpoint, 0, pr->debug_data);
-			} else {
-				PR_RunError (pr, "breakpoint hit");
-			}
-		}
-
 		pr_type_t  *stk;
 		pr_type_t  *mm;
 		pr_func_t   function;
 
+		static const int jump_table[OP_BREAK * 2] = {
+#include "libs/gamecode/pr_jump.cinc"
+		};
 		pr_opcode_e st_op = st->op & OP_MASK;
-#define OP_begin(op) case op:
-#define OP_end break
-		switch (st_op) {
+		goto *(&&OP_break_label + jump_table[st_op]);
+#define OP_begin(op) op##_label:
+#define OP_end \
+		do { \
+			if (pr->watch && pr->watch->value != old_val.value) { \
+				if (!pr->wp_conditional \
+					|| pr->watch->value == pr->wp_val.value) { \
+					if (pr->debug_handler) { \
+						pr->debug_handler (prd_watchpoint, 0, pr->debug_data); \
+					} else { \
+						PR_RunError (pr, "watchpoint hit: %d -> %d", \
+									 old_val.value, pr->watch->value); \
+					} \
+				} \
+				old_val.value = pr->watch->value; \
+			} \
+			st++; \
+			++pr->pr_xstatement; \
+			if (pr->pr_xstatement != st - pr->pr_statements) \
+				PR_RunError (pr, "internal error"); \
+			if (++profile > 1000000 && !pr->no_exec_limit) { \
+				PR_RunError (pr, "runaway loop error"); \
+			} \
+			if (pr->pr_trace) { \
+				if (pr->debug_handler) { \
+					pr->debug_handler (prd_trace, 0, pr->debug_data); \
+				} else { \
+					PR_PrintStatement (pr, st, 1); \
+				} \
+			} \
+			pr_opcode_e st_op = st->op & OP_MASK; \
+			goto *(&&OP_break_label + jump_table[st_op]); \
+		} while (0)
+		// ensure execution can't enter except via the jump table
+		if (0) {
+			OP_begin(OP_break) {
+				if (pr->debug_handler) {
+					pr->debug_handler (prd_breakpoint, 0, pr->debug_data);
+				} else {
+					PR_RunError (pr, "breakpoint hit");
+				}
+				pr_opcode_e st_op = st->op & OP_MASK;
+				goto *(&&OP_break_label + jump_table[st_op & ~OP_BREAK]);
+			}
 			// 0 0000
 			OP_begin(OP_NOP) {
 			} OP_end;
@@ -2876,20 +2912,10 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 									 (pr_ushort_t) st->b);
 				}
 			} OP_end;
-			default:
+			//default:
+			OP_begin(OP_invalid) {
 				PR_RunError (pr, "Bad opcode x%03x", st->op & OP_MASK);
-		}
-		if (pr->watch && pr->watch->value != old_val.value) {
-			if (!pr->wp_conditional
-				|| pr->watch->value == pr->wp_val.value) {
-				if (pr->debug_handler) {
-					pr->debug_handler (prd_watchpoint, 0, pr->debug_data);
-				} else {
-					PR_RunError (pr, "watchpoint hit: %d -> %d",
-								 old_val.value, pr->watch->value);
-				}
-			}
-			old_val.value = pr->watch->value;
+			};
 		}
 	}
 exit_program:;

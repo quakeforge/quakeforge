@@ -834,7 +834,7 @@ def process_opcode(opcode, group):
 
 import sys
 
-if len (sys.argv) < 2 or sys.argv[1] not in ["enum", "table"]:
+if len (sys.argv) < 2 or sys.argv[1] not in ["enum", "table", "jump"]:
     sys.stderr.write ("specify output type: enum or table\n")
     sys.exit(1)
 
@@ -877,3 +877,15 @@ elif sys.argv[1] == "table":
                        '\\t.types = {ty},\\n'
                        '\\t.fmt = {fmt},\\n'
                        '}},"', group))
+elif sys.argv[1] == "jump":
+    W = 16
+    for i, group in enumerate(opcodes):
+        if group is not None:
+            op_name = group["op"]
+            op_label = f"{op_name}_label"
+        else:
+            op_name = f"OP_spare_{i}"
+            op_label = "OP_invalid_label"
+        op_ind = f"[{op_name}]"
+        op_ind = f"%-{W}.{W}s" % op_ind
+        print(f"\t{op_ind} = &&{op_label} - &&OP_break_label,");
