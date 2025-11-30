@@ -42,7 +42,7 @@
 #include "def.h"
 
 // The maximum size of a temp def, return value, or parameter value
-#define MAX_DEF_SIZE 32
+#define MAX_DEF_SIZE PR_MAX_RETURN
 
 typedef enum param_qual_e {
 	pq_const,

@@ -430,7 +430,7 @@ typedef enum : pr_ushort_t {
 	OP_MEMSETP_v6p,
 	OP_MEMSETPI_v6p,
 } pr_opcode_v6p_e;
-#define OP_BREAK 0x8000
+#define OP_BREAK 0x0200
 
 typedef enum : pr_ushort_t {
 #ifndef IN_DOXYGEN
@@ -452,13 +452,22 @@ typedef enum {
 	pr_branch_call,
 } pr_branch_e;
 
-#define OP_a_SHIFT (9)
-#define OP_b_SHIFT (11)
-#define OP_c_SHIFT (13)
+#define OP_a_SHIFT (10)
+#define OP_b_SHIFT (12)
+#define OP_c_SHIFT (14)
 #define OP_a_BASE (3 << OP_a_SHIFT)
 #define OP_b_BASE (3 << OP_b_SHIFT)
 #define OP_c_BASE (3 << OP_c_SHIFT)
-#define OP_MASK (~(OP_BREAK|OP_a_BASE|OP_b_BASE|OP_c_BASE))
+#define OP_MASK (~(OP_a_BASE|OP_b_BASE|OP_c_BASE))
+
+// statement operands are 16 bits, addressing mode needs 3, leaving 1 to
+// avoid a clash with (non-existant) mode 7 and max sized return value
+// this allows a return value size of 1024
+#define OP_ret_SIZE_BITS (16 - 3 - 1)
+#define OP_ret_SIZE_MASK ((1 << OP_ret_SIZE_BITS) - 1)
+#define OP_ret_SIZE(c) (((c) & OP_ret_SIZE_MASK) + 1)
+#define OP_ret_MODE(c) (((pr_ushort_t) (c)) >> OP_ret_SIZE_BITS)
+#define OP_ret_VOID(c) (((pr_ushort_t) (c)) == 0xffff)
 
 typedef enum {
 	OP_with_zero,
@@ -527,7 +536,8 @@ typedef struct dparmsize_s {
 #define	DEF_SAVEGLOBAL	(1<<15)
 
 #define	PR_MAX_PARAMS	8
-#define PR_MAX_RETURN	32			// maximum size of return value
+// maximum size of return value
+#define PR_MAX_RETURN	(1 << OP_ret_SIZE_BITS)
 
 typedef struct dfunction_s {
 	pr_int_t    first_statement;	// negative numbers are builtins
@@ -564,7 +574,7 @@ typedef struct pr_va_list_s {
 	 |(((0x##c) & 0xfff) <<  0) )
 #define	PROG_ID_VERSION	6
 #define	PROG_V6P_VERSION	PROG_VERSION_ENCODE(0,fff,00a)
-#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,013)
+#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,014)
 
 typedef struct pr_chunk_s {
 	pr_uint_t   offset;

@@ -1819,7 +1819,7 @@ statement_return (sblock_t *sblock, const expr_t *e)
 			pr_ushort_t mode = 0;
 			sblock = addressing_mode (sblock, ret_val, &s->opa, &s->opb, &mode,
 									  &target);
-			ret_ctrl |= mode << 5;
+			ret_ctrl |= mode << OP_ret_SIZE_BITS;
 			s->opc = short_operand (ret_ctrl, e);
 			statement_add_use (s, target);
 		} else {

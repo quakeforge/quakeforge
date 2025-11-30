@@ -2163,8 +2163,6 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 		pr_type_t  *mm;
 		pr_func_t   function;
 
-		int         ret_size = 0;
-
 		pr_opcode_e st_op = st->op & OP_MASK;
 #define OP_begin(op) case op:
 #define OP_end break
@@ -2627,10 +2625,10 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_jump(D);
 			OP_cmp_T (LT, U, long, lvec2, lvec4, <, ulong, ulvec2, ulvec4);
 			OP_begin(OP_RETURN) {
-				ret_size = (st->c & 0x1f) + 1;	// up to 32 words
-				if ((pr_ushort_t) st->c != 0xffff) {
+				if (!OP_ret_VOID(st->c)) {
+					int ret_size = OP_ret_SIZE(st->c);
 					mm = nullptr;
-					switch ((pr_addrmode_e) (((pr_ushort_t) st->c) >> 5)) {
+					switch ((pr_addrmode_e) OP_ret_MODE(st->c)) {
 #define ret_addr_mode(m) \
 	case pr_addrmode_##m: mm = pr_address_mode_##m (pr, st); break
 						ret_addr_mode(A);

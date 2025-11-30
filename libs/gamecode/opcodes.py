@@ -646,7 +646,7 @@ return_formats = {
     "opname": "return",
     "widths": "-1, -1, -1",    # width specified by st->c
     "columns": "-1, -1, -1",
-    "format": "%Mc5",
+    "format": "%McC",
     "types": "ev_void, ev_void, ev_void",
 }
 udivops_formats = {
