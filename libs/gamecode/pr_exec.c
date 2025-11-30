@@ -1764,6 +1764,10 @@ exit_program:;
 
 #define MM(type) (*((pr_##type##_t *) (mm)))
 #define STK(type) (*((pr_##type##_t *) (stk)))
+#define PR_OP(o) (pr->pr_globals + st->o + PR_BASE(pr, st, o))
+#define op_a PR_OP(a)
+#define op_b PR_OP(b)
+#define op_c PR_OP(c)
 
 typedef enum {
 	pr_addrmode_A,
@@ -1775,102 +1779,129 @@ typedef enum {
 } pr_addrmode_e;
 
 static pr_type_t *
-pr_address_mode (progs_t *pr, const dstatement_t *st, pr_addrmode_e addrmode)
+pr_address_mode_A (progs_t *pr, const dstatement_t *st)
 {
-	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, a);
-	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, b);
-	pr_ptr_t    mm_offs = 0;
-	pr_ptr_t    edict_area = 0;
+	// regular global access
+	pr_ptr_t    mm_offs = op_a - pr->pr_globals;
 
-	switch (addrmode) {
-		case pr_addrmode_A:
-			// regular global access
-			mm_offs = op_a - pr->pr_globals;
-			break;
-		case pr_addrmode_B:
-			// entity.field (equivalent to OP_LOAD_t_v6p)
-			edict_area = pr->pr_edict_area - pr->pr_globals;
-			mm_offs = edict_area + OPA(entity) + OPB(field);
-			break;
-		case pr_addrmode_C:
-			// constant indexed pointer: *a + b (supports -ve offset)
-			mm_offs = OPA(ptr) + st->b;
-			break;
-		case pr_addrmode_D:
-			// variable indexed pointer: *a + *b (supports -ve offset)
-			mm_offs = OPA(ptr) + OPB(int);
-			break;
-		case pr_addrmode_E:
-			// global access with constant offset (supports -ve offset)
-			mm_offs = op_a - pr->pr_globals + st->b;
-			break;
-		case pr_addrmode_F:
-			// global access with variable offset (supports -ve offset)
-			mm_offs = op_a - pr->pr_globals + OPB(int);
-			break;
-	}
 	return pr->pr_globals + mm_offs;
 }
 
 static pr_type_t *
-pr_call_mode (progs_t *pr, const dstatement_t *st, pr_addrmode_e call_mode)
+pr_address_mode_B (progs_t *pr, const dstatement_t *st)
 {
-	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, a);
-	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, b);
-	pr_ptr_t    mm_offs = 0;
-	pr_ptr_t    edict_area = 0;
+	// entity.field (equivalent to OP_LOAD_t_v6p)
+	pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
+	pr_ptr_t    mm_offs = edict_area + OPA(entity) + OPB(field);
 
-	switch (call_mode) {
-		case pr_addrmode_B:
-			// regular global access
-			mm_offs = op_a - pr->pr_globals;
-			break;
-		case pr_addrmode_C:
-			// constant indexed pointer: *a + b (supports -ve offset)
-			mm_offs = OPA(ptr) + st->b;
-			break;
-		case pr_addrmode_D:
-			// variable indexed pointer: *a + *b (supports -ve offset)
-			mm_offs = OPA(ptr) + OPB(int);
-			break;
-		case pr_addrmode_E:
-			// entity.field (equivalent to OP_LOAD_t_v6p)
-			edict_area = pr->pr_edict_area - pr->pr_globals;
-			mm_offs = edict_area + OPA(entity) + OPB(field);
-			break;
-		case pr_addrmode_A:
-		case pr_addrmode_F:
-	}
+	return pr->pr_globals + mm_offs;
+}
+
+static pr_type_t *
+pr_address_mode_C (progs_t *pr, const dstatement_t *st)
+{
+	// constant indexed pointer: *a + b (supports -ve offset)
+	pr_ptr_t    mm_offs = OPA(ptr) + st->b;
+
+	return pr->pr_globals + mm_offs;
+}
+
+static pr_type_t *
+pr_address_mode_D (progs_t *pr, const dstatement_t *st)
+{
+	// variable indexed pointer: *a + *b (supports -ve offset)
+	pr_ptr_t    mm_offs = OPA(ptr) + OPB(int);
+
+	return pr->pr_globals + mm_offs;
+}
+
+static pr_type_t *
+pr_address_mode_E (progs_t *pr, const dstatement_t *st)
+{
+	// global access with constant offset (supports -ve offset)
+	pr_ptr_t    mm_offs = op_a - pr->pr_globals + st->b;
+
+	return pr->pr_globals + mm_offs;
+}
+
+static pr_type_t *
+pr_address_mode_F (progs_t *pr, const dstatement_t *st)
+{
+	// global access with variable offset (supports -ve offset)
+	pr_ptr_t    mm_offs = op_a - pr->pr_globals + OPB(int);
+
+	return pr->pr_globals + mm_offs;
+}
+
+static pr_type_t *
+pr_call_mode_B (progs_t *pr, const dstatement_t *st)
+{
+	// regular global access
+	pr_ptr_t   mm_offs = op_a - pr->pr_globals;
+
+	return pr->pr_globals + mm_offs;
+}
+
+static pr_type_t *
+pr_call_mode_C (progs_t *pr, const dstatement_t *st)
+{
+	// constant indexed pointer: *a + b (supports -ve offset)
+	pr_ptr_t    mm_offs = OPA(ptr) + st->b;
+
+	return pr->pr_globals + mm_offs;
+}
+
+static pr_type_t *
+pr_call_mode_D (progs_t *pr, const dstatement_t *st)
+{
+	// variable indexed pointer: *a + *b (supports -ve offset)
+	pr_ptr_t    mm_offs = OPA(ptr) + OPB(int);
+
 	return pr->pr_globals + mm_offs;
 }
 
 static pr_ptr_t __attribute__((pure))
-pr_jump_mode (progs_t *pr, const dstatement_t *st, pr_addrmode_e jump_mode)
+pr_jump_mode_A (progs_t *pr, const dstatement_t *st)
 {
-	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, a);
-	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, b);
-	pr_ptr_t    jump_offs = pr->pr_xstatement;
+	// instruction relative offset
+	pr_ptr_t    jump_offs = pr->pr_xstatement + st->a;
 
-	switch (jump_mode) {
-		case pr_addrmode_A:
-			// instruction relative offset
-			jump_offs = jump_offs + st->a;
-			break;
-		case pr_addrmode_B:
-			// variable indexed array: a + *b (only +ve)
-			jump_offs = PR_PTR (uint, op_a + OPB(uint));
-			break;
-		case pr_addrmode_C:
-			// constant indexed pointer: *a + b (supports -ve offset)
-			jump_offs = OPA(ptr) + st->b;
-			break;
-		case pr_addrmode_D:
-			// variable indexed pointer: *a + *b (supports -ve offset)
-			jump_offs = OPA(ptr) + OPB(int);
-			break;
-		case pr_addrmode_E:
-		case pr_addrmode_F:
+	if (pr_boundscheck && jump_offs >= pr->progs->statements.count) {
+		PR_RunError (pr, "out of bounds: %x", jump_offs);
 	}
+	return jump_offs - 1;	// for st++
+}
+
+static pr_ptr_t __attribute__((pure))
+pr_jump_mode_B (progs_t *pr, const dstatement_t *st)
+{
+	// variable indexed array: a + *b (only +ve)
+	pr_ptr_t    jump_offs = PR_PTR (uint, op_a + OPB(uint));
+
+	if (pr_boundscheck && jump_offs >= pr->progs->statements.count) {
+		PR_RunError (pr, "out of bounds: %x", jump_offs);
+	}
+	return jump_offs - 1;	// for st++
+}
+
+static pr_ptr_t __attribute__((pure))
+pr_jump_mode_C (progs_t *pr, const dstatement_t *st)
+{
+	// constant indexed pointer: *a + b (supports -ve offset)
+	pr_ptr_t    jump_offs = OPA(ptr) + st->b;
+
+	if (pr_boundscheck && jump_offs >= pr->progs->statements.count) {
+		PR_RunError (pr, "out of bounds: %x", jump_offs);
+	}
+	return jump_offs - 1;	// for st++
+}
+
+static pr_ptr_t __attribute__((pure))
+pr_jump_mode_D (progs_t *pr, const dstatement_t *st)
+{
+	// variable indexed pointer: *a + *b (supports -ve offset)
+	pr_ptr_t    jump_offs = OPA(ptr) + OPB(int);
+
 	if (pr_boundscheck && jump_offs >= pr->progs->statements.count) {
 		PR_RunError (pr, "out of bounds: %x", jump_offs);
 	}
@@ -1922,7 +1953,6 @@ static void
 pr_with (progs_t *pr, const dstatement_t *st)
 {
 	pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
-	pr_type_t  *op_b = pr->pr_globals + PR_BASE (pr, st, b) + st->b;
 	pr_type_t  *stk;
 
 	switch (st->a) {
@@ -2129,15 +2159,6 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			}
 		}
 
-		pr_ptr_t    st_a = st->a + PR_BASE (pr, st, a);
-		pr_ptr_t    st_b = st->b + PR_BASE (pr, st, b);
-		pr_ptr_t    st_c = st->c + PR_BASE (pr, st, c);
-
-
-		pr_type_t  *op_a = pr->pr_globals + st_a;
-		pr_type_t  *op_b = pr->pr_globals + st_b;
-		pr_type_t  *op_c = pr->pr_globals + st_c;
-
 		pr_type_t  *stk;
 		pr_type_t  *mm;
 		pr_func_t   function;
@@ -2161,7 +2182,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 #define OP_assign_v(d,s,t) VectorCopy(&s(t),&d(t))
 #define OP_load_T_M_W(o,t,m,w,a) \
 			OP_begin(OP_##o##_##m##_##w) { \
-				mm = pr_address_mode (pr, st, pr_addrmode_##m); \
+				mm = pr_address_mode_##m (pr, st); \
 				a(OPC,MM,t); \
 			} OP_end
 #define OP_load_1(m) OP_load_T_M_W(LOAD,int,  m,1,OP_assign_s)
@@ -2176,7 +2197,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 0 0001
 #define OP_store_T_M_W(o,t,m,w,a) \
 			OP_begin(OP_##o##_##m##_##w) { \
-				mm = pr_address_mode (pr, st, pr_addrmode_##m); \
+				mm = pr_address_mode_##m (pr, st); \
 				a(MM,OPC,t); \
 			} OP_end
 #define OP_store_1(m) OP_store_T_M_W(STORE,int,  m,1,OP_assign_s)
@@ -2191,7 +2212,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 0 0010
 #define OP_push_T_M_W(t,m,w,a) \
 			OP_begin(OP_PUSH_##m##_##w) { \
-				mm = pr_address_mode (pr, st, pr_addrmode_##m); \
+				mm = pr_address_mode_##m (pr, st); \
 				stk = pr_stack_push (pr); \
 				a(STK,MM,t); \
 			} OP_end
@@ -2207,7 +2228,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 0 0011
 #define OP_pop_T_M_W(t,m,w,a) \
 			OP_begin(OP_POP_##m##_##w) { \
-				mm = pr_address_mode (pr, st, pr_addrmode_##m); \
+				mm = pr_address_mode_##m (pr, st); \
 				stk = pr_stack_pop (pr); \
 				a(MM,STK,t); \
 			} OP_end
@@ -2439,7 +2460,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 0 1111
 #define OP_lea(m) \
 			OP_begin(OP_LEA_##m) { \
-				mm = pr_address_mode (pr, st, pr_addrmode_##m); \
+				mm = pr_address_mode_##m (pr, st); \
 				OPC(ptr) = mm - pr->pr_globals; \
 			} OP_end
 			OP_lea(E);
@@ -2597,7 +2618,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_cmp_T (LT, u, int, ivec2, ivec4, <, uint, uvec2, uvec4);
 #define OP_jump(m) \
 			OP_begin(OP_JUMP_##m) { \
-				pr->pr_xstatement = pr_jump_mode (pr, st, pr_addrmode_##m); \
+				pr->pr_xstatement = pr_jump_mode_##m (pr, st); \
 				st = pr->pr_statements + pr->pr_xstatement; \
 			} OP_end
 			OP_jump(A);
@@ -2608,7 +2629,17 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_begin(OP_RETURN) {
 				ret_size = (st->c & 0x1f) + 1;	// up to 32 words
 				if ((pr_ushort_t) st->c != 0xffff) {
-					mm = pr_address_mode (pr, st, ((pr_ushort_t) st->c) >> 5);
+					mm = nullptr;
+					switch ((pr_addrmode_e) (((pr_ushort_t) st->c) >> 5)) {
+#define ret_addr_mode(m) \
+	case pr_addrmode_##m: mm = pr_address_mode_##m (pr, st); break
+						ret_addr_mode(A);
+						ret_addr_mode(B);
+						ret_addr_mode(C);
+						ret_addr_mode(D);
+						ret_addr_mode(E);
+						ret_addr_mode(F);
+					}
 					if ((pr_int_t *) mm != &R_INT (pr)) {
 						memcpy (&R_INT (pr), mm, ret_size * sizeof (*op_a));
 					}
@@ -2626,7 +2657,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			} OP_end;
 #define OP_call(m) \
 			OP_begin(OP_CALL_##m) { \
-				mm = pr_call_mode (pr, st, pr_addrmode_##m); \
+				mm = pr_call_mode_##m (pr, st); \
 				function = PR_PTR (func, mm); \
 				pr->pr_argc = 0; \
 				/* op_c specifies the location for the return value if any*/ \
@@ -2773,7 +2804,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 1 1110
 			OP_cmp_T (LE, u, int, ivec2, ivec4, <=, uint, uvec2, uvec4);
 #define OP_relative_jump(m) \
-	do { pr->pr_xstatement = pr_jump_mode (pr, st, pr_addrmode_##m); \
+	do { pr->pr_xstatement = pr_jump_mode_##m (pr, st); \
 		 st = pr->pr_statements + pr->pr_xstatement; } while (0)
 #define OP_branch(op, test) \
 			OP_begin(OP_##op) { \
