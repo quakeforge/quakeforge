@@ -1886,13 +1886,13 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 */
 #define PR_RESGET(map,ind)										\
 	({															\
-		__auto_type ret = (map)._free;							\
+		typeof((map)._free) ret;								\
 		unsigned    row = ~ind / 1024;							\
 		unsigned    col = ~ind % 1024;							\
-		if (row >= (map)._size) {								\
-			ret = 0;											\
-		} else {												\
+		if (__builtin_expect (row < (map)._size, 1)) {			\
 			ret = &(map)._map[row][col];						\
+		} else {												\
+			ret = nullptr;										\
 		}														\
 		ret;													\
 	})
