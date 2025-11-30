@@ -1889,7 +1889,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 					}
 					shift = fmt[3];
 					shift = (shift & 0xf)
-							+ (((shift & 0x40) >> 3) | ((shift & 0x40) >> 5));
+							+ (((shift & 0x40) >> 3) | ((shift & 0x40) >> 6));
 					fmt++; // M/m have one extra item
 				}
 
@@ -2021,7 +2021,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						{
 							pr_ptr_t    ptr = 0;
 							pr_int_t    offs = 0;
-							switch ((opval >> shift) & 3) {
+							switch ((opval >> shift) & 7) {
 								case 0:
 									ptr = s->a + PR_BASE (pr, s, a);
 									break;
