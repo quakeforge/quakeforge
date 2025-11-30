@@ -1414,13 +1414,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 
 			// ==================
-#define OP_relative_jump(offs) \
+#define OP_relative_jump_v6p(offs) \
 	do { pr->pr_xstatement += (offs) - 1;	/* offset the st++ */ \
 		 st = pr->pr_statements + pr->pr_xstatement; } while (0)
 
 #define OP_branch_v6p(op, test) \
 			case OP_##op##_v6p: \
-				if (OPA(int) test 0) OP_relative_jump(st->b); \
+				if (OPA(int) test 0) OP_relative_jump_v6p(st->b); \
 				break;
 			OP_branch_v6p(IFNOT, ==);
 			OP_branch_v6p(IF,    !=);
@@ -1429,7 +1429,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			OP_branch_v6p(IFAE,  >=);
 			OP_branch_v6p(IFA,   >);
 			case OP_GOTO_v6p:
-				OP_relative_jump(st->a);
+				OP_relative_jump_v6p(st->a);
 				break;
 			case OP_JUMP_v6p:
 				if (pr_boundscheck
@@ -1765,37 +1765,46 @@ exit_program:;
 #define MM(type) (*((pr_##type##_t *) (mm)))
 #define STK(type) (*((pr_##type##_t *) (stk)))
 
+typedef enum {
+	pr_addrmode_A,
+	pr_addrmode_B,
+	pr_addrmode_C,
+	pr_addrmode_D,
+	pr_addrmode_E,
+	pr_addrmode_F,
+} pr_addrmode_e;
+
 static pr_type_t *
-pr_address_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
+pr_address_mode (progs_t *pr, const dstatement_t *st, pr_addrmode_e addrmode)
 {
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, a);
 	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, b);
 	pr_ptr_t    mm_offs = 0;
 	pr_ptr_t    edict_area = 0;
 
-	switch (mm_ind) {
-		case 0:
+	switch (addrmode) {
+		case pr_addrmode_A:
 			// regular global access
 			mm_offs = op_a - pr->pr_globals;
 			break;
-		case 1:
+		case pr_addrmode_B:
 			// entity.field (equivalent to OP_LOAD_t_v6p)
 			edict_area = pr->pr_edict_area - pr->pr_globals;
 			mm_offs = edict_area + OPA(entity) + OPB(field);
 			break;
-		case 2:
+		case pr_addrmode_C:
 			// constant indexed pointer: *a + b (supports -ve offset)
 			mm_offs = OPA(ptr) + st->b;
 			break;
-		case 3:
+		case pr_addrmode_D:
 			// variable indexed pointer: *a + *b (supports -ve offset)
 			mm_offs = OPA(ptr) + OPB(int);
 			break;
-		case 4:
+		case pr_addrmode_E:
 			// global access with constant offset (supports -ve offset)
 			mm_offs = op_a - pr->pr_globals + st->b;
 			break;
-		case 5:
+		case pr_addrmode_F:
 			// global access with variable offset (supports -ve offset)
 			mm_offs = op_a - pr->pr_globals + OPB(int);
 			break;
@@ -1804,59 +1813,63 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 }
 
 static pr_type_t *
-pr_call_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
+pr_call_mode (progs_t *pr, const dstatement_t *st, pr_addrmode_e call_mode)
 {
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, a);
 	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, b);
 	pr_ptr_t    mm_offs = 0;
 	pr_ptr_t    edict_area = 0;
 
-	switch (mm_ind) {
-		case 1:
+	switch (call_mode) {
+		case pr_addrmode_B:
 			// regular global access
 			mm_offs = op_a - pr->pr_globals;
 			break;
-		case 2:
+		case pr_addrmode_C:
 			// constant indexed pointer: *a + b (supports -ve offset)
 			mm_offs = OPA(ptr) + st->b;
 			break;
-		case 3:
+		case pr_addrmode_D:
 			// variable indexed pointer: *a + *b (supports -ve offset)
 			mm_offs = OPA(ptr) + OPB(int);
 			break;
-		case 4:
+		case pr_addrmode_E:
 			// entity.field (equivalent to OP_LOAD_t_v6p)
 			edict_area = pr->pr_edict_area - pr->pr_globals;
 			mm_offs = edict_area + OPA(entity) + OPB(field);
 			break;
+		case pr_addrmode_A:
+		case pr_addrmode_F:
 	}
 	return pr->pr_globals + mm_offs;
 }
 
 static pr_ptr_t __attribute__((pure))
-pr_jump_mode (progs_t *pr, const dstatement_t *st, int jump_ind)
+pr_jump_mode (progs_t *pr, const dstatement_t *st, pr_addrmode_e jump_mode)
 {
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, a);
 	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, b);
 	pr_ptr_t    jump_offs = pr->pr_xstatement;
 
-	switch (jump_ind) {
-		case 0:
+	switch (jump_mode) {
+		case pr_addrmode_A:
 			// instruction relative offset
 			jump_offs = jump_offs + st->a;
 			break;
-		case 1:
+		case pr_addrmode_B:
 			// variable indexed array: a + *b (only +ve)
 			jump_offs = PR_PTR (uint, op_a + OPB(uint));
 			break;
-		case 2:
+		case pr_addrmode_C:
 			// constant indexed pointer: *a + b (supports -ve offset)
 			jump_offs = OPA(ptr) + st->b;
 			break;
-		case 3:
+		case pr_addrmode_D:
 			// variable indexed pointer: *a + *b (supports -ve offset)
 			jump_offs = OPA(ptr) + OPB(int);
 			break;
+		case pr_addrmode_E:
+		case pr_addrmode_F:
 	}
 	if (pr_boundscheck && jump_offs >= pr->progs->statements.count) {
 		PR_RunError (pr, "out of bounds: %x", jump_offs);
@@ -2132,160 +2145,102 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 		int         ret_size = 0;
 
 		pr_opcode_e st_op = st->op & OP_MASK;
+#define OP_begin(op) case op:
+#define OP_end break
 		switch (st_op) {
 			// 0 0000
-			case OP_NOP:
-				break;
-			case OP_ADJSTK:
+			OP_begin(OP_NOP) {
+			} OP_end;
+			OP_begin(OP_ADJSTK) {
 				pr_stack_adjust (pr, (pr_ushort_t) st->a, st->b);
-				break;
-			case OP_LDCONST:
+			} OP_end;
+			OP_begin(OP_LDCONST) {
 				PR_RunError (pr, "OP_LDCONST not implemented");
-				break;
-			case OP_LOAD_B_1:
-			case OP_LOAD_C_1:
-			case OP_LOAD_D_1:
-				mm = pr_address_mode (pr, st, (st_op - OP_LOAD_B_1 + 4) >> 2);
-				OPC(int) = MM(int);
-				break;
-			case OP_LOAD_B_2:
-			case OP_LOAD_C_2:
-			case OP_LOAD_D_2:
-				mm = pr_address_mode (pr, st, (st_op - OP_LOAD_B_2 + 4) >> 2);
-				OPC(ivec2) = MM(ivec2);
-				break;
-			case OP_LOAD_B_3:
-			case OP_LOAD_C_3:
-			case OP_LOAD_D_3:
-				mm = pr_address_mode (pr, st, (st_op - OP_LOAD_B_3 + 4) >> 2);
-				VectorCopy (&MM(int), &OPC(int));
-				break;
-			case OP_LOAD_B_4:
-			case OP_LOAD_C_4:
-			case OP_LOAD_D_4:
-				mm = pr_address_mode (pr, st, (st_op - OP_LOAD_B_4 + 4) >> 2);
-				OPC(ivec4) = MM(ivec4);
-				break;
+			} OP_end;
+#define OP_assign_s(d,s,t) d(t) = s(t)
+#define OP_assign_v(d,s,t) VectorCopy(&s(t),&d(t))
+#define OP_load_T_M_W(o,t,m,w,a) \
+			OP_begin(OP_##o##_##m##_##w) { \
+				mm = pr_address_mode (pr, st, pr_addrmode_##m); \
+				a(OPC,MM,t); \
+			} OP_end
+#define OP_load_1(m) OP_load_T_M_W(LOAD,int,  m,1,OP_assign_s)
+#define OP_load_2(m) OP_load_T_M_W(LOAD,ivec2,m,2,OP_assign_s)
+#define OP_load_3(m) OP_load_T_M_W(LOAD,int,  m,3,OP_assign_v)
+#define OP_load_4(m) OP_load_T_M_W(LOAD,ivec4,m,4,OP_assign_s)
+#define OP_load_M(m) OP_load_1(m);OP_load_2(m);OP_load_3(m);OP_load_4(m)
+			OP_load_M(B);
+			OP_load_M(C);
+			OP_load_M(D);
+
 			// 0 0001
-			case OP_STORE_A_1:
-			case OP_STORE_B_1:
-			case OP_STORE_C_1:
-			case OP_STORE_D_1:
-				mm = pr_address_mode (pr, st, (st_op - OP_STORE_A_1) >> 2);
-				MM(int) = OPC(int);
-				break;
-			case OP_STORE_A_2:
-			case OP_STORE_B_2:
-			case OP_STORE_C_2:
-			case OP_STORE_D_2:
-				mm = pr_address_mode (pr, st, (st_op - OP_STORE_A_2) >> 2);
-				MM(ivec2) = OPC(ivec2);
-				break;
-			case OP_STORE_A_3:
-			case OP_STORE_B_3:
-			case OP_STORE_C_3:
-			case OP_STORE_D_3:
-				mm = pr_address_mode (pr, st, (st_op - OP_STORE_A_3) >> 2);
-				VectorCopy (&OPC(int), &MM(int));
-				break;
-			case OP_STORE_A_4:
-			case OP_STORE_B_4:
-			case OP_STORE_C_4:
-			case OP_STORE_D_4:
-				mm = pr_address_mode (pr, st, (st_op - OP_STORE_A_4) >> 2);
-				MM(ivec4) = OPC(ivec4);
-				break;
+#define OP_store_T_M_W(o,t,m,w,a) \
+			OP_begin(OP_##o##_##m##_##w) { \
+				mm = pr_address_mode (pr, st, pr_addrmode_##m); \
+				a(MM,OPC,t); \
+			} OP_end
+#define OP_store_1(m) OP_store_T_M_W(STORE,int,  m,1,OP_assign_s)
+#define OP_store_2(m) OP_store_T_M_W(STORE,ivec2,m,2,OP_assign_s)
+#define OP_store_3(m) OP_store_T_M_W(STORE,int,  m,3,OP_assign_v)
+#define OP_store_4(m) OP_store_T_M_W(STORE,ivec4,m,4,OP_assign_s)
+#define OP_store_M(m) OP_store_1(m);OP_store_2(m);OP_store_3(m);OP_store_4(m)
+			OP_store_M(A);
+			OP_store_M(B);
+			OP_store_M(C);
+			OP_store_M(D);
 			// 0 0010
-			case OP_PUSH_A_1:
-			case OP_PUSH_B_1:
-			case OP_PUSH_C_1:
-			case OP_PUSH_D_1:
-				mm = pr_address_mode (pr, st, (st_op - OP_PUSH_A_1) >> 2);
-				stk = pr_stack_push (pr);
-				STK(int) = MM(int);
-				break;
-			case OP_PUSH_A_2:
-			case OP_PUSH_B_2:
-			case OP_PUSH_C_2:
-			case OP_PUSH_D_2:
-				mm = pr_address_mode (pr, st, (st_op - OP_PUSH_A_2) >> 2);
-				stk = pr_stack_push (pr);
-				STK(ivec2) = MM(ivec2);
-				break;
-			case OP_PUSH_A_3:
-			case OP_PUSH_B_3:
-			case OP_PUSH_C_3:
-			case OP_PUSH_D_3:
-				mm = pr_address_mode (pr, st, (st_op - OP_PUSH_A_3) >> 2);
-				stk = pr_stack_push (pr);
-				VectorCopy (&MM(int), &STK(int));
-				break;
-			case OP_PUSH_A_4:
-			case OP_PUSH_B_4:
-			case OP_PUSH_C_4:
-			case OP_PUSH_D_4:
-				mm = pr_address_mode (pr, st, (st_op - OP_PUSH_A_4) >> 2);
-				stk = pr_stack_push (pr);
-				STK(ivec4) = MM(ivec4);
-				break;
+#define OP_push_T_M_W(t,m,w,a) \
+			OP_begin(OP_PUSH_##m##_##w) { \
+				mm = pr_address_mode (pr, st, pr_addrmode_##m); \
+				stk = pr_stack_push (pr); \
+				a(STK,MM,t); \
+			} OP_end
+#define OP_push_1(m) OP_push_T_M_W(int,  m,1,OP_assign_s)
+#define OP_push_2(m) OP_push_T_M_W(ivec2,m,2,OP_assign_s)
+#define OP_push_3(m) OP_push_T_M_W(int,  m,3,OP_assign_v)
+#define OP_push_4(m) OP_push_T_M_W(ivec4,m,4,OP_assign_s)
+#define OP_push_M(m) OP_push_1(m);OP_push_2(m);OP_push_3(m);OP_push_4(m)
+			OP_push_M(A);
+			OP_push_M(B);
+			OP_push_M(C);
+			OP_push_M(D);
 			// 0 0011
-			case OP_POP_A_1:
-			case OP_POP_B_1:
-			case OP_POP_C_1:
-			case OP_POP_D_1:
-				mm = pr_address_mode (pr, st, (st_op - OP_POP_A_1) >> 2);
-				stk = pr_stack_pop (pr);
-				MM(int) = STK(int);
-				break;
-			case OP_POP_A_2:
-			case OP_POP_B_2:
-			case OP_POP_C_2:
-			case OP_POP_D_2:
-				mm = pr_address_mode (pr, st, (st_op - OP_POP_A_2) >> 2);
-				stk = pr_stack_pop (pr);
-				MM(ivec2) = STK(ivec2);
-				break;
-			case OP_POP_A_3:
-			case OP_POP_B_3:
-			case OP_POP_C_3:
-			case OP_POP_D_3:
-				mm = pr_address_mode (pr, st, (st_op - OP_POP_A_3) >> 2);
-				stk = pr_stack_pop (pr);
-				VectorCopy (&STK(int), &MM(int));
-				break;
-			case OP_POP_A_4:
-			case OP_POP_B_4:
-			case OP_POP_C_4:
-			case OP_POP_D_4:
-				mm = pr_address_mode (pr, st, (st_op - OP_POP_A_4) >> 2);
-				stk = pr_stack_pop (pr);
-				MM(ivec4) = STK(ivec4);
-				break;
+#define OP_pop_T_M_W(t,m,w,a) \
+			OP_begin(OP_POP_##m##_##w) { \
+				mm = pr_address_mode (pr, st, pr_addrmode_##m); \
+				stk = pr_stack_pop (pr); \
+				a(MM,STK,t); \
+			} OP_end
+#define OP_pop_1(m) OP_pop_T_M_W(int,  m,1,OP_assign_s)
+#define OP_pop_2(m) OP_pop_T_M_W(ivec2,m,2,OP_assign_s)
+#define OP_pop_3(m) OP_pop_T_M_W(int,  m,3,OP_assign_v)
+#define OP_pop_4(m) OP_pop_T_M_W(ivec4,m,4,OP_assign_s)
+#define OP_pop_M(m) OP_pop_1(m);OP_pop_2(m);OP_pop_3(m);OP_pop_4(m)
+			OP_pop_M(A);
+			OP_pop_M(B);
+			OP_pop_M(C);
+			OP_pop_M(D);
 
 #define OP_mvmul_T_3(T,cols,rows,t) \
-			case OP_MVMUL_##cols##3##_##T: \
-				{ \
-					auto a = &OPA(t##vec##rows); \
-					auto b = OPB(t##vec##cols); \
-					auto c = OPC(t##vec##rows); \
-					VectorScale (a[0], b[0], c); \
-					for (int i = 1; i < cols; i++) { \
-						VectorMultAdd(c, b[i], a[i], c); \
-					} \
+			OP_begin(OP_MVMUL_##cols##3##_##T) { \
+				auto a = &OPA(t##vec##rows); \
+				auto b = OPB(t##vec##cols); \
+				auto c = OPC(t##vec##rows); \
+				VectorScale (a[0], b[0], c); \
+				for (int i = 1; i < cols; i++) { \
+					VectorMultAdd(c, b[i], a[i], c); \
 				} \
-				break
+			} OP_end
 #define OP_mvmul_T(T,cols,rows,t) \
-			case OP_MVMUL_##cols##rows##_##T: \
-				{ \
-					auto a = &OPA(t##vec##rows); \
-					auto b = OPB(t##vec##cols); \
-					pr_##t##vec##rows##_t c = a[0] * b[0]; \
-					for (int i = 1; i < cols; i++) { \
-						c += a[i] * b[i]; \
-					} \
-					OPC(t##vec##rows) = c; \
+			OP_begin(OP_MVMUL_##cols##rows##_##T) { \
+				auto a = &OPA(t##vec##rows); \
+				auto b = OPB(t##vec##cols); \
+				pr_##t##vec##rows##_t c = a[0] * b[0]; \
+				for (int i = 1; i < cols; i++) { \
+					c += a[i] * b[i]; \
 				} \
-				break
+				OPC(t##vec##rows) = c; \
+			} OP_end
 			// 0 0100
 			OP_mvmul_T  (F,3,2,);
 			OP_mvmul_T_3(F,3,3,);
@@ -2305,25 +2260,21 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_mvmul_T  (D,2,4,d);
 
 #define OP_vmmul_T_3(T,cols,rows,t) \
-			case OP_VMMUL_##cols##3##_##T: \
-				{ \
-					auto a = OPA(t##vec##rows); \
-					auto b = &OPB(t##vec##rows); \
-					for (int i = 0; i < cols; i++) { \
-						OPC(t##vec##cols)[i] = DotProduct (a, b[i]); \
-					} \
+			OP_begin(OP_VMMUL_##cols##3##_##T) { \
+				auto a = OPA(t##vec##rows); \
+				auto b = &OPB(t##vec##rows); \
+				for (int i = 0; i < cols; i++) { \
+					OPC(t##vec##cols)[i] = DotProduct (a, b[i]); \
 				} \
-				break
+			} OP_end
 #define OP_vmmul_T(T,cols,rows,t,t2) \
-			case OP_VMMUL_##cols##rows##_##T: \
-				{ \
-					auto a = OPA(t##vec##rows); \
-					auto b = &OPB(t##vec##rows); \
-					for (int i = 0; i < cols; i++) { \
-						OPC(t##vec##cols)[i] = dot##rows##t2(a, b[i])[0]; \
-					} \
+			OP_begin(OP_VMMUL_##cols##rows##_##T) { \
+				auto a = OPA(t##vec##rows); \
+				auto b = &OPB(t##vec##rows); \
+				for (int i = 0; i < cols; i++) { \
+					OPC(t##vec##cols)[i] = dot##rows##t2(a, b[i])[0]; \
 				} \
-				break
+			} OP_end
 #define dot4f dotf
 #define dot4d dotd
 			// 0 0101
@@ -2347,18 +2298,16 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 #undef dot4d
 
 #define OP_outer_T(T,cols,rows,t) \
-			case OP_OUTER_##cols##rows##_##T: \
-				{ \
-					auto a = OPA(t##vec##rows); \
-					auto b = OPB(t##vec##cols); \
-					auto c = &OPC(t##vec##rows); \
-					for (int i = 0; i < rows; i++) { \
-						for (int j = 0; j < cols; j++) { \
-							c[i][j] = a[i] * b[j]; \
-						} \
+			OP_begin(OP_OUTER_##cols##rows##_##T) { \
+				auto a = OPA(t##vec##rows); \
+				auto b = OPB(t##vec##cols); \
+				auto c = &OPC(t##vec##rows); \
+				for (int i = 0; i < rows; i++) { \
+					for (int j = 0; j < cols; j++) { \
+						c[i][j] = a[i] * b[j]; \
 					} \
 				} \
-				break
+			} OP_end
 			// 0 0110
 			OP_outer_T(F,3,2,);
 			OP_outer_T(F,3,3,);
@@ -2381,74 +2330,62 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_mvmul_T(F,2,2,);
 			OP_vmmul_T(F,2,2,,f);
 			OP_outer_T(F,2,2,);
-			case OP_WEDGE_F_2:
-				{
-					auto a = OPA(vec2);
-					auto b = OPB(vec2);
-					OPC(float) = a[0] * b[1] - a[1] * b[0];
-				}
-				break;
+			OP_begin(OP_WEDGE_F_2) {
+				auto a = OPA(vec2);
+				auto b = OPB(vec2);
+				OPC(float) = a[0] * b[1] - a[1] * b[0];
+			} OP_end;
 			OP_mvmul_T(D,2,2,d);
 			OP_vmmul_T(D,2,2,d,d);
 			OP_outer_T(D,2,2,d);
-			case OP_WEDGE_D_2:
-				{
-					auto a = OPA(dvec2);
-					auto b = OPB(dvec2);
-					OPC(double) = a[0] * b[1] - a[1] * b[0];
-				}
-				break;
-			case OP_SWIZZLE_F_2:
-				{
-					auto s2 = OPA(ivec2);
-					pr_ivec4_t s4 = { s2[0], s2[1] };
-					s4 = pr_swizzle_f (s4, (pr_ushort_t) st->b);
-					OPC(ivec2) = (pr_ivec2_t) { s4[0], s4[1] };
-				}
-				break;
-			case OP_SWIZZLE_F_3:
-				{
-					auto s4 = loadvec3i (&OPA(int));
-					s4 = pr_swizzle_f (s4, (pr_ushort_t) st->b);
-					storevec3i (&OPC(int), s4);
-				}
-				break;
-			case OP_SWIZZLE_D_2:
-				{
-					auto s2 = OPA(lvec2);
-					pr_lvec4_t s4 = { s2[0], s2[1] };
-					s4 = pr_swizzle_d (s4, (pr_ushort_t) st->b);
-					OPC(lvec2) = (pr_lvec2_t) { s4[0], s4[1] };
-				}
-				break;
-			case OP_SWIZZLE_D_3:
-				{
-					auto s4 = loadvec3l (&OPA(long));
-					s4 = pr_swizzle_d (s4, (pr_ushort_t) st->b);
-					storevec3l (&OPC(long), s4);
-				}
-				break;
+			OP_begin(OP_WEDGE_D_2) {
+				auto a = OPA(dvec2);
+				auto b = OPB(dvec2);
+				OPC(double) = a[0] * b[1] - a[1] * b[0];
+			} OP_end;
+			OP_begin(OP_SWIZZLE_F_2) {
+				auto s2 = OPA(ivec2);
+				pr_ivec4_t s4 = { s2[0], s2[1] };
+				s4 = pr_swizzle_f (s4, (pr_ushort_t) st->b);
+				OPC(ivec2) = (pr_ivec2_t) { s4[0], s4[1] };
+			} OP_end;
+			OP_begin(OP_SWIZZLE_F_3) {
+				auto s4 = loadvec3i (&OPA(int));
+				s4 = pr_swizzle_f (s4, (pr_ushort_t) st->b);
+				storevec3i (&OPC(int), s4);
+			} OP_end;
+			OP_begin(OP_SWIZZLE_D_2) {
+				auto s2 = OPA(lvec2);
+				pr_lvec4_t s4 = { s2[0], s2[1] };
+				s4 = pr_swizzle_d (s4, (pr_ushort_t) st->b);
+				OPC(lvec2) = (pr_lvec2_t) { s4[0], s4[1] };
+			} OP_end;
+			OP_begin(OP_SWIZZLE_D_3) {
+				auto s4 = loadvec3l (&OPA(long));
+				s4 = pr_swizzle_d (s4, (pr_ushort_t) st->b);
+				storevec3l (&OPC(long), s4);
+			} OP_end;
 			// spare
 			// spare
 			// spare
 			// spare
 
 #define OP_cmp_1(OP, T, rt, cmp, ct) \
-			case OP_##OP##_##T##_1: \
+			OP_begin(OP_##OP##_##T##_1) { \
 				OPC(rt) = -(OPA(ct) cmp OPB(ct)); \
-				break
+			} OP_end
 #define OP_cmp_2(OP, T, rt, cmp, ct) \
-			case OP_##OP##_##T##_2: \
+			OP_begin(OP_##OP##_##T##_2) { \
 				OPC(rt) = (OPA(ct) cmp OPB(ct)); \
-				break
+			} OP_end
 #define OP_cmp_3(OP, T, rt, cmp, ct) \
-			case OP_##OP##_##T##_3: \
+			OP_begin(OP_##OP##_##T##_3) { \
 				VectorCompCompare (&OPC(rt), -, &OPA(ct), cmp, &OPB(ct)); \
-				break;
+			} OP_end
 #define OP_cmp_4(OP, T, rt, cmp, ct) \
-			case OP_##OP##_##T##_4: \
+			OP_begin(OP_##OP##_##T##_4) { \
 				OPC(rt) = (OPA(ct) cmp OPB(ct)); \
-				break
+			} OP_end
 #define OP_cmp_T(OP, T, rt1, rt2, rt4, cmp, ct1, ct2, ct4) \
 			OP_cmp_1 (OP, T, rt1, cmp, ct1); \
 			OP_cmp_2 (OP, T, rt2, cmp, ct2); \
@@ -2468,21 +2405,21 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_cmp(GT, >);
 
 #define OP_op_1(OP, T, t, op) \
-			case OP_##OP##_##T##_1: \
+			OP_begin(OP_##OP##_##T##_1) { \
 				OPC(t) = (OPA(t) op OPB(t)); \
-				break
+			} OP_end
 #define OP_op_2(OP, T, t, op) \
-			case OP_##OP##_##T##_2: \
+			OP_begin(OP_##OP##_##T##_2) { \
 				OPC(t) = (OPA(t) op OPB(t)); \
-				break
+			} OP_end
 #define OP_op_3(OP, T, t, op) \
-			case OP_##OP##_##T##_3: \
+			OP_begin(OP_##OP##_##T##_3) { \
 				VectorCompOp (&OPC(t), &OPA(t), op, &OPB(t)); \
-				break;
+			} OP_end;
 #define OP_op_4(OP, T, t, op) \
-			case OP_##OP##_##T##_4: \
+			OP_begin(OP_##OP##_##T##_4) { \
 				OPC(t) = (OPA(t) op OPB(t)); \
-				break
+			} OP_end
 #define OP_op_T(OP, T, t1, t2, t4, op) \
 			OP_op_1 (OP, T, t1, op); \
 			OP_op_2 (OP, T, t2, op); \
@@ -2500,40 +2437,27 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 0 1110
 			OP_cmp(LE, <=);
 			// 0 1111
-			case OP_LEA_E:
-				mm = pr_address_mode (pr, st, 4);
-				OPC(ptr) = mm - pr->pr_globals;
-				break;
-			case OP_LOAD64_B_3:
-			case OP_LOAD64_C_3:
-			case OP_LOAD64_D_3:
-				mm = pr_address_mode (pr, st, (st_op - OP_LOAD64_B_3 + 1));
-				VectorCopy (&MM(long), &OPC(long));
-				break;
-			case OP_STORE64_A_3:
-			case OP_STORE64_B_3:
-			case OP_STORE64_C_3:
-			case OP_STORE64_D_3:
-				mm = pr_address_mode (pr, st, (st_op - OP_STORE64_A_3));
-				VectorCopy (&OPC(long), &MM(long));
-				break;
-			case OP_LEA_F:
-				mm = pr_address_mode (pr, st, 5);
-				OPC(ptr) = mm - pr->pr_globals;
-				break;
-			case OP_LOAD64_B_4:
-			case OP_LOAD64_C_4:
-			case OP_LOAD64_D_4:
-				mm = pr_address_mode (pr, st, (st_op - OP_LOAD64_B_4 + 1));
-				OPC(lvec4) = MM(lvec4);
-				break;
-			case OP_STORE64_A_4:
-			case OP_STORE64_B_4:
-			case OP_STORE64_C_4:
-			case OP_STORE64_D_4:
-				mm = pr_address_mode (pr, st, (st_op - OP_STORE64_A_4));
-				MM(lvec4) = OPC(lvec4);
-				break;
+#define OP_lea(m) \
+			OP_begin(OP_LEA_##m) { \
+				mm = pr_address_mode (pr, st, pr_addrmode_##m); \
+				OPC(ptr) = mm - pr->pr_globals; \
+			} OP_end
+			OP_lea(E);
+			OP_load_T_M_W(LOAD64,long,B,3,OP_assign_v);
+			OP_load_T_M_W(LOAD64,long,C,3,OP_assign_v);
+			OP_load_T_M_W(LOAD64,long,D,3,OP_assign_v);
+			OP_store_T_M_W(STORE64,long,A,3,OP_assign_v);
+			OP_store_T_M_W(STORE64,long,B,3,OP_assign_v);
+			OP_store_T_M_W(STORE64,long,C,3,OP_assign_v);
+			OP_store_T_M_W(STORE64,long,D,3,OP_assign_v);
+			OP_lea(F);
+			OP_load_T_M_W(LOAD64,lvec4,B,4,OP_assign_s);
+			OP_load_T_M_W(LOAD64,lvec4,C,4,OP_assign_s);
+			OP_load_T_M_W(LOAD64,lvec4,D,4,OP_assign_s);
+			OP_store_T_M_W(STORE64,lvec4,A,4,OP_assign_s);
+			OP_store_T_M_W(STORE64,lvec4,B,4,OP_assign_s);
+			OP_store_T_M_W(STORE64,lvec4,C,4,OP_assign_s);
+			OP_store_T_M_W(STORE64,lvec4,D,4,OP_assign_s);
 
 #define OP_op(OP, op) \
 			OP_op_T (OP, I, int, ivec2, ivec4, op); \
@@ -2541,21 +2465,21 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_op_T (OP, L, long, lvec2, lvec4, op); \
 			OP_op_T (OP, D, double, dvec2, dvec4, op)
 #define OP_uop_1(OP, T, t, op) \
-			case OP_##OP##_##T##_1: \
+			OP_begin(OP_##OP##_##T##_1) { \
 				OPC(t) = op (OPA(t)); \
-				break
+			} OP_end
 #define OP_uop_2(OP, T, t, op) \
-			case OP_##OP##_##T##_2: \
+			OP_begin(OP_##OP##_##T##_2) { \
 				OPC(t) = op (OPA(t)); \
-				break
+			} OP_end
 #define OP_uop_3(OP, T, t, op) \
-			case OP_##OP##_##T##_3: \
+			OP_begin(OP_##OP##_##T##_3) { \
 				VectorCompUop (&OPC(t), op, &OPA(t)); \
-				break;
+			} OP_end;
 #define OP_uop_4(OP, T, t, op) \
-			case OP_##OP##_##T##_4: \
+			OP_begin(OP_##OP##_##T##_4) { \
 				OPC(t) = op (OPA(t)); \
-				break
+			} OP_end
 #define OP_uop_T(OP, T, t1, t2, t4, op) \
 			OP_uop_1 (OP, T, t1, op); \
 			OP_uop_2 (OP, T, t2, op); \
@@ -2574,13 +2498,11 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 // -5 rem -3 = -2
 #define OP_store(d, s) *(d) = s
 #define OP_remmod_T(OP, T, n, t, l, f, s) \
-			case OP_##OP##_##T##_##n: \
-				{ \
-					__auto_type a = l (&OPA(t)); \
-					__auto_type b = l (&OPB(t)); \
-					s (&OPC(t), a - b * f(a / b)); \
-				} \
-				break
+			OP_begin(OP_##OP##_##T##_##n) { \
+				__auto_type a = l (&OPA(t)); \
+				__auto_type b = l (&OPB(t)); \
+				s (&OPC(t), a - b * f(a / b)); \
+			} OP_end
 #define OP_rem_T(T, n, t, l, f, s) \
 			OP_remmod_T(REM, T, n, t, l, f, s)
 
@@ -2602,19 +2524,17 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 //  5 mod -3 = -1
 // -5 mod -3 = -2
 #define OP_mod_Ti(T, n, t, l, m, s) \
-			case OP_MOD_##T##_##n: \
-				{ \
-					__auto_type a = l(&OPA(t)); \
-					__auto_type b = l(&OPB(t)); \
-					__auto_type c = a % b; \
-					/* % is really remainder and so has the same sign rules */\
-					/* as division: -5 % 3 = -2, so need to add b (3 here)  */\
-					/* if c's sign is incorrect, but only if c is non-zero  */\
-					__auto_type mask = m((a ^ b) < 0); \
-					mask &= m(c != 0); \
-					s(&OPC(t), c + (mask & b)); \
-				} \
-				break
+			OP_begin(OP_MOD_##T##_##n) { \
+				__auto_type a = l(&OPA(t)); \
+				__auto_type b = l(&OPB(t)); \
+				__auto_type c = a % b; \
+				/* % is really remainder and so has the same sign rules */\
+				/* as division: -5 % 3 = -2, so need to add b (3 here)  */\
+				/* if c's sign is incorrect, but only if c is non-zero  */\
+				__auto_type mask = m((a ^ b) < 0); \
+				mask &= m(c != 0); \
+				s(&OPC(t), c + (mask & b)); \
+			} OP_end
 // floating point modulo is so much easier :P (just use floor instead of trunc)
 #define OP_mod_Tf(T, n, t, l, f, s) \
 			OP_remmod_T(MOD, T, n, t, l, f, s)
@@ -2645,26 +2565,24 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_op_T (SHL, u, uint, ivec2, ivec4, <<);
 			OP_op_T (SHL, U, ulong, lvec2, lvec4, <<);
 #define OP_op_str(OP, s, op) \
-			case OP_##OP##_S: \
-				{ \
-					int         cmp = strcmp (PR_GetString (pr, OPA(string)), \
-											  PR_GetString (pr, OPB(string)));\
-					OPC(int) = s(cmp op 0); \
-				} \
-				break
+			OP_begin(OP_##OP##_S) { \
+				int         cmp = strcmp (PR_GetString (pr, OPA(string)), \
+										  PR_GetString (pr, OPB(string)));\
+				OPC(int) = s(cmp op 0); \
+			} OP_end
 			OP_op_str(EQ, -, ==);
 			OP_op_str(LT, -, <);
 			OP_op_str(GT, -, >);
 			OP_op_str(CMP, , +);//effectively just copy the result
 			OP_op_str(GE, -, >=);
 			OP_op_str(LE, -, <=);
-			case OP_ADD_S:
+			OP_begin(OP_ADD_S) {
 				OPC(string) = PR_CatStrings(pr, PR_GetString (pr, OPA(string)),
 											PR_GetString (pr, OPB(string)));
-				break;
-			case OP_NOT_S:
+			} OP_end;
+			OP_begin(OP_NOT_S) {
 				OPC(int) = -(!OPA(string) || !*PR_GetString (pr, OPA(string)));
-				break;
+			} OP_end;
 			// 1 0111
 			OP_op_T (ASR, I, int, ivec2, ivec4, >>);
 			OP_op_T (SHR, u, uint, uvec2, uvec4, >>);
@@ -2677,15 +2595,17 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_uop_T (BITNOT, I, int, ivec2, ivec4, ~);
 			// 1 1001
 			OP_cmp_T (LT, u, int, ivec2, ivec4, <, uint, uvec2, uvec4);
-			case OP_JUMP_A:
-			case OP_JUMP_B:
-			case OP_JUMP_C:
-			case OP_JUMP_D:
-				pr->pr_xstatement = pr_jump_mode (pr, st, st_op - OP_JUMP_A);
-				st = pr->pr_statements + pr->pr_xstatement;
-				break;
+#define OP_jump(m) \
+			OP_begin(OP_JUMP_##m) { \
+				pr->pr_xstatement = pr_jump_mode (pr, st, pr_addrmode_##m); \
+				st = pr->pr_statements + pr->pr_xstatement; \
+			} OP_end
+			OP_jump(A);
+			OP_jump(B);
+			OP_jump(C);
+			OP_jump(D);
 			OP_cmp_T (LT, U, long, lvec2, lvec4, <, ulong, ulvec2, ulvec4);
-			case OP_RETURN:
+			OP_begin(OP_RETURN) {
 				ret_size = (st->c & 0x1f) + 1;	// up to 32 words
 				if ((pr_ushort_t) st->c != 0xffff) {
 					mm = pr_address_mode (pr, st, ((pr_ushort_t) st->c) >> 5);
@@ -2703,121 +2623,111 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					}
 					goto exit_program;
 				}
-				break;
-			case OP_CALL_B:
-			case OP_CALL_C:
-			case OP_CALL_D:
-				mm = pr_call_mode (pr, st, st_op - OP_CALL_B + 1);
-				function = PR_PTR (func, mm);
-				pr->pr_argc = 0;
-				// op_c specifies the location for the return value if any
-				pr->pr_xfunction->profile += profile - startprofile;
-				startprofile = profile;
-				PR_CallFunction (pr, function, op_c);
-				st = pr->pr_statements + pr->pr_xstatement;
-				break;
+			} OP_end;
+#define OP_call(m) \
+			OP_begin(OP_CALL_##m) { \
+				mm = pr_call_mode (pr, st, pr_addrmode_##m); \
+				function = PR_PTR (func, mm); \
+				pr->pr_argc = 0; \
+				/* op_c specifies the location for the return value if any*/ \
+				pr->pr_xfunction->profile += profile - startprofile; \
+				startprofile = profile; \
+				PR_CallFunction (pr, function, op_c); \
+				st = pr->pr_statements + pr->pr_xstatement; \
+			} OP_end;
+			OP_call(B);
+			OP_call(C);
+			OP_call(D);
 			// 1 1010
 			OP_cmp_T (GT, u, int, ivec2, ivec4, >, uint, uvec2, uvec4);
-			case OP_SWIZZLE_F_4:
+			OP_begin(OP_SWIZZLE_F_4) {
 				OPC(ivec4) = pr_swizzle_f (OPA(ivec4), (pr_ushort_t) st->b);
-				break;
-			case OP_SCALE_F_2:
+			} OP_end;
+			OP_begin(OP_SCALE_F_2) {
 				OPC(vec2) = OPA(vec2) * OPB(float);
-				break;
-			case OP_SCALE_F_3:
+			} OP_end;
+			OP_begin(OP_SCALE_F_3) {
 				VectorScale (&OPA(float), OPB(float), &OPC(float));
-				break;
-			case OP_SCALE_F_4:
+			} OP_end;
+			OP_begin(OP_SCALE_F_4) {
 				OPC(vec4) = OPA(vec4) * OPB(float);
-				break;
+			} OP_end;
 			OP_cmp_T (GT, U, long, lvec2, lvec4, >, ulong, ulvec2, ulvec4);
-			case OP_SWIZZLE_D_4:
+			OP_begin(OP_SWIZZLE_D_4) {
 				OPC(lvec4) = pr_swizzle_d (OPA(lvec4), (pr_ushort_t) st->b);
-				break;
-			case OP_SCALE_D_2:
+			} OP_end;
+			OP_begin(OP_SCALE_D_2) {
 				OPC(dvec2) = OPA(dvec2) * OPB(double);
-				break;
-			case OP_SCALE_D_3:
+			} OP_end;
+			OP_begin(OP_SCALE_D_3) {
 				VectorScale (&OPA(double), OPB(double), &OPC(double));
-				break;
-			case OP_SCALE_D_4:
+			} OP_end;
+			OP_begin(OP_SCALE_D_4) {
 				OPC(dvec4) = OPA(dvec4) * OPB(double);
-				break;
+			} OP_end;
 			// 1 1011
-			case OP_CROSS_F:
-				{
-					pr_vec4_t   a = loadvec3f (&OPA(float));
-					pr_vec4_t   b = loadvec3f (&OPB(float));
-					pr_vec4_t   c = crossf (a, b);
-					storevec3f (&OPC(float), c);
-				}
-				break;
-			case OP_CDOT_F:
+			OP_begin(OP_CROSS_F) {
+				pr_vec4_t   a = loadvec3f (&OPA(float));
+				pr_vec4_t   b = loadvec3f (&OPB(float));
+				pr_vec4_t   c = crossf (a, b);
+				storevec3f (&OPC(float), c);
+			} OP_end;
+			OP_begin(OP_CDOT_F) {
 				OPC(float) = dot2f (OPA(vec2), OPB(vec2))[0];
-				break;
-			case OP_VDOT_F:
+			} OP_end;
+			OP_begin(OP_VDOT_F) {
 				OPC(float) = DotProduct (&OPA(float), &OPB(float));
-				break;
-			case OP_QDOT_F:
+			} OP_end;
+			OP_begin(OP_QDOT_F) {
 				OPC(float) = dotf (OPA(vec4), OPB(vec4))[0];
-				break;
-			case OP_CMUL_F:
+			} OP_end;
+			OP_begin(OP_CMUL_F) {
 				OPC(vec2) = cmulf (OPA(vec2), OPB(vec2));
-				break;
-			case OP_QVMUL_F:
-				{
-					pr_vec4_t   v = loadvec3f (&OPB(float));
-					v = qvmulf (OPA(vec4), v);
-					storevec3f (&OPC(float), v);
-				}
-				break;
-			case OP_VQMUL_F:
-				{
-					pr_vec4_t   v = loadvec3f (&OPA(float));
-					v = vqmulf (v, OPB(vec4));
-					storevec3f (&OPC(float), v);
-				}
-				break;
-			case OP_QMUL_F:
+			} OP_end;
+			OP_begin(OP_QVMUL_F) {
+				pr_vec4_t   v = loadvec3f (&OPB(float));
+				v = qvmulf (OPA(vec4), v);
+				storevec3f (&OPC(float), v);
+			} OP_end;
+			OP_begin(OP_VQMUL_F) {
+				pr_vec4_t   v = loadvec3f (&OPA(float));
+				v = vqmulf (v, OPB(vec4));
+				storevec3f (&OPC(float), v);
+			} OP_end;
+			OP_begin(OP_QMUL_F) {
 				OPC(vec4) = qmulf (OPA(vec4), OPB(vec4));
-				break;
-			case OP_CROSS_D:
-				{
-					pr_dvec4_t  a = loadvec3d (&OPA(double));
-					pr_dvec4_t  b = loadvec3d (&OPB(double));
-					pr_dvec4_t  c = crossd (a, b);
-					storevec3d (&OPC(double), c);
-				}
-				break;
-			case OP_CDOT_D:
+			} OP_end;
+			OP_begin(OP_CROSS_D) {
+				pr_dvec4_t  a = loadvec3d (&OPA(double));
+				pr_dvec4_t  b = loadvec3d (&OPB(double));
+				pr_dvec4_t  c = crossd (a, b);
+				storevec3d (&OPC(double), c);
+			} OP_end;
+			OP_begin(OP_CDOT_D) {
 				OPC(double) = dot2d (OPA(dvec2), OPB(dvec2))[0];
-				break;
-			case OP_VDOT_D:
+			} OP_end;
+			OP_begin(OP_VDOT_D) {
 				OPC(double) = DotProduct (&OPA(double), &OPB(double));
-				break;
-			case OP_QDOT_D:
+			} OP_end;
+			OP_begin(OP_QDOT_D) {
 				OPC(double) = dotd (OPA(dvec4), OPB(dvec4))[0];
-				break;
-			case OP_CMUL_D:
+			} OP_end;
+			OP_begin(OP_CMUL_D) {
 				OPC(dvec2) = cmuld (OPA(dvec2), OPB(dvec2));
-				break;
-			case OP_QVMUL_D:
-				{
-					pr_dvec4_t   v = loadvec3d (&OPB(double));
-					v = qvmuld (OPA(dvec4), v);
-					storevec3d (&OPC(double), v);
-				}
-				break;
-			case OP_VQMUL_D:
-				{
-					pr_dvec4_t  v = loadvec3d (&OPA(double));
-					v = vqmuld (v, OPB(dvec4));
-					storevec3d (&OPC(double), v);
-				}
-				break;
-			case OP_QMUL_D:
+			} OP_end;
+			OP_begin(OP_QVMUL_D) {
+				pr_dvec4_t   v = loadvec3d (&OPB(double));
+				v = qvmuld (OPA(dvec4), v);
+				storevec3d (&OPC(double), v);
+			} OP_end;
+			OP_begin(OP_VQMUL_D) {
+				pr_dvec4_t  v = loadvec3d (&OPA(double));
+				v = vqmuld (v, OPB(dvec4));
+				storevec3d (&OPC(double), v);
+			} OP_end;
+			OP_begin(OP_QMUL_D) {
 				OPC(dvec4) = qmuld (OPA(dvec4), OPB(dvec4));
-				break;
+			} OP_end;
 			// 1 1100
 			OP_op_T (BITAND, L, long, lvec2, lvec4, &);
 			OP_op_T (BITOR, L, long, lvec2, lvec4, |);
@@ -2825,177 +2735,118 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_uop_T (BITNOT, L, long, lvec2, lvec4, ~);
 			// 1 1101
 			OP_cmp_T (GE, u, int, ivec2, ivec4, >=, uint, uvec2, uvec4);
-			case OP_MOVE_I:
+			OP_begin(OP_MOVE_I) {
 				memmove (op_c, op_a, (pr_ushort_t) st->b * sizeof (pr_type_t));
-				break;
-			case OP_MOVE_P:
+			} OP_end;
+			OP_begin(OP_MOVE_P) {
 				memmove (pr->pr_globals + OPC(ptr), pr->pr_globals + OPA(ptr),
 						 OPB(uint) * sizeof (pr_type_t));
-				break;
-			case OP_MOVE_PI:
+			} OP_end;
+			OP_begin(OP_MOVE_PI) {
 				memmove (pr->pr_globals + OPC(ptr), pr->pr_globals + OPA(ptr),
 						 (pr_ushort_t) st->b * sizeof (pr_type_t));
-				break;
-			case OP_STATE_ft:
-				{
-					int         self = *pr->globals.self;
-					int         nextthink = pr->fields.nextthink + self;
-					int         frame = pr->fields.frame + self;
-					int         think = pr->fields.think + self;
-					float       time = *pr->globals.ftime + 0.1;
-					PR_PTR (float, &pr->pr_edict_area[nextthink]) = time;
-					PR_PTR (float, &pr->pr_edict_area[frame]) = OPA(float);
-					PR_PTR (func, &pr->pr_edict_area[think]) = OPB(func);
-				}
-				break;
+			} OP_end;
+#define OP_state(op,t,d) \
+			OP_begin(OP_STATE_##op) { \
+				int         self = *pr->globals.self; \
+				int         nextthink = pr->fields.nextthink + self; \
+				int         frame = pr->fields.frame + self; \
+				int         think = pr->fields.think + self; \
+				auto        time = *pr->globals.d; \
+				PR_PTR (t, &pr->pr_edict_area[nextthink]) = time; \
+				PR_PTR (int, &pr->pr_edict_area[frame]) = OPA(int); \
+				PR_PTR (func, &pr->pr_edict_area[think]) = OPB(func); \
+			} OP_end;
+			OP_state(ft,float,ftime+0.1);
 			OP_cmp_T (GE, U, long, lvec2, lvec4, >=, ulong, ulvec2, ulvec4);
-			case OP_MEMSET_I:
+			OP_begin(OP_MEMSET_I) {
 				pr_memset (op_c, OPA(int), (pr_ushort_t) st->b);
-				break;
-			case OP_MEMSET_P:
+			} OP_end;
+			OP_begin(OP_MEMSET_P) {
 				pr_memset (pr->pr_globals + OPC(ptr), OPA(int), OPB(uint));
-				break;
-			case OP_MEMSET_PI:
+			} OP_end;
+			OP_begin(OP_MEMSET_PI) {
 				pr_memset (pr->pr_globals + OPC(ptr), OPA(int),
 						   (pr_ushort_t) st->b);
-				break;
-			case OP_STATE_ftt:
-				{
-					int         self = *pr->globals.self;
-					int         nextthink = pr->fields.nextthink + self;
-					int         frame = pr->fields.frame + self;
-					int         think = pr->fields.think + self;
-					float       time = *pr->globals.ftime + OPC(float);
-					PR_PTR (float, &pr->pr_edict_area[nextthink]) = time;
-					PR_PTR (float, &pr->pr_edict_area[frame]) = OPA(float);
-					PR_PTR (func, &pr->pr_edict_area[think]) = OPB(func);
-				}
-				break;
+			} OP_end;
+			OP_state(ftt,float,ftime+OPC(float));
 			// 1 1110
 			OP_cmp_T (LE, u, int, ivec2, ivec4, <=, uint, uvec2, uvec4);
-			case OP_IFZ:
-				if (!OPC(int)) {
-					pr->pr_xstatement = pr_jump_mode (pr, st, 0);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_IFB:
-				if (OPC(int) < 0) {
-					pr->pr_xstatement = pr_jump_mode (pr, st, 0);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_IFA:
-				if (OPC(int) > 0) {
-					pr->pr_xstatement = pr_jump_mode (pr, st, 0);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_STATE_dt:
-				{
-					int         self = *pr->globals.self;
-					int         nextthink = pr->fields.nextthink + self;
-					int         frame = pr->fields.frame + self;
-					int         think = pr->fields.think + self;
-					double      time = *pr->globals.dtime + 0.1;
-					PR_PTR (double, &pr->pr_edict_area[nextthink]) = time;
-					PR_PTR (int, &pr->pr_edict_area[frame]) = OPA(int);
-					PR_PTR (func, &pr->pr_edict_area[think]) = OPB(func);
-				}
-				break;
+#define OP_relative_jump(m) \
+	do { pr->pr_xstatement = pr_jump_mode (pr, st, pr_addrmode_##m); \
+		 st = pr->pr_statements + pr->pr_xstatement; } while (0)
+#define OP_branch(op, test) \
+			OP_begin(OP_##op) { \
+				if (OPC(int) test 0) OP_relative_jump(A); \
+			} OP_end;
+			OP_branch(IFZ,  ==);
+			OP_branch(IFB,  <);
+			OP_branch(IFA,  >);
+			OP_state(dt,double,dtime+0.1);
 			OP_cmp_T (LE, U, long, lvec2, lvec4, <=, ulong, ulvec2, ulvec4);
-			case OP_IFNZ:
-				if (OPC(int)) {
-					pr->pr_xstatement = pr_jump_mode (pr, st, 0);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_IFAE:
-				if (OPC(int) >= 0) {
-					pr->pr_xstatement = pr_jump_mode (pr, st, 0);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_IFBE:
-				if (OPC(int) <= 0) {
-					pr->pr_xstatement = pr_jump_mode (pr, st, 0);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_STATE_dtt:
-				{
-					int         self = *pr->globals.self;
-					int         nextthink = pr->fields.nextthink + self;
-					int         frame = pr->fields.frame + self;
-					int         think = pr->fields.think + self;
-					double      time = *pr->globals.dtime + OPC(double);
-					PR_PTR (double, &pr->pr_edict_area[nextthink]) = time;
-					PR_PTR (int, &pr->pr_edict_area[frame]) = OPA(int);
-					PR_PTR (func, &pr->pr_edict_area[think]) = OPB(func);
-				}
-				break;
+			OP_branch(IFNZ, !=);
+			OP_branch(IFAE, >=);
+			OP_branch(IFBE, <=);
+			OP_state(dtt,double,dtime+OPC(double));
 			// 1 1111
-			case OP_LEA_A:
-			case OP_LEA_B:
-			case OP_LEA_C:
-			case OP_LEA_D:
-				mm = pr_address_mode (pr, st, (st_op - OP_LEA_A));
-				OPC(ptr) = mm - pr->pr_globals;
-				break;
-			case OP_QV4MUL_F:
+			OP_lea(A);
+			OP_lea(B);
+			OP_lea(C);
+			OP_lea(D);
+			OP_begin(OP_QV4MUL_F) {
 				OPC(vec4) = qvmulf (OPA(vec4), OPB(vec4));
-				break;
-			case OP_V4QMUL_F:
+			} OP_end;
+			OP_begin(OP_V4QMUL_F) {
 				OPC(vec4) = vqmulf (OPA(vec4), OPB(vec4));
-				break;
-			case OP_QV4MUL_D:
+			} OP_end;
+			OP_begin(OP_QV4MUL_D) {
 				OPC(dvec4) = qvmuld (OPA(dvec4), OPB(dvec4));
-				break;
-			case OP_V4QMUL_D:
+			} OP_end;
+			OP_begin(OP_V4QMUL_D) {
 				OPC(dvec4) = vqmuld (OPA(dvec4), OPB(dvec4));
-				break;
-			case OP_BITAND_F:
+			} OP_end;
+			OP_begin(OP_BITAND_F) {
 				OPC(float) = (int) OPA(float) & (int) OPB(float);
-				break;
-			case OP_BITOR_F:
+			} OP_end;
+			OP_begin(OP_BITOR_F) {
 				OPC(float) = (int) OPA(float) | (int) OPB(float);
-				break;
-			case OP_BITXOR_F:
+			} OP_end;
+			OP_begin(OP_BITXOR_F) {
 				OPC(float) = (int) OPA(float) ^ (int) OPB(float);
-				break;
-			case OP_BITNOT_F:
+			} OP_end;
+			OP_begin(OP_BITNOT_F) {
 				OPC(float) = ~ (int) OPA(float);
-				break;
-			case OP_CONV:
+			} OP_end;
+			OP_begin(OP_CONV) {
 				switch ((pr_ushort_t) st->b) {
 #include "libs/gamecode/pr_convert.cinc"
 					default:
 						PR_RunError (pr, "invalid conversion code: %04o",
 									 (pr_ushort_t) st->b);
 				}
-				break;
-			case OP_WITH:
+			} OP_end;
+			OP_begin(OP_WITH) {
 				pr_with (pr, st);
-				break;
-			case OP_EXTEND:
+			} OP_end;
+			OP_begin(OP_EXTEND) {
 				switch ((pr_ushort_t) st->b) {
 #include "libs/gamecode/pr_extend.cinc"
 					default:
 						PR_RunError (pr, "invalid extend code: %04o",
 									 (pr_ushort_t) st->b);
 				}
-				break;
+			} OP_end;
 #define OP_hop2(vec, op) ((vec)[0] op (vec)[1])
 #define OP_hop3(vec, op) ((vec)[0] op (vec)[1] op (vec)[2])
 #define OP_hop4(vec, op) ((vec)[0] op (vec)[1] op (vec)[2] op (vec)[3])
-			case OP_HOPS:
+			OP_begin(OP_HOPS) {
 				switch ((pr_ushort_t) st->b) {
 #include "libs/gamecode/pr_hops.cinc"
 					default:
 						PR_RunError (pr, "invalid hops code: %04o",
 									 (pr_ushort_t) st->b);
 				}
-				break;
+			} OP_end;
 			default:
 				PR_RunError (pr, "Bad opcode x%03x", st->op & OP_MASK);
 		}
