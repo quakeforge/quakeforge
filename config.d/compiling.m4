@@ -203,7 +203,7 @@ if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 		dnl 	QF_CC_OPTION(-finline-limit=32000 -Winline)
 		dnl fi
 		dnl heavy="-O2 -ffast-math -fno-unsafe-math-optimizations -funroll-loops -fomit-frame-pointer"
-		heavy="-O2 -fno-fast-math -funroll-loops -fomit-frame-pointer "
+		heavy="-O2 -fno-fast-math -ffp-contract=off -funroll-loops -fomit-frame-pointer "
 		CFLAGS="$saved_cflags"
 		light="-O2"
 		AC_ARG_ENABLE(strict-aliasing,

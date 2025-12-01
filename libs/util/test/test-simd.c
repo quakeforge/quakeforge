@@ -191,13 +191,7 @@ static vec4d_test_t vec4d_tests[] = {
 	T(crossd, one,     up,      { 1, -1,  0} ),
 	// This one fails when optimizing with -mfma (which is why fma is not
 	// used): ulp errors in z and w
-	T(crossd, qtest,   qtest,   {0, 0, 0, 0},
-#if defined(__aarch64__)
-# ifdef __OPTIMIZE__
-		   {0, 0, -2.1938006966593093e-17, 1.3322676295501878e-17},
-# endif
-#endif
-	),
+	T(crossd, qtest,   qtest,   {0, 0, 0, 0} ),
 
 	T(qmuld, qident,  qident,   qident  ),
 	T(qmuld, qident,  right,    right   ),
@@ -219,13 +213,7 @@ static vec4d_test_t vec4d_tests[] = {
 	T(qmuld, one,     { 2, 2, 2, -2 }, { 0, 0, 0, -8 } ),
 	// This one fails when optimizing with -mfma (which is why fma is not
 	// used): ulp error in z
-	T(qmuld, qtest,   qtest,   {0.768, 0.576, 0, -0.28},
-#if defined(__aarch64__)
-# ifdef __OPTIMIZE__
-		   {0, 0, -2.1938006966593093e-17, 0},
-# endif
-#endif
-	),
+	T(qmuld, qtest,   qtest,   {0.768, 0.576, 0, -0.28} ),
 
 	// The one vector is not unit (magnitude 2), so using it as a rotation
 	// quaternion results in scaling by 4. However, it still has the effect
@@ -328,20 +316,12 @@ static vec4f_test_t vec4f_tests[] = {
 	T(crossf, one,     right,   { 0,  1, -1} ),
 	T(crossf, one,     forward, {-1,  0,  1} ),
 	T(crossf, one,     up,      { 1, -1,  0} ),
-#ifdef __aarch64__
-# ifdef __OPTIMIZE__
-	T(crossf, qtest,   qtest,   {0, 0, -1.47819534e-09, -1.43051153e-08} ),
-# else
+#if defined(__aarch64__) || defined(__SSE__) || defined(__OPTIMIZE__)
 	T(crossf, qtest,   qtest,   {0, 0, 0, 0} ),
-# endif
 #else
-# if !defined(__SSE__) && !defined(__OPTIMIZE__)
 	// when not optimizing and SSE is not available (but ok when
 	// optimizing)
 	T(crossf, qtest,   qtest,   {0, 0, -1.47819534e-09, 0} ),
-# else
-	T(crossf, qtest,   qtest,   {0, 0, 0, 0} ),
-# endif
 #endif
 
 	T(qmulf, qident,  qident,   qident  ),
@@ -363,22 +343,12 @@ static vec4f_test_t vec4f_tests[] = {
 	T(qmulf, one,     one,     { 2, 2, 2, -2 } ),
 	T(qmulf, one,     { 2, 2, 2, -2 }, { 0, 0, 0, -8 } ),
 	T(qmulf, qtest,   qtest,   {0.768, 0.576, 0, -0.28},
-#ifdef __aarch64__
-# ifdef __OPTIMIZE__
-				   {0, 6e-8, -1.47819534e-09, 2.98023224e-08}
-# else
-				   {0, 5.96046448e-08, 0, 2.98023224e-08}
-# endif
+#if defined(__aarch64__) || defined(__SSE__) || defined(__OPTIMIZE__)
+	                           {0, 6e-8, 0, 3e-8}
 #else
-# if !defined(__SSE__) && !defined(__OPTIMIZE__)
-	// when not optimizing and SSE is not available (but ok when
+	// when not optimizing and SSE is not available (on x86) (but ok when
 	// optimizing)
 	                           {0, 6e-8, -1.47819534e-09, 3e-8}
-# elif  !defined(__SSE__)
-	                           {0, 6e-8, 0, 6e-8}
-# else
-	                           {0, 6e-8, 0, 3e-8}
-#endif
 #endif
 	),
 
