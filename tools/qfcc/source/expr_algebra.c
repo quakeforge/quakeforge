@@ -3497,14 +3497,24 @@ algebra_reverse (const expr_t *e)
 	return mvec_gather (r, algebra);
 }
 
-const expr_t *
-algebra_cast_expr (const type_t *dstType, const expr_t *e)
+bool
+algebra_test_cast (const type_t *dstType, const expr_t *e)
 {
 	auto srcType = get_type (e);
 	if (!(is_scalar (dstType) || is_nonscalar (dstType)
 		  || is_algebra (dstType))
 		|| !(is_scalar (srcType) || is_nonscalar (srcType)
 			 || is_algebra (srcType))) {
+		return false;
+	}
+	return true;
+}
+
+const expr_t *
+algebra_cast_expr (const type_t *dstType, const expr_t *e)
+{
+	auto srcType = get_type (e);
+	if (!algebra_test_cast (dstType, e)) {
 		return cast_error (e, srcType, dstType);
 	}
 

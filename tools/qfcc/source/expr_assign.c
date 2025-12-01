@@ -208,6 +208,11 @@ check_types_compatible (const expr_t **dst, const expr_t **src)
 		*src = cast_expr (dst_type, *src);
 		return nullptr;
 	}
+	if ((*src)->implicit
+		&& is_algebra (dst_type) && algebra_test_cast (dst_type, *src)) {
+		*src = algebra_cast_expr (dst_type, *src);
+		return nullptr;
+	}
 	if (current_target.check_types_compatible) {
 		auto expr = current_target.check_types_compatible (dst, src);
 		if (expr) {
