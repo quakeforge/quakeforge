@@ -34,6 +34,7 @@ typedef struct body_s {
 @overload state_t dState (state_t s);
 @overload state_t dState (state_t s, bivector_t f);
 @overload state_t dState (state_t s, body_t *body);
+@overload state_t dState (state_t s, bivector_t f, body_t *body);
 
 void draw_3dline (transform_t camera, vec4 p1, vec4 p2, int color);
 void create_cube ();

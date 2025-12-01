@@ -184,6 +184,15 @@ dState (state_t s, body_t *body)
 	};
 }
 
+state_t
+dState (state_t s, bivector_t f, body_t *body)
+{
+	return {
+		.M = -0.5f * s.M * s.B,
+		.B = @undual(body.Ii @hadamard (f - (body.I @hadamard ⋆s.B) × s.B)),
+	};
+}
+
 void
 draw_3dline (transform_t camera, vec4 p1, vec4 p2, int color)
 {

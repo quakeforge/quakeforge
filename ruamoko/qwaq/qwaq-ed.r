@@ -1196,8 +1196,12 @@ main (int argc, string *argv)
 		bs.B = block_body.R * bs.B * ~block_body.R;
 
 		float h = frametime / 100;
+		bivector_t f = {
+			.bvect = '0 0 0.1',
+			.bvecp = '0 0 1',
+		};
 		for (int i = 0; i < 100; i++) {
-			auto ds = dState (bs, &block_body);
+			auto ds = dState (bs, f, &block_body);
 			bs.M += h * ds.M;
 			bs.B += h * ds.B;
 			bs.M = normalize (bs.M);
