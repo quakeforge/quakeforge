@@ -2157,9 +2157,10 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 
 		static const int jump_table[OP_BREAK * 2] = {
 #include "libs/gamecode/pr_jump.cinc"
+			[OP_BREAK...OP_BREAK+0x1ff] = &&OP_break_label - &&OP_invalid_label
 		};
 		pr_opcode_e st_op = st->op & OP_MASK;
-		goto *(&&OP_break_label + jump_table[st_op]);
+		goto *(&&OP_invalid_label + jump_table[st_op]);
 #define OP_begin(op) op##_label:
 #define OP_end \
 		do { \
@@ -2190,10 +2191,14 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				} \
 			} \
 			pr_opcode_e st_op = st->op & OP_MASK; \
-			goto *(&&OP_break_label + jump_table[st_op]); \
+			goto *(&&OP_invalid_label + jump_table[st_op]); \
 		} while (0)
 		// ensure execution can't enter except via the jump table
 		if (0) {
+			//default:
+			OP_begin(OP_invalid) {
+				PR_RunError (pr, "Bad opcode x%03x", st->op & OP_MASK);
+			};
 			OP_begin(OP_break) {
 				if (pr->debug_handler) {
 					pr->debug_handler (prd_breakpoint, 0, pr->debug_data);
@@ -2201,7 +2206,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					PR_RunError (pr, "breakpoint hit");
 				}
 				pr_opcode_e st_op = st->op & OP_MASK;
-				goto *(&&OP_break_label + jump_table[st_op & ~OP_BREAK]);
+				goto *(&&OP_invalid_label + jump_table[st_op & ~OP_BREAK]);
 			}
 			// 0 0000
 			OP_begin(OP_NOP) {
@@ -2912,10 +2917,6 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 									 (pr_ushort_t) st->b);
 				}
 			} OP_end;
-			//default:
-			OP_begin(OP_invalid) {
-				PR_RunError (pr, "Bad opcode x%03x", st->op & OP_MASK);
-			};
 		}
 	}
 exit_program:;

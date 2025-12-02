@@ -880,12 +880,10 @@ elif sys.argv[1] == "table":
 elif sys.argv[1] == "jump":
     W = 16
     for i, group in enumerate(opcodes):
-        if group is not None:
-            op_name = group["op"]
-            op_label = f"{op_name}_label"
-        else:
-            op_name = f"OP_spare_{i}"
-            op_label = "OP_invalid_label"
+        if group is None:
+            continue
+        op_name = group["op"]
+        op_label = f"{op_name}_label"
         op_ind = f"[{op_name}]"
         op_ind = f"%-{W}.{W}s" % op_ind
-        print(f"\t{op_ind} = &&{op_label} - &&OP_break_label,");
+        print(f"\t{op_ind} = &&{op_label} - &&OP_invalid_label,");
