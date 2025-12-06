@@ -216,6 +216,15 @@ static cvar_t r_farclip_cvar = {
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_float, .value = &r_farclip },
 };
+float r_csm_lambda;
+static cvar_t r_csm_lambda_cvar = {
+	.name = "r_csm_lambda",
+	.description =
+		"Blend factor between linear and logarithmic CSM splits.",
+	.default_value = "0.98",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &r_csm_lambda },
+};
 vec4f_t r_firecolor;
 static cvar_t r_firecolor_cvar = {
 	.name = "r_firecolor",
@@ -583,6 +592,7 @@ R_Init_Cvars (void)
 	Cvar_Register (&r_dynamic_cvar, 0, 0);
 	Cvar_Register (&r_explosionclip_cvar, 0, 0);
 	Cvar_Register (&r_farclip_cvar, r_farclip_f, 0);
+	Cvar_Register (&r_csm_lambda_cvar, nullptr, nullptr);
 	Cvar_Register (&r_firecolor_cvar, 0, 0);
 	Cvar_Register (&r_flatlightstyles_cvar, 0, 0);
 	Cvar_Register (&r_graphheight_cvar, 0, 0);

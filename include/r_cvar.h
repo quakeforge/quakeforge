@@ -56,6 +56,7 @@ extern int r_dspeeds;
 extern int r_dynamic;
 extern int r_explosionclip;
 extern float r_farclip;
+extern float r_csm_lambda;
 extern vec4f_t r_firecolor;
 extern int r_flatlightstyles;
 extern int r_graphheight;

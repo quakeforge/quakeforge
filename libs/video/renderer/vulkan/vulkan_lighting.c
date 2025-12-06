@@ -478,7 +478,7 @@ calculate_splits (light_split_t *s)
 	qfZoneScoped (true);
 	if (s->splits
 		&& s->num_splits == NUM_CASCADE + 1
-		&& s->lambda == 0.98f //FIXME cvar
+		&& s->lambda == r_csm_lambda
 		&& s->far == r_farclip
 		&& s->near == r_nearclip) {
 		return false;
@@ -488,7 +488,7 @@ calculate_splits (light_split_t *s)
 	s->splits = malloc (sizeof (float[s->num_splits]));
 	s->far = r_farclip;
 	s->near = r_nearclip;
-	s->lambda = 0.98;//FIXME
+	s->lambda = r_csm_lambda;
 
 	float far_near = s->far - s->near;
 	float log_far_near = log (s->far) - log (s->near);
