@@ -255,6 +255,14 @@ CL_World_NewMap (const char *mapname, const char *skyname)
 			CL_LoadSky (skyname);
 			Fog_ParseWorldspawn (cl_world.worldspawn);
 		}
+		// Nothing should ever be outside the bounds of a map, so no need
+		// to calculate the bounds of all objects, just the map is enough
+		ent_aabb_t bounds = {
+			.mins = { VectorExpand (cl_world.models.a[1]->mins) },
+			.maxs = { VectorExpand (cl_world.models.a[1]->maxs) },
+		};
+		cl_world.scene->lights->casters = bounds;
+		cl_world.scene->lights->receivers = bounds;
 	}
 	CL_LoadLights (cl_world.edicts, cl_world.scene);
 
