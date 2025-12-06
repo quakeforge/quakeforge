@@ -78,7 +78,7 @@ typedef struct qfv_lightmatdataset_s
 #define LIGHTING_ATTACH_INFOS 4
 #define LIGHTING_SHADOW_INFOS 32
 #define LIGHTING_DESCRIPTORS (LIGHTING_BUFFER_INFOS + LIGHTING_ATTACH_INFOS + 1)
-#define LIGHTING_STAGES 8
+#define LIGHTING_STAGES 16
 
 typedef struct qfv_framebufferset_s
 	DARRAY_TYPE (VkFramebuffer) qfv_framebufferset_t;
@@ -111,7 +111,7 @@ typedef struct lightingframe_s {
 	VkBuffer    id_buffer;
 	VkBuffer    radius_buffer;
 	VkBuffer    entid_buffer;
-	light_queue_t light_queue[4];
+	light_queue_t light_queue[ST_COUNT];
 
 	light_idrad_t *id_radius;
 	vec4f_t    *positions;

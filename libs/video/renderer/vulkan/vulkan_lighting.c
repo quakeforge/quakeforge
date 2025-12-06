@@ -82,7 +82,7 @@
 
 #define shadow_quanta 128
 #define lnearclip r_nearclip
-#define NUM_CASCADE 4
+#define NUM_CASCADE 8
 #define max_views 17	// FIXME should be 32 (or really, maxMultiviewViewCount,
 						// but there are other problems there), but nvidia's
 						// drivers segfault for > 17
@@ -2570,7 +2570,9 @@ allocate_map (mapctx_t *mctx, int type, int (*getsize) (const light_t *light))
 			continue;
 		}
 		int light_size = getsize (&mctx->lights[li]);
-		light_size = round_light_size (light_size);
+		if (type != ST_CASCADE) {
+			light_size = round_light_size (light_size);
+		}
 		if (size != light_size || numLayers + layers > mctx->maxLayers) {
 			if (numLayers) {
 				mctx->maps[mctx->numMaps++] = (mapdesc_t) {
@@ -2663,7 +2665,7 @@ get_spot_size (const light_t *light)
 static int
 get_direct_size (const light_t *light)
 {
-	return 1024;
+	return 2048;
 }
 
 static void
