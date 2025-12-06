@@ -246,7 +246,7 @@ calc_bounds (ecs_pool_t *pool, ent_aabb_t *out_bounds)
 }
 
 void
-Light_CacluateBounds (lightingdata_t *ldata)
+Light_CalculateBounds (lightingdata_t *ldata)
 {
 	qfZoneScoped (true);
 	auto scene = ldata->scene;

@@ -275,7 +275,7 @@ bi_refresh (progs_t *pr, void *_res)
 					Ent_RemoveComponent (ent, c_caster, scene->reg);
 				}
 			}
-			Light_CacluateBounds (scene->lights);
+			Light_CalculateBounds (scene->lights);
 		}
 	}
 	SCR_UpdateScreen (camera, con_realtime, bi_2dfuncs);

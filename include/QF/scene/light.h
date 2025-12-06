@@ -77,6 +77,6 @@ void Light_EnableSun (lightingdata_t *ldata);
 void Light_DecayLights (lightingdata_t *ldata, float frametime,
 						double realtime);
 void Light_LinkLight (lightingdata_t *ldata, uint32_t entid);
-void Light_CacluateBounds (lightingdata_t *ldata);
+void Light_CalculateBounds (lightingdata_t *ldata);
 
 #endif//__QF_scene_light_h
