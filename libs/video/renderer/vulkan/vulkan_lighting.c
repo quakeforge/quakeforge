@@ -553,7 +553,9 @@ cascade_mats (mat4f_t *mat, qfv_light_matdata_t *lmd,
 		cropBB[1][2] = min (receivers.maxs[2], split.maxs[2]);
 		cropBB[1][3] = 1;
 
-		vec4f_t width = cropBB[1] - cropBB[0];
+		vec4f_t w1 = cropBB[1] - cropBB[0];
+		vec4f_t w2 = {w1[1], w1[0], w1[2], w1[3] };
+		vec4f_t width = maxv4f (w1, w2);
 		vec4f_t scale = (vec4f_t) {2, 2,-1,-2} / width;
 		vec4f_t offset = 0.5 * (cropBB[1] + cropBB[0]) * scale;
 		offset[2] = cropBB[1][2] * scale[2];
