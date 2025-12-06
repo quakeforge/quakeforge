@@ -182,7 +182,7 @@ lighting_setup_shadow (const exprval_t **params, exprval_t *result,
 			.mins = { VectorExpand (brush->submodels[0].mins) },
 			.maxs = { VectorExpand (brush->submodels[0].maxs) },
 		};
-		lctx->ldata->receivers = lctx->ldata->casters;
+		lctx->ldata->receivers = lctx->ldata->receivers;
 	}
 	set_t leafs = SET_STATIC_INIT (brush->modleafs, alloca);
 	set_empty (&leafs);
