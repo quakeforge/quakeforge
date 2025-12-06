@@ -566,6 +566,12 @@ cascade_mats (mat4f_t *mat, qfv_light_matdata_t *lmd,
 		mat[i][3] = -offset;
 
 		mmulf (mat[i], mat[i], lightview);
+		float f = size / 2.0;
+		// project the origin onto the light's view plane
+		auto o = mvmulf (mat[i], (vec4f_t) { 0, 0, 0, 1 }) * f;
+		o = o - vfloor4f(o + 0.5);
+		// snap the offset so the origin is always on a pixel boundary
+		mat[i][3] -= o / f;
 
 		float s = min (scale[0], scale[1]);
 		lmd[i] = (qfv_light_matdata_t) {
