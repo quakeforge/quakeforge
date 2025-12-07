@@ -184,7 +184,7 @@ QFV_GetImageSize (qfv_device_t *device, VkImage image)
 
 void
 QFV_GenerateMipMaps (qfv_device_t *device, VkCommandBuffer cmd,
-					 VkImage image, unsigned mips,
+					 VkImage image, unsigned first_mip, unsigned mips,
 					 unsigned width, unsigned height, unsigned layers)
 {
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -194,19 +194,22 @@ QFV_GenerateMipMaps (qfv_device_t *device, VkCommandBuffer cmd,
 	qfv_imagebarrier_t fnl=imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
 
 	pre.barrier.image = image;
+	pre.barrier.subresourceRange.baseMipLevel = first_mip;
 	pre.barrier.subresourceRange.levelCount = 1;
 	pre.barrier.subresourceRange.layerCount = layers;
 	pst.barrier.image = image;
+	pst.barrier.subresourceRange.baseMipLevel = first_mip;
 	pst.barrier.subresourceRange.levelCount = 1;
 	pst.barrier.subresourceRange.layerCount = layers;
 	fnl.barrier.image = image;
+	fnl.barrier.subresourceRange.baseMipLevel = first_mip;
 	fnl.barrier.subresourceRange.levelCount = 1;
 	fnl.barrier.subresourceRange.layerCount = layers;
 
 	VkImageBlit blit = {
-		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, layers},
+		{VK_IMAGE_ASPECT_COLOR_BIT, first_mip, 0, layers},
 		{{0, 0, 0}, {width, height, 1}},
-		{VK_IMAGE_ASPECT_COLOR_BIT, 1, 0, layers},
+		{VK_IMAGE_ASPECT_COLOR_BIT, first_mip + 1, 0, layers},
 		{{0, 0, 0}, {max (width >> 1, 1), max (height >> 1, 1), 1}},
 	};
 

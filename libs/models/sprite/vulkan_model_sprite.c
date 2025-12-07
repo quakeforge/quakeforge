@@ -187,7 +187,7 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								   1, &copy);
 	QFV_GenerateMipMaps (device, packet->cmd, sprite->image,
-						 mipLevels, dsprite->width, dsprite->height,
+						 0, mipLevels, dsprite->width, dsprite->height,
 						 sprite_ctx->numframes);
 
 	QFV_PacketSubmit (packet);

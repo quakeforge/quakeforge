@@ -191,7 +191,7 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 
 	if (mipLevels > 1) {
 		QFV_GenerateMipMaps (device, packet->cmd, image->image.image,
-							 mipLevels, w, h, SKIN_LAYERS);
+							 0, mipLevels, w, h, SKIN_LAYERS);
 	}
 	QFV_PacketSubmit (packet);
 

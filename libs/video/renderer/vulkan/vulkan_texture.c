@@ -256,7 +256,7 @@ Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
 	QFV_PacketCopyImage (packet, qtex->image, extent, 0, sb, db);
 	if (mip > 1) {
 		QFV_GenerateMipMaps (device, packet->cmd, qtex->image,
-							 mip, tex->width, tex->height, layers);
+							 0, mip, tex->width, tex->height, layers);
 	}
 	QFV_PacketSubmit (packet);
 	return qtex;

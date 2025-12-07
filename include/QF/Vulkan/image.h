@@ -97,7 +97,7 @@ size_t QFV_GetImageSize (struct qfv_device_s *device, VkImage image);
  *			completion.
  */
 void QFV_GenerateMipMaps (struct qfv_device_s *device, VkCommandBuffer cmd,
-						  VkImage image, unsigned mips,
+						  VkImage image, unsigned first_mip, unsigned mips,
 						  unsigned width, unsigned height, unsigned layers);
 int QFV_MipLevels (int width, int height) __attribute__((const));
 
