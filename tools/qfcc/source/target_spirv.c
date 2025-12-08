@@ -895,6 +895,10 @@ static unsigned spirv_emit_expr (const expr_t *e, spirvctx_t *ctx);
 static unsigned
 spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 {
+	if (sym->sy_type == sy_expr) {
+		// this is probably a const (eg, const float pi = 3.14)
+		return 0;
+	}
 	if (sym->sy_type != sy_var) {
 		internal_error (0, "unexpected non-variable symbol type");
 	}
