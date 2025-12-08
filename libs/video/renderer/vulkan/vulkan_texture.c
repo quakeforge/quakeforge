@@ -38,6 +38,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/mathlib.h"
 #include "QF/va.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/barrier.h"
@@ -122,6 +123,32 @@ tex_format (const tex_t *tex, VkFormat *format, int *bpp)
 }
 
 static byte *
+stage_tex_data_rows (qfv_packet_t *packet, tex_t *tex, int y, int rows, int bpp)
+{
+	size_t      texels = tex->width * rows;
+	byte       *tex_data = QFV_PacketExtend (packet, bpp * texels);
+	byte       *data = tex->data + y * tex->width * bpp;
+
+	if (tex->format == tex_palette) {
+		Vulkan_ExpandPalette (tex_data, data, tex->palette, 1, texels);
+	} else {
+		if (tex->format == 3) {
+			byte       *in = data;
+			byte       *out = tex_data;
+			while (texels-- > 0) {
+				*out++ = *in++;
+				*out++ = *in++;
+				*out++ = *in++;
+				*out++ = 255;
+			}
+		} else {
+			memcpy (tex_data, data, bpp * texels);
+		}
+	}
+	return tex_data;
+}
+
+static byte *
 stage_tex_data (qfv_packet_t *packet, tex_t *tex, int bpp)
 {
 	size_t      texels = tex->width * tex->height;
@@ -177,6 +204,72 @@ stage_multi_tex_data (qfv_packet_t *packet, tex_t **tex, int count, int bpp)
 	return tex_data;
 }
 
+typedef struct {
+	tex_t     **tex;
+	int         layer;
+	int         count;
+	int         bpp;
+	int         y;
+	int         rows;
+} tex_cmd_t;
+
+#define MAX_TEX_BYTES (16*1024*1024)
+
+//NOTE: all textures must have the same dimensions or bad things will happen
+static int
+calc_tex_stage_commands (tex_t **tex, int count, int bpp)
+{
+	if (count < 1 || bpp < 1) {
+		Sys_Error ("invalid count or bpp: %d %d", count, bpp);
+	}
+	size_t      row_bytes = tex[0]->width * bpp;
+	size_t      bytes = tex[0]->height * row_bytes;
+	if (bytes > MAX_TEX_BYTES) {
+		// a single layer is too big to handle in one submit
+		// number of rows that can be done per submit
+		int r = MAX_TEX_BYTES / row_bytes;
+		return ((tex[0]->height + r - 1) / r) * count;
+	}
+	// number of layers that can be done per submit
+	int n = MAX_TEX_BYTES / bytes;
+	return (count + n - 1) / n;
+}
+
+static void
+init_tex_stage_commands (tex_cmd_t *cmd, tex_t **tex, int count, int bpp)
+{
+	size_t      row_bytes = tex[0]->width * bpp;
+	size_t      bytes = tex[0]->height * row_bytes;
+	if (bytes > MAX_TEX_BYTES) {
+		const int r = MAX_TEX_BYTES / row_bytes;
+		for (int l = 0; l < count; l++) {
+			int rows = tex[l]->height;
+			for (int y = 0; y < rows; y += r) {
+				*cmd++ = (tex_cmd_t) {
+					.tex = &tex[l],
+					.layer = l,
+					.count = 1,
+					.bpp = bpp,
+					.y = y,
+					.rows = min (r, rows - y),
+				};
+			}
+		}
+		return;
+	}
+	int n = MAX_TEX_BYTES / bytes;
+	for (int l = 0; l < count; l += n) {
+		*cmd++ = (tex_cmd_t) {
+			.tex = &tex[l],
+			.layer = l,
+			.count = min (n, count - l),
+			.bpp = bpp,
+			.y = 0,
+			.rows = tex[l]->height,
+		};
+	}
+}
+
 static qfv_tex_t *
 alloc_qfv_tex ()
 {
@@ -188,6 +281,57 @@ alloc_qfv_tex ()
 		.resource = (qfv_resource_t *) &qtex[1],
 	};
 	return qtex;
+}
+
+static void
+load_tex_set (tex_t **tex_set, int layers, int mip, int bpp, qfv_tex_t *qtex,
+			  vulkan_ctx_t *ctx)
+{
+	int num_cmd = calc_tex_stage_commands (tex_set, layers, bpp);
+	tex_cmd_t tex_cmd[num_cmd];
+	init_tex_stage_commands (tex_cmd, tex_set, layers, bpp);
+
+	auto sb = &imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	auto db = &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	if (mip > 1) {
+		// transition done by mipmaps
+		db = nullptr;
+	}
+	qfv_packet_t *packet = nullptr;
+	for (int i = 0; i < num_cmd; i++) {
+		auto cmd = &tex_cmd[i];
+		if (packet) {
+			QFV_PacketSubmit (packet);
+		}
+		packet = QFV_PacketAcquire (ctx->staging, "tex.loadarray");
+		printf ("%d %d %d %d\n", cmd->layer, cmd->count, cmd->y, cmd->rows);
+		if (cmd->count > 1) {
+			stage_multi_tex_data (packet, cmd->tex, cmd->count, bpp);
+		} else {
+			stage_tex_data_rows (packet, cmd->tex[0], cmd->y, cmd->rows, bpp);
+		}
+		qfv_offset_t offset = {
+			.x = 0,
+			.y = cmd->y,
+			.z = 0,
+			.layer = cmd->layer,
+		};
+		qfv_extent_t extent = {
+			.width = cmd->tex[0]->width,
+			.height = cmd->rows,
+			.depth = 1,
+			.layers = cmd->count,
+		};
+		QFV_PacketCopyImage (packet, qtex->image, offset, extent, 0, sb,
+							 i < num_cmd - 1 ? nullptr : db);
+		// want a transition for only the first copy
+		sb = nullptr;
+	}
+	if (mip > 1) {
+		QFV_GenerateMipMaps (ctx->device, packet->cmd, qtex->image, 0, mip,
+							 tex_set[0]->width, tex_set[0]->height, layers);
+	}
+	QFV_PacketSubmit (packet);
 }
 
 qfv_tex_t *
@@ -234,32 +378,11 @@ Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
 	qtex->image = image->image.image;
 	qtex->view = view->image_view.view;
 
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.loadarray");
 	tex_t *tex_set[layers];
 	for (int i = 0; i < layers; i++) {
 		tex_set[i] = &tex[i];
 	}
-	stage_multi_tex_data (packet, tex_set, layers, bpp);
-
-	qfv_offset_t offset = {};
-	qfv_extent_t extent = {
-		.width = tex[0].width,
-		.height = tex[0].height,
-		.depth = 1,
-		.layers = layers,
-	};
-	auto sb = &imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	auto db = &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	if (mip > 1) {
-		// transition done by mipmaps
-		db = nullptr;
-	}
-	QFV_PacketCopyImage (packet, qtex->image, offset, extent, 0, sb, db);
-	if (mip > 1) {
-		QFV_GenerateMipMaps (device, packet->cmd, qtex->image,
-							 0, mip, tex->width, tex->height, layers);
-	}
-	QFV_PacketSubmit (packet);
+	load_tex_set (tex_set, layers, mip, bpp, qtex, ctx);
 	return qtex;
 }
 
@@ -320,6 +443,9 @@ Vulkan_LoadEnvMap (vulkan_ctx_t *ctx, tex_t *tex, const char *name)
 
 	if (!tex_format (tex, &format, &bpp)) {
 		return 0;
+	}
+	if (tex->height * 2 == tex->width) {
+		return Vulkan_LoadTex (ctx, tex, 1, name);
 	}
 	if (tex->height * 3 != tex->width * 2) {
 		return 0;
@@ -392,22 +518,7 @@ Vulkan_LoadEnvSides (vulkan_ctx_t *ctx, tex_t **tex, const char *name)
 	int size = tex[0]->height;
 	qfv_tex_t  *qtex = create_cubetex (ctx, size, format, name);
 
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.loadenvsides");
-
-	stage_multi_tex_data (packet, tex, 6, bpp);
-
-	qfv_offset_t offset = {};
-	qfv_extent_t extent = {
-		.width = size,
-		.height = size,
-		.depth = 1,
-		.layers = 6,
-	};
-	auto sb = &imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	auto db = &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	QFV_PacketCopyImage (packet, qtex->image, offset, extent, 0, sb, db);
-
-	QFV_PacketSubmit (packet);
+	load_tex_set (tex, 6, 1, bpp, qtex, ctx);
 	return qtex;
 }
 
