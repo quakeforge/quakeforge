@@ -241,6 +241,7 @@ Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
 	}
 	stage_multi_tex_data (packet, tex_set, layers, bpp);
 
+	qfv_offset_t offset = {};
 	qfv_extent_t extent = {
 		.width = tex[0].width,
 		.height = tex[0].height,
@@ -253,7 +254,7 @@ Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
 		// transition done by mipmaps
 		db = nullptr;
 	}
-	QFV_PacketCopyImage (packet, qtex->image, extent, 0, sb, db);
+	QFV_PacketCopyImage (packet, qtex->image, offset, extent, 0, sb, db);
 	if (mip > 1) {
 		QFV_GenerateMipMaps (device, packet->cmd, qtex->image,
 							 0, mip, tex->width, tex->height, layers);
@@ -395,6 +396,7 @@ Vulkan_LoadEnvSides (vulkan_ctx_t *ctx, tex_t **tex, const char *name)
 
 	stage_multi_tex_data (packet, tex, 6, bpp);
 
+	qfv_offset_t offset = {};
 	qfv_extent_t extent = {
 		.width = size,
 		.height = size,
@@ -403,7 +405,7 @@ Vulkan_LoadEnvSides (vulkan_ctx_t *ctx, tex_t **tex, const char *name)
 	};
 	auto sb = &imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	auto db = &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	QFV_PacketCopyImage (packet, qtex->image, extent, 0, sb, db);
+	QFV_PacketCopyImage (packet, qtex->image, offset, extent, 0, sb, db);
 
 	QFV_PacketSubmit (packet);
 	return qtex;
@@ -612,17 +614,18 @@ texture_startup (exprctx_t *ectx)
 	auto sb = imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	auto db = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
 
+	qfv_offset_t offset = {};
 	QFV_PacketCopyImage (packet, images[0].image.image,
-						 (qfv_extent_t) { 1, 1, 1, 1 },
+						 offset, (qfv_extent_t) { 1, 1, 1, 1 },
 						 QFV_PacketOffset (packet, black_bytes), &sb, &db);
 	QFV_PacketCopyImage (packet, images[1].image.image,
-						 (qfv_extent_t) { 1, 1, 1, 1 },
+						 offset, (qfv_extent_t) { 1, 1, 1, 1 },
 						 QFV_PacketOffset (packet, white_bytes), &sb, &db);
 	QFV_PacketCopyImage (packet, images[2].image.image,
-						 (qfv_extent_t) { 1, 1, 1, 1 },
+						 offset, (qfv_extent_t) { 1, 1, 1, 1 },
 						 QFV_PacketOffset (packet, magenta_bytes), &sb, &db);
 	QFV_PacketCopyImage (packet, images[3].image.image,
-						 (qfv_extent_t) { 1, 1, 1, 3 },
+						 offset, (qfv_extent_t) { 1, 1, 1, 3 },
 						 QFV_PacketOffset (packet, skin_bytes), &sb, &db);
 
 	QFV_PacketSubmit (packet);

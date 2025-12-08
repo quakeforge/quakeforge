@@ -43,11 +43,20 @@ typedef struct qfv_scatter_s {
 	VkDeviceSize length;
 } qfv_scatter_t;
 
+typedef struct qfv_offset_s {
+	uint32_t    x;
+	uint32_t    y;
+	uint32_t    z;
+	uint32_t    layer;
+	uint32_t    mip;
+} qfv_offset_t;
+
 typedef struct qfv_extent_s {
 	uint32_t    width;
 	uint32_t    height;
 	uint32_t    depth;
 	uint32_t    layers;
+	uint32_t    row_length;
 } qfv_extent_t;
 
 qfv_stagebuf_t *QFV_CreateStagingBuffer (struct qfv_device_s *device,
@@ -59,20 +68,21 @@ qfv_packet_t *QFV_PacketAcquire (qfv_stagebuf_t *stage, const char *name);
 void *QFV_PacketExtend (qfv_packet_t *packet, size_t size);
 void QFV_PacketSubmit (qfv_packet_t *packet);
 VkResult QFV_PacketWait (qfv_packet_t *packet);
-struct qfv_bufferbarrier_s;
+typedef struct qfv_bufferbarrier_s qfv_bufferbarrier_t;
 void QFV_PacketCopyBuffer (qfv_packet_t *packet,
 						   VkBuffer dstBuffer, VkDeviceSize offset,
-						   const struct qfv_bufferbarrier_s *srcBarrier,
-						   const struct qfv_bufferbarrier_s *dstBarrier);
+						   const qfv_bufferbarrier_t *srcBarrier,
+						   const qfv_bufferbarrier_t *dstBarrier);
 void QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 							  uint32_t count, qfv_scatter_t *scatter,
-							  const struct qfv_bufferbarrier_s *srcBarrier,
-							  const struct qfv_bufferbarrier_s *dstBarrier);
-struct qfv_imagebarrier_s;
+							  const qfv_bufferbarrier_t *srcBarrier,
+							  const qfv_bufferbarrier_t *dstBarrier);
+typedef struct qfv_imagebarrier_s qfv_imagebarrier_t;
 void QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
-						  qfv_extent_t extent, size_t offset,
-						  const struct qfv_imagebarrier_s *srcBarrier,
-						  const struct qfv_imagebarrier_s *dstBarrier);
+						  qfv_offset_t imgOffset, qfv_extent_t imgExtent,
+						  size_t offset,
+						  const qfv_imagebarrier_t *srcBarrier,
+						  const qfv_imagebarrier_t *dstBarrier);
 size_t QFV_PacketOffset (qfv_packet_t *packet, void *ptr);
 size_t QFV_PacketFullOffset (qfv_packet_t *packet, void *ptr);
 

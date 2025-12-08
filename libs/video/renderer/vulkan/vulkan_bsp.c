@@ -1158,7 +1158,7 @@ create_notexture (vulkan_ctx_t *ctx, qfv_packet_t *packet, qfv_resobj_t *res)
 	size_t offset = QFV_PacketOffset (packet, data_bytes);
 	auto sb = imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	auto db = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	QFV_PacketCopyImage (packet, res->image.image,
+	QFV_PacketCopyImage (packet, res->image.image, (qfv_offset_t){},
 						 (qfv_extent_t) {64, 64, 1, 1}, offset, &sb, &db);
 }
 

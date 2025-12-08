@@ -538,7 +538,8 @@ QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 
 void
 QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
-					 qfv_extent_t extent, size_t offset,
+					 qfv_offset_t imgOffset, qfv_extent_t imgExtent,
+					 size_t offset,
 					 const qfv_imagebarrier_t *srcBarrier,
 					 const qfv_imagebarrier_t *dstBarrier)
 {
@@ -546,25 +547,41 @@ QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 		Sys_Error ("offset outside of packet");
 	}
 	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
-	qfv_imagebarrier_t ib = *srcBarrier;
-	ib.barrier.image = dstImage;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0, 1, &ib.barrier);
+	if (srcBarrier) {
+		auto ib = *srcBarrier;
+		ib.barrier.image = dstImage;
+		ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+		ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+		dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
+									 0, 0, 0, 0, 0, 1, &ib.barrier);
+	}
 	VkBufferImageCopy copy_region = {
 		.bufferOffset = packet->offset + offset,
-		.bufferRowLength = 0,
+		.bufferRowLength = imgExtent.row_length,
 		.bufferImageHeight = 0,
-		.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, extent.layers},
-		{0, 0, 0}, {extent.width, extent.height, extent.depth},
+		.imageSubresource = {
+			.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			.mipLevel = imgOffset.mip,
+			.baseArrayLayer = imgOffset.layer,
+			.layerCount = imgExtent.layers,
+		},
+		.imageOffset = {
+			.x = imgOffset.x,
+			.y = imgOffset.y,
+			.z = imgOffset.z
+		},
+		.imageExtent = {
+			.width = imgExtent.width,
+			.height = imgExtent.height,
+			.depth = imgExtent.depth
+		},
 	};
 	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
 								   dstImage,
 								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								   1, &copy_region);
 	if (dstBarrier) {
-		ib = *dstBarrier;
+		auto ib = *dstBarrier;
 		ib.barrier.image = dstImage;
 		ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
 		ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;

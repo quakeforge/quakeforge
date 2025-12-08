@@ -152,7 +152,7 @@ iqm_transfer_texture (tex_t *tex, VkImage image, qfv_stagebuf_t *stage,
 		.depth = 1,
 		.layers = 1,
 	};
-	QFV_PacketCopyImage (packet, image, extent, 0, sb, ib);
+	QFV_PacketCopyImage (packet, image, (qfv_offset_t){}, extent, 0, sb, ib);
 
 	if (mipLevels != 1) {
 		QFV_GenerateMipMaps (device, packet->cmd, image, 0, mipLevels,

@@ -294,7 +294,7 @@ painter_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto data = QFV_PacketExtend (packet, size);
 	memcpy (data, pctx->cmd_heads, size);
 	QFV_PacketCopyImage (packet, frame->cmd_heads_image,
-						 pctx->cmd_extent, 0,
+						 (qfv_offset_t){}, pctx->cmd_extent, 0,
 						 &imageBarriers[qfv_LT_Undefined_to_TransferDst],
 						 &imageBarriers[qfv_LT_TransferDst_to_General]);
 	QFV_PacketSubmit (packet);

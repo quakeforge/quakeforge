@@ -187,7 +187,8 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 		// transition done by mipmaps
 		db = nullptr;
 	}
-	QFV_PacketCopyImage (packet, image->image.image, extent, 0, sb, db);
+	QFV_PacketCopyImage (packet, image->image.image, (qfv_offset_t){}, extent,
+						 0, sb, db);
 
 	if (mipLevels > 1) {
 		QFV_GenerateMipMaps (device, packet->cmd, image->image.image,
