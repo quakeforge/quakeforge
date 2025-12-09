@@ -123,51 +123,59 @@ tex_format (const tex_t *tex, VkFormat *format, int *bpp)
 }
 
 static byte *
-stage_tex_data_rows (qfv_packet_t *packet, tex_t *tex, int y, int rows, int bpp)
+stage_pal (byte *out, byte *in, int texels, int bpp, const byte *palette)
 {
-	size_t      texels = tex->width * rows;
-	byte       *tex_data = QFV_PacketExtend (packet, bpp * texels);
-	byte       *data = tex->data + y * tex->width * bpp;
-
-	if (tex->format == tex_palette) {
-		Vulkan_ExpandPalette (tex_data, data, tex->palette, 1, texels);
-	} else {
-		if (tex->format == 3) {
-			byte       *in = data;
-			byte       *out = tex_data;
-			while (texels-- > 0) {
-				*out++ = *in++;
-				*out++ = *in++;
-				*out++ = *in++;
-				*out++ = 255;
-			}
-		} else {
-			memcpy (tex_data, data, bpp * texels);
-		}
-	}
-	return tex_data;
+	Vulkan_ExpandPalette (out, in, palette, 1, texels);
+	return out + texels * 4;
 }
 
 static byte *
-stage_tex_data (qfv_packet_t *packet, tex_t *tex, int bpp)
+stage_rgb (byte *out, byte *in, int texels, int bpp, const byte *palette)
 {
-	size_t      texels = tex->width * tex->height;
-	byte       *tex_data = QFV_PacketExtend (packet, bpp * texels);
+	while (texels-- > 0) {
+		*out++ = *in++;
+		*out++ = *in++;
+		*out++ = *in++;
+		*out++ = 255;
+	}
+	return out;
+}
 
+static byte *
+stage_bpp (byte *out, byte *in, int texels, int bpp, const byte *palette)
+{
+	memcpy (out, in, bpp * texels);
+	return out + texels * bpp;
+}
+
+static byte *
+stage_tex_data_rows (qfv_packet_t *packet, tex_t *tex, int y, int rows,
+					 int bpp, int row_texels)
+{
+	if (!row_texels) {
+		row_texels = tex->width;
+	}
+	if (!rows) {
+		rows = tex->height;
+	}
+	int         row_bytes = row_texels * bpp;
+	size_t      texels = tex->width;
+	byte       *tex_data = QFV_PacketExtend (packet, bpp * texels * rows);
+	byte       *in = tex->data + y * row_bytes;
+	auto stage = stage_bpp;
 	if (tex->format == tex_palette) {
-		Vulkan_ExpandPalette (tex_data, tex->data, tex->palette, 1, texels);
+		stage = stage_pal;
+	} else if (tex->format == 3) {
+		stage = stage_rgb;
+	}
+
+	if (row_bytes == tex->width * bpp) {
+		stage (tex_data, in, texels * rows, bpp, tex->palette);
 	} else {
-		if (tex->format == 3) {
-			byte       *in = tex->data;
-			byte       *out = tex_data;
-			while (texels-- > 0) {
-				*out++ = *in++;
-				*out++ = *in++;
-				*out++ = *in++;
-				*out++ = 255;
-			}
-		} else {
-			memcpy (tex_data, tex->data, bpp * texels);
+		auto out = tex_data;
+		for (int i = 0; i < rows; i++) {
+			out = stage (out, in, texels, bpp, tex->palette);
+			in += row_bytes;
 		}
 	}
 	return tex_data;
@@ -181,25 +189,16 @@ stage_multi_tex_data (qfv_packet_t *packet, tex_t **tex, int count, int bpp)
 	byte       *tex_data = QFV_PacketExtend (packet, bpp * texels * count);
 	byte       *out_data = tex_data;
 
+	auto stage = stage_bpp;
+	auto palette = tex[0]->palette;
+	if (tex[0]->format == tex_palette) {
+		stage = stage_pal;
+	} else if (tex[0]->format == 3) {
+		stage = stage_rgb;
+	}
+
 	for (int i = 0; i < count; i++, out_data += bpp * texels) {
-		auto data = tex[i]->data;
-		if (tex[i]->format == tex_palette) {
-			auto palette = tex[i]->palette;
-			Vulkan_ExpandPalette (out_data, data, palette, 1, texels);
-		} else {
-			if (tex[i]->format == 3) {
-				byte       *in = data;
-				byte       *out = out_data;
-				while (texels-- > 0) {
-					*out++ = *in++;
-					*out++ = *in++;
-					*out++ = *in++;
-					*out++ = 255;
-				}
-			} else {
-				memcpy (out_data, data, bpp * texels);
-			}
-		}
+		stage (out_data, tex[i]->data, texels, bpp, palette);
 	}
 	return tex_data;
 }
@@ -308,7 +307,7 @@ load_tex_set (tex_t **tex_set, int layers, int mip, int bpp, qfv_tex_t *qtex,
 		if (cmd->count > 1) {
 			stage_multi_tex_data (packet, cmd->tex, cmd->count, bpp);
 		} else {
-			stage_tex_data_rows (packet, cmd->tex[0], cmd->y, cmd->rows, bpp);
+			stage_tex_data_rows (packet, *cmd->tex, cmd->y, cmd->rows, bpp, 0);
 		}
 		qfv_offset_t offset = {
 			.x = 0,
@@ -455,7 +454,7 @@ Vulkan_LoadEnvMap (vulkan_ctx_t *ctx, tex_t *tex, const char *name)
 	qfv_tex_t  *qtex = create_cubetex (ctx, size, format, name);
 
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.loadenvmap");
-	stage_tex_data (packet, tex, bpp);
+	stage_tex_data_rows (packet, tex, 0, tex->height, bpp, 0);
 
 	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	ib.barrier.image = qtex->image;
@@ -548,7 +547,7 @@ Vulkan_UpdateTex (vulkan_ctx_t *ctx, qfv_tex_t *tex, tex_t *src,
 								 0, 0, 0, 0, 0,
 								 1, &ib.barrier);
 
-	auto data = stage_tex_data (packet, src, bpp);
+	auto data = stage_tex_data_rows (packet, src, 0, src->height, bpp, 0);
 	auto offset = QFV_PacketOffset (packet, data);
 	VkBufferImageCopy copy = {
 		.bufferOffset = packet->offset + offset,
@@ -717,9 +716,12 @@ texture_startup (exprctx_t *ectx)
 	ctx->default_skin = views[6].image_view.view;
 
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.startup");
-	auto black_bytes = stage_tex_data (packet, &default_black_tex, 4);
-	auto white_bytes = stage_tex_data (packet, &default_white_tex, 4);
-	auto magenta_bytes = stage_tex_data (packet, &default_magenta_tex, 4);
+	auto black_bytes = stage_tex_data_rows (packet, &default_black_tex,
+											0, 0, 4, 0);
+	auto white_bytes =  stage_tex_data_rows (packet, &default_white_tex,
+											 0, 0, 4, 0);
+	auto magenta_bytes =  stage_tex_data_rows (packet, &default_magenta_tex,
+											   0, 0, 4, 0);
 	auto skin_bytes = stage_multi_tex_data (packet, default_skin_tex, 3, 4);
 
 	auto sb = imageBarriers[qfv_LT_Undefined_to_TransferDst];
