@@ -306,9 +306,6 @@ stage_tex_set (qfv_tex_t *qtex, tex_cmd_t *tex_cmd, int num_cmd,
 			QFV_PacketSubmit (packet);
 		}
 		packet = QFV_PacketAcquire (ctx->staging, "tex.loadarray");
-		printf ("%d %d [%4d %4d] %d %d [%4d %4d]\n", cmd->layer, cmd->count,
-				cmd->out_x, cmd->out_y, cmd->rows, cmd->row_texels,
-				cmd->in_x, cmd->in_y);
 		if (cmd->count > 1) {
 			stage_multi_tex_data (packet, cmd->tex, cmd->count, cmd->bpp);
 		} else {
@@ -447,7 +444,7 @@ Vulkan_LoadEnvMap (vulkan_ctx_t *ctx, tex_t *tex, const char *name)
 	int         bpp;
 	VkFormat    format;
 
-	static int env_coords[][2] = {
+	static int env_coords_3x2[][2] = {
 		{2, 0},	// right
 		{0, 0}, // left
 		{1, 1}, // top
@@ -456,17 +453,69 @@ Vulkan_LoadEnvMap (vulkan_ctx_t *ctx, tex_t *tex, const char *name)
 		{1, 0}, // back
 	};
 
+	static int env_coords_4x3[][2] = {
+		{2, 1},	// right
+		{0, 1}, // left
+		{1, 0}, // top
+		{1, 2}, // bottom
+		{1, 1}, // front
+		{3, 1}, // back
+	};
+
+	static int env_coords_3x4[][2] = {
+		{2, 1},	// right
+		{0, 1}, // left
+		{1, 0}, // top
+		{1, 2}, // bottom
+		{1, 1}, // front
+		{1, 3}, // back upside down?
+	};
+
+	static int env_coords_6x1[][2] = {
+		{0, 0},	// right
+		{1, 0}, // left
+		{2, 0}, // top
+		{3, 0}, // bottom
+		{4, 0}, // front
+		{5, 0}, // back
+	};
+
+	static int env_coords_1x6[][2] = {
+		{0, 0},	// right
+		{0, 1}, // left
+		{0, 2}, // top
+		{0, 3}, // bottom
+		{0, 4}, // front
+		{0, 5}, // back
+	};
+	int (*env_coords)[2] = nullptr;
+
 	if (!tex_format (tex, &format, &bpp)) {
 		return 0;
 	}
 	if (tex->height * 2 == tex->width) {
 		return Vulkan_LoadTex (ctx, tex, 1, name);
 	}
-	if (tex->height * 3 != tex->width * 2) {
+	int size;
+	if (tex->height * 3 == tex->width * 2) {
+		env_coords = env_coords_3x2;
+		size = tex->height / 2;
+	} else if (tex->height * 4 == tex->width * 3) {
+		env_coords = env_coords_4x3;
+		size = tex->width / 4;
+	} else if (tex->height * 3 == tex->width * 4) {
+		env_coords = env_coords_3x4;
+		size = tex->height / 4;
+	} else if (tex->height * 6 == tex->width * 1) {
+		env_coords = env_coords_6x1;
+		size = tex->height;
+	} else if (tex->height * 1 == tex->width * 6) {
+		env_coords = env_coords_1x6;
+		size = tex->width;
+	} else {
 		return 0;
 	}
 
-	int size = tex->height / 2;
 	qfv_tex_t  *qtex = create_cubetex (ctx, size, format, name);
 
 	tex_t dummy = {
