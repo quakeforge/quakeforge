@@ -59,12 +59,19 @@ vec4
 sky_map (vec3 dir, float time)
 {
 	const float pi = 3.14159265358979;
-	vec2 uv = vec2 (atan (dir.y, dir.x), atan (dir.z, length(dir.xy)));
 	// equirectangular images go from left to right, top to bottom, but
 	// the computed angles go right to left, bottom to top, so both need to be
 	// flipped for the maps to be the right way round.
-	uv *= vec2(-1/(2*pi), -1/pi * 0.99);
-	return texture (SkyMap, uv + 0.5);
+	const vec2 conv = vec2(-1/(2*pi), -1/pi);
+
+	vec3 rid = -dir;
+	float x1 = atan (dir.y, dir.x);
+	float x2 = atan (rid.y, rid.x);
+	float y = atan (dir.z, length(dir.xy));
+	vec2 uv1 = vec2 (x1, y) * conv + vec2(0.5, 0.5);
+	vec2 uv2 = vec2 (x2, y) * conv + vec2(0.0, 0.5);
+	vec2 uv = fwidth(uv1.x) > 0.5 ? uv2 : uv1;
+	return texture (SkyMap, uv);
 }
 
 vec4
