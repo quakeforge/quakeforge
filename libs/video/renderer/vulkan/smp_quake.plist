@@ -67,6 +67,23 @@ samplers = {
 		borderColor = float_transparent_black;
 		unnormalizedCoordinates = false;
 	};
+	quakesky_sampler = {
+		magFilter = linear;
+		minFilter = linear;
+		mipmapMode = linear;
+		addressModeU = mirrored_repeat;
+		addressModeV = mirrored_repeat;
+		addressModeW = mirrored_repeat;
+		mipLodBias = 0;
+		anisotropyEnable = false;
+		maxAnisotropy = 0;
+		compareEnable = false;
+		compareOp = always;
+		minLod = 0;
+		maxLod = 4;
+		borderColor = float_transparent_black;
+		unnormalizedCoordinates = false;
+	};
 	qskin_sampler = {
 		magFilter = linear;
 		minFilter = linear;

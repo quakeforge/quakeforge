@@ -11,12 +11,14 @@ layout (constant_id = 1) const bool doSkySheet = false;
 
 layout (set = 3, binding = 0) uniform sampler2DArray SkySheet;
 layout (set = 4, binding = 0) uniform samplerCube SkyBox;
+layout (set = 5, binding = 0) uniform sampler2D SkyMap;
 
 layout (push_constant) uniform PushConstants {
 	vec4        fog;
 	float       time;
 	float       alpha;
 	float       turb_scale;
+	uint        control;
 };
 
 layout (location = 0) in vec4 tl_st;
@@ -54,14 +56,24 @@ sky_sheet (vec3 dir, float time)
 }
 
 vec4
+sky_map (vec3 dir, float time)
+{
+	const float pi = 3.14159265358979;
+	vec2 uv = vec2 (atan (dir.y, dir.x), atan (dir.z, length(dir.xy)));
+	// equirectangular images go from left to right, top to bottom, but
+	// the computed angles go right to left, bottom to top, so both need to be
+	// flipped for the maps to be the right way round.
+	uv *= vec2(-1/(2*pi), -1/pi * 0.99);
+	return texture (SkyMap, uv + 0.5);
+}
+
+vec4
 sky_box (vec3 dir, float time)
 {
 	// NOTE: quake's world is right-handed with Z up and X forward, but
 	// Vulkan's cube maps are left-handed with Y up and Z forward. The
 	// rotation to X foward is done by the Sky matrix so all that's left
 	// to do here is swizzle the Y and Z coordinates
-	dir = normalize(dir);
-	//return vec4(dir.xyz, 1) * 0.5 + vec4(0.5);
 	return texture (SkyBox, dir.xzy);
 }
 
@@ -69,7 +81,11 @@ vec4
 sky_color (vec3 dir, float time)
 {
 	if (!doSkySheet) {
-		return sky_box (dir, time);
+		if (control & 4) {
+			return sky_map (dir, time);
+		} else {
+			return sky_box (dir, time);
+		}
 	} if (!doSkyBox) {
 		return sky_sheet (dir, time);
 	} else {

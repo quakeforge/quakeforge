@@ -458,14 +458,16 @@ render_graph = {
 			};
 			layout = {
 				descriptorSets = (matrix_set, entity_set, oit_set,
-				//				  surface      skybox/lightmap
-								  texture_set, texture_set);
+				//				  surface      skybox       skymap
+				//                             lightmap
+								  texture_set, texture_set, texture_set);
 				pushConstants = {
 					fragment = {
 						fog = vec4;
 						time = float;
 						alpha = float;
 						turb_scale = float;
+						control = uint;
 					};
 				};
 			};

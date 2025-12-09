@@ -377,6 +377,10 @@ typedef struct bspctx_s {
 	struct qfv_tex_s *skybox_tex;		///< sky box texture for current map
 	VkDescriptorSet skybox_descriptor;
 
+	VkImageView default_skymap;
+	struct qfv_tex_s *skymap_tex;		///< sky eqrec map for current map
+	VkDescriptorSet skymap_descriptor;
+
 	bsp_pass_t  main_pass;			///< camera view depth, gbuffer, etc
 	bsp_pass_t  shadow_pass;
 	bsp_pass_t  debug_pass;
