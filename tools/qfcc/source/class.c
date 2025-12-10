@@ -1981,8 +1981,9 @@ symtab_t *
 class_ivar_scope (class_type_t *class_type, symtab_t *parent)
 {
 	class_t    *class = extract_class (class_type);
-	if (!class->ivars)
-		return 0;
+	if (!class->ivars) {
+		class->ivars = class_new_ivars (class);
+	}
 	return symtab_flat_copy (class->ivars, parent, stab_ivars);
 }
 
