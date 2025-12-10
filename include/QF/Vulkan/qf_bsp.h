@@ -386,6 +386,7 @@ typedef struct bspctx_s {
 	bsp_pass_t  debug_pass;
 
 	VkSampler    sampler;
+	VkSampler    equrect;
 
 	struct qfv_resource_s *base_resource;
 	size_t       vertex_buffer_size;

@@ -1527,6 +1527,7 @@ bsp_startup (exprctx_t *ectx)
 	bctx->debug_pass.entqueue = EntQueue_New (mod_num_types);
 
 	bctx->sampler = QFV_Render_Sampler (ctx, "quakebsp_sampler");
+	bctx->equrect = QFV_Render_Sampler (ctx, "equirectangular_sampler");
 
 	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 4096,
 										 tex_frgba, ctx->staging);
@@ -1585,7 +1586,7 @@ bsp_startup (exprctx_t *ectx)
 											 bctx->sampler);
 	bctx->skymap_descriptor
 		= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skymap,
-											 bctx->sampler);
+											 bctx->equrect);
 	bctx->notexture_descriptor
 		= Vulkan_CreateCombinedImageSampler (ctx, bctx->notexture,
 											 bctx->sampler);
@@ -1753,7 +1754,7 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 												 bctx->sampler);
 		bctx->skymap_descriptor
 			= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skymap,
-												 bctx->sampler);
+												 bctx->equrect);
 		return;
 	}
 
@@ -1805,14 +1806,14 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 				= Vulkan_CreateTextureDescriptor (ctx, sky_tex, bctx->sampler);
 			bctx->skymap_descriptor
 				= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skymap,
-													 bctx->sampler);
+													 bctx->equrect);
 		} else {
 			bctx->skymap_tex = sky_tex;
 			bctx->skybox_descriptor
 				= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skybox,
 													 bctx->sampler);
 			bctx->skymap_descriptor
-				= Vulkan_CreateTextureDescriptor (ctx, sky_tex, bctx->sampler);
+				= Vulkan_CreateTextureDescriptor (ctx, sky_tex, bctx->equrect);
 		}
 		Sys_MaskPrintf (SYS_vulkan, "Sky %s loaded\n", sky);
 	}
