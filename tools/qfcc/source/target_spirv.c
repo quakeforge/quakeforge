@@ -1248,6 +1248,16 @@ spirv_generate_matrix (const expr_t *e, spirvctx_t *ctx)
 	return id;
 }
 
+static unsigned
+spirv_generate_not (const expr_t *e, spirvctx_t *ctx)
+{
+	scoped_src_loc (e);
+	auto expr = e->expr.e1;
+	auto zero = new_int_expr (0, true);
+	auto not = binary_expr (QC_EQ, expr, zero);
+	return spirv_emit_expr (not, ctx);
+}
+
 #define SPV_meta(m,t)
 #define SPV_type(m,t) ((unsigned)((1<<((m)+16))|(1<<(t))))
 #define SPV_type_cmp(a,b) (((a) & (b)) == (b))
@@ -1330,6 +1340,8 @@ static spvop_t spv_ops[] = {
 
 	{"bitnot", SpvOpNot,                  SPV_INT,   0         },
 	{"not",    SpvOpLogicalNot,           SPV_BOOL,  0         },
+	{"not",    .types1 = SPV_FLOAT|SPV_INT,
+		.generate = spirv_generate_not },
 
 	{"shl",    SpvOpShiftLeftLogical,     SPV_INT,   SPV_INT   },
 	{"shr",    SpvOpShiftRightLogical,    SPV_UINT,  SPV_INT   },
@@ -1457,9 +1469,12 @@ spirv_uexpr (const expr_t *e, spirvctx_t *ctx)
 		internal_error (e, "unexpected unary op_name: %s %s\n", op_name,
 						get_type_string(t));
 	}
-	if (!spv_op->op) {
+	if (!spv_op->op && !spv_op->generate) {
 		internal_error (e, "unimplemented op: %s %s\n", op_name,
 						get_type_string(t));
+	}
+	if (spv_op->generate) {
+		return spv_op->generate (e, ctx);
 	}
 	unsigned uid = spirv_emit_expr (e->expr.e1, ctx);
 
