@@ -2273,7 +2273,9 @@ spirv_select (const expr_t *e, spirvctx_t *ctx)
 	spirv_SelectionMerge (merge, ctx);
 	spirv_BranchConditional (e->select.not, test, true_label, false_label, ctx);
 	spirv_LabelId (true_label, ctx);
-	spirv_emit_expr (e->select.true_body, ctx);
+	if (e->select.true_body) {
+		spirv_emit_expr (e->select.true_body, ctx);
+	}
 	if (!is_block_terminated (ctx->code_space)) {
 		spirv_Branch (merge, ctx);
 	}
