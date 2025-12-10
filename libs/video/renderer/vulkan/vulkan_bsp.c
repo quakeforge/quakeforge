@@ -879,12 +879,20 @@ push_fragconst (QFV_BspQueue queue, VkPipelineLayout layout,
 				qfv_device_t *device, VkCommandBuffer cmd,
 				bspctx_t *bctx)
 {
+	uint32_t control = 0;
+	if (bctx->skymap_tex) {
+		control |= 4;
+	} else if (bctx->skybox_tex) {
+		control |= 2;
+	} else {
+		control |= 1;
+	}
 	bsp_frag_constants_t constants = {
 		.fog = Fog_Get (),
 		.time = vr_data.realtime,
 		.alpha = queue == QFV_bspTurb ? r_wateralpha : 1,
 		.turb_scale = queue == QFV_bspTurb ? 1 : 0,
-		.control = bctx->skymap_tex ? 4 : 0,
+		.control = control,
 	};
 
 	qfv_push_constants_t push_constants[] = {

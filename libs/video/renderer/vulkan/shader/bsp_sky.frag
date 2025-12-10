@@ -6,9 +6,6 @@
 
 #include "oit_store.finc"
 
-layout (constant_id = 0) const bool doSkyBox = false;
-layout (constant_id = 1) const bool doSkySheet = false;
-
 layout (set = 3, binding = 0) uniform sampler2DArray SkySheet;
 layout (set = 4, binding = 0) uniform samplerCube SkyBox;
 layout (set = 5, binding = 0) uniform sampler2D SkyMap;
@@ -87,19 +84,20 @@ sky_box (vec3 dir, float time)
 vec4
 sky_color (vec3 dir, float time)
 {
-	if (!doSkySheet) {
+	if (!(control & 1)) {
 		if (control & 4) {
 			return sky_map (dir, time);
 		} else {
 			return sky_box (dir, time);
 		}
-	} if (!doSkyBox) {
+	} if (!(control & 6)) {
 		return sky_sheet (dir, time);
 	} else {
 		// can see through the sheet (may look funny when looking down)
 		// maybe have 4 sheet layers instead of 2?
 		vec4        c1 = sky_sheet (dir, time);
-		vec4        c2 = sky_box (dir, time);
+		vec4        c2 = control & 4 ? sky_map (dir, time)
+									 : sky_box (dir, time);
 		return vec4 (mix (c2.rgb, c1.rgb, c1.a), max (c1.a, c2.a));
 		//return vec4 (1, 0, 1, 1);
 	}
@@ -110,7 +108,7 @@ main (void)
 {
 	vec4        c;
 
-	if (doSkyBox || doSkySheet) {
+	if (control) {
 		c = sky_color (direction, time);
 	} else {
 		c = vec4 (0, 0, 0, 1);

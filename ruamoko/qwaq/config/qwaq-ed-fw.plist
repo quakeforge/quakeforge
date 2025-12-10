@@ -414,25 +414,10 @@ render_graph = {
 						{ size = 4; offset = 4; constantID = 1; },
 					);
 				};
-				skybox_fragment = {
+				sky_fragment = {
 					stage = fragment;
 					name = main;
 					module = $builtin/bsp_sky.frag;
-					specializationInfo = {
-						@inherit = $brush.shader.sky_specialization;
-						// doSkyBox, doSkySheet
-						data = "array(1, 0)";
-					};
-				};
-				skysheet_fragment = {
-					stage = fragment;
-					name = main;
-					module = $builtin/bsp_sky.frag;
-					specializationInfo = {
-						@inherit = $brush.shader.sky_specialization;
-						// doSkyBox, doSkySheet
-						data = "array(0, 1)";
-					};
 				};
 				turb_fragment = {
 					stage = fragment;
@@ -1417,7 +1402,7 @@ render_graph = {
 						rasterization = $cw_cull_back;
 					};
 					pipelines = {
-						bsp:skybox = {
+						bsp:sky = {
 							color = $color.bsp;
 							tasks = (
 								// FIXME sky should not use OIT
@@ -1427,23 +1412,7 @@ render_graph = {
 
 							stages = (
 								$brush.shader.quake_vertex,
-								$brush.shader.skybox_fragment,
-							);
-							vertexInput = $brush.vertexInput;
-							inputAssembly = $brush.inputAssembly;
-							layout = $brush.layout;
-						};
-						bsp:skysheet = {
-							color = $color.bsp;
-							tasks = (
-								// FIXME sky should not use OIT
-								{ func = bsp_draw_queue;
-								  params = (lightmap, sky, 1); },
-							);
-
-							stages = (
-								$brush.shader.quake_vertex,
-								$brush.shader.skysheet_fragment,
+								$brush.shader.sky_fragment,
 							);
 							vertexInput = $brush.vertexInput;
 							inputAssembly = $brush.inputAssembly;
