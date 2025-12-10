@@ -265,7 +265,7 @@ typedef struct mod_brush_s {
 
 	int32_t    *node_parents;
 	int32_t    *leaf_parents;
-	int        *leaf_flags;	// union of surf flags for surfs in leaf
+	uint32_t   *leaf_flags;	// union of surf flags for surfs in leaf
 
 	unsigned int checksum;
 	unsigned int checksum2;

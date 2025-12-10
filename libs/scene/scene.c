@@ -282,7 +282,7 @@ static int empty_leaf_parents[] = {
 	[1] = 0,
 };
 
-static int empty_leaf_flags[] = {
+static uint32_t empty_leaf_flags[] = {
 	[1] = SURF_DRAWSKY,
 };
 

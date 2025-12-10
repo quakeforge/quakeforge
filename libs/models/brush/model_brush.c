@@ -722,10 +722,10 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 	}
 
 	size_t      size = (brush->modleafs + brush->numnodes) * sizeof (int32_t);
-	size += brush->modleafs * sizeof (int);
+	size += brush->modleafs * sizeof (uint32_t);
 	brush->node_parents = Hunk_AllocName (0, size, mod->name);
 	brush->leaf_parents = brush->node_parents + brush->numnodes;
-	brush->leaf_flags = (int *) (brush->leaf_parents + brush->modleafs);
+	brush->leaf_flags = (uint32_t *) (brush->leaf_parents + brush->modleafs);
 	Mod_SetParent (brush, 0, -1);	// sets nodes and leafs
 	Mod_SetLeafFlags (brush);
 }
