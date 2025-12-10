@@ -1295,9 +1295,11 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 							 &transfer_dst, &vtxattr_read);
 	QFV_PacketScatterBuffer (packet, lframe->radius_buffer, 1, &radius_scatter,
 							 &transfer_dst, &vtxattr_read);
-	QFV_PacketScatterBuffer (packet, lframe->shadowmat_id_buffer,
-							 1, &matrix_id_scater,
-							 &transfer_dst, &storage_read);
+	if (matrix_id_scater.length) {
+		QFV_PacketScatterBuffer (packet, lframe->shadowmat_id_buffer,
+								 1, &matrix_id_scater,
+								 &transfer_dst, &storage_read);
+	}
 
 	QFV_PacketSubmit (packet);
 	transition_shadow_targets (lframe, ctx);
