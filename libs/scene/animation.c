@@ -115,7 +115,7 @@ alias_skin (double time, renderer_t *rend, model_t *m)
 		rend->skindesc = 0;
 	} else {
 		auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
-		uint32_t skinnum = rend->skin;
+		uint32_t skinnum = rend->skinnum;
 		rend->skindesc = get_frame_data (time, &mesh->skin, skinnum, mesh);
 	}
 	if (!m->model) {
