@@ -371,9 +371,10 @@ CL_TransformEntity (entity_t ent, float scale, const vec3_t angles,
 		auto renderer = Entity_GetRenderer (ent);
 		if (renderer->model && renderer->model->type == mod_mesh) {
 			//FIXME use a flag
-			// stupid quake bug
-			// why, oh, why, do alias models pitch in the opposite direction
-			// to everything else?
+			// alias models pitch in the opposite direction because they
+			// follow the convention of positive pitch being nose-up, while
+			// other model types assume angles is just rotation around the +Y
+			// axis.
 			ang[PITCH] = -ang[PITCH];
 		}
 		AngleQuat (ang, (vec_t*)&rotation);//FIXME
