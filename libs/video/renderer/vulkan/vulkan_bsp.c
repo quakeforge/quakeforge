@@ -203,7 +203,7 @@ setup_pass_instances (bsp_pass_t *pass, const bspctx_t *bctx)
 static void
 setup_pass_draw_queues (bsp_pass_t *pass)
 {
-	pass->num_queues = 4;//solid, sky, water, transparent
+	pass->num_queues = QFV_bspNumPasses;
 	pass->draw_queues = malloc (sizeof (bsp_drawset_t[pass->num_queues]));
 	for (int i = 0; i < pass->num_queues; i++) {
 		DARRAY_INIT (&pass->draw_queues[i], 64);
@@ -887,6 +887,7 @@ push_fragconst (QFV_BspQueue queue, VkPipelineLayout layout,
 	} else {
 		control |= 1;
 	}
+	control |= (queue == QFV_bspBackground) << 3;
 	bsp_frag_constants_t constants = {
 		.fog = Fog_Get (),
 		.time = vr_data.realtime,
@@ -895,20 +896,22 @@ push_fragconst (QFV_BspQueue queue, VkPipelineLayout layout,
 		.control = control,
 	};
 
+	constexpr uint32_t stage = VK_SHADER_STAGE_VERTEX_BIT
+							 | VK_SHADER_STAGE_FRAGMENT_BIT;
 	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+		{ stage,
 			offsetof (bsp_frag_constants_t, fog),
 			sizeof (constants.fog), &constants.fog },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+		{ stage,
 			offsetof (bsp_frag_constants_t, time),
 			sizeof (constants.time), &constants.time },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+		{ stage,
 			offsetof (bsp_frag_constants_t, alpha),
 			sizeof (constants.alpha), &constants.alpha },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+		{ stage,
 			offsetof (bsp_frag_constants_t, turb_scale),
 			sizeof (constants.turb_scale), &constants.turb_scale },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+		{ stage,
 			offsetof (bsp_frag_constants_t, control),
 			sizeof (constants.control), &constants.control },
 	};
@@ -990,6 +993,9 @@ queue_faces (bsp_pass_t *pass, QFV_BspPass pass_ind,
 			}
 
 			int         dq = QFV_bspSolid;
+			if (f.flags & SURF_DRAWBACKGROUND) {
+				dq = QFV_bspBackground;
+			}
 			if (f.flags & SURF_DRAWSKY) {
 				dq = QFV_bspSky;
 			}
@@ -1039,8 +1045,12 @@ draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 			vulktex_t  *tex = pass->textures->a[d.tex_id];
 			bind_texture (tex, TEX_SET, layout, dfunc, cmd);
 		}
-		dfunc->vkCmdDrawIndexed (cmd, d.index_count, d.instance_count,
-								 d.first_index, 0, d.first_instance);
+		if (queue == QFV_bspBackground) {
+			dfunc->vkCmdDraw (cmd, 3, d.instance_count, 0, d.first_instance);
+		} else {
+			dfunc->vkCmdDrawIndexed (cmd, d.index_count, d.instance_count,
+									 d.first_index, 0, d.first_instance);
+		}
 	}
 }
 
@@ -1333,7 +1343,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	} else {
 		push_fragconst (queue, layout, device, cmd, bctx);
 	}
-	if (queue == QFV_bspSky) {
+	if (queue == QFV_bspSky || queue == QFV_bspBackground) {
 		vulktex_t skybox = { .descriptor = bctx->skybox_descriptor };
 		bind_texture (&skybox, SKYBOX_SET, layout, dfunc, cmd);
 		vulktex_t skymap = { .descriptor = bctx->skymap_descriptor };
@@ -1652,15 +1662,17 @@ static exprtype_t bsp_queue_type = {
 };
 static int bsp_queue_values[] = {
 	QFV_bspSolid,
+	QFV_bspBackground,
 	QFV_bspSky,
 	QFV_bspTrans,
 	QFV_bspTurb,
 };
 static exprsym_t bsp_queue_symbols[] = {
 	{"solid",       &bsp_queue_type, bsp_queue_values + 0},
-	{"sky",         &bsp_queue_type, bsp_queue_values + 1},
-	{"translucent", &bsp_queue_type, bsp_queue_values + 2},
-	{"turbulent",   &bsp_queue_type, bsp_queue_values + 3},
+	{"background",  &bsp_queue_type, bsp_queue_values + 1},
+	{"sky",         &bsp_queue_type, bsp_queue_values + 2},
+	{"translucent", &bsp_queue_type, bsp_queue_values + 3},
+	{"turbulent",   &bsp_queue_type, bsp_queue_values + 4},
 	{}
 };
 static exprtab_t bsp_queue_symtab = { .symbols = bsp_queue_symbols };

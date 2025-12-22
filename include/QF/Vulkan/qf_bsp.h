@@ -319,6 +319,7 @@ typedef struct bsp_pass_s {
 ///@{
 typedef enum {
 	QFV_bspSolid,
+	QFV_bspBackground,
 	QFV_bspSky,
 	QFV_bspTrans,	// texture translucency
 	QFV_bspTurb,	// also translucent via r_wateralpha

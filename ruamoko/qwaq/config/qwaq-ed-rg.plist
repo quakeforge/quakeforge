@@ -489,14 +489,6 @@ render_graph = {
 					name = main;
 					module = $builtin/quakebsp.vert;
 				};
-				sky_specialization = {
-					mapEntries = (
-						// doSkyBox
-						{ size = 4; offset = 0; constantID = 0; },
-						// doSkySheet
-						{ size = 4; offset = 4; constantID = 1; },
-					);
-				};
 				sky_fragment = {
 					stage = fragment;
 					name = main;
@@ -529,7 +521,7 @@ render_graph = {
 				//				  surface      skybox       skymap
 								  texture_set, texture_set, texture_set);
 				pushConstants = {
-					fragment = {
+					vertex|fragment = {
 						fog = vec4;
 						time = float;
 						alpha = float;
@@ -1869,7 +1861,9 @@ render_graph = {
 						bsp:sky = {
 							color = $color.bsp;
 							tasks = (
-								// FIXME sky should not use OIT
+								// FIXME background and sky should not use OIT
+								{ func = bsp_draw_queue;
+								  params = (main, background, 1); },
 								{ func = bsp_draw_queue;
 								  params = (main, sky, 1); },
 							);
