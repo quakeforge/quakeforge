@@ -378,6 +378,9 @@ typedef struct bspctx_s {
 	struct qfv_tex_s *skybox_tex;		///< sky box texture for current map
 	VkDescriptorSet skybox_descriptor;
 
+	vulktex_t   notexture_render;
+	vulktex_t   background_render;
+
 	VkImageView default_skymap;
 	struct qfv_tex_s *skymap_tex;		///< sky eqrec map for current map
 	VkDescriptorSet skymap_descriptor;
@@ -396,6 +399,7 @@ typedef struct bspctx_s {
 	VkDeviceMemory vertex_memory;
 	VkBuffer     index_buffer;
 	VkDeviceMemory index_memory;
+	VkBuffer     default_verts;
 	VkBuffer     entid_buffer;
 	VkDeviceMemory entid_memory;
 	bspframeset_t frames;

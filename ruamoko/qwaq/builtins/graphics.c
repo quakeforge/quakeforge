@@ -171,6 +171,7 @@ bi_newscene (progs_t *pr, void *_res)
 {
 	pr_ulong_t  scene_id = P_ULONG (pr, 0);
 	SCR_NewScene (Scene_GetScene (pr, scene_id));
+	r_funcs->R_LoadSkys ("eso0932a");
 }
 
 static vec4f_t

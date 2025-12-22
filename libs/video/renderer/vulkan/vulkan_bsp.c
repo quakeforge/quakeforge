@@ -237,14 +237,19 @@ void
 Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
+	auto bctx = ctx->bsp_context;
+
 	clear_textures (ctx);
-	vulktex_t notexture_vtex = {
-		.view = ctx->bsp_context->notexture,
+
+	bctx->notexture_render = (vulktex_t) { .view = bctx->notexture };
+	bctx->background_render = (vulktex_t) { .view = bctx->default_skysheet };
+	texture_t base_tx[] = {
+		{ .render = &bctx->notexture_render },
+		{ .render = &bctx->background_render },
 	};
-	texture_t notexture_tx = {
-		.render = &notexture_vtex,
-	};
-	add_texture (&notexture_tx, ctx);
+	for (size_t i = 0; i < countof (base_tx); i++) {
+		add_texture (&base_tx[i], ctx);
+	}
 	{
 		// FIXME make worldmodel non-special. needs smarter handling of
 		// textures on sub-models but not on main model.
@@ -267,12 +272,13 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		register_textures (brush, ctx);
 	}
 
-	bspctx_t   *bctx = ctx->bsp_context;
 	int         num_tex = bctx->registered_textures.size;
 
 	texture_t **textures = alloca (num_tex * sizeof (texture_t *));
-	textures[0] = &notexture_tx;
-	for (int i = 0, t = 1; i < num_models; i++) {
+	textures[0] = &base_tx[0];
+	textures[1] = &base_tx[1];
+	textures[2] = &base_tx[2];
+	for (int i = 0, t = countof (base_tx); i < num_models; i++) {
 		model_t    *m = models[i];
 		// sub-models are done as part of the main model
 		if (!m || *m->path == '*') {
@@ -411,6 +417,10 @@ build_surf_displist (const faceref_t *faceref, buildctx_t *build)
 		.flags = surf->flags,
 	};
 
+	if (!numverts) {
+		return;
+	}
+
 	build->index_base += face->index_count;
 	for (int i = 0; i < numverts; i++) {
 		build->indices[face->first_index + i] = build->vertex_base + i;
@@ -500,7 +510,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		mod_brush_t *brush = &m->brush;
 		dmodel_t    *dm = brush->submodels;
 		for (unsigned j = 0; j < brush->numsurfaces; j++) {
-			if (j == dm->firstface + dm->numfaces) {
+			if (dm && j == dm->firstface + dm->numfaces) {
 				// move on to the next sub-model
 				dm++;
 				if (dm == brush->submodels + brush->numsubmodels) {
@@ -513,9 +523,15 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			}
 			msurface_t *surf = brush->surfaces + j;
 			// append surf to the texture chain
-			vulktex_t *tex = surf->texinfo->texture->render;
-			DARRAY_APPEND (&face_sets[tex->tex_id],
-						   ((faceref_t) { surf, m, face_base }));
+			auto texture = surf->texinfo->texture;
+			if (surf->flags & SURF_DRAWBACKGROUND) {
+				texture->render = &bctx->background_render;
+			}
+			vulktex_t *tex = texture->render;
+			if (tex) {
+				DARRAY_APPEND (&face_sets[tex->tex_id],
+							   ((faceref_t) { surf, m, face_base }));
+			}
 		}
 		face_base += brush->numsurfaces;
 	}
@@ -549,8 +565,12 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t vertex_buffer_size = vertex_count * sizeof (bspvert_t);
 
 	index_buffer_size = (index_buffer_size + atom_mask) & ~atom_mask;
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "bsp.build");
-	bspvert_t  *vertices = QFV_PacketExtend (packet, vertex_buffer_size);
+	qfv_packet_t *packet = nullptr;
+	bspvert_t  *vertices = nullptr;
+	if (vertex_buffer_size) {
+		packet = QFV_PacketAcquire (ctx->staging, "bsp.build");
+		vertices = QFV_PacketExtend (packet, vertex_buffer_size);
+	}
 	// holds all the polygon definitions: vertex indices + poly_count
 	// primitive restart markers. The primitive restart markers are included
 	// in index_count.
@@ -565,7 +585,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	free (bctx->models);
 	bctx->num_faces = face_base;
 	bctx->models = malloc (bctx->num_models * sizeof (bsp_model_t));
-	bctx->faces = malloc (face_base * sizeof (bsp_face_t));
+	bctx->faces = calloc (face_base, sizeof (bsp_face_t));
 	bctx->poly_indices = malloc (index_count * sizeof (uint32_t));
 	bctx->surfaces = calloc (face_base, sizeof (msurface_t *));
 
@@ -665,10 +685,12 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		bctx->vertex_buffer_size = vertex_buffer_size;
 	}
 
-	auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
-	auto db = &bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
-	QFV_PacketCopyBuffer (packet, bctx->vertex_buffer, 0, sb, db);
-	QFV_PacketSubmit (packet);
+	if (packet) {
+		auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+		auto db = &bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
+		QFV_PacketCopyBuffer (packet, bctx->vertex_buffer, 0, sb, db);
+		QFV_PacketSubmit (packet);
+	}
 
 	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
 		DARRAY_CLEAR (&face_sets[i]);
@@ -1204,16 +1226,18 @@ create_base_resources (vulkan_ctx_t *ctx)
 	size_t size = sizeof (qfv_resource_t)
 				+ sizeof (qfv_resobj_t[4])	//images
 				+ sizeof (qfv_resobj_t[4]) 	//views
+				+ sizeof (qfv_resobj_t[1])	//default vertices
 				+ sizeof (qfv_resobj_t[1]);	//entid
 	bctx->base_resource = malloc (size);
 	auto images = (qfv_resobj_t *) &bctx->base_resource[1];
 	auto views = (qfv_resobj_t *) &images[4];
-	auto entid = (qfv_resobj_t *) &views[4];
+	auto verts = (qfv_resobj_t *) &views[4];
+	auto entid = (qfv_resobj_t *) &verts[1];
 	*bctx->base_resource = (qfv_resource_t) {
 		.name = "bsp",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = 4 + 4 + 1,
+		.num_objects = 4 + 4 + 1 + 1,
 		.objects = images,
 	};
 	QFV_ResourceInitTexImage (&images[0], "notexture", true,
@@ -1233,6 +1257,15 @@ create_base_resources (vulkan_ctx_t *ctx)
 	QFV_ResourceInitImageView (&views[2], 2, &images[2]);
 	QFV_ResourceInitImageView (&views[3], 3, &images[3]);
 
+	*verts = (qfv_resobj_t) {
+		.name = "verts",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (bspvert_t[3]),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		},
+	};
 	size_t      entid_count = Vulkan_Scene_MaxEntities (ctx);
 	*entid = (qfv_resobj_t) {
 		.name = "entid",
@@ -1250,6 +1283,7 @@ create_base_resources (vulkan_ctx_t *ctx)
 	bctx->default_skysheet = views[1].image_view.view;
 	bctx->default_skybox = views[2].image_view.view;
 	bctx->default_skymap = views[3].image_view.view;
+	bctx->default_verts = verts->buffer.buffer;
 	bctx->entid_buffer = entid->buffer.buffer;
 
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.base");
@@ -1286,14 +1320,14 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto cmd = taskctx->cmd;
 	uint16_t *matrix_base = taskctx->data;
 
-	if (!bctx->vertex_buffer) {
-		return;
-	}
-
 	// params are in reverse order
 	auto pass_ind = *(QFV_BspPass *) params[2]->value;
 	auto queue = *(QFV_BspQueue *) params[1]->value;
 	auto textured = *(int *) params[0]->value;
+
+	if (queue != QFV_bspBackground && !bctx->vertex_buffer) {
+		return;
+	}
 
 	auto pass = (bsp_pass_t *[]) {
 		[QFV_bspMain] = &bctx->main_pass,
@@ -1306,10 +1340,14 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 
 	auto bframe = &bctx->frames.a[ctx->curFrame];
-	VkBuffer    buffers[] = { bctx->vertex_buffer, bctx->entid_buffer };
+	VkBuffer    buffers[] = { bctx->default_verts, bctx->entid_buffer };
+	if (bctx->vertex_buffer) {
+		buffers[0] = bctx->vertex_buffer;
+	}
 	VkDeviceSize offsets[] = { 0, bframe->entid_offset };
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 2, buffers, offsets);
-	dfunc->vkCmdBindIndexBuffer (cmd, bctx->index_buffer, bframe->index_offset,
+	dfunc->vkCmdBindIndexBuffer (cmd, bctx->index_buffer,
+								 bframe->index_offset,
 								 VK_INDEX_TYPE_UINT32);
 
 	if (matrix_base) {

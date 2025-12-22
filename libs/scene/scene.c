@@ -260,6 +260,8 @@ static mleaf_t empty_leafs[] = {
 		.mins = {-INFINITY, -INFINITY, -INFINITY},
 		.maxs = { INFINITY,  INFINITY,  INFINITY},
 		.compressed_vis = empty_visdata,
+		.firstmarksurface = 0,
+		.nummarksurfaces = 1,
 	},
 };
 
@@ -270,7 +272,26 @@ static mnode_t empty_nodes[] = {
 		.children = { ~0, ~1 },
 		.minmaxs = {-INFINITY, -INFINITY, -INFINITY,
 					INFINITY,  INFINITY,  INFINITY},
+		.firstsurface = 0,
+		.numsurfaces = 1,
 	},
+};
+
+static texture_t empty_sky_texture = { };
+
+static mtexinfo_t empty_sky = {
+	.texture = &empty_sky_texture,
+};
+
+static msurface_t empty_surfs[] = {
+	[0] = {
+		.flags = SURF_DRAWBACKGROUND | SURF_PLANEBACK,
+		.texinfo = &empty_sky,
+	},
+};
+
+static msurface_t *empty_marksurfaces[] = {
+	[0] = &empty_surfs[0],
 };
 
 static int empty_node_parents[] = {
@@ -299,12 +320,20 @@ static model_t empty_world = {
 		.numnodes = 1,
 		.nodes = empty_nodes,
 		.leafs = empty_leafs,
+		.numsurfaces = 1,
+		.surfaces = empty_surfs,
+		.nummarksurfaces = 1,
+		.marksurfaces = empty_marksurfaces,
 		.entities = empty_entities,
 		.visdata = empty_visdata,
 		.node_parents = empty_node_parents,
 		.leaf_parents = empty_leaf_parents,
 		.leaf_flags = empty_leaf_flags,
 	},
+};
+
+static model_t *empty_world_models[] = {
+	[1] = &empty_world,
 };
 
 scene_t *
@@ -326,6 +355,8 @@ Scene_NewScene (scene_system_t *extra_systems)
 	ECS_CreateComponentPools (scene->reg);
 
 	scene->worldmodel = &empty_world;
+	scene->num_models = countof (empty_world_models);
+	scene->models = empty_world_models;
 	scene->camera = nullent;
 
 	scene->efrag_db = malloc (sizeof (efrag_db_t));

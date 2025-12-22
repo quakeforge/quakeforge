@@ -150,7 +150,8 @@ init_qf (void)
 
 	//Cvar_Set (developer, "1");
 
-	Memory_Init (Sys_Alloc (32 * 1024 * 1024), 32 * 1024 * 1024);
+	//FIXME LoadTGA and friends use the wrong hunk
+	Memory_Init (Sys_Alloc (128 * 1024 * 1024), 128 * 1024 * 1024);
 	PR_Init_Cvars ();
 }
 

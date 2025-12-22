@@ -33,15 +33,16 @@ void
 main (void)
 {
 	if (control & 8) {
-		vec4        v = vec4 (gl_VertexIndex & 2, gl_VertexIndex & 1, 0, 1);
-		v = vec4 (2, 4, 0, 1) * v - vec4 (1, 1, 0, 0);
+		vec4        v = vec4 (gl_VertexIndex & 1, gl_VertexIndex & 2, 0, 1);
+		v = vec4 (4, 2, 0, 1) * v - vec4 (1, 1, 0, 0);
 		gl_Position = v;
+		v.z = 1;
 		vec3        d = vec3 (Projection3d[0][0], Projection3d[1][1], 1);
 		vec3        vertex = v.xyz / d;
 		vec3        dir = vec3 (dot(vertex, View[gl_ViewIndex][0].xyz),
 								dot(vertex, View[gl_ViewIndex][1].xyz),
 								dot(vertex, View[gl_ViewIndex][2].xyz));
-		direction = (Sky * vec4(dir,1)).xyz;
+		direction = (Sky * vec4(dir,0)).xyz;
 	} else {
 		vec3        vert = vec4(vertex,1) * entities[entid].transform;
 		gl_Position = Projection3d * (View[gl_ViewIndex] * vec4 (vert, 1));
