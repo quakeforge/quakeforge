@@ -665,20 +665,11 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		bctx->vertex_buffer_size = vertex_buffer_size;
 	}
 
-	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
-	bb.barrier.buffer = bctx->vertex_buffer;
-	bb.barrier.size = vertex_buffer_size;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
-								 0, 0, 0, 1, &bb.barrier, 0, 0);
-	VkBufferCopy copy_region = { packet->offset, 0, vertex_buffer_size };
-	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer,
-							bctx->vertex_buffer, 1, &copy_region);
-	bb = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
-	bb.barrier.buffer = bctx->vertex_buffer;
-	bb.barrier.size = vertex_buffer_size;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
-								 0, 0, 0, 1, &bb.barrier, 0, 0);
+	auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto db = &bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
+	QFV_PacketCopyBuffer (packet, bctx->vertex_buffer, 0, sb, db);
 	QFV_PacketSubmit (packet);
+
 	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
 		DARRAY_CLEAR (&face_sets[i]);
 	}
