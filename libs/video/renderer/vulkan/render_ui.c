@@ -322,12 +322,13 @@ entid_button (uint32_t entid, vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 	DARRAY_INSERT_AT (e_w_ids, entid, ind);
 	DARRAY_INSERT_AT (&debug->ent_windows,
 		((imui_window_t) {
-			.name = nva ("Entity %08x##%p.window", entid, rctx),
+			.name = nva ("Entity %08x", entid),
 			.xpos = io.mouse.x + 50,
 			.ypos = io.mouse.y,
 			.is_open = true,
 			.auto_fit = true,
 		}), ind);
+	IMUI_RegisterWindow (imui_ctx, &debug->ent_windows.a[ind]);
 }
 
 static void
@@ -390,19 +391,19 @@ QFV_Render_UI (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 		rctx->debug = malloc (sizeof (qfv_renderdebug_t));
 		*rctx->debug = (qfv_renderdebug_t) {
 			.job_timings_window = {
-				.name = nva ("Job Timings##%p.window", rctx),
+				.name = "Job Timings",
 				.xpos = 100,
 				.ypos = 50,
 				.auto_fit = true,
 			},
 			.job_control_window = {
-				.name = nva ("Job Control##%p.window", rctx),
+				.name = "Job Control",
 				.xpos = 100,
 				.ypos = 50,
 				.auto_fit = true,
 			},
 			.entid_window = {
-				.name = nva ("Entities##%p.window", rctx),
+				.name = "Entities",
 				.xpos = 100,
 				.ypos = 50,
 				.auto_fit = true,
@@ -465,9 +466,6 @@ QFV_Render_UI_Shutdown (vulkan_ctx_t *ctx)
 			free ((char *) d->ent_windows.a[i].name);
 		}
 		DARRAY_CLEAR (&d->ent_windows);
-		free ((char *) d->job_timings_window.name);
-		free ((char *) d->job_control_window.name);
-		free ((char *) d->entid_window.name);
 		free (d);
 	}
 }
