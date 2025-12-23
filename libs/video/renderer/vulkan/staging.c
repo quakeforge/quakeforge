@@ -506,11 +506,10 @@ QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 						 const qfv_bufferbarrier_t *dstBarrier)
 {
 	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
-	qfv_bufferbarrier_t bb = *srcBarrier;
 	VkBufferCopy copy_regions[count];
 	VkBufferMemoryBarrier barriers[count] = {};//FIXME arm gcc sees as uninit
 	for (uint32_t i = 0; i < count; i++) {
-		barriers[i] = bb.barrier;
+		barriers[i] = srcBarrier->barrier;
 		barriers[i].buffer = dstBuffer;
 		barriers[i].offset = scatter[i].dstOffset;
 		barriers[i].size = scatter[i].length;
@@ -521,18 +520,19 @@ QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 			.size = scatter[i].length,
 		};
 	}
-	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+	dfunc->vkCmdPipelineBarrier (packet->cmd,
+								 srcBarrier->srcStages, srcBarrier->dstStages,
 								 0, 0, 0, count, barriers, 0, 0);
 	dfunc->vkCmdCopyBuffer (packet->cmd, packet->stage->buffer, dstBuffer,
 							count, copy_regions);
-	bb = *dstBarrier;
 	for (uint32_t i = 0; i < count; i++) {
-		barriers[i] = bb.barrier;
+		barriers[i] = dstBarrier->barrier;
 		barriers[i].buffer = dstBuffer;
 		barriers[i].offset = scatter[i].dstOffset;
 		barriers[i].size = scatter[i].length;
 	}
-	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+	dfunc->vkCmdPipelineBarrier (packet->cmd,
+								 dstBarrier->srcStages, dstBarrier->dstStages,
 								 0, 0, 0, count, barriers, 0, 0);
 }
 
