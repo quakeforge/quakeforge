@@ -958,8 +958,9 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		};
 		packet_data += eid_scatter.length;
 		for (int i = 0; i < ST_COUNT; i++) {
-			memcpy (eids + queue[i].start, entids[i],
-					sizeof (uint32_t[queue[i].count]));
+			for (int j = 0; j < queue[i].count; j++) {
+				eids[queue[i].start + j] = entids[i][j].id;
+			}
 		}
 		QFV_PacketScatterBuffer (packet, lframe->entid_buffer, 1, &eid_scatter,
 				&(qfv_bufferbarrier_t) {
