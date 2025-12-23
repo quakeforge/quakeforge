@@ -108,7 +108,11 @@ pack_indices (void *out, const uint32_t *in, uint32_t num_inds,
 			  qfm_type_t index_type)
 {
 	if (index_type == qfm_u32) {
-		return num_inds * sizeof (uint32_t);
+		size_t size = num_inds * sizeof (uint32_t);;
+		if (out != in) {
+			memcpy (out, in, size);
+		}
+		return size;
 	} else if (index_type == qfm_u16) {
 		auto inds = (uint16_t *) out;
 		for (uint32_t i = 0; i < num_inds; i++) {
