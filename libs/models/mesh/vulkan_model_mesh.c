@@ -159,12 +159,13 @@ vulkan_mesh_load_arrays (mod_mesh_ctx_t *mesh_ctx, qfv_mesh_t *rmesh,
 	};
 	auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
 	auto db = &bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
+	auto ib = &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead];
 	QFV_PacketScatterBuffer (packet, rmesh->geom_buffer, 1,
 							 &scatter[0], sb, db);
 	QFV_PacketScatterBuffer (packet, rmesh->rend_buffer, 1,
 							 &scatter[1], sb, db);
 	QFV_PacketScatterBuffer (packet, rmesh->index_buffer, 1,
-							 &scatter[2], sb, db);
+							 &scatter[2], sb, ib);
 	QFV_PacketSubmit (packet);
 }
 
