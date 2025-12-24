@@ -135,7 +135,7 @@ bi_qsort (progs_t *pr, void *data)
 	qfZoneScoped (true);
 	void       *array = P_GPOINTER (pr, 0);
 	size_t      nmemb = P_INT (pr, 1);
-	size_t      size = P_INT (pr, 2) * sizeof (pr_int_t);
+	size_t      size = P_INT (pr, 2);
 	pr_func_t   cmp = P_FUNCTION (pr, 3);
 
 	if (!cmp) {
