@@ -268,7 +268,7 @@ main (void)
 	if (sizeof (trivector_t) != sizeof (scalar_t)) {
 		error ("trivector has wrong size: %d\n", sizeof (trivector_t));
 	}
-	if (sizeof (evengrades_t) != 4) {
+	if (sizeof (evengrades_t) != 4 * sizeof (scalar_t)) {
 		evengrades_t e;
 		#define offsetof(s,f) ((int)(&((s*)0).f))
 		printf ("evengrades has wrong size: %d\n", sizeof (evengrades_t));
@@ -279,7 +279,7 @@ main (void)
 				offsetof (evengrades_t, scalar));
 		ret = 1;
 	}
-	if (sizeof (oddgrades_t) != 4) {
+	if (sizeof (oddgrades_t) != 4 * sizeof (scalar_t)) {
 		oddgrades_t o;
 		#define offsetof(s,f) ((int)(&((s*)0).f))
 		printf ("oddgrades has wrong size: %d\n", sizeof (oddgrades_t));

@@ -23,11 +23,11 @@ main()
 	}
 	auto base = (uint)&tetra_brush[0];
 	auto one = (uint)&tetra_brush[1];
-	if (base % sizeof (vec4)) {
+	if (base % (sizeof (vec4) / sizeof (int))) {
 		printf ("tetra_brush[0] is not vec4 aligned: %d\n", base);
 		return 1;
 	}
-	if (one % sizeof (vec4)) {
+	if (one % (sizeof (vec4) / sizeof (int))) {
 		printf ("tetra_brush[1] is not vec4 aligned: %d\n", one);
 		return 1;
 	}

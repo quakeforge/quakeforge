@@ -19,10 +19,10 @@ calc_inertia_tensor (msgbuf_t model_buf)
 {
 	qf_model_t model;
 	qf_mesh_t mesh;
-	MsgBuf_ReadBytes (model_buf, &model, sizeof (model) * 4);
-	int offset = model.meshes.offset + sizeof(mesh) * 0 * 4;
+	MsgBuf_ReadBytes (model_buf, &model, sizeof (model));
+	int offset = model.meshes.offset + sizeof(mesh) * 0;
 	MsgBuf_ReadSeek (model_buf, offset, msg_set);
-	MsgBuf_ReadBytes (model_buf, &mesh, sizeof (mesh) * 4);
+	MsgBuf_ReadBytes (model_buf, &mesh, sizeof (mesh));
 
 	int indices = mesh.indices + offset;
 	int vertices = mesh.vertices.offset + offset;
@@ -30,13 +30,13 @@ calc_inertia_tensor (msgbuf_t model_buf)
 	point_t C = nil;
 	for (uint i = 0; i < mesh.triangle_count; i++) {
 		uint inds[3];
-		MsgBuf_ReadSeek (model_buf, indices + i * sizeof (inds) * 4, msg_set);
-		MsgBuf_ReadBytes (model_buf, inds, sizeof (inds) * 4);
+		MsgBuf_ReadSeek (model_buf, indices + i * sizeof (inds), msg_set);
+		MsgBuf_ReadBytes (model_buf, inds, sizeof (inds));
 		vec4 v[3];
 		for (int j = 0; j < 3; j++) {
 			MsgBuf_ReadSeek (model_buf, vertices + inds[j] * mesh.vertex_stride,
 							 msg_set);
-			MsgBuf_ReadBytes (model_buf, &v[j], sizeof(vec3) * 4);
+			MsgBuf_ReadBytes (model_buf, &v[j], sizeof(vec3));
 			v[j].w = 1;
 		}
 
@@ -59,13 +59,13 @@ calc_inertia_tensor (msgbuf_t model_buf)
 	mat3 I = {};
 	for (uint i = 0; i < mesh.triangle_count; i++) {
 		uint inds[3];
-		MsgBuf_ReadSeek (model_buf, indices + i * sizeof (inds) * 4, msg_set);
-		MsgBuf_ReadBytes (model_buf, inds, sizeof (inds) * 4);
+		MsgBuf_ReadSeek (model_buf, indices + i * sizeof (inds), msg_set);
+		MsgBuf_ReadBytes (model_buf, inds, sizeof (inds));
 		vec4 v[3];
 		for (int j = 0; j < 3; j++) {
 			MsgBuf_ReadSeek (model_buf, vertices + inds[j] * mesh.vertex_stride,
 							 msg_set);
-			MsgBuf_ReadBytes (model_buf, &v[j], sizeof(vec3) * 4);
+			MsgBuf_ReadBytes (model_buf, &v[j], sizeof(vec3));
 			v[j].w = 1;
 			v[j] -= com;
 		}
@@ -232,26 +232,26 @@ msgbuf_t create_ico ()
 
 	qf_model_t model = {
 		.meshes = {
-			.offset = sizeof (qf_model_t) * 4,
+			.offset = sizeof (qf_model_t),
 			.count = 1,
 		},
 	};
 	qf_mesh_t mesh = {
 		.triangle_count = 20,
 		.index_type = qfm_u32,
-		.indices = (sizeof (qf_mesh_t)
-					+ 2 * sizeof (qfm_attrdesc_t)
-					+ 2 * sizeof (new_verts)) * 4,
+		.indices = sizeof (qf_mesh_t)
+				 + 2 * sizeof (qfm_attrdesc_t)
+				 + 2 * sizeof (new_verts),
 		.attributes = {
-			.offset = (sizeof (qf_mesh_t)) * 4,
+			.offset = sizeof (qf_mesh_t),
 			.count = 2,
 		},
 		.vertices = {
-			.offset = (sizeof (qf_mesh_t)
-						+ 2 * sizeof (qfm_attrdesc_t)) * 4,
+			.offset = sizeof (qf_mesh_t)
+					+ 2 * sizeof (qfm_attrdesc_t),
 			.count = num_verts,
 		},
-		.vertex_stride = 4 * 2 * sizeof (new_verts[0]),
+		.vertex_stride = 2 * sizeof (new_verts[0]),
 		.scale = '1 1 1',
 		.bounds_min = '-2 -2 -2',
 		.bounds_max = ' 2  2  2',
@@ -260,14 +260,14 @@ msgbuf_t create_ico ()
 	qfm_attrdesc_t attributes[] = {
 		{
 			.offset = 0,
-			.stride = 2 * sizeof (vec3) * 4,
+			.stride = 2 * sizeof (vec3),
 			.attr = qfm_position,
 			.type = qfm_f32,
 			.components = 3,
 		},
 		{
-			.offset = sizeof (vec3) * 4,
-			.stride = 2 * sizeof (vec3) * 4,
+			.offset = sizeof (vec3),
+			.stride = 2 * sizeof (vec3),
 			.attr = qfm_normal,
 			.type = qfm_f32,
 			.components = 3,
@@ -279,15 +279,15 @@ msgbuf_t create_ico ()
 			  + sizeof (qfm_attrdesc_t) * 2
 			  + sizeof (new_verts) * 2
 			  + sizeof (new_inds);
-	auto msg = MsgBuf_New (size * 4);//size is in ints, msgbuf wants bytes
-	MsgBuf_WriteBytes (msg, &model, sizeof (model) * 4);//FIXME 4
-	MsgBuf_WriteBytes (msg, &mesh, sizeof (mesh) * 4);
-	MsgBuf_WriteBytes (msg, &attributes, sizeof (attributes) * 4);
+	auto msg = MsgBuf_New (size);
+	MsgBuf_WriteBytes (msg, &model, sizeof (model));
+	MsgBuf_WriteBytes (msg, &mesh, sizeof (mesh));
+	MsgBuf_WriteBytes (msg, &attributes, sizeof (attributes));
 	for (int i = 0; i < num_verts; i++) {
-		MsgBuf_WriteBytes (msg, &new_verts[i], sizeof (new_verts[i]) * 4);
-		MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]) * 4);
+		MsgBuf_WriteBytes (msg, &new_verts[i], sizeof (new_verts[i]));
+		MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]));
 	}
-	MsgBuf_WriteBytes (msg, &new_inds, sizeof (new_inds) * 4);
+	MsgBuf_WriteBytes (msg, &new_inds, sizeof (new_inds));
 	return msg;
 }
 
@@ -336,26 +336,26 @@ msgbuf_t create_block ()
 
 	qf_model_t model = {
 		.meshes = {
-			.offset = sizeof (qf_model_t) * 4,
+			.offset = sizeof (qf_model_t),
 			.count = 1,
 		},
 	};
 	qf_mesh_t mesh = {
 		.triangle_count = 12,
 		.index_type = qfm_u32,
-		.indices = (sizeof (qf_mesh_t)
-					+ 2 * sizeof (qfm_attrdesc_t)
-					+ 2 * sizeof (new_verts)) * 4,
+		.indices = sizeof (qf_mesh_t)
+				 + 2 * sizeof (qfm_attrdesc_t)
+				 + 2 * sizeof (new_verts),
 		.attributes = {
-			.offset = (sizeof (qf_mesh_t)) * 4,
+			.offset = sizeof (qf_mesh_t),
 			.count = 2,
 		},
 		.vertices = {
-			.offset = (sizeof (qf_mesh_t)
-						+ 2 * sizeof (qfm_attrdesc_t)) * 4,
+			.offset = sizeof (qf_mesh_t)
+					+ 2 * sizeof (qfm_attrdesc_t),
 			.count = num_verts,
 		},
-		.vertex_stride = 4 * 2 * sizeof (new_verts[0]),
+		.vertex_stride = 2 * sizeof (new_verts[0]),
 		.scale = '1 1 1',
 		.bounds_min = '-4.5 -0.5 -2',
 		.bounds_max = ' 4.5  0.5  2',
@@ -364,14 +364,14 @@ msgbuf_t create_block ()
 	qfm_attrdesc_t attributes[] = {
 		{
 			.offset = 0,
-			.stride = 2 * sizeof (vec3) * 4,
+			.stride = 2 * sizeof (vec3),
 			.attr = qfm_position,
 			.type = qfm_f32,
 			.components = 3,
 		},
 		{
-			.offset = sizeof (vec3) * 4,
-			.stride = 2 * sizeof (vec3) * 4,
+			.offset = sizeof (vec3),
+			.stride = 2 * sizeof (vec3),
 			.attr = qfm_normal,
 			.type = qfm_f32,
 			.components = 3,
@@ -383,15 +383,15 @@ msgbuf_t create_block ()
 			  + sizeof (qfm_attrdesc_t) * 2
 			  + sizeof (new_verts) * 2
 			  + sizeof (new_inds);
-	auto msg = MsgBuf_New (size * 4);//size is in ints, msgbuf wants bytes
-	MsgBuf_WriteBytes (msg, &model, sizeof (model) * 4);//FIXME 4
-	MsgBuf_WriteBytes (msg, &mesh, sizeof (mesh) * 4);
-	MsgBuf_WriteBytes (msg, &attributes, sizeof (attributes) * 4);
+	auto msg = MsgBuf_New (size);
+	MsgBuf_WriteBytes (msg, &model, sizeof (model));
+	MsgBuf_WriteBytes (msg, &mesh, sizeof (mesh));
+	MsgBuf_WriteBytes (msg, &attributes, sizeof (attributes));
 	for (int i = 0; i < num_verts; i++) {
-		MsgBuf_WriteBytes (msg, &new_verts[i], sizeof (new_verts[i]) * 4);
-		MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]) * 4);
+		MsgBuf_WriteBytes (msg, &new_verts[i], sizeof (new_verts[i]));
+		MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]));
 	}
-	MsgBuf_WriteBytes (msg, &new_inds, sizeof (new_inds) * 4);
+	MsgBuf_WriteBytes (msg, &new_inds, sizeof (new_inds));
 	return msg;
 }
 
@@ -722,7 +722,7 @@ create_quadsphere ()
 
 	qf_model_t model = {
 		.meshes = {
-			.offset = sizeof (qf_model_t) * 4,
+			.offset = sizeof (qf_model_t),
 			.count = 6,
 		},
 	};
@@ -731,7 +731,7 @@ create_quadsphere ()
 		.attributes = {
 			.count = 2,
 		},
-		.vertex_stride = 4 * 2 * sizeof (verts[0]),
+		.vertex_stride = 2 * sizeof (verts[0]),
 		.scale = '1 1 1',
 		.bounds_min = '-1 -1 -1',
 		.bounds_max = ' 1  1  1',
@@ -740,14 +740,14 @@ create_quadsphere ()
 	qfm_attrdesc_t attributes[] = {
 		{
 			.offset = 0,
-			.stride = 2 * sizeof (vec3) * 4,
+			.stride = 2 * sizeof (vec3),
 			.attr = qfm_position,
 			.type = qfm_f32,
 			.components = 3,
 		},
 		{
-			.offset = sizeof (vec3) * 4,
-			.stride = 2 * sizeof (vec3) * 4,
+			.offset = sizeof (vec3),
+			.stride = 2 * sizeof (vec3),
 			.attr = qfm_normal,
 			.type = qfm_f32,
 			.components = 3,
@@ -776,40 +776,40 @@ create_quadsphere ()
 		obj_malloc (sizeof (quarteredge_t) * max_halfedges),
 		obj_malloc (sizeof (quarteredge_t) * max_halfedges),
 	};
-	auto msg = MsgBuf_New (size * 4);//size is in ints, msgbuf wants bytes
-	MsgBuf_WriteBytes (msg, &model, sizeof (model) * 4);
+	auto msg = MsgBuf_New (size);
+	MsgBuf_WriteBytes (msg, &model, sizeof (model));
 	int offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
 	int mesh_offsets[] = {
-		offset + sizeof (qf_mesh_t) * 0 * 4,
-		offset + sizeof (qf_mesh_t) * 1 * 4,
-		offset + sizeof (qf_mesh_t) * 2 * 4,
-		offset + sizeof (qf_mesh_t) * 3 * 4,
-		offset + sizeof (qf_mesh_t) * 4 * 4,
-		offset + sizeof (qf_mesh_t) * 5 * 4,
+		offset + sizeof (qf_mesh_t) * 0,
+		offset + sizeof (qf_mesh_t) * 1,
+		offset + sizeof (qf_mesh_t) * 2,
+		offset + sizeof (qf_mesh_t) * 3,
+		offset + sizeof (qf_mesh_t) * 4,
+		offset + sizeof (qf_mesh_t) * 5,
 	};
 	printf ("offset: %d\n", offset);
 	for (int i = 0; i < 6; i++) {
 		printf ("  %d:offset: %d\n", i, mesh_offsets[i]);
 	}
-	MsgBuf_WriteSeek (msg, sizeof (qf_mesh_t) * 6 * 4, msg_cur);
+	MsgBuf_WriteSeek (msg, sizeof (qf_mesh_t) * 6, msg_cur);
 
 	int attributes_offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
 	printf ("attributes_offset: %d\n", attributes_offset);
 	mesh_template.attributes.offset = attributes_offset;
 	mesh_template.attributes.offset -= mesh_offsets[0];
-	MsgBuf_WriteBytes (msg, attributes, sizeof (attributes) * 4);
+	MsgBuf_WriteBytes (msg, attributes, sizeof (attributes));
 
 	mesh_template.adjacency.offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
 	mesh_template.adjacency.offset -= mesh_offsets[0];
 	mesh_template.adjacency.count = num_halfedges;
-	MsgBuf_WriteBytes (msg, halfedges, sizeof (halfedges) * 4);
+	MsgBuf_WriteBytes (msg, halfedges, sizeof (halfedges));
 
 	mesh_template.vertices.offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
 	mesh_template.vertices.offset -= mesh_offsets[0];
 	mesh_template.vertices.count = num_verts;
 	for (int i = 0; i < num_verts; i++) {
-		MsgBuf_WriteBytes (msg, &verts[i], sizeof (verts[i]) * 4);
-		MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]) * 4);
+		MsgBuf_WriteBytes (msg, &verts[i], sizeof (verts[i]));
+		MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]));
 	}
 
 	mesh_template.indices = MsgBuf_WriteSeek (msg, 0, msg_cur);
@@ -826,12 +826,12 @@ create_quadsphere ()
 		}
 		indices[4] = indices[0];
 		indices[5] = indices[2];
-		MsgBuf_WriteBytes (msg, indices, sizeof (indices) * 4);
+		MsgBuf_WriteBytes (msg, indices, sizeof (indices));
 	}
 
 	offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
 	MsgBuf_WriteSeek (msg, mesh_offsets[0], msg_set);
-	MsgBuf_WriteBytes (msg, &mesh_template, sizeof (mesh_template) * 4);
+	MsgBuf_WriteBytes (msg, &mesh_template, sizeof (mesh_template));
 	MsgBuf_WriteSeek (msg, offset, msg_set);
 
 	for (int d = 1; d < 6; d++) {
@@ -877,17 +877,17 @@ create_quadsphere ()
 		mesh_template.adjacency.offset -= mesh_offsets[d];
 		mesh_template.adjacency.count = hd_1;
 		MsgBuf_WriteBytes (msg, subdiv_halfedges[ind],
-						   sizeof (quarteredge_t) * hd_1 * 4);
+						   sizeof (quarteredge_t) * hd_1);
 
 		mesh_template.vertices.offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
 		mesh_template.vertices.offset -= mesh_offsets[d];
 		mesh_template.vertices.count = vd_1;
 		for (int i = 0; i < vd_1; i++) {
 			MsgBuf_WriteBytes (msg, &subdiv_verts[ind][i],
-							   sizeof (subdiv_verts[ind][i]) * 4);
+							   sizeof (subdiv_verts[ind][i]));
 			// normals (verts are normalized)
 			MsgBuf_WriteBytes (msg, &subdiv_verts[ind][i],
-							   sizeof (subdiv_verts[ind][i]) * 4);
+							   sizeof (subdiv_verts[ind][i]));
 		}
 
 		mesh_template.indices = MsgBuf_WriteSeek (msg, 0, msg_cur);
@@ -904,12 +904,12 @@ create_quadsphere ()
 			}
 			indices[4] = indices[0];
 			indices[5] = indices[2];
-			MsgBuf_WriteBytes (msg, indices, sizeof (indices) * 4);
+			MsgBuf_WriteBytes (msg, indices, sizeof (indices));
 		}
 
 		offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
 		MsgBuf_WriteSeek (msg, mesh_offsets[d], msg_set);
-		MsgBuf_WriteBytes (msg, &mesh_template, sizeof (mesh_template) * 4);
+		MsgBuf_WriteBytes (msg, &mesh_template, sizeof (mesh_template));
 		MsgBuf_WriteSeek (msg, offset, msg_set);
 	}
 

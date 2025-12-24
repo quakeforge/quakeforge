@@ -941,7 +941,7 @@ begin_class (class_t *class, rua_ctx_t *ctx)
 		EMIT_STRING (space, meta->super_class, class->super_class->name);
 	EMIT_STRING (space, meta->name, class->name);
 	meta->info = _PR_CLS_META;
-	meta->instance_size = type_size (&type_class);
+	meta->instance_size = type_size (&type_class) * sizeof (pr_type_t);
 	if (!class->super_class) {
 		// The ivars list for the meta class struct get emitted only for the
 		// root class of the hierachy.
@@ -1122,7 +1122,7 @@ finish_class (class_t *class)
 	EMIT_DEF (space, meta->methods, emit_methods (class->methods,
 												  class->name, 0));
 
-	cls->instance_size = type_size (class->type);
+	cls->instance_size = type_size (class->type) * sizeof (pr_type_t);
 	EMIT_DEF (space, cls->ivars, emit_ivars (class->ivars, class->name));
 	EMIT_DEF (space, cls->methods, emit_methods (class->methods,
 												 class->name, 1));

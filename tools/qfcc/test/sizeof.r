@@ -8,5 +8,5 @@ main()
 {
 	int s = sizeof (Snafu *);
 	printf ("sizeof (Snafu *) == %d\n", s);
-	return s != 1;
+	return s != 4;
 }

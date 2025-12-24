@@ -1655,7 +1655,7 @@ static void
 rua_obj_malloc (progs_t *pr, void *data)
 {
 	qfZoneScoped (true);
-	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
+	int         size = P_INT (pr, 0);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
 	RETURN_POINTER (pr, mem);
@@ -1926,7 +1926,7 @@ static inline pr_id_t *
 class_create_instance (progs_t *pr, pr_class_t *class)
 {
 	qfZoneScoped (true);
-	int         size = class->instance_size * sizeof (pr_type_t);
+	int         size = class->instance_size;
 	pr_type_t  *mem;
 	pr_id_t    *id = 0;
 
@@ -2078,7 +2078,7 @@ rua_object_copy (progs_t *pr, void *data)
 
 	id = class_create_instance (pr, class);
 	if (id) {
-		memcpy (id, object, sizeof (pr_type_t) * class->instance_size);
+		memcpy (id, object, class->instance_size);
 		// copy the retain count
 		((pr_type_t *) id)[-1] = ((pr_type_t *) object)[-1];
 	}

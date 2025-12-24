@@ -1154,10 +1154,10 @@ main (int argc, string *argv)
 	{
 		qf_model_t model;
 		vec4 stuff = {};
-		MsgBuf_ReadBytes (quadsphere, &model, sizeof (model) * 4);
-		int offset = model.meshes.offset + sizeof(qsmesh) * SUBDIV * 4;
+		MsgBuf_ReadBytes (quadsphere, &model, sizeof (model));
+		int offset = model.meshes.offset + sizeof(qsmesh) * SUBDIV;
 		MsgBuf_ReadSeek (quadsphere, offset, msg_set);
-		MsgBuf_ReadBytes (quadsphere, &qsmesh, sizeof (qsmesh) * 4);
+		MsgBuf_ReadBytes (quadsphere, &qsmesh, sizeof (qsmesh));
 		qsmesh.adjacency.offset += offset;
 		qsmesh.vertices.offset += offset;
 	}
@@ -1239,25 +1239,25 @@ main (int argc, string *argv)
 			for (uint i = 0; i < qsmesh.adjacency.count; i++) {
 				int adjacency = qsmesh.adjacency.offset;
 				int verts = qsmesh.vertices.offset;
-				int offset = adjacency + (i + base) * sizeof (quarteredge_t)*4;
+				int offset = adjacency + (i + base) * sizeof (quarteredge_t);
 				quarteredge_t h[2];
 				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
-				MsgBuf_ReadBytes (quadsphere, &h[0], sizeof (quarteredge_t)*4);
+				MsgBuf_ReadBytes (quadsphere, &h[0], sizeof (quarteredge_t));
 				//printf ("%d: %d %d %d\n", i + base, h[0].twin, h[0].vert, h[0].edge);
 //#define NEXT(i) h[0].next
 #define NEXT(i) (((i) & ~3) | (((i)+1) & 3))
-				offset = adjacency + NEXT(i + base) * sizeof (quarteredge_t)*4;
+				offset = adjacency + NEXT(i + base) * sizeof (quarteredge_t);
 				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
-				MsgBuf_ReadBytes (quadsphere, &h[1], sizeof (quarteredge_t)*4);
+				MsgBuf_ReadBytes (quadsphere, &h[1], sizeof (quarteredge_t));
 				vec4 v[2] = {};
 				vec4 n = {};
-				offset = verts + h[0].vert * sizeof (vec3) * 2 * 4;
+				offset = verts + h[0].vert * sizeof (vec3) * 2;
 				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
-				MsgBuf_ReadBytes (quadsphere, &v[0], sizeof (vec3) * 4);
-				MsgBuf_ReadBytes (quadsphere, &n, sizeof (vec3) * 4);
-				offset = verts + h[1].vert * sizeof (vec3) * 2 * 4;
+				MsgBuf_ReadBytes (quadsphere, &v[0], sizeof (vec3));
+				MsgBuf_ReadBytes (quadsphere, &n, sizeof (vec3));
+				offset = verts + h[1].vert * sizeof (vec3) * 2;
 				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
-				MsgBuf_ReadBytes (quadsphere, &v[1], sizeof (vec3) * 4);
+				MsgBuf_ReadBytes (quadsphere, &v[1], sizeof (vec3));
 				v[0] += '-20 20 0 0';
 				v[1] += '-20 20 0 0';
 				Gizmo_AddCapsule (v[0], v[1], 0.005,// { 1, 0, 0, 0});

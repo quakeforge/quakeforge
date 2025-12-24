@@ -19,6 +19,7 @@ main ()
 	for (int i = 0; i < 2; i++) {
 		dst = vs.ofs[i];
 	}
+	printf("sizeof(foo) = %d\n", sizeof(foo));
 	printf("dst = %d\n", dst);
-	return sizeof(foo) != 5 || dst != 4;
+	return sizeof(foo) != 5 * sizeof(int) || dst != 4;
 }

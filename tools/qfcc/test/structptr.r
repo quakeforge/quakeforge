@@ -36,7 +36,8 @@ main ()
 	vs.ofs = 2;
 	//printf ("before: %d\nafter: ", vs.val);
 	test (vs);
-	if (vs.val != vs.res)
+	int expt = vs.val * @sizeof(int);
+	if (expt != vs.res)
 		printf ("val vs res: %d %d\n", vs.val, vs.res);
-	return vs.val != vs.res;
+	return expt != vs.res;
 }

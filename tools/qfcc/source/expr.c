@@ -2932,7 +2932,8 @@ sizeof_expr (const expr_t *expr, const type_t *type)
 	if (!type)
 		type = get_type (expr);
 	if (type) {
-		expr = new_int_expr (type_aligned_size (type), false);
+		int size = type_aligned_size (type) * sizeof (pr_type_t);
+		expr = new_int_expr (size, false);
 	}
 	return expr;
 }
