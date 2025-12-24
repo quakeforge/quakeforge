@@ -1665,7 +1665,7 @@ static void
 rua_obj_atomic_malloc (progs_t *pr, void *data)
 {
 	qfZoneScoped (true);
-	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
+	int         size = P_INT (pr, 0);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
 	RETURN_POINTER (pr, mem);
@@ -1675,7 +1675,7 @@ static void
 rua_obj_valloc (progs_t *pr, void *data)
 {
 	qfZoneScoped (true);
-	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
+	int         size = P_INT (pr, 0);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
 	RETURN_POINTER (pr, mem);
@@ -1686,7 +1686,7 @@ rua_obj_realloc (progs_t *pr, void *data)
 {
 	qfZoneScoped (true);
 	void       *mem = (void*)P_GPOINTER (pr, 0);
-	int         size = P_INT (pr, 1) * sizeof (pr_type_t);
+	int         size = P_INT (pr, 1);
 
 	mem = PR_Zone_Realloc (pr, mem, size);
 	RETURN_POINTER (pr, mem);
@@ -1696,7 +1696,7 @@ static void
 rua_obj_calloc (progs_t *pr, void *data)
 {
 	qfZoneScoped (true);
-	int         size = P_INT (pr, 0) * P_INT (pr, 1) * sizeof (pr_type_t);
+	int         size = P_INT (pr, 0) * P_INT (pr, 1);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
 	memset (mem, 0, size);
