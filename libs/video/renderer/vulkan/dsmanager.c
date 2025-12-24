@@ -52,6 +52,7 @@ QFV_DSManager_Create (const qfv_descriptorsetlayoutinfo_t *setLayoutInfo,
 	auto poolSizes = (VkDescriptorPoolSize *) &setManager[1];
 	*setManager = (qfv_dsmanager_t) {
 		.name = setLayoutInfo->name,
+		.va_ctx = ctx->va_ctx,
 		.device = ctx->device,
 		.poolCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
@@ -124,8 +125,9 @@ QFV_DSManager_AllocSet (qfv_dsmanager_t *setManager)
 		uint32_t    ind = --setManager->freeSets.size;
 		return setManager->freeSets.a[ind];
 	}
-	VkDevice dev = setManager->device->dev;
-	qfv_devfuncs_t *dfunc = setManager->device->funcs;
+	auto device = setManager->device;
+	auto dfunc = device->funcs;
+	VkDevice dev = device->dev;
 	VkResult    res;
 retry:
 	if (setManager->activePool) {
@@ -156,6 +158,11 @@ retry:
 	if (res != VK_SUCCESS) {
 		Sys_Error ("failed to create descriptor set pool: %d", res);
 	}
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_POOL,
+						 setManager->activePool,
+						 vac (setManager->va_ctx, "descriptorPool:%s:%zd",
+							  setManager->name,
+							  setManager->usedPools.size));
 	goto retry;
 }
 

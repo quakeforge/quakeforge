@@ -16,6 +16,7 @@ typedef struct qfv_descriptorsetset_s
 
 typedef struct qfv_dsmanager_s {
 	const char *name;
+	struct va_ctx_s *va_ctx;
 	struct qfv_device_s *device;
 	VkDescriptorPoolCreateInfo poolCreateInfo;
 	VkDescriptorPool activePool;
