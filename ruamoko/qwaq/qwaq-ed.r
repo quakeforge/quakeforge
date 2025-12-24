@@ -1147,8 +1147,9 @@ main (int argc, string *argv)
 	entity_t QuadSphere_ent = Scene_CreateEntity ([main_window scene]);
 	add_target (QuadSphere_ent);
 	Entity_SetModel (QuadSphere_ent, Model_LoadMesh ("quadsphere", quadsphere));
-	Entity_SetSubmeshMask (QuadSphere_ent, ~(1<<5));
-	Transform_SetLocalPosition(Entity_GetTransform (QuadSphere_ent), {-20, 20, 00, 1});
+	Entity_SetSubmeshMask (QuadSphere_ent, ~(1<<8));
+	Transform_SetLocalPosition(Entity_GetTransform (QuadSphere_ent), { 6470e3, -20, 20, 1});
+	Transform_SetLocalScale(Entity_GetTransform (QuadSphere_ent), { 6370e3, 6370e3, 6370e3, 1});
 	qf_mesh_t qsmesh;
 	vec4 stuff = {};
 	{
