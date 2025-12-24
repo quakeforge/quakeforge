@@ -37,7 +37,14 @@
 
 #include "ruamoko/qwaq/qwaq.h"
 
+static void
+qwaq_graphics_init (progs_t *pr)
+{
+	pr->zone_size = 128 * 1024 * 1024;
+}
+
 static progsinit_f main_app[] = {
+	qwaq_graphics_init,
 	BI_Graphics_Init,
 	QWAQ_EditBuffer_Init,
 	0

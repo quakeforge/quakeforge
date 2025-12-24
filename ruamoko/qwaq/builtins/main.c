@@ -244,8 +244,12 @@ load_progs (progs_t *pr, const char *name)
 	}
 	pr->progs_name = name;
 	pr->max_edicts = 1;
-	pr->zone_size = 8*1024*1024;
-	pr->stack_size = 64*1024;
+	if (!pr->zone_size) {
+		pr->zone_size = 8*1024*1024;
+	}
+	if (!pr->stack_size) {
+		pr->stack_size = 64*1024;
+	}
 	PR_LoadProgsFile (pr, file, size);
 	Qclose (file);
 	if (!PR_RunLoadFuncs (pr))
