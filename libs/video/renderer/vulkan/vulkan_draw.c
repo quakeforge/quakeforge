@@ -114,6 +114,7 @@ typedef struct {
 } quadvert_t;
 
 typedef struct linequeue_s {
+	VkBuffer    buffer;
 	linevert_t *verts;
 	int         count;
 	int         max_count;
@@ -128,6 +129,7 @@ typedef struct vertqueue_s {
 } vertqueue_t;
 
 typedef struct quadqueue_s {
+	VkBuffer    buffer;
 	quadinst_t *quads;
 	int         count;
 	int         max_count;
@@ -167,10 +169,6 @@ typedef struct descpool_s {
 } descpool_t;
 
 typedef struct drawframe_s {
-	size_t      instance_offset;
-	size_t      line_offset;
-	VkBuffer    instance_buffer;
-	VkBuffer    line_buffer;
 	VkBufferView dvert_view;
 
 	descbatchset_t quad_batch;
@@ -181,6 +179,8 @@ typedef struct drawframe_s {
 
 	vertqueue_t dyn_vert_queue;
 	quadvert_t  dyn_quad_verts[QUEUED_QUADS * VERTS_PER_QUAD];
+	quadinst_t  quad_insts_data[MAX_INSTANCES];
+	linevert_t  line_verts_data[MAX_LINES * VERTS_PER_LINE];
 } drawframe_t;
 
 typedef struct drawframeset_s
@@ -325,12 +325,11 @@ static void
 create_buffers (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	drawctx_t  *dctx = ctx->draw_context;
 	auto rctx = ctx->render_context;
 	size_t      frames = rctx->frames.size;
 
-	dctx->draw_resource = malloc (2 * sizeof (qfv_resource_t)
+	dctx->draw_resource = malloc (sizeof (qfv_resource_t)
 								  // index buffer
 								  + sizeof (qfv_resobj_t)
 								  // svertex buffer and view
@@ -341,7 +340,7 @@ create_buffers (vulkan_ctx_t *ctx)
 								  + (frames) * sizeof (qfv_resobj_t)
 								  // frames instance buffers
 								  + (frames) * sizeof (qfv_resobj_t));
-	dctx->index_object = (qfv_resobj_t *) &dctx->draw_resource[2];
+	dctx->index_object = (qfv_resobj_t *) &dctx->draw_resource[1];
 	dctx->svertex_objects = &dctx->index_object[1];
 	dctx->dvertex_objects = &dctx->svertex_objects[2];
 	dctx->lvertex_objects = &dctx->dvertex_objects[2 * frames];
@@ -351,16 +350,8 @@ create_buffers (vulkan_ctx_t *ctx)
 		.name = "draw",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = 1 + 2,	// quad and 9-slice indices, and static verts
+		.num_objects = 1 + 2 + (2 * frames) + (frames) + (frames),
 		.objects = dctx->index_object,
-	};
-	dctx->draw_resource[1] = (qfv_resource_t) {
-		.name = "draw",
-		.va_ctx = ctx->va_ctx,
-		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-						   | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-		.num_objects = (2 * frames) + (frames) + (frames),
-		.objects = dctx->dvertex_objects,
 	};
 
 	dctx->index_object[0] = (qfv_resobj_t) {
@@ -407,7 +398,7 @@ create_buffers (vulkan_ctx_t *ctx)
 			.type = qfv_res_buffer_view,
 			.buffer_view = {
 				.buffer = &dctx->dvertex_objects[i * 2 + 0]
-						- dctx->draw_resource[1].objects,
+						- dctx->draw_resource[0].objects,
 				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
 				.offset = 0,
 				.size = dctx->dvertex_objects[i * 2 + 0].buffer.size,
@@ -432,12 +423,7 @@ create_buffers (vulkan_ctx_t *ctx)
 			},
 		};
 	}
-	QFV_CreateResource (device, &dctx->draw_resource[0]);
-	QFV_CreateResource (device, &dctx->draw_resource[1]);
-
-	void       *data;
-	VkDeviceMemory memory = dctx->draw_resource[1].memory;
-	dfunc->vkMapMemory (device->dev, memory, 0, VK_WHOLE_SIZE, 0, &data);
+	QFV_CreateResource (device, dctx->draw_resource);
 
 	dctx->slice_vert_queue = (vertqueue_t) {
 		.buffer = dctx->svertex_objects[0].buffer.buffer,
@@ -447,11 +433,7 @@ create_buffers (vulkan_ctx_t *ctx)
 
 	for (size_t f = 0; f < frames; f++) {
 		drawframe_t *frame = &dctx->frames.a[f];
-		frame->instance_buffer = dctx->instance_objects[f].buffer.buffer;
-		frame->instance_offset = dctx->instance_objects[f].buffer.offset;
 		frame->dvert_view = dctx->dvertex_objects[f * 2 + 1].buffer_view.view;
-		frame->line_buffer = dctx->lvertex_objects[f].buffer.buffer;
-		frame->line_offset = dctx->lvertex_objects[f].buffer.offset;
 
 		frame->dyn_vert_queue = (vertqueue_t) {
 			.buffer = dctx->dvertex_objects[f * 2 + 0].buffer.buffer,
@@ -462,13 +444,15 @@ create_buffers (vulkan_ctx_t *ctx)
 		DARRAY_INIT (&frame->quad_batch, 16);
 		DARRAY_INIT (&frame->clip_range, 16);
 		frame->quad_insts = (quadqueue_t) {
-			.quads = (quadinst_t *) ((byte *)data + frame->instance_offset),
+			.buffer = dctx->instance_objects[f].buffer.buffer,
+			.quads = frame->quad_insts_data,
 			.max_count = MAX_INSTANCES,
 		};
 
 		frame->line_verts = (linequeue_t) {
-			.verts = (linevert_t *) ((byte *)data + frame->line_offset),
-			.max_count = MAX_INSTANCES,
+			.buffer = dctx->lvertex_objects[f].buffer.buffer,
+			.verts = frame->line_verts_data,
+			.max_count = MAX_LINES,
 		};
 	}
 
@@ -523,6 +507,24 @@ cachepic_getkey (const void *_cp, void *unused)
 }
 
 static void
+flush_draw_data (VkBuffer buffer, VkDeviceSize offset,
+				 void *data, size_t size, vulkan_ctx_t *ctx)
+{
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "draw.flush");
+	void *out = QFV_PacketExtend (packet, size);
+	memcpy (out, data, size);
+	QFV_duCmdBeginLabel (ctx->device, packet->cmd, "flush_draw_data",
+						 {0.2, 0.8, 0.3, 1});
+	auto sb = bufferBarriers[qfv_BB_VertexAttrRead_to_TransferWrite];
+	auto db = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
+	sb.srcStages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	db.dstStages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	QFV_PacketCopyBuffer (packet, buffer, offset, &sb, &db);
+	QFV_duCmdEndLabel (ctx->device, packet->cmd);
+	QFV_PacketSubmit (packet);
+}
+
+static void
 flush_vertqueue (vertqueue_t *queue, vulkan_ctx_t *ctx)
 {
 	if (!queue->count) {
@@ -530,20 +532,32 @@ flush_vertqueue (vertqueue_t *queue, vulkan_ctx_t *ctx)
 	}
 
 	uint32_t    size = queue->count * sizeof (queue->verts[0]);
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "draw.flush");
-	quadvert_t *verts = QFV_PacketExtend (packet, size);
-	memcpy (verts, queue->verts, size);
-	QFV_duCmdBeginLabel (ctx->device, packet->cmd, "flush_vertqueue",
-						 {0.2, 0.8, 0.3, 1});
-	auto sb = bufferBarriers[qfv_BB_UniformRead_to_TransferWrite];
-	auto db = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
-	sb.srcStages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-	db.dstStages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-	QFV_PacketCopyBuffer (packet, queue->buffer, queue->base, &sb, &db);
-	QFV_duCmdEndLabel (ctx->device, packet->cmd);
-	QFV_PacketSubmit (packet);
+	flush_draw_data (queue->buffer, queue->base, queue->verts, size, ctx);
 	queue->base += size;
 	queue->count = 0;
+}
+
+static void
+flush_quadqueue (quadqueue_t *queue, vulkan_ctx_t *ctx)
+{
+	if (!queue->count) {
+		return;
+	}
+
+	uint32_t    size = queue->count * sizeof (queue->quads[0]);
+	flush_draw_data (queue->buffer, 0, queue->quads, size, ctx);
+}
+
+static void
+flush_linequeue (linequeue_t *queue, vulkan_ctx_t *ctx)
+{
+	if (!queue->count) {
+		return;
+	}
+
+	uint32_t    count = queue->count * VERTS_PER_LINE;
+	uint32_t    size = count * sizeof (queue->verts[0]);
+	flush_draw_data (queue->buffer, 0, queue->verts, size, ctx);
 }
 
 static uint32_t
@@ -887,8 +901,7 @@ draw_shutdown (exprctx_t *ectx)
 	auto dctx = ctx->draw_context;
 
 	if (dctx->draw_resource) {
-		QFV_DestroyResource (device, &dctx->draw_resource[0]);
-		QFV_DestroyResource (device, &dctx->draw_resource[1]);
+		QFV_DestroyResource (device, dctx->draw_resource);
 		free (dctx->draw_resource);
 	}
 	for (size_t i = 0; i < dctx->fonts.size; i++) {
@@ -1084,7 +1097,7 @@ draw_quads (qfv_taskctx_t *taskctx)
 	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
 
-	VkBuffer    instance_buffer = dframe->instance_buffer;
+	VkBuffer    instance_buffer = dframe->quad_insts.buffer;
 	VkDeviceSize offsets[] = {0};
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &instance_buffer, offsets);
 
@@ -1136,7 +1149,7 @@ draw_lines (qfv_taskctx_t *taskctx)
 	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
 
-	VkBuffer    line_buffer = dframe->line_buffer;
+	VkBuffer    line_buffer = dframe->line_verts.buffer;
 	VkDeviceSize offsets[] = {0};
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &line_buffer, offsets);
 	VkDescriptorSet set[1] = {
@@ -1166,29 +1179,16 @@ slice_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
 	auto dctx = ctx->draw_context;
 	auto dframe = &dctx->frames.a[ctx->curFrame];
+
+	flush_quadqueue (&dframe->quad_insts, ctx);
 	if (!dframe->quad_insts.count) {
 		return;
 	}
 
 	auto cr = &dframe->clip_range.a[dframe->clip_range.size - 1];
 	cr->count = dframe->quad_batch.size - cr->start;
-
-	qftVkScopedZone (taskctx->frame->qftVkCtx, taskctx->cmd, "slice_draw");
-	VkDeviceMemory memory = dctx->draw_resource[1].memory;
-	size_t      atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
-	size_t      atom_mask = atom - 1;
-#define a(x) (((x) + atom_mask) & ~atom_mask)
-	VkMappedMemoryRange ranges[] = {
-		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		  memory, dframe->instance_offset,
-		  a(dframe->quad_insts.count * BYTES_PER_QUAD) },
-	};
-#undef a
-	dfunc->vkFlushMappedMemoryRanges (device->dev, countof (ranges), ranges);
 
 	draw_quads (taskctx);
 
@@ -1202,26 +1202,13 @@ line_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
 	auto dctx = ctx->draw_context;
 	auto dframe = &dctx->frames.a[ctx->curFrame];
 
+	flush_linequeue (&dframe->line_verts, ctx);
 	if (!dframe->line_verts.count) {
 		return;
 	}
-
-	VkDeviceMemory memory = dctx->draw_resource[1].memory;
-	size_t      atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
-	size_t      atom_mask = atom - 1;
-#define a(x) (((x) + atom_mask) & ~atom_mask)
-	VkMappedMemoryRange ranges[] = {
-		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		  memory, dframe->line_offset,
-		  a(dframe->line_verts.count * BYTES_PER_LINE) },
-	};
-#undef a
-	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, ranges);
 
 	draw_lines (taskctx);
 
