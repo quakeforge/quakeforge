@@ -393,15 +393,15 @@ typedef struct bspctx_s {
 	VkSampler    equrect;
 
 	struct qfv_resource_s *base_resource;
+	VkBuffer     default_verts;
+	struct qfv_resource_s *bsp_resource;
 	size_t       vertex_buffer_size;
 	size_t       index_buffer_size;
 	VkBuffer     vertex_buffer;
-	VkDeviceMemory vertex_memory;
 	VkBuffer     index_buffer;
-	VkDeviceMemory index_memory;
-	VkBuffer     default_verts;
 	VkBuffer     entid_buffer;
-	VkDeviceMemory entid_memory;
+	uint32_t    *index_data;
+	uint32_t    *entid_data;
 	bspframeset_t frames;
 } bspctx_t;
 

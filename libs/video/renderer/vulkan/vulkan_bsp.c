@@ -473,7 +473,6 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
 
 	init_visstate (bctx);
@@ -561,7 +560,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
 	size_t atom_mask = atom - 1;
 	size_t frames = bctx->frames.size;
-	size_t index_buffer_size = index_count * frames * sizeof (uint32_t);
+	size_t index_buffer_size = index_count * sizeof (uint32_t);
 	size_t vertex_buffer_size = vertex_count * sizeof (bspvert_t);
 
 	index_buffer_size = (index_buffer_size + atom_mask) & ~atom_mask;
@@ -631,58 +630,59 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	Sys_MaskPrintf (SYS_vulkan,
 					"R_BuildDisplayLists: verts:%u, inds:%u, polys:%u\n",
 					vertex_count, index_count, poly_count);
-	if (index_buffer_size > bctx->index_buffer_size) {
-		if (bctx->index_buffer) {
-			dfunc->vkUnmapMemory (device->dev, bctx->index_memory);
-			dfunc->vkDestroyBuffer (device->dev, bctx->index_buffer, 0);
-			dfunc->vkFreeMemory (device->dev, bctx->index_memory, 0);
+	if (index_buffer_size > bctx->index_buffer_size
+		|| vertex_buffer_size > bctx->vertex_buffer_size) {
+		if (bctx->bsp_resource) {
+			QFV_DestroyResource (device, bctx->bsp_resource);
 		}
-		bctx->index_buffer
-			= QFV_CreateBuffer (device, index_buffer_size,
-								VK_BUFFER_USAGE_TRANSFER_DST_BIT
-								| VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, bctx->index_buffer,
-							 "buffer:bsp:index");
-		bctx->index_memory
-			= QFV_AllocBufferMemory (device, bctx->index_buffer,
-									 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-									 index_buffer_size, 0);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
-							 bctx->index_memory, "memory:bsp:index");
-		QFV_BindBufferMemory (device,
-							  bctx->index_buffer, bctx->index_memory, 0);
-		bctx->index_buffer_size = index_buffer_size;
-		void       *data;
-		dfunc->vkMapMemory (device->dev, bctx->index_memory, 0,
-							index_buffer_size, 0, &data);
-		uint32_t   *index_data = data;
+		free (bctx->index_data);
+		bctx->index_data = malloc (index_buffer_size);
+
+		if (!bctx->bsp_resource) {
+			size_t size = sizeof (qfv_resource_t)
+						+ sizeof (qfv_resobj_t[1])	//vertices
+						+ sizeof (qfv_resobj_t[1]);	//indices
+			bctx->bsp_resource = malloc (size);
+		}
+		auto vertices = (qfv_resobj_t *) &bctx->bsp_resource[1];
+		auto indices = (qfv_resobj_t *) &vertices[1];
+		*bctx->bsp_resource = (qfv_resource_t) {
+			.name = "bsp",
+			.va_ctx = ctx->va_ctx,
+			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			.num_objects = 2,
+			.objects = vertices,
+		};
+
+		*vertices = (qfv_resobj_t) {
+			.name = "vertex",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = vertex_buffer_size,
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+						| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+			},
+		};
+		*indices = (qfv_resobj_t) {
+			.name = "index",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = index_buffer_size * frames,
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+						| VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+			},
+		};
+		QFV_CreateResource (ctx->device, bctx->bsp_resource);
+
 		for (size_t i = 0; i < frames; i++) {
-			uint32_t    offset = index_count * i;
-			bctx->frames.a[i].index_data = index_data + offset;
-			bctx->frames.a[i].index_offset = offset * sizeof (uint32_t);
+			bctx->frames.a[i].index_data = bctx->index_data;
+			bctx->frames.a[i].index_offset = 0;
 			bctx->frames.a[i].index_count = 0;
 		}
-	}
-	if (vertex_buffer_size > bctx->vertex_buffer_size) {
-		if (bctx->vertex_buffer) {
-			dfunc->vkDestroyBuffer (device->dev, bctx->vertex_buffer, 0);
-			dfunc->vkFreeMemory (device->dev, bctx->vertex_memory, 0);
-		}
-		bctx->vertex_buffer
-			= QFV_CreateBuffer (device, vertex_buffer_size,
-								VK_BUFFER_USAGE_TRANSFER_DST_BIT
-								| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER,
-							 bctx->vertex_buffer, "buffer:bsp:vertex");
-		bctx->vertex_memory
-			= QFV_AllocBufferMemory (device, bctx->vertex_buffer,
-									 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-									 vertex_buffer_size, 0);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
-							 bctx->vertex_memory, "memory:bsp:vertex");
-		QFV_BindBufferMemory (device,
-							  bctx->vertex_buffer, bctx->vertex_memory, 0);
+		bctx->index_buffer_size = index_buffer_size;
 		bctx->vertex_buffer_size = vertex_buffer_size;
+		bctx->vertex_buffer = vertices->buffer.buffer;
+		bctx->index_buffer = indices->buffer.buffer;
 	}
 
 	if (packet) {
@@ -1071,34 +1071,34 @@ static void
 bsp_flush (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
-	size_t      atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
-	size_t      atom_mask = atom - 1;
-	size_t      index_offset = bframe->index_offset;
-	size_t      index_size = bframe->index_count * sizeof (uint32_t);
-	size_t      entid_offset = bframe->entid_offset;
-	size_t      entid_size = bframe->entid_count * sizeof (uint32_t);
 
 	if (!bframe->index_count) {
 		return;
 	}
-	index_offset &= ~atom_mask;
-	index_size = (index_size + atom_mask) & ~atom_mask;
-	entid_offset &= ~atom_mask;
-	entid_size = (entid_size + atom_mask) & ~atom_mask;
+	qfv_packet_t *packet;
+	void *data;
+	size_t size;
 
-	VkMappedMemoryRange ranges[] = {
-		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		  bctx->index_memory, index_offset, index_size
-		},
-		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		  bctx->entid_memory, entid_offset, entid_size
-		},
-	};
-	dfunc->vkFlushMappedMemoryRanges (device->dev, 2, ranges);
+	packet = QFV_PacketAcquire (ctx->staging, "bsp.index");
+	size = sizeof (uint32_t[bframe->index_count]);
+	data = QFV_PacketExtend (packet, size);
+	memcpy (data, bframe->index_data, size);
+	QFV_PacketCopyBuffer (packet, bctx->index_buffer, bframe->index_offset,
+						  &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
+	QFV_PacketSubmit (packet);
+
+	packet = QFV_PacketAcquire (ctx->staging, "bsp.entid");
+	size = sizeof (uint32_t[bframe->entid_count]);
+	data = QFV_PacketExtend (packet, size);
+	memcpy (data, bframe->entid_data, size);
+	QFV_PacketCopyBuffer (packet, bctx->entid_buffer, bframe->entid_offset,
+						  &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+					  &bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
+	QFV_PacketSubmit (packet);
+
 	QFV_ScrapFlush (bctx->light_scrap);
 }
 
@@ -1208,6 +1208,7 @@ static void
 create_base_resources (vulkan_ctx_t *ctx)
 {
 	auto bctx = ctx->bsp_context;
+	size_t frames = bctx->frames.size;
 
 	static tex_t notexture_tex = {
 		.width = 64,
@@ -1271,7 +1272,7 @@ create_base_resources (vulkan_ctx_t *ctx)
 		.name = "entid",
 		.type = qfv_res_buffer,
 		.buffer = {
-			.size = entid_count * sizeof (uint32_t),
+			.size = entid_count * sizeof (uint32_t) * frames,
 			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 					| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		},
@@ -1290,6 +1291,17 @@ create_base_resources (vulkan_ctx_t *ctx)
 	create_notexture (ctx, packet, &images[0]);
 	create_default_skys (ctx, packet, &images[1]);
 	QFV_PacketSubmit (packet);
+
+	bctx->entid_data = malloc (sizeof (uint32_t[entid_count]));
+	for (size_t i = 0; i < frames; i++) {
+		auto bframe = &bctx->frames.a[i];
+		bframe->entid_data = bctx->entid_data;
+		bframe->entid_offset = 0;
+		bframe->entid_count = 0;
+		bframe->index_data = nullptr;
+		bframe->index_offset = 0;
+		bframe->index_count = 0;
+	}
 }
 
 static void
@@ -1506,7 +1518,6 @@ bsp_shutdown (exprctx_t *ectx)
 	qfvPushDebug (ctx, "bsp shutdown");
 
 	auto device = ctx->device;
-	auto dfunc = device->funcs;
 	auto bctx = ctx->bsp_context;
 
 	bctx->main_pass.entqueue = 0;	// owned by r_ent_queue
@@ -1533,17 +1544,9 @@ bsp_shutdown (exprctx_t *ectx)
 	if (bctx->base_resource) {
 		QFV_DestroyResource (device, bctx->base_resource);
 	}
-
-	if (bctx->vertex_buffer) {
-		dfunc->vkDestroyBuffer (device->dev, bctx->vertex_buffer, 0);
-		dfunc->vkFreeMemory (device->dev, bctx->vertex_memory, 0);
+	if (bctx->bsp_resource) {
+		QFV_DestroyResource (device, bctx->bsp_resource);
 	}
-	if (bctx->index_buffer) {
-		dfunc->vkDestroyBuffer (device->dev, bctx->index_buffer, 0);
-		dfunc->vkFreeMemory (device->dev, bctx->index_memory, 0);
-	}
-	dfunc->vkDestroyBuffer (device->dev, bctx->entid_buffer, 0);
-	dfunc->vkFreeMemory (device->dev, bctx->entid_memory, 0);
 
 	if (bctx->skybox_tex) {
 		Vulkan_UnloadTex (ctx, bctx->skybox_tex);
@@ -1565,7 +1568,6 @@ bsp_startup (exprctx_t *ectx)
 	auto bctx = ctx->bsp_context;
 
 	auto device = ctx->device;
-	auto dfunc = device->funcs;
 
 	bctx->main_pass.bsp_context = bctx;
 	bctx->shadow_pass.bsp_context = bctx;
@@ -1579,8 +1581,6 @@ bsp_startup (exprctx_t *ectx)
 	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 4096,
 										 tex_frgba, ctx->staging);
 
-	create_base_resources (ctx);
-
 	DARRAY_INIT (&bctx->registered_textures, 64);
 
 	setup_pass_draw_queues (&bctx->main_pass);
@@ -1593,36 +1593,7 @@ bsp_startup (exprctx_t *ectx)
 	DARRAY_RESIZE (&bctx->frames, frames);
 	bctx->frames.grow = 0;
 
-	size_t      entid_count = Vulkan_Scene_MaxEntities (ctx);
-	size_t      entid_size = entid_count * sizeof (uint32_t);
-	size_t atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
-	size_t atom_mask = atom - 1;
-	entid_size = (entid_size + atom_mask) & ~atom_mask;
-	bctx->entid_buffer
-		= QFV_CreateBuffer (device, frames * entid_size,
-							VK_BUFFER_USAGE_TRANSFER_DST_BIT
-							| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, bctx->entid_buffer,
-						 "buffer:bsp:entid");
-	bctx->entid_memory
-		= QFV_AllocBufferMemory (device, bctx->entid_buffer,
-								 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-								 frames * entid_size, 0);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
-						 bctx->entid_memory, "memory:bsp:entid");
-	QFV_BindBufferMemory (device,
-						  bctx->entid_buffer, bctx->entid_memory, 0);
-	uint32_t   *entid_data;
-	dfunc->vkMapMemory (device->dev, bctx->entid_memory, 0,
-						frames * entid_size, 0, (void **) &entid_data);
-
-	for (size_t i = 0; i < frames; i++) {
-		auto bframe = &bctx->frames.a[i];
-
-
-		bframe->entid_data = entid_data + i * entid_count;
-		bframe->entid_offset = i * entid_size;
-	}
+	create_base_resources (ctx);
 
 	bctx->lightmap_descriptor
 		= Vulkan_CreateCombinedImageSampler (ctx,
