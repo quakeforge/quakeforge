@@ -222,9 +222,15 @@ output_select_renderpass (const exprval_t **params, exprval_t *result,
 	auto render = main->render;
 
 	if (scr_fisheye) {
-		render->active = &render->renderpasses[1];
+		if (render->active != &render->renderpasses[1]) {
+			ctx->render_context->size_time = -1;
+			render->active = &render->renderpasses[1];
+		}
 	} else {
-		render->active = &render->renderpasses[0];
+		if (render->active != &render->renderpasses[0]) {
+			ctx->render_context->size_time = -1;
+			render->active = &render->renderpasses[0];
+		}
 	}
 }
 

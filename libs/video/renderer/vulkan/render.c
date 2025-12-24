@@ -572,9 +572,10 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 
 	qfv_output_t output = {};
 	Vulkan_ConfigOutput (ctx, &output);
+	int64_t size_time = ctx->render_context->size_time;
 	if ((output.extent.width != render->output.extent.width
 		|| output.extent.height != render->output.extent.height)
-		&& (Sys_LongTime () - ctx->render_context->size_time) > 2*1000*1000) {
+		&& (size_time < 0 || Sys_LongTime () - size_time > 2*1000*1000)) {
 		QFV_DestroyFramebuffer (ctx, rp);
 		QFV_UpdateViewportScissor (render, &output);
 		render->output.extent = output.extent;
@@ -657,7 +658,7 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 			.q = DARRAY_STATIC_INIT (8),
 			.compare = qfv_deletion_compare,
 		},
-		.size_time = -1000*1000*1000,
+		.size_time = -1,
 	};
 	DARRAY_RESIZE (&rctx->frames, vulkan_frame_count);
 
