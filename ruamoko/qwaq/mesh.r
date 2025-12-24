@@ -720,10 +720,13 @@ create_quadsphere ()
 		}
 	}
 
+	const int levels = 6;
+	const int subdiv = levels - 1;
+
 	qf_model_t model = {
 		.meshes = {
 			.offset = sizeof (qf_model_t),
-			.count = 6,
+			.count = levels,
 		},
 	};
 	qf_mesh_t mesh_template = {
@@ -754,15 +757,15 @@ create_quadsphere ()
 		},
 	};
 
-	int max_halfedges = calc_num_halfedges (num_halfedges, 5);
+	int max_halfedges = calc_num_halfedges (num_halfedges, subdiv);
 	int max_vertices = calc_num_vertices (num_halfedges, num_verts,
-										  num_faces, num_edges, 5);
-	int extra_halfedges = calc_extra_halfedges (num_halfedges, 5);
+										  num_faces, num_edges, subdiv);
+	int extra_halfedges = calc_extra_halfedges (num_halfedges, subdiv);
 	int extra_verts = calc_extra_vertices (num_halfedges, num_verts,
-										   num_faces, num_edges, 5);
-	int extra_faces = calc_extra_faces (num_halfedges, 5);
+										   num_faces, num_edges, subdiv);
+	int extra_faces = calc_extra_faces (num_halfedges, subdiv);
 	uint size = sizeof (qf_model_t)
-			  + sizeof (qf_mesh_t) * 6
+			  + sizeof (qf_mesh_t) * levels
 			  + sizeof (qfm_attrdesc_t) * 2// need only one copy
 			  + sizeof (halfedge_t) * num_halfedges
 			  + sizeof (quarteredge_t) * extra_halfedges
@@ -786,12 +789,15 @@ create_quadsphere ()
 		offset + sizeof (qf_mesh_t) * 3,
 		offset + sizeof (qf_mesh_t) * 4,
 		offset + sizeof (qf_mesh_t) * 5,
+		offset + sizeof (qf_mesh_t) * 6,
+		offset + sizeof (qf_mesh_t) * 7,
+		offset + sizeof (qf_mesh_t) * 8,
 	};
 	printf ("offset: %d\n", offset);
-	for (int i = 0; i < 6; i++) {
+	for (int i = 0; i < levels; i++) {
 		printf ("  %d:offset: %d\n", i, mesh_offsets[i]);
 	}
-	MsgBuf_WriteSeek (msg, sizeof (qf_mesh_t) * 6, msg_cur);
+	MsgBuf_WriteSeek (msg, sizeof (qf_mesh_t) * levels, msg_cur);
 
 	int attributes_offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
 	printf ("attributes_offset: %d\n", attributes_offset);
@@ -834,7 +840,7 @@ create_quadsphere ()
 	MsgBuf_WriteBytes (msg, &mesh_template, sizeof (mesh_template));
 	MsgBuf_WriteSeek (msg, offset, msg_set);
 
-	for (int d = 1; d < 6; d++) {
+	for (int d = 1; d < levels; d++) {
 		int hd = calc_num_halfedges (num_halfedges, d - 1);
 		int vd = calc_num_vertices (num_halfedges, num_verts,
 									num_faces, num_edges, d - 1);
