@@ -168,14 +168,11 @@ typedef struct descpool_s {
 
 typedef struct drawframe_s {
 	size_t      instance_offset;
-	size_t      dvert_offset;
 	size_t      line_offset;
 	VkBuffer    instance_buffer;
 	VkBuffer    line_buffer;
 	VkBufferView dvert_view;
 
-	uint32_t    dvertex_index;
-	uint32_t    dvertex_max;
 	descbatchset_t quad_batch;
 	drawclipset_t clip_range;
 	quadqueue_t quad_insts;
@@ -213,7 +210,6 @@ typedef struct drawctx_s {
 	qpic_t     *crosshair;
 	int        *conchar_inds;
 	qpic_t     *conchars;
-	qpic_t     *conback;
 	qpic_t     *white_pic;
 	qpic_t     *backtile_pic;
 	// use two separate cmem blocks for pics and strings (cachepic names)
@@ -234,8 +230,6 @@ typedef struct drawctx_s {
 	drawfontset_t fonts;
 	SCR_Func *scr_funcs;
 
-	uint32_t    svertex_index;
-	uint32_t    svertex_max;
 	vertqueue_t slice_vert_queue;
 	quadvert_t  slice_verts[QUEUED_QUADS * VERTS_PER_SLICE];
 } drawctx_t;
@@ -445,8 +439,6 @@ create_buffers (vulkan_ctx_t *ctx)
 	VkDeviceMemory memory = dctx->draw_resource[1].memory;
 	dfunc->vkMapMemory (device->dev, memory, 0, VK_WHOLE_SIZE, 0, &data);
 
-	dctx->svertex_index = 0;
-	dctx->svertex_max = MAX_QUADS * VERTS_PER_QUAD;
 	dctx->slice_vert_queue = (vertqueue_t) {
 		.buffer = dctx->svertex_objects[0].buffer.buffer,
 		.verts = dctx->slice_verts,
@@ -460,9 +452,6 @@ create_buffers (vulkan_ctx_t *ctx)
 		frame->dvert_view = dctx->dvertex_objects[f * 2 + 1].buffer_view.view;
 		frame->line_buffer = dctx->lvertex_objects[f].buffer.buffer;
 		frame->line_offset = dctx->lvertex_objects[f].buffer.offset;
-
-		frame->dvertex_index = 0;
-		frame->dvertex_max = MAX_QUADS * VERTS_PER_QUAD;
 
 		frame->dyn_vert_queue = (vertqueue_t) {
 			.buffer = dctx->dvertex_objects[f * 2 + 0].buffer.buffer,
@@ -1197,17 +1186,13 @@ slice_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
 		  memory, dframe->instance_offset,
 		  a(dframe->quad_insts.count * BYTES_PER_QUAD) },
-		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		  memory, dframe->dvert_offset,
-		  a(dframe->dvertex_index * sizeof (quadvert_t)) },
 	};
 #undef a
-	dfunc->vkFlushMappedMemoryRanges (device->dev, 2, ranges);
+	dfunc->vkFlushMappedMemoryRanges (device->dev, countof (ranges), ranges);
 
 	draw_quads (taskctx);
 
 	dframe->quad_insts.count = 0;
-	dframe->dvertex_index = 0;
 	dframe->dyn_descs.in_use = 0;
 }
 
