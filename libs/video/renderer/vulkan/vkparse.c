@@ -870,6 +870,53 @@ parse_specialization_data (const plitem_t *item, void **data,
 	return ret;
 }
 
+static int parse_qfv_dependencyinfo_t (const plfield_t *field,
+									   const plitem_t *item, void *data,
+									   plitem_t *messages, void *context);
+static int parse_dependency_dict (const plfield_t *field,
+								  const plitem_t *item, void *data,
+								  plitem_t *messages, void *context)
+{
+	((qfv_dependencyinfo_t *) data)->name = vkstrdup (context, field->name);
+	return parse_qfv_dependencyinfo_t (field, item, data, messages, context);
+}
+
+static int
+parse_dependency_info (const plitem_t *item, void **data,
+					   plitem_t *messages, parsectx_t *pctx)
+{
+	struct tmp_array {
+		uint32_t    count;
+		void       *data;
+	} tmp_array;
+	parse_array_t array_data = {
+		.type = QFMultiType | (1 << QFString) | (1 << QFDictionary),
+		.stride = sizeof (qfv_dependencyinfo_t),
+		.value_offset = offsetof (struct tmp_array, data),
+		.size_offset = offsetof (struct tmp_array, count),
+	};
+	plfield_t field = { .name = "dependencies", .data = &array_data };
+
+	auto size_ptr = (uint32_t *) data[0];
+	auto data_ptr = (void **) data[1];
+	int ret = 0;
+
+	if (PL_Type (item) == QFDictionary) {
+		array_data.parser = parse_dependency_dict;
+		ret = parse_labeledarray (&field, item, &tmp_array, messages, pctx);
+	} else {
+		array_data.parser = parse_qfv_dependencyinfo_t;
+		ret = parse_array (&field, item, &tmp_array, messages, pctx);
+	}
+
+	if (ret) {
+		*size_ptr = tmp_array.count;
+		*data_ptr = tmp_array.data;
+	}
+
+	return ret;
+}
+
 static int
 parse_task_function (const plitem_t *item, void **data,
 					 plitem_t *messages, parsectx_t *pctx)

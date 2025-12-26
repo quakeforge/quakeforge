@@ -407,9 +407,8 @@ parse = {
 		};
 		color = auto;
 		dependencies = {
-			type = (labeledarray, qfv_dependencyinfo_t, name);
-			size = num_dependencies;
-			values = dependencies;
+			type = (custom, (QFDictionary, QFArray), parse_dependency_info);
+			fields = (num_dependencies, dependencies);
 		};
 		attachments = {
 			type = (single, qfv_attachmentsetinfo_t);
