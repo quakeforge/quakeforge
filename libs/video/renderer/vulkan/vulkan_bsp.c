@@ -363,8 +363,13 @@ static void
 count_verts_inds (const faceref_t *faceref, uint32_t *verts, uint32_t *inds)
 {
 	msurface_t *surf = faceref->face;
-	*verts = surf->numedges;
-	*inds = surf->numedges + 1;
+	if (surf->flags & SURF_DRAWBACKGROUND) {
+		*verts = 0;
+		*inds = 0;
+	} else {
+		*verts = surf->numedges;
+		*inds = surf->numedges + 1;
+	}
 }
 
 typedef struct bspvert_s {
@@ -416,6 +421,9 @@ build_surf_displist (const faceref_t *faceref, buildctx_t *build)
 		.tex_id = build->tex_id,
 		.flags = surf->flags,
 	};
+	if (surf->flags & SURF_DRAWBACKGROUND) {
+		face->index_count = 0;
+	}
 
 	if (!numverts) {
 		return;
@@ -555,7 +563,15 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			poly_count++;
 		}
 	}
-	index_count *= 3;
+
+	// vulkan doesn't like 0-length buffers, but vertex_count and index_count
+	// will be 0 for the empty world model.
+	if (vertex_count < 1) {
+		vertex_count = 1;
+	}
+	if (index_count < 1) {
+		index_count = 1;
+	}
 
 	size_t atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
 	size_t atom_mask = atom - 1;
@@ -563,7 +579,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t index_buffer_size = index_count * sizeof (uint32_t);
 	size_t vertex_buffer_size = vertex_count * sizeof (bspvert_t);
 
-	index_buffer_size = (index_buffer_size + atom_mask) & ~atom_mask;
+	index_buffer_size = (index_buffer_size + atom_mask - 1) & ~atom_mask;
 	qfv_packet_t *packet = nullptr;
 	bspvert_t  *vertices = nullptr;
 	if (vertex_buffer_size) {
