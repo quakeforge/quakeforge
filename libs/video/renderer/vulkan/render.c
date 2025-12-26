@@ -378,6 +378,9 @@ run_deletion_queue (vulkan_ctx_t *ctx)
 		if (del.semaphore) {
 			dfunc->vkDestroySemaphore (device->dev, del.semaphore, 0);
 		}
+		if (del.image_view) {
+			dfunc->vkDestroyImageView (device->dev, del.image_view, 0);
+		}
 	}
 }
 
@@ -530,6 +533,18 @@ QFV_QueueResourceDelete (vulkan_ctx_t *ctx, qfv_resource_t *res)
 	uint32_t frames = rctx->frames.size;
 	qfv_delete_t del = {
 		.resources = res,
+		.deletion_frame = ctx->frameNumber + frames,
+	};
+	PQUEUE_INSERT (&rctx->deletion_queue, del);
+}
+
+void
+QFV_QueueImageViewDelete (vulkan_ctx_t *ctx, VkImageView image_view)
+{
+	auto rctx = ctx->render_context;
+	uint32_t frames = rctx->frames.size;
+	qfv_delete_t del = {
+		.image_view = image_view,
 		.deletion_frame = ctx->frameNumber + frames,
 	};
 	PQUEUE_INSERT (&rctx->deletion_queue, del);

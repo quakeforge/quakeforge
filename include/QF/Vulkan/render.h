@@ -449,6 +449,7 @@ typedef struct qfv_delete_s {
 	struct qfv_resource_s *resources;
 	VkFramebuffer framebuffer;
 	VkSemaphore semaphore;
+	VkImageView image_view;
 	uint64_t    deletion_frame;
 } qfv_delete_t;
 
@@ -514,6 +515,7 @@ void QFV_CreateFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp,
 
 void QFV_QueueResourceDelete (struct vulkan_ctx_s *ctx,
 							  struct qfv_resource_s *res);
+void QFV_QueueImageViewDelete (struct vulkan_ctx_s *ctx, VkImageView view);
 
 struct qfv_dsmanager_s *
 QFV_Render_DSManager (struct vulkan_ctx_s *ctx,
