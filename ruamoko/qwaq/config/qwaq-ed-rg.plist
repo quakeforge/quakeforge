@@ -194,6 +194,26 @@ render_graph = {
 			};
 			flags = by_region;
 		};
+		extcolor_dependency = {
+			src = {
+				stage = color_attachment_output;
+				access = color_attachment_write|color_attachment_read;
+			};
+			dst = {
+				stage = color_attachment_output;
+				access = color_attachment_write;
+			};
+		};
+		extcolor_outdep = {
+			src = {
+				stage = color_attachment_output;
+				access = color_attachment_write|color_attachment_read;
+			};
+			dst = {
+				stage = bottom_of_pipe;
+				access = memory_read;
+			};
+		};
 		depth_dependency = {
 			src = {
 				stage = early_fragment_tests|late_fragment_tests;
@@ -204,6 +224,16 @@ render_graph = {
 				access = input_attachment_read|depth_stencil_attachment_read;
 			};
 			flags = by_region;
+		};
+		extdepth_dependency = {
+			src = {
+				stage = late_fragment_tests;
+				access = depth_stencil_attachment_read|depth_stencil_attachment_write;
+			};
+			dst = {
+				stage = early_fragment_tests;
+				access = depth_stencil_attachment_write;
+			};
 		};
 		image_base = {
 			imageType = `2d;
@@ -1543,6 +1573,9 @@ render_graph = {
 			subpasses = {
 				depth = {
 					color = "[ 0.5,  0.5,  0.5, 1]";
+					dependencies = {
+						$external = $extdepth_dependency;
+					};
 					attachments = {
 						depth = {
 							depth = depth_stencil_attachment_optimal;
@@ -1651,6 +1684,9 @@ render_graph = {
 			subpasses = {
 				gizmo_cmd = {
 					color = "[ 0.5,  0.5,  0.5, 1]";
+					dependencies = {
+						$external = $extcolor_dependency;
+					};
 					attachments = { };
 
 					base_pipeline = {
@@ -1677,16 +1713,7 @@ render_graph = {
 				};
 				$external = {
 					dependencies = {
-						gizmo_cmd = {
-							src = {
-								stage = color_attachment_output;
-								access = color_attachment_write;
-							};
-							dst = {
-								stage = fragment_shader;
-								access = shader_read;
-							};
-						}
+						gizmo_cmd = $extcolor_outdep;
 					};
 				};
 			};
@@ -1757,10 +1784,14 @@ render_graph = {
 			subpasses = {
 				depth = {
 					color = "[ 0.5,  0.5,  0.5, 1]";
+					dependencies = (
+						{@inherit = $extdepth_dependency; name = $external;},
+					);
 					attachments = {
 						depth = {
 							depth = depth_stencil_attachment_optimal;
 						};
+						preserve = (color, emission, normal, position, output);
 					};
 
 					base_pipeline = {
@@ -1852,6 +1883,7 @@ render_graph = {
 						depth = {
 							depth = depth_stencil_read_only_optimal;
 						};
+						preserve = (color, emission, normal, position, output);
 					};
 					base_pipeline = {
 						@inherit = $pipeline_base;
@@ -2113,6 +2145,7 @@ render_graph = {
 					color = "[ 0.7,  0.3,  0.3, 1]";
 					dependencies = {
 						translucent = $color_dependency;
+						gbuffer = $color_dependency;
 						lighting = $color_dependency;
 					};
 					attachments = {
@@ -2288,7 +2321,8 @@ render_graph = {
 								stage = fragment_shader;
 								access = shader_read;
 							};
-						}
+						};
+						entid = $extcolor_outdep;
 					};
 				};
 			};
@@ -2361,9 +2395,10 @@ render_graph = {
 			subpasses = {
 				compose = {
 					color = "[ 0,  0.5,  0.5, 1]";
-					dependencies = {
-						$external = $swapchain_dependency;
-					};
+					dependencies = (
+						{@inherit = $swapchain_dependency; name = $external;},
+						{@inherit = $extcolor_dependency; name = $external;},
+					);
 					attachments = {
 						color = {
 							output = {
@@ -2465,6 +2500,11 @@ render_graph = {
 						};
 					};
 				};
+				$external = {
+					dependencies = {
+						compose = $extcolor_outdep;
+					}
+				}
 			};
 		};
 		shadow = {
@@ -2478,6 +2518,9 @@ render_graph = {
 			subpasses = {
 				shadow = {
 					color = "[ 0.5,  0.5,  0.5, 1]";
+					dependencies = {
+						$external = $extdepth_dependency;
+					};
 					attachments = {
 						depth = {
 							shadow = depth_stencil_attachment_optimal;

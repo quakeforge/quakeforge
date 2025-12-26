@@ -34,6 +34,26 @@ properties = {
 		};
 		flags = by_region;
 	};
+	extcolor_dependency = {
+		src = {
+			stage = color_attachment_output;
+			access = color_attachment_write|color_attachment_read;
+		};
+		dst = {
+			stage = color_attachment_output;
+			access = color_attachment_write;
+		};
+	};
+	extcolor_outdep = {
+		src = {
+			stage = color_attachment_output;
+			access = color_attachment_write|color_attachment_read;
+		};
+		dst = {
+			stage = bottom_of_pipe;
+			access = memory_read;
+		};
+	};
 	depth_dependency = {
 		src = {
 			stage = early_fragment_tests|late_fragment_tests;
@@ -44,6 +64,16 @@ properties = {
 			access = input_attachment_read|depth_stencil_attachment_read;
 		};
 		flags = by_region;
+	};
+	extdepth_dependency = {
+		src = {
+			stage = late_fragment_tests;
+			access = depth_stencil_attachment_read|depth_stencil_attachment_write;
+		};
+		dst = {
+			stage = early_fragment_tests;
+			access = depth_stencil_attachment_write;
+		};
 	};
 	image_base = {
 		imageType = `2d;
@@ -1243,6 +1273,9 @@ renderpasses = {
 		subpasses = {
 			depth = {
 				color = "[ 0.5,  0.5,  0.5, 1]";
+				dependencies = {
+					$external = $extdepth_dependency;
+				};
 				attachments = {
 					depth = {
 						depth = depth_stencil_attachment_optimal;
@@ -1405,6 +1438,9 @@ renderpasses = {
 		subpasses = {
 			depth = {
 				color = "[ 0.5,  0.5,  0.5, 1]";
+				dependencies = (
+					{@inherit = $extdepth_dependency; name = $external;},
+				);
 				attachments = {
 					depth = {
 						depth = depth_stencil_attachment_optimal;
@@ -1764,6 +1800,7 @@ renderpasses = {
 				color = "[ 0.7,  0.3,  0.3, 1]";
 				dependencies = {
 					translucent = $color_dependency;
+					gbuffer = $color_dependency;
 					lighting = $color_dependency;
 				};
 				attachments = {
@@ -1923,7 +1960,8 @@ renderpasses = {
 							stage = fragment_shader;
 							access = shader_read;
 						};
-					}
+					};
+					entid = $extcolor_outdep;
 				};
 			};
 		};
@@ -2007,9 +2045,10 @@ renderpasses = {
 		subpasses = {
 			compose = {
 				color = "[ 0,  0.5,  0.5, 1]";
-				dependencies = {
-					$external = $swapchain_dependency;
-				};
+				dependencies = (
+					{@inherit = $swapchain_dependency; name = $external;},
+					{@inherit = $extcolor_dependency; name = $external;},
+				);
 				attachments = {
 					color = {
 						output = {
@@ -2097,6 +2136,11 @@ renderpasses = {
 					};
 				};
 			};
+			$external = {
+				dependencies = {
+					compose = $extcolor_outdep;
+				}
+			}
 		};
 	};
 	shadow = {
@@ -2110,6 +2154,9 @@ renderpasses = {
 		subpasses = {
 			shadow = {
 				color = "[ 0.5,  0.5,  0.5, 1]";
+				dependencies = {
+					$external = $extdepth_dependency;
+				};
 				attachments = {
 					depth = {
 						shadow = depth_stencil_attachment_optimal;
