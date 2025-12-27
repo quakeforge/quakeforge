@@ -91,6 +91,7 @@ properties = {
 	};
 	cube_image_base = {
 		@inherit = $image_base;
+		usage = color_attachment|input_attachment;
 		extent = {
 			width = "min($render_output.extent.width,$render_output.extent.height)";
 			height = "min($render_output.extent.width,$render_output.extent.height)";
@@ -1104,12 +1105,12 @@ images = {
 	occlusion_cube_depth = {
 		@inherit = $cube_image_base;
 		format = d32_sfloat;
-		usage = depth_stencil_attachment|input_attachment|transient_attachment;
+		usage = depth_stencil_attachment|input_attachment;
 	};
 	cube_depth = {
 		@inherit = $cube_image_base;
 		format = d32_sfloat;
-		usage = depth_stencil_attachment|input_attachment|transient_attachment;
+		usage = depth_stencil_attachment|input_attachment;
 	};
 	cube_color = {
 		@inherit = $cube_image_base;

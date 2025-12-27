@@ -173,6 +173,16 @@ render_graph = {
 			slice     = "[0.8, 0.7, 0.2, 1]";
 			lines     = "[0.8, 0.7, 0.4, 1]";
 		};
+		swapchain_dependency = {
+			src = {
+				stage = color_attachment_output;
+				access = 0;
+			};
+			dst = {
+				stage = color_attachment_output;
+				access = color_attachment_write|color_attachment_read;
+			};
+		};
 		color_dependency = {
 			src = {
 				stage = color_attachment_output;
@@ -184,6 +194,26 @@ render_graph = {
 			};
 			flags = by_region;
 		};
+		extcolor_dependency = {
+			src = {
+				stage = color_attachment_output;
+				access = 0;
+			};
+			dst = {
+				stage = color_attachment_output;
+				access = color_attachment_write;
+			};
+		};
+		extcolor_outdep = {
+			src = {
+				stage = color_attachment_output;
+				access = color_attachment_write|color_attachment_read;
+			};
+			dst = {
+				stage = bottom_of_pipe;
+				access = memory_read;
+			};
+		};
 		depth_dependency = {
 			src = {
 				stage = early_fragment_tests|late_fragment_tests;
@@ -194,6 +224,16 @@ render_graph = {
 				access = input_attachment_read|depth_stencil_attachment_read;
 			};
 			flags = by_region;
+		};
+		extdepth_dependency = {
+			src = {
+				stage = early_fragment_tests|late_fragment_tests;
+				access = depth_stencil_attachment_read|depth_stencil_attachment_write;
+			};
+			dst = {
+				stage = early_fragment_tests|late_fragment_tests;
+				access = depth_stencil_attachment_write;
+			};
 		};
 		image_base = {
 			imageType = `2d;
@@ -211,6 +251,7 @@ render_graph = {
 		};
 		cube_image_base = {
 			@inherit = $image_base;
+			usage = color_attachment|input_attachment;
 			flags = cube_compatible;
 			extent = {
 				width = "min($render_output.extent.width,$render_output.extent.height)";
@@ -1235,7 +1276,7 @@ render_graph = {
 		cube_depth = {
 			@inherit = $cube_image_base;
 			format = d32_sfloat;
-			usage = depth_stencil_attachment|input_attachment|transient_attachment;
+			usage = depth_stencil_attachment|input_attachment;
 		};
 		cube_color = {
 			@inherit = $cube_image_base;
@@ -1320,6 +1361,10 @@ render_graph = {
 			subpasses = {
 				solid = {
 					color = "[ 0.3,  0.7,  0.3, 1]";
+					dependencies = (
+						{@inherit = $extdepth_dependency; name = $external;},
+						{@inherit = $extcolor_dependency; name = $external;},
+					);
 					attachments = {
 						color = {
 							color = {
@@ -1462,6 +1507,7 @@ render_graph = {
 					dependencies = {
 						solid = $color_dependency;
 						translucent = $color_dependency;//FIXME is this right? no op
+						$external = $extcolor_dependency;
 					};
 					attachments = {
 						input = {
@@ -1545,6 +1591,20 @@ render_graph = {
 						};
 					};
 				};
+				$external = {
+					dependencies = {
+						compose = {
+							src = {
+								stage = color_attachment_output;
+								access = color_attachment_write;
+							};
+							dst = {
+								stage = fragment_shader|color_attachment_output;
+								access = shader_read|color_attachment_write;
+							};
+						};
+					}
+				}
 			};
 			output = output;
 		};
@@ -1567,8 +1627,6 @@ render_graph = {
 						@inherit = $attachment_base;
 						format = $images.cube_color.format;
 						loadOp = clear;
-						storeOp = store;
-						finalLayout = $render_output.finalLayout;
 						view = cube_color;
 					};
 					output = {
@@ -1581,7 +1639,7 @@ render_graph = {
 					};
 				};
 			};
-			output = cube_color;
+			output = cube_output;
 		};
 		output = {
 			color = "[0, 1, 1, 1]";
@@ -1594,6 +1652,9 @@ render_graph = {
 			subpasses = {
 				compose = {
 					color = "[ 0,  0.5,  0.5, 1]";
+					dependencies = (
+						{@inherit = $swapchain_dependency; name = $external;},
+					);
 					attachments = {
 						color = {
 							output = {
@@ -1695,6 +1756,11 @@ render_graph = {
 						};
 					};
 				};
+				$external = {
+					dependencies = {
+						compose = $extcolor_outdep;
+					}
+				}
 			};
 		};
 		gizmo = {
@@ -1814,7 +1880,7 @@ render_graph = {
 			};
 		};
 		setup_main = {
-			dependencies = (wait_on_fence);
+			dependencies = (start_frame);
 			process = {
 				tasks = (
 					{ func = output_select_renderpass;
@@ -1852,7 +1918,7 @@ render_graph = {
 			};
 		};
 		preoutput = {
-			dependencies = (wait_on_fence);
+			dependencies = (main);
 			process = {
 				tasks = (
 					{ func = submit_render; },
@@ -1868,7 +1934,7 @@ render_graph = {
 			};
 		};
 		output = {
-			dependencies = (main, preoutput);
+			dependencies = (preoutput);
 			render = {
 				renderpasses = {
 					output = $renderpasses.output;

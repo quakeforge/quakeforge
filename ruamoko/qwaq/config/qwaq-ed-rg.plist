@@ -197,7 +197,7 @@ render_graph = {
 		extcolor_dependency = {
 			src = {
 				stage = color_attachment_output;
-				access = color_attachment_write|color_attachment_read;
+				access = 0;
 			};
 			dst = {
 				stage = color_attachment_output;
@@ -227,11 +227,11 @@ render_graph = {
 		};
 		extdepth_dependency = {
 			src = {
-				stage = late_fragment_tests;
+				stage = early_fragment_tests|late_fragment_tests;
 				access = depth_stencil_attachment_read|depth_stencil_attachment_write;
 			};
 			dst = {
-				stage = early_fragment_tests;
+				stage = early_fragment_tests|late_fragment_tests;
 				access = depth_stencil_attachment_write;
 			};
 		};
@@ -1782,6 +1782,7 @@ render_graph = {
 					color = "[ 0.5,  0.5,  0.5, 1]";
 					dependencies = (
 						{@inherit = $extdepth_dependency; name = $external;},
+						{@inherit = $extcolor_dependency; name = $external;},
 					);
 					attachments = {
 						depth = {
@@ -1874,6 +1875,7 @@ render_graph = {
 					color = "[ 0.25, 0.25, 0.6, 1]";
 					dependencies = {
 						depth = $depth_dependency;
+						$external = $extcolor_dependency;
 					};
 					attachments = {
 						depth = {
@@ -1964,6 +1966,7 @@ render_graph = {
 					dependencies = {
 						depth = $depth_dependency;
 						translucent = $depth_dependency;//FIXME why?
+						$external = $extcolor_dependency;
 					};
 					attachments = {
 						color = {
@@ -2050,6 +2053,7 @@ render_graph = {
 					color = "[ 0.8,  0.8,  0.8, 1]";
 					dependencies = {
 						gbuffer = $color_dependency;
+						$external = $extcolor_dependency;
 					};
 					attachments = {
 						input = {
@@ -2143,6 +2147,7 @@ render_graph = {
 						translucent = $color_dependency;
 						gbuffer = $color_dependency;
 						lighting = $color_dependency;
+						$external = $extcolor_dependency;
 					};
 					attachments = {
 						input = {
@@ -2272,6 +2277,7 @@ render_graph = {
 					color = "[ 1,  0,  0, 1]";
 					dependencies = {
 						depth = $depth_dependency;
+						$external = $extcolor_dependency;
 					};
 					attachments = {
 						color = {
@@ -2308,6 +2314,9 @@ render_graph = {
 				};
 				$external = {
 					dependencies = {
+						translucent = $extcolor_outdep;
+						gbuffer = $extcolor_outdep;
+						lighting = $extcolor_outdep;
 						compose = {
 							src = {
 								stage = color_attachment_output;
