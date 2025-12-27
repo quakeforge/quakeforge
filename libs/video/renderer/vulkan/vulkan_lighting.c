@@ -2905,11 +2905,26 @@ transition_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &bInfo);
 
-	auto ib = imageBarriers[qfv_LT_Undefined_to_ShaderReadOnly];
+	auto ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	ib.barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
 	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 	VkImageMemoryBarrier barriers[lctx->num_maps];
+	for (int i = 0; i < lctx->num_maps; i++) {
+		barriers[i] = ib.barrier;
+		barriers[i].image = lctx->map_images[i];
+	}
+	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
+								 0, 0, 0, 0, 0, lctx->num_maps, barriers);
+	VkImageLayout layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	VkClearDepthStencilValue value = {};
+	VkImageSubresourceRange range = ib.barrier.subresourceRange;
+	for (int i = 0; i < lctx->num_maps; i++) {
+		dfunc->vkCmdClearDepthStencilImage (cmd, lctx->map_images[i], layout,
+											&value, 1, &range);
+	}
+	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	ib.barrier.subresourceRange = range;
 	for (int i = 0; i < lctx->num_maps; i++) {
 		barriers[i] = ib.barrier;
 		barriers[i].image = lctx->map_images[i];
