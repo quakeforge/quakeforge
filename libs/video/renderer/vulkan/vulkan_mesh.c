@@ -285,7 +285,8 @@ push_fwd_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 			offsetof (fwd_push_constants_t, shadelight),
 			sizeof (constants.shadelight), &constants.shadelight },
 	};
-	QFV_PushConstants (device, cmd, layout, 9, push_constants);
+	QFV_PushConstants (device, cmd, layout,
+					   countof (push_constants), push_constants);
 }
 
 static void
