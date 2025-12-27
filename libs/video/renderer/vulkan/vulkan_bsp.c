@@ -563,6 +563,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			poly_count++;
 		}
 	}
+	// There are three independent passes
+	index_count *= 3;
 
 	// vulkan doesn't like 0-length buffers, but vertex_count and index_count
 	// will be 0 for the empty world model.
