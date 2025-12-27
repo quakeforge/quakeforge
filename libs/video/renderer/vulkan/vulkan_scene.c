@@ -55,7 +55,7 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-static const int qfv_max_entities = 4096;	//FIXME should make dynamic
+static const int qfv_max_entities = 8192;	//FIXME should make dynamic
 
 int
 Vulkan_Scene_MaxEntities (vulkan_ctx_t *ctx)
