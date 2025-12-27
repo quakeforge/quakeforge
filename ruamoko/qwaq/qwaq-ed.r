@@ -1018,10 +1018,9 @@ draw_principle_axes (motor_t M, bivector_t I)
 int
 main (int argc, string *argv)
 {
-	bool early_exit = argc > 1 && strtof (argv[1], nil);
-
-	if (early_exit) {
-		realtime = -1;
+	float early_exit = 0;
+	if (argc > 1) {
+		early_exit = strtof (argv[1], nil);
 	}
 
 	arp_start ();
@@ -1177,17 +1176,11 @@ main (int argc, string *argv)
 		arp_start ();
 
 		frametime = refresh ([main_window scene]);
+		realtime += frametime;
 		if (early_exit) {
-			if (realtime < 0) {
-				realtime = 0;
-			} else {
-				realtime += frametime;
-			}
-			if (realtime > 1) {
+			if (realtime > early_exit + double (1ul<<32)) {
 				break;
 			}
-		} else {
-		    realtime += frametime;
 		}
 
 		//update_cube(frametime);
