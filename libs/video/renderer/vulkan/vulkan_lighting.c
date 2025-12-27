@@ -1022,6 +1022,10 @@ lighting_update_descriptors (const exprval_t **params, exprval_t *result,
 	auto step = QFV_GetStep (params[0], job);
 	auto render = step->render;
 	auto fb = &render->active->framebuffer;
+	if (fb->update_frame == lframe->update_frame) {
+		return;
+	}
+	lframe->update_frame = fb->update_frame;
 	VkDescriptorImageInfo attachInfo[] = {
 		{	.imageView = fb->views[QFV_attachColor],
 			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
@@ -1973,6 +1977,7 @@ lighting_startup (exprctx_t *ectx)
 			.shadowmat_set = QFV_DSManager_AllocSet (shadowmat_mgr),
 			.lights_set = QFV_DSManager_AllocSet (lights_mgr),
 			.attach_set = QFV_DSManager_AllocSet (attach_mgr),
+			.update_frame = ~UINT64_C(0),
 			.shadowmat_buffer = light_mats[i].buffer.buffer,
 			.shadowmat_id_buffer = light_mat_ids[i].buffer.buffer,
 			.light_buffer = light_data[i].buffer.buffer,

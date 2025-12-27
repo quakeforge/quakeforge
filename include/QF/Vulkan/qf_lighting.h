@@ -98,6 +98,7 @@ typedef struct lightingframe_s {
 	VkDescriptorSet shadowmat_set;
 	VkDescriptorSet lights_set;
 	VkDescriptorSet attach_set;
+	uint64_t    update_frame;
 
 	VkQueryPool query;
 	VkFence     fence;

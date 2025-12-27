@@ -58,13 +58,12 @@
 #include "vid_vulkan.h"
 
 static VkDescriptorImageInfo base_image_info = {
-	0, 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+	.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 };
 static VkWriteDescriptorSet base_image_write = {
-	VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-	0, 0, 1,
-	VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-	0, 0, 0
+	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+	.descriptorCount = 1,
+	.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
 };
 
 static void
@@ -84,18 +83,22 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto cmd = taskctx->cmd;
 
 	auto fb = &taskctx->renderpass->framebuffer;
-	cframe->imageInfo[0].imageView = fb->views[QFV_attachColor];
-	cframe->imageInfo[1].imageView = fb->views[QFV_attachEmission];
-	cframe->imageInfo[2].imageView = fb->views[QFV_attachNormal];
-	cframe->imageInfo[3].imageView = fb->views[QFV_attachPosition];
-	cframe->imageInfo[4].imageView = fb->views[QFV_attachLight];
-	if (color_only) {
-		dfunc->vkUpdateDescriptorSets (device->dev, 1,
-									   cframe->descriptors, 0, 0);
-	} else {
-		dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
-									   cframe->descriptors, 0, 0);
-
+	if (fb->update_frame != cframe->update_frame) {
+		cframe->update_frame = fb->update_frame;
+		cframe->imageInfo[0].imageView = fb->views[QFV_attachColor];
+		cframe->imageInfo[1].imageView = fb->views[QFV_attachEmission];
+		cframe->imageInfo[2].imageView = fb->views[QFV_attachNormal];
+		cframe->imageInfo[3].imageView = fb->views[QFV_attachPosition];
+		cframe->imageInfo[4].imageView = fb->views[QFV_attachLight];
+		if (color_only) {
+			dfunc->vkUpdateDescriptorSets (device->dev, 1,
+										   cframe->descriptors, 0, 0);
+		} else {
+			dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
+										   cframe->descriptors, 0, 0);
+		}
+	}
+	if (!color_only) {
 		vec4f_t fog = Fog_Get ();
 		vec4f_t cam = r_refdef.camera[3];
 		qfv_push_constants_t push_constants[] = {
@@ -159,6 +162,7 @@ compose_startup (exprctx_t *ectx)
 			cframe->descriptors[j].dstBinding = j;
 			cframe->descriptors[j].pImageInfo = &cframe->imageInfo[j];
 		}
+		cframe->update_frame = ~UINT64_C(0);
 	}
 	qfvPopDebug (ctx);
 }

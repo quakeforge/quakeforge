@@ -41,6 +41,7 @@
 typedef struct composeframe_s {
 	VkDescriptorImageInfo imageInfo[COMPOSE_IMAGE_INFOS];
 	VkWriteDescriptorSet descriptors[COMPOSE_IMAGE_INFOS];
+	uint64_t    update_frame;
 } composeframe_t;
 
 typedef struct composeframeset_s

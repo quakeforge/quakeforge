@@ -524,6 +524,7 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 		__auto_type sp = &rp->subpasses[i];
 		sp->inherit.framebuffer = framebuffer;
 	}
+	rp->framebuffer.update_frame = ctx->frameNumber;
 }
 
 void

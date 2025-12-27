@@ -357,6 +357,7 @@ typedef struct qfv_framebuffer_s {
 	uint32_t    layers;
 	uint32_t    num_attachments;
 	VkImageView *views;
+	uint64_t    update_frame;
 } qfv_framebuffer_t;
 
 typedef struct qfv_renderpass_s {
