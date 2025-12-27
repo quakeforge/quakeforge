@@ -156,14 +156,21 @@ sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 
 	mat4f_t     mat = {};
 	uint32_t    frame;
+	uint32_t    spriteind = 0;
 	vec4f_t     fog = Fog_Get ();
 	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat), mat },
+		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+			0, sizeof (mat), mat },
 		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 			64, sizeof (frame), &frame },
 		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-			64, sizeof (frame), &frame },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT, 72, sizeof (fog), &fog },
+			68, sizeof (frame), &spriteind },
+		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+			72, sizeof (frame), &spriteind },
+		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+			76, sizeof (frame), &spriteind },
+		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+			80, sizeof (fog), &fog },
 	};
 
 	auto animation = Entity_GetAnimation (ent);
@@ -178,7 +185,7 @@ sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 
 	emit_commands (taskctx->cmd,
 				   (qfv_sprite_t *) ((byte *) sprite + sprite->skin.data),
-				   2, push_constants, taskctx, ent);
+				   countof(push_constants), push_constants, taskctx, ent);
 }
 
 static void

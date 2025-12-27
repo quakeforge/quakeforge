@@ -448,12 +448,8 @@ properties = {
 		layout = {
 			descriptorSets = (matrix_set, sprite_set);
 			pushConstants = {
-				vertex   = {
-					Model = mat4;
-					frame = int;
-				};
-				fragment = {
-					overlap   = { offset = 64; type = int; };
+				vertex|fragment = {
+					Model     = mat4;
 					frame     = int;
 					spriteind = int;
 					fog       = vec4;

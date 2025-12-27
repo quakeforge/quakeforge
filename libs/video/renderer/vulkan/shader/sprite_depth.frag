@@ -3,7 +3,7 @@
 layout (set = 1, binding = 1) uniform sampler2DArray Texture;
 
 layout (push_constant) uniform PushConstants {
-	layout (offset = 64)
+	mat4 Model;
 	int  frame;
 	int  spriteind;
 	// two slots

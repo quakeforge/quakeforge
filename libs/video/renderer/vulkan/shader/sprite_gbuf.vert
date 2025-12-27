@@ -13,6 +13,9 @@ layout (set = 1, binding = 0) uniform Vertices {
 layout (push_constant) uniform PushConstants {
 	mat4 Model;
 	int  frame;
+	int  spriteind;
+	// two slots
+	vec4 fog;
 };
 
 layout (location = 0) out vec2 st;
