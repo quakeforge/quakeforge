@@ -197,7 +197,6 @@ include_qf_vulkan = \
 	include/QF/Vulkan/funclist.h \
 	include/QF/Vulkan/image.h \
 	include/QF/Vulkan/instance.h \
-	include/QF/Vulkan/memory.h \
 	include/QF/Vulkan/mouse_pick.h \
 	include/QF/Vulkan/pipeline.h \
 	include/QF/Vulkan/projection.h \
