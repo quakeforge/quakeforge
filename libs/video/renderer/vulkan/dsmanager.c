@@ -64,6 +64,7 @@ QFV_DSManager_Create (const qfv_descriptorsetlayoutinfo_t *setLayoutInfo,
 		.freePools = DARRAY_STATIC_INIT (4),
 		.usedPools = DARRAY_STATIC_INIT (4),
 		.freeSets = DARRAY_STATIC_INIT (4),
+		.avail_sets = maxSets,
 	};
 	for (uint32_t i = 0; i < setLayoutInfo->num_bindings; i++) {
 		auto binding = setLayoutInfo->bindings[i];
@@ -138,12 +139,15 @@ retry:
 			.descriptorSetCount = 1,
 			.pSetLayouts = &setManager->layout,
 		};
-		res = dfunc->vkAllocateDescriptorSets (dev, &aInfo, &set);
-		if (res == VK_SUCCESS) {
-			return set;
-		}
-		if (res != VK_ERROR_OUT_OF_POOL_MEMORY) {
-			Sys_Error ("failed to allocate descriptor set: %d", res);
+		if (setManager->avail_sets > 0) {
+			res = dfunc->vkAllocateDescriptorSets (dev, &aInfo, &set);
+			if (res == VK_SUCCESS) {
+				setManager->avail_sets--;
+				return set;
+			}
+			if (res != VK_ERROR_OUT_OF_POOL_MEMORY) {
+				Sys_Error ("failed to allocate descriptor set: %d", res);
+			}
 		}
 		DARRAY_APPEND (&setManager->usedPools, setManager->activePool);
 	}
@@ -163,6 +167,7 @@ retry:
 						 vac (setManager->va_ctx, "descriptorPool:%s:%zd",
 							  setManager->name,
 							  setManager->usedPools.size));
+	setManager->avail_sets = setManager->poolCreateInfo.maxSets;
 	goto retry;
 }
 

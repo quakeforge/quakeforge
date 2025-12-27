@@ -24,6 +24,7 @@ typedef struct qfv_dsmanager_s {
 	qfv_descriptorpoolset_t usedPools;
 	qfv_descriptorsetset_t freeSets;
 	VkDescriptorSetLayout layout;
+	uint32_t    avail_sets;
 } qfv_dsmanager_t;
 
 struct qfv_descriptorsetlayoutinfo_s;
