@@ -48,12 +48,7 @@ typedef struct entdataset_s
     DARRAY_TYPE (entdata_t) entdataset_t;
 
 typedef struct scnframe_s {
-	// used to check if the entity has been pooled this frame (cleared
-	// every frame)
-	struct set_s *pooled_entities;
-	// data for entities pooled this frame (cleared every frame). transfered
-	// to gpu
-	entdataset_t entity_pool;
+	uint32_t    offset;
 	VkDescriptorSet descriptors;
 } scnframe_t;
 
@@ -62,6 +57,13 @@ typedef struct scnframeset_s
 
 typedef struct scenectx_s {
 	struct qfv_resource_s *entities;
+	VkBuffer    entity_buffer;
+	// used to check if the entity has been pooled this frame (cleared
+	// every frame)
+	struct set_s *pooled_entities;
+	// data for entities pooled this frame (cleared every frame). transfered
+	// to gpu
+	entdataset_t entity_pool;
 	scnframeset_t frames;
 	int         max_entities;
 	struct scene_s *scene;
@@ -74,6 +76,7 @@ void Vulkan_Scene_Init (struct vulkan_ctx_s *ctx);
 int Vulkan_Scene_MaxEntities (struct vulkan_ctx_s *ctx) __attribute__((pure));
 VkDescriptorSet Vulkan_Scene_Descriptors (struct vulkan_ctx_s *ctx) __attribute__((pure));
 int Vulkan_Scene_AddEntity (struct vulkan_ctx_s *ctx, struct entity_s entity);
+void Vulkan_Scene_Clear (struct vulkan_ctx_s *ctx);
 void Vulkan_Scene_Flush (struct vulkan_ctx_s *ctx);
 
 void Vulkan_NewScene (struct scene_s *scene, struct vulkan_ctx_s *ctx);

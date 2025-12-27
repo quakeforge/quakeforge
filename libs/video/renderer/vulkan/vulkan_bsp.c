@@ -1090,6 +1090,8 @@ bsp_flush (vulkan_ctx_t *ctx)
 	bspctx_t   *bctx = ctx->bsp_context;
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
+	Vulkan_Scene_Flush (ctx);
+
 	if (!bframe->index_count) {
 		return;
 	}
@@ -1332,7 +1334,7 @@ bsp_reset_queues (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	bframe->index_count = 0;
 	bframe->entid_count = 0;
 
-	Vulkan_Scene_Flush (ctx);
+	Vulkan_Scene_Clear (ctx);
 }
 
 static void

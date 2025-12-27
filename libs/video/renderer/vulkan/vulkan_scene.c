@@ -43,12 +43,14 @@
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_scene.h"
+#include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
+#include "QF/Vulkan/staging.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -74,17 +76,16 @@ int
 Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t entity)
 {
 	scenectx_t *sctx = ctx->scene_context;
-	scnframe_t *sframe = &sctx->frames.a[ctx->curFrame];
 
 	entdata_t  *entdata = 0;
 	int         render_id = -1;
 	//lock
 	int         ent_id = Ent_Index (entity.id + 1);//nullent -> 0
-	if (!set_is_member (sframe->pooled_entities, ent_id)) {
-		if (sframe->entity_pool.size < sframe->entity_pool.maxSize) {
-			set_add (sframe->pooled_entities, ent_id);
-			render_id = sframe->entity_pool.size++;
-			entdata = sframe->entity_pool.a + render_id;
+	if (!set_is_member (sctx->pooled_entities, ent_id)) {
+		if (sctx->entity_pool.size < sctx->entity_pool.maxSize) {
+			set_add (sctx->pooled_entities, ent_id);
+			render_id = sctx->entity_pool.size++;
+			entdata = sctx->entity_pool.a + render_id;
 		}
 	} else {
 		if (!Entity_Valid (entity)) {
@@ -122,13 +123,34 @@ Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t entity)
 }
 
 void
+Vulkan_Scene_Clear (vulkan_ctx_t *ctx)
+{
+	scenectx_t *sctx = ctx->scene_context;
+
+	set_empty (sctx->pooled_entities);
+	sctx->entity_pool.size = 0;
+}
+
+void
 Vulkan_Scene_Flush (vulkan_ctx_t *ctx)
 {
 	scenectx_t *sctx = ctx->scene_context;
 	scnframe_t *sframe = &sctx->frames.a[ctx->curFrame];
 
-	set_empty (sframe->pooled_entities);
-	sframe->entity_pool.size = 0;
+	if (!sctx->entity_pool.size) {
+		return;
+	}
+
+	auto entity_pool = &sctx->entity_pool;
+	size_t size = entity_pool->size * sizeof(entity_pool->a[0]);
+	auto packet = QFV_PacketAcquire (ctx->staging, "scene.entities");
+	entdata_t *data = QFV_PacketExtend (packet, size);
+
+	memcpy (data, entity_pool->a, size);
+	QFV_PacketCopyBuffer (packet, sctx->entity_buffer, sframe->offset,
+						  &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
+	QFV_PacketSubmit (packet);
 }
 
 static VkWriteDescriptorSet base_buffer_write = {
@@ -165,15 +187,11 @@ scene_shutdown (exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	qfvPushDebug (ctx, "scene shutdown");
 	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	scenectx_t *sctx = ctx->scene_context;
 
-	for (size_t i = 0; i < sctx->frames.size; i++) {
-		__auto_type sframe = &sctx->frames.a[i];
-		set_delete (sframe->pooled_entities);
-	}
+	set_delete (sctx->pooled_entities);
+	free (sctx->entity_pool.a);
 
-	dfunc->vkUnmapMemory (device->dev, sctx->entities->memory);
 	QFV_DestroyResource (device, sctx->entities);
 	free (sctx->frames.a);
 	free (sctx);
@@ -201,7 +219,7 @@ scene_startup (exprctx_t *ectx)
 	*sctx->entities = (qfv_resource_t) {
 		.name = "scene",
 		.va_ctx = ctx->va_ctx,
-		.memory_properties = VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		.num_objects = 1,
 		.objects = (qfv_resobj_t *) &sctx->entities[1],
 	};
@@ -210,24 +228,27 @@ scene_startup (exprctx_t *ectx)
 		.type = qfv_res_buffer,
 		.buffer = {
 			.size = frames * qfv_max_entities * sizeof (entdata_t),
-			.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+			.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					| VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		},
 	};
 
 	QFV_CreateResource (device, sctx->entities);
+	sctx->entity_buffer = sctx->entities->objects[0].buffer.buffer;
+	sctx->pooled_entities = set_new ();
+	sctx->entity_pool = (entdataset_t) {
+		.maxSize = qfv_max_entities,
+		.a = malloc (sizeof (entdata_t[qfv_max_entities])),
+	};
 
 	auto dsmanager = QFV_Render_DSManager (ctx, "entity_set");
-
-	entdata_t  *entdata;
-	dfunc->vkMapMemory (device->dev, sctx->entities->memory, 0, VK_WHOLE_SIZE,
-						0, (void **) &entdata);
 
 	VkBuffer    buffer = sctx->entities->objects[0].buffer.buffer;
 	size_t      entdata_size = qfv_max_entities * sizeof (entdata_t);
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type sframe = &sctx->frames.a[i];
 
-		sframe->descriptors = QFV_DSManager_AllocSet (dsmanager);;
+		sframe->descriptors = QFV_DSManager_AllocSet (dsmanager);
 		VkDescriptorBufferInfo bufferInfo = {
 			buffer, i * entdata_size, entdata_size
 		};
@@ -237,11 +258,7 @@ scene_startup (exprctx_t *ectx)
 		write[0].pBufferInfo = &bufferInfo;
 		dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
 
-		sframe->entity_pool = (entdataset_t) {
-			.maxSize = qfv_max_entities,
-			.a = entdata + i * qfv_max_entities,
-		};
-		sframe->pooled_entities = set_new ();
+		sframe->offset = i * sizeof(entdata_t[qfv_max_entities]);
 	}
 	qfvPopDebug (ctx);
 }
