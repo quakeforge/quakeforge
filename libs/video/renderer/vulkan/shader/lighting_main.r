@@ -2,10 +2,16 @@
 #include "integer.h"
 #include "fppack.h"
 
+[buffer, readonly, set(0), binding(2)] @block
+#include "matrices.h"
+;
+
 #define INPUT_ATTACH_SET 2
 #include "input_attach.h"
 
 [in("FragCoord")] vec4 gl_FragCoord;
+[flat, in("ViewIndex")] int gl_ViewIndex;
+[in(0)] vec2 uv;
 [out(0)] vec4 frag_color;
 
 float
@@ -31,8 +37,20 @@ main (void)
 	vec3        c = subpassLoad (color).rgb;
 	vec3        e = subpassLoad (emission).rgb;
 	vec3        n = subpassLoad (normal).rgb;
-	vec4        p = subpassLoad (position);
 	vec3        light = vec3 (0);
+	float       d = subpassLoad (depth).x;
+	vec4        invp = vec4 (
+					near_plane/Projection3d[0][0],
+					near_plane/Projection3d[1][1],
+					near_plane,
+					1);
+	vec4        p = vec4 ((2 * uv - 1), 1, d) * invp;
+	p = InvView[gl_ViewIndex] * p;
+	if (!p.w) {
+		frag_color = vec4 (light, 1);
+		return;
+	}
+	p /= p.w;
 
 	uint        start = queue.start;
 	uint        end = start + queue.count;

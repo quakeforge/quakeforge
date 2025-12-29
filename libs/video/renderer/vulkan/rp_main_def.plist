@@ -32,7 +32,7 @@ properties = {
 			stage = fragment_shader;
 			access = input_attachment_read;
 		};
-		flags = by_region;
+		flags = by_region|view_local;
 	};
 	extcolor_dependency = {
 		src = {
@@ -63,7 +63,7 @@ properties = {
 			stage = fragment_shader|early_fragment_tests|late_fragment_tests;
 			access = input_attachment_read|depth_stencil_attachment_read;
 		};
-		flags = by_region;
+		flags = by_region|view_local;
 	};
 	extdepth_dependency = {
 		src = {
@@ -91,7 +91,6 @@ properties = {
 	};
 	cube_image_base = {
 		@inherit = $image_base;
-		usage = color_attachment|input_attachment;
 		extent = {
 			width = "min($render_output.extent.width,$render_output.extent.height)";
 			height = "min($render_output.extent.width,$render_output.extent.height)";
@@ -133,7 +132,7 @@ properties = {
 	depth_base = {
 		@inherit = $attachment_base;
 		loadOp = clear;
-		finalLayout = depth_stencil_read_only_optimal;
+		finalLayout = shader_read_only_optimal;
 		clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 	};
 
@@ -815,7 +814,13 @@ descriptorSetLayouts = {
 				binding = 1;
 				descriptorType = storage_buffer;
 				descriptorCount = 1;
-				stageFlags = vertex;
+				stageFlags = vertex|fragment;
+			},
+			{
+				binding = 2;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex|fragment;
 			},
 		);
 	};
@@ -1083,10 +1088,6 @@ images = {
 		@inherit = $image_base;
 		format = r16g16b16a16_sfloat;
 	};
-	position = {
-		@inherit = $image_base;
-		format = r32g32b32a32_sfloat;
-	};
 	light = {
 		@inherit = $image_base;
 		format = r16g16b16a16_sfloat;
@@ -1123,10 +1124,6 @@ images = {
 	cube_normal = {
 		@inherit = $cube_image_base;
 		format = r16g16b16a16_sfloat;
-	};
-	cube_position = {
-		@inherit = $cube_image_base;
-		format = r32g32b32a32_sfloat;
 	};
 	cube_light = {
 		@inherit = $cube_image_base;
@@ -1176,11 +1173,6 @@ imageviews = {
 		image = normal;
 		format = $images.normal.format;
 	};
-	position = {
-		@inherit = $view_base;
-		image = position;
-		format = $images.position.format;
-	};
 	light = {
 		@inherit = $view_base;
 		image = light;
@@ -1225,11 +1217,6 @@ imageviews = {
 		@inherit = $cube_view_base;
 		image = cube_normal;
 		format = $images.cube_normal.format;
-	};
-	cube_position = {
-		@inherit = $cube_view_base;
-		image = cube_position;
-		format = $images.cube_position.format;
 	};
 	cube_light = {
 		@inherit = $cube_view_base;
@@ -1399,12 +1386,6 @@ renderpasses = {
 					format = $images.normal.format;
 					view = normal;
 				};
-				position = {
-					@inherit = $attachment_base;
-					format = $images.position.format;
-					loadOp = clear;
-					view = position;
-				};
 				light = {
 					@inherit = $attachment_base;
 					format = $images.light.format;
@@ -1442,7 +1423,7 @@ renderpasses = {
 					depth = {
 						depth = depth_stencil_attachment_optimal;
 					};
-					preserve = (color, emission, normal, position, output);
+					preserve = (color, emission, normal, output);
 				};
 
 				base_pipeline = {
@@ -1534,7 +1515,7 @@ renderpasses = {
 					depth = {
 						depth = depth_stencil_read_only_optimal;
 					};
-					preserve = (color, emission, normal, position, output);
+					preserve = (color, emission, normal, output);
 				};
 				base_pipeline = {
 					@inherit = $pipeline_base;
@@ -1618,7 +1599,6 @@ renderpasses = {
 				color = "[ 0.3,  0.7,  0.3, 1]";
 				dependencies = {
 					depth = $depth_dependency;
-					translucent = $depth_dependency;//FIXME why?
 				};
 				attachments = {
 					color = {
@@ -1631,10 +1611,6 @@ renderpasses = {
 							blend = $blend_disable;
 						};
 						normal = {
-							layout = color_attachment_optimal;
-							blend = $blend_disable;
-						};
-						position = {
 							layout = color_attachment_optimal;
 							blend = $blend_disable;
 						};
@@ -1705,6 +1681,7 @@ renderpasses = {
 			lighting = {
 				color = "[ 0.8,  0.8,  0.8, 1]";
 				dependencies = {
+					depth = $depth_dependency;
 					gbuffer = $color_dependency;
 				};
 				attachments = {
@@ -1712,7 +1689,7 @@ renderpasses = {
 						color = shader_read_only_optimal;
 						emission = shader_read_only_optimal;
 						normal = shader_read_only_optimal;
-						position = shader_read_only_optimal;
+						depth = shader_read_only_optimal;
 					};
 					color = {
 						light = {
@@ -1720,7 +1697,7 @@ renderpasses = {
 							blend = $additive_blend;
 						};
 					};
-					preserve = (depth, output);
+					preserve = (output);
 				};
 				pipelines = {
 					lights_none = {
@@ -1735,7 +1712,7 @@ renderpasses = {
 						);
 
 						stages = (
-							$fstriangle.shader.vertex,
+							$fstriangle.shader.vertexst,
 							$lighting.shader.fragment_none,
 						);
 						layout = $lighting.layout;
@@ -1752,7 +1729,7 @@ renderpasses = {
 						);
 
 						stages = (
-							$fstriangle.shader.vertex,
+							$fstriangle.shader.vertexst,
 							$lighting.shader.fragment_plane,
 						);
 						layout = $lighting.layout;
@@ -1769,7 +1746,7 @@ renderpasses = {
 						);
 
 						stages = (
-							$fstriangle.shader.vertex,
+							$fstriangle.shader.vertexst,
 							$lighting.shader.fragment_cascade,
 						);
 						layout = $lighting.layout;
@@ -1786,7 +1763,7 @@ renderpasses = {
 						);
 
 						stages = (
-							$fstriangle.shader.vertex,
+							$fstriangle.shader.vertexst,
 							$lighting.shader.fragment_cube,
 						);
 						layout = $lighting.layout;
@@ -1805,7 +1782,7 @@ renderpasses = {
 						color = shader_read_only_optimal;
 						emission = shader_read_only_optimal;
 						normal = shader_read_only_optimal;
-						position = shader_read_only_optimal;
+						depth = shader_read_only_optimal;
 						light = shader_read_only_optimal;
 					};
 					color = {
@@ -1814,7 +1791,6 @@ renderpasses = {
 							blend = $additive_blend;
 						};
 					};
-					preserve = (depth);
 				};
 				pipelines = {
 					compose = {
@@ -1920,7 +1896,7 @@ renderpasses = {
 							blend = $blend_disable;
 						};
 					};
-					preserve = (depth, normal, position, output);
+					preserve = (depth, normal, output);
 				};
 				pipelines = {
 					entid_lights = {
@@ -1995,12 +1971,6 @@ renderpasses = {
 					@inherit = $attachment_base;
 					format = $images.cube_normal.format;
 					view = cube_normal;
-				};
-				position = {
-					@inherit = $attachment_base;
-					format = $images.cube_position.format;
-					view = cube_position;
-					loadOp = clear;
 				};
 				light = {
 					@inherit = $attachment_base;

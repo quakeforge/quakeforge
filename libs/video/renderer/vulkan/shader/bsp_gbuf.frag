@@ -11,13 +11,11 @@ layout (push_constant) uniform PushConstants {
 layout (location = 0) in vec4 tl_st;
 layout (location = 1) in vec3 direction;
 layout (location = 2) in vec3 normal;
-layout (location = 3) in vec4 position;
 layout (location = 4) in vec4 color;
 
 layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 frag_emission;
 layout (location = 2) out vec4 frag_normal;
-layout (location = 3) out vec4 frag_position;
 
 vec4
 fogBlend (vec4 color)
@@ -43,5 +41,4 @@ main (void)
 	frag_color = c;//fogBlend (c);
 	frag_emission = e;
 	frag_normal = vec4 (normal, 0);
-	frag_position = vec4 (position.xyz, gl_FragCoord.z);
 }

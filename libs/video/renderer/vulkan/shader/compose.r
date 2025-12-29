@@ -26,11 +26,11 @@ main (void)
 	vec3        c = subpassLoad (color).rgb;
 	vec3        l = subpassLoad (light).rgb;
 	vec3        e = subpassLoad (emission).rgb;
-	vec4        p = subpassLoad (position);
+	float       d = subpassLoad (depth).x;
 	l = l / (l + 1);
 	vec3        o = max(BlendFrags (vec4 (c * l + e, 1)).xyz, vec3(0));
 
-	float d = p.w > 0 ? length (p.xyz - camera.xyz) : 1e36;
+	d = d > 0 ? 1/d : 1e36;//p.w > 0 ? length (p.xyz - camera.xyz) : 1e36;
 	o = FogBlend (vec4(o,1), fog, d).xyz;
 	o = pow (o, vec3(0.83));//FIXME make gamma correction configurable
 	frag_color = vec4 (o, 1);

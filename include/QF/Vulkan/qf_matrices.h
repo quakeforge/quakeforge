@@ -42,6 +42,7 @@ typedef struct qfv_matrix_buffer_s {
 	mat4f_t     View[6];
 	mat4f_t     Sky;
 	mat4f_t     Projection2d;
+	mat4f_t     InvViews[6];
 	vec2f_t     ScreenSize;
 	vec2f_t     pad[7];
 } qfv_matrix_buffer_t;
@@ -74,13 +75,17 @@ typedef struct matrixctx_s {
 struct vulkan_ctx_s;
 
 void Vulkan_CalcViewMatrix (struct vulkan_ctx_s *ctx);
-void Vulkan_SetViewMatrices (struct vulkan_ctx_s *ctx, mat4f_t views[],
+void Vulkan_SetViewMatrices (struct vulkan_ctx_s *ctx,
+							 mat4f_t views[], mat4f_t invviews[],
 							 int count);
 void Vulkan_SetSkyMatrix (struct vulkan_ctx_s *ctx, mat4f_t sky);
 void Vulkan_SetSkyMatrix (struct vulkan_ctx_s *ctx, mat4f_t sky);
 
 void Vulkan_Matrix_Init (struct vulkan_ctx_s *ctx);
 VkDescriptorSet Vulkan_Matrix_Descriptors (struct vulkan_ctx_s *ctx, int frame)
+	__attribute__((pure));
+VkDescriptorBufferInfo Vulkan_Matrix_BufferInfo (struct vulkan_ctx_s *ctx,
+												 int frame)
 	__attribute__((pure));
 
 #endif//__QF_Vulkan_qf_matrices_h

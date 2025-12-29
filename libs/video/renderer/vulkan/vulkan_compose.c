@@ -88,7 +88,7 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		cframe->imageInfo[0].imageView = fb->views[QFV_attachColor];
 		cframe->imageInfo[1].imageView = fb->views[QFV_attachEmission];
 		cframe->imageInfo[2].imageView = fb->views[QFV_attachNormal];
-		cframe->imageInfo[3].imageView = fb->views[QFV_attachPosition];
+		cframe->imageInfo[3].imageView = fb->views[QFV_attachDepth];
 		cframe->imageInfo[4].imageView = fb->views[QFV_attachLight];
 		if (color_only) {
 			dfunc->vkUpdateDescriptorSets (device->dev, 1,

@@ -19,7 +19,6 @@ layout(early_fragment_tests) in;
 layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 frag_emission;
 layout (location = 2) out vec4 frag_normal;
-layout (location = 3) out vec4 frag_position;
 
 void
 main (void)
@@ -33,5 +32,4 @@ main (void)
 	frag_color = vec4(0,0,0,1);
 	frag_emission = pix;
 	frag_normal = vec4(normal, 1);
-	frag_position = vec4 (position.xyz, gl_FragCoord.z);
 }

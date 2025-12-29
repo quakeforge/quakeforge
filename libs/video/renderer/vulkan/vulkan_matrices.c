@@ -65,17 +65,27 @@ setup_view (vulkan_ctx_t *ctx)
 		__auto_type mctx = ctx->matrix_context;
 		QFV_PerspectiveTan (mctx->matrices.Projection3d, 1, 1, r_nearclip);
 		mat4f_t     views[6];
+		mat4f_t     invviews[6];
 		for (int i = 0; i < 6; i++) {
 			mat4f_t     rotinv;
 			mat4ftranspose (rotinv, qfv_box_rotations[i]);
 			mmulf (views[i], rotinv, r_refdef.camera_inverse);
 			mmulf (views[i], qfv_z_up, views[i]);
+
+			mat4ftranspose (invviews[i], qfv_z_up);
+			mmulf (invviews[i], qfv_box_rotations[i], invviews[i]);
+			mmulf (invviews[i], r_refdef.camera, invviews[i]);
 		}
-		Vulkan_SetViewMatrices (ctx, views, 6);
+		Vulkan_SetViewMatrices (ctx, views, invviews, 6);
 	} else {
 		mat4f_t     view;
+		mat4f_t     invview;
 		mmulf (view, qfv_z_up, r_refdef.camera_inverse);
-		Vulkan_SetViewMatrices (ctx, &view, 1);
+
+		mat4ftranspose (invview, qfv_z_up);
+		mmulf (invview, r_refdef.camera, invview);
+
+		Vulkan_SetViewMatrices (ctx, &view, &invview, 1);
 	}
 }
 
@@ -106,11 +116,13 @@ setup_sky (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_SetViewMatrices (vulkan_ctx_t *ctx, mat4f_t views[], int count)
+Vulkan_SetViewMatrices (vulkan_ctx_t *ctx,
+						mat4f_t views[], mat4f_t invviews[], int count)
 {
 	__auto_type mctx = ctx->matrix_context;
 
 	memcpy (mctx->matrices.View, views, count * sizeof (mat4f_t));
+	memcpy (mctx->matrices.InvViews, invviews, count * sizeof (mat4f_t));
 	mctx->dirty = mctx->frames.size;
 }
 
@@ -207,6 +219,7 @@ matrices_startup (exprctx_t *ectx)
 			.buffer = {
 				.size = sizeof (qfv_matrix_buffer_t),
 				.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+						 | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 						 | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			},
 		};
@@ -291,4 +304,14 @@ Vulkan_Matrix_Descriptors (vulkan_ctx_t *ctx, int frame)
 {
 	auto mctx = ctx->matrix_context;
 	return mctx->frames.a[frame].descriptors;
+}
+
+VkDescriptorBufferInfo
+Vulkan_Matrix_BufferInfo (vulkan_ctx_t *ctx, int frame)
+{
+	auto mctx = ctx->matrix_context;
+	auto mframe = &mctx->frames.a[frame];
+	return (VkDescriptorBufferInfo) {
+		mframe->buffer, 0, VK_WHOLE_SIZE
+	};
 }

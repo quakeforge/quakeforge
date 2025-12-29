@@ -18,7 +18,7 @@ INPUT_ATTACH(0) subpassInput color;
 #ifndef COLOR_ONLY
 INPUT_ATTACH(1) subpassInput emission;
 INPUT_ATTACH(2) subpassInput normal;
-INPUT_ATTACH(3) subpassInput position;
+INPUT_ATTACH(3) subpassInput depth;
 INPUT_ATTACH(4) subpassInput light;
 #endif
 

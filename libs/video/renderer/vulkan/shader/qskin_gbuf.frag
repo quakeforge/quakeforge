@@ -18,7 +18,6 @@ layout (location = 3) in vec4 color;
 layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 frag_emission;
 layout (location = 2) out vec4 frag_normal;
-layout (location = 3) out vec4 frag_position;
 
 void
 main (void)
@@ -35,5 +34,4 @@ main (void)
 	frag_color = c * color;
 	frag_emission = e;
 	frag_normal = vec4(normalize(normal), 1);
-	frag_position = vec4 (position.xyz, gl_FragCoord.z);
 }
