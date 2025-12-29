@@ -627,6 +627,9 @@ Vulkan_Gizmo_AddBrush (vec4f_t orig, const vec4f_t bounds[2],
 	};
 	QuatScale (color, 255, brush.col);
 	auto p = gizmo_add_object (&brush, sizeof (brush), 5 * num_nodes, ctx);
+	if (!p) {
+		return;
+	}
 	for (int i = 0; i < num_nodes; i++) {
 		for (int j = 0; j < 4; j++) {
 			*(float *)(p++) = nodes[i].plane[j];
