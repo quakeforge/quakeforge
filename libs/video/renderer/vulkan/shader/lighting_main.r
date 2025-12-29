@@ -34,8 +34,6 @@ diffuse (vec3 incoming, vec3 normal)
 void
 main (void)
 {
-	vec3        c = subpassLoad (color).rgb;
-	vec3        e = subpassLoad (emission).rgb;
 	vec3        n = subpassLoad (normal).rgb;
 	vec3        light = vec3 (0);
 	float       d = subpassLoad (depth).x;
@@ -51,6 +49,7 @@ main (void)
 		return;
 	}
 	p /= p.w;
+	p.w = d;
 
 	uint        start = queue.start;
 	uint        end = start + queue.count;
