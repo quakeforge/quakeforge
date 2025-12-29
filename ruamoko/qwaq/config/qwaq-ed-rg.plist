@@ -192,12 +192,12 @@ render_graph = {
 				stage = fragment_shader;
 				access = input_attachment_read;
 			};
-			flags = by_region;
+			flags = by_region|view_local;
 		};
 		extcolor_dependency = {
 			src = {
 				stage = color_attachment_output;
-				access = 0;
+				access = color_attachment_write|color_attachment_read;
 			};
 			dst = {
 				stage = color_attachment_output;
@@ -223,7 +223,7 @@ render_graph = {
 				stage = fragment_shader|early_fragment_tests|late_fragment_tests;
 				access = input_attachment_read|depth_stencil_attachment_read;
 			};
-			flags = by_region;
+			flags = by_region|view_local;
 		};
 		extdepth_dependency = {
 			src = {
@@ -1048,7 +1048,13 @@ render_graph = {
 					binding = 1;
 					descriptorType = storage_buffer;
 					descriptorCount = 1;
-					stageFlags = vertex;
+					stageFlags = vertex|fragment;
+				},
+				{
+					binding = 2;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = vertex|fragment;
 				},
 			);
 		};
@@ -1382,10 +1388,6 @@ render_graph = {
 			@inherit = $image_base;
 			format = r16g16b16a16_sfloat;
 		};
-		position = {
-			@inherit = $image_base;
-			format = r32g32b32a32_sfloat;
-		};
 		light = {
 			@inherit = $image_base;
 			format = r16g16b16a16_sfloat;
@@ -1422,10 +1424,6 @@ render_graph = {
 		cube_normal = {
 			@inherit = $cube_image_base;
 			format = r16g16b16a16_sfloat;
-		};
-		cube_position = {
-			@inherit = $cube_image_base;
-			format = r32g32b32a32_sfloat;
 		};
 		cube_light = {
 			@inherit = $cube_image_base;
@@ -1475,11 +1473,6 @@ render_graph = {
 			image = normal;
 			format = $images.normal.format;
 		};
-		position = {
-			@inherit = $view_base;
-			image = position;
-			format = $images.position.format;
-		};
 		light = {
 			@inherit = $view_base;
 			image = light;
@@ -1524,11 +1517,6 @@ render_graph = {
 			@inherit = $cube_view_base;
 			image = cube_normal;
 			format = $images.cube_normal.format;
-		};
-		cube_position = {
-			@inherit = $cube_view_base;
-			image = cube_position;
-			format = $images.cube_position.format;
 		};
 		cube_light = {
 			@inherit = $cube_view_base;
@@ -1707,11 +1695,6 @@ render_graph = {
 						};
 					};
 				};
-				$external = {
-					dependencies = {
-						gizmo_cmd = $extcolor_outdep;
-					};
-				};
 			};
 		};
 		gizmo_cube = {
@@ -1754,11 +1737,6 @@ render_graph = {
 						format = $images.normal.format;
 						view = normal;
 					};
-					position = {
-						@inherit = $position_base;
-						format = $images.position.format;
-						view = position;
-					};
 					light = {
 						@inherit = $light_base;
 						format = $images.light.format;
@@ -1788,7 +1766,7 @@ render_graph = {
 						depth = {
 							depth = depth_stencil_attachment_optimal;
 						};
-						preserve = (color, emission, normal, position, output);
+						preserve = (color, emission, normal, output);
 					};
 
 					base_pipeline = {
@@ -1881,7 +1859,7 @@ render_graph = {
 						depth = {
 							depth = depth_stencil_read_only_optimal;
 						};
-						preserve = (color, emission, normal, position, output);
+						preserve = (color, emission, normal, output);
 					};
 					base_pipeline = {
 						@inherit = $pipeline_base;
@@ -1982,10 +1960,6 @@ render_graph = {
 								layout = color_attachment_optimal;
 								blend = $blend_disable;
 							};
-							position = {
-								layout = color_attachment_optimal;
-								blend = $blend_disable;
-							};
 						};
 						depth = {
 							depth = depth_stencil_read_only_optimal;
@@ -2060,7 +2034,7 @@ render_graph = {
 							color = shader_read_only_optimal;
 							emission = shader_read_only_optimal;
 							normal = shader_read_only_optimal;
-							position = shader_read_only_optimal;
+							depth = shader_read_only_optimal;
 						};
 						color = {
 							light = {
@@ -2068,7 +2042,7 @@ render_graph = {
 								blend = $additive_blend;
 							};
 						};
-						preserve = (depth, output);
+						preserve = (output);
 					};
 					pipelines = {
 						lights_none = {
@@ -2083,7 +2057,7 @@ render_graph = {
 							);
 
 							stages = (
-								$fstriangle.shader.vertex,
+								$fstriangle.shader.vertexst,
 								$lighting.shader.fragment_none,
 							);
 							layout = $lighting.layout;
@@ -2100,7 +2074,7 @@ render_graph = {
 							);
 
 							stages = (
-								$fstriangle.shader.vertex,
+								$fstriangle.shader.vertexst,
 								$lighting.shader.fragment_plane,
 							);
 							layout = $lighting.layout;
@@ -2117,7 +2091,7 @@ render_graph = {
 							);
 
 							stages = (
-								$fstriangle.shader.vertex,
+								$fstriangle.shader.vertexst,
 								$lighting.shader.fragment_cascade,
 							);
 							layout = $lighting.layout;
@@ -2134,7 +2108,7 @@ render_graph = {
 							);
 
 							stages = (
-								$fstriangle.shader.vertex,
+								$fstriangle.shader.vertexst,
 								$lighting.shader.fragment_cube,
 							);
 							layout = $lighting.layout;
@@ -2154,7 +2128,7 @@ render_graph = {
 							color = shader_read_only_optimal;
 							emission = shader_read_only_optimal;
 							normal = shader_read_only_optimal;
-							position = shader_read_only_optimal;
+							depth = shader_read_only_optimal;
 							light = shader_read_only_optimal;
 						};
 						color = {
@@ -2163,7 +2137,6 @@ render_graph = {
 								blend = $additive_blend;
 							};
 						};
-						preserve = (depth);
 					};
 					pipelines = {
 						compose = {
@@ -2176,7 +2149,7 @@ render_graph = {
 							);
 
 							stages = (
-								$fstriangle.shader.vertex,
+								$fstriangle.shader.vertexst,
 								$compose.shader.fragment,
 							);
 							layout = $compose.layout;
@@ -2363,11 +2336,6 @@ render_graph = {
 						@inherit = $normal_base;
 						format = $images.cube_normal.format;
 						view = cube_normal;
-					};
-					position = {
-						@inherit = $position_base;
-						format = $images.cube_position.format;
-						view = cube_position;
 					};
 					light = {
 						@inherit = $light_base;
