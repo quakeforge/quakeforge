@@ -32,7 +32,7 @@ properties = {
 			stage = fragment_shader;
 			access = input_attachment_read;
 		};
-		flags = by_region;
+		flags = by_region|view_local;
 	};
 	extcolor_dependency = {
 		src = {
@@ -63,7 +63,7 @@ properties = {
 			stage = fragment_shader|early_fragment_tests|late_fragment_tests;
 			access = input_attachment_read|depth_stencil_attachment_read;
 		};
-		flags = by_region;
+		flags = by_region|view_local;
 	};
 	extdepth_dependency = {
 		src = {
@@ -91,7 +91,6 @@ properties = {
 	};
 	cube_image_base = {
 		@inherit = $image_base;
-		usage = color_attachment|input_attachment;
 		flags = cube_compatible;
 		extent = {
 			width = "min($render_output.extent.width,$render_output.extent.height)";
@@ -134,7 +133,7 @@ properties = {
 	depth_base = {
 		@inherit = $attachment_base;
 		loadOp = clear;
-		finalLayout = depth_stencil_read_only_optimal;
+		finalLayout = shader_read_only_optimal;
 		clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 	};
 
@@ -1023,7 +1022,7 @@ images = {
 	cube_depth = {
 		@inherit = $cube_image_base;
 		format = d32_sfloat;
-		usage = depth_stencil_attachment|input_attachment;
+		usage = depth_stencil_attachment|input_attachment|transient_attachment;
 	};
 	cube_color = {
 		@inherit = $cube_image_base;
@@ -1253,8 +1252,8 @@ renderpasses = {
 				color = "[ 0.7,  0.3,  0.3, 1]";
 				dependencies = {
 					solid = $color_dependency;
-					translucent = $color_dependency;//FIXME is this right? no op
-					$external = $extcolor_dependency;
+					translucent = $depth_dependency;
+					//$external = $extcolor_dependency;
 				};
 				attachments = {
 					input = {
@@ -1266,7 +1265,7 @@ renderpasses = {
 							blend = $additive_blend;
 						};
 					};
-					preserve = (depth);
+					//preserve = (depth);
 				};
 				pipelines = {
 					compose = {
@@ -1330,8 +1329,8 @@ renderpasses = {
 							access = color_attachment_write;
 						};
 						dst = {
-							stage = fragment_shader|color_attachment_output;
-							access = shader_read|color_attachment_write;
+							stage = fragment_shader;
+							access = shader_read;
 						};
 					};
 				}
