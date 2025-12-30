@@ -860,6 +860,7 @@ render_graph = {
 					fragment = {
 						fog = vec4;
 						camera = vec4;
+						near_plane = float;
 					};
 				};
 			};

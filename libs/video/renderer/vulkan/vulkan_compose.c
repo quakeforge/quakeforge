@@ -101,11 +101,15 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	if (!color_only) {
 		vec4f_t fog = Fog_Get ();
 		vec4f_t cam = r_refdef.camera[3];
+		float near_plane = r_nearclip;
 		qfv_push_constants_t push_constants[] = {
 			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (fog), &fog },
-			{ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(fog), sizeof (cam), &cam },
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof (fog), sizeof (cam), &cam },
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof (fog)+ sizeof (cam),
+				sizeof (near_plane), &near_plane },
 		};
-		QFV_PushConstants (device, cmd, layout, 2, push_constants);
+		QFV_PushConstants (device, cmd, layout,
+						   countof (push_constants), push_constants);
 	}
 
 	VkDescriptorSet sets[] = {

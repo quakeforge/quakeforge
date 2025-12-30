@@ -14,6 +14,7 @@
 [push_constant] @block PushConstants {
 	vec4        fog;
 	vec4        camera;
+	float       near_plane;
 };
 
 [out(0)] vec4 frag_color;
@@ -30,7 +31,7 @@ main (void)
 	l = l / (l + 1);
 	vec3        o = max(BlendFrags (vec4 (c * l + e, 1)).xyz, vec3(0));
 
-	d = d > 0 ? 1/d : 1e36;//p.w > 0 ? length (p.xyz - camera.xyz) : 1e36;
+	d = d > 0 ? near_plane / d : 1e36;
 	o = FogBlend (vec4(o,1), fog, d).xyz;
 	o = pow (o, vec3(0.83));//FIXME make gamma correction configurable
 	frag_color = vec4 (o, 1);
