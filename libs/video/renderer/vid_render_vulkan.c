@@ -587,6 +587,7 @@ static vid_model_funcs_t model_funcs = {
 	.Mod_SpriteLoadFrames           = vulkan_Mod_SpriteLoadFrames,
 
 	.skin_set                = Skin_Set,
+	.texture_set             = Skin_Texture,
 	.skin_setupskin          = vulkan_Skin_SetupSkin,
 	.skin_destroy            = vulkan_Skin_Destroy,
 };

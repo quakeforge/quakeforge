@@ -194,6 +194,45 @@ Skin_Set (const char *skinname)
 	return skinent;
 }
 
+VISIBLE uint32_t
+Skin_Texture (const char *skinname)
+{
+	if (!skinname || !*skinname) {
+		return nullskin;
+	}
+	__attribute__((cleanup (freestr))) char *name = QFS_CompressPath (skinname);
+	QFS_StripExtension (name, name);
+	if (strchr (name, '.') || strchr (name, '/')) {
+		Sys_Printf ("Bad skin name: '%s'\n", skinname);
+		return nullskin;
+	}
+	void *_id = Hash_Find (skin_hash, name);
+	if (_id) {
+		return (uint32_t) (uintptr_t) _id;
+	}
+
+	// always create a new skin entity so the name can be associated with
+	// a possibly bad skin (to prevent unnecessary retries)
+	uint32_t    skinent = ECS_NewEntity (skinsys.reg);
+	char       *sname = strdup (name);
+	Ent_SetComponent (skinent, skinsys.base + skin_name, skinsys.reg, &sname);
+	Hash_Add (skin_hash, (void *) (uintptr_t) skinent);
+
+	tex_t      *tex = LoadImage (va ("skins/%s", name), 1);
+	if (!tex) {
+		Sys_Printf ("Couldn't load skin %s\n", name);
+		return skinent;
+	}
+
+	skin_t      skin = {
+		.tex = tex,
+	};
+	m_funcs->skin_setupskin (&skin);
+	Ent_SetComponent (skinent, skinsys.base + skin_skin, skinsys.reg, &skin);
+
+	return skinent;
+}
+
 skin_t *
 Skin_Get (uint32_t skin)
 {
