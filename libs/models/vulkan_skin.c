@@ -60,6 +60,7 @@ Vulkan_Skin_Clear (qfv_skin_t *skin, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 
+	QFV_DeviceWaitIdle (device);
 	Vulkan_MeshRemoveSkin (ctx, skin);
 	if (skin->resource) {
 		QFV_DestroyResource (device, skin->resource);
