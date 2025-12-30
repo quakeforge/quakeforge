@@ -161,7 +161,6 @@ EntQueue_AddEntity (entqueue_t *queue, entity_t ent, int queue_num)
 {
 	int         id = Ent_Index (ent.id);
 	if (!set_is_member (queue->queued_ents, id)) {
-		// entity ids are negative (ones-complement)
 		set_add (queue->queued_ents, id);
 		DARRAY_APPEND (&queue->ent_queues[queue_num], ent);
 	}
