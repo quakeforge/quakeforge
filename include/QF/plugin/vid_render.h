@@ -79,6 +79,7 @@ typedef struct vid_model_funcs_s {
 	void (*Mod_SpriteLoadFrames) (struct mod_sprite_ctx_s *sprite_ctx);
 
 	uint32_t (*skin_set) (const char *skinname);
+	uint32_t (*texture_set) (const char *skinname);
 	void (*skin_setupskin) (skin_t *skin);
 	void (*skin_destroy) (skin_t *skin);
 } vid_model_funcs_t;

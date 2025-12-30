@@ -44,11 +44,13 @@
 #include "QF/model.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/qf_mesh.h"
 #include "QF/Vulkan/qf_model.h"
+#include "QF/Vulkan/qf_texture.h"
 
 #include "mod_internal.h"
 #include "vid_vulkan.h"
@@ -59,7 +61,11 @@ Vulkan_Skin_Clear (qfv_skin_t *skin, vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 
 	Vulkan_MeshRemoveSkin (ctx, skin);
-	QFV_DestroyResource (device, skin->resource);
+	if (skin->resource) {
+		QFV_DestroyResource (device, skin->resource);
+	} else {
+		Vulkan_UnloadTex (ctx, (qfv_tex_t *) skin->tex);
+	}
 }
 
 void
@@ -80,9 +86,26 @@ Vulkan_Skin_SetupSkin (skin_t *skin, struct vulkan_ctx_s *ctx)
 		.texels = tex->data,
 		.skindesc = &skindesc,
 	};
-	qfv_skin_t *vskin = Vulkan_Mod_AllocSkins (1, false);
-	skin->tex = (tex_t *) vskin;
-	Vulkan_Mod_LoadSkin (&alias_ctx, &askin, skinsize, vskin, ctx);
+	if (tex->format == tex_palette) {
+		qfv_skin_t *vskin = Vulkan_Mod_AllocSkins (1, false);
+		skin->tex = (tex_t *) vskin;
+		Vulkan_Mod_LoadSkin (&alias_ctx, &askin, skinsize, vskin, ctx);
+	} else {
+		tex_t array_tex[3] = { *tex, *tex, *tex };
+		size_t size = ImageSize (tex, false);
+		array_tex[1].data = array_tex[2].data = calloc (size, 1);
+		auto vtex = Vulkan_LoadTexArray (ctx, array_tex, 3, 1,
+										 vac (ctx->va_ctx, "skin:%d",
+											  skin->id));
+		free (array_tex[2].data);
+		qfv_skin_t *vskin = malloc (sizeof (qfv_skin_t));
+		*vskin = (qfv_skin_t) {
+			.tex = vtex,
+			.view = vtex->view,
+		};
+		Vulkan_MeshAddSkin (ctx, vskin);
+		skin->tex = (tex_t *) vskin;
+	}
 }
 
 void

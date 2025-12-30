@@ -64,6 +64,7 @@ typedef struct qfv_mesh_s {
 
 typedef struct qfv_skin_s {
 	struct qfv_resource_s *resource;
+	struct qfv_tex_s *tex;
 	VkImageView view;
 	byte        colors[4];
 	VkDescriptorSet descriptor;
