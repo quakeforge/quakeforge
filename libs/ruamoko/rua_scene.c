@@ -350,6 +350,30 @@ bi (Entity_SetSubmeshMask)
 	renderer->submesh_mask = submesh_mask;
 }
 
+bi (Entity_SetSkin)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	const char *skinname = P_GSTRING (pr, 1);
+	entity_t    ent = rua_entity_get (res, ent_id);
+
+	auto renderer = Entity_GetRenderer (ent);
+	renderer->skin = mod_funcs->skin_set (skinname);;
+}
+
+bi (Entity_SetTexture)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	const char *skinname = P_GSTRING (pr, 1);
+	entity_t    ent = rua_entity_get (res, ent_id);
+
+	auto renderer = Entity_GetRenderer (ent);
+	renderer->skin = mod_funcs->texture_set (skinname);;
+}
+
 bi (Entity_GetPoseMotors)
 {
 	qfZoneScoped (true);
@@ -728,6 +752,8 @@ static builtin_t builtins[] = {
 	bi(Entity_GetTransform,         1, p(ulong)),
 	bi(Entity_SetModel,             2, p(ulong), p(int)),
 	bi(Entity_SetSubmeshMask,       2, p(ulong), p(uint)),
+	bi(Entity_SetSkin,              2, p(ulong), p(string)),
+	bi(Entity_SetTexture,           2, p(ulong), p(string)),
 	bi(Entity_GetPoseMotors,		3, p(ulong), p(ptr), p(double)),
 	bi(Entity_GetAnimation,         1, p(ulong)),
 	bi(Entity_SetAnimation,         1, p(ulong), p(ptr)),

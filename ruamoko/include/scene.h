@@ -47,6 +47,8 @@ transform_t Entity_GetTransform (entity_t ent);
 void Entity_SetModel (entity_t ent, model_t model);
 // bits in submesh_mask disable that submic
 void Entity_SetSubmeshMask (entity_t ent, uint submesh_mask);
+void Entity_SetSkin (entity_t ent, string skinname);
+void Entity_SetTexture (entity_t ent, string skinname);
 int Entity_GetPoseMotors (entity_t ent, void *motors, double time);
 animation_t *Entity_GetAnimation (entity_t ent);// NOTE: pointer is ephemeral
 void Entity_SetAnimation (entity_t ent, animation_t *anim);
