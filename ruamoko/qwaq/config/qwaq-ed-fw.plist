@@ -537,13 +537,11 @@ render_graph = {
 				//                            palette                skin
 				descriptorSets = (matrix_set, texture_set, bone_set, texture_set);
 				pushConstants = {
-					vertex   = {
+					vertex|fragment = {
 						Model = mat4;
 						enabled_mask = uint;
 						blend = float;
 						debug_bone = uint;
-					};
-					fragment = {
 						colors = uint;
 						base_color = vec4;
 						fog = vec4;
