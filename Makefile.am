@@ -96,7 +96,7 @@ V_QFCCLD_1 =
 
 QCSYSTEM=--no-default-paths -I$(top_srcdir) -I$(top_srcdir)/ruamoko/include -I$(top_srcdir)/include
 QCFLAGS=-qq -O -g -Werror -Wall -Wno-integer-divide
-QCPPFLAGS=$(QCSYSTEM)
+QCPPFLAGS=$(QCSYSTEM) --embed-dir=$(top_builddir)
 QCLINKFLAGS=--no-default-paths -Lruamoko/lib
 QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
 QSPIRV=$(QCOMPILE) -Ctarget=spir-v

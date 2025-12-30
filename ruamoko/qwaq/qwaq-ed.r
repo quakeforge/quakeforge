@@ -32,6 +32,11 @@ static string input_cfg =
 #embed "config/qwaq-ed-in.cfg"
 ;
 
+//FIXME embed as uint array doesn't work yet
+static string planetary_shader =
+#embed "ruamoko/qwaq/planetary.r.spv"
+;
+
 int in_context;
 in_axis_t *cam_move_forward;
 in_axis_t *cam_move_side;

@@ -9,6 +9,16 @@ noinst_PROGRAMS += @QWAQ_TARGETS@ \
 	ruamoko/qwaq/input-app.dat$(EXEEXT) \
 	ruamoko/qwaq/z-transform.dat$(EXEEXT)
 
+planetary_src = ruamoko/qwaq/planetary.r
+
+qwaqshader_src = \
+	$(planetary_src)
+qwaqshader_dep = $(call spvautodep, $(qwaqshader_src))
+include $(qwaqshader_dep) # am--include-marker
+spv_depfiles_remade += $(qwaqshader_dep)
+
+qwaqshader_r = $(call spvautoc,$(qwaqshader_src))
+
 libui=ruamoko/qwaq/libui.a
 libedit=ruamoko/qwaq/libedit.a
 noinst_LIBRARIES += $(libui) $(libedit)
@@ -85,6 +95,10 @@ qwaq_ed_dat_src= \
 	ruamoko/qwaq/player.r \
 	ruamoko/qwaq/playercam.r \
 	ruamoko/qwaq/qwaq-ed.r
+
+ruamoko/qwaq/qwaq-ed.o: \
+	ruamoko/qwaq/qwaq-ed.r \
+	$(qwaqshader_r)
 
 qwaq_input_app_dat_src= \
 	ruamoko/qwaq/device/axisdata.r \
