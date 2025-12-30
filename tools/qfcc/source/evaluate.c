@@ -280,14 +280,17 @@ const expr_t *
 evaluate_constexpr (const expr_t *e)
 {
 	debug (e, "fold_constants");
+	bool implicit = false;
 	if (e->type == ex_uexpr) {
 		if (!is_constant (e->expr.e1)) {
 			return e;
 		}
+		implicit = e->expr.e1->implicit;
 	} else if (e->type == ex_expr) {
 		if (!is_constant (e->expr.e1) || !is_constant (e->expr.e2)) {
 			return e;
 		}
+		implicit = e->expr.e1->implicit && e->expr.e2->implicit;
 	} else if (e->type == ex_alias) {
 		// offsets are always constant
 		if (!is_constant (e->alias.expr)) {
@@ -297,14 +300,17 @@ evaluate_constexpr (const expr_t *e)
 		if (!is_constant (e->extend.src)) {
 			return e;
 		}
+		implicit = e->extend.src->implicit;
 	} else if (e->type == ex_field) {
 		if (!is_constant (e->field.object)) {
 			return e;
 		}
+		implicit = e->field.object->implicit;
 	} else if (e->type == ex_swizzle) {
 		if (!is_constant (e->swizzle.src)) {
 			return e;
 		}
+		implicit = e->swizzle.src->implicit;
 	} else {
 		return e;
 	}
@@ -336,6 +342,6 @@ evaluate_constexpr (const expr_t *e)
 
 	evaluate_run_sblock (&sblock, nullptr);
 	auto val = new_type_value (get_type (e), value_pr.pr_return_buffer);
-	e = new_value_expr (val, false);
+	e = new_value_expr (val, implicit);
 	return e;
 }
