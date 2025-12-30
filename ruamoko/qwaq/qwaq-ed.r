@@ -188,7 +188,7 @@ Array *windows;
 	}, 0);
 	// ambient light
 	Light_AddLight (ldata, {
-		{ 1, 1, 1, 50 },
+		{ 0, 0, 0, 50 },
 		{ 0, 0, 0, 0 },
 		{ 0, 0, 0, -1 },
 		{ 0, 0, 1, 0 },
@@ -1152,7 +1152,8 @@ main (int argc, string *argv)
 	add_target (QuadSphere_ent);
 	Entity_SetModel (QuadSphere_ent, Model_LoadMesh ("quadsphere", quadsphere));
 	Entity_SetSubmeshMask (QuadSphere_ent, ~(1<<8));
-	Transform_SetLocalPosition(Entity_GetTransform (QuadSphere_ent), { 6770e3, -20, 20, 1});
+	Entity_SetTexture (QuadSphere_ent, "8k_earth_daymap");
+	Transform_SetLocalPosition(Entity_GetTransform (QuadSphere_ent), { 12770e3, -20, 20, 1});
 	Transform_SetLocalScale(Entity_GetTransform (QuadSphere_ent), { 6370e3, 6370e3, 6370e3, 1});
 	mat4 mat = Transform_GetWorldMatrix(Entity_GetTransform (QuadSphere_ent));
 	qf_mesh_t qsmesh;
@@ -1199,6 +1200,12 @@ main (int argc, string *argv)
 		auto bs = block_state;
 		bs.M = block_body.R * bs.M;
 		bs.B = block_body.R * bs.B * ~block_body.R;
+
+		float ph = float(0.05 * (realtime - double (1ul<<32)));
+		quaternion trot = { 0, 0, sin(ph), cos(ph) };
+		quaternion vrot = '0 0 0 1';//{ 0, -sqrt(0.5f), 0, sqrt(0.5f) };
+		Transform_SetLocalRotation(Entity_GetTransform (QuadSphere_ent),
+			vrot * trot);
 
 		float h = frametime / 100;
 		bivector_t f = {

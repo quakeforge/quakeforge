@@ -586,6 +586,11 @@ render_graph = {
 					name = main;
 					module = $builtin/mesh.r;
 				};
+				planetary = {
+					stage = fragment;
+					name = main;
+					module = planetary.r.spv;
+				};
 			};
 			vertexInput = {
 				bindings = (
@@ -2007,7 +2012,8 @@ render_graph = {
 
 							stages = (
 								$mesh.shader.gbuf_vertex,
-								$qskin.shader.fragment,
+								$mesh.shader.planetary,
+								//$qskin.shader.fragment,
 							);
 							vertexInput = $mesh.vertexInput;
 							inputAssembly = $mesh.inputAssembly;
