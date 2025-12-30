@@ -162,7 +162,6 @@ vulkan_R_ClearState (void)
 	QFV_DeviceWaitIdle (vulkan_ctx->device);
 	//FIXME clear scene correctly
 	r_refdef.worldmodel = 0;
-	EntQueue_Clear (r_ent_queue);
 	R_ClearParticles ();
 	QFV_Render_Run_ClearState (vulkan_ctx);
 }

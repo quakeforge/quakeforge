@@ -54,6 +54,7 @@
 #include "QF/scene/entity.h"
 
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_sprite.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/buffer.h"
@@ -199,13 +200,17 @@ sprite_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
 
+	auto queue = Vulkan_Scene_EntQueue (ctx);
+	if (!queue) {
+		return;
+	}
+
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 1, sets, 0, 0);
 
-	auto queue = r_ent_queue;	//FIXME fetch from scene
 	for (size_t i = 0; i < queue->ent_queues[mod_sprite].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_sprite].a[i];
 		sprite_draw_ent (taskctx, ent);

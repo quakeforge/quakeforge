@@ -63,6 +63,7 @@ bool        r_cache_thrash;		// set if surface cache is thrashing
 bool        r_lock_viewleaf;	// prevent vis updates (for debug camera)
 bool        r_override_camera;
 transform_t r_camera;
+entqueue_t *r_ent_queue;
 
 visstate_t r_visstate;		//FIXME per renderer
 
@@ -479,8 +480,6 @@ SCR_Init (void)
 
 	scr_initialized = true;
 
-	r_ent_queue = EntQueue_New (mod_num_types);
-
 	cvar_t     *var = Cvar_FindVar ("viewsize");
 	Cvar_AddListener (var, viewsize_listener, 0);
 	VID_OnVidResize_AddListener (vidsize_listener, 0);
@@ -515,6 +514,7 @@ SCR_NewScene (scene_t *scene)
 		r_refdef.registry = scene->reg;
 		r_funcs->set_fov (tan_fov_x, tan_fov_y);
 		r_funcs->R_NewScene (scene);
+		r_ent_queue = scene->ent_queue;
 	} else {
 		r_visstate = (visstate_t) {};
 		r_funcs->R_ClearState ();

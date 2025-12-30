@@ -60,6 +60,7 @@
 #include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/barrier.h"
@@ -709,7 +710,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	const dlight_t *dynamic_lights[MaxLights];
 	int ndlight = 0;
 
-	auto entqueue = r_ent_queue;   //FIXME fetch from scene
+	auto entqueue = Vulkan_Scene_EntQueue (ctx);
 	for (size_t i = 0; i < entqueue->ent_queues[mod_light].size; i++) {
 		entity_t    ent = entqueue->ent_queues[mod_light].a[i];
 		if (has_dynlight (ent)) {

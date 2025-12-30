@@ -1435,7 +1435,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	} [pass_ind];
 
 	if (pass_ind == QFV_bspMain || pass_ind == QFV_bspLightmap) {
-		pass->entqueue = r_ent_queue;
+		pass->entqueue = Vulkan_Scene_EntQueue (ctx);
 		pass->position = r_refdef.frame.position;
 		pass->vis_frame = r_visstate.visframecount;
 	}
@@ -1444,7 +1444,9 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		pass->brush = &r_refdef.worldmodel->brush;
 	}
 
-	EntQueue_Clear (pass->entqueue);
+	if (pass->entqueue) {
+		EntQueue_Clear (pass->entqueue);
+	}
 
 	clear_queues (bctx, pass);	// do this first for water and skys
 
@@ -1540,7 +1542,7 @@ bsp_shutdown (exprctx_t *ectx)
 	auto device = ctx->device;
 	auto bctx = ctx->bsp_context;
 
-	bctx->main_pass.entqueue = 0;	// owned by r_ent_queue
+	bctx->main_pass.entqueue = 0;	// owned by the scene
 	shutdown_pass_draw_queues (&bctx->main_pass);
 	shutdown_pass_draw_queues (&bctx->shadow_pass);
 	shutdown_pass_draw_queues (&bctx->debug_pass);

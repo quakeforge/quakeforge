@@ -359,6 +359,7 @@ Scene_NewScene (scene_system_t *extra_systems)
 	scene->models = empty_world_models;
 	scene->camera = nullent;
 
+	scene->ent_queue = EntQueue_New (mod_num_types);
 	scene->efrag_db = malloc (sizeof (efrag_db_t));
 	Efrags_InitDB (scene->efrag_db, empty_world.brush.visleafs + 1);
 

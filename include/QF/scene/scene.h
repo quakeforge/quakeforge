@@ -42,6 +42,7 @@
 
 typedef struct model_s model_t;
 typedef struct efrag_db_s efrag_db_t;
+typedef struct entqueue_s entqueue_t;
 
 enum scene_components {
 	scene_href,			//hierarchical transform
@@ -83,6 +84,7 @@ typedef struct scene_s {
 	struct ecs_registry_s *reg;
 	uint32_t base;
 
+	entqueue_t *ent_queue;
 	efrag_db_t *efrag_db;
 	model_t    *worldmodel;
 	int         num_models;

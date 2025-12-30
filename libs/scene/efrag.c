@@ -155,8 +155,6 @@ Efrags_DelEfrag (efrag_db_t *db, uint32_t efragid)
 	ECS_DelId (&db->idpool, efragid);
 }
 
-entqueue_t *r_ent_queue;
-
 uint32_t
 R_LinkEfrag (scene_t *scene, mleaf_t *leaf, entity_t ent, uint32_t queue,
 			 uint32_t efrag)
@@ -318,6 +316,6 @@ R_StoreEfrags (scene_t *scene, mleaf_t *leaf)
 			.id = efrag->entity,
 			.base = scene->base,
 		};
-		EntQueue_AddEntity (r_ent_queue, ent, efrag->queue_num);
+		EntQueue_AddEntity (scene->ent_queue, ent, efrag->queue_num);
 	}
 }
