@@ -1141,14 +1141,15 @@ main (int argc, string *argv)
 
 	//id camtest = [[CamTest camtest:[main_window scene]] retain];
 
-	#define SUBDIV 1
+	#define SUBDIV 8
 	auto quadsphere = create_quadsphere();
 	entity_t QuadSphere_ent = Scene_CreateEntity ([main_window scene]);
 	add_target (QuadSphere_ent);
 	Entity_SetModel (QuadSphere_ent, Model_LoadMesh ("quadsphere", quadsphere));
 	Entity_SetSubmeshMask (QuadSphere_ent, ~(1<<8));
-	Transform_SetLocalPosition(Entity_GetTransform (QuadSphere_ent), { 6470e3, -20, 20, 1});
+	Transform_SetLocalPosition(Entity_GetTransform (QuadSphere_ent), { 6770e3, -20, 20, 1});
 	Transform_SetLocalScale(Entity_GetTransform (QuadSphere_ent), { 6370e3, 6370e3, 6370e3, 1});
+	mat4 mat = Transform_GetWorldMatrix(Entity_GetTransform (QuadSphere_ent));
 	qf_mesh_t qsmesh;
 	vec4 stuff = {};
 	{
@@ -1182,6 +1183,11 @@ main (int argc, string *argv)
 				break;
 			}
 		}
+		//static bool fish = false;
+		//if (realtime > (10 + double (1ul<<32)) && !fish) {
+		//	Cvar_SetInteger ("fisheye", true);
+		//	fish = true;
+		//}
 
 		//update_cube(frametime);
 		//draw_cube();
@@ -1229,8 +1235,9 @@ main (int argc, string *argv)
 			if (base >= qsmesh.adjacency.count) {
 				base = 0;
 			}
-			//for (uint i = 0; i < 4u * (1 << (2 * SUBDIV)); i++) {
-			for (uint i = 0; i < qsmesh.adjacency.count; i++) {
+			//float len = 0;
+			for (uint i = 0; 0&&i < 4u * (1 << (2 * SUBDIV)); i++) {
+			//for (uint i = 0; i < qsmesh.adjacency.count; i++) {
 				int adjacency = qsmesh.adjacency.offset;
 				int verts = qsmesh.vertices.offset;
 				int offset = adjacency + (i + base) * sizeof (quarteredge_t);
@@ -1243,7 +1250,7 @@ main (int argc, string *argv)
 				offset = adjacency + NEXT(i + base) * sizeof (quarteredge_t);
 				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
 				MsgBuf_ReadBytes (quadsphere, &h[1], sizeof (quarteredge_t));
-				vec4 v[2] = {};
+				vec4 v[2] = {'0 0 0 1', '0 0 0 1'};
 				vec4 n = {};
 				offset = verts + h[0].vert * sizeof (vec3) * 2;
 				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
@@ -1252,11 +1259,17 @@ main (int argc, string *argv)
 				offset = verts + h[1].vert * sizeof (vec3) * 2;
 				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
 				MsgBuf_ReadBytes (quadsphere, &v[1], sizeof (vec3));
-				v[0] += '-20 20 0 0';
-				v[1] += '-20 20 0 0';
-				Gizmo_AddCapsule (v[0], v[1], 0.005,// { 1, 0, 0, 0});
+				//v[0] += '-20 20 0 0';
+				//v[1] += '-20 20 0 0';
+				v[0] = mat * v[0];
+				v[1] = mat * v[1];
+				Gizmo_AddCapsule (v[0], v[1], 3e3,//0.005,// { 1, 0, 0, 0});
 								  vec4 (i & 1, (i>>1)&1, (i>>2)&1, -1)*0.5+0.5);
+				//auto d = v[1] - v[0];
+				//float l = d • d;
+				//if (l > len) len = l;
 			}
+			//printf ("max len: %g\n", sqrt(len));
 		}
 		leafnode ();
 		//set_transform ([playercam state].M, camera);
