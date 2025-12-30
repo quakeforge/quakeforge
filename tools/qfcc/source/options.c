@@ -95,6 +95,7 @@ enum {
 	OPT_ADVANCED,
 	OPT_BLOCK_DOT,
 	OPT_CPP,
+	OPT_EMBED_DIR,
 	OPT_EXTENDED,
 	OPT_FRAMES,
 	OPT_INCLUDE,
@@ -113,6 +114,7 @@ static struct option const long_options[] = {
 	{"code", required_argument, 0, 'C'},
 	{"cpp", required_argument, 0, OPT_CPP},
 	{"define", required_argument, 0, 'D'},
+	{"embed-dir", required_argument, 0, OPT_EMBED_DIR},
 	{"extended", no_argument, 0, OPT_EXTENDED},
 	{"files", no_argument, 0, 'F'},
 	{"frames", no_argument, 0, OPT_FRAMES},
@@ -762,6 +764,9 @@ DecodeArgs (int argc, char **argv)
 				saw_E = 1;
 				options.preprocess_only = 1;
 				add_cpp_def ("-E");
+				break;
+			case OPT_EMBED_DIR:			// embed-dir
+				cpp_embed_dir (optarg);
 				break;
 			case OPT_INCLUDE:			// include-file
 				add_cpp_def (nva ("%s", "-include"));

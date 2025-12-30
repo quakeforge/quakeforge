@@ -83,6 +83,7 @@ static cpp_arg_t *cpp_quote_list,  **cpp_quote_tail  = &cpp_quote_list;
 static cpp_arg_t *cpp_include_list,**cpp_include_tail= &cpp_include_list;
 static cpp_arg_t *cpp_system_list, **cpp_system_tail = &cpp_system_list;
 static cpp_arg_t *cpp_after_list,  **cpp_after_tail  = &cpp_after_list;
+static cpp_arg_t *cpp_embed_list,  **cpp_embed_tail  = &cpp_embed_list;
 
 static const char *cpp_prefix = "";
 static const char *cpp_sysroot = QFCC_INCLUDE_PATH;
@@ -400,6 +401,21 @@ cpp_include (const char *opt, const char *arg)
 	return -1;
 }
 #undef CPP_INCLUDE
+
+int
+cpp_embed_dir (const char *arg)
+{
+	if (!arg) {
+		return -1;
+	}
+	if (!strcmp (arg, "-")) {
+		return -1;
+	}
+	CPP_ADD (embed, arg);
+	add_cpp_def (save_string ("--embed-dir"));
+	add_cpp_def (save_string (arg));
+	return 1;
+}
 
 static rua_macro_t *
 make_magic_macro (symtab_t *tab, const char *name, rua_macro_f update)
@@ -748,6 +764,29 @@ cpp_find_file (const char *name, int quote, bool *is_system)
 		}
 	}
 	for (auto dir = cpp_after_list; dir; dir = dir->next) {
+		if ((path = test_path (dir->arg, name))) {
+			return path;
+		}
+	}
+	if (!errno) {
+		errno = ENOENT;
+	}
+	return 0;
+}
+
+const char *
+cpp_find_embed (const char *name, int quote, bool *is_system)
+{
+	*is_system = false;
+	if (*name == '/') {
+		return name;
+	}
+	const char *path;
+	if (cpp_quote_start
+		&& (path = test_path (cpp_quote_start->arg, name))) {
+		return path;
+	}
+	for (auto dir = cpp_embed_list; dir; dir = dir->next) {
 		if ((path = test_path (dir->arg, name))) {
 			return path;
 		}

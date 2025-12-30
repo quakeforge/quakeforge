@@ -2369,7 +2369,7 @@ rua_embed_file (const char *name, rua_ctx_t *ctx)
 	int quote = *name;
 	name = make_string (name, 0);
 	bool is_system;
-	auto found = cpp_find_file (name, quote, &is_system);
+	auto found = cpp_find_embed (name, quote, &is_system);
 	FILE *file;
 	if (!found
 		|| stat (found, &statbuf) < 0

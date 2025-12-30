@@ -41,9 +41,11 @@ void add_cpp_def (const char *arg);
 
 int cpp_depend (const char *opt, const char *arg);
 int cpp_include (const char *opt, const char *arg);
+int cpp_embed_dir (const char *arg);
 void cpp_define (const char *arg);
 void cpp_undefine (const char *arg);
 const char *cpp_find_file (const char *name, int quote, bool *is_system);
+const char *cpp_find_embed (const char *name, int quote, bool *is_system);
 void cpp_push_quote_path (const char *path);
 void cpp_pop_quote_path (void);
 
