@@ -147,6 +147,8 @@ ENTINLINE animation_t *Entity_GetAnimation (entity_t ent);
 ENTINLINE void Entity_SetAnimation (entity_t ent, animation_t *animation);
 ENTINLINE renderer_t *Entity_GetRenderer (entity_t ent);
 ENTINLINE void Entity_SetRenderer (entity_t ent, renderer_t *renderer);
+ENTINLINE int *Entity_GetEntqueue (entity_t ent);
+ENTINLINE void Entity_SetEntqueue (entity_t ent, int entqueue);
 
 #undef ENTINLINE
 #ifndef IMPLEMENT_ENTITY_Funcs
@@ -242,6 +244,23 @@ void
 Entity_SetRenderer (entity_t ent, renderer_t *renderer)
 {
 	Ent_SetComponent (ent.id, ent.base + scene_renderer, ent.reg, renderer);
+}
+
+ENTINLINE
+int *
+Entity_GetEntqueue (entity_t ent)
+{
+	if (Ent_HasComponent (ent.id, ent.base + scene_entqueue, ent.reg)) {
+		return Ent_GetComponent (ent.id, ent.base + scene_entqueue, ent.reg);
+	}
+	return nullptr;
+}
+
+ENTINLINE
+void
+Entity_SetEntqueue (entity_t ent, int entqueue)
+{
+	Ent_SetComponent (ent.id, ent.base + scene_entqueue, ent.reg, &entqueue);
 }
 
 typedef struct ecs_pool_s ecs_pool_t;

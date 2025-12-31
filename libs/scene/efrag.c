@@ -299,7 +299,12 @@ R_AddEfrags (scene_t *scene, entity_t ent)
 	VectorAdd (org, entmodel->mins, emins);
 	VectorAdd (org, entmodel->maxs, emaxs);
 
-	R_SplitEntityOnNode (scene, ent, rend->model->type, vis, emins, emaxs);
+	int queue = rend->model->type;
+	int *entqueue = Entity_GetEntqueue (ent);
+	if (entqueue) {
+		queue = *entqueue;
+	}
+	R_SplitEntityOnNode (scene, ent, queue, vis, emins, emaxs);
 }
 
 void

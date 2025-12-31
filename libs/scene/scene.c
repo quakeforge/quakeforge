@@ -181,6 +181,12 @@ static const component_t scene_components[scene_comp_count] = {
 		.destroy = destroy_renderer,
 		.name = "renderer",
 	},
+	[scene_entqueue] = {
+		.size = sizeof (int),
+		.create = 0,//create_entqueue,
+		.destroy = nullptr,// destroy_entqueue,
+		.name = "entqueue",
+	},
 	[scene_active] = {
 		.size = sizeof (byte),
 		.create = create_active,

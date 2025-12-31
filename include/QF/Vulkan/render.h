@@ -312,6 +312,13 @@ typedef struct qfv_samplerinfo_s {
 	uint32_t    num_samplers;
 } qfv_samplerinfo_t;
 
+typedef struct qfv_entqueueinfo_s {
+	struct memsuper_s *memsuper;
+	struct plitem_s *plitem;
+	const char **queue_names;
+	uint32_t    num_queues;
+} qfv_entqueueinfo_t;
+
 #ifndef __QFCC__
 typedef struct qfv_time_s {
 	int64_t     cur_time;
@@ -467,11 +474,17 @@ typedef struct qfv_renderctx_s {
 	qfv_attachmentinfoset_t external_attachments;
 	qfv_jobinfo_t *jobinfo;
 	qfv_samplerinfo_t *samplerinfo;
+	qfv_entqueueinfo_t *entqueueinfo;
 	qfv_job_t  *job;
 	qfv_renderframeset_t frames;
 	qfv_deletequeue_t deletion_queue;
 	int64_t     size_time;
 	struct qfv_renderdebug_s *debug;
+
+	int         entqueue_count;
+	exprtab_t   entqueue_symtab;
+	exprenum_t  entqueue_enum;
+	exprtype_t  entqueue_type;
 } qfv_renderctx_t;
 
 typedef struct qfv_taskctx_s {
@@ -494,6 +507,7 @@ void QFV_RunRenderPass (struct vulkan_ctx_s *ctx, qfv_renderpass_t *renderpass,
 void QFV_RunRenderJob (struct vulkan_ctx_s *ctx);
 void QFV_LoadRenderInfo (struct vulkan_ctx_s *ctx, struct plitem_s *item);
 void QFV_LoadSamplerInfo (struct vulkan_ctx_s *ctx, struct plitem_s *item);
+void QFV_LoadEntqueueInfo (struct vulkan_ctx_s *ctx, struct plitem_s *item);
 void QFV_BuildRender (struct vulkan_ctx_s *ctx);
 void QFV_Render_Init (struct vulkan_ctx_s *ctx);
 void QFV_Render_Run_Init (struct vulkan_ctx_s *ctx);
