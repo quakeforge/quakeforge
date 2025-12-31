@@ -42,9 +42,11 @@ entity_t Scene_CreateEntity (scene_t scene);
 void Scene_DestroyEntity (entity_t ent);
 void Scene_SetLighting (scene_t scene, lightingdata_t ldata);
 void Scene_SetCamera (scene_t scene, entity_t ent);
+int Scene_Entqueue (scene_t scene, string entqueue_name);
 
 transform_t Entity_GetTransform (entity_t ent);
 void Entity_SetModel (entity_t ent, model_t model);
+void Entity_SetEntqueue (entity_t ent, int entqueue);
 // bits in submesh_mask disable that submic
 void Entity_SetSubmeshMask (entity_t ent, uint submesh_mask);
 void Entity_SetSkin (entity_t ent, string skinname);
