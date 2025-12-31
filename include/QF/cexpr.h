@@ -136,6 +136,7 @@ exprval_t *cexpr_cvar_struct (exprctx_t *ctx);
 void cexpr_cast_plitem (const exprval_t *val1, const exprval_t *src,
 						exprval_t *result, exprctx_t *ctx);
 
+const char *cexpr_getkey (const void *s, void *unused) __attribute__((pure));
 void cexpr_init_symtab (exprtab_t *symtab, exprctx_t *ctx);
 
 char *cexpr_yyget_text (void *scanner);

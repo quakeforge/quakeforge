@@ -149,8 +149,8 @@ cexpr_cvar_struct (exprctx_t *ctx)
 	return cvars;
 }
 
-static const char *
-expr_getkey (const void *s, void *unused)
+const char *
+cexpr_getkey (const void *s, void *unused)
 {
 	__auto_type sym = (exprsym_t *) s;
 	return sym->name;
@@ -162,7 +162,7 @@ cexpr_init_symtab (exprtab_t *symtab, exprctx_t *ctx)
 	exprsym_t  *sym;
 
 	if (!symtab->tab) {
-		symtab->tab = Hash_NewTable (61, expr_getkey, 0, 0, ctx->hashctx);
+		symtab->tab = Hash_NewTable (61, cexpr_getkey, 0, 0, ctx->hashctx);
 		for (sym = symtab->symbols; sym->name; sym++) {
 			Hash_Add (symtab->tab, sym);
 		}
