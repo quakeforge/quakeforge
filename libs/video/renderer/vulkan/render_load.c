@@ -40,6 +40,7 @@
 
 #include "QF/cmem.h"
 #include "QF/hash.h"
+#include "QF/model.h"
 #include "QF/va.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
@@ -93,6 +94,78 @@ QFV_LoadSamplerInfo (vulkan_ctx_t *ctx, plitem_t *item)
 	rctx->samplerinfo = QFV_ParseSamplerInfo (ctx, item, rctx);
 	if (rctx->samplerinfo) {
 		rctx->samplerinfo->plitem = item;
+	}
+}
+
+void
+QFV_LoadEntqueueInfo (vulkan_ctx_t *ctx, plitem_t *item)
+{
+	static const char *modtype_names[] = {
+		"mod_brush",
+		"mod_sprite",
+		"mod_mesh",
+		"mod_light",
+	};
+	static_assert(countof (modtype_names) == mod_num_types);
+
+	qfZoneScoped (true);
+	auto rctx = ctx->render_context;
+	rctx->entqueueinfo = QFV_ParseEntqueueInfo (ctx, item, rctx);
+	if (rctx->entqueueinfo) {
+		auto eqi = rctx->entqueueinfo;
+		auto symtab = &rctx->entqueue_symtab;
+		auto messages = PL_NewArray ();
+		eqi->plitem = PL_ObjectForKey (item, "queues");
+		int num_syms = mod_num_types + eqi->num_queues;
+		size_t size = sizeof(exprsym_t[num_syms]);
+		rctx->entqueue_type = (exprtype_t) {
+			.name = "entqueue",
+			.size = sizeof (int),
+			.binops = cexpr_enum_binops,
+			.get_string = cexpr_enum_get_string,
+			.data = &rctx->entqueue_enum,
+		};
+		rctx->entqueue_enum = (exprenum_t) {
+			.type = &rctx->entqueue_type,
+			.symtab = &rctx->entqueue_symtab,
+		};
+		rctx->entqueue_symtab = (exprtab_t) {
+			.symbols = cmemalloc (eqi->memsuper, size),
+			.tab = Hash_NewTable (61, cexpr_getkey, 0, 0, &rctx->hashctx),
+		};
+		for (uint32_t i = 0; i < mod_num_types; i++) {
+			int ind = i;
+			symtab->symbols[ind] = (exprsym_t) {
+				.name = modtype_names[i],
+				.type = &rctx->entqueue_type,
+				.value = cmemalloc (eqi->memsuper, sizeof (int)),
+			};
+			*(int *) symtab->symbols[ind].value = ind;
+			Hash_Add (symtab->tab, &symtab->symbols[ind]);
+		}
+		for (uint32_t i = 0; i < eqi->num_queues; i++) {
+			int ind = mod_num_types + i;
+			printf ("%d %s\n", mod_num_types + i, eqi->queue_names[i]);
+			if (Hash_Find (symtab->tab, eqi->queue_names[i])) {
+				PL_Message (messages, PL_ObjectAtIndex (eqi->plitem, i),
+							"duplicate entqueue name: %s", eqi->queue_names[i]);
+			}
+			symtab->symbols[ind] = (exprsym_t) {
+				.name = eqi->queue_names[i],
+				.type = &rctx->entqueue_type,
+				.value = cmemalloc (eqi->memsuper, sizeof (int)),
+			};
+			*(int *) symtab->symbols[ind].value = ind;
+			Hash_Add (symtab->tab, &symtab->symbols[ind]);
+		}
+		if (PL_A_NumObjects (messages)) {
+			for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+				Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+			}
+			Sys_Error ("invalid entqueues");
+		}
+		PL_Release (messages);
+		rctx->entqueue_count = num_syms;
 	}
 }
 

@@ -705,13 +705,8 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 }
 
 static void
-mesh_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+mesh_draw_entqueue (int stage, int pass, int entqueue, qfv_taskctx_t *taskctx)
 {
-	qfZoneNamed (zone, true);
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto pass = *(int *) params[0]->value;
-	auto stage = *(int *) params[1]->value;
-
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
@@ -732,8 +727,8 @@ mesh_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, shadow ? 1 : 2, sets, 0, 0);
 
-	for (size_t i = 0; i < queue->ent_queues[mod_mesh].size; i++) {
-		entity_t    ent = queue->ent_queues[mod_mesh].a[i];
+	for (size_t i = 0; i < queue->ent_queues[entqueue].size; i++) {
+		entity_t    ent = queue->ent_queues[entqueue].a[i];
 		auto renderer = Entity_GetRenderer (ent);
 		if ((stage == mesh_shadow && renderer->noshadows)
 			|| (stage == mesh_main && renderer->onlyshadows)) {
@@ -750,6 +745,29 @@ mesh_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			mesh_depth_range (taskctx, 0, 1);
 		}
 	}
+}
+
+static void
+mesh_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto pass = *(int *) params[0]->value;
+	auto stage = *(int *) params[1]->value;
+
+	mesh_draw_entqueue (stage, pass, mod_mesh, taskctx);
+}
+
+static void
+mesh_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto queue = *(int *) params[0]->value;
+	auto pass = *(int *) params[1]->value;
+	auto stage = *(int *) params[2]->value;
+
+	mesh_draw_entqueue (stage, pass, queue, taskctx);
 }
 
 static void
@@ -842,11 +860,17 @@ static exprenum_t mesh_stage_enum = {
 };
 
 static exprtype_t *mesh_draw_params[] = {
+	&cexpr_int,		// filled in later from render context entqueue_type
 	&cexpr_int,
 	&mesh_stage_type,
 };
 static exprfunc_t mesh_draw_func[] = {
-	{ .func = mesh_draw, .num_params = 2, .param_types = mesh_draw_params },
+	{ .func = mesh_draw, .num_params = 2, .param_types = mesh_draw_params + 1 },
+	{}
+};
+static exprfunc_t mesh_draw_queue_func[] = {
+	{ .func = mesh_draw_queue, .num_params = 3,
+		.param_types = mesh_draw_params },
 	{}
 };
 
@@ -857,6 +881,7 @@ static exprfunc_t mesh_init_func[] = {
 
 static exprsym_t mesh_task_syms[] = {
 	{ "mesh_draw", &cexpr_function, mesh_draw_func },
+	{ "mesh_draw_queue", &cexpr_function, mesh_draw_queue_func },
 	{ "mesh_init", &cexpr_function, mesh_init_func },
 	{}
 };
@@ -866,6 +891,9 @@ Vulkan_Mesh_Init (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	qfvPushDebug (ctx, "mesh init");
+
+	auto rctx = ctx->render_context;
+	mesh_draw_params[0] = &rctx->entqueue_type;
 	QFV_Render_AddTasks (ctx, mesh_task_syms);
 
 	qfvPopDebug (ctx);

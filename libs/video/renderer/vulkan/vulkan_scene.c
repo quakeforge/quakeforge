@@ -312,6 +312,7 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	auto sctx = ctx->scene_context;
+	auto rctx = ctx->render_context;
 	sctx->scene = scene;
 
 	for (int i = 0; i < 256; i++) {
@@ -319,6 +320,11 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 	}
 
 	r_refdef.worldmodel = scene->worldmodel;
+	if (rctx->entqueue_count > scene->ent_queue->num_queues) {
+		EntQueue_Delete (scene->ent_queue);
+		scene->ent_queue = EntQueue_New (rctx->entqueue_count);
+		scene->entqueue_enum = &rctx->entqueue_enum;
+	}
 	EntQueue_Clear (scene->ent_queue);
 
 	R_ClearParticles ();

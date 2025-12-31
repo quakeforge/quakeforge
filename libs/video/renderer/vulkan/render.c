@@ -853,6 +853,10 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 			}
 		}
 	}
+	if (rctx->entqueueinfo) {
+		Hash_DelTable (rctx->entqueue_symtab.tab);
+		delete_memsuper (rctx->entqueueinfo->memsuper);
+	}
 	Hash_DelContext (rctx->hashctx);
 
 	QFV_Render_UI_Shutdown (ctx);

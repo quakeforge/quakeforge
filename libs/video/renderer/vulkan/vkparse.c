@@ -1548,7 +1548,7 @@ QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 	return ji;
 }
 
-struct qfv_samplerinfo_s *
+qfv_samplerinfo_t *
 QFV_ParseSamplerInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 {
 	memsuper_t *memsuper = new_memsuper ();
@@ -1585,6 +1585,43 @@ QFV_ParseSamplerInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 		}
 	}
 	QFV_DestroySymtab (exprctx.external_variables);
+	PL_Release (messages);
+	if (!ret) {
+		delete_memsuper (memsuper);
+		si = 0;
+	}
+
+	return si;
+}
+
+qfv_entqueueinfo_t *
+QFV_ParseEntqueueInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
+{
+	memsuper_t *memsuper = new_memsuper ();
+	qfv_entqueueinfo_t *si = cmemalloc (memsuper, sizeof (qfv_entqueueinfo_t));
+	*si = (qfv_entqueueinfo_t) { .memsuper = memsuper };
+
+	scriptctx_t *sctx = ctx->script_context;
+	plitem_t   *messages = PL_NewArray ();
+
+	exprctx_t   exprctx = {
+		.symtab = &root_symtab,
+		.messages = messages,
+		.hashctx = &sctx->hashctx,
+		.memsuper = memsuper,
+	};
+	parsectx_t  parsectx = {
+		.ectx = &exprctx,
+		.vctx = ctx,
+		.data = rctx,
+	};
+
+	int         ret;
+	if (!(ret = parse_qfv_entqueueinfo_t (0, item, si, messages, &parsectx))) {
+		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+		}
+	}
 	PL_Release (messages);
 	if (!ret) {
 		delete_memsuper (memsuper);

@@ -131,6 +131,7 @@ vulkan_R_Init (struct plitem_s *config)
 	Vulkan_Compose_Init (vulkan_ctx);
 
 	if (config) {
+		auto entqueues = PL_ObjectForKey (config, "entqueues");
 		auto samplers = PL_ObjectForKey (config, "samplers");
 		auto render_graph = PL_ObjectForKey (config, "render_graph");
 		if (!render_graph) {
@@ -138,6 +139,9 @@ vulkan_R_Init (struct plitem_s *config)
 		}
 		if (!samplers) {
 			Sys_Error ("samplers not found in config");
+		}
+		if (entqueues) {
+			QFV_LoadEntqueueInfo (vulkan_ctx, entqueues);
 		}
 		QFV_LoadSamplerInfo (vulkan_ctx, samplers);
 		QFV_LoadRenderInfo (vulkan_ctx, render_graph);
