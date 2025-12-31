@@ -979,6 +979,10 @@ exprtype_t cexpr_voidptr = {
 	.size = sizeof (void *),
 };
 
+binop_t cexpr_enum_binops[] = {
+	{ '=', &cexpr_plitem, 0, cexpr_cast_plitem },
+};
+
 VISIBLE binop_t *
 cexpr_find_cast (exprtype_t *dst_type, exprtype_t *src_type)
 {

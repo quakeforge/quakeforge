@@ -163,6 +163,7 @@ extern exprtype_t cexpr_voidptr;
 extern binop_t cexpr_array_binops[];
 extern binop_t cexpr_struct_binops[];
 extern binop_t cexpr_struct_pointer_binops[];
+extern binop_t cexpr_enum_binops[];
 extern binop_t cexpr_flag_binops[];
 extern unop_t cexpr_flag_unops[];
 
