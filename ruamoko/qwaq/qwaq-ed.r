@@ -1148,9 +1148,11 @@ main (int argc, string *argv)
 
 	#define SUBDIV 8
 	auto quadsphere = create_quadsphere();
+	int planetary_queue = Scene_Entqueue ([main_window scene], "planetary");
 	entity_t QuadSphere_ent = Scene_CreateEntity ([main_window scene]);
 	add_target (QuadSphere_ent);
 	Entity_SetModel (QuadSphere_ent, Model_LoadMesh ("quadsphere", quadsphere));
+	Entity_SetEntqueue (QuadSphere_ent, planetary_queue);
 	Entity_SetSubmeshMask (QuadSphere_ent, ~(1<<8));
 	Entity_SetTexture (QuadSphere_ent, "8k_earth_daymap");
 	Transform_SetLocalPosition(Entity_GetTransform (QuadSphere_ent), { 12770e3, -20, 20, 1});

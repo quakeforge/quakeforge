@@ -1,4 +1,7 @@
 {
+entqueues = {
+	queues = (planetary);
+};
 samplers = {
 	samplers = {
 		quakepic = {
@@ -1823,6 +1826,8 @@ render_graph = {
 							tasks = (
 								{ func = mesh_draw;
 								  params = (main, 0); },
+								{ func = mesh_draw_queue;
+								  params = (main, 0, planetary); },
 							);
 
 							stages = (
@@ -2012,8 +2017,29 @@ render_graph = {
 
 							stages = (
 								$mesh.shader.gbuf_vertex,
+								$qskin.shader.fragment,
+							);
+							vertexInput = $mesh.vertexInput;
+							inputAssembly = $mesh.inputAssembly;
+							layout = $mesh.layout;
+							dynamic = {
+								dynamicState = (
+									viewport,
+									scissor,
+									vertex_input_ext,
+								);
+							};
+						};
+						planetary:gbuffer = {
+							color = $color.mesh;
+							tasks = (
+								{ func = mesh_draw_queue;
+								  params = (main, 1, planetary); },
+							);
+
+							stages = (
+								$mesh.shader.gbuf_vertex,
 								$mesh.shader.planetary,
-								//$qskin.shader.fragment,
 							);
 							vertexInput = $mesh.vertexInput;
 							inputAssembly = $mesh.inputAssembly;
