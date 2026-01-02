@@ -9,9 +9,11 @@ noinst_PROGRAMS += @QWAQ_TARGETS@ \
 	ruamoko/qwaq/input-app.dat$(EXEEXT) \
 	ruamoko/qwaq/z-transform.dat$(EXEEXT)
 
+atmosphere_src = ruamoko/qwaq/atmosphere.r
 planetary_src = ruamoko/qwaq/planetary.r
 
 qwaqshader_src = \
+	$(atmosphere_src) \
 	$(planetary_src)
 qwaqshader_dep = $(call spvautodep, $(qwaqshader_src))
 include $(qwaqshader_dep) # am--include-marker

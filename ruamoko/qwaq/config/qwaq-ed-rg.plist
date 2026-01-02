@@ -885,6 +885,25 @@ render_graph = {
 				};
 			};
 		};
+		atmosphere = {
+			shader = {
+				fragment = {
+					stage = fragment;
+					name = main;
+					module = atmosphere.r.spv;
+				};
+			};
+			layout = {
+				descriptorSets = ($input, matrix_set);
+				pushConstants = {
+					fragment = {
+						fog = vec4;
+						camera = vec4;
+						near_plane = float;
+					};
+				};
+			};
+		};
 		output = {
 			@inherit = $compose_base;
 			shader = {
@@ -1413,6 +1432,10 @@ render_graph = {
 			@inherit = $image_base;
 			format = r16g16b16a16_sfloat;
 		};
+		compo = {
+			@inherit = $image_base;
+			format = r16g16b16a16_sfloat;
+		};
 		output = {
 			@inherit = $image_base;
 			usage = color_attachment|input_attachment|sampled;
@@ -1447,6 +1470,10 @@ render_graph = {
 			format = r16g16b16a16_sfloat;
 		};
 		cube_light = {
+			@inherit = $cube_image_base;
+			format = r16g16b16a16_sfloat;
+		};
+		cube_compo = {
 			@inherit = $cube_image_base;
 			format = r16g16b16a16_sfloat;
 		};
@@ -1499,6 +1526,11 @@ render_graph = {
 			image = light;
 			format = $images.light.format;
 		};
+		compo = {
+			@inherit = $view_base;
+			image = compo;
+			format = $images.compo.format;
+		};
 		output = {
 			@inherit = $view_base;
 			image = output;
@@ -1543,6 +1575,11 @@ render_graph = {
 			@inherit = $cube_view_base;
 			image = cube_light;
 			format = $images.cube_light.format;
+		};
+		cube_compo = {
+			@inherit = $cube_view_base;
+			image = cube_compo;
+			format = $images.cube_compo.format;
 		};
 		cube_output = {
 			@inherit = $cube_view_base;
@@ -1762,6 +1799,11 @@ render_graph = {
 						@inherit = $light_base;
 						format = $images.light.format;
 						view = light;
+					};
+					compo = {
+						@inherit = $color_base;
+						format = $images.compo.format;
+						view = compo;
 					};
 					entid = {
 						@inherit = $entid_base;
@@ -2177,7 +2219,7 @@ render_graph = {
 							light = shader_read_only_optimal;
 						};
 						color = {
-							output = {
+							compo = {
 								layout = color_attachment_optimal;
 								blend = $additive_blend;
 							};
@@ -2291,6 +2333,40 @@ render_graph = {
 						};
 					};
 				};
+				atmosphere = {
+					color = "[ 0.0784313725490196, 0.19607843137254902, 0.37254901960784315, 1]";
+					dependencies = {
+						compose = $color_dependency;
+					};
+					attachments = {
+						input = {
+							compo = shader_read_only_optimal;
+							depth = shader_read_only_optimal;
+						};
+						color = {
+							output = {
+								layout = color_attachment_optimal;
+								blend = $additive_blend;
+							};
+						};
+					};
+					pipelines = {
+						atmosphere = {
+							@inherit = $compose_base;
+
+							color = $color.compose;
+							tasks = (
+								{ func = fullscreen_pass; },
+							);
+
+							stages = (
+								$fstriangle.shader.vertexst,
+								$atmosphere.shader.fragment,
+							);
+							layout = $atmosphere.layout;
+						};
+					};
+				};
 				entid = {
 					color = "[ 1,  0,  0, 1]";
 					dependencies = {
@@ -2335,7 +2411,7 @@ render_graph = {
 						translucent = $extcolor_outdep;
 						gbuffer = $extcolor_outdep;
 						lighting = $extcolor_outdep;
-						compose = {
+						atmosphere = {
 							src = {
 								stage = color_attachment_output;
 								access = color_attachment_write;
@@ -2354,7 +2430,7 @@ render_graph = {
 		deferred_cube = {
 			@inherit = $renderpasses.deferred;
 			@next = (VkRenderPassMultiviewCreateInfo, {
-				viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
+				viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
 			});
 			framebuffer = {
 				width = "min($render_output.extent.width,$render_output.extent.height)";
@@ -2386,6 +2462,11 @@ render_graph = {
 						@inherit = $light_base;
 						format = $images.cube_light.format;
 						view = cube_light;
+					};
+					compo = {
+						@inherit = $color_base;
+						format = $images.cube_compo.format;
+						view = cube_compo;
 					};
 					entid = {
 						@inherit = $entid_base;

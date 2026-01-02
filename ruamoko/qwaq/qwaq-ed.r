@@ -32,7 +32,10 @@ static string input_cfg =
 #embed "config/qwaq-ed-in.cfg"
 ;
 
-//FIXME embed as uint array doesn't work yet
+static string atmosphere_shader =
+#embed "ruamoko/qwaq/atmosphere.r.spv"
+;
+
 static string planetary_shader =
 #embed "ruamoko/qwaq/planetary.r.spv"
 ;
