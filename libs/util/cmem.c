@@ -381,6 +381,15 @@ cmemfree (memsuper_t *super, void *mem)
 	}
 }
 
+char *
+cmemstrdup (memsuper_t *super, const char *str)
+{
+	size_t      len = strlen (str) + 1;
+	char       *dup = cmemalloc (super, len);
+	memcpy (dup, str, len);
+	return dup;
+}
+
 memsuper_t *
 new_memsuper (void)
 {

@@ -479,10 +479,8 @@ parse_fixed_array (const plfield_t *field, const plitem_t *item,
 static char *
 vkstrdup (parsectx_t *context, const char *str)
 {
-	size_t      len = strlen (str) + 1;
-	char       *dup = vkparse_alloc (context, len);
-	memcpy (dup, str, len);
-	return dup;
+	parsectx_t *pctx = context;
+	return cmemstrdup (pctx->ectx->memsuper, str);
 }
 
 static __attribute__((used)) parse_string_t parse_string_array = { 0 };
