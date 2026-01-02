@@ -227,10 +227,12 @@ matrices_startup (exprctx_t *ectx)
 	QFV_CreateResource (device, mctx->resource);
 
 	auto dsmanager = QFV_Render_DSManager (ctx, "matrix_set");
+	uint32_t ds_index = QFV_GetDSIndex (ctx, "matrix_set");
 	for (size_t i = 0; i < frames; i++) {
 		auto mframe = &mctx->frames.a[i];
 		mframe->buffer = buffers[i].buffer.buffer;
 		mframe->descriptors = QFV_DSManager_AllocSet (dsmanager);
+		QFV_SetDescriptorSet (ctx, i, ds_index, mframe->descriptors);
 		VkDescriptorBufferInfo bufferInfo = {
 			mframe->buffer, 0, VK_WHOLE_SIZE
 		};

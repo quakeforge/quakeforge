@@ -196,12 +196,14 @@ typedef struct qfv_pipelineinfo_s {
 typedef struct qfv_subpassinfo_s {
 	vec4f_t     color;
 	const char *name;
+	int         line;
 	uint32_t    num_dependencies;
 	qfv_dependencyinfo_t *dependencies;
 	qfv_attachmentsetinfo_t *attachments;
-	uint32_t    num_pipelines;
-	qfv_pipelineinfo_t *pipelines;
 	qfv_pipelineinfo_t *base_pipeline;
+	qfv_pipelineinfo_t *pipelines;
+	uint32_t    num_pipelines;
+	uint32_t    subpass_input;	// valid only if attachments.num_input > 0
 } qfv_subpassinfo_t;
 
 typedef struct qfv_framebufferinfo_s {
@@ -274,8 +276,8 @@ typedef struct qfv_jobinfo_s {
 	qfv_imageinfo_t *buffers;
 	qfv_imageviewinfo_t *bufferviews;
 
-	uint32_t    num_dslayouts;
-	qfv_descriptorsetlayoutinfo_t *dslayouts;
+	uint32_t    num_dslayouts;	// does not include subpass input layouts
+	qfv_descriptorsetlayoutinfo_t *dslayouts;//modified to include spi layouts
 
 	qfv_taskinfo_t *newscene_tasks;
 	uint32_t    newscene_num_tasks;
@@ -356,7 +358,15 @@ typedef struct qfv_subpass_s {
 	VkCommandBufferBeginInfo beginInfo;
 	uint32_t    pipeline_count;
 	qfv_pipeline_t *pipelines;
+	uint32_t    frame_index;	// valid only if num_inputs > 0
+	uint32_t    num_inputs;
+	uint32_t   *input_indices;	// valid only if num_inputs > 0
 } qfv_subpass_t;
+
+typedef struct qfv_subpassinput_s {
+	uint64_t    update_frame;
+	VkDescriptorSet set;
+} qfv_subpassinput_t;
 
 typedef struct qfv_framebuffer_s {
 	uint32_t    width;
@@ -447,6 +457,8 @@ typedef struct qfv_job_s {
 typedef struct qfv_renderframe_s {
 	VkFence     fence;
 	VkSemaphore renderDoneSemaphore;
+	qfv_subpassinput_t *subpass_inputs;
+	VkDescriptorSet *descriptor_sets;
 	qfv_cmdpoolmgr_t render_cmdpool;
 	qfv_cmdpoolmgr_t output_cmdpool;
 	qfv_cmdpoolmgr_t *active_pool;
@@ -492,6 +504,7 @@ typedef struct qfv_taskctx_s {
 	qfv_renderframe_t *frame;
 	qfv_pipeline_t *pipeline;
 	qfv_renderpass_t *renderpass;
+	qfv_subpass_t *subpass;
 	VkCommandBuffer cmd;
 	void       *data;
 } qfv_taskctx_t;
@@ -508,6 +521,9 @@ void QFV_RunRenderJob (struct vulkan_ctx_s *ctx);
 void QFV_LoadRenderInfo (struct vulkan_ctx_s *ctx, struct plitem_s *item);
 void QFV_LoadSamplerInfo (struct vulkan_ctx_s *ctx, struct plitem_s *item);
 void QFV_LoadEntqueueInfo (struct vulkan_ctx_s *ctx, struct plitem_s *item);
+uint32_t QFV_GetDSIndex (struct vulkan_ctx_s *ctx, const char *name);
+void QFV_SetDescriptorSet (struct vulkan_ctx_s *ctx, uint32_t frame,
+						   uint32_t ds_index, VkDescriptorSet set);
 void QFV_BuildRender (struct vulkan_ctx_s *ctx);
 void QFV_Render_Init (struct vulkan_ctx_s *ctx);
 void QFV_Render_Run_Init (struct vulkan_ctx_s *ctx);

@@ -72,6 +72,22 @@ QFV_AppendCmdBuffer (vulkan_ctx_t *ctx, VkCommandBuffer cmd)
 	DARRAY_APPEND (&job->commands, cmd);
 }
 
+void
+QFV_SetDescriptorSet (vulkan_ctx_t *ctx, uint32_t frame,
+					  uint32_t ds_index, VkDescriptorSet set)
+{
+	auto rctx = ctx->render_context;
+	if (frame == ~0u) {
+		for (size_t i = 0; i < rctx->frames.size; i++) {
+			auto rframe = &rctx->frames.a[i];
+			rframe->descriptor_sets[ds_index] = set;
+		}
+	} else {
+		auto rframe = &rctx->frames.a[frame];
+		rframe->descriptor_sets[ds_index] = set;
+	}
+}
+
 static void
 update_time (qfv_time_t *time, int64_t start, int64_t end)
 {
@@ -189,6 +205,7 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 			.ctx = ctx,
 			.frame = frame,
 			.renderpass = rp,
+			.subpass = sp,
 			.cmd = QFV_GetCmdBuffer (ctx, true),
 			.data = data,
 		};
@@ -603,6 +620,61 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 }
 
 static void
+fullscreen_pass (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto rctx = ctx->render_context;
+	auto rframe = &rctx->frames.a[ctx->curFrame];
+	auto renderpass = taskctx->renderpass;
+	auto subpass = taskctx->subpass;
+	auto pipeline = taskctx->pipeline;
+	auto cmd = taskctx->cmd;
+	auto input = &rframe->subpass_inputs[subpass->frame_index];
+
+	if (!subpass->num_inputs) {
+		Sys_Error ("fullscreen_pass with no subpass inputs: %s:%s:%s",
+				   renderpass->label.name, subpass->label.name,
+				   pipeline->label.name);
+	}
+	auto fb = &taskctx->renderpass->framebuffer;
+	if (fb->update_frame != input->update_frame) {
+		input->update_frame = fb->update_frame;
+		VkDescriptorImageInfo image_info[subpass->num_inputs];
+		VkWriteDescriptorSet image_write[subpass->num_inputs];
+		for (uint32_t i = 0; i < subpass->num_inputs; i++) {
+			image_info[i] = (VkDescriptorImageInfo) {
+				.imageView = fb->views[subpass->input_indices[i]],
+				.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			};
+			image_write[i] = (VkWriteDescriptorSet) {
+				.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstSet = input->set,
+				.dstBinding = i,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+				.pImageInfo = &image_info[i],
+			};
+		}
+		dfunc->vkUpdateDescriptorSets (device->dev, subpass->num_inputs,
+									   image_write, 0, 0);
+	}
+	if (pipeline->num_indices) {
+		VkDescriptorSet sets[pipeline->num_indices];
+		for (uint32_t i = 0; i < pipeline->num_indices; i++) {
+			sets[i] = rframe->descriptor_sets[pipeline->ds_indices[i]];
+		}
+		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+										pipeline->layout,
+										0, pipeline->num_indices, sets, 0, 0);
+	}
+	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
+}
+
+static void
 submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
@@ -639,6 +711,10 @@ static exprfunc_t update_framebuffer_func[] = {
 	{ .func = update_framebuffer, .num_params = 1, update_framebuffer_params },
 	{}
 };
+static exprfunc_t fullscreen_pass_func[] = {
+	{ .func = fullscreen_pass },
+	{}
+};
 
 static exprfunc_t submit_render_func[] = {
 	{ .func = submit_render },
@@ -648,6 +724,7 @@ static exprfunc_t submit_render_func[] = {
 static exprsym_t render_task_syms[] = {
 	{ "wait_on_fence", &cexpr_function, wait_on_fence_func },
 	{ "update_framebuffer", &cexpr_function, update_framebuffer_func },
+	{ "fullscreen_pass", &cexpr_function, fullscreen_pass_func },
 	{ "submit_render", &cexpr_function, submit_render_func },
 	{}
 };
@@ -688,10 +765,13 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 	auto device = ctx->device;
 	for (size_t i = 0; i < rctx->frames.size; i++) {
 		auto frame = &rctx->frames.a[i];
-		frame->fence = QFV_CreateFence (device, 1);
+		*frame = (qfv_renderframe_t) {
+			.fence = QFV_CreateFence (device, 1),
+			.renderDoneSemaphore = QFV_CreateSemaphore (device),
+			.active_pool = &frame->render_cmdpool,
+		};
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_FENCE, frame->fence,
 							 vac (ctx->va_ctx, "render:%zd", i));
-		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
 							 frame->renderDoneSemaphore,
 							 vac (ctx->va_ctx, "render done:%zd", i));
@@ -699,7 +779,6 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 								 vac (ctx->va_ctx, "render pool:%zd", i));
 		QFV_CmdPoolManager_Init (&frame->output_cmdpool, device,
 								 vac (ctx->va_ctx, "output pool:%zd", i));
-		frame->active_pool = &frame->render_cmdpool;
 #ifdef TRACY_ENABLE
 		auto instance = ctx->instance->instance;
 		auto physdev = ctx->device->physDev->dev;

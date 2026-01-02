@@ -145,7 +145,6 @@ QFV_LoadEntqueueInfo (vulkan_ctx_t *ctx, plitem_t *item)
 		}
 		for (uint32_t i = 0; i < eqi->num_queues; i++) {
 			int ind = mod_num_types + i;
-			printf ("%d %s\n", mod_num_types + i, eqi->queue_names[i]);
 			if (Hash_Find (symtab->tab, eqi->queue_names[i])) {
 				PL_Message (messages, PL_ObjectAtIndex (eqi->plitem, i),
 							"duplicate entqueue name: %s", eqi->queue_names[i]);
@@ -193,11 +192,17 @@ typedef struct {
 	uint32_t    num_comp_pipelines;
 
 	uint32_t    num_ds_indices;
+	uint32_t    num_subpass_inputs;
+	uint32_t    num_input_indices;
 } objcount_t;
 
 static void
 count_as_stuff (qfv_attachmentsetinfo_t *as, objcount_t *counts)
 {
+	if (as->num_input) {
+		counts->num_subpass_inputs++;
+		counts->num_input_indices += as->num_input;
+	}
 	counts->num_attachmentrefs += as->num_input;
 	counts->num_attachmentrefs += as->num_color;
 	counts->num_colorblend += as->num_color;
@@ -213,6 +218,7 @@ count_as_stuff (qfv_attachmentsetinfo_t *as, objcount_t *counts)
 static void
 count_sp_stuff (qfv_subpassinfo_t *spi, objcount_t *counts)
 {
+	spi->subpass_input = counts->num_subpass_inputs;
 	counts->num_dependencies += spi->num_dependencies;
 	if (spi->attachments) {
 		count_as_stuff (spi->attachments, counts);
@@ -491,6 +497,8 @@ typedef struct {
 	objcount_t  inds;
 	objptr_t    ptr;
 
+	qfv_subpassinfo_t *subpass;
+
 	vulkan_ctx_t *ctx;
 	qfv_jobinfo_t *jinfo;
 	exprtab_t  *symtab;
@@ -521,6 +529,16 @@ find_subpass (qfv_dependencyinfo_t *d, uint32_t spind,
 static uint32_t __attribute__((pure))
 find_ds_index (const qfv_reference_t *ref, objstate_t *s)
 {
+	if (strcmp (ref->name, "$input") == 0) {
+		if (!s->subpass) {
+			Sys_Error ("not doing a subpass");
+		}
+		auto subpass = s->subpass;
+		if (!subpass->attachments || !subpass->attachments->num_input) {
+			Sys_Error ("%d: subpass has no input attachments", subpass->line);
+		}
+		return s->jinfo->num_dslayouts + subpass->subpass_input;
+	}
 	for (uint32_t i = 0; i < s->jinfo->num_dslayouts; i++) {
 		__auto_type ds = &s->jinfo->dslayouts[i];
 		if (strcmp (ds->name, ref->name) == 0) {
@@ -531,14 +549,27 @@ find_ds_index (const qfv_reference_t *ref, objstate_t *s)
 			   s->rpi->name, s->spi->name, ref->line, ref->name);
 }
 
-static VkDescriptorSetLayout
-find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
+uint32_t
+QFV_GetDSIndex (vulkan_ctx_t *ctx, const char *name)
 {
-	auto ds = &s->jinfo->dslayouts[find_ds_index (ref, s)];
-	if (ds->setLayout) {
-		return ds->setLayout;
-	}
+	auto rctx = ctx->render_context;
+	auto jinfo = rctx->jobinfo;
 
+	for (uint32_t i = 0; i < jinfo->num_dslayouts; i++) {
+		auto ds = &jinfo->dslayouts[i];
+		if (strcmp (ds->name, name) == 0) {
+			return i;
+		}
+	}
+	Sys_Error ("invalid descriptor set layout: %s", name);
+}
+
+static void
+create_descriptorSet (qfv_descriptorsetlayoutinfo_t *ds, objstate_t *s)
+{
+	if (!ds->num_bindings) {
+		Sys_Error ("0 bindings in %s", ds->name);
+	}
 	VkDescriptorSetLayoutCreateInfo cInfo = {
 		.sType=VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 		.flags = ds->flags,
@@ -551,6 +582,41 @@ find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
 						 ds->setLayout, vac (s->ctx->va_ctx, "descriptorSet:%s",
 											 ds->name));
+}
+
+static VkDescriptorSetLayout
+find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
+{
+	uint32_t ds_index = find_ds_index (ref, s);
+	auto ds = &s->jinfo->dslayouts[ds_index];
+	if (ds->setLayout) {
+		return ds->setLayout;
+	}
+
+	if (ds_index >= s->jinfo->num_dslayouts) {
+		auto memsuper = s->jinfo->memsuper;
+		auto subpass = s->subpass;
+		auto attach = subpass->attachments;
+		size_t size = sizeof (VkDescriptorSetLayoutBinding[attach->num_input]);
+		VkDescriptorSetLayoutBinding *bindings;
+		bindings = cmemalloc (memsuper, size);
+		for (uint32_t i = 0; i < attach->num_input; i++) {
+			bindings[i] = (VkDescriptorSetLayoutBinding) {
+				.binding = i,
+				.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+				.descriptorCount = 1,
+				.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+			};
+		}
+		*ds = (qfv_descriptorsetlayoutinfo_t) {
+			.name = cmemstrdup (memsuper, vac (s->ctx->va_ctx, "%s:$input",
+											   subpass->name)),
+			.num_bindings = attach->num_input,
+			.bindings = bindings,
+		};
+		create_descriptorSet (ds, s);
+	}
+	create_descriptorSet (ds, s);
 	return ds->setLayout;
 }
 
@@ -921,6 +987,9 @@ typedef struct {
 	qfv_pipeline_t *pipelines;
 	qfv_taskinfo_t *tasks;
 	uint32_t *ds_indices;
+	VkDescriptorSet *descriptor_sets;
+	qfv_subpassinput_t *subpass_inputs;
+	uint32_t *input_indices;
 	VkImageView *attachment_views;
 } jobptr_t;
 
@@ -985,6 +1054,9 @@ static void
 init_subpass (qfv_subpass_t *sp, qfv_subpassinfo_t *isp,
 			  jobptr_t *jp, objstate_t *s)
 {
+	s->subpass = isp;
+	auto attachments = isp->attachments;
+	uint32_t    ni = attachments ? attachments->num_input : 0;
 	uint32_t    np = s->inds.num_graph_pipelines + s->inds.num_comp_pipelines;
 	*sp = (qfv_subpass_t) {
 		.label = make_label (isp->name, isp->color),
@@ -999,17 +1071,33 @@ init_subpass (qfv_subpass_t *sp, qfv_subpassinfo_t *isp,
 		},
 		.pipeline_count = isp->num_pipelines,
 		.pipelines = &jp->pipelines[np],
+		.frame_index = s->inds.num_subpass_inputs,
+		.num_inputs = ni,
+		.input_indices = &jp->input_indices[s->inds.num_input_indices],
 	};
+	if (ni) {
+		for (uint32_t i = 0; i < ni; i++) {
+			qfv_reference_t ref = {
+				.name = attachments->input[i].name,
+				.line = attachments->input[i].line,
+			};
+			sp->input_indices[i] = find_attachment (&ref, s);
+		}
+		s->inds.num_subpass_inputs++;
+		s->inds.num_input_indices += ni;
+	}
 	for (uint32_t i = 0; i < isp->num_pipelines; i++) {
 		init_pipeline (&sp->pipelines[i], &isp->pipelines[i], jp, s, 0);
 		s->inds.num_graph_pipelines++;
 	}
+	s->subpass = nullptr;
 }
 
 static void
 init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
 				 jobptr_t *jp, objstate_t *s)
 {
+	s->rpi = rpinfo;
 	*rp = (qfv_renderpass_t) {
 		.vulkan_ctx = s->ctx,
 		.label = make_label (rpinfo->name, rpinfo->color),
@@ -1112,7 +1200,10 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 {
 	auto rctx = ctx->render_context;
 	auto jobinfo = rctx->jobinfo;
+	uint32_t frames = rctx->frames.size;
 
+	uint32_t     num_dslayouts = jobinfo->num_dslayouts
+							   + counts->num_subpass_inputs;
 	size_t      size = sizeof (qfv_job_t);
 	size += sizeof (qfv_step_t       [counts->num_steps]);
 	size += sizeof (qfv_render_t     [counts->num_render]);
@@ -1130,7 +1221,10 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 	size += sizeof (VkPipeline       [counts->num_comp_pipelines]);
 	size += sizeof (VkPipelineLayout [counts->num_layouts]);
 	size += sizeof (VkImageView      [counts->num_attachments]);
-	size += sizeof (qfv_dsmanager_t *[jobinfo->num_dslayouts]);
+	size += sizeof (qfv_dsmanager_t *[num_dslayouts]);
+	size += sizeof (VkDescriptorSet  [frames * num_dslayouts]);
+	size += sizeof (qfv_subpassinput_t[frames * counts->num_subpass_inputs]);
+	size += sizeof (uint32_t         [counts->num_input_indices]);
 	size += sizeof (uint32_t         [counts->num_ds_indices]);
 
 	rctx->job = malloc (size);
@@ -1139,10 +1233,10 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 		.num_renderpasses = counts->num_renderpasses,
 		.num_pipelines = counts->num_graph_pipelines
 						 + counts->num_comp_pipelines,
-		.num_layouts = s->inds.num_layouts,
+		.num_layouts = num_dslayouts,
 		.num_steps = counts->num_steps,
 		.commands = DARRAY_STATIC_INIT (16),
-		.num_dsmanagers = jobinfo->num_dslayouts,
+		.num_dsmanagers = num_dslayouts,
 		.startup_funcs = DARRAY_STATIC_INIT (16),
 		.shutdown_funcs = DARRAY_STATIC_INIT (16),
 		.clearstate_funcs = DARRAY_STATIC_INIT (16),
@@ -1162,7 +1256,10 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 	job->layouts = (VkPipelineLayout *) &job->pipelines[job->num_pipelines];
 	auto av = (VkImageView *) &job->layouts[counts->num_layouts];
 	job->dsmanager = (qfv_dsmanager_t **) &av[counts->num_attachments];
-	auto ds = (uint32_t *) &job->dsmanager[jobinfo->num_dslayouts];
+	auto ds = (VkDescriptorSet *) &job->dsmanager[job->num_dsmanagers];
+	auto si = (qfv_subpassinput_t *) &ds[frames * job->num_dsmanagers];
+	auto ii = (uint32_t *) &si[frames * counts->num_subpass_inputs];
+	auto dsi = (uint32_t *) &ii[counts->num_input_indices];
 
 	return (jobptr_t) {
 		.steps = job->steps,
@@ -1174,7 +1271,10 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 		.subpasses = sp,
 		.pipelines = pl,
 		.tasks = ti,
-		.ds_indices = ds,
+		.ds_indices = dsi,
+		.descriptor_sets = ds,
+		.subpass_inputs = si,
+		.input_indices = ii,
 		.attachment_views = av,
 	};
 }
@@ -1202,12 +1302,12 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, jobptr_t jp, objstate_t *s)
 	auto cv = jp.clearvalues;
 	memcpy (cv, s->ptr.clear, sizeof (VkClearValue [counts->num_attachments ]));
 
-	for (uint32_t i = 0; i < job->num_steps; i++) {
-		init_step (i, &jp, s);
-	}
 	for (uint32_t i = 0; i < job->num_dsmanagers; i++) {
 		auto layoutInfo = &jobinfo->dslayouts[i];
 		job->dsmanager[i] = QFV_DSManager_Create (layoutInfo, 16, ctx);
+	}
+	for (uint32_t i = 0; i < job->num_steps; i++) {
+		init_step (i, &jp, s);
 	}
 }
 
@@ -1284,6 +1384,7 @@ create_pipeline_layout (const qfv_pipelineinfo_t *pli, objstate_t *s)
 static void
 create_subpass_layouts (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
 {
+	s->subpass = &sub[index];
 	s->spi = &sub[index];
 	s->plc = &s->ptr.gplCreate[s->inds.num_graph_pipelines];
 	s->spc = &s->ptr.subpass[s->inds.num_subpasses];
@@ -1294,6 +1395,7 @@ create_subpass_layouts (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
 		}
 		create_pipeline_layout (&s->spi->pipelines[i], s);
 	}
+	s->subpass = nullptr;
 }
 
 static void
@@ -1359,6 +1461,17 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 	__auto_type rctx = ctx->render_context;
 	__auto_type jinfo = rctx->jobinfo;
 
+	if (counts->num_subpass_inputs) {
+		uint32_t num_dslayouts = jinfo->num_dslayouts;
+		uint32_t count = num_dslayouts + counts->num_subpass_inputs;
+		size_t asize = sizeof (qfv_descriptorsetlayoutinfo_t[count]);
+		size_t csize = sizeof (qfv_descriptorsetlayoutinfo_t[num_dslayouts]);
+		void *new_layouts = cmemalloc (jinfo->memsuper, asize);
+		memset (new_layouts, 0, asize);
+		memcpy (new_layouts, jinfo->dslayouts, csize);
+		jinfo->dslayouts = new_layouts;
+	}
+
 	VkRenderPass renderpasses[counts->num_renderpasses + 1] = {};
 	VkPipeline pipelines[counts->num_graph_pipelines
 						 + counts->num_comp_pipelines + 1] = {};
@@ -1415,6 +1528,7 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 	create_layouts (ctx, &s);
 	counts->num_layouts = s.inds.num_layouts;
 	counts->num_ds_indices = s.inds.num_ds_indices;
+	s.inds.num_ds_indices = 0;
 
 	auto jp = create_job (ctx, counts, &s);
 
@@ -1425,6 +1539,15 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 	init_tasks (&job->init_task_count, &job->init_tasks,
 			    jinfo->init_num_tasks, jinfo->init_tasks,
 				&jp, &s);
+
+	uint32_t num_descriptor_sets = job->num_dsmanagers;
+	for (size_t i = 0; i < rctx->frames.size; i++) {
+		auto frame = &rctx->frames.a[i];
+		frame->descriptor_sets = jp.descriptor_sets + i * num_descriptor_sets;
+		for (uint32_t j = 0; j < num_descriptor_sets; j++) {
+			frame->descriptor_sets[0] = 0;
+		}
+	}
 	QFV_Render_Run_Init (ctx);
 
 	for (uint32_t i = 0; i < jinfo->num_steps; i++) {
@@ -1445,6 +1568,7 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 		|| s.inds.num_preserve != counts->num_preserve
 		|| s.inds.num_graph_pipelines != counts->num_graph_pipelines
 		|| s.inds.num_comp_pipelines != counts->num_comp_pipelines
+		|| s.inds.num_ds_indices != counts->num_ds_indices
 		|| s.inds.num_layouts > counts->num_layouts) {
 		Sys_Error ("create_objects: something was missed");
 	}
@@ -1487,6 +1611,25 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 	s.inds.num_layouts = num_layouts;
 	s.inds.num_tasks = num_tasks;
 	init_job (ctx, counts, jp, &s);
+
+	uint32_t num_subpass_inputs = counts->num_subpass_inputs;
+	for (size_t i = 0; i < rctx->frames.size; i++) {
+		auto frame = &rctx->frames.a[i];
+		frame->subpass_inputs = jp.subpass_inputs + i * num_subpass_inputs;
+		for (uint32_t j = 0; j < num_subpass_inputs; j++) {
+			uint32_t ds_index = jinfo->num_dslayouts + j;
+			auto dsmanager = job->dsmanager[ds_index];
+			auto set = QFV_DSManager_AllocSet (dsmanager);
+			frame->descriptor_sets[ds_index] = set;
+			frame->subpass_inputs[j] = (qfv_subpassinput_t) {
+				.update_frame = ~UINT64_C(0),
+				.set = set,
+			};
+			QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, set,
+								 vac (ctx->va_ctx, "%s:%zd",
+									  dsmanager->name, i));
+		}
+	}
 }
 
 static void

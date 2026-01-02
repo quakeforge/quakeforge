@@ -405,6 +405,7 @@ parse = {
 		.dictionary = {
 			.parse = auto;
 			name = $name;
+			line = $item.line;
 		};
 		color = auto;
 		dependencies = {
@@ -415,16 +416,17 @@ parse = {
 			type = (single, qfv_attachmentsetinfo_t);
 			value = attachments;
 		};
-		pipelines = {
-			type = (labeledarray, qfv_pipelineinfo_t, name);
-			size = num_pipelines;
-			values = pipelines;
-		};
 		base_pipeline = {
 			//type = (labeledsingle, qfv_pipelineinfo_t, name);
 			type = (single, qfv_pipelineinfo_t, name);
 			value = base_pipeline;
 		};
+		pipelines = {
+			type = (labeledarray, qfv_pipelineinfo_t, name);
+			size = num_pipelines;
+			values = pipelines;
+		};
+		subpass_input = ignore;
 	};
 	qfv_attachmentinfo_s = {
 		.name = qfv_attachmentinfo_t;
