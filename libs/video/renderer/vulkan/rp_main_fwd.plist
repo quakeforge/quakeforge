@@ -54,14 +54,25 @@ properties = {
 			access = memory_read;
 		};
 	};
-	depth_dependency = {
+	depthtest_dependency = {
 		src = {
 			stage = early_fragment_tests|late_fragment_tests;
 			access = depth_stencil_attachment_write;
 		};
 		dst = {
-			stage = fragment_shader|early_fragment_tests|late_fragment_tests;
-			access = input_attachment_read|depth_stencil_attachment_read;
+			stage = early_fragment_tests|late_fragment_tests;
+			access = depth_stencil_attachment_read;
+		};
+		flags = by_region|view_local;
+	};
+	depthread_dependency = {
+		src = {
+			stage = early_fragment_tests|late_fragment_tests;
+			access = depth_stencil_attachment_read;
+		};
+		dst = {
+			stage = fragment_shader;
+			access = input_attachment_read;
 		};
 		flags = by_region|view_local;
 	};
@@ -1090,7 +1101,7 @@ renderpasses = {
 			translucent = {
 				color = "[ 0.25, 0.25, 0.6, 1]";
 				dependencies = {
-					solid = $depth_dependency;
+					solid = $depthtest_dependency;
 				};
 				attachments = {
 					depth = {
@@ -1155,11 +1166,11 @@ renderpasses = {
 			};
 			compose = {
 				color = "[ 0.7,  0.3,  0.3, 1]";
-				dependencies = {
-					solid = $color_dependency;
-					translucent = $depth_dependency;
-					//$external = $extcolor_dependency;
-				};
+				dependencies = (
+					{@inherit = $color_dependency; name = solid;},
+					{@inherit = $color_dependency; name = translucent;},
+					{@inherit = $depthread_dependency; name = solid;},
+				);
 				attachments = {
 					input = {
 						color = shader_read_only_optimal;
@@ -1233,8 +1244,8 @@ renderpasses = {
 							access = color_attachment_write;
 						};
 						dst = {
-							stage = fragment_shader;
-							access = shader_read;
+							stage = fragment_shader|color_attachment_output;
+							access = shader_read|color_attachment_write;
 						};
 					};
 				}

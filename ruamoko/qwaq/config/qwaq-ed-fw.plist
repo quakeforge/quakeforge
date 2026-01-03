@@ -217,14 +217,25 @@ render_graph = {
 				access = memory_read;
 			};
 		};
-		depth_dependency = {
+		depthtest_dependency = {
 			src = {
 				stage = early_fragment_tests|late_fragment_tests;
 				access = depth_stencil_attachment_write;
 			};
 			dst = {
-				stage = fragment_shader|early_fragment_tests|late_fragment_tests;
-				access = input_attachment_read|depth_stencil_attachment_read;
+				stage = early_fragment_tests|late_fragment_tests;
+				access = depth_stencil_attachment_read;
+			};
+			flags = by_region;
+		};
+		depthread_dependency = {
+			src = {
+				stage = early_fragment_tests|late_fragment_tests;
+				access = depth_stencil_attachment_read;
+			};
+			dst = {
+				stage = fragment_shader;
+				access = input_attachment_read;
 			};
 			flags = by_region;
 		};
@@ -1323,7 +1334,7 @@ render_graph = {
 				};
 			};
 			subpasses = {
-				solid = {
+				solid = {// subpass 0
 					color = "[ 0.3,  0.7,  0.3, 1]";
 					dependencies = (
 						{@inherit = $extdepth_dependency; name = $external;},
@@ -1400,10 +1411,10 @@ render_graph = {
 						};
 					};
 				};
-				translucent = {
+				translucent = {// subpass 1
 					color = "[ 0.25, 0.25, 0.6, 1]";
 					dependencies = {
-						solid = $depth_dependency;
+						solid = $depthtest_dependency;
 					};
 					attachments = {
 						depth = {
@@ -1466,13 +1477,13 @@ render_graph = {
 						};
 					};
 				};
-				compose = {
+				compose = {// subpass 2
 					color = "[ 0.7,  0.3,  0.3, 1]";
-					dependencies = {
-						solid = $color_dependency;
-						translucent = $color_dependency;//FIXME is this right? no op
-						$external = $extcolor_dependency;
-					};
+					dependencies = (
+						{@inherit = $color_dependency; name = solid;},
+						{@inherit = $color_dependency; name = translucent;},
+						{@inherit = $depthread_dependency; name = solid;},
+					);
 					attachments = {
 						input = {
 							color = shader_read_only_optimal;

@@ -217,14 +217,25 @@ render_graph = {
 				access = memory_read;
 			};
 		};
-		depth_dependency = {
+		depthtest_dependency = {
 			src = {
 				stage = early_fragment_tests|late_fragment_tests;
 				access = depth_stencil_attachment_write;
 			};
 			dst = {
 				stage = fragment_shader|early_fragment_tests|late_fragment_tests;
-				access = input_attachment_read|depth_stencil_attachment_read;
+				access = depth_stencil_attachment_read;
+			};
+			flags = by_region|view_local;
+		};
+		depthread_dependency = {
+			src = {
+				stage = early_fragment_tests|late_fragment_tests;
+				access = depth_stencil_attachment_read;
+			};
+			dst = {
+				stage = fragment_shader;
+				access = input_attachment_read;
 			};
 			flags = by_region|view_local;
 		};
@@ -1598,7 +1609,7 @@ render_graph = {
 				lightcull = {
 					color = "[ 0.7,  0.5,  0, 1]";
 					dependencies = {
-						depth = $depth_dependency;
+						depth = $depthtest_dependency;
 					};
 					attachments = {
 						depth = {
@@ -1757,7 +1768,7 @@ render_graph = {
 				};
 			};
 			subpasses = {
-				depth = {
+				depth = {// subpass 0
 					color = "[ 0.5,  0.5,  0.5, 1]";
 					dependencies = (
 						{@inherit = $extdepth_dependency; name = $external;},
@@ -1852,10 +1863,10 @@ render_graph = {
 						};
 					};
 				};
-				translucent = {
+				translucent = {// subpass 1
 					color = "[ 0.25, 0.25, 0.6, 1]";
 					dependencies = {
-						depth = $depth_dependency;
+						depth = $depthtest_dependency;
 						$external = $extcolor_dependency;
 					};
 					attachments = {
@@ -1942,11 +1953,11 @@ render_graph = {
 						};
 					};
 				};
-				gbuffer = {
+				gbuffer = {// subpass 2
 					color = "[ 0.3,  0.7,  0.3, 1]";
 					dependencies = {
-						depth = $depth_dependency;
-						translucent = $depth_dependency;//FIXME why?
+						depth = $depthtest_dependency;
+						translucent = $depthtest_dependency;//FIXME why?
 						$external = $extcolor_dependency;
 					};
 					attachments = {
@@ -2048,9 +2059,11 @@ render_graph = {
 						};
 					};
 				};
-				lighting = {
+				lighting = {// subpass 4
 					color = "[ 0.8,  0.8,  0.8, 1]";
 					dependencies = {
+						translucent = $depthread_dependency;
+						gbuffer = $depthread_dependency;
 						gbuffer = $color_dependency;
 						$external = $extcolor_dependency;
 					};
@@ -2138,7 +2151,7 @@ render_graph = {
 						};
 					};
 				};
-				compose = {
+				compose = {// subpass 5
 					color = "[ 0.7,  0.3,  0.3, 1]";
 					dependencies = {
 						translucent = $color_dependency;
@@ -2267,7 +2280,7 @@ render_graph = {
 						};
 					};
 				};
-				atmosphere = {
+				atmosphere = {// subpass 6
 					color = "[ 0.0784313725490196, 0.19607843137254902, 0.37254901960784315, 1]";
 					dependencies = {
 						compose = $color_dependency;
@@ -2301,10 +2314,10 @@ render_graph = {
 						};
 					};
 				};
-				entid = {
+				entid = {// subpass 7
 					color = "[ 1,  0,  0, 1]";
 					dependencies = {
-						depth = $depth_dependency;
+						depth = $depthtest_dependency;
 						$external = $extcolor_dependency;
 					};
 					attachments = {
