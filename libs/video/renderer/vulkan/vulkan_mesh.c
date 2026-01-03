@@ -58,36 +58,6 @@
 #include "r_local.h"
 #include "vid_vulkan.h"
 
-typedef struct {
-	mat4f_t     mat;
-	uint32_t    enabled_mask;
-	float       blend;
-	uint32_t    debug_bone;
-	byte        colors[4];
-	vec4f_t     base_color;
-	vec4f_t     fog;
-} mesh_push_constants_t;
-
-typedef struct {
-	mat4f_t     mat;
-	uint32_t    enabled_mask;
-	float       blend;
-	uint32_t    debug_bone;
-	byte        colors[4];
-	vec4f_t     base_color;
-	vec4f_t     fog;
-	vec4f_t     lightvec;
-	float       ambient;
-	float       shadelight;
-} fwd_push_constants_t;
-
-typedef struct {
-	mat4f_t     mat;
-	uint32_t    enabled_mask;
-	float       blend;
-	uint32_t    matrix_base;
-} shadow_push_constants_t;
-
 static void
 mesh_depth_range (qfv_taskctx_t *taskctx, float minDepth, float maxDepth)
 {
@@ -185,145 +155,6 @@ Vulkan_MeshRemoveSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
 {
 	Vulkan_FreeTexture (ctx, skin->descriptor);
 	skin->descriptor = 0;
-}
-
-static void
-push_mesh_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
-					 int debug_bone, byte *colors, vec4f_t base_color,
-					 int pass, qfv_taskctx_t *taskctx)
-{
-	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto cmd = taskctx->cmd;
-	auto layout = taskctx->pipeline->layout;
-
-	mesh_push_constants_t constants = {
-		.enabled_mask = enabled_mask,
-		.blend = blend,
-		.debug_bone = debug_bone,
-		.colors = { VEC4_EXP (colors) },
-		.base_color = base_color,
-		.fog = Fog_Get (),
-	};
-
-	VkShaderStageFlags stage_flags = VK_SHADER_STAGE_VERTEX_BIT
-								   | VK_SHADER_STAGE_FRAGMENT_BIT;
-	qfv_push_constants_t push_constants[] = {
-		{ stage_flags,
-			offsetof (mesh_push_constants_t, mat),
-			sizeof (mat4f_t), mat },
-		{ stage_flags,
-			offsetof (mesh_push_constants_t, enabled_mask),
-			sizeof (uint32_t), &constants.enabled_mask },
-		{ stage_flags,
-			offsetof (mesh_push_constants_t, blend),
-			sizeof (float), &constants.blend },
-		{ stage_flags,
-			offsetof (mesh_push_constants_t, debug_bone),
-			sizeof (float), &constants.debug_bone },
-		{ stage_flags,
-			offsetof (mesh_push_constants_t, colors),
-			sizeof (constants.colors), constants.colors },
-		{ stage_flags,
-			offsetof (mesh_push_constants_t, base_color),
-			sizeof (constants.base_color), &constants.base_color },
-		{ stage_flags,
-			offsetof (mesh_push_constants_t, fog),
-			sizeof (constants.fog), &constants.fog },
-	};
-	QFV_PushConstants (device, cmd, layout, pass ? 7 : 4, push_constants);
-}
-
-static void
-push_fwd_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
-					int debug_bone, byte *colors, vec4f_t base_color,
-					const alight_t *lighting, int pass, qfv_taskctx_t *taskctx)
-{
-	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto cmd = taskctx->cmd;
-	auto layout = taskctx->pipeline->layout;
-
-	fwd_push_constants_t constants = {
-		.blend = blend,
-		.enabled_mask = enabled_mask,
-		.debug_bone = debug_bone,
-		.colors = { VEC4_EXP (colors) },
-		.base_color = base_color,
-		.fog = Fog_Get (),
-		.lightvec = { VectorExpand (lighting->lightvec) },
-		.ambient = lighting->ambientlight,
-		.shadelight = lighting->shadelight,
-	};
-
-	VkShaderStageFlags stage_flags = VK_SHADER_STAGE_VERTEX_BIT
-								   | VK_SHADER_STAGE_FRAGMENT_BIT;
-	qfv_push_constants_t push_constants[] = {
-		{ stage_flags,
-			offsetof (fwd_push_constants_t, mat),
-			sizeof (mat4f_t), mat },
-		{ stage_flags,
-			offsetof (mesh_push_constants_t, enabled_mask),
-			sizeof (uint32_t), &constants.enabled_mask },
-		{ stage_flags,
-			offsetof (fwd_push_constants_t, blend),
-			sizeof (float), &constants.blend },
-		{ stage_flags,
-			offsetof (mesh_push_constants_t, debug_bone),
-			sizeof (uint32_t), &constants.debug_bone },
-		{ stage_flags,
-			offsetof (fwd_push_constants_t, colors),
-			sizeof (constants.colors), constants.colors },
-		{ stage_flags,
-			offsetof (fwd_push_constants_t, base_color),
-			sizeof (constants.base_color), &constants.base_color },
-		{ stage_flags,
-			offsetof (fwd_push_constants_t, fog),
-			sizeof (constants.fog), &constants.fog },
-		{ stage_flags,
-			offsetof (fwd_push_constants_t, lightvec),
-			sizeof (constants.lightvec), &constants.lightvec },
-		{ stage_flags,
-			offsetof (fwd_push_constants_t, ambient),
-			sizeof (constants.ambient), &constants.ambient },
-		{ stage_flags,
-			offsetof (fwd_push_constants_t, shadelight),
-			sizeof (constants.shadelight), &constants.shadelight },
-	};
-	QFV_PushConstants (device, cmd, layout,
-					   countof (push_constants), push_constants);
-}
-
-static void
-push_shadow_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
-					   uint16_t *matrix_base, qfv_taskctx_t *taskctx)
-{
-	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto cmd = taskctx->cmd;
-	auto layout = taskctx->pipeline->layout;
-
-	shadow_push_constants_t constants = {
-		.enabled_mask = enabled_mask,
-		.blend = blend,
-		.matrix_base = *matrix_base,
-	};
-
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_VERTEX_BIT,
-			offsetof (shadow_push_constants_t, mat),
-			sizeof (mat4f_t), mat },
-		{ VK_SHADER_STAGE_VERTEX_BIT,
-			offsetof (shadow_push_constants_t, enabled_mask),
-			sizeof (uint32_t), &constants.enabled_mask },
-		{ VK_SHADER_STAGE_VERTEX_BIT,
-			offsetof (shadow_push_constants_t, blend),
-			sizeof (float), &constants.blend },
-		{ VK_SHADER_STAGE_VERTEX_BIT,
-			offsetof (shadow_push_constants_t, matrix_base),
-			sizeof (uint32_t), &constants.matrix_base },
-	};
-	QFV_PushConstants (device, cmd, layout, 4, push_constants);
 }
 
 static struct {
@@ -573,7 +404,8 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto cmd = taskctx->cmd;
-	auto layout = taskctx->pipeline->layout;
+	auto pipeline = taskctx->pipeline;
+	auto layout = pipeline->layout;
 	auto mctx = ctx->mesh_context;
 
 	auto model = renderer->model->model;
@@ -586,8 +418,6 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	if (!skin) {
 		skin = &mctx->default_skin;
 	}
-	vec4f_t base_color;
-	QuatCopy (renderer->colormod, base_color);
 
 	byte colors[4] = {};
 	QuatCopy (skin->colors, colors);
@@ -602,7 +432,6 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 										   + rmesh->bone_descriptors);
 
 	auto anim = Entity_GetAnimation (ent);
-	float blend = anim ? anim->blend : 0;
 
 	uint32_t enabled_mask = set_vertex_attributes (meshes, cmd, ctx);
 	uint32_t c_matrix_palette = ent.base + scene_matrix_palette;
@@ -666,22 +495,26 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 									layout,
 									shadow ? 1 : 2,
 									pass && skin ? 2 : 1, sets, 0, 0);
+
+	Transform_GetWorldMatrix (transform, *mctx->mat);
+	*mctx->enabled_mask = enabled_mask;
+	*mctx->blend = anim ? anim->blend : 0;
 	if (matrix_base) {
-		push_shadow_constants (Transform_GetWorldMatrixPtr (transform),
-							   enabled_mask, blend, matrix_base, taskctx);
+		*mctx->matrix_base = *matrix_base;
 	} else {
-		if (pass > 1) {
+		QuatCopy (colors, mctx->colors);
+		QuatCopy (renderer->colormod, *mctx->base_color);
+		*mctx->fog = Fog_Get ();
+		if (mctx->lightvec) {
 			alight_t    lighting;
 			R_Setup_Lighting (ent, &lighting);
-			push_fwd_constants (Transform_GetWorldMatrixPtr (transform),
-								enabled_mask, blend, anim->debug_bone,
-								colors, base_color, &lighting, pass, taskctx);
-		} else {
-			push_mesh_constants (Transform_GetWorldMatrixPtr (transform),
-								 enabled_mask, blend, anim->debug_bone,
-								 colors, base_color, pass, taskctx);
+			VectorCopy (lighting.lightvec, *mctx->lightvec);
+			*mctx->ambient = lighting.ambientlight;
+			*mctx->shadelight = lighting.shadelight;
 		}
+		*mctx->debug_bone = anim ? anim->debug_bone : ~0;
 	}
+	QFV_PushBlackboard (ctx, cmd, pipeline);
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
 		if (renderer->submesh_mask & (1 << i)) {
 			continue;
@@ -834,9 +667,23 @@ mesh_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_Render_AddShutdown (ctx, mesh_shutdown);
 	QFV_Render_AddStartup (ctx, mesh_startup);
 
-	meshctx_t *mctx = calloc (1, sizeof (meshctx_t));
+	meshctx_t *mctx = malloc (sizeof (meshctx_t));
 	ctx->mesh_context = mctx;
 
+	*mctx = (meshctx_t) {
+		.matrix_base  = QFV_GetBlackboardVar (ctx, "MatrixBase"),
+		.mat          = QFV_GetBlackboardVar (ctx, "Model"),
+		.enabled_mask = QFV_GetBlackboardVar (ctx, "enabled_mask"),
+		.blend        = QFV_GetBlackboardVar (ctx, "blend"),
+		.debug_bone   = QFV_GetBlackboardVar (ctx, "debug_bone"),
+		.colors       = QFV_GetBlackboardVar (ctx, "colors"),
+		.base_color   = QFV_GetBlackboardVar (ctx, "base_color"),
+		.fog          = QFV_GetBlackboardVar (ctx, "fog"),
+		.lightvec     = QFV_GetBlackboardVar (ctx, "lightvec"),
+		.ambient      = QFV_GetBlackboardVar (ctx, "ambient"),
+		.shadelight   = QFV_GetBlackboardVar (ctx, "shadelight"),
+	};
+	*mctx->debug_bone = ~0u;
 	qfvPopDebug (ctx);
 }
 

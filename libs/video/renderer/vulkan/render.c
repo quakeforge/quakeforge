@@ -671,14 +671,7 @@ fullscreen_pass (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 										pipeline->layout,
 										0, pipeline->num_indices, sets, 0, 0);
 	}
-	if (pipeline->num_push_constants) {
-		auto layout = pipeline->layout;
-		auto blackboard = &rctx->blackboard;
-		auto first = pipeline->first_push_constant;
-		auto count = pipeline->num_push_constants;
-		auto push_constants = blackboard->push_constants + first;
-		QFV_PushConstants (device, cmd, layout, count, push_constants);
-	}
+	QFV_PushBlackboard (ctx, cmd, pipeline);
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
@@ -1032,6 +1025,38 @@ QFV_FindStep (const char *name, qfv_job_t *job)
 		}
 	}
 	return 0;
+}
+
+void
+QFV_PushBlackboard (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
+					qfv_pipeline_t *pipeline)
+{
+	auto rctx = ctx->render_context;
+	auto device = ctx->device;
+
+	if (pipeline->num_push_constants) {
+		auto layout = pipeline->layout;
+		auto blackboard = &rctx->blackboard;
+		auto first = pipeline->first_push_constant;
+		auto count = pipeline->num_push_constants;
+		auto push_constants = blackboard->push_constants + first;
+		QFV_PushConstants (device, cmd, layout, count, push_constants);
+	}
+}
+
+void *
+QFV_GetBlackboardVar (struct vulkan_ctx_s *ctx, const char *name)
+{
+	auto rctx = ctx->render_context;
+	auto bb = &rctx->blackboard;
+	if (!bb->symbols) {
+		return nullptr;
+	}
+	auto pc = (qfv_pushconstantinfo_t *) Hash_Find (bb->symbols, name);
+	if (!pc) {
+		return nullptr;
+	}
+	return bb->data + pc->offset;
 }
 
 qfv_step_t *

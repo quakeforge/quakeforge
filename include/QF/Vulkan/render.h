@@ -567,6 +567,10 @@ QFV_Render_DSManager (struct vulkan_ctx_s *ctx,
 					  const char *setName) __attribute__((pure));
 VkSampler QFV_Render_Sampler (struct vulkan_ctx_s *ctx, const char *name);
 
+void *QFV_GetBlackboardVar (struct vulkan_ctx_s *ctx, const char *name);
+void QFV_PushBlackboard (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd,
+						 qfv_pipeline_t *pipeline);
+
 qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_job_t *job);
 qfv_step_t *QFV_FindStep (const char *step, qfv_job_t *job) __attribute__((pure));
 struct qfv_resobj_s *QFV_FindResource (const char *name, qfv_renderpass_t *rp) __attribute__((pure));
