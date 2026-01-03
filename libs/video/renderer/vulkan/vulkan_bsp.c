@@ -906,58 +906,30 @@ bind_texture (vulktex_t *tex, uint32_t setnum, VkPipelineLayout layout,
 }
 
 static void
-push_fragconst (QFV_BspQueue queue, VkPipelineLayout layout,
-				qfv_device_t *device, VkCommandBuffer cmd,
-				bspctx_t *bctx)
+push_bspconst (uint16_t *matrix_base, QFV_BspQueue queue,
+			   qfv_pipeline_t *pipeline,
+			   VkCommandBuffer cmd, bspctx_t *bctx)
 {
-	uint32_t control = 0;
-	if (bctx->skymap_tex) {
-		control |= 4;
-	} else if (bctx->skybox_tex) {
-		control |= 2;
+	if (matrix_base) {
+		*bctx->matrix_base = *matrix_base;
 	} else {
-		control |= 1;
+		uint32_t control = 0;
+		if (bctx->skymap_tex) {
+			control |= 4;
+		} else if (bctx->skybox_tex) {
+			control |= 2;
+		} else {
+			control |= 1;
+		}
+		control |= (queue == QFV_bspBackground) << 3;
+		*bctx->fog = Fog_Get ();
+		*bctx->time = vr_data.realtime;
+		*bctx->alpha = queue == QFV_bspTurb ? r_wateralpha : 1;
+		*bctx->turb_scale = queue == QFV_bspTurb ? 1 : 0;
+		*bctx->control = control;
 	}
-	control |= (queue == QFV_bspBackground) << 3;
-	bsp_frag_constants_t constants = {
-		.fog = Fog_Get (),
-		.time = vr_data.realtime,
-		.alpha = queue == QFV_bspTurb ? r_wateralpha : 1,
-		.turb_scale = queue == QFV_bspTurb ? 1 : 0,
-		.control = control,
-	};
 
-	constexpr uint32_t stage = VK_SHADER_STAGE_VERTEX_BIT
-							 | VK_SHADER_STAGE_FRAGMENT_BIT;
-	qfv_push_constants_t push_constants[] = {
-		{ stage,
-			offsetof (bsp_frag_constants_t, fog),
-			sizeof (constants.fog), &constants.fog },
-		{ stage,
-			offsetof (bsp_frag_constants_t, time),
-			sizeof (constants.time), &constants.time },
-		{ stage,
-			offsetof (bsp_frag_constants_t, alpha),
-			sizeof (constants.alpha), &constants.alpha },
-		{ stage,
-			offsetof (bsp_frag_constants_t, turb_scale),
-			sizeof (constants.turb_scale), &constants.turb_scale },
-		{ stage,
-			offsetof (bsp_frag_constants_t, control),
-			sizeof (constants.control), &constants.control },
-	};
-	QFV_PushConstants (device, cmd, layout,
-					   countof (push_constants), push_constants);
-}
-
-static void
-push_shadowconst (uint32_t matrix_base, VkPipelineLayout layout,
-				  qfv_device_t *device, VkCommandBuffer cmd)
-{
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (uint32_t), &matrix_base },
-	};
-	QFV_PushConstants (device, cmd, layout, 1, push_constants);
+	QFV_PushBlackboard (bctx->vulkan_ctx, cmd, pipeline);
 }
 
 static void
@@ -1348,7 +1320,8 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto bctx = ctx->bsp_context;
-	auto layout = taskctx->pipeline->layout;
+	auto pipeline = taskctx->pipeline;
+	auto layout = pipeline->layout;
 	auto cmd = taskctx->cmd;
 	uint16_t *matrix_base = taskctx->data;
 
@@ -1399,11 +1372,8 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 										layout, 0, 3, sets, 0, 0);
 	}
 
-	if (matrix_base) {
-		push_shadowconst (*matrix_base, layout, device, cmd);
-	} else {
-		push_fragconst (queue, layout, device, cmd, bctx);
-	}
+	push_bspconst (matrix_base, queue, pipeline, cmd, bctx);
+
 	if (queue == QFV_bspSky || queue == QFV_bspBackground) {
 		vulktex_t skybox = { .descriptor = bctx->skybox_descriptor };
 		bind_texture (&skybox, SKYBOX_SET, layout, dfunc, cmd);
@@ -1647,6 +1617,16 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	bspctx_t   *bctx = calloc (1, sizeof (bspctx_t));
 	ctx->bsp_context = bctx;
 	bctx->vulkan_ctx = ctx;
+	*bctx = (bspctx_t) {
+		.vulkan_ctx = ctx,
+
+		.matrix_base = QFV_GetBlackboardVar (ctx, "MatrixBase"),
+		.fog         = QFV_GetBlackboardVar (ctx, "fog"),
+		.time        = QFV_GetBlackboardVar (ctx, "time"),
+		.alpha       = QFV_GetBlackboardVar (ctx, "alpha"),
+		.turb_scale  = QFV_GetBlackboardVar (ctx, "turb_scale"),
+		.control     = QFV_GetBlackboardVar (ctx, "control"),
+	};
 }
 
 static exprenum_t bsp_pass_enum;
