@@ -164,6 +164,35 @@ run_subpass (qfv_subpass_t *sp, qfv_taskctx_t *taskctx)
 {
 	qfv_device_t *device = taskctx->ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+
+	if (sp->num_inputs) {
+		auto ctx = taskctx->ctx;
+		auto rctx = ctx->render_context;
+		auto rframe = &rctx->frames.a[ctx->curFrame];
+		auto input = &rframe->subpass_inputs[sp->frame_index];
+		auto fb = &taskctx->renderpass->framebuffer;
+		if (fb->update_frame != input->update_frame) {
+			input->update_frame = fb->update_frame;
+			VkDescriptorImageInfo image_info[sp->num_inputs];
+			VkWriteDescriptorSet image_write[sp->num_inputs];
+			for (uint32_t i = 0; i < sp->num_inputs; i++) {
+				image_info[i] = (VkDescriptorImageInfo) {
+					.imageView = fb->views[sp->input_indices[i]],
+					.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				};
+				image_write[i] = (VkWriteDescriptorSet) {
+					.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+					.dstSet = input->set,
+					.dstBinding = i,
+					.descriptorCount = 1,
+					.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+					.pImageInfo = &image_info[i],
+				};
+			}
+			dfunc->vkUpdateDescriptorSets (device->dev, sp->num_inputs,
+										   image_write, 0, 0);
+		}
+	}
 	dfunc->vkBeginCommandBuffer (taskctx->cmd, &sp->beginInfo);
 	QFV_duCmdBeginLabel (device, taskctx->cmd, sp->label.name,
 						 {VEC4_EXP (sp->label.color)});
@@ -627,50 +656,17 @@ fullscreen_pass (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	auto rctx = ctx->render_context;
-	auto rframe = &rctx->frames.a[ctx->curFrame];
 	auto renderpass = taskctx->renderpass;
 	auto subpass = taskctx->subpass;
 	auto pipeline = taskctx->pipeline;
 	auto cmd = taskctx->cmd;
-	auto input = &rframe->subpass_inputs[subpass->frame_index];
 
 	if (!subpass->num_inputs) {
 		Sys_Error ("fullscreen_pass with no subpass inputs: %s:%s:%s",
 				   renderpass->label.name, subpass->label.name,
 				   pipeline->label.name);
 	}
-	auto fb = &taskctx->renderpass->framebuffer;
-	if (fb->update_frame != input->update_frame) {
-		input->update_frame = fb->update_frame;
-		VkDescriptorImageInfo image_info[subpass->num_inputs];
-		VkWriteDescriptorSet image_write[subpass->num_inputs];
-		for (uint32_t i = 0; i < subpass->num_inputs; i++) {
-			image_info[i] = (VkDescriptorImageInfo) {
-				.imageView = fb->views[subpass->input_indices[i]],
-				.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			};
-			image_write[i] = (VkWriteDescriptorSet) {
-				.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-				.dstSet = input->set,
-				.dstBinding = i,
-				.descriptorCount = 1,
-				.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-				.pImageInfo = &image_info[i],
-			};
-		}
-		dfunc->vkUpdateDescriptorSets (device->dev, subpass->num_inputs,
-									   image_write, 0, 0);
-	}
-	if (pipeline->num_indices) {
-		VkDescriptorSet sets[pipeline->num_indices];
-		for (uint32_t i = 0; i < pipeline->num_indices; i++) {
-			sets[i] = rframe->descriptor_sets[pipeline->ds_indices[i]];
-		}
-		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-										pipeline->layout,
-										0, pipeline->num_indices, sets, 0, 0);
-	}
+	QFV_BindDescriptors (ctx, cmd, pipeline);
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
@@ -1043,6 +1039,26 @@ QFV_PushBlackboard (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 		QFV_PushConstants (device, cmd, layout, count, push_constants);
 	}
 }
+
+void
+QFV_BindDescriptors (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
+					 qfv_pipeline_t *pipeline)
+{
+	if (pipeline->num_indices) {
+		auto device = ctx->device;
+		auto dfunc = device->funcs;
+		auto rctx = ctx->render_context;
+		auto rframe = &rctx->frames.a[ctx->curFrame];
+		VkDescriptorSet sets[pipeline->num_indices];
+		for (uint32_t i = 0; i < pipeline->num_indices; i++) {
+			sets[i] = rframe->descriptor_sets[pipeline->ds_indices[i]];
+		}
+		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+										pipeline->layout,
+										0, pipeline->num_indices, sets, 0, 0);
+	}
+}
+
 
 void *
 QFV_GetBlackboardVar (struct vulkan_ctx_s *ctx, const char *name)

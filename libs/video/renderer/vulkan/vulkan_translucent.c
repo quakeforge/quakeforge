@@ -167,6 +167,9 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto step = QFV_GetStep (params[0], job);
 	auto render = step->render;
 
+	auto set = scr_fisheye ? tframe->cube : tframe->flat;
+	QFV_SetDescriptorSet (ctx, ctx->curFrame, tctx->ds_index, set);
+
 	if (tctx->extent.width != render->output.extent.width
 		|| tctx->extent.height != render->output.extent.height) {
 
@@ -401,6 +404,7 @@ translucent_startup (exprctx_t *ectx)
 	tctx->maxFragments = vulkan_oit_fragments * 1024 * 1024;
 
 	auto dsmanager = QFV_Render_DSManager (ctx, "oit_set");
+	tctx->ds_index = QFV_GetDSIndex (ctx, "oit_set");
 	for (size_t i = 0; i < frames; i++) {
 		tctx->frames.a[i] = (translucentframe_t) {
 			.flat = QFV_DSManager_AllocSet (dsmanager),

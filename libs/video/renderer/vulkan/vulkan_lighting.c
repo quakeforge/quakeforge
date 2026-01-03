@@ -1007,68 +1007,6 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 }
 
 static void
-lighting_update_descriptors (const exprval_t **params, exprval_t *result,
-							 exprctx_t *ectx)
-{
-	qfZoneNamed (zone, true);
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto lctx = ctx->lighting_context;
-
-	auto lframe = &lctx->frames.a[ctx->curFrame];
-
-	auto job = ctx->render_context->job;
-	auto step = QFV_GetStep (params[0], job);
-	auto render = step->render;
-	auto fb = &render->active->framebuffer;
-	if (fb->update_frame == lframe->update_frame) {
-		return;
-	}
-	lframe->update_frame = fb->update_frame;
-	VkDescriptorImageInfo attachInfo[] = {
-		{	.imageView = fb->views[QFV_attachColor],
-			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-		{	.imageView = fb->views[QFV_attachEmission],
-			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-		{	.imageView = fb->views[QFV_attachNormal],
-			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-		{	.imageView = fb->views[QFV_attachDepth],
-			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-	};
-	VkWriteDescriptorSet attachWrite[] = {
-		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = lframe->attach_set,
-			.dstBinding = 0,
-			.descriptorCount = 1,
-			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-			.pImageInfo = &attachInfo[0], },
-		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = lframe->attach_set,
-			.dstBinding = 1,
-			.descriptorCount = 1,
-			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-			.pImageInfo = &attachInfo[1], },
-		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = lframe->attach_set,
-			.dstBinding = 2,
-			.descriptorCount = 1,
-			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-			.pImageInfo = &attachInfo[2], },
-		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = lframe->attach_set,
-			.dstBinding = 3,
-			.descriptorCount = 1,
-			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-			.pImageInfo = &attachInfo[3], },
-	};
-	dfunc->vkUpdateDescriptorSets (device->dev,
-								   LIGHTING_ATTACH_INFOS, attachWrite,
-								   0, 0);
-}
-
-static void
 lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 						   exprctx_t *ectx)
 {
@@ -1110,19 +1048,24 @@ lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 		dfunc->vkCmdBindIndexBuffer (cmd, lctx->splat_inds, 0,
 									 VK_INDEX_TYPE_UINT32);
 	} else {
-		VkDescriptorSet sets[] = {
-			lframe->shadowmat_set,
-			lframe->lights_set,
-			lframe->attach_set,
+		auto set =
 			(VkDescriptorSet[]) {
 				lctx->shadow_2d_set,
 				lctx->shadow_2d_set,
 				lctx->shadow_2d_set,
 				lctx->shadow_cube_set
-			}[shadow_type],
-		};
-		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-										layout, 0, countof(sets), sets, 0, 0);
+			}[shadow_type];
+		QFV_SetDescriptorSet (ctx, ctx->curFrame, lctx->lighting_shadow, set);
+
+		auto lframe = &lctx->frames.a[ctx->curFrame];
+		vec4f_t fog = Fog_Get ();
+		// convert scatter to transmission (FIXME ignoring absorbtion)
+		fog = (vec4f_t) { 1, 1, 1, 0 } - fog;
+		fog[3] = -fog[3];
+		*lctx->fog = fog;
+		*lctx->near_plane = r_nearclip;
+		*lctx->queue = lframe->light_queue[shadow_type];
+		*lctx->num_cascades = NUM_CASCADE;
 	}
 }
 
@@ -1516,16 +1459,7 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 	if (!queue.count) {
 		return;
 	}
-
-	vec4f_t fog = Fog_Get ();
-	// convert scatter to transmission (FIXME ignoring absorbtion)
-	fog = (vec4f_t) { 1, 1, 1, 0 } - fog;
-	fog[3] = -fog[3];
-	*lctx->fog = fog;
-	*lctx->near_plane = r_nearclip;
-	*lctx->queue = queue;
-	*lctx->num_cascades = NUM_CASCADE;
-
+	QFV_BindDescriptors (ctx, cmd, pipeline);
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
@@ -1941,6 +1875,7 @@ lighting_startup (exprctx_t *ectx)
 	lctx->default_view_2d = default_view_2d[0].image_view.view;
 
 	auto shadow_mgr = QFV_Render_DSManager (ctx, "lighting_shadow");
+	lctx->lighting_shadow = QFV_GetDSIndex (ctx, "lighting_shadow");
 	lctx->shadow_cube_set = QFV_DSManager_AllocSet (shadow_mgr);
 	lctx->shadow_2d_set = QFV_DSManager_AllocSet (shadow_mgr);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
@@ -1949,15 +1884,15 @@ lighting_startup (exprctx_t *ectx)
 						 lctx->shadow_2d_set, "lighting:shadow_2d_set");
 	lctx->shadow_sampler = QFV_Render_Sampler (ctx, "shadow_sampler");
 
-	auto attach_mgr = QFV_Render_DSManager (ctx, "lighting_attach");
 	auto lights_mgr = QFV_Render_DSManager (ctx, "lighting_lights");
 	auto shadowmat_mgr = QFV_Render_DSManager (ctx, "shadowmat_set");
+	uint32_t lighting_lights = QFV_GetDSIndex (ctx, "lighting_lights");
+	uint32_t shadowmat_set = QFV_GetDSIndex (ctx, "shadowmat_set");
 	for (size_t i = 0; i < frames; i++) {
 		auto lframe = &lctx->frames.a[i];
 		*lframe = (lightingframe_t) {
 			.shadowmat_set = QFV_DSManager_AllocSet (shadowmat_mgr),
 			.lights_set = QFV_DSManager_AllocSet (lights_mgr),
-			.attach_set = QFV_DSManager_AllocSet (attach_mgr),
 			.update_frame = ~UINT64_C(0),
 			.shadowmat_buffer = light_mats[i].buffer.buffer,
 			.shadowmat_id_buffer = light_mat_ids[i].buffer.buffer,
@@ -1969,10 +1904,9 @@ lighting_startup (exprctx_t *ectx)
 			.radius_buffer = light_radii[i].buffer.buffer,
 			.entid_buffer = light_entids[i].buffer.buffer,
 		};
+		QFV_SetDescriptorSet (ctx, i, shadowmat_set, lframe->shadowmat_set);
+		QFV_SetDescriptorSet (ctx, i, lighting_lights, lframe->lights_set);
 
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
-							 lframe->attach_set,
-							 vac (ctx->va_ctx, "lighting:attach_set:%zd", i));
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
 							 lframe->lights_set,
 							 vac (ctx->va_ctx, "lighting:lights_set:%zd", i));
@@ -2215,11 +2149,6 @@ static exprfunc_t lighting_update_lights_func[] = {
 	{ .func = lighting_update_lights },
 	{}
 };
-static exprfunc_t lighting_update_descriptors_func[] = {
-	{ .func = lighting_update_descriptors, .num_params = 1,
-		.param_types = stepref_param },
-	{}
-};
 static exprfunc_t lighting_bind_descriptors_func[] = {
 	{ .func = lighting_bind_descriptors, .num_params = 2,
 		.param_types = shadow_type_param },
@@ -2270,8 +2199,6 @@ static exprfunc_t lighting_init_func[] = {
 
 static exprsym_t lighting_task_syms[] = {
 	{ "lighting_update_lights", &cexpr_function, lighting_update_lights_func },
-	{ "lighting_update_descriptors", &cexpr_function,
-		lighting_update_descriptors_func },
 	{ "lighting_bind_descriptors", &cexpr_function,
 		lighting_bind_descriptors_func },
 	{ "lighting_draw_splats", &cexpr_function, lighting_draw_splats_func },

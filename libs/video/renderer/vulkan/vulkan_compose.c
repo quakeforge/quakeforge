@@ -57,63 +57,19 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-static VkDescriptorImageInfo base_image_info = {
-	.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-};
-static VkWriteDescriptorSet base_image_write = {
-	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-	.descriptorCount = 1,
-	.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-};
-
 static void
-compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+compose_update (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
-	int  color_only = *(int *) params[0]->value;
-
 	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-
 	auto cctx = ctx->compose_context;
-	auto cframe = &cctx->frames.a[ctx->curFrame];
-	auto pipeline = taskctx->pipeline;
-	auto layout = pipeline->layout;
-	auto cmd = taskctx->cmd;
 
-	auto fb = &taskctx->renderpass->framebuffer;
-	if (fb->update_frame != cframe->update_frame) {
-		cframe->update_frame = fb->update_frame;
-		cframe->imageInfo[0].imageView = fb->views[QFV_attachColor];
-		cframe->imageInfo[1].imageView = fb->views[QFV_attachEmission];
-		cframe->imageInfo[2].imageView = fb->views[QFV_attachNormal];
-		cframe->imageInfo[3].imageView = fb->views[QFV_attachDepth];
-		cframe->imageInfo[4].imageView = fb->views[QFV_attachLight];
-		if (color_only) {
-			dfunc->vkUpdateDescriptorSets (device->dev, 1,
-										   cframe->descriptors, 0, 0);
-		} else {
-			dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
-										   cframe->descriptors, 0, 0);
-		}
-	}
 	if (cctx->camera) {
 		*cctx->fog = Fog_Get ();
 		*cctx->camera = r_refdef.camera[3];
 		*cctx->near_plane = r_nearclip;
 	}
-	QFV_PushBlackboard (ctx, cmd, pipeline);
-
-	VkDescriptorSet sets[] = {
-		cframe->descriptors[0].dstSet,
-		Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
-	};
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 2, sets, 0, 0);
-
-	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
 static void
@@ -124,7 +80,6 @@ compose_shutdown (exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	composectx_t *cctx = ctx->compose_context;
 
-	free (cctx->frames.a);
 	free (cctx);
 }
 
@@ -134,34 +89,8 @@ compose_startup (exprctx_t *ectx)
 	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
 	qfvPushDebug (ctx, "compose startup");
 
-	auto cctx = ctx->compose_context;
-
-	auto rctx = ctx->render_context;
-	size_t      frames = rctx->frames.size;
-	DARRAY_INIT (&cctx->frames, frames);
-	DARRAY_RESIZE (&cctx->frames, frames);
-	cctx->frames.grow = 0;
-
-	auto dsmanager = QFV_Render_DSManager (ctx, "compose_attach");
-	for (size_t i = 0; i < frames; i++) {
-		auto cframe = &cctx->frames.a[i];
-		auto set = QFV_DSManager_AllocSet (dsmanager);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, set,
-							 vac (ctx->va_ctx, "compose:attach_set:%zd", i));
-
-		for (int j = 0; j < COMPOSE_IMAGE_INFOS; j++) {
-			cframe->imageInfo[j] = base_image_info;
-			cframe->imageInfo[j].sampler = 0;
-			cframe->descriptors[j] = base_image_write;
-			cframe->descriptors[j].dstSet = set;
-			cframe->descriptors[j].dstBinding = j;
-			cframe->descriptors[j].pImageInfo = &cframe->imageInfo[j];
-		}
-		cframe->update_frame = ~UINT64_C(0);
-	}
 	qfvPopDebug (ctx);
 }
 
@@ -184,12 +113,12 @@ compose_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	};
 }
 
-static exprtype_t *compose_draw_params[] = {
+static exprtype_t *compose_update_params[] = {
 	&cexpr_int,
 };
-static exprfunc_t compose_draw_func[] = {
-	{ .func = compose_draw, .num_params = 1,
-		.param_types = compose_draw_params },
+static exprfunc_t compose_update_func[] = {
+	{ .func = compose_update, .num_params = 1,
+		.param_types = compose_update_params },
 	{}
 };
 
@@ -199,7 +128,7 @@ static exprfunc_t compose_init_func[] = {
 };
 
 static exprsym_t compose_task_syms[] = {
-	{ "compose_draw", &cexpr_function, compose_draw_func },
+	{ "compose_update", &cexpr_function, compose_update_func },
 	{ "compose_init", &cexpr_function, compose_init_func },
 	{}
 };

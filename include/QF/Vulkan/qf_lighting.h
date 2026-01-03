@@ -74,10 +74,6 @@ typedef struct qfv_light_matdata_s {
 typedef struct qfv_lightmatdataset_s
 	DARRAY_TYPE (qfv_light_matdata_t) qfv_lightmatdataset_t;
 
-#define LIGHTING_BUFFER_INFOS 1
-#define LIGHTING_ATTACH_INFOS 4
-#define LIGHTING_SHADOW_INFOS 32
-#define LIGHTING_DESCRIPTORS (LIGHTING_BUFFER_INFOS + LIGHTING_ATTACH_INFOS + 1)
 #define LIGHTING_STAGES 16
 
 typedef struct qfv_framebufferset_s
@@ -98,7 +94,6 @@ typedef struct light_idrad_s {
 typedef struct lightingframe_s {
 	VkDescriptorSet shadowmat_set;
 	VkDescriptorSet lights_set;
-	VkDescriptorSet attach_set;
 	uint64_t    update_frame;
 
 	VkQueryPool query;
@@ -176,6 +171,7 @@ typedef struct lightingctx_s {
 	VkSampler shadow_sampler;
 	VkDescriptorSet shadow_cube_set;
 	VkDescriptorSet shadow_2d_set;
+	uint32_t    lighting_shadow;
 
 	VkBuffer splat_verts;
 	VkBuffer splat_inds;

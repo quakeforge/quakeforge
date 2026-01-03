@@ -653,7 +653,7 @@ properties = {
 		};
 		layout = {
 			descriptorSets = (shadowmat_set, lighting_lights,
-							  lighting_attach, lighting_shadow);
+							  $input, lighting_shadow);
 			pushConstants = {
 				fragment = {
 					fog = vec4;
@@ -673,7 +673,7 @@ properties = {
 			};
 		};
 		layout = {
-			descriptorSets = (compose_attach, oit_set);
+			descriptorSets = ($input, oit_set);
 			pushConstants = {
 				fragment = {
 					fog = vec4;
@@ -924,34 +924,6 @@ descriptorSetLayouts = {
 			},
 		);
 	};
-	lighting_attach = {
-		bindings = (
-			{
-				binding = 0;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-			{
-				binding = 1;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-			{
-				binding = 2;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-			{
-				binding = 3;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-		);
-	};
 	lighting_lights = {
 		bindings = (
 			{
@@ -998,40 +970,6 @@ descriptorSetLayouts = {
 				binding = 0;
 				descriptorType = combined_image_sampler;
 				descriptorCount = 32;
-				stageFlags = fragment;
-			},
-		);
-	};
-	compose_attach = {
-		bindings = (
-			{
-				binding = 0;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-			{
-				binding = 1;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-			{
-				binding = 2;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-			{
-				binding = 3;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-			{
-				binding = 4;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
 				stageFlags = fragment;
 			},
 		);
@@ -1802,8 +1740,7 @@ renderpasses = {
 
 						color = $color.compose;
 						tasks = (
-							{ func = compose_draw;
-							  params = (0); },
+							{ func = fullscreen_pass; },
 						);
 
 						stages = (
@@ -2508,7 +2445,8 @@ steps = {
 				shadow15 = $renderpasses.shadow15;
 				shadow16 = $renderpasses.shadow16;
 				shadow17 = $renderpasses.shadow17;
-/* FIXME bug in nvidia drivers? causes segfault when building the pipelines
+				/* FIXME bug in nvidia drivers? causes segfault when
+				building the pipelines
 				shadow18 = $renderpasses.shadow18;
 				shadow19 = $renderpasses.shadow19;
 				shadow20 = $renderpasses.shadow20;
@@ -2524,7 +2462,7 @@ steps = {
 				shadow30 = $renderpasses.shadow30;
 				shadow31 = $renderpasses.shadow31;
 				shadow32 = $renderpasses.shadow32;
-*/
+				*/
 			};
 		};
 	};
@@ -2539,9 +2477,8 @@ steps = {
 				  params = ("\"main\""); },
 				{ func = clear_translucent;
 				  params = ("\"main\""); },
+				{ func = compose_update; },
 				{ func = particle_wait_physics; },
-				{ func = lighting_update_descriptors;
-				  params = ("\"main\""); },
 			);
 		};
 	};

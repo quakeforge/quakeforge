@@ -855,7 +855,7 @@ render_graph = {
 			};
 			layout = {
 				descriptorSets = (shadowmat_set, lighting_lights,
-								  lighting_attach, lighting_shadow);
+								  $input, lighting_shadow);
 				pushConstants = {
 					fragment = {
 						fog = vec4;
@@ -875,7 +875,7 @@ render_graph = {
 				};
 			};
 			layout = {
-				descriptorSets = (compose_attach, oit_set);
+				descriptorSets = ($input, oit_set);
 				pushConstants = {
 					fragment = {
 						fog = vec4;
@@ -1238,34 +1238,6 @@ render_graph = {
 				},
 			);
 		};
-		lighting_attach = {
-			bindings = (
-				{
-					binding = 0;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 1;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 2;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 3;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-			);
-		};
 		lighting_lights = {
 			bindings = (
 				{
@@ -1312,40 +1284,6 @@ render_graph = {
 					binding = 0;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 32;
-					stageFlags = fragment;
-				},
-			);
-		};
-		compose_attach = {
-			bindings = (
-				{
-					binding = 0;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 1;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 2;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 3;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 4;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
 					stageFlags = fragment;
 				},
 			);
@@ -2231,8 +2169,7 @@ render_graph = {
 
 							color = $color.compose;
 							tasks = (
-								{ func = compose_draw;
-								  params = (0); },
+								{ func = fullscreen_pass; },
 							);
 
 							stages = (
@@ -3035,9 +2972,8 @@ render_graph = {
 					  params = ("\"gizmo_cmd\"", "\"main\""); },
 					{ func = clear_translucent;
 					  params = ("\"main\""); },
+					{ func = compose_update; },
 					{ func = particle_wait_physics; },
-					{ func = lighting_update_descriptors;
-					  params = ("\"main\""); },
 					{ func = gizmo_flush; },
 				);
 			};

@@ -1,4 +1,7 @@
 {
+entqueues = {
+	queues = (planetary);
+};
 samplers = {
 	samplers = {
 		quakepic = {
@@ -724,43 +727,6 @@ render_graph = {
 				};
 			};
 		};
-		lighting = {
-			shader = {
-				vertex_splat = {
-					stage = vertex;
-					name = main;
-					module = $builtin/light_splat.vert;
-				};
-				fragment = {
-					stage = fragment;
-					name = main;
-					module = $builtin/lighting.frag;
-				};
-				debug_fragment = {
-					stage = fragment;
-					name = main;
-					module = $builtin/light_debug.frag;
-				};
-			};
-			vertexInput_splat = {
-				bindings = (
-					{ binding = 0; stride = "4"; inputRate = instance; },
-					{ binding = 1; stride = "3 * 4"; inputRate = vertex; },
-				);
-				attributes = (
-					{ location = 0; binding = 0; format = r32_uint; offset = 0; },
-					{ location = 1; binding = 1; format = r32g32b32_sfloat; offset = 0;  },
-				);
-			};
-			inputAssembly = {
-				topology = triangle_fan;
-				primitiveRestartEnable = true;
-			};
-			layout = {
-				descriptorSets = (matrix_set, lighting_lights,
-								  lighting_attach, lighting_shadow);
-			};
-		};
 		compose = {
 			shader = {
 				fragment = {
@@ -770,7 +736,7 @@ render_graph = {
 				};
 			};
 			layout = {
-				descriptorSets = (compose_attach, oit_set);
+				descriptorSets = ($input, oit_set);
 			};
 		};
 		output = {
@@ -1525,8 +1491,7 @@ render_graph = {
 
 							color = $color.compose;
 							tasks = (
-								{ func = compose_draw;
-								  params = (1); },
+								{ func = fullscreen_pass; },
 							);
 							stages = (
 								$fstriangle.shader.vertex,
@@ -1891,6 +1856,7 @@ render_graph = {
 					  params = ("\"gizmo_cmd\"", "\"main\""); },
 					{ func = clear_translucent;
 					  params = ("\"main\""); },
+					{ func = compose_update; },
 					{ func = particle_wait_physics; },
 					{ func = gizmo_flush; },
 				);

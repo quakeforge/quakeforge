@@ -563,43 +563,6 @@ properties = {
 			};
 		};
 	};
-	lighting = {
-		shader = {
-			vertex_splat = {
-				stage = vertex;
-				name = main;
-				module = $builtin/light_splat.vert;
-			};
-			fragment = {
-				stage = fragment;
-				name = main;
-				module = $builtin/lighting.frag;
-			};
-			debug_fragment = {
-				stage = fragment;
-				name = main;
-				module = $builtin/light_debug.frag;
-			};
-		};
-		vertexInput_splat = {
-			bindings = (
-				{ binding = 0; stride = "4"; inputRate = instance; },
-				{ binding = 1; stride = "3 * 4"; inputRate = vertex; },
-			);
-			attributes = (
-				{ location = 0; binding = 0; format = r32_uint; offset = 0; },
-				{ location = 1; binding = 1; format = r32g32b32_sfloat; offset = 0;  },
-			);
-		};
-		inputAssembly = {
-			topology = triangle_fan;
-			primitiveRestartEnable = true;
-		};
-		layout = {
-			descriptorSets = (matrix_set, lighting_lights,
-							  lighting_attach, lighting_shadow);
-		};
-	};
 	compose = {
 		shader = {
 			fragment = {
@@ -609,7 +572,7 @@ properties = {
 			};
 		};
 		layout = {
-			descriptorSets = (compose_attach, oit_set);
+			descriptorSets = ($input, oit_set);
 		};
 	};
 	output = {
@@ -847,40 +810,6 @@ descriptorSetLayouts = {
 			},
 		);
 	};
-	lighting_attach = {
-		bindings = (
-			{
-				binding = 0;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-			{
-				binding = 1;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-			{
-				binding = 2;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-			{
-				binding = 3;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-			{
-				binding = 4;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-		);
-	};
 	lighting_lights = {
 		bindings = (
 			{
@@ -921,28 +850,6 @@ descriptorSetLayouts = {
 				binding = 0;
 				descriptorType = combined_image_sampler;
 				descriptorCount = 32;
-				stageFlags = fragment;
-			},
-		);
-	};
-	compose_attach = {
-		bindings = (
-			{
-				binding = 0;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-			{
-				binding = 1;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
-			{
-				binding = 2;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
 				stageFlags = fragment;
 			},
 		);
@@ -1271,8 +1178,7 @@ renderpasses = {
 
 						color = $color.compose;
 						tasks = (
-							{ func = compose_draw;
-							  params = (1); },
+							{ func = fullscreen_pass; },
 						);
 						stages = (
 							$fstriangle.shader.vertex,
@@ -1539,6 +1445,7 @@ steps = {
 				  params = ("\"main\""); },
 				{ func = clear_translucent;
 				  params = ("\"main\""); },
+			    { func = compose_update; },
 				{ func = particle_wait_physics; },
 			);
 		};
