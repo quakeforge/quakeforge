@@ -9,6 +9,8 @@
 #define COLOR_ONLY
 #include "input_attach.h"
 
+INPUT_ATTACH(0) subpassInput color;
+
 [out(0)] vec4 frag_color;
 
 [shader("Fragment")]

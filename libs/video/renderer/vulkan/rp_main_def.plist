@@ -1628,8 +1628,6 @@ renderpasses = {
 				};
 				attachments = {
 					input = {
-						color = shader_read_only_optimal;
-						emission = shader_read_only_optimal;
 						normal = shader_read_only_optimal;
 						depth = shader_read_only_optimal;
 					};
@@ -1639,7 +1637,7 @@ renderpasses = {
 							blend = $additive_blend;
 						};
 					};
-					preserve = (output);
+					preserve = (output, emission);
 				};
 				pipelines = {
 					lights_none = {
@@ -1723,7 +1721,6 @@ renderpasses = {
 					input = {
 						color = shader_read_only_optimal;
 						emission = shader_read_only_optimal;
-						normal = shader_read_only_optimal;
 						depth = shader_read_only_optimal;
 						light = shader_read_only_optimal;
 					};

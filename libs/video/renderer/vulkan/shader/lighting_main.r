@@ -9,6 +9,9 @@
 #define INPUT_ATTACH_SET 2
 #include "input_attach.h"
 
+INPUT_ATTACH(0) subpassInput normal;
+INPUT_ATTACH(1) subpassInput depth;
+
 [in("FragCoord")] vec4 gl_FragCoord;
 [flat, in("ViewIndex")] int gl_ViewIndex;
 [in(0)] vec2 uv;
