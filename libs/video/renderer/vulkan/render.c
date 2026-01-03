@@ -912,8 +912,9 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 	}
 
 	if (rctx->jobinfo) {
-		__auto_type jinfo = rctx->jobinfo;
-		for (uint32_t i = 0; i < jinfo->num_dslayouts; i++) {
+		auto jinfo = rctx->jobinfo;
+		uint32_t count = jinfo->num_dslayouts + jinfo->num_splayouts;
+		for (uint32_t i = 0; i < count; i++) {
 			__auto_type setLayout = jinfo->dslayouts[i].setLayout;
 			dfunc->vkDestroyDescriptorSetLayout (device->dev, setLayout, 0);
 		}

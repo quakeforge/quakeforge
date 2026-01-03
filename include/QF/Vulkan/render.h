@@ -276,6 +276,7 @@ typedef struct qfv_jobinfo_s {
 	qfv_imageinfo_t *buffers;
 	qfv_imageviewinfo_t *bufferviews;
 
+	uint32_t    num_splayouts;
 	uint32_t    num_dslayouts;	// does not include subpass input layouts
 	qfv_descriptorsetlayoutinfo_t *dslayouts;//modified to include spi layouts
 

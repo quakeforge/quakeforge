@@ -619,8 +619,9 @@ find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
 			.bindings = bindings,
 		};
 		create_descriptorSet (ds, s);
+	} else {
+		create_descriptorSet (ds, s);
 	}
-	create_descriptorSet (ds, s);
 	return ds->setLayout;
 }
 
@@ -1242,7 +1243,7 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 		.num_renderpasses = counts->num_renderpasses,
 		.num_pipelines = counts->num_graph_pipelines
 						 + counts->num_comp_pipelines,
-		.num_layouts = num_dslayouts,
+		.num_layouts = counts->num_layouts,
 		.num_steps = counts->num_steps,
 		.commands = DARRAY_STATIC_INIT (16),
 		.num_dsmanagers = num_dslayouts,
@@ -1605,6 +1606,7 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 		memset (new_layouts, 0, asize);
 		memcpy (new_layouts, jinfo->dslayouts, csize);
 		jinfo->dslayouts = new_layouts;
+		jinfo->num_splayouts = counts->num_subpass_inputs;
 	}
 
 	VkRenderPass renderpasses[counts->num_renderpasses + 1] = {};
