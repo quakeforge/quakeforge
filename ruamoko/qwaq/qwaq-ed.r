@@ -1157,6 +1157,7 @@ main (int argc, string *argv)
 	Entity_SetModel (QuadSphere_ent, Model_LoadMesh ("quadsphere", quadsphere));
 	Entity_SetEntqueue (QuadSphere_ent, planetary_queue);
 	Entity_SetSubmeshMask (QuadSphere_ent, ~(1<<8));
+	Entity_SetShadowFlags (QuadSphere_ent, true, true, false);
 	Entity_SetTexture (QuadSphere_ent, "8k_earth_daymap");
 	Transform_SetLocalPosition(Entity_GetTransform (QuadSphere_ent), { 12770e3, -20, 20, 1});
 	Transform_SetLocalScale(Entity_GetTransform (QuadSphere_ent), { 6370e3, 6370e3, 6370e3, 1});
