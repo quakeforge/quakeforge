@@ -399,6 +399,28 @@ parse = {
 		};
 		layout = auto;
 	};
+	qfv_dependencyinfo_s = {
+		.name = qfv_dependencyinfo_t;
+		.type = (QFDictionary, QFString);
+		.string = {
+			name = $name;
+			line = $item.line;
+			.reference = $item;
+			.parse = auto;
+		};
+		.dictionary = {
+			.parse = auto;
+			name = $name;
+			line = $item.line;
+		};
+		name = {
+			type = string;
+			string = name;
+		};
+		src = auto;
+		dst = auto;
+		flags = auto;
+	};
 	qfv_subpassinfo_s = {
 		.name = qfv_subpassinfo_t;
 		.type = (QFDictionary);

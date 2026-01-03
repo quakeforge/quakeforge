@@ -527,7 +527,7 @@ find_subpass (qfv_dependencyinfo_t *d, uint32_t spind,
 			return i;
 		}
 	}
-	Sys_Error ("invalid dependency: [%d] %s", spind, d->name);
+	Sys_Error ("%d: invalid dependency: [%d] %s", d->line, spind, d->name);
 }
 
 static uint32_t __attribute__((pure))

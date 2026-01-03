@@ -121,6 +121,7 @@ typedef struct qfv_dependencymask_s {
 
 typedef struct qfv_dependencyinfo_s {
 	const char *name;
+	int         line;
 	qfv_dependencymask_t src;
 	qfv_dependencymask_t dst;
 	VkDependencyFlags flags;
