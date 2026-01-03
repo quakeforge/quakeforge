@@ -52,6 +52,10 @@ typedef struct outputctx_s {
 	VkFramebuffer *framebuffers;		// one per swapchain image
 	VkSemaphore *outputSemaphores;		// one per swapchain image
 	qfv_attachmentinfo_t swapchain_info;
+
+	float *time;
+	float *fov;
+	float *aspect;
 } outputctx_t;
 
 struct vulkan_ctx_s;

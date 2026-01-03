@@ -49,6 +49,10 @@ typedef struct composeframeset_s
 
 typedef struct composectx_s {
 	composeframeset_t frames;
+
+	vec4f_t    *fog;
+	vec4f_t    *camera;
+	float      *near_plane;
 } composectx_t;
 
 struct vulkan_ctx_s;

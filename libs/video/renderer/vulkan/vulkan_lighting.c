@@ -1496,13 +1496,6 @@ lighting_draw_hulls (const exprval_t **params, exprval_t *result,
 	}
 }
 
-typedef struct {
-	vec4f_t     fog;
-	float       near_plane;
-	uint32_t    queue;
-	uint32_t    num_cascade;
-} light_push_constants_t;
-
 static void
 lighting_draw_lights (const exprval_t **params, exprval_t *result,
 					  exprctx_t *ectx)
@@ -1513,14 +1506,12 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto lctx = ctx->lighting_context;
-	auto layout = taskctx->pipeline->layout;
+	auto pipeline = taskctx->pipeline;
 	auto cmd = taskctx->cmd;
 
 	auto lframe = &lctx->frames.a[ctx->curFrame];
 	auto shadow_type = *(int *) params[0]->value;
 	auto queue = lframe->light_queue[shadow_type];
-	float near_plane = r_nearclip;
-	uint32_t num_cascade = NUM_CASCADE;
 
 	if (!queue.count) {
 		return;
@@ -1530,23 +1521,12 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 	// convert scatter to transmission (FIXME ignoring absorbtion)
 	fog = (vec4f_t) { 1, 1, 1, 0 } - fog;
 	fog[3] = -fog[3];
+	*lctx->fog = fog;
+	*lctx->near_plane = r_nearclip;
+	*lctx->queue = queue;
+	*lctx->num_cascades = NUM_CASCADE;
 
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (light_push_constants_t, fog),
-			sizeof (fog), &fog },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (light_push_constants_t, near_plane),
-			sizeof (near_plane), &near_plane },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (light_push_constants_t, queue),
-			sizeof (queue), &queue },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (light_push_constants_t, num_cascade),
-			sizeof (num_cascade), &num_cascade },
-	};
-	QFV_PushConstants (device, cmd, layout, countof (push_constants),
-					   push_constants);
+	QFV_PushBlackboard (ctx, cmd, pipeline);
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
@@ -2151,19 +2131,25 @@ lighting_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_Render_AddStartup (ctx, lighting_startup);
 	QFV_Render_AddClearState (ctx, lighting_clearstate);
 
-	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
+	lightingctx_t *lctx = malloc (sizeof (lightingctx_t));
 	ctx->lighting_context = lctx;
 
-	lctx->shadow_info = (qfv_attachmentinfo_t) {
-		.name = "$shadow",
-		.format = VK_FORMAT_D32_SFLOAT,
-		.samples = 1,
-		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-		.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,//FIXME plist
+	*lctx = (lightingctx_t) {
+		.shadow_info = (qfv_attachmentinfo_t) {
+			.name = "$shadow",
+			.format = VK_FORMAT_D32_SFLOAT,
+			.samples = 1,
+			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+			.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,//FIXME plist
+		},
+		.fog          = QFV_GetBlackboardVar (ctx, "fog"),
+		.near_plane   = QFV_GetBlackboardVar (ctx, "near_plane"),
+		.queue        = QFV_GetBlackboardVar (ctx, "queue"),
+		.num_cascades = QFV_GetBlackboardVar (ctx, "num_cascades"),
 	};
 	qfv_attachmentinfo_t *attachments[] = {
 		&lctx->shadow_info,

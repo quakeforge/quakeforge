@@ -79,7 +79,8 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	auto cctx = ctx->compose_context;
 	auto cframe = &cctx->frames.a[ctx->curFrame];
-	auto layout = taskctx->pipeline->layout;
+	auto pipeline = taskctx->pipeline;
+	auto layout = pipeline->layout;
 	auto cmd = taskctx->cmd;
 
 	auto fb = &taskctx->renderpass->framebuffer;
@@ -98,19 +99,12 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 										   cframe->descriptors, 0, 0);
 		}
 	}
-	if (!color_only) {
-		vec4f_t fog = Fog_Get ();
-		vec4f_t cam = r_refdef.camera[3];
-		float near_plane = r_nearclip;
-		qfv_push_constants_t push_constants[] = {
-			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (fog), &fog },
-			{ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof (fog), sizeof (cam), &cam },
-			{ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof (fog)+ sizeof (cam),
-				sizeof (near_plane), &near_plane },
-		};
-		QFV_PushConstants (device, cmd, layout,
-						   countof (push_constants), push_constants);
+	if (cctx->camera) {
+		*cctx->fog = Fog_Get ();
+		*cctx->camera = r_refdef.camera[3];
+		*cctx->near_plane = r_nearclip;
 	}
+	QFV_PushBlackboard (ctx, cmd, pipeline);
 
 	VkDescriptorSet sets[] = {
 		cframe->descriptors[0].dstSet,
@@ -181,8 +175,13 @@ compose_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_Render_AddShutdown (ctx, compose_shutdown);
 	QFV_Render_AddStartup (ctx, compose_startup);
 
-	composectx_t *cctx = calloc (1, sizeof (composectx_t));
+	composectx_t *cctx = malloc (sizeof (composectx_t));
 	ctx->compose_context = cctx;
+	*cctx = (composectx_t) {
+		.fog        = QFV_GetBlackboardVar (ctx, "fog"),
+		.camera     = QFV_GetBlackboardVar (ctx, "camera"),
+		.near_plane = QFV_GetBlackboardVar (ctx, "near_plane"),
+	};
 }
 
 static exprtype_t *compose_draw_params[] = {

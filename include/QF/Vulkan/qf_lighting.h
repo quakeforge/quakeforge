@@ -87,6 +87,7 @@ typedef struct light_queue_s {
 	uint16_t    start;
 	uint16_t    count;
 } light_queue_t;
+static_assert (sizeof(light_queue_t) == sizeof (uint32_t));
 
 typedef struct light_idrad_s {
 	uint32_t    id;
@@ -186,6 +187,11 @@ typedef struct lightingctx_s {
 	uint32_t dynamic_count;
 	struct lightingdata_s *ldata;
 	struct scene_s *scene;
+
+	vec4f_t    *fog;
+	float      *near_plane;
+	light_queue_t *queue;
+	uint32_t   *num_cascades;
 } lightingctx_t;
 
 struct vulkan_ctx_s;

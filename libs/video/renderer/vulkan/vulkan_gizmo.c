@@ -123,6 +123,8 @@ typedef struct gizmoctx_s {
 	uint32_t    cmd_height;
 	giz_data_t  obj_ids;
 	giz_data_t  objects;
+
+	vec2f_t    *frag_size;
 } gizmoctx_t;
 
 static void
@@ -338,6 +340,8 @@ gizmo_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.cmd_height = 135,//FIXME
 		.obj_ids = DARRAY_STATIC_INIT (1024),
 		.objects = DARRAY_STATIC_INIT (1024),
+
+		.frag_size = QFV_GetBlackboardVar (ctx, "frag_size"),
 	};
 }
 
@@ -450,7 +454,8 @@ gizmo_draw_cmd (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto gctx = ctx->gizmo_context;
 	auto frame = &gctx->frames.a[ctx->curFrame];
-	auto layout = taskctx->pipeline->layout;
+	auto pipeline = taskctx->pipeline;
+	auto layout = pipeline->layout;
 	auto cmd = taskctx->cmd;
 
 	VkDescriptorSet sets[] = {
@@ -460,12 +465,11 @@ gizmo_draw_cmd (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, countof(sets), sets, 0, nullptr);
 
-	vec2f_t frag_size = { 1.0 / gctx->cmd_width, 1.0 / gctx->cmd_height };
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (vec2f_t), &frag_size },
+	*gctx->frag_size = (vec2f_t) {
+		1.0 / gctx->cmd_width,
+		1.0 / gctx->cmd_height,
 	};
-	QFV_PushConstants (device, cmd, layout,
-					   countof (push_constants), push_constants);
+	QFV_PushBlackboard (ctx, cmd, pipeline);
 
 	VkDeviceSize offsets[] = {0};
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &frame->obj_ids, offsets);

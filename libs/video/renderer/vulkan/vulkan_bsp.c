@@ -79,14 +79,6 @@
 #define SKYMAP_SET 5
 #define LIGHTMAP_SET 4
 
-typedef struct bsp_push_constants_s {
-	vec4f_t     fog;
-	float       time;
-	float       alpha;
-	float       turb_scale;
-	uint32_t    control;
-} bsp_frag_constants_t;
-
 static void
 add_texture (texture_t *tx, vulkan_ctx_t *ctx)
 {
