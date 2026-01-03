@@ -671,6 +671,14 @@ fullscreen_pass (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 										pipeline->layout,
 										0, pipeline->num_indices, sets, 0, 0);
 	}
+	if (pipeline->num_push_constants) {
+		auto layout = pipeline->layout;
+		auto blackboard = &rctx->blackboard;
+		auto first = pipeline->first_push_constant;
+		auto count = pipeline->num_push_constants;
+		auto push_constants = blackboard->push_constants + first;
+		QFV_PushConstants (device, cmd, layout, count, push_constants);
+	}
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
@@ -909,6 +917,10 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 		qftCVkContextDestroy (frame->qftVkCtx);
 	}
 	DARRAY_CLEAR (&rctx->frames);
+
+	if (rctx->blackboard.symbols) {
+		Hash_DelTable (rctx->blackboard.symbols);
+	}
 
 	if (rctx->jobinfo) {
 		__auto_type jinfo = rctx->jobinfo;

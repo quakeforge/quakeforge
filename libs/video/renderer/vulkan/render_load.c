@@ -175,6 +175,9 @@ typedef struct {
 	uint32_t    num_bufferviews;
 	uint32_t    num_layouts;
 
+	uint32_t    num_pushconstantranges;
+	uint32_t    num_pushconstants;
+
 	uint32_t    num_steps;
 	uint32_t    num_render;
 	uint32_t    num_compute;
@@ -497,7 +500,8 @@ typedef struct {
 	objcount_t  inds;
 	objptr_t    ptr;
 
-	qfv_subpassinfo_t *subpass;
+	const qfv_subpassinfo_t *subpass;
+	const qfv_pipelineinfo_t *pipeline;
 
 	vulkan_ctx_t *ctx;
 	qfv_jobinfo_t *jinfo;
@@ -621,6 +625,25 @@ find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
 }
 
 #define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
+static uint32_t pc_type_sizes[] = {
+	[qfv_float] = sizeof (float),
+	[qfv_int]   = sizeof (int32_t),
+	[qfv_uint]  = sizeof (uint32_t),
+	[qfv_vec2]  = sizeof (vec2f_t),
+	[qfv_vec3]  = sizeof (vec3_t),
+	[qfv_vec4]  = sizeof (vec4f_t),
+	[qfv_mat4]  = sizeof (mat4f_t),
+};
+
+static uint32_t pc_type_align[] = {
+	[qfv_float] = alignof (float),
+	[qfv_int]   = alignof (int32_t),
+	[qfv_uint]  = alignof (uint32_t),
+	[qfv_vec2]  = alignof (vec2f_t),
+	[qfv_vec3]  = alignof (vec4f_t),
+	[qfv_vec4]  = alignof (vec4f_t),
+	[qfv_mat4]  = alignof (mat4f_t),
+};
 
 static uint32_t
 parse_pushconstantrange (VkPushConstantRange *range,
@@ -637,34 +660,14 @@ parse_pushconstantrange (VkPushConstantRange *range,
 		if (pushconstant->size != ~0u) {
 			size = pushconstant->size;
 		} else {
-			switch (pushconstant->type) {
-				case qfv_float:
-				case qfv_int:
-				case qfv_uint:
-					size = sizeof (int32_t);
-					offset = RUP (offset, sizeof (int32_t));
-					break;
-				case qfv_vec2:
-					size = sizeof (vec2f_t);
-					offset = RUP (offset, sizeof (vec2f_t));
-					break;
-				case qfv_vec3:
-					size = sizeof (vec3_t);
-					offset = RUP (offset, sizeof (vec4f_t));
-					break;
-				case qfv_vec4:
-					size = sizeof (vec4f_t);
-					offset = RUP (offset, sizeof (vec4f_t));
-					break;
-				case qfv_mat4:
-					size = sizeof (mat4f_t);
-					offset = RUP (offset, sizeof (vec4f_t));
-					break;
-				default:
-					Sys_Error ("%s.%s:%s:%d invalid type: %d",
-							   s->rpi->name, s->spi->name, pushconstant->name,
-							   pushconstant->line, pushconstant->type);
+			if (pushconstant->type > qfv_mat4) {
+				Sys_Error ("%s.%s:%s:%d invalid type: %d",
+						   s->rpi->name, s->spi->name, pushconstant->name,
+						   pushconstant->line, pushconstant->type);
 			}
+			size = pc_type_sizes[pushconstant->type];
+			uint32_t align = pc_type_align[pushconstant->type];
+			offset = RUP (offset, align);
 		}
 		if (range_offset == ~0u) {
 			range_offset = offset;
@@ -724,6 +727,7 @@ static void
 init_plCreate (VkGraphicsPipelineCreateInfo *plc, const qfv_pipelineinfo_t *pli,
 			   objstate_t *s)
 {
+	s->pipeline = pli;
 	if (pli->num_graph_stages) {
 		plc->stageCount = pli->num_graph_stages;
 	}
@@ -764,6 +768,7 @@ init_plCreate (VkGraphicsPipelineCreateInfo *plc, const qfv_pipelineinfo_t *pli,
 		plc->layout = li->layout;
 		s->inds.num_ds_indices += li->num_sets;
 	}
+	s->pipeline = nullptr;
 }
 
 static uint32_t __attribute__((pure))
@@ -1030,7 +1035,9 @@ static void
 init_pipeline (qfv_pipeline_t *pl, qfv_pipelineinfo_t *plinfo,
 			   jobptr_t *jp, objstate_t *s, int is_compute)
 {
-	__auto_type li = find_layout (&plinfo->layout, s);
+	auto blackboard = &s->ctx->render_context->blackboard;
+	auto li = find_layout (&plinfo->layout, s);
+	uint32_t layout_ind = li - s->ptr.layouts;
 	*pl = (qfv_pipeline_t) {
 		.label = make_label (plinfo->name, plinfo->color),
 		.disabled = plinfo->disabled,
@@ -1041,6 +1048,8 @@ init_pipeline (qfv_pipeline_t *pl, qfv_pipelineinfo_t *plinfo,
 		.layout = li->layout,
 		.num_indices = li->num_sets,
 		.ds_indices = &jp->ds_indices[s->inds.num_ds_indices],
+		.first_push_constant = blackboard->layout_start[layout_ind],
+		.num_push_constants = blackboard->layout_count[layout_ind],
 	};
 	init_tasks (&pl->task_count, &pl->tasks, plinfo->num_tasks, plinfo->tasks,
 			    jp, s);
@@ -1375,10 +1384,12 @@ del_objstate (void *_state)
 static void
 create_pipeline_layout (const qfv_pipelineinfo_t *pli, objstate_t *s)
 {
+	s->pipeline = pli;
 	if (pli->layout.name) {
 		__auto_type li = find_layout (&pli->layout, s);
 		s->inds.num_ds_indices += li->num_sets;
 	}
+	s->pipeline = nullptr;
 }
 
 static void
@@ -1433,9 +1444,11 @@ create_step_compute_layouts (uint32_t index, const qfv_stepinfo_t *step,
 	uint32_t    base = s->inds.num_graph_pipelines;
 	for (uint32_t i = 0; i < cinfo->num_pipelines; i++) {
 		auto pli = &cinfo->pipelines[i];
+		s->pipeline = pli;
 		auto li = find_layout (&pli->layout, s);
 		s->ptr.plName[base + s->inds.num_comp_pipelines] = pli->name;
 		s->inds.num_ds_indices += li->num_sets;
+		s->pipeline = nullptr;
 	}
 }
 
@@ -1451,6 +1464,128 @@ create_layouts (vulkan_ctx_t *ctx, objstate_t *s)
 	}
 	for (uint32_t i = 0; i < jinfo->num_steps; i++) {
 		create_step_compute_layouts (i, &jinfo->steps[i], s);
+	}
+}
+
+static const char *
+blackboard_getkey (const void *_pc, void *data)
+{
+	const qfv_pushconstantinfo_t *pc = _pc;
+	return pc->name;
+}
+
+static void
+create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, jobptr_t jp,
+				   objstate_t *s)
+{
+	auto rctx = ctx->render_context;
+	//auto job = rctx->job;
+	if (!counts->num_pushconstantranges || !counts->num_pushconstants) {
+		return;
+	}
+	VkShaderStageFlags stageFlags[counts->num_pushconstants];
+	qfv_pushconstantinfo_t bb_constants[counts->num_pushconstants];
+	qfv_pushconstantinfo_t pc_constants[counts->num_pushconstants];
+	uint32_t map[counts->num_pushconstants];
+
+	uint32_t cind = 0;
+	uint32_t mind = 0;
+
+	for (uint32_t i = 0; i < counts->num_layouts; i++) {
+		auto layout = &s->ptr.layouts[i];
+		uint32_t pc_offset = 0;
+		for (uint32_t j = 0; j < layout->num_pushconstantranges; j++) {
+			auto r = layout->pushconstantranges[j];
+			for (uint32_t k = 0; k < r.num_pushconstants; k++ ) {
+				auto c = r.pushconstants[k];
+				if (c.offset != ~0u) {
+					// used for creating overlapping pushconstant ranges
+					// so probably don't want a blackboard variable for it
+					pc_offset = c.offset + c.size;
+					continue;
+				}
+				if (c.size == ~0u) {
+					c.size = pc_type_sizes[c.type];
+				}
+				stageFlags[cind] = r.stageFlags;
+				bb_constants[cind] = c;
+				pc_offset = RUP (pc_offset, pc_type_align[c.type]);
+				c.offset = pc_offset;
+				pc_offset += c.size;
+				pc_constants[cind] = c;
+
+				map[mind++] = cind++;
+			}
+		}
+	}
+
+	uint32_t bb_offset = 0;
+	for (uint32_t i = 0; i < cind; i++) {
+		auto pc = &bb_constants[i];
+		for (uint32_t j = 0; j < i; j++) {
+			if (bb_constants[j].name
+				&& strcmp (bb_constants[j].name, pc->name) == 0) {
+				map[i] = j;
+				pc->name = nullptr;
+				break;
+			}
+		}
+		if (!pc->name) {
+			continue;
+		}
+		bb_offset = RUP (bb_offset, pc_type_align[pc->type]);
+		pc->offset = bb_offset;
+		bb_offset += pc->size;
+	}
+	auto bb = &rctx->blackboard;
+	auto memsuper = rctx->jobinfo->memsuper;
+	bb->symbols = Hash_NewTable (253, blackboard_getkey, 0, 0, &rctx->hashctx);
+	bb->data = cmemalloc (memsuper, bb_offset);
+	bb->push_constants = cmemalloc (memsuper,
+									sizeof (qfv_push_constants_t[cind]));
+	bb->layout_start = cmemalloc (memsuper,
+								  sizeof (uint32_t[counts->num_layouts]));
+	bb->layout_count = cmemalloc (memsuper,
+								  sizeof (uint32_t[counts->num_layouts]));
+	for (uint32_t i = 0; i < cind; i++) {
+		uint32_t ind = map[i];
+		auto pc = &pc_constants[i];
+		auto bc = &bb_constants[ind];
+		bb->push_constants[i] = (qfv_push_constants_t) {
+			.stageFlags = stageFlags[i],
+			.offset = pc->offset,
+			.size = pc->size,
+			.data = bb->data + bc->offset,
+		};
+		if (bc->name) {
+			qfv_pushconstantinfo_t *c = cmemalloc (memsuper, sizeof (*c));
+			*c = *bc;
+			Hash_Add (bb->symbols, c);
+			if (developer & SYS_vulkan) {
+				printf ("%3d %d %2d %s\n", c->offset, c->type, c->size,
+						c->name);
+			}
+			bc->name = nullptr;
+		}
+	}
+	bb->layout_start[0] = 0;
+	for (uint32_t i = 0; i < counts->num_layouts; i++) {
+		if (i > 0) {
+			bb->layout_start[i] = bb->layout_start[i - 1]
+								+ bb->layout_count[i - 1];
+		}
+		bb->layout_count[i] = 0;
+		auto layout = &s->ptr.layouts[i];
+		for (uint32_t j = 0; j < layout->num_pushconstantranges; j++) {
+			auto r = layout->pushconstantranges[j];
+			for (uint32_t k = 0; k < r.num_pushconstants; k++ ) {
+				auto c = r.pushconstants[k];
+				if (c.offset != ~0u) {
+					continue;
+				}
+				bb->layout_count[i] ++;
+			}
+		}
 	}
 }
 
@@ -1528,9 +1663,19 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 	create_layouts (ctx, &s);
 	counts->num_layouts = s.inds.num_layouts;
 	counts->num_ds_indices = s.inds.num_ds_indices;
+	for (uint32_t i = 0; i < counts->num_layouts; i++) {
+		auto layout = &s.ptr.layouts[i];
+		counts->num_pushconstantranges += layout->num_pushconstantranges;
+		for (uint32_t j = 0; j < layout->num_pushconstantranges; j++) {
+			auto range = &layout->pushconstantranges[j];
+			counts->num_pushconstants += range->num_pushconstants;
+		}
+	}
 	s.inds.num_ds_indices = 0;
 
 	auto jp = create_job (ctx, counts, &s);
+
+	create_blackboard (ctx, counts, jp, &s);
 
 	auto job = rctx->job;
 	init_tasks (&job->newscene_task_count, &job->newscene_tasks,

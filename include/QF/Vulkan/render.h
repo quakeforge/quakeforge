@@ -38,7 +38,7 @@ typedef struct qfv_descriptorsetlayoutinfo_s {
 	VkDescriptorSetLayout setLayout;
 } qfv_descriptorsetlayoutinfo_t;
 
-typedef enum qfv_type_t {
+typedef enum qfv_type_t : uint32_t {
 	qfv_float,
 	qfv_int,
 	qfv_uint,
@@ -348,6 +348,9 @@ typedef struct qfv_pipeline_s {
 	uint32_t    num_indices;
 	uint32_t   *ds_indices;
 
+	uint32_t    first_push_constant;
+	uint32_t    num_push_constants;
+
 	uint32_t    task_count;
 	qfv_taskinfo_t *tasks;
 } qfv_pipeline_t;
@@ -454,6 +457,16 @@ typedef struct qfv_job_s {
 	qfv_initfuncset_t clearstate_funcs;
 } qfv_job_t;
 
+typedef struct hashtab_s hashtab_t;
+
+typedef struct qfv_blackboard_s {
+	byte       *data;
+	hashtab_t  *symbols;
+	qfv_push_constants_t *push_constants;
+	uint32_t   *layout_start;
+	uint32_t   *layout_count;
+} qfv_blackboard_t;
+
 typedef struct qfv_renderframe_s {
 	VkFence     fence;
 	VkSemaphore renderDoneSemaphore;
@@ -488,6 +501,7 @@ typedef struct qfv_renderctx_s {
 	qfv_samplerinfo_t *samplerinfo;
 	qfv_entqueueinfo_t *entqueueinfo;
 	qfv_job_t  *job;
+	qfv_blackboard_t blackboard;
 	qfv_renderframeset_t frames;
 	qfv_deletequeue_t deletion_queue;
 	int64_t     size_time;
