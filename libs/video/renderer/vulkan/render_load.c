@@ -1401,6 +1401,11 @@ create_subpass_layouts (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
 	s->plc = &s->ptr.gplCreate[s->inds.num_graph_pipelines];
 	s->spc = &s->ptr.subpass[s->inds.num_subpasses];
 
+	if (sub[index].attachments && sub[index].attachments->num_input) {
+		qfv_reference_t ref = { .name = "$input" };
+		find_descriptorSet (&ref, s);
+	}
+
 	for (uint32_t i = 0; i < s->spi->num_pipelines; i++) {
 		if (s->spi->base_pipeline) {
 			create_pipeline_layout (s->spi->base_pipeline, s);
@@ -1418,6 +1423,7 @@ create_renderpass_layouts (uint32_t index, const qfv_renderinfo_t *rinfo,
 	for (uint32_t i = 0; i < s->rpi->num_subpasses; i++) {
 		create_subpass_layouts (i, s->rpi->subpasses, s);
 	}
+	s->rpi = nullptr;
 }
 
 static void
