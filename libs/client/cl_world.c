@@ -147,7 +147,7 @@ CL_ParseStatic (qmsg_t *msg, int version)
 
 	// copy it to the current state
 	renderer->model = cl_world.models.a[es.modelindex];
-	renderer->noshadows = renderer->model->shadow_alpha < 0.5;
+	renderer->noshadowcast = renderer->model->shadow_alpha < 0.5;
 	animation->frame = es.frame;
 	renderer->skinnum = es.skinnum;
 

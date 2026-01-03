@@ -563,7 +563,7 @@ mesh_draw_entqueue (int stage, int pass, int entqueue, qfv_taskctx_t *taskctx)
 	for (size_t i = 0; i < queue->ent_queues[entqueue].size; i++) {
 		entity_t    ent = queue->ent_queues[entqueue].a[i];
 		auto renderer = Entity_GetRenderer (ent);
-		if ((stage == mesh_shadow && renderer->noshadows)
+		if ((stage == mesh_shadow && renderer->noshadowcast)
 			|| (stage == mesh_main && renderer->onlyshadows)) {
 			continue;
 		}

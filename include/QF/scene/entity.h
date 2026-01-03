@@ -104,7 +104,8 @@ typedef struct renderer_s {
 	uint32_t    skindesc;			//FIXME ^^
 	struct trail_s *trail;
 	unsigned    fullbright:1;
-	unsigned    noshadows:1;
+	unsigned    noshadowcast:1;
+	unsigned    noshadowreceive:1;
 	unsigned    onlyshadows:1;
 	unsigned    depthhack:1;
 	float       colormod[4];	// color tint and alpha for model

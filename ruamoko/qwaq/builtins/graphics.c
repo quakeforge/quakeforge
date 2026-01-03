@@ -265,12 +265,12 @@ bi_refresh (progs_t *pr, void *_res)
 				};
 				auto mat = Transform_GetWorldMatrixPtr (xform);
 				aabb = transform_bounds (mat, aabb);
-				if (!rend->onlyshadows) {
+				if (!rend->noshadowreceive) {
 					Ent_SetComponent (ent, c_receiver, scene->reg, &aabb);
 				} else {
 					Ent_RemoveComponent (ent, c_receiver, scene->reg);
 				}
-				if (!rend->noshadows) {
+				if (!rend->noshadowcast) {
 					Ent_SetComponent (ent, c_caster, scene->reg, &aabb);
 				} else {
 					Ent_RemoveComponent (ent, c_caster, scene->reg);
