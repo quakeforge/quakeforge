@@ -70,22 +70,22 @@
 
 static void
 emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
-			   int numPC, qfv_push_constants_t *constants,
 			   qfv_taskctx_t *taskctx, entity_t ent)
 {
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	auto layout = taskctx->pipeline->layout;
+	auto pipeline = taskctx->pipeline;
+	auto layout = pipeline->layout;
 
 	Vulkan_BeginEntityLabel (ctx, cmd, ent);
 
-	QFV_PushConstants (device, cmd, layout, numPC, constants);
 	VkDescriptorSet sets[] = {
 		sprite->descriptors,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 1, 1, sets, 0, 0);
+	QFV_PushBlackboard (ctx, cmd, pipeline);
 	dfunc->vkCmdDraw (cmd, 4, 1, 0, 0);
 
 	QFV_CmdEndLabel (device, cmd);
@@ -151,42 +151,26 @@ Vulkan_Sprite_FreeDescriptors (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
 static void
 sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 {
+	auto ctx = taskctx->ctx;
+	auto sctx = ctx->sprite_context;
 	auto renderer = Entity_GetRenderer (ent);
 	auto model = renderer->model;
 	msprite_t *sprite = model->cache.data;
 
-	mat4f_t     mat = {};
-	uint32_t    frame;
-	uint32_t    spriteind = 0;
-	vec4f_t     fog = Fog_Get ();
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-			0, sizeof (mat), mat },
-		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-			64, sizeof (frame), &frame },
-		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-			68, sizeof (frame), &spriteind },
-		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-			72, sizeof (frame), &spriteind },
-		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-			76, sizeof (frame), &spriteind },
-		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-			80, sizeof (fog), &fog },
-	};
+	*sctx->fog = Fog_Get ();
 
 	auto animation = Entity_GetAnimation (ent);
-	frame = animation->pose2;
+	*sctx->frame = animation->pose2;
 
 	transform_t transform = Entity_Transform (ent);
-	mat[3] = Transform_GetWorldPosition (transform);
-	vec4f_t     cameravec = r_refdef.frame.position - mat[3];
+	Transform_GetWorldMatrix (transform, *sctx->mat);
+	vec4f_t     cameravec = r_refdef.frame.position - (*sctx->mat)[3];
 	R_BillboardFrame (transform, sprite->type, cameravec,
-					  &mat[2], &mat[1], &mat[0]);
-	mat[0] = -mat[0];
+					  &(*sctx->mat)[2], &(*sctx->mat)[1], &(*sctx->mat)[0]);
+	(*sctx->mat)[0] = -(*sctx->mat)[0];
 
-	emit_commands (taskctx->cmd,
-				   (qfv_sprite_t *) ((byte *) sprite + sprite->skin.data),
-				   countof(push_constants), push_constants, taskctx, ent);
+	auto sprt = (qfv_sprite_t *) ((byte *) sprite + sprite->skin.data);
+	emit_commands (taskctx->cmd, sprt, taskctx, ent);
 }
 
 static void
@@ -246,8 +230,15 @@ sprite_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	QFV_Render_AddShutdown (ctx, sprite_shutdown);
 	QFV_Render_AddStartup (ctx, sprite_startup);
-	spritectx_t *sctx = calloc (1, sizeof (spritectx_t));
+	spritectx_t *sctx = malloc (sizeof (spritectx_t));
 	ctx->sprite_context = sctx;
+	*sctx = (spritectx_t) {
+		.mat       = QFV_GetBlackboardVar (ctx, "Model"),
+		.frame     = QFV_GetBlackboardVar (ctx, "frame"),
+		.spriteind = QFV_GetBlackboardVar (ctx, "spriteind"),
+		.fog       = QFV_GetBlackboardVar (ctx, "fog"),
+	};
+	*sctx->spriteind = 0;
 }
 
 static exprfunc_t sprite_draw_func[] = {

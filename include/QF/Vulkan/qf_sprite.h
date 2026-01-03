@@ -62,6 +62,11 @@ typedef struct spritectx_s {
 	struct qfv_dsmanager_s *dsmanager;
 	unsigned    maxImages;
 	VkSampler   sampler;
+
+	mat4f_t    *mat;
+	int32_t    *frame;
+	int32_t    *spriteind;
+	vec4f_t    *fog;
 } spritectx_t;
 
 struct vulkan_ctx_s;
