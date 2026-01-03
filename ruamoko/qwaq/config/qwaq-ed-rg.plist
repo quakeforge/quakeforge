@@ -1880,24 +1880,6 @@ render_graph = {
 						rasterization = $cw_cull_back;
 					};
 					pipelines = {
-						bsp:sky = {
-							color = $color.bsp;
-							tasks = (
-								// FIXME background and sky should not use OIT
-								{ func = bsp_draw_queue;
-								  params = (main, background, 1); },
-								{ func = bsp_draw_queue;
-								  params = (main, sky, 1); },
-							);
-
-							stages = (
-								$brush.shader.quake_vertex,
-								$brush.shader.sky_fragment,
-							);
-							vertexInput = $brush.vertexInput;
-							inputAssembly = $brush.inputAssembly;
-							layout = $brush.layout;
-						};
 						bsp:trans = {
 							color = $color.bsp;
 							tasks = (
@@ -2021,6 +2003,64 @@ render_graph = {
 								);
 							};
 						};
+						sprite:gbuffer = {
+							color = $color.sprite;
+							tasks = (
+								{ func = sprite_draw; },
+							);
+
+							stages = (
+								$sprite.shader.gbuf_vertex,
+								$sprite.shader.gbuf_fragment,
+							);
+							vertexInput = $sprite.vertexInput;
+							inputAssembly = $sprite.inputAssembly;
+							layout = $sprite.layout;
+						};
+					};
+				};
+				unlit = {// subpass 3
+					color = "[ 0.25, 0.25, 0.3, 1]";
+					dependencies = {
+						depth = $depthtest_dependency;
+						gbuffer = $color_dependency;
+						$external = $extcolor_dependency;
+					};
+					attachments = {
+						color = {
+							emission = {
+								layout = color_attachment_optimal;
+								blend = $blend_disable;
+							};
+						};
+						depth = {
+							depth = depth_stencil_read_only_optimal;
+						};
+						preserve = (color, normal, output);
+					};
+					base_pipeline = {
+						@inherit = $pipeline_base;
+						rasterization = $cw_cull_back;
+					};
+					pipelines = {
+						bsp:sky = {
+							color = $color.bsp;
+							tasks = (
+								// FIXME background and sky should not use OIT
+								{ func = bsp_draw_queue;
+								  params = (main, background, 1); },
+								{ func = bsp_draw_queue;
+								  params = (main, sky, 1); },
+							);
+
+							stages = (
+								$brush.shader.quake_vertex,
+								$brush.shader.sky_fragment,
+							);
+							vertexInput = $brush.vertexInput;
+							inputAssembly = $brush.inputAssembly;
+							layout = $brush.layout;
+						};
 						planetary:gbuffer = {
 							color = $color.mesh;
 							tasks = (
@@ -2043,20 +2083,6 @@ render_graph = {
 								);
 							};
 						};
-						sprite:gbuffer = {
-							color = $color.sprite;
-							tasks = (
-								{ func = sprite_draw; },
-							);
-
-							stages = (
-								$sprite.shader.gbuf_vertex,
-								$sprite.shader.gbuf_fragment,
-							);
-							vertexInput = $sprite.vertexInput;
-							inputAssembly = $sprite.inputAssembly;
-							layout = $sprite.layout;
-						};
 					};
 				};
 				lighting = {// subpass 4
@@ -2064,6 +2090,7 @@ render_graph = {
 					dependencies = {
 						translucent = $depthread_dependency;
 						gbuffer = $depthread_dependency;
+						unlit = $depthread_dependency;
 						gbuffer = $color_dependency;
 						$external = $extcolor_dependency;
 					};
@@ -2157,6 +2184,7 @@ render_graph = {
 						translucent = $color_dependency;
 						gbuffer = $color_dependency;
 						lighting = $color_dependency;
+						unlit = $color_dependency;
 						$external = $extcolor_dependency;
 					};
 					attachments = {
@@ -2377,7 +2405,7 @@ render_graph = {
 		deferred_cube = {
 			@inherit = $renderpasses.deferred;
 			@next = (VkRenderPassMultiviewCreateInfo, {
-				viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
+				viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
 			});
 			framebuffer = {
 				width = "min($render_output.extent.width,$render_output.extent.height)";

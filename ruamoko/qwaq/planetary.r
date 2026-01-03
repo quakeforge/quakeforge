@@ -113,8 +113,8 @@ surf_map (vec3 dir, int layer)
 [in(3)] vec4 color;
 
 [out(0)] vec4 frag_color;
-[out(1)] vec4 frag_emission;
-[out(2)] vec4 frag_normal;
+//[out(1)] vec4 frag_emission;
+//[out(2)] vec4 frag_normal;
 
 [shader("Fragment")]
 [capability("MultiView")]
@@ -130,11 +130,11 @@ main ()
 	vec4 c, e;
 	c = surf_map(local_dir, 0);
 	e = surf_map(local_dir, 1) * 2;
-	vec4 rows = unpackUnorm4x8(colors);
-	vec4        cmap = surf_map (dir, 2);
-	c += texture (Palette, vec2 (cmap.x, rows.x)) * cmap.y;
-	c += texture (Palette, vec2 (cmap.z, rows.y)) * cmap.w;
-	frag_color = c * color;
-	frag_emission = e;
-	frag_normal = vec4(normalize(dir), 1);
+	//vec4 rows = unpackUnorm4x8(colors);
+	//vec4        cmap = surf_map (dir, 2);
+	//c += texture (Palette, vec2 (cmap.x, rows.x)) * cmap.y;
+	//c += texture (Palette, vec2 (cmap.z, rows.y)) * cmap.w;
+	frag_color = c * color + e * 2;
+	//frag_emission = e;
+	//frag_normal = vec4(normalize(dir), 1);
 }
