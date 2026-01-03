@@ -388,6 +388,22 @@ bi (Entity_SetSubmeshMask)
 	renderer->submesh_mask = submesh_mask;
 }
 
+bi (Entity_SetShadowFlags)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	bool        noshadowcast = P_INT (pr, 1);
+	bool        noshadowreceive = P_INT (pr, 2);
+	bool        onlyshadows = P_INT (pr, 3);
+	entity_t    ent = rua_entity_get (res, ent_id);
+
+	auto renderer = Entity_GetRenderer (ent);
+	renderer->noshadowcast = noshadowcast;
+	renderer->noshadowreceive = noshadowreceive;
+	renderer->onlyshadows = onlyshadows;
+}
+
 bi (Entity_SetSkin)
 {
 	qfZoneScoped (true);
@@ -792,6 +808,7 @@ static builtin_t builtins[] = {
 	bi(Entity_SetModel,             2, p(ulong), p(int)),
 	bi(Entity_SetEntqueue,          2, p(ulong), p(int)),
 	bi(Entity_SetSubmeshMask,       2, p(ulong), p(uint)),
+	bi(Entity_SetShadowFlags,       4, p(ulong), p(int), p(int), p(int)),
 	bi(Entity_SetSkin,              2, p(ulong), p(string)),
 	bi(Entity_SetTexture,           2, p(ulong), p(string)),
 	bi(Entity_GetPoseMotors,		3, p(ulong), p(ptr), p(double)),

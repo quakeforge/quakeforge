@@ -12,6 +12,8 @@ transform_t Entity_GetTransform (entity_t ent) = #0;
 void Entity_SetModel (entity_t ent, model_t model) = #0;
 void Entity_SetEntqueue (entity_t ent, int entqueue) = #0;
 void Entity_SetSubmeshMask (entity_t ent, uint submesh_mask) = #0;
+void Entity_SetShadowFlags (entity_t ent, bool noshadowcast,
+							bool noshadowreceive, bool onlyshadows) = #0;
 void Entity_SetSkin (entity_t ent, string skinname) = #0;
 void Entity_SetTexture (entity_t ent, string skinname) = #0;
 int Entity_GetPoseMotors (entity_t ent, void *motors, double time) = #0;
