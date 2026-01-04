@@ -1,6 +1,7 @@
 search = (
 	VkDebugUtilsMessageSeverityFlagBitsEXT,
 	VkValidationFeatureEnableEXT,
+	VkValidationFeatureDisableEXT,
 	VkObjectType,
 	VkPresentModeKHR,
 	VkSpecializationInfo,
