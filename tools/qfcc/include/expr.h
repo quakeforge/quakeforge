@@ -453,6 +453,11 @@ typedef struct {
 	const type_t *type;			///< result type for extract
 } ex_bitfield_t;
 
+typedef struct {
+	const expr_t *ptr;
+	const expr_t *offset;
+} ex_ptroffset_t;
+
 typedef struct expr_s {
 	expr_t     *next;
 	rua_loc_t   loc;			///< source location of expression
@@ -510,6 +515,7 @@ typedef struct expr_s {
 		ex_xvalue_t xvalue;				///< lvalue/rvalue specific expression
 		ex_process_t process;			///< expression than needs processing
 		ex_bitfield_t bitfield;			///< bitfield insert/extract expression
+		ex_ptroffset_t ptroffset;		///< pointer offset expression
 	};
 } expr_t;
 

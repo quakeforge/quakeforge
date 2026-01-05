@@ -151,21 +151,18 @@ pointer_arithmetic (int op, const expr_t *e1, const expr_t *e2)
 			return error (e2, "cannot use %c on pointers of different types",
 						  op);
 		}
-		e1 = cast_expr (&type_int, e1);
-		e2 = cast_expr (&type_int, e2);
-		psize = new_int_expr (type_size (t1->fldptr.type), false);
-		return binary_expr ('/', binary_expr ('-', e1, e2), psize);
+		return current_target.pointer_diff (e1, e2);
 	} else if (is_pointer (t1)) {
-		offset = cast_expr (&type_int, e2);
+		offset = e2;
 		ptr = e1;
 		ptype = t1;
 	} else if (is_pointer (t2)) {
-		offset = cast_expr (&type_int, e1);
+		offset = e1;
 		ptr = e2;
 		ptype = t2;
 	}
 	// op is known to be + or -
-	psize = new_int_expr (type_size (ptype->fldptr.type), false);
+	psize = new_int_expr (type_size (ptype->fldptr.type), true);
 	offset = unary_expr (op, binary_expr ('*', offset, psize));
 	return offset_pointer_expr (ptr, offset);
 }

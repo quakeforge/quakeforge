@@ -576,6 +576,22 @@ print_bitfield (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
 }
 
 static void
+print_ptroffset (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
+				 const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->ptroffset.ptr, level, printed, next);
+	_print_expr (dstr, e->ptroffset.offset, level, printed, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
+			   e->ptroffset.ptr);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
+			   e->ptroffset.offset);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   "<process>", e->loc.line);
+}
+
+static void
 print_subexpr (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
 			   const expr_t *next)
 {
@@ -1131,6 +1147,7 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
 		[ex_xvalue] = print_xvalue,
 		[ex_process] = print_process,
 		[ex_bitfield] = print_bitfield,
+		[ex_ptroffset] = print_ptroffset,
 	};
 	int         indent = level * 2 + 2;
 

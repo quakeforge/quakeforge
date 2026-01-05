@@ -86,6 +86,7 @@ EX_EXPR(caselabel)	///< case expression (::ex_caselabel_t)
 EX_EXPR(xvalue)		///< xvalue expression (::ex_xvalue_t)
 EX_EXPR(process)	///< expression that needs processing (::ex_process_t)
 EX_EXPR(bitfield)	///< bitfield insert/extract expression (::ex_bitfield_t)
+EX_EXPR(ptroffset)	///< pointer offset expression (::ex_ptroffset_t)
 
 #undef EX_EXPR
 

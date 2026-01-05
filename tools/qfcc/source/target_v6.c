@@ -388,6 +388,8 @@ target_t v6_target = {
 	.vector_compare = v6_vector_compare,
 	.shift_op = v6_shift_op,
 	.test_expr = v6_test_expr,
+	.pointer_diff = ruamoko_pointer_diff,
+	.ptr_type_size = ruamoko_ptr_type_size,
 
 	.short_circuit = true,
 };
@@ -406,6 +408,8 @@ target_t v6p_target = {
 	.vector_compare = v6p_vector_compare,
 	.shift_op = v6p_shift_op,
 	.test_expr = v6p_test_expr,
+	.pointer_diff = ruamoko_pointer_diff,
+	.ptr_type_size = ruamoko_ptr_type_size,
 
 	.short_circuit = true,
 	.zero_memory = true,

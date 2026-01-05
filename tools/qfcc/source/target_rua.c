@@ -520,6 +520,22 @@ ruamoko_test_expr (const expr_t *expr)
 	return error (expr, "cannot convert to bool");
 }
 
+const expr_t *
+ruamoko_pointer_diff (const expr_t *ptra, const expr_t *ptrb)
+{
+	auto e1 = cast_expr (&type_int, ptra);
+	auto e2 = cast_expr (&type_int, ptrb);
+	auto type = get_type (ptra)->fldptr.type;
+	auto psize = new_int_expr (ruamoko_ptr_type_size (type), true);
+	return binary_expr ('/', binary_expr ('-', e1, e2), psize);
+}
+
+int
+ruamoko_ptr_type_size (const type_t *type)
+{
+	return type_aligned_size (type);
+}
+
 target_t ruamoko_target = {
 	.value_too_large = ruamoko_value_too_large,
 	.build_scope = ruamoko_build_scope,
@@ -533,6 +549,8 @@ target_t ruamoko_target = {
 	.vector_compare = ruamoko_vector_compare,
 	.shift_op = ruamoko_shift_op,
 	.test_expr = ruamoko_test_expr,
+	.pointer_diff = ruamoko_pointer_diff,
+	.ptr_type_size = ruamoko_ptr_type_size,
 
 	.short_circuit = true,
 	.zero_memory = true,

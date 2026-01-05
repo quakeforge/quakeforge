@@ -203,6 +203,8 @@ get_type (const expr_t *e)
 			}
 			type = e->bitfield.type;
 			break;
+		case ex_ptroffset:
+			return get_type (e->ptroffset.ptr);
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -2107,6 +2109,9 @@ has_function_call (const expr_t *e)
 					|| has_function_call (e->bitfield.length)
 					|| (e->bitfield.insert
 						&& has_function_call (e->bitfield.insert)));
+		case ex_ptroffset:
+			return (has_function_call (e->ptroffset.ptr)
+					|| has_function_call (e->ptroffset.offset));
 		case ex_count:
 			break;
 	}
@@ -2539,9 +2544,10 @@ offset_pointer_expr (const expr_t *pointer, const expr_t *offset)
 		internal_error (offset, "pointer offset is not an integer type");
 	}
 	const expr_t *ptr;
-	if (pointer->type == ex_alias && !pointer->alias.offset
-		&& is_integral (get_type (pointer->alias.expr))) {
-		ptr = pointer->alias.expr;
+	const expr_t *offs;
+	if (pointer->type == ex_ptroffset) {
+		ptr = pointer->ptroffset.ptr;
+		offs = binary_expr ('+', pointer->ptroffset.offset, offset);
 	} else if (pointer->type == ex_address && is_constant (offset)) {
 		if (pointer->address.offset) {
 			offset = binary_expr ('+', pointer->address.offset, offset);
@@ -2550,13 +2556,19 @@ offset_pointer_expr (const expr_t *pointer, const expr_t *offset)
 								pointer->address.lvalue, offset);
 		return ptr;
 	} else {
-		ptr = cast_expr (&type_int, pointer);
+		ptr = pointer;
+		offs = offset;
 	}
 	if (ptr->type == ex_error) {
 		return ptr;
 	}
-	ptr = binary_expr ('+', ptr, offset);
-	return cast_expr (ptr_type, ptr);
+	auto ptroffset = new_expr ();
+	ptroffset->type = ex_ptroffset;
+	ptroffset->ptroffset = (ex_ptroffset_t) {
+		.ptr = ptr,
+		.offset = offs,
+	};
+	return ptroffset;
 }
 
 static expr_t *
@@ -3092,6 +3104,9 @@ can_inline (const expr_t *expr, symbol_t *fsym)
 					&& can_inline (expr->bitfield.length, fsym)
 					&& (!expr->bitfield.insert
 						|| can_inline (expr->bitfield.insert, fsym)));
+		case ex_ptroffset:
+			return (can_inline (expr->ptroffset.ptr, fsym)
+					&& can_inline (expr->ptroffset.offset, fsym));
 		case ex_def:
 		case ex_temp:
 		case ex_nil:

@@ -64,6 +64,8 @@ typedef struct {
 	const expr_t *(*cast_expr) (const type_t *dstType, const expr_t *expr);
 	const expr_t *(*check_types_compatible) (const expr_t **dst,
 											 const expr_t **src);
+	const expr_t *(*pointer_diff) (const expr_t *ptra, const expr_t *ptrb);
+	int       (*ptr_type_size) (const type_t *type);
 	bool      (*type_assignable) (const type_t *dst, const type_t *src);
 	bool      (*init_type_ok) (const type_t *dst, const type_t *src);
 
@@ -92,5 +94,7 @@ const expr_t *ruamoko_proc_caselabel (const expr_t *expr, rua_ctx_t *ctx);
 const expr_t *ruamoko_field_array (const expr_t *e);
 const expr_t *ruamoko_proc_address (const expr_t *expr, rua_ctx_t *ctx);
 const expr_t *ruamoko_test_expr (const expr_t *expr);
+const expr_t *ruamoko_pointer_diff (const expr_t *ptra, const expr_t *ptrb);
+int ruamoko_ptr_type_size (const type_t *type)__attribute__((pure));
 
 #endif//__target_h

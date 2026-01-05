@@ -146,6 +146,7 @@ is_lvalue (const expr_t *expr)
 		case ex_caselabel:
 		case ex_process:
 		case ex_bitfield:
+		case ex_ptroffset:
 			break;
 		case ex_cond:
 			return (is_lvalue (expr->cond.true_expr)

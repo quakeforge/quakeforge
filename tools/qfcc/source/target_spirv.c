@@ -50,6 +50,7 @@
 #include "tools/qfcc/include/spirv_grammar.h"
 #include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/switch.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/target.h"
@@ -58,6 +59,11 @@
 
 #define INSN(i,o) D_var_o(int,(i),o)
 #define ADD_DATA(d,s) defspace_add_data((d), (s)->data, (s)->size)
+
+static type_t type_spv_ptrarith = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
 
 typedef struct spirvctx_s {
 	module_t   *module;
@@ -2439,6 +2445,52 @@ spirv_bitfield (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_ptroffset (const expr_t *e, spirvctx_t *ctx)
+{
+	//FIXME move
+	if (!type_spv_ptrarith.symtab) {
+		static struct_def_t spv_ptrarith_struct[] = {
+			{"result", &type_uint},
+			{"carry",  &type_uint},
+			{}
+		};
+		make_structure (".spv.ptrarith", 's', spv_ptrarith_struct,
+						&type_spv_ptrarith);
+		chain_type (&type_spv_ptrarith);
+	}
+
+	scoped_src_loc (e);
+	auto ptr_type = get_type (e);
+	auto ptr = e->ptroffset.ptr;
+	auto offs = e->ptroffset.offset;
+	ptr = cast_expr (&type_uvec2, ptr);
+	if (type_size (get_type (offs)) != 1) {
+		error (offs, "64-bit offset not supported (yet)");
+		return 0;
+	}
+	offs = cast_expr (&type_uint, offs);
+	const expr_t *add_operands[] = {
+		edag_add_expr (new_swizzle_expr (ptr, "x")),
+		offs,
+	};
+	auto add = new_intrinsic_expr (nullptr);
+	add->intrinsic.opcode = new_int_expr (SpvOpIAddCarry, false);
+	add->intrinsic.res_type = &type_spv_ptrarith;
+	add->intrinsic.is_pure = true;
+	list_gather (&add->intrinsic.operands, add_operands,
+				 countof (add_operands));
+	rua_ctx_t rctx = {};
+	auto lo = expr_process (new_field_expr (add, new_name_expr ("result")), &rctx);
+	auto carry = expr_process (new_field_expr (add, new_name_expr ("carry")), &rctx);
+	auto hi = binary_expr ('+', carry, new_swizzle_expr (ptr, "y"));
+	auto ptroffset = constructor_expr (new_type_expr (&type_uvec2),
+									   expr_append_expr (new_list_expr (hi),
+														 lo));
+	ptroffset = cast_expr (ptr_type, ptroffset);
+	return spirv_emit_expr (ptroffset, ctx);
+}
+
+static unsigned
 spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 {
 	static spirv_expr_f funcs[ex_count] = {
@@ -2472,6 +2524,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_switch] = spirv_switch,
 		[ex_xvalue] = spirv_xvalue,
 		[ex_bitfield] = spirv_bitfield,
+		[ex_ptroffset] = spirv_ptroffset,
 	};
 
 	if (e->type >= ex_count) {
@@ -2494,6 +2547,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		unsigned id = funcs[e->type] (e, ctx);
 		spirv_add_expr_id (e, id, ctx);
 	}
+	edag_flush ();
 	return spirv_expr_id (e, ctx);
 }
 
@@ -3335,6 +3389,23 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func)
 	return false;
 }
 
+static int
+spirv_ptr_type_size (const type_t *type)
+{
+	return type_aligned_size (type) * sizeof (pr_int_t);
+}
+
+static const expr_t *
+spirv_pointer_diff (const expr_t *ptra, const expr_t *ptrb)
+{
+	return error (ptra, "pointer difference not implemented without Int64");
+	auto e1 = cast_expr (&type_long, ptra);
+	auto e2 = cast_expr (&type_long, ptrb);
+	auto type = get_type (ptra)->fldptr.type;
+	auto psize = new_long_expr (spirv_ptr_type_size (type), true);
+	return binary_expr ('/', binary_expr ('-', e1, e2), psize);
+}
+
 target_t spirv_target = {
 	.init = spirv_init,
 	.value_too_large = spirv_value_too_large,
@@ -3353,6 +3424,8 @@ target_t spirv_target = {
 	.test_expr = spirv_test_expr,
 	.cast_expr = spirv_cast_expr,
 	.check_types_compatible = spirv_check_types_compatible,
+	.pointer_diff = spirv_pointer_diff,
+	.ptr_type_size = spirv_ptr_type_size,
 	.type_assignable = spirv_types_logically_match,
 	.init_type_ok = spirv_types_logically_match,
 	.setup_intrinsic_symtab = spirv_setup_intrinsic_symtab,
