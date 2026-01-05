@@ -1034,9 +1034,10 @@ proc_intrinsic (const expr_t *expr, rua_ctx_t *ctx)
 	e->intrinsic = (ex_intrinsic_t) {
 		.opcode = opcode,
 		.res_type = expr->intrinsic.res_type,
+		.is_pure = expr->intrinsic.is_pure,
 	};
 	list_gather (&e->intrinsic.operands, operands, count);
-	return e;
+	return edag_add_expr (e);
 }
 
 static const expr_t *

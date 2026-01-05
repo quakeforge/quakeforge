@@ -103,11 +103,39 @@ edag_add_expr (const expr_t *expr)
 			case ex_visibility:
 			case ex_loop:
 			case ex_select:
-			case ex_intrinsic:
 			case ex_switch:
 			case ex_caselabel:
 			case ex_process:
 				// these are never put in the dag
+				return expr;
+			case ex_intrinsic:
+				if (expr->intrinsic.is_pure) {
+					int a, b;
+					if (e->intrinsic.opcode != expr->intrinsic.opcode
+						|| e->intrinsic.res_type != expr->intrinsic.res_type
+						|| (a = list_count (&e->intrinsic.operands))
+							!= (b = list_count (&expr->intrinsic.operands))
+						|| e->intrinsic.extra != expr->intrinsic.extra) {
+						return expr;
+					}
+					if (!a) {
+						break;
+					}
+					const expr_t *la[a];
+					const expr_t *lb[b];
+					list_scatter (&e->intrinsic.operands, la);
+					list_scatter (&expr->intrinsic.operands, lb);
+					int i;
+					for (i = 0; i < a; i++) {
+						if (la[i] != lb[i]) {
+							break;
+						}
+					}
+					if (i < a) {
+						continue;
+					}
+					return e;
+				}
 				return expr;
 			case ex_list:
 			case ex_block:
@@ -248,6 +276,12 @@ edag_add_expr (const expr_t *expr)
 					&& e->bitfield.start == expr->bitfield.start
 					&& e->bitfield.length == expr->bitfield.length
 					&& e->bitfield.insert == expr->bitfield.insert) {
+					return e;
+				}
+				break;
+			case ex_ptroffset:
+				if (e->ptroffset.ptr == expr->ptroffset.ptr
+					&& e->ptroffset.offset == e->ptroffset.offset) {
 					return e;
 				}
 				break;

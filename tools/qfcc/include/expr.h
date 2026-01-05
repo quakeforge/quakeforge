@@ -417,6 +417,7 @@ typedef struct {
 	const type_t *res_type;
 	ex_list_t   operands;
 	const expr_t *extra;
+	bool  is_pure;
 } ex_intrinsic_t;
 
 typedef struct {
