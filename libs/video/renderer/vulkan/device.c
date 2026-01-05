@@ -179,6 +179,7 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
 			.pNext = &vertex_index_8bit,
 			.hostQueryReset = 1,
+			.bufferDeviceAddress = 1,
 		};
 		VkPhysicalDeviceVulkan11Features features11 = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
