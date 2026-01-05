@@ -1697,6 +1697,7 @@ render_graph = {
 								$gizmo.shader.queueobj,
 							);
 							vertexInput = $gizmo.vertexInput;
+							rasterization = $cw_cull_front;
 							inputAssembly = $gizmo.inputAssembly;
 							layout = $gizmo.layout;
 						};

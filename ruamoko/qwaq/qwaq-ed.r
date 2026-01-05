@@ -310,7 +310,8 @@ Array *windows;
 	Camera *camera = [cameras objectAtIndex:0];
 	[camera setTransformFromMotor:camera_state.M];
 
-	[cameras makeObjectsPerformSelector: @selector(draw)];
+	[cameras makeObjectsPerformSelector: @selector(drawExcept:)
+							 withObject: active_camera];
 	return self;
 }
 
