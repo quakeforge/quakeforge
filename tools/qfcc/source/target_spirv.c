@@ -1258,6 +1258,24 @@ spirv_generate_not (const expr_t *e, spirvctx_t *ctx)
 	return spirv_emit_expr (not, ctx);
 }
 
+static unsigned
+spirv_generate_load (const expr_t *e, spirvctx_t *ctx)
+{
+	auto res_type = get_type (e);
+	unsigned ptr_id = spirv_emit_expr (e->expr.e1, ctx);
+	unsigned res_type_id = spirv_Type (res_type, ctx);
+	unsigned align = type_align (res_type) * sizeof (pr_int_t);
+
+	unsigned id = spirv_id (ctx);
+	auto insn = spirv_new_insn (SpvOpLoad, 6, ctx->code_space, ctx);
+	INSN (insn, 1) = res_type_id;
+	INSN (insn, 2) = id;
+	INSN (insn, 3) = ptr_id;
+	INSN (insn, 4) = SpvMemoryAccessAlignedMask;
+	INSN (insn, 5) = align;
+	return id;
+}
+
 #define SPV_meta(m,t)
 #define SPV_type(m,t) ((unsigned)((1<<((m)+16))|(1<<(t))))
 #define SPV_type_cmp(a,b) (((a) & (b)) == (b))
@@ -1275,7 +1293,7 @@ static extinst_t glsl_450 = {
 };
 
 static spvop_t spv_ops[] = {
-	{"load",   SpvOpLoad,                 SPV_PTR,   0         },
+	{"load",   .types1 = SPV_PTR, .generate = spirv_generate_load },
 
 	{"or",     SpvOpLogicalOr,            SPV_BOOL,  SPV_BOOL  },
 	{"and",    SpvOpLogicalAnd,           SPV_BOOL,  SPV_BOOL  },
@@ -1933,6 +1951,7 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 {
 	unsigned src = spirv_emit_expr (e->assign.src, ctx);
 	unsigned dst = 0;
+	unsigned align = 0;	// default to not emitting Aligned
 
 	if (is_temp (e->assign.dst)) {
 		// spir-v uses SSA, so temps cannot be assigned to directly, so instead
@@ -1950,6 +1969,10 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 		}
 	} else if (is_deref (e->assign.dst)) {
 		auto ptr = e->assign.dst->expr.e1;
+		auto ptr_type = get_type (ptr);
+		if (is_pointer (ptr_type)) {
+			align = type_align (ptr_type) * sizeof (pr_int_t);
+		}
 		dst = spirv_emit_expr (ptr, ctx);
 	}
 
@@ -1957,9 +1980,14 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 		internal_error (e, "invalid assignment?");
 	}
 
-	auto insn = spirv_new_insn (SpvOpStore, 3, ctx->code_space, ctx);
+	int count = align ? 5 : 3;
+	auto insn = spirv_new_insn (SpvOpStore, count, ctx->code_space, ctx);
 	INSN (insn, 1) = dst;
 	INSN (insn, 2) = src;
+	if (align) {
+		INSN (insn, 3) = SpvMemoryAccessAlignedMask;
+		INSN (insn, 4) = align;
+	}
 	return 0;
 }
 
@@ -1984,7 +2012,8 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 			arg_ids[i] = spirv_emit_expr (a, ctx);
 		} else {
 			auto psym = new_symbol ("param");
-			psym->type = tagged_reference_type (SpvStorageClassFunction, get_type (a));
+			psym->type = tagged_reference_type (SpvStorageClassFunction,
+												get_type (a));
 			psym->sy_type = sy_var;
 			psym->var.storage = (storage_class_t) SpvStorageClassFunction;
 			psym->id = spirv_variable (psym, ctx);
@@ -3213,6 +3242,7 @@ static SpvCapability spirv_base_capabilities[] = {
 	SpvCapabilityStorageImageExtendedFormats,
 	SpvCapabilityDeviceGroup,
 	SpvCapabilityShaderNonUniform,
+	SpvCapabilityPhysicalStorageBufferAddresses,
 };
 
 static void
@@ -3224,7 +3254,8 @@ spirv_init (void)
 	pr.module = &module;
 
 	//FIXME unhardcode
-	spirv_set_addressing_model (pr.module, SpvAddressingModelLogical);
+	spirv_set_addressing_model (pr.module,
+								SpvAddressingModelPhysicalStorageBuffer64);
 	//FIXME look into Vulkan, or even configurable
 	spirv_set_memory_model (pr.module, SpvMemoryModelGLSL450);
 
@@ -3328,4 +3359,6 @@ target_t spirv_target = {
 	.function_attr = spirv_function_attr,
 
 	.short_circuit = false,
+	.pointer_tag = SpvStorageClassPhysicalStorageBuffer,
+	.pointer_size = 2,	// internal sizes are in ints rather than bytes
 };

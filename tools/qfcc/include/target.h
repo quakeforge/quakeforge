@@ -75,6 +75,8 @@ typedef struct {
 	bool        zero_memory;
 
 	unsigned    label_id;
+	unsigned    pointer_tag;
+	int         pointer_size;
 } target_t;
 
 extern target_t current_target;
