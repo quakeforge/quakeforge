@@ -1126,6 +1126,25 @@ spirv_EntryPoint (entrypoint_t *entrypoint, spirvctx_t *ctx)
 	}
 }
 
+static unsigned
+spirv_ptr_load (const type_t *res_type, unsigned ptr_id, unsigned align,
+				spirvctx_t *ctx)
+{
+	int res_type_id = spirv_Type (res_type, ctx);
+
+	unsigned id = spirv_id (ctx);
+	int count = align ? 6 : 4;
+	auto insn = spirv_new_insn (SpvOpLoad, count, ctx->code_space, ctx);
+	INSN (insn, 1) = res_type_id;
+	INSN (insn, 2) = id;
+	INSN (insn, 3) = ptr_id;
+	if (align) {
+		INSN (insn, 4) = SpvMemoryAccessAlignedMask;
+		INSN (insn, 5) = align;
+	}
+	return id;
+}
+
 typedef struct {
 	const char *name;
 	unsigned    id;
@@ -1269,17 +1288,9 @@ spirv_generate_load (const expr_t *e, spirvctx_t *ctx)
 {
 	auto res_type = get_type (e);
 	unsigned ptr_id = spirv_emit_expr (e->expr.e1, ctx);
-	unsigned res_type_id = spirv_Type (res_type, ctx);
-	unsigned align = type_align (res_type) * sizeof (pr_int_t);
+	unsigned align = type_align (res_type) * sizeof (pr_type_t);
 
-	unsigned id = spirv_id (ctx);
-	auto insn = spirv_new_insn (SpvOpLoad, 6, ctx->code_space, ctx);
-	INSN (insn, 1) = res_type_id;
-	INSN (insn, 2) = id;
-	INSN (insn, 3) = ptr_id;
-	INSN (insn, 4) = SpvMemoryAccessAlignedMask;
-	INSN (insn, 5) = align;
-	return id;
+	return spirv_ptr_load (res_type, ptr_id, align, ctx);
 }
 
 #define SPV_meta(m,t)
@@ -1843,7 +1854,7 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 	ex_list_t list = {};
 	// convert the left-branching field/array expression chain to a list
 	while (e->type == ex_field || e->type == ex_array) {
-		const type_t *mtype;
+		const type_t *mtype;//for comparison of membe and object types
 		if (e->type == ex_field
 			&& is_algebra (mtype = get_type (e->field.member))
 			&& mtype == get_type (e->field.object)) {
@@ -1879,18 +1890,31 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 	int num_obj = list_count (&list);
 	const expr_t *ind_expr[num_obj];
 	unsigned ind_id[num_obj];
+	int num_ind = 0;
 	list_scatter (&list, ind_expr);
 	for (int i = 0; i < num_obj; i++) {
 		auto obj = ind_expr[i];
 		bool direct_ind = false;
 		unsigned index;
 		if (obj->type == ex_field) {
+			if (is_pointer (get_type (obj->field.object))) {
+				unsigned storage = base_type->fldptr.tag;
+				base_type = get_type (obj->field.object);
+				*acc_type = tagged_pointer_type (storage, base_type);
+				break;
+			}
 			if (obj->field.member->type != ex_symbol) {
 				internal_error (obj->field.member, "not a symbol");
 			}
 			auto sym = obj->field.member->symbol;
 			index = sym->id;
 		} else if (obj->type == ex_array) {
+			if (is_pointer (get_type (obj->array.base))) {
+				unsigned storage = base_type->fldptr.tag;
+				base_type = get_type (obj->array.base);
+				*acc_type = tagged_pointer_type (storage, base_type);
+				break;
+			}
 			auto ind = obj->array.index;
 			if (is_integral_val (ind)) {
 				index = expr_integral (ind);
@@ -1905,25 +1929,69 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 			internal_error (obj, "what the what?!?");
 		}
 		if (literal_ind || direct_ind) {
-			ind_id[i] = index;
+			ind_id[num_ind++] = index;
 		} else {
 			scoped_src_loc (obj);
 			auto ind = new_uint_expr (index);
-			ind_id[i] = spirv_emit_expr (ind, ctx);
+			ind_id[num_ind++] = spirv_emit_expr (ind, ctx);
 		}
+		e = obj;
 	}
+	// e is now the base object of the pointer chain
 
 	int acc_type_id = spirv_Type (*acc_type, ctx);
 	int id = spirv_id (ctx);
-	auto insn = spirv_new_insn (op, 4 + num_obj, ctx->code_space, ctx);
+	auto insn = spirv_new_insn (op, 4 + num_ind, ctx->code_space, ctx);
 	INSN (insn, 1) = acc_type_id;
 	INSN (insn, 2) = id;
 	INSN (insn, 3) = base_id;
 	auto field_ind = &INSN (insn, 4);
-	for (int i = 0; i < num_obj; i++) {
+	for (int i = 0; i < num_ind; i++) {
 		field_ind[i] = ind_id[i];
 	}
-	return id;
+	if (num_ind == num_obj) {
+		return id;
+	}
+	unsigned ptr_id = spirv_ptr_load (base_type, id, 0, ctx);
+	const expr_t *ptr = nullptr;
+	for (int i = num_ind; i < num_obj; i++) {
+		auto obj = ind_expr[i];
+		base_type = get_type (e);
+		if (obj->type == ex_field) {
+			internal_error (obj, "not yet");
+		} else if (obj->type == ex_array) {
+			scoped_src_loc (obj->array.index);
+			int base_ind = 0;
+			if (is_array (base_type)) {
+				base_ind = base_type->array.base;
+			}
+			auto ele_type = obj->array.type;
+			auto base = new_int_expr (base_ind, false);
+			int size = type_aligned_size (ele_type) * sizeof (pr_type_t);
+			auto scale = new_int_expr (size, false);
+			auto offset = binary_expr ('*', base, scale);
+			auto index = binary_expr ('*', obj->array.index, scale);
+			offset = binary_expr ('-', index, offset);
+			if (is_array (base_type)
+				|| is_nonscalar (base_type) || is_matrix (base_type)) {
+			} else {
+				// "wedge" the spirv-id for the pointer into the expression
+				// being generated. spirv_emit_expr will use the id instead
+				// of evaluating the expression.
+				ptr = new_expr_copy (e);
+				spirv_add_expr_id (ptr, ptr_id, ctx);
+			}
+			unsigned storage = base_type->fldptr.tag;
+			*acc_type = tagged_pointer_type (storage, ele_type);
+			ptr = offset_pointer_expr (ptr, offset);
+			ptr = cast_expr (*acc_type, ptr);
+			ptr_id = spirv_emit_expr (ptr, ctx);
+			e = obj;
+		} else {
+			internal_error (obj, "what the what?!?");
+		}
+	}
+	return ptr_id;
 }
 
 static unsigned
@@ -1977,7 +2045,7 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 		auto ptr = e->assign.dst->expr.e1;
 		auto ptr_type = get_type (ptr);
 		if (is_pointer (ptr_type)) {
-			align = type_align (ptr_type) * sizeof (pr_int_t);
+			align = type_align (ptr_type) * sizeof (pr_type_t);
 		}
 		dst = spirv_emit_expr (ptr, ctx);
 	}
@@ -2245,14 +2313,11 @@ spirv_field_array (const expr_t *e, spirvctx_t *ctx)
 
 	if (acc_type != res_type) {
 		// base is a pointer or reference so load the value
-		unsigned ptr_id = id;
-		int res_type_id = spirv_Type (res_type, ctx);
-
-		id = spirv_id (ctx);
-		auto insn = spirv_new_insn (SpvOpLoad, 4, ctx->code_space, ctx);
-		INSN (insn, 1) = res_type_id;
-		INSN (insn, 2) = id;
-		INSN (insn, 3) = ptr_id;
+		unsigned align = 0;
+		if (is_pointer (acc_type)) {
+			align = type_align (res_type) * sizeof (pr_type_t);
+		}
+		id = spirv_ptr_load (res_type, id, align, ctx);
 	}
 	return id;
 }
@@ -2493,6 +2558,9 @@ spirv_ptroffset (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 {
+	if (spirv_expr_id (e, ctx)) {
+		return spirv_expr_id (e, ctx);
+	}
 	static spirv_expr_f funcs[ex_count] = {
 		[ex_bool] = spirv_bool,
 		[ex_label] = spirv_label,
@@ -2535,18 +2603,16 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 						expr_names[e->type]);
 	}
 
-	if (!spirv_expr_id (e, ctx)) {
-		if (options.code.debug) {
-			auto cs = ctx->code_space;
-			if (cs->size >= 4 && cs->data[cs->size - 4].value == 0x40008) {
-				//back up and overwrite the previous debug line instruction
-				cs->size -= 4;
-			}
-			spirv_DebugLine (e, ctx);
+	if (options.code.debug) {
+		auto cs = ctx->code_space;
+		if (cs->size >= 4 && cs->data[cs->size - 4].value == 0x40008) {
+			//back up and overwrite the previous debug line instruction
+			cs->size -= 4;
 		}
-		unsigned id = funcs[e->type] (e, ctx);
-		spirv_add_expr_id (e, id, ctx);
+		spirv_DebugLine (e, ctx);
 	}
+	unsigned id = funcs[e->type] (e, ctx);
+	spirv_add_expr_id (e, id, ctx);
 	edag_flush ();
 	return spirv_expr_id (e, ctx);
 }
@@ -3392,7 +3458,7 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func)
 static int
 spirv_ptr_type_size (const type_t *type)
 {
-	return type_aligned_size (type) * sizeof (pr_int_t);
+	return type_aligned_size (type) * sizeof (pr_type_t);
 }
 
 static const expr_t *
