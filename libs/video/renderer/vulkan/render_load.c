@@ -647,6 +647,7 @@ static uint32_t pc_type_sizes[] = {
 	[qfv_vec3]  = sizeof (vec3_t),
 	[qfv_vec4]  = sizeof (vec4f_t),
 	[qfv_mat4]  = sizeof (mat4f_t),
+	[qfv_ptr]   = sizeof (VkDeviceAddress),
 };
 
 static uint32_t pc_type_align[] = {
@@ -657,6 +658,7 @@ static uint32_t pc_type_align[] = {
 	[qfv_vec3]  = alignof (vec4f_t),
 	[qfv_vec4]  = alignof (vec4f_t),
 	[qfv_mat4]  = alignof (mat4f_t),
+	[qfv_ptr]   = alignof (VkDeviceAddress),
 };
 
 static uint32_t
@@ -674,7 +676,7 @@ parse_pushconstantrange (VkPushConstantRange *range,
 		if (pushconstant->size != ~0u) {
 			size = pushconstant->size;
 		} else {
-			if (pushconstant->type > qfv_mat4) {
+			if (pushconstant->type > countof (pc_type_sizes)) {
 				Sys_Error ("%s.%s:%s:%d invalid type: %d",
 						   s->rpi->name, s->spi->name, pushconstant->name,
 						   pushconstant->line, pushconstant->type);

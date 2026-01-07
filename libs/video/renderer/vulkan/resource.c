@@ -87,6 +87,21 @@ create_image_view (qfv_device_t *device, qfv_resobj_t *imgview_obj,
 	dfunc->vkCreateImageView (device->dev, &createInfo, 0, &view->view);
 }
 
+static void
+get_buffer_address (qfv_resobj_t *buffer_obj, qfv_device_t *device)
+{
+	qfv_devfuncs_t *dfunc = device->funcs;
+	auto buffer = &buffer_obj->buffer;
+	if (buffer->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+		VkBufferDeviceAddressInfo addr_info = {
+			.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+			.buffer = buffer->buffer,
+		};
+		buffer->address = dfunc->vkGetBufferDeviceAddress (device->dev,
+														   &addr_info);
+	}
+}
+
 int
 QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 {
@@ -96,6 +111,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 	VkPhysicalDeviceMemoryProperties *memprops = &physdev->memory_properties;
 	VkMemoryRequirements req;
 	VkDeviceSize size = 0;
+	VkMemoryAllocateFlags alloc_flags = 0;
 
 	if (!(resource->memory_properties
 		  & (VK_MEMORY_PROPERTY_HOST_CACHED_BIT
@@ -120,6 +136,10 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 											  resource->name, obj->name));
 					dfunc->vkGetBufferMemoryRequirements (device->dev,
 														  buffer->buffer, &req);
+					if (buffer->usage
+						& VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+						alloc_flags |= VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+					}
 				}
 				break;
 			case qfv_res_buffer_view:
@@ -172,8 +192,13 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 				                == properties)) {
 			Sys_MaskPrintf (SYS_vulkan, "QFV_CreateResource: %s:mti: %d\n",
 							resource->name, type);
+			VkMemoryAllocateFlagsInfo flags_info = {
+				.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
+				.flags = alloc_flags,
+			};
 			VkMemoryAllocateInfo allocate_info = {
 				.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+				.pNext = &flags_info,
 				.allocationSize = size,
 				.memoryTypeIndex = type,
 			};
@@ -221,6 +246,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 					QFV_BindBufferMemory (device, buffer->buffer,
 										  resource->memory, offset);
 					buffer->offset = offset;
+					get_buffer_address (obj, device);
 				}
 				break;
 			case qfv_res_image:

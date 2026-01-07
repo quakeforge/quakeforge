@@ -22,6 +22,7 @@ typedef struct qfv_resobj_s {
 			VkBufferUsageFlags usage;
 			VkBuffer    buffer;
 			VkDeviceSize offset;
+			VkDeviceAddress address;
 		}       buffer;
 		struct {
 			unsigned    buffer;

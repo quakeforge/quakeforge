@@ -46,6 +46,7 @@ typedef enum qfv_type_t : uint32_t {
 	qfv_vec3,
 	qfv_vec4,
 	qfv_mat4,
+	qfv_ptr,
 } qfv_type_t;
 
 typedef struct qfv_pushconstantinfo_s {
