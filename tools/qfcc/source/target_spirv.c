@@ -2078,6 +2078,12 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 		if (res_type == acc_type) {
 			internal_error (e, "assignment to temp?");
 		}
+		if (!is_ptr (acc_type)) {
+			internal_error (e, "access type is not a pointer or reference");
+		}
+		if (acc_type->fldptr.tag == SpvStorageClassPhysicalStorageBuffer) {
+			align = type_align (res_type) * sizeof (pr_type_t);
+		}
 	} else if (is_deref (e->assign.dst)) {
 		auto ptr = e->assign.dst->expr.e1;
 		auto ptr_type = get_type (ptr);
