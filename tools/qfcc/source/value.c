@@ -316,6 +316,10 @@ ex_value_t *
 new_type_value (const type_t *type, const pr_type_t *data)
 {
 	size_t      typeSize = type_size (type) * sizeof (pr_type_t);
+	if (typeSize < 4) {
+		// type_size returns 0 for short and ushort
+		typeSize = 2;
+	}
 	ex_value_t  val = {};
 	if (typeSize > sizeof (val) - offsetof (ex_value_t, raw_value)) {
 		internal_error (0, "value too large");
