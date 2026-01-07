@@ -222,6 +222,9 @@ binary_expr (int op, const exprval_t *a, const exprval_t *b,
 {
 	binop_t    *binop;
 
+	if (!a || !b) {
+		return 0;
+	}
 	for (binop = a->type->binops; binop->op; binop++) {
 		exprtype_t *otype = binop->other;
 		if (!otype) {
@@ -304,6 +307,9 @@ unary_expr (int op, const exprval_t *val, exprctx_t *context)
 {
 	unop_t     *unop;
 
+	if (!val) {
+		return 0;
+	}
 	for (unop = val->type->unops; unop->op; unop++) {
 		if (unop->op == op) {
 			break;
