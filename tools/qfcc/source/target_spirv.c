@@ -1287,9 +1287,14 @@ static unsigned
 spirv_generate_load (const expr_t *e, spirvctx_t *ctx)
 {
 	auto res_type = get_type (e);
-	unsigned ptr_id = spirv_emit_expr (e->expr.e1, ctx);
-	unsigned align = type_align (res_type) * sizeof (pr_type_t);
+	auto ptr = e->expr.e1;
+	auto ptr_type = get_type (ptr);
+	unsigned align = 0;
+	if (ptr_type->fldptr.tag == SpvStorageClassPhysicalStorageBuffer) {
+		align = type_align (res_type) * sizeof (pr_type_t);
+	}
 
+	unsigned ptr_id = spirv_emit_expr (ptr, ctx);
 	return spirv_ptr_load (res_type, ptr_id, align, ctx);
 }
 
