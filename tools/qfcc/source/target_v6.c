@@ -392,6 +392,7 @@ target_t v6_target = {
 	.ptr_type_size = ruamoko_ptr_type_size,
 
 	.short_circuit = true,
+	.pointer_direct_cast = true,
 };
 
 target_t v6p_target = {
@@ -413,4 +414,5 @@ target_t v6p_target = {
 
 	.short_circuit = true,
 	.zero_memory = true,
+	.pointer_direct_cast = true,
 };

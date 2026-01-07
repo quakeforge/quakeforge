@@ -554,4 +554,5 @@ target_t ruamoko_target = {
 
 	.short_circuit = true,
 	.zero_memory = true,
+	.pointer_direct_cast = true,
 };
