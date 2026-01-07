@@ -274,8 +274,8 @@ typedef struct qfv_jobinfo_s {
 	qfv_imageviewinfo_t *imageviews;
 	uint32_t    num_buffers;
 	uint32_t    num_bufferviews;
-	qfv_imageinfo_t *buffers;
-	qfv_imageviewinfo_t *bufferviews;
+	qfv_bufferinfo_t *buffers;
+	qfv_bufferviewinfo_t *bufferviews;
 
 	uint32_t    num_splayouts;
 	uint32_t    num_dslayouts;	// does not include subpass input layouts
@@ -449,6 +449,8 @@ typedef struct qfv_job_s {
 	uint32_t    num_dsmanagers;
 	struct qfv_dsmanager_s **dsmanager;
 	qfv_time_t time;
+
+	struct qfv_resource_s *resources;
 
 	qfv_taskinfo_t *newscene_tasks;
 	qfv_taskinfo_t *init_tasks;

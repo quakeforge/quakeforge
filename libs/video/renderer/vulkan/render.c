@@ -892,6 +892,7 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 		for (uint32_t i = 0; i < job->num_dsmanagers; i++) {
 			QFV_DSManager_Destroy (job->dsmanager[i]);
 		}
+		QFV_DestroyResource (device, job->resources);
 		free (rctx->job);
 	}
 

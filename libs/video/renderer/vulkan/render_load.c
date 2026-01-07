@@ -365,6 +365,19 @@ find_imageviewinfo (qfv_jobinfo_t *jobinfo, const qfv_reference_t *ref)
 	return 0;
 }
 
+static qfv_bufferinfo_t * __attribute__((pure))
+find_bufferinfo (qfv_jobinfo_t *jobinfo, const qfv_reference_t *ref)
+{
+	for (uint32_t i = 0; i < jobinfo->num_buffers; i++) {
+		auto img = &jobinfo->buffers[i];
+		if (strcmp (ref->name, img->name) == 0) {
+			return img;
+		}
+	}
+	Sys_Printf ("%d: unknown buffer reference: %s\n", ref->line, ref->name);
+	return 0;
+}
+
 static bool
 setup_resources (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 				 uint32_t num_attachments, qfv_resource_t *resources,
@@ -1318,6 +1331,57 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, jobptr_t jp, objstate_t *s)
 	}
 	for (uint32_t i = 0; i < job->num_steps; i++) {
 		init_step (i, &jp, s);
+	}
+
+	if (jobinfo->num_buffers) {
+		size_t size = sizeof (qfv_resource_t)
+					+ sizeof (qfv_resobj_t[jobinfo->num_buffers])
+					+ sizeof (qfv_resobj_t[jobinfo->num_bufferviews]);
+		job->resources = malloc (size);
+		*job->resources = (qfv_resource_t) {
+			.name = "render",
+			.va_ctx = ctx->va_ctx,
+			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			.num_objects = jobinfo->num_buffers + jobinfo->num_bufferviews,
+			.objects = (qfv_resobj_t *) &job->resources[1],
+		};
+		auto buffers = job->resources->objects;
+		auto bufferviews = &buffers[jobinfo->num_buffers];
+		for (uint32_t i = 0; i < jobinfo->num_buffers; i++) {
+			auto b = &jobinfo->buffers[i];
+			buffers[i] = (qfv_resobj_t) {
+				.name = b->name,
+				.type = qfv_res_buffer,
+				.buffer = {
+					.size = b->size,
+					.usage = b->usage,
+				},
+			};
+		}
+		bool error = false;
+		for (uint32_t i = 0; i < jobinfo->num_bufferviews; i++) {
+			auto bv = &jobinfo->bufferviews[i];
+			auto b = find_bufferinfo (jobinfo, &bv->buffer);
+			if (!b) {
+				error = true;
+				continue;
+			}
+			bufferviews[i] = (qfv_resobj_t) {
+				.name = bv->name,
+				.buffer_view = {
+					.buffer = b - jobinfo->buffers,
+					.format = bv->format,
+					.offset = bv->offset,
+					.size = bv->range,
+				},
+			};
+		}
+		if (error) {
+			free (job->resources);
+			job->resources = nullptr;
+		} else {
+			QFV_CreateResource (ctx->device, job->resources);
+		}
 	}
 }
 
