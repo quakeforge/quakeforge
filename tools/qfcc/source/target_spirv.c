@@ -34,6 +34,7 @@
 
 #include "QF/hash.h"
 #include "QF/quakeio.h"
+#include "QF/va.h"
 
 #include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/attribute.h"
@@ -465,15 +466,25 @@ spirv_TypeMatrix (unsigned col_type, unsigned columns, spirvctx_t *ctx)
 static unsigned
 spirv_TypePointer (const type_t *type, spirvctx_t *ctx)
 {
+	auto globals = ctx->module->globals;
+
+	unsigned id = spirv_id (ctx);
+	spirv_add_type_id (type, id, ctx);
 	auto rtype = dereference_type (type);
+	if (type->fldptr.tag == SpvStorageClassPhysicalStorageBuffer
+		&& is_struct (rtype)) {
+		auto fwd = spirv_new_insn (SpvOpTypeForwardPointer, 3, globals, ctx);
+		INSN (fwd, 1) = id;
+		INSN (fwd, 2) = type->fldptr.tag;
+	}
 	unsigned rid = spirv_Type (rtype, ctx);
 
-	auto globals = ctx->module->globals;
 	auto insn = spirv_new_insn (SpvOpTypePointer, 4, globals, ctx);
-	INSN (insn, 1) = spirv_id (ctx);
+	INSN (insn, 1) = id;
 	INSN (insn, 2) = type->fldptr.tag;
 	INSN (insn, 3) = rid;
-	return INSN (insn, 1);
+	spirv_decorate_id (id, type->attributes, ctx);
+	return id;
 }
 
 static unsigned
@@ -735,7 +746,8 @@ spirv_Type (const type_t *type, spirvctx_t *ctx)
 	} else if (is_double (type)) {
 		id = spirv_TypeFloat (64, ctx);
 	} else if (is_ptr (type)) {
-		id = spirv_TypePointer (type, ctx);
+		// type id added by spirv_TypePointer
+		return spirv_TypePointer (type, ctx);
 	} else if (is_struct (type)) {
 		id = spirv_TypeStruct (type, ctx);
 	} else if (is_boolean (type)) {
@@ -3370,12 +3382,19 @@ static SpvCapability spirv_base_capabilities[] = {
 	SpvCapabilityPhysicalStorageBufferAddresses,
 };
 
+static const char *
+spirv_type_getkey (const void *t, void *unused)
+{
+	return ((const type_t *) t)->name;
+}
+
 static void
 spirv_init (void)
 {
 	static module_t module = {		//FIXME probably not what I want
 		.global_syms = DARRAY_STATIC_INIT (16),
 	};
+	module.forward_structs = Hash_NewTable (61, spirv_type_getkey, 0, 0, 0);
 	pr.module = &module;
 
 	//FIXME unhardcode
@@ -3460,6 +3479,39 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func)
 	return false;
 }
 
+static const type_t *
+spirv_pointer_type (const type_t *aux)
+{
+	auto type = aux;
+	if (is_struct (type) && !type->symtab) {
+		auto tag = va ("@bda.%s", type->name + 4);
+		type_t new = {
+			.type = ev_invalid,
+			.name = save_string (va ("tag %s", tag)),
+			.meta = ty_struct,
+			.attributes = type->attributes,
+		};
+		type = find_type (&new);
+		if (!type->symtab) {
+			Hash_Add (pr.module->forward_structs, (void *) type);
+		} else {
+			internal_error (0, "tag %s already exists", tag);
+		}
+	} else {
+		type = iface_block_type (type, "@bda");
+	}
+	return tagged_pointer_type (SpvStorageClassPhysicalStorageBuffer, type);
+}
+
+static void
+spirv_finish_struct (const type_t *type)
+{
+	auto tag = va ("tag @bda.%s", type->name + 4);
+	if (Hash_Del (pr.module->forward_structs, tag)) {
+		iface_block_type (type, "@bda");
+	}
+}
+
 static int
 spirv_ptr_type_size (const type_t *type)
 {
@@ -3486,6 +3538,7 @@ target_t spirv_target = {
 	.var_attributes = spirv_var_attributes,
 	.declare_sym = spirv_declare_sym,
 	.create_entry_point = spirv_create_entry_point,
+	.finish_struct = spirv_finish_struct,
 	.initialized_temp = spirv_initialized_temp,
 	.assign_vector = spirv_assign_vector,
 	.proc_switch = spirv_proc_switch,
@@ -3503,6 +3556,6 @@ target_t spirv_target = {
 	.function_attr = spirv_function_attr,
 
 	.short_circuit = false,
-	.pointer_tag = SpvStorageClassPhysicalStorageBuffer,
+	.pointer_type = spirv_pointer_type,
 	.pointer_size = 2,	// internal sizes are in ints rather than bytes
 };

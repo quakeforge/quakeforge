@@ -841,7 +841,10 @@ tagged_pointer_type (unsigned tag, const type_t *aux)
 const type_t *
 pointer_type (const type_t *aux)
 {
-	return tagged_pointer_type (current_target.pointer_tag, aux);
+	if (current_target.pointer_type) {
+		return current_target.pointer_type (aux);
+	}
+	return tagged_pointer_type (0, aux);
 }
 
 const type_t *

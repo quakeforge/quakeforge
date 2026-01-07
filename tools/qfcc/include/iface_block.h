@@ -73,5 +73,6 @@ void finish_block (iface_block_t *block);
 void declare_block_instance (specifier_t spec, iface_block_t *block,
 							 symbol_t *instance_name, rua_ctx_t *ctx);
 iface_block_t *get_block (const char *name, interface_t interface);
+const type_t *iface_block_type (const type_t *type, const char *pre_tag);
 
 #endif//__block_h
