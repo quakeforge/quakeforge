@@ -275,6 +275,11 @@ iface_block_type (const type_t *type, const char *pre_tag)
 				alignment = type_align (ftype);
 			}
 			offset = RUP (offset, type_align (ftype) * uint);
+			if (s->sy_type == sy_convert) {
+				sym->convert = s->convert;
+			} else {
+				sym->offset = offset;
+			}
 			add_attribute (&sym->attributes,
 						   new_attrfunc ("Offset", new_uint_expr (offset)));
 			offset += type_size (ftype) * uint;
