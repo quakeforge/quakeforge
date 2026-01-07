@@ -1969,44 +1969,64 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 	if (num_ind == num_obj) {
 		return id;
 	}
-	unsigned ptr_id = spirv_ptr_load (base_type, id, 0, ctx);
+	unsigned ptr_id = 0;
+	unsigned align = 0;
 	const expr_t *ptr = nullptr;
 	for (int i = num_ind; i < num_obj; i++) {
+		if (id) {
+			ptr_id = spirv_ptr_load (base_type, id, align, ctx);
+			id = 0;
+		}
 		auto obj = ind_expr[i];
 		base_type = get_type (e);
+		const expr_t *offset;
+		const type_t *type;
 		if (obj->type == ex_field) {
-			internal_error (obj, "not yet");
+			scoped_src_loc (obj->field.member);
+			if (obj->field.member->type != ex_symbol) {
+				internal_error (obj->field.member, "not a symbol");
+			}
+			auto sym = obj->field.member->symbol;
+			offset = new_uint_expr (sym->offset);
+			type = obj->field.type;
 		} else if (obj->type == ex_array) {
 			scoped_src_loc (obj->array.index);
 			int base_ind = 0;
 			if (is_array (base_type)) {
 				base_ind = base_type->array.base;
 			}
-			auto ele_type = obj->array.type;
+			type = obj->array.type;
 			auto base = new_int_expr (base_ind, false);
-			int size = type_aligned_size (ele_type) * sizeof (pr_type_t);
+			int size = type_aligned_size (type) * sizeof (pr_type_t);
 			auto scale = new_int_expr (size, false);
-			auto offset = binary_expr ('*', base, scale);
 			auto index = binary_expr ('*', obj->array.index, scale);
+			offset = binary_expr ('*', base, scale);
 			offset = binary_expr ('-', index, offset);
 			if (is_array (base_type)
 				|| is_nonscalar (base_type) || is_matrix (base_type)) {
 			} else {
-				// "wedge" the spirv-id for the pointer into the expression
-				// being generated. spirv_emit_expr will use the id instead
-				// of evaluating the expression.
-				ptr = new_expr_copy (e);
-				spirv_add_expr_id (ptr, ptr_id, ctx);
 			}
-			unsigned storage = base_type->fldptr.tag;
-			*acc_type = tagged_pointer_type (storage, ele_type);
-			ptr = offset_pointer_expr (ptr, offset);
-			ptr = cast_expr (*acc_type, ptr);
-			ptr_id = spirv_emit_expr (ptr, ctx);
-			e = obj;
 		} else {
 			internal_error (obj, "what the what?!?");
 		}
+		// "wedge" the spirv-id for the pointer into the expression
+		// being generated. spirv_emit_expr will use the id instead
+		// of evaluating the expression.
+		ptr = new_expr_copy (e);
+		spirv_add_expr_id (ptr, ptr_id, ctx);
+		unsigned storage = base_type->fldptr.tag;
+		*acc_type = tagged_pointer_type (storage, type);
+		if (!is_zero (offset)) {
+			ptr = offset_pointer_expr (ptr, offset);
+		}
+		ptr = cast_expr (*acc_type, ptr);
+		ptr_id = spirv_emit_expr (ptr, ctx);
+		if (is_pointer (type)) {
+			id = ptr_id;
+			align = type_align (type) * sizeof (pr_type_t);
+			base_type = type;
+		}
+		e = obj;
 	}
 	return ptr_id;
 }
