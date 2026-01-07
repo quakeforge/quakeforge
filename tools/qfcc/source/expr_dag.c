@@ -281,7 +281,8 @@ edag_add_expr (const expr_t *expr)
 				break;
 			case ex_ptroffset:
 				if (e->ptroffset.ptr == expr->ptroffset.ptr
-					&& e->ptroffset.offset == e->ptroffset.offset) {
+					&& e->ptroffset.offset == expr->ptroffset.offset
+					&& e->ptroffset.type == expr->ptroffset.type) {
 					return e;
 				}
 				break;

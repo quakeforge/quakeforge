@@ -456,6 +456,7 @@ typedef struct {
 typedef struct {
 	const expr_t *ptr;
 	const expr_t *offset;
+	const type_t *type;
 } ex_ptroffset_t;
 
 typedef struct expr_s {

@@ -204,7 +204,8 @@ get_type (const expr_t *e)
 			type = e->bitfield.type;
 			break;
 		case ex_ptroffset:
-			return get_type (e->ptroffset.ptr);
+			type = e->ptroffset.type;
+			break;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -1515,6 +1516,12 @@ new_alias_expr (const type_t *type, const expr_t *expr)
 	if (type == get_type (expr)) {
 		return expr;
 	}
+	if (is_pointer (type) && expr->type == ex_ptroffset) {
+		scoped_src_loc (expr);
+		auto new = new_expr_copy (expr);
+		new->ptroffset.type = type;
+		return new;
+	}
 
 	expr_t     *alias = new_expr ();
 	alias->type = ex_alias;
@@ -2548,6 +2555,7 @@ offset_pointer_expr (const expr_t *pointer, const expr_t *offset)
 	if (pointer->type == ex_ptroffset) {
 		ptr = pointer->ptroffset.ptr;
 		offs = binary_expr ('+', pointer->ptroffset.offset, offset);
+		ptr_type = pointer->ptroffset.type;
 	} else if (pointer->type == ex_address && is_constant (offset)) {
 		if (pointer->address.offset) {
 			offset = binary_expr ('+', pointer->address.offset, offset);
@@ -2567,6 +2575,7 @@ offset_pointer_expr (const expr_t *pointer, const expr_t *offset)
 	ptroffset->ptroffset = (ex_ptroffset_t) {
 		.ptr = ptr,
 		.offset = offs,
+		.type = ptr_type,
 	};
 	return ptroffset;
 }
