@@ -325,6 +325,14 @@ typedef struct qfv_entqueueinfo_s {
 } qfv_entqueueinfo_t;
 
 #ifndef __QFCC__
+
+typedef struct hashtab_s hashtab_t;
+typedef struct vulkan_ctx_s vulkan_ctx_t;
+typedef struct scene_s scene_t;
+typedef struct imui_ctx_s imui_ctx_t;
+typedef struct qfv_dsmanager_s qfv_dsmanager_t;
+typedef struct qfv_resobj_s qfv_resobj_t;
+
 typedef struct qfv_time_s {
 	int64_t     cur_time;
 	int64_t     min_time;
@@ -384,7 +392,7 @@ typedef struct qfv_framebuffer_s {
 } qfv_framebuffer_t;
 
 typedef struct qfv_renderpass_s {
-	struct vulkan_ctx_s *vulkan_ctx;
+	vulkan_ctx_t *vulkan_ctx;
 	qfv_label_t label;		// for debugging
 
 	VkRenderPassBeginInfo beginInfo;
@@ -448,7 +456,7 @@ typedef struct qfv_job_s {
 	qfv_step_t *steps;
 	qfv_cmdbufferset_t commands;
 	uint32_t    num_dsmanagers;
-	struct qfv_dsmanager_s **dsmanager;
+	qfv_dsmanager_t **dsmanager;
 	qfv_time_t time;
 
 	struct qfv_resource_s *resources;
@@ -461,8 +469,6 @@ typedef struct qfv_job_s {
 	qfv_initfuncset_t shutdown_funcs;
 	qfv_initfuncset_t clearstate_funcs;
 } qfv_job_t;
-
-typedef struct hashtab_s hashtab_t;
 
 typedef struct qfv_blackboard_s {
 	byte       *data;
@@ -519,7 +525,7 @@ typedef struct qfv_renderctx_s {
 } qfv_renderctx_t;
 
 typedef struct qfv_taskctx_s {
-	struct vulkan_ctx_s *ctx;
+	vulkan_ctx_t *ctx;
 	qfv_renderframe_t *frame;
 	qfv_pipeline_t *pipeline;
 	qfv_renderpass_t *renderpass;
@@ -528,67 +534,66 @@ typedef struct qfv_taskctx_s {
 	void       *data;
 } qfv_taskctx_t;
 
-VkCommandBuffer QFV_GetCmdBuffer (struct vulkan_ctx_s *ctx, bool secondary);
-void QFV_AppendCmdBuffer (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd);
+VkCommandBuffer QFV_GetCmdBuffer (vulkan_ctx_t *ctx, bool secondary);
+void QFV_AppendCmdBuffer (vulkan_ctx_t *ctx, VkCommandBuffer cmd);
 
-void QFV_RunRenderPassCmd (VkCommandBuffer cmd, struct vulkan_ctx_s *ctx,
+void QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 						   qfv_renderpass_t *renderpass,
 						   void *data);
-void QFV_RunRenderPass (struct vulkan_ctx_s *ctx, qfv_renderpass_t *renderpass,
+void QFV_RunRenderPass (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass,
 						uint32_t width, uint32_t height, void *data);
-void QFV_RunRenderJob (struct vulkan_ctx_s *ctx);
-void QFV_LoadRenderInfo (struct vulkan_ctx_s *ctx, struct plitem_s *item);
-void QFV_LoadSamplerInfo (struct vulkan_ctx_s *ctx, struct plitem_s *item);
-void QFV_LoadEntqueueInfo (struct vulkan_ctx_s *ctx, struct plitem_s *item);
-uint32_t QFV_GetDSIndex (struct vulkan_ctx_s *ctx, const char *name);
-void QFV_SetDescriptorSet (struct vulkan_ctx_s *ctx, uint32_t frame,
+void QFV_RunRenderJob (vulkan_ctx_t *ctx);
+void QFV_LoadRenderInfo (vulkan_ctx_t *ctx, struct plitem_s *item);
+void QFV_LoadSamplerInfo (vulkan_ctx_t *ctx, struct plitem_s *item);
+void QFV_LoadEntqueueInfo (vulkan_ctx_t *ctx, struct plitem_s *item);
+uint32_t QFV_GetDSIndex (vulkan_ctx_t *ctx, const char *name);
+void QFV_SetDescriptorSet (vulkan_ctx_t *ctx, uint32_t frame,
 						   uint32_t ds_index, VkDescriptorSet set);
-void QFV_BuildRender (struct vulkan_ctx_s *ctx);
-void QFV_Render_Init (struct vulkan_ctx_s *ctx);
-void QFV_Render_Run_Init (struct vulkan_ctx_s *ctx);
-void QFV_Render_Run_Startup (struct vulkan_ctx_s *ctx);
-void QFV_Render_Run_ClearState (struct vulkan_ctx_s *ctx);
-void QFV_Render_Shutdown (struct vulkan_ctx_s *ctx);
-void QFV_Render_AddTasks (struct vulkan_ctx_s *ctx, exprsym_t *task_sys);
-void QFV_Render_AddStartup (struct vulkan_ctx_s *ctx, qfv_initfunc_f func);
-void QFV_Render_AddShutdown (struct vulkan_ctx_s *ctx, qfv_initfunc_f func);
-void QFV_Render_AddClearState (struct vulkan_ctx_s *ctx, qfv_initfunc_f func);
-void QFV_Render_AddAttachments (struct vulkan_ctx_s *ctx,
+void QFV_BuildRender (vulkan_ctx_t *ctx);
+void QFV_Render_Init (vulkan_ctx_t *ctx);
+void QFV_Render_Run_Init (vulkan_ctx_t *ctx);
+void QFV_Render_Run_Startup (vulkan_ctx_t *ctx);
+void QFV_Render_Run_ClearState (vulkan_ctx_t *ctx);
+void QFV_Render_Shutdown (vulkan_ctx_t *ctx);
+void QFV_Render_AddTasks (vulkan_ctx_t *ctx, exprsym_t *task_sys);
+void QFV_Render_AddStartup (vulkan_ctx_t *ctx, qfv_initfunc_f func);
+void QFV_Render_AddShutdown (vulkan_ctx_t *ctx, qfv_initfunc_f func);
+void QFV_Render_AddClearState (vulkan_ctx_t *ctx, qfv_initfunc_f func);
+void QFV_Render_AddAttachments (vulkan_ctx_t *ctx,
 								uint32_t num_attachments,
 		                        qfv_attachmentinfo_t **attachments);
 
 void QFV_UpdateViewportScissor (qfv_render_t *render,
 								const qfv_output_t *output);
-void QFV_DestroyFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp);
-void QFV_CreateFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp,
+void QFV_DestroyFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp);
+void QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 							VkExtent2D extent);
 
-void QFV_QueueResourceDelete (struct vulkan_ctx_s *ctx,
+void QFV_QueueResourceDelete (vulkan_ctx_t *ctx,
 							  struct qfv_resource_s *res);
-void QFV_QueueImageViewDelete (struct vulkan_ctx_s *ctx, VkImageView view);
+void QFV_QueueImageViewDelete (vulkan_ctx_t *ctx, VkImageView view);
 
-struct qfv_dsmanager_s *
-QFV_Render_DSManager (struct vulkan_ctx_s *ctx,
-					  const char *setName) __attribute__((pure));
-VkSampler QFV_Render_Sampler (struct vulkan_ctx_s *ctx, const char *name);
+qfv_dsmanager_t *QFV_Render_DSManager (vulkan_ctx_t *ctx, const char *setName)
+	__attribute__((pure));
+VkSampler QFV_Render_Sampler (vulkan_ctx_t *ctx, const char *name);
 
-void *QFV_GetBlackboardVar (struct vulkan_ctx_s *ctx, const char *name);
-void QFV_PushBlackboard (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd,
+void *QFV_GetBlackboardVar (vulkan_ctx_t *ctx, const char *name);
+void QFV_PushBlackboard (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 						 qfv_pipeline_t *pipeline);
-void QFV_BindDescriptors (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd,
+void QFV_BindDescriptors (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 						  qfv_pipeline_t *pipeline);
 
 qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_job_t *job);
-qfv_step_t *QFV_FindStep (const char *step, qfv_job_t *job) __attribute__((pure));
-struct qfv_resobj_s *QFV_FindResource (const char *name, qfv_renderpass_t *rp) __attribute__((pure));
+qfv_step_t *QFV_FindStep (const char *step, qfv_job_t *job)
+	__attribute__((pure));
+qfv_resobj_t *QFV_FindResource (const char *name, qfv_renderpass_t *rp)
+	__attribute__((pure));
 
-struct scene_s;
-void QFV_Render_NewScene (struct scene_s *scene, struct vulkan_ctx_s *ctx);
+void QFV_Render_NewScene (scene_t *scene, vulkan_ctx_t *ctx);
 
-struct imui_ctx_s;
-void QFV_Render_UI (struct vulkan_ctx_s *ctx, struct imui_ctx_s *imui_ctx);
-void QFV_Render_Menu (struct vulkan_ctx_s *ctx, struct imui_ctx_s *imui_ctx);
-void QFV_Render_UI_Shutdown (struct vulkan_ctx_s *ctx);
+void QFV_Render_UI (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx);
+void QFV_Render_Menu (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx);
+void QFV_Render_UI_Shutdown (vulkan_ctx_t *ctx);
 
 #endif//__QFCC__
 
