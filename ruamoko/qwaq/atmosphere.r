@@ -102,22 +102,13 @@ calculateLight (PlanetaryData *P, BodyParams *B, AtmosphereParams *A,
 [in(0)] vec2 uv;
 [out(0)] vec4 frag_color;
 
-[shader("Fragment")]
-[capability("MultiView")]
-void
-main ()
+vec4
+atmosphere_color (vec4 originalCol, uint body)
 {
 	auto P = planetary;
-	auto B = planetary.bodies + 1;
-	auto A = planetary.atmospheres + 1;
+	auto B = planetary.bodies + body;
+	auto A = planetary.atmospheres + body;
 	auto sun = planetary.bodies;
-
-	vec4 originalCol = subpassLoad (compo);
-
-	if ((!(uvec2)planetary.bodies) || (!(uvec2)planetary.atmospheres)) {
-		frag_color = originalCol;
-		return;
-	}
 
 	vec3        light = vec3 (0);
 	float       d = subpassLoad (depth).x;
@@ -131,6 +122,9 @@ main ()
 	p = InvView[gl_ViewIndex] * p;
 
 	vec3 dirToSun = normalize (sun.planetCenter - p.xyz);
+	//if (gl_FragCoord.x == 0.5 && gl_FragCoord.y == 0.5) {
+	//	printf ("dirToSun: %v3f", dirToSun);
+	//}
 
 	float sceneDepth = length (p.xyz);
 
@@ -148,10 +142,31 @@ main ()
 		const float epsilon = 0.0001;
 		vec3 pointInAtmosphere = rayOrigin + rayDir * (dstToAtmosphere + epsilon);
 		vec3 light = calculateLight(P, B, A, pointInAtmosphere, rayDir, dstThroughAtmosphere - epsilon * 2, originalCol.rgb, dirToSun);
-		frag_color = vec4(light, originalCol.a);
+		return vec4(light, originalCol.a);
 	} else {
-		frag_color = originalCol;
+		return originalCol;
 	}
+}
+
+[shader("Fragment")]
+[capability("MultiView")]
+void
+main ()
+{
+	vec4 color = subpassLoad (compo);
+
+	//if (gl_FragCoord.x == 0.5 && gl_FragCoord.y == 0.5) {
+	//	printf ("%p %p %p", planetary, planetary.bodies, planetary.atmospheres);
+	//}
+	if ((!(uvec2)planetary.bodies) || (!(uvec2)planetary.atmospheres)) {
+		frag_color = color;
+		frag_color = vec4(1,0,1,1);
+		return;
+	}
+
+	color = atmosphere_color (color, 0);
+	color = atmosphere_color (color, 1);
+	frag_color = color;
 }
 
 #if 0

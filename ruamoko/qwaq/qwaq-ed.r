@@ -128,7 +128,7 @@ update_orrery ()
 		{// sun
 		.atmosphereRadius = 13655700e3,
 		.oceanRadius = 695700e3,
-		.densityFalloff = 4,
+		.densityFalloff = 4e1,
 		.scatteringCoefficients = '0.10662224073302788 0.32444156446229333 0.6830134553650706'f,
 		},
 		{// earth
