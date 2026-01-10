@@ -42,6 +42,7 @@
 #include "QF/hash.h"
 #include "QF/mathlib.h"
 #include "QF/va.h"
+#include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
@@ -51,6 +52,7 @@
 #include "QF/Vulkan/pipeline.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
+#include "QF/Vulkan/staging.h"
 #include "QF/Vulkan/swapchain.h"
 #include "vid_vulkan.h"
 
@@ -696,6 +698,39 @@ submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	DARRAY_RESIZE (&job->commands, 0);
 }
 
+static void
+blackboard_set_bufferptr (const exprval_t **params, exprval_t *result,
+						  exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto rctx = ctx->render_context;
+	auto varname = *(const char **) params[1]->value;
+	auto bufname = *(const char **) params[0]->value;
+
+	auto bb = &rctx->blackboard;
+	if (!bb->symbols) {
+		Sys_Error ("no blackboard");
+	}
+
+	auto pc = (qfv_pushconstantinfo_t *) Hash_Find (bb->symbols, varname);
+	if (!pc) {
+		Sys_Error ("invalid blackboard var %s\n", varname);
+	}
+	if (pc->type != qfv_ptr) {
+		Sys_Error ("blackboard var %s not a pointer\n", varname);
+	}
+
+	auto addr = QFV_GetBufferAddress (ctx, bufname, ctx->curFrame);
+	if (!addr) {
+		Sys_Error ("invalid buffer %s\n", bufname);
+	}
+
+	auto ptr = (VkDeviceAddress *) (bb->data + pc->offset);
+	*ptr = addr;
+}
+
 static exprfunc_t wait_on_fence_func[] = {
 	{ .func = wait_on_fence },
 	{}
@@ -718,11 +753,24 @@ static exprfunc_t submit_render_func[] = {
 	{}
 };
 
+static exprtype_t *blackboard_set_bufferptr_params[] = {
+	&cexpr_string,
+	&cexpr_string,
+};
+static exprfunc_t blackboard_set_bufferptr_func[] = {
+	{ .func = blackboard_set_bufferptr, .num_params = 2,
+		blackboard_set_bufferptr_params },
+	{}
+};
+
 static exprsym_t render_task_syms[] = {
 	{ "wait_on_fence", &cexpr_function, wait_on_fence_func },
 	{ "update_framebuffer", &cexpr_function, update_framebuffer_func },
 	{ "fullscreen_pass", &cexpr_function, fullscreen_pass_func },
 	{ "submit_render", &cexpr_function, submit_render_func },
+
+	{ "blackboard_set_bufferptr", &cexpr_function,
+		blackboard_set_bufferptr_func },
 	{}
 };
 
@@ -1023,6 +1071,95 @@ QFV_FindStep (const char *name, qfv_job_t *job)
 		}
 	}
 	return 0;
+}
+
+#define MAX_BUFFER_BYTES (16*1024*1024)
+
+VkDeviceAddress
+QFV_GetBufferAddress (vulkan_ctx_t *ctx, const char *name, uint32_t frame)
+{
+	auto rctx = ctx->render_context;
+	auto job = rctx->job;
+	auto jinfo = rctx->jobinfo;
+	auto buffer = QFV_FindBufferInfo (ctx, name);
+	if (!buffer) {
+		return 0;
+	}
+	uint32_t ind = buffer - jinfo->buffers;
+	VkDeviceAddress offset = 0;
+	if (buffer->perframe) {
+		offset = frame * buffer->size;
+	}
+	return job->resources->objects[ind].buffer.address + offset;
+}
+
+VkDeviceAddress
+QFV_GetBufferOffset (vulkan_ctx_t *ctx, const char *name, uint32_t frame)
+{
+	auto buffer = QFV_FindBufferInfo (ctx, name);
+	if (!buffer) {
+		return 0;
+	}
+	VkDeviceAddress offset = 0;
+	if (buffer->perframe) {
+		offset = frame * buffer->size;
+	}
+	return offset;
+}
+
+VkDeviceSize
+QFV_GetBufferSize (vulkan_ctx_t *ctx, const char *name)
+{
+	auto buffer = QFV_FindBufferInfo (ctx, name);
+	if (!buffer) {
+		return 0;
+	}
+	return buffer->size;
+}
+
+void
+QFV_UpdateBuffer (vulkan_ctx_t *ctx, const char *name, uint32_t offset,
+				  void *data, uint32_t size)
+{
+	auto rctx = ctx->render_context;
+	auto job = rctx->job;
+	auto jinfo = rctx->jobinfo;
+	auto bufferinfo = QFV_FindBufferInfo (ctx, name);
+	if (!bufferinfo) {
+		return;
+	}
+	uint32_t ind = bufferinfo - jinfo->buffers;
+	auto buffer = job->resources->objects[ind].buffer.buffer;
+
+	if (offset + size > bufferinfo->size) {
+		Sys_Error ("bad offset + size in update to %s: %u %u:%"PRIu64,
+				   name, offset, size, bufferinfo->size);
+	}
+	uint32_t frame = ctx->curFrame;
+	auto dstOffset = offset;
+	if (bufferinfo->perframe) {
+		dstOffset += frame * bufferinfo->size;
+	}
+	qfv_packet_t *packet = nullptr;
+	while (size) {
+		uint32_t count = size;
+		if (count > MAX_BUFFER_BYTES) {
+			count = MAX_BUFFER_BYTES;
+		}
+		if (packet) {
+			QFV_PacketSubmit (packet);
+		}
+		packet = QFV_PacketAcquire (ctx->staging, "QFV_UpdateBuffer");
+		void *pkt_data = QFV_PacketExtend (packet, count);
+		memcpy (pkt_data, data, count);
+		auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+		//FIXME config?
+		auto db = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+		QFV_PacketCopyBuffer (packet, buffer, dstOffset, sb, db);
+		dstOffset += count;
+		size -= count;
+	}
+	QFV_PacketSubmit (packet);
 }
 
 void

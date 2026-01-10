@@ -174,6 +174,12 @@ typedef struct vid_render_funcs_s {
 
 	void (*debug_ui) (struct imui_ctx_s *imui_ctx);
 
+	void (*UpdateBuffer) (const char *name, uint32_t offset,
+						  void *data, uint32_t size);
+	uint64_t (*BufferAddress) (const char *name);
+	uint64_t (*BufferOffset) (const char *name);
+	uint64_t (*BufferSize) (const char *name);
+
 	vid_model_funcs_t *model_funcs;
 } vid_render_funcs_t;
 

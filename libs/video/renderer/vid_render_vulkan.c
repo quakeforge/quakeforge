@@ -459,6 +459,31 @@ vulkan_debug_ui (struct imui_ctx_s *imui_ctx)
 }
 
 static void
+vulkan_UpdateBuffer (const char *name, uint32_t offset,
+					 void *data, uint32_t size)
+{
+	QFV_UpdateBuffer (vulkan_ctx, name, offset, data, size);
+}
+
+static uint64_t
+vulkan_BufferAddress (const char *name)
+{
+	return QFV_GetBufferAddress (vulkan_ctx, name, vulkan_ctx->curFrame);
+}
+
+static uint64_t
+vulkan_BufferOffset (const char *name)
+{
+	return QFV_GetBufferOffset (vulkan_ctx, name, vulkan_ctx->curFrame);
+}
+
+static uint64_t
+vulkan_BufferSize (const char *name)
+{
+	return QFV_GetBufferSize (vulkan_ctx, name);
+}
+
+static void
 vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 {
 	Vulkan_Mod_LoadLighting (mod, bsp, vulkan_ctx);
@@ -706,6 +731,12 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.capture_screen = vulkan_capture_screen,
 
 	.debug_ui = vulkan_debug_ui,
+
+	.UpdateBuffer = vulkan_UpdateBuffer,
+	.BufferAddress = vulkan_BufferAddress,
+	.BufferOffset = vulkan_BufferOffset,
+	.BufferSize = vulkan_BufferSize,
+
 
 	.model_funcs = &model_funcs
 };

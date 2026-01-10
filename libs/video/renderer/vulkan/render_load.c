@@ -378,6 +378,15 @@ find_bufferinfo (qfv_jobinfo_t *jobinfo, const qfv_reference_t *ref)
 	return 0;
 }
 
+qfv_bufferinfo_t *
+QFV_FindBufferInfo (vulkan_ctx_t *ctx, const char *name)
+{
+	auto rctx = ctx->render_context;
+	auto jinfo = rctx->jobinfo;
+	qfv_reference_t ref = { .name = name };
+	return find_bufferinfo (jinfo, &ref);
+}
+
 static bool
 setup_resources (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 				 uint32_t num_attachments, qfv_resource_t *resources,
@@ -1351,11 +1360,16 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, jobptr_t jp, objstate_t *s)
 		auto bufferviews = &buffers[jobinfo->num_buffers];
 		for (uint32_t i = 0; i < jobinfo->num_buffers; i++) {
 			auto b = &jobinfo->buffers[i];
+			VkDeviceSize size = b->size;
+			if (b->perframe) {
+				b->size = RUP (b->size, 64);
+				size = b->size * rctx->frames.size;
+			}
 			buffers[i] = (qfv_resobj_t) {
 				.name = b->name,
 				.type = qfv_res_buffer,
 				.buffer = {
-					.size = b->size,
+					.size = size,
 					.usage = b->usage,
 				},
 			};

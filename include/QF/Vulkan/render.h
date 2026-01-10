@@ -104,6 +104,7 @@ typedef struct qfv_bufferinfo_s {
 	VkDeviceSize size;
 	VkBufferUsageFlags usage;
 	VkSharingMode sharingMode;
+	bool        perframe;
 } qfv_bufferinfo_t;
 
 typedef struct qfv_bufferviewinfo_s {
@@ -576,6 +577,19 @@ void QFV_QueueImageViewDelete (vulkan_ctx_t *ctx, VkImageView view);
 qfv_dsmanager_t *QFV_Render_DSManager (vulkan_ctx_t *ctx, const char *setName)
 	__attribute__((pure));
 VkSampler QFV_Render_Sampler (vulkan_ctx_t *ctx, const char *name);
+
+qfv_bufferinfo_t *QFV_FindBufferInfo (vulkan_ctx_t *ctx, const char *name)
+	__attribute__((pure));
+VkDeviceAddress QFV_GetBufferAddress (vulkan_ctx_t *ctx,
+									  const char *name, uint32_t frame)
+	__attribute__((pure));
+VkDeviceAddress QFV_GetBufferOffset (vulkan_ctx_t *ctx,
+									 const char *name, uint32_t frame)
+	__attribute__((pure));
+VkDeviceSize QFV_GetBufferSize (vulkan_ctx_t *ctx, const char *name)
+	__attribute__((pure));
+void QFV_UpdateBuffer (vulkan_ctx_t *ctx, const char *name, uint32_t offset,
+					   void *data, uint32_t size);
 
 void *QFV_GetBlackboardVar (vulkan_ctx_t *ctx, const char *name);
 void QFV_PushBlackboard (vulkan_ctx_t *ctx, VkCommandBuffer cmd,

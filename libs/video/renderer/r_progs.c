@@ -593,6 +593,45 @@ bi(Painter_AddBezier)
 	}
 }
 
+bi (Render_UpdateBuffer)
+{
+	qfZoneScoped (true);
+	if (r_funcs->UpdateBuffer) {
+		const char *name = P_GSTRING (pr, 0);
+		uint32_t    offset = P_UINT (pr, 1);
+		void       *ptr = P_GPOINTER (pr, 2);
+		uint32_t    size = P_UINT (pr, 3);
+		r_funcs->UpdateBuffer (name, offset, ptr, size);
+	}
+}
+
+bi (Render_BufferAddress)
+{
+	qfZoneScoped (true);
+	if (r_funcs->UpdateBuffer) {
+		const char *name = P_GSTRING (pr, 0);
+		R_ULONG (pr) = r_funcs->BufferAddress (name);
+	}
+}
+
+bi (Render_BufferOffset)
+{
+	qfZoneScoped (true);
+	if (r_funcs->UpdateBuffer) {
+		const char *name = P_GSTRING (pr, 0);
+		R_ULONG (pr) = r_funcs->BufferOffset (name);
+	}
+}
+
+bi (Render_BufferSize)
+{
+	qfZoneScoped (true);
+	if (r_funcs->UpdateBuffer) {
+		const char *name = P_GSTRING (pr, 0);
+		R_ULONG (pr) = r_funcs->BufferSize (name);
+	}
+}
+
 static const char *
 bi_draw_get_key (const void *p, void *unused)
 {
@@ -678,6 +717,10 @@ static builtin_t builtins[] = {
 	bi(Painter_AddBezier, 6, p(vec2), p(vec2), p(vec2), p(vec2),
 							 p(float), p(vec4)),
 
+	bi(Render_UpdateBuffer,    4, p(string), p(uint), p(ptr), p(uint)),
+	bi(Render_BufferAddress,   1, p(string)),
+	bi(Render_BufferOffset,    1, p(string)),
+	bi(Render_BufferSize,      1, p(string)),
 	{0}
 };
 
