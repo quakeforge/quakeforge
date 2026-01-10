@@ -162,7 +162,8 @@ pointer_arithmetic (int op, const expr_t *e1, const expr_t *e2)
 		ptype = t2;
 	}
 	// op is known to be + or -
-	psize = new_int_expr (type_size (ptype->fldptr.type), true);
+	int size = type_size (ptype->fldptr.type) * current_target.pointer_scale;
+	psize = new_int_expr (size, true);
 	offset = unary_expr (op, binary_expr ('*', offset, psize));
 	return offset_pointer_expr (ptr, offset);
 }

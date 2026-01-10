@@ -79,6 +79,7 @@ typedef struct {
 
 	unsigned    label_id;
 	const type_t *(*pointer_type) (const type_t *aux);
+	int         pointer_scale;
 	int         pointer_size;
 	bool        pointer_direct_cast;
 } target_t;

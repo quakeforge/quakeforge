@@ -3586,5 +3586,6 @@ target_t spirv_target = {
 
 	.short_circuit = false,
 	.pointer_type = spirv_pointer_type,
+	.pointer_scale = 4,
 	.pointer_size = 2,	// internal sizes are in ints rather than bytes
 };
