@@ -1899,11 +1899,18 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 
 	*acc_type = *res_type;
 	bool literal_ind = true;
+	bool ptr_start = false;
 	if (is_pointer (base_type) || is_reference (base_type)) {
 		unsigned storage = base_type->fldptr.tag;
 		*acc_type = tagged_reference_type (storage, *res_type);
 		op = SpvOpAccessChain;
 		literal_ind = false;
+		if (is_reference (base_type)
+			&& is_pointer (dereference_type (base_type))) {
+			ptr_start = true;
+			base_type = dereference_type (base_type);
+			e = pointer_deref (e);
+		}
 	}
 
 	int num_obj = list_count (&list);
@@ -1911,7 +1918,7 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 	unsigned ind_id[num_obj];
 	int num_ind = 0;
 	list_scatter (&list, ind_expr);
-	for (int i = 0; i < num_obj; i++) {
+	for (int i = 0; !ptr_start && i < num_obj; i++) {
 		auto obj = ind_expr[i];
 		bool direct_ind = false;
 		unsigned index;
@@ -1958,15 +1965,18 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 	}
 	// e is now the base object of the pointer chain
 
-	int acc_type_id = spirv_Type (*acc_type, ctx);
-	int id = spirv_id (ctx);
-	auto insn = spirv_new_insn (op, 4 + num_ind, ctx->code_space, ctx);
-	INSN (insn, 1) = acc_type_id;
-	INSN (insn, 2) = id;
-	INSN (insn, 3) = base_id;
-	auto field_ind = &INSN (insn, 4);
-	for (int i = 0; i < num_ind; i++) {
-		field_ind[i] = ind_id[i];
+	unsigned id = 0;
+	if (num_ind) {
+		unsigned acc_type_id = spirv_Type (*acc_type, ctx);
+		id = spirv_id (ctx);
+		auto insn = spirv_new_insn (op, 4 + num_ind, ctx->code_space, ctx);
+		INSN (insn, 1) = acc_type_id;
+		INSN (insn, 2) = id;
+		INSN (insn, 3) = base_id;
+		auto field_ind = &INSN (insn, 4);
+		for (int i = 0; i < num_ind; i++) {
+			field_ind[i] = ind_id[i];
+		}
 	}
 	if (num_ind == num_obj) {
 		return id;
