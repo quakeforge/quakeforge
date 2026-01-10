@@ -80,6 +80,8 @@ typedef struct spirvctx_s {
 	struct DARRAY_TYPE (function_t *) func_queue;
 	strpool_t  *strpool;
 	unsigned id;
+
+	rua_loc_t last_debug;
 } spirvctx_t;
 
 static unsigned spirv_value (const expr_t *e, spirvctx_t *ctx);
@@ -2646,7 +2648,8 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 						expr_names[e->type]);
 	}
 
-	if (options.code.debug) {
+	if (options.code.debug && ctx->last_debug.line != e->loc.line) {
+		ctx->last_debug = e->loc;
 		auto cs = ctx->code_space;
 		if (cs->size >= 4 && cs->data[cs->size - 4].value == 0x40008) {
 			//back up and overwrite the previous debug line instruction
