@@ -95,6 +95,54 @@ void Painter_AddBox (vec2 c, vec2 e, float r, vec4 color) = #0;
 void Painter_AddBezier (vec2 p0, vec2 p1, vec2 p2, vec2 p3, float r,
 						vec4 color) = #0;
 
+void Render_UpdateBuffer (string name, ulong offset, void *data,
+						  ulong size) = #0;
+ulong Render_BufferAddress (string name) = #0;
+ulong Render_BufferOffset (string name) = #0;
+ulong Render_BufferSize (string name) = #0;
+
+#include "planetary.h"
+
+void
+update_orrery ()
+{
+	ulong addr = Render_BufferAddress ("planetary");
+	PlanetaryData planetary = {
+		.numOpticalDepthPoints = 10,
+		.numInScatteringPoints = 10,
+		.scaleFactor = 1e-6,
+		.bodies = addr + sizeof (PlanetaryData),
+		.atmospheres = addr + sizeof (PlanetaryData) + sizeof (BodyParams) * 2,
+	};
+	BodyParams bodies[] = {
+		{// sun
+		.planetCenter = vec3(-71987230e3, -95987230e3, 90012770e3),//FIXME doesn't like 'x y z'f
+		.planetRadius = 695700e3,
+		},
+		{// earth
+		.planetCenter = vec3(12770e3, -20, 20),
+		.planetRadius = 6370e3,
+		},
+	};
+	AtmosphereParams atmospheres[] = {
+		{// sun
+		.atmosphereRadius = 13655700e3,
+		.oceanRadius = 695700e3,
+		.densityFalloff = 4,
+		.scatteringCoefficients = '0.10662224073302788 0.32444156446229333 0.6830134553650706'f,
+		},
+		{// earth
+		.atmosphereRadius = 6470e3,
+		.oceanRadius = 6370e3,
+		.densityFalloff = 4,
+		.scatteringCoefficients = '0.10662224073302788 0.32444156446229333 0.6830134553650706'f,
+		}
+	};
+	Render_UpdateBuffer ("planetary", 0, &planetary, sizeof (planetary));
+	Render_UpdateBuffer ("planetary", sizeof(planetary), &bodies, sizeof (bodies));
+	Render_UpdateBuffer ("planetary", sizeof(planetary)+sizeof(bodies), &atmospheres, sizeof (atmospheres));
+}
+
 imui_ctx_t imui_ctx;
 #define IMUI_context imui_ctx
 imui_window_t *style_editor;
@@ -1201,6 +1249,8 @@ main (int argc, string *argv)
 		//	Cvar_SetInteger ("fisheye", true);
 		//	fish = true;
 		//}
+
+		update_orrery ();
 
 		//update_cube(frametime);
 		//draw_cube();

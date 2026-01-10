@@ -13,22 +13,12 @@
 INPUT_ATTACH(0) compo;
 INPUT_ATTACH(1) depth;
 
-//[push_constant] @block PushConstants {
-	const float       near_plane = 0.1;
-//};
+#include "planetary.h"
 
-//[buffer, readonly, set(1), binding(2)] @block Params {
-const vec3 planetCenter = vec3(12770e3, -20, 20);
-const float planetRadius = 6370e3;
-const float atmosphereRadius = 6470e3;
-const float oceanRadius = 6370e3;
-const float densityFalloff = 4;
-const int numOpticalDepthPoints = 10;
-const int numInScatteringPoints = 10;
-const float scaleFactor = 1e-6;
-const vec3 scatteringCoefficients = vec3(0.10662224073302788,0.32444156446229333,0.6830134553650706) * scaleFactor;
-const vec3 dirToSun = vec3(-0.48,-0.64,0.6);
-//};
+[push_constant] @block PushConstants {
+	PlanetaryData *planetary;
+	float near_plane;
+};
 
 typedef struct HitInfo {
 	float distance;		// 0 if inside
@@ -60,43 +50,47 @@ raySphere (vec3 sphereCenter, float sphereRadius, vec3 rayOrigin, vec3 rayDir)
 }
 
 float
-densityAtPoint(vec3 densitySamplePoint) {
-	float heightAboveSurface = length(densitySamplePoint - planetCenter) - planetRadius;
-	float height01 = heightAboveSurface / (atmosphereRadius - planetRadius);
-	float localDensity = exp(-height01 * densityFalloff) * (1 - height01);
+densityAtPoint(BodyParams *B, AtmosphereParams *A, vec3 densitySamplePoint) {
+	float heightAboveSurface = length(densitySamplePoint - B.planetCenter) - B.planetRadius;
+	float height01 = heightAboveSurface / (A.atmosphereRadius - B.planetRadius);
+	float localDensity = exp(-height01 * A.densityFalloff) * (1 - height01);
 	return localDensity;
 }
 
 float
-opticalDepth(vec3 rayOrigin, vec3 rayDir, float rayLength)
+opticalDepth(PlanetaryData *P, BodyParams *B, AtmosphereParams *A,
+			 vec3 rayOrigin, vec3 rayDir, float rayLength)
 {
 	vec3 densitySamplePoint = rayOrigin;
-	float stepSize = rayLength / (numOpticalDepthPoints - 1);
+	float stepSize = rayLength / (P.numOpticalDepthPoints - 1);
 	float opticalDepth = 0;
 
-	for (int i = 0; i < numOpticalDepthPoints; i++) {
-		float localDensity = densityAtPoint (densitySamplePoint);
-		opticalDepth += localDensity * stepSize * scaleFactor;
+	for (int i = 0; i < P.numOpticalDepthPoints; i++) {
+		float localDensity = densityAtPoint (B, A, densitySamplePoint);
+		opticalDepth += localDensity * stepSize * P.scaleFactor;
 		densitySamplePoint += rayDir * stepSize;
 	}
 	return opticalDepth;
 }
 
 vec3
-calculateLight (vec3 rayOrigin, vec3 rayDir, float rayLength, vec3 originalCol) {
+calculateLight (PlanetaryData *P, BodyParams *B, AtmosphereParams *A,
+				vec3 rayOrigin, vec3 rayDir, float rayLength, vec3 originalCol,
+				vec3 dirToSun) {
 	vec3 inScatterPoint = rayOrigin;
-	float stepSize = rayLength / (numInScatteringPoints - 1);
+	float stepSize = rayLength / (P.numInScatteringPoints - 1);
 	vec3 inScatteredLight = vec3(0);
 	float viewRayOpticalDepth = 0;
+	vec3 scatter = A.scatteringCoefficients * P.scaleFactor;
 
-	for (int i = 0; i < numInScatteringPoints; i++) {
-		float sunRayLength = raySphere(planetCenter, atmosphereRadius, inScatterPoint, dirToSun).thickness;
-		float sunRayOpticalDepth = opticalDepth(inScatterPoint, dirToSun, sunRayLength);
-		viewRayOpticalDepth = opticalDepth(inScatterPoint, -rayDir, stepSize * i);
-		vec3 transmittance = exp(-(sunRayOpticalDepth + viewRayOpticalDepth) * scatteringCoefficients);
-		float localDensity = densityAtPoint(inScatterPoint);
+	for (int i = 0; i < P.numInScatteringPoints; i++) {
+		float sunRayLength = raySphere(B.planetCenter, A.atmosphereRadius, inScatterPoint, dirToSun).thickness;
+		float sunRayOpticalDepth = opticalDepth(P, B, A, inScatterPoint, dirToSun, sunRayLength);
+		viewRayOpticalDepth = opticalDepth(P, B, A, inScatterPoint, -rayDir, stepSize * i);
+		vec3 transmittance = exp(-(sunRayOpticalDepth + viewRayOpticalDepth) * scatter);
+		float localDensity = densityAtPoint(B, A, inScatterPoint);
 
-		inScatteredLight += localDensity * transmittance * scatteringCoefficients * stepSize;
+		inScatteredLight += localDensity * transmittance * scatter * stepSize;
 		inScatterPoint += rayDir * stepSize;
 	}
 	float originalColTransmittance = exp(-viewRayOpticalDepth);
@@ -113,6 +107,18 @@ calculateLight (vec3 rayOrigin, vec3 rayDir, float rayLength, vec3 originalCol) 
 void
 main ()
 {
+	auto P = planetary;
+	auto B = planetary.bodies + 1;
+	auto A = planetary.atmospheres + 1;
+	auto sun = planetary.bodies;
+
+	vec4 originalCol = subpassLoad (compo);
+
+	if ((!(uvec2)planetary.bodies) || (!(uvec2)planetary.atmospheres)) {
+		frag_color = originalCol;
+		return;
+	}
+
 	vec3        light = vec3 (0);
 	float       d = subpassLoad (depth).x;
 	vec4        invp = vec4 (
@@ -124,24 +130,24 @@ main ()
 	vec3 dir = (InvView[gl_ViewIndex] * vec4(p.xyz, 0)).xyz;
 	p = InvView[gl_ViewIndex] * p;
 
-	vec4 originalCol = subpassLoad (compo);
+	vec3 dirToSun = normalize (sun.planetCenter - p.xyz);
 
 	float sceneDepth = length (p.xyz);
 
 	vec3 rayOrigin = InvView[gl_ViewIndex][3].xyz;
 	vec3 rayDir = normalize(dir);
 
-	float dstToOcean = raySphere(planetCenter, oceanRadius, rayOrigin, rayDir).distance;
+	float dstToOcean = raySphere(B.planetCenter, A.oceanRadius, rayOrigin, rayDir).distance;
 	float dstToSurface = sceneDepth < p.w * dstToOcean ? sceneDepth / p.w : dstToOcean;
 
-	auto hitInfo = raySphere(planetCenter, atmosphereRadius, rayOrigin, rayDir);
+	auto hitInfo = raySphere(B.planetCenter, A.atmosphereRadius, rayOrigin, rayDir);
 	float dstToAtmosphere = hitInfo.distance;
 	float dstThroughAtmosphere = min(hitInfo.thickness, dstToSurface - dstToAtmosphere);
 
 	if (dstThroughAtmosphere > 0) {
 		const float epsilon = 0.0001;
 		vec3 pointInAtmosphere = rayOrigin + rayDir * (dstToAtmosphere + epsilon);
-		vec3 light = calculateLight(pointInAtmosphere, rayDir, dstThroughAtmosphere - epsilon * 2, originalCol.rgb);
+		vec3 light = calculateLight(P, B, A, pointInAtmosphere, rayDir, dstThroughAtmosphere - epsilon * 2, originalCol.rgb, dirToSun);
 		frag_color = vec4(light, originalCol.a);
 	} else {
 		frag_color = originalCol;

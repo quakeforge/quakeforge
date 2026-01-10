@@ -906,6 +906,12 @@ render_graph = {
 			};
 			layout = {
 				descriptorSets = ($input, matrix_set);
+				pushConstants = {
+					fragment = {
+						planetary = ptr;
+						near_plane = float;
+					};
+				};
 				//pushConstants = {
 				//	fragment = {
 				//		fog = vec4;
@@ -1539,6 +1545,13 @@ render_graph = {
 		cube_entid = {
 			@inherit = $cube_view_base;
 			image = cube_entid;
+		};
+	};
+	buffers = {
+		planetary = {
+			size = 1048576;
+			usage = transfer_dst|shader_device_address|storage_buffer;
+			perframe = true;
 		};
 	};
 	output = {
@@ -2313,6 +2326,7 @@ render_graph = {
 					color = "[ 0.0784313725490196, 0.19607843137254902, 0.37254901960784315, 1]";
 					dependencies = {
 						compose = $color_dependency;
+						$external = $extcolor_dependency;
 					};
 					attachments = {
 						input = {
@@ -2386,6 +2400,8 @@ render_graph = {
 					dependencies = {
 						translucent = $extcolor_outdep;
 						gbuffer = $extcolor_outdep;
+						lighting = $extcolor_outdep;
+						unlit = $extcolor_outdep;
 						lighting = $extcolor_outdep;
 						atmosphere = {
 							src = {
@@ -3014,6 +3030,8 @@ render_graph = {
 					{ func = compose_update; },
 					{ func = particle_wait_physics; },
 					{ func = gizmo_flush; },
+					{ func = blackboard_set_bufferptr;
+					  params = ("\"planetary\"", "\"planetary\"") },
 				);
 			};
 		};
