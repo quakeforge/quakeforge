@@ -1292,7 +1292,7 @@ spirv_generate_not (const expr_t *e, spirvctx_t *ctx)
 {
 	scoped_src_loc (e);
 	auto expr = e->expr.e1;
-	auto zero = new_int_expr (0, true);
+	auto zero = new_zero_expr (get_type (expr));
 	auto not = binary_expr (QC_EQ, expr, zero);
 	return spirv_emit_expr (not, ctx);
 }
@@ -2210,6 +2210,30 @@ spirv_return (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_horizontal (const expr_t *e, spirvctx_t *ctx)
+{
+	SpvOp op = SpvOpNop;
+	switch (e->hop.op) {
+		case '&':
+			op = SpvOpAll;
+			break;
+		case '|':
+			op = SpvOpAny;
+			break;
+		default:
+			internal_error (e, "hop %d not implemented", e->hop.op);
+	}
+	unsigned hop_id = spirv_emit_expr (e->hop.vec, ctx);
+	unsigned tid = spirv_Type (get_type (e), ctx);
+	unsigned id = spirv_id (ctx);
+	auto insn = spirv_new_insn (op, 4, ctx->code_space, ctx);
+	INSN (insn, 1) = tid;
+	INSN (insn, 2) = id;
+	INSN (insn, 3) = hop_id;
+	return id;
+}
+
+static unsigned
 spirv_swizzle (const expr_t *e, spirvctx_t *ctx)
 {
 	int count = type_width (e->swizzle.type);
@@ -2624,6 +2648,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_assign] = spirv_assign,
 		[ex_branch] = spirv_branch,
 		[ex_return] = spirv_return,
+		[ex_horizontal] = spirv_horizontal,
 		[ex_swizzle] = spirv_swizzle,
 		[ex_extend] = spirv_extend,
 		[ex_list] = spirv_list,
