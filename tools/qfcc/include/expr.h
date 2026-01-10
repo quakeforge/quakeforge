@@ -983,6 +983,20 @@ bool is_selector (const expr_t *e) __attribute__((pure));
 */
 const expr_t *constant_expr (const expr_t *e);
 
+/**	Check if the op-code is a relational.
+
+	\param op		The op-code to check.
+	\return			True if the expression is relational (< <= >= >).
+*/
+bool is_relational (const expr_t *e) __attribute__((pure));
+
+/**	Check if the op-code is an equality.
+
+	\param op		The op-code to check.
+	\return			True if the expression is equality (== !=).
+*/
+bool is_equality (const expr_t *e) __attribute__((pure));
+
 /**	Check if the op-code is a comparison.
 
 	\param op		The op-code to check.

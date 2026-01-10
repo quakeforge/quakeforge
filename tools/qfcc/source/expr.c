@@ -1957,6 +1957,33 @@ convert_buffer (const expr_t *e, const type_t *t)
 }
 
 bool
+is_relational (const expr_t *e)
+{
+	if (e->type != ex_expr) {
+		return false;
+	}
+	int op = e->expr.op;
+	if (op == QC_LE || op == QC_GE || op == QC_LT || op == QC_GT
+		|| op == '>' || op == '<') {
+		return true;
+	}
+	return false;
+}
+
+bool
+is_equality (const expr_t *e)
+{
+	if (e->type != ex_expr) {
+		return false;
+	}
+	int op = e->expr.op;
+	if (op == QC_EQ || op == QC_NE) {
+		return true;
+	}
+	return false;
+}
+
+bool
 is_compare (int op)
 {
 	if (op == QC_EQ || op == QC_NE || op == QC_LE || op == QC_GE

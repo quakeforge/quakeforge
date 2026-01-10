@@ -423,8 +423,26 @@ ruamoko_test_expr (const expr_t *expr)
 	if (is_boolean (type)) {
 		// the above is_bool and is_lbool tests ensure a boolean type
 		// is a vector (there are no bool matrices)
+		if (is_relational (expr)) {
+			return error (expr, "ambiguous conversion to bool");
+		}
+		int op = '&';
+		if (is_equality (expr)) {
+			if (expr->expr.op == QC_NE) {
+				op = '|';
+			}
+		} else if (expr->type == ex_uexpr && expr->expr.op == '!') {
+			auto val = expr->expr.e1;
+			auto type = get_type (val);
+			auto zero = new_zero_expr (type);
+			auto btype = bool_type (type);
+			expr = typed_binary_expr (btype, QC_EQ, val, zero);
+			op = '&';
+		} else {
+			return error (expr, "ambiguous conversion to bool");
+		}
 		type = base_type (type);
-		expr = new_horizontal_expr ('|', expr, type);
+		expr = new_horizontal_expr (op, expr, type);
 		if (type_size (type) > 1) {
 			expr = fold_constants (expr);
 			expr = edag_add_expr (expr);
@@ -449,7 +467,7 @@ ruamoko_test_expr (const expr_t *expr)
 		case ev_ushort:
 		{
 			// short and ushort handled with the same code as float/double
-			// because they have no backing type and and thus constants, which
+			// because they have no backing type and thus constants, which
 			// fold_constants will take care of.
 			auto zero = new_zero_expr (type);
 			auto btype = bool_type (type);

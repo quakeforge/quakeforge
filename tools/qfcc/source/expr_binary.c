@@ -547,10 +547,10 @@ scalar_dot_product_expr (int op, const expr_t *a, const expr_t *b)
 static const expr_t *
 boolean_op (int op, const expr_t *a, const expr_t *b)
 {
-	if (!is_boolean (get_type (a))) {
+	if (!is_boolean (get_type (a)) || !is_scalar (get_type (a))) {
 		a = test_expr (a);
 	}
-	if (!is_boolean (get_type (b))) {
+	if (!is_boolean (get_type (b)) || !is_scalar (get_type (b))) {
 		b = test_expr (b);
 	}
 	if (!promote_exprs (&a, &b)) {
@@ -908,7 +908,8 @@ static expr_type_t bit_ops[] = {
 };
 
 static expr_type_t bool_ops[] = {
-	{   .match_a = is_boolean, .match_b = is_boolean, },
+	{   .match_a = is_boolean, .match_b = is_boolean,
+			.process = boolean_op },
 	{   .match_a = is_scalar, .match_b = is_scalar,
 			.process = boolean_op },
 
