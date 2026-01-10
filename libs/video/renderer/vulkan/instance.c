@@ -153,24 +153,30 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
 		msgSev = "error: ";
 	}
-	fprintf (stderr, "validation layer: %s%s\n", msgSev,
-			 callbackData->pMessage);
-	for (uint32_t i = 0; i < callbackData->objectCount; i++) {
-		fprintf (stderr, "    Object Handle[%d] = 0x%" PRIx64, i,
-				 callbackData->pObjects[i].objectHandle);
-		if (callbackData->pObjects[i].pObjectName) {
-			fprintf (stderr, " [%s]", callbackData->pObjects[i].pObjectName);
+	if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
+		&& strcmp (callbackData->pMessageIdName, "VVL-DEBUG-PRINTF") == 0) {
+		fprintf (stderr, "%s\n", callbackData->pMessage);
+	} else {
+		fprintf (stderr, "validation layer: %s%s\n", msgSev,
+				 callbackData->pMessage);
+		for (uint32_t i = 0; i < callbackData->objectCount; i++) {
+			fprintf (stderr, "    Object Handle[%d] = 0x%" PRIx64, i,
+					 callbackData->pObjects[i].objectHandle);
+			if (callbackData->pObjects[i].pObjectName) {
+				fprintf (stderr, " [%s]",
+						 callbackData->pObjects[i].pObjectName);
+			}
+			exprval_t val = {
+				.type = &VkObjectType_type,
+				.value = (void *) &callbackData->pObjects[i].objectType,
+			};
+			auto vactx = va_create_context (4);
+			fprintf (stderr, " %s\n", val.type->get_string (&val, vactx));
+			va_destroy_context (vactx);
 		}
-		exprval_t val = {
-			.type = &VkObjectType_type,
-			.value = (void *) &callbackData->pObjects[i].objectType,
-		};
-		auto vactx = va_create_context (4);
-		fprintf (stderr, " %s\n", val.type->get_string (&val, vactx));
-		va_destroy_context (vactx);
-	}
-	for (size_t i = instance->debug_stack.size; i-- > 0; ) {
-		fprintf (stderr, "    %s\n", instance->debug_stack.a[i]);
+		for (size_t i = instance->debug_stack.size; i-- > 0; ) {
+			fprintf (stderr, "    %s\n", instance->debug_stack.a[i]);
+		}
 	}
 	debug_breakpoint (messageSeverity);
 	return VK_FALSE;
