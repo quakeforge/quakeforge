@@ -2623,10 +2623,16 @@ spirv_ptroffset (const expr_t *e, spirvctx_t *ctx)
 	add->intrinsic.is_pure = true;
 	list_gather (&add->intrinsic.operands, add_operands,
 				 countof (add_operands));
-	rua_ctx_t rctx = {};
-	auto lo = expr_process (new_field_expr (add, new_name_expr ("result")), &rctx);
-	auto carry = expr_process (new_field_expr (add, new_name_expr ("carry")), &rctx);
-	auto hi = binary_expr ('+', carry, new_swizzle_expr (ptr, "y"));
+	auto result_sym = get_struct_field (&type_spv_ptrarith, add,
+										new_name_expr ("result"));
+	auto carry_sym = get_struct_field (&type_spv_ptrarith, add,
+									   new_name_expr ("carry"));
+	auto lo = new_field_expr (add, new_symbol_expr (result_sym));
+	auto carry = new_field_expr (add, new_symbol_expr (carry_sym));
+	lo->field.type = &type_uint;
+	carry->field.type = &type_uint;
+	auto hi = typed_binary_expr (&type_uint, '+', carry,
+								 new_swizzle_expr (ptr, "y"));
 	auto ptroffset = constructor_expr (new_type_expr (&type_uvec2),
 									   expr_append_expr (new_list_expr (hi),
 														 lo));
