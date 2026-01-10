@@ -50,6 +50,7 @@ search = (
 );
 parse = {
 	VkValidationFeatureEnableEXT = expflags;
+	VkValidationFeatureDisableEXT = expflags;
 	VkPhysicalDeviceLimits = readonly;
 	VkSpecializationInfo = {
 		mapEntries = {
