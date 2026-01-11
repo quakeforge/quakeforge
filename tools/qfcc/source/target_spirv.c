@@ -1312,6 +1312,26 @@ spirv_generate_load (const expr_t *e, spirvctx_t *ctx)
 	return spirv_ptr_load (res_type, ptr_id, align, ctx);
 }
 
+static unsigned
+spirv_generate_ptrcmp (const expr_t *e, spirvctx_t *ctx)
+{
+	auto e1 = e->expr.e1;
+	auto e2 = e->expr.e2;
+	if (is_zero (e1)) {
+		e1 = new_zero_expr (&type_uvec2);
+	} else {
+		e1 = cast_expr (&type_uvec2, e1);
+	}
+	if (is_zero (e2)) {
+		e2 = new_zero_expr (&type_uvec2);
+	} else {
+		e2 = cast_expr (&type_uvec2, e2);
+	}
+	e = binary_expr (e->expr.op, e1, e2);
+	e = test_expr (e);
+	return spirv_emit_expr (e, ctx);
+}
+
 #define SPV_meta(m,t)
 #define SPV_type(m,t) ((unsigned)((1<<((m)+16))|(1<<(t))))
 #define SPV_type_cmp(a,b) (((a) & (b)) == (b))
@@ -1337,9 +1357,13 @@ static spvop_t spv_ops[] = {
 	{"eq",     SpvOpLogicalEqual,         SPV_BOOL,  SPV_BOOL  },
 	{"eq",     SpvOpIEqual,               SPV_INT,   SPV_INT   },
 	{"eq",     SpvOpFOrdEqual,            SPV_FLOAT, SPV_FLOAT },
+	{"eq",    .types1 = SPV_PTR, .types2 = SPV_PTR,
+		.generate = spirv_generate_ptrcmp },
 	{"ne",     SpvOpLogicalNotEqual,      SPV_BOOL,  SPV_BOOL  },
 	{"ne",     SpvOpFOrdNotEqual,         SPV_FLOAT, SPV_FLOAT },
 	{"ne",     SpvOpINotEqual,            SPV_INT,   SPV_INT   },
+	{"ne",    .types1 = SPV_PTR, .types2 = SPV_PTR,
+		.generate = spirv_generate_ptrcmp },
 	{"le",     SpvOpULessThanEqual,       SPV_UINT,  SPV_UINT  },
 	{"le",     SpvOpSLessThanEqual,       SPV_SINT,  SPV_SINT  },
 	{"le",     SpvOpFOrdLessThanEqual,    SPV_FLOAT, SPV_FLOAT },
