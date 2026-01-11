@@ -112,24 +112,29 @@ update_orrery ()
 		.numInScatteringPoints = 10,
 		.scaleFactor = 1e-6,
 		.bodies = addr + sizeof (PlanetaryData),
-		.atmospheres = addr + sizeof (PlanetaryData) + sizeof (BodyParams) * 2,
+		.atmospheres = addr + sizeof (PlanetaryData) + sizeof (BodyParams) * 3,
 	};
 	BodyParams bodies[] = {
 		{// sun
-		.planetCenter = vec3(-71987230e3, -95987230e3, 90012770e3),//FIXME doesn't like 'x y z'f
+		.planetCenter = vec3(-71987230000.0, -96000000020.0, 90000000020.0),//FIXME doesn't like 'x y z'f
 		.planetRadius = 695700e3,
 		},
 		{// earth
 		.planetCenter = vec3(12770e3, -20, 20),
 		.planetRadius = 6370e3,
 		},
+		{// moon
+		.planetCenter = vec3(-171550000.0, -245760020.0, 230400020.0),
+		.planetRadius = 1738e3,
+		},
 	};
 	AtmosphereParams atmospheres[] = {
 		{// sun
 		.atmosphereRadius = 13655700e3,
 		.oceanRadius = 695700e3,
-		.densityFalloff = 4e1,
-		.scatteringCoefficients = '0.10662224073302788 0.32444156446229333 0.6830134553650706'f,
+		.densityFalloff = 4e2,
+		//.scatteringCoefficients = '0.10662224073302788 0.32444156446229333 0.6830134553650706'f,
+		.scatteringCoefficients = '0.6830134553650706 0.5830134553650706 0.32444156446229333'f,
 		},
 		{// earth
 		.atmosphereRadius = 6470e3,
@@ -1201,6 +1206,16 @@ main (int argc, string *argv)
 	#define SUBDIV 8
 	auto quadsphere = create_quadsphere();
 	int planetary_queue = Scene_Entqueue ([main_window scene], "planetary");
+
+	entity_t moon_ent = Scene_CreateEntity ([main_window scene]);
+	add_target (moon_ent);
+	Entity_SetModel (moon_ent, Model_LoadMesh ("quadsphere", quadsphere));
+	Entity_SetEntqueue (moon_ent, planetary_queue);
+	Entity_SetSubmeshMask (moon_ent, ~(1<<4));
+	Entity_SetShadowFlags (moon_ent, true, true, false);
+	Transform_SetLocalPosition(Entity_GetTransform (moon_ent), { -171550000.0, -245760020.0, 230400020.0, 1});
+	Transform_SetLocalScale(Entity_GetTransform (moon_ent), { 1738e3, 1738e3, 1738e3, 1});
+
 	entity_t QuadSphere_ent = Scene_CreateEntity ([main_window scene]);
 	add_target (QuadSphere_ent);
 	Entity_SetModel (QuadSphere_ent, Model_LoadMesh ("quadsphere", quadsphere));

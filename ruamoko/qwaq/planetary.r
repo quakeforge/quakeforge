@@ -1,3 +1,5 @@
+#include "../../libs/video/renderer/vulkan/shader/general.h"
+
 #define GLSL(op) @intrinsic(OpExtInst, "GLSL.std.450", op)
 #define SPV(op) @intrinsic(op)
 
@@ -27,6 +29,8 @@ genFType fwidth(genFType p) = SPV(OpFwidth);
 genFType normalize(genFType x) =  GLSL(Normalize);
 genDType normalize(genDType x) =  GLSL(Normalize);
 };
+
+#include "planetary.h"
 
 #define highp
 #define gvec4 @vector(gsampler.sample_type, 4)
@@ -85,6 +89,8 @@ vec4 unpackSnorm4x8(highp uint p) = GLSL(UnpackSnorm4x8);
 	uint  colors;
 	vec4  base_color;
 	vec4  fog;
+	PlanetaryData *planetary;
+	float near_plane;
 };
 
 vec4
@@ -127,6 +133,36 @@ main ()
 		dir • normalize(Model[1].xyz),
 		dir • normalize(Model[2].xyz)
 	);
+	auto sun = planetary.bodies;
+	float l = 1;
+	if (sun) {
+		auto moon = planetary.bodies + 2;
+		auto p = position.xyz;
+		auto s = sun.planetCenter;
+		auto R = sun.planetRadius;
+		auto b = moon.planetCenter;
+		auto r = moon.planetRadius;
+
+		float x = (p - b) • normalize(b - s);
+		if (x > 0) {
+			float y = length ((p - b) - x * normalize (b - s));
+			float D = length (b - s);
+			float mo = (R + r) / D;
+			float mi = (R - r) / D;
+			float ho = r / mo;
+			float hi = r / mi;
+			float yo = mo * (x + ho);
+			float yi = mi * (x - hi);
+			float lo = (y - abs(yi))/(yo - abs(yi));
+			float R1 = r*(D + x)/(R * x);
+			float li = yi > 0 ? 1 - R1 * R1 : 0;
+			l = mix (li, 1, clamp(lo, 0, 1));
+		}
+
+		auto d = position.xyz - sun.planetCenter;
+		l *= max(0, normalize(dir) • -normalize(d));
+	}
+
 	vec4 c, e;
 	c = surf_map(local_dir, 0);
 	e = surf_map(local_dir, 1) * 2;
@@ -134,7 +170,7 @@ main ()
 	//vec4        cmap = surf_map (dir, 2);
 	//c += texture (Palette, vec2 (cmap.x, rows.x)) * cmap.y;
 	//c += texture (Palette, vec2 (cmap.z, rows.y)) * cmap.w;
-	frag_color = c * color + e * 2;
+	frag_color = l * c * color + e * 2;
 	//frag_emission = e;
 	//frag_normal = vec4(normalize(dir), 1);
 }

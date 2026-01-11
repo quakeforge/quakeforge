@@ -639,6 +639,23 @@ render_graph = {
 					};
 				};
 			};
+			planetary = {
+				//                            palette                skin
+				descriptorSets = (matrix_set, texture_set, bone_set, texture_set);
+				pushConstants = {
+					vertex|fragment = {
+						Model = mat4;
+						enabled_mask = uint;
+						blend = float;
+						debug_bone = uint;
+						colors = uint;
+						base_color = vec4;
+						fog = vec4;
+						planetary = ptr;
+						near_plane = float;
+					};
+				};
+			};
 			depth_layout = {
 				descriptorSets = (matrix_set, texture_set, bone_set);
 				pushConstants = {
@@ -2088,7 +2105,7 @@ render_graph = {
 							);
 							vertexInput = $mesh.vertexInput;
 							inputAssembly = $mesh.inputAssembly;
-							layout = $mesh.layout;
+							layout = $mesh.planetary;
 							dynamic = {
 								dynamicState = (
 									viewport,
