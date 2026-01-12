@@ -5,9 +5,11 @@ noinst_LTLIBRARIES += @VID_TARGETS@ @vid_libs@
 EXTRA_LTLIBRARIES += \
 	libs/video/targets/libQFx11.la \
 	libs/video/targets/libQFwin.la \
+	libs/video/targets/libQFwl.la \
 	libs/video/targets/libvid_common.la \
 	libs/video/targets/libvid_win.la \
-	libs/video/targets/libvid_x11.la
+	libs/video/targets/libvid_x11.la \
+	libs/video/targets/libvid_wl.la
 
 win_gl_src = libs/video/targets/vid_win_gl.c
 win_sw_src = libs/video/targets/vid_win_sw.c
@@ -25,6 +27,15 @@ if X11_VULKAN
 x11_src = $(x11_gl_src) $(x11_sw_src) $(x11_vulkan_src)
 else
 x11_src = $(x11_gl_src) $(x11_sw_src)
+endif
+
+wl_gl_src = libs/video/targets/vid_wl_gl.c
+wl_sw_src = libs/video/targets/vid_wl_sw.c
+wl_vulkan_src = libs/video/targets/vid_wl_vulkan.c
+if WL_VULKAN
+wl_src = $(wl_gl_src) $(wl_sw_src) $(wl_vulkan_src)
+else
+wl_src = $(wl_gl_src) $(wl_sw_src)
 endif
 
 js_libs = libs/util/libQFutil.la
@@ -51,6 +62,16 @@ libs_video_targets_libvid_win_la_CFLAGS=		$(AM_CFLAGS) @PREFER_NON_PIC@ $(X_CFLA
 libs_video_targets_libvid_win_la_LDFLAGS=		@STATIC@
 EXTRA_libs_video_targets_libvid_win_la_SOURCES= $(win_vulkan_src)
 
+libs_video_targets_libvid_wl_la_SOURCES = \
+	libs/video/targets/in_wl.c \
+	libs/video/targets/context_wl.c \
+	libs/video/targets/dga_check.c \
+    libs/video/targets/xdg-shell-protocol.c \
+	$(wl_src)
+libs_video_targets_libvid_wl_la_CFLAGS=		$(AM_CFLAGS) @PREFER_NON_PIC@ $(X_CFLAGS)
+libs_video_targets_libvid_wl_la_LDFLAGS=		@STATIC@
+EXTRA_libs_video_targets_libvid_wl_la_SOURCES= $(wl_vulkan_src)
+
 #
 # MS Windows
 #
@@ -70,3 +91,13 @@ libs_video_targets_libQFx11_la_SOURCES=		libs/video/targets/vid_x11.c
 libs_video_targets_libQFx11_la_LDFLAGS=		@STATIC@
 libs_video_targets_libQFx11_la_LIBADD=			$(x11_libs)
 libs_video_targets_libQFx11_la_DEPENDENCIES=	$(x11_libs)
+
+#
+# Wayland
+#
+wl_libs=libs/video/targets/libvid_common.la libs/video/targets/libvid_wl.la
+libs_video_targets_libQFwl_la_CFLAGS=			$(AM_CFLAGS) @PREFER_NON_PIC@ $(X_CFLAGS)
+libs_video_targets_libQFwl_la_SOURCES=		libs/video/targets/vid_wl.c
+libs_video_targets_libQFwl_la_LDFLAGS=		@STATIC@
+libs_video_targets_libQFwl_la_LIBADD=			$(wl_libs)
+libs_video_targets_libQFwl_la_DEPENDENCIES=	$(wl_libs)

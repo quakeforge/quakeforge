@@ -30,7 +30,7 @@
 bin_PROGRAMS += @QW_TARGETS@
 
 EXTRA_PROGRAMS += \
-	qw-client-win qw-client-x11 qw-server qw-master
+	qw-client-win qw-client-x11 qw-client-wl qw-server qw-master
 
 noinst_LIBRARIES += @qw_libs@
 EXTRA_LIBRARIES += qw/source/libqw_client.a qw/source/libqw_common.a qw/source/libqw_sdl.a qw/source/libqw_server.a
@@ -136,3 +136,20 @@ qw_client_win_SOURCES=	qw/source/cl_sys_win.c $(tracy_src) $(tracyvk_src)
 qw_client_win_LDADD= $(qw_client_win_libs) -lgdi32 $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_win_LDFLAGS=  $(common_ldflags)
 qw_client_win_DEPENDENCIES= $(qw_client_win_libs)
+
+# ... Wayland
+qw_client_wl_libs= \
+			$(qw_client_libs) \
+			$(qw_cl_plugin_LIBS) \
+			libs/video/renderer/libQFrenderer.la \
+			libs/models/libQFmodels.la \
+			libs/video/targets/libQFwl.la \
+			$(qw_client_LIBS)
+qw_client_wl_SOURCES=	qw/source/cl_sys_unix.c $(tracy_src) $(tracyvk_src)
+qw_client_wl_LDADD= $(qw_client_wl_libs) \
+			$(VIDMODE_LIBS) $(WAYLAND_LIBS) \
+			$(NET_LIBS) \
+			$(LIBCURL_LIBS) $(DL_LIBS)
+qw_client_wl_LDFLAGS=	$(common_ldflags)
+qw_client_wl_DEPENDENCIES= $(qw_client_wl_libs)
+
