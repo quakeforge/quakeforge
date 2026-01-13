@@ -123,6 +123,13 @@ static const struct wl_registry_listener registry_listener = {
 };
 
 void
+WL_ProcessEvents (void)
+{
+    struct timespec ts = {};
+    wl_display_dispatch_timeout(wl_disp, &ts);
+}
+
+void
 WL_CloseDisplay (void)
 {
     wl_display_disconnect (wl_disp);
@@ -170,3 +177,5 @@ WL_OpenDisplay (void)
     wl_display_roundtrip (wl_disp);
 }
 
+extern int wl_force_link;
+static __attribute__((used)) int *context_wl_force_link = &wl_force_link;

@@ -84,9 +84,6 @@ wl_sw8_8_update (sw_ctx_t *ctx, vrect_t *rects)
         wl_surface_damage_buffer (wl_surf, 0, 0, INT32_MAX, INT32_MAX);
         wl_surface_commit (wl_surf);
     }
-
-    struct timespec ts = {};
-    wl_display_dispatch_timeout(wl_disp, &ts);
 }
 
 static sw_framebuffer_t swfb;

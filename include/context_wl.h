@@ -44,11 +44,25 @@ extern struct xdg_toplevel *xdg_toplevel;
 
 extern bool wl_surface_configured;
 
+bool WL_SetGamma (double);
+void WL_SetScreenSaver (void);
 void WL_CloseDisplay (void);
+void WL_CreateNullCursor (void);
 void WL_CreateWindow (int, int);
+void WL_ForceViewPort (void);
 void WL_UpdateFullscreen (int fullscreen);
 void WL_Init_Cvars (void);
 void WL_OpenDisplay (void);
+void WL_ProcessEvent (void);
+void WL_ProcessEvents (void);
+void WL_RestoreGamma (void);
+void WL_RestoreScreenSaver (void);
+void WL_RestoreVidMode (void);
+void WL_SetCaption (const char *);
+void WL_SetVidMode (int, int);
+void WL_SaveMouseAcceleration (void);
+void WL_RemoveMouseAcceleration (void);
+void WL_RestoreMouseAcceleration (void);
 
 struct vid_internal_s;
 struct gl_ctx_s *WL_GL_Context (struct vid_internal_s *);

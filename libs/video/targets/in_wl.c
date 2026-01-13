@@ -67,3 +67,29 @@
 #include "qfselect.h"
 #include "vid_internal.h"
 
+static int wl_driver_handle = -1;
+
+static void
+in_wl_process_events (void *data)
+{
+    WL_ProcessEvents ();
+}
+
+static void
+in_wl_init (void *data)
+{
+}
+
+static in_driver_t in_wl_driver = {
+    .init           = in_wl_init,
+    .process_events = in_wl_process_events,
+};
+
+static void __attribute__((constructor))
+in_wl_register_driver (void)
+{
+    wl_driver_handle = IN_RegisterDriver (&in_wl_driver, nullptr);
+}
+
+int wl_force_link;
+
