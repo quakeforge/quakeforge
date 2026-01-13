@@ -2821,6 +2821,9 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	ADD_DATA (space, mod->func_declarations);
 	ADD_DATA (space, mod->func_definitions);
 
+	if (pr->error_count) {
+		return true;
+	}
 	return write_output (filename, space->data,
 						 space->size * sizeof (pr_type_t));
 }
