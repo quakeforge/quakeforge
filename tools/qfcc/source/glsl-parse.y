@@ -316,6 +316,10 @@ make_param (specifier_t spec)
 
 %%
 
+prog:translation_unit
+	|
+	;
+
 translation_unit
 	: external_declaration
 	| translation_unit external_declaration
