@@ -1690,8 +1690,12 @@ rescan:
 }
 
 static yyscan_t *
-rua_init_scanner (rua_extra_t *extra, rua_parser_t *parser)
+rua_init_scanner (rua_extra_t *extra, rua_parser_t *parser, rua_ctx_t *ctx)
 {
+	auto macros = ctx->macros;
+	if (!macros) {
+		macros = new_symtab (cpp_macros, stab_global);
+	}
 	*extra = (rua_extra_t) {
 		.parser = parser,
 		.pre_state = pre_yypstate_new (),
@@ -1699,7 +1703,7 @@ rua_init_scanner (rua_extra_t *extra, rua_parser_t *parser)
 		.cond_stack = DARRAY_STATIC_INIT (8),
 		.include_stack = DARRAY_STATIC_INIT (8),
 		.dstr = dstring_new (),
-		.macro_tab = new_symtab (cpp_macros, stab_global),
+		.macro_tab = macros,
 		.location = { 1, 1, 1, 1, pr.loc.file },
 	};
 	yyscan_t    scanner;
@@ -1758,7 +1762,7 @@ rua_parse (FILE *in, rua_parser_t *parser, rua_ctx_t *ctx)
 	rua_extra_t extra;
 
 	ctx->extra = &extra;
-	ctx->scanner = rua_init_scanner (&extra, parser);
+	ctx->scanner = rua_init_scanner (&extra, parser, ctx);
 	yyset_in (in, ctx->scanner);
 	int status = rua_do_scan (ctx->scanner, ctx);
 	rua_destroy_scanner (ctx->scanner, &extra);
@@ -1773,7 +1777,7 @@ rua_parse_string (const char *str, rua_parser_t *parser, rua_ctx_t *ctx)
 	rua_extra_t extra;
 
 	ctx->extra = &extra;
-	ctx->scanner = rua_init_scanner (&extra, parser);
+	ctx->scanner = rua_init_scanner (&extra, parser, ctx);
 	yy_scan_string (str, ctx->scanner);
 	int status = rua_do_scan (ctx->scanner, ctx);
 	rua_destroy_scanner (ctx->scanner, &extra);
