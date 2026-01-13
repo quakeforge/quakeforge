@@ -61,6 +61,13 @@ int 		VID_options_items = 1;
 static void
 WL_VID_Shutdown (void)
 {
+    Sys_MaskPrintf(SYS_wayland, "WL_VID_Shutdown\n");
+
+    WL_CloseDisplay();
+
+    if (vid_internal.unload) {
+        vid_internal.unload(vid_internal.ctx);
+    }
 }
 
 static void

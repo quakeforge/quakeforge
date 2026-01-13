@@ -86,7 +86,7 @@ zxdg_toplevel_decoration_configure (void *data,
         Sys_Error ("Wayland: Compositor expects client-side decorations, which we don't support.");
     }
 
-    Sys_MaskPrintf(SYS_wayland, "Wayland compositor will give server-side decorations.\n");
+    Sys_MaskPrintf (SYS_wayland, "Wayland compositor will give server-side decorations.\n");
 }
 
 static const struct zxdg_toplevel_decoration_v1_listener toplevel_decoration_listener = {
@@ -94,9 +94,40 @@ static const struct zxdg_toplevel_decoration_v1_listener toplevel_decoration_lis
 };
 
 static void
+toplevel_configure (void *data, struct xdg_toplevel *toplvl,
+                    int32_t width, int32_t height, struct wl_array *states)
+{
+}
+
+static void
+toplevel_close (void *data, struct xdg_toplevel *toplvl)
+{
+    Sys_Quit ();
+}
+
+static void
+toplevel_configure_bounds (void *data, struct xdg_toplevel *toplvl,
+                            int32_t width, int32_t height)
+{
+}
+
+static void
+toplevel_wm_capabilities (void *data, struct xdg_toplevel *toplvl,
+                            struct wl_array *capabilities)
+{
+}
+
+static const struct xdg_toplevel_listener toplevel_listener = {
+    .configure = toplevel_configure,
+    .close = toplevel_close,
+    .configure_bounds = toplevel_configure_bounds,
+    .wm_capabilities = toplevel_wm_capabilities,
+};
+
+static void
 xdg_surface_configure (void *data, struct xdg_surface *surf, uint32_t serial)
 {
-    xdg_surface_ack_configure(surf, serial);
+    xdg_surface_ack_configure (surf, serial);
     wl_surface_configured = true;
 }
 
@@ -147,12 +178,27 @@ void
 WL_ProcessEvents (void)
 {
     struct timespec ts = {};
-    wl_display_dispatch_timeout(wl_disp, &ts);
+    wl_display_dispatch_timeout (wl_disp, &ts);
+}
+
+static void
+wl_destroy_window (void)
+{
+    xdg_toplevel_destroy (xdg_toplevel);
+    xdg_surface_destroy (xdg_surface);
+    wl_surface_destroy (wl_surf);
 }
 
 void
 WL_CloseDisplay (void)
 {
+    Sys_MaskPrintf (SYS_wayland, "WL_CloseDisplay\n");
+
+    wl_destroy_window ();
+
+    // TODO: Remove registry globals
+
+    wl_registry_destroy (wl_reg);
     wl_display_disconnect (wl_disp);
 }
 
@@ -174,6 +220,7 @@ WL_CreateWindow (int width, int height)
     xdg_surface_add_listener (xdg_surface, &surface_listener, nullptr);
 
     xdg_toplevel = xdg_surface_get_toplevel (xdg_surface);
+    xdg_toplevel_add_listener (xdg_toplevel, &toplevel_listener, nullptr);
     xdg_toplevel_set_title (xdg_toplevel, "Hello");
 
     if (decoration_manager) {
