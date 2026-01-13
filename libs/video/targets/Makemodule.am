@@ -66,7 +66,6 @@ libs_video_targets_libvid_wl_la_SOURCES = \
 	libs/video/targets/in_wl.c \
 	libs/video/targets/context_wl.c \
 	libs/video/targets/dga_check.c \
-    libs/video/targets/xdg-shell-protocol.c \
 	$(wl_src)
 libs_video_targets_libvid_wl_la_CFLAGS=		$(AM_CFLAGS) @PREFER_NON_PIC@ $(X_CFLAGS)
 libs_video_targets_libvid_wl_la_LDFLAGS=		@STATIC@

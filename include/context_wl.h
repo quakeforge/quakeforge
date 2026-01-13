@@ -41,6 +41,8 @@ extern struct wl_surface *wl_surf;
 extern struct xdg_wm_base *xdg_wm_base;
 extern struct xdg_surface *xdg_surface;
 extern struct xdg_toplevel *xdg_toplevel;
+extern struct zxdg_decoration_manager_v1 *decoration_manager;
+extern struct zxdg_toplevel_decoration_v1 *toplevel_decoration;
 
 extern bool wl_surface_configured;
 
