@@ -125,7 +125,7 @@ static const struct wl_registry_listener registry_listener = {
 void
 WL_CloseDisplay (void)
 {
-    wl_display_disconnect(wl_disp);
+    wl_display_disconnect (wl_disp);
 }
 
 void
@@ -143,10 +143,10 @@ WL_CreateWindow (int width, int height)
 {
     wl_surf = wl_compositor_create_surface (wl_comp);
     xdg_surface = xdg_wm_base_get_xdg_surface (xdg_wm_base, wl_surf);
-    xdg_surface_add_listener(xdg_surface, &surface_listener, nullptr);
+    xdg_surface_add_listener (xdg_surface, &surface_listener, nullptr);
 
-    xdg_toplevel = xdg_surface_get_toplevel(xdg_surface);
-    xdg_toplevel_set_title(xdg_toplevel, "Hello");
+    xdg_toplevel = xdg_surface_get_toplevel (xdg_surface);
+    xdg_toplevel_set_title (xdg_toplevel, "Hello");
 
     wl_surface_commit (wl_surf);
 }

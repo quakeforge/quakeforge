@@ -104,7 +104,7 @@ WL_VID_Init (byte *palette, byte *colormap)
     WL_CreateWindow (viddef.width, viddef.height);
     vid_internal.create_context (vid_internal.ctx);
 
-    WL_VID_SetPalette(palette, colormap);
+    WL_VID_SetPalette (palette, colormap);
     
     Sys_MaskPrintf (SYS_vid, "Video mode %dx%d initialized.\n", viddef.width, viddef.height);
 
