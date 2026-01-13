@@ -90,9 +90,9 @@ static void
 yyerror (YYLTYPE *yylloc, rua_ctx_t *ctx, const char *s)
 {
 #ifdef GLSL_YYERROR_VERBOSE
-	error (0, "%s %s\n", glsl_yytext, s);
+	error (0, "'%s' %s\n", glsl_yytext, s);
 #else
-	error (0, "%s before %s", s, glsl_yytext);
+	error (0, "%s before '%s'", s, glsl_yytext);
 #endif
 	exit(1);
 }
