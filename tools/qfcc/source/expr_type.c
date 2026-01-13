@@ -333,6 +333,10 @@ resolve_reference (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
 	auto type = resolve_type (args[0], ctx);
 	if (arg_count > 1) {
+		if (!is_integral_val (args[1])) {
+			error (args[1], "not a constant integer");
+			return nullptr;
+		}
 		unsigned tag = expr_integral (args[1]);
 		type = tagged_reference_type (tag, type);
 	} else {

@@ -1244,6 +1244,9 @@ typespec_reserved
 				};
 			} else {
 				auto type = resolve_type ($1, ctx);
+				if (!type) {
+					type = type_default;
+				}
 				$$ = type_spec (type);
 			}
 		}
