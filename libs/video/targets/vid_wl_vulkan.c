@@ -164,10 +164,9 @@ static VkSurfaceKHR
 wl_vulkan_create_surface (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
-	vulkan_presentation_t *pres = ctx->presentation;
-    (void)pres;
+	
+    vulkan_presentation_t *pres = ctx->presentation;
 	VkInstance inst = ctx->instance->instance;
-    (void)inst;
 	VkSurfaceKHR surface = nullptr;
 
     VkWaylandSurfaceCreateInfoKHR createInfo = {
