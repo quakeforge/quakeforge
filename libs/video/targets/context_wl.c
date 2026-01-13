@@ -46,8 +46,8 @@
 #include <locale.h>
 
 #include <wayland-client.h>
-#include "xdg-shell-client-protocol.h"
-#include "xdg-client-decoration-protocol.h"
+#include "libs/video/targets/xdg-shell-client-protocol.h"
+#include "libs/video/targets/xdg-decoration-client-protocol.h"
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"

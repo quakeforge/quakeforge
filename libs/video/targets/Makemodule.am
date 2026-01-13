@@ -62,10 +62,40 @@ libs_video_targets_libvid_win_la_CFLAGS=		$(AM_CFLAGS) @PREFER_NON_PIC@ $(X_CFLA
 libs_video_targets_libvid_win_la_LDFLAGS=		@STATIC@
 EXTRA_libs_video_targets_libvid_win_la_SOURCES= $(win_vulkan_src)
 
+xdg_shell_protocol_xml = /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml
+xdg_shell_client_protocol_hinc = libs/video/targets/xdg-shell-client-protocol.hinc
+$(xdg_shell_client_protocol_hinc): $(xdg_shell_protocol_xml)
+	wayland-scanner client-header $< $@.t && $(am__mv) $@.t $@
+xdg_shell_protocol_cinc = libs/video/targets/xdg-shell-protocol.cinc
+$(xdg_shell_protocol_cinc): $(xdg_shell_protocol_xml)
+	wayland-scanner private-code $< $@.t && $(am__mv) $@.t $@
+
+xdg_decoration_protocol_xml = /usr/share/wayland-protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml
+xdg_decoration_client_protocol_hinc = libs/video/targets/xdg-decoration-client-protocol.hinc
+$(xdg_decoration_client_protocol_hinc): $(xdg_decoration_protocol_xml)
+	wayland-scanner client-header $< $@.t && $(am__mv) $@.t $@
+xdg_decoration_protocol_cinc = libs/video/targets/xdg-decoration-protocol.cinc
+$(xdg_decoration_protocol_cinc): $(xdg_decoration_protocol_xml)
+	wayland-scanner private-code $< $@.t && $(am__mv) $@.t $@
+
+BUILT_SOURCES += \
+    $(xdg_shell_client_protocol_hinc) \
+    $(xdg_shell_protocol_cinc) \
+    $(xdg_decoration_client_protocol_hinc) \
+    $(xdg_decoration_protocol_cinc)
+
+CLEANFILES += \
+    $(xdg_shell_client_protocol_hinc) \
+	$(xdg_shell_protocol_cinc) \
+    $(xdg_decoration_client_protocol_hinc) \
+    $(xdg_decoration_protocol_cinc)
+
 libs_video_targets_libvid_wl_la_SOURCES = \
 	libs/video/targets/in_wl.c \
 	libs/video/targets/context_wl.c \
 	libs/video/targets/dga_check.c \
+    libs/video/targets/xdg-shell-protocol.c \
+    libs/video/targets/xdg-decoration-protocol.c \
 	$(wl_src)
 libs_video_targets_libvid_wl_la_CFLAGS=		$(AM_CFLAGS) @PREFER_NON_PIC@ $(X_CFLAGS)
 libs_video_targets_libvid_wl_la_LDFLAGS=		@STATIC@
