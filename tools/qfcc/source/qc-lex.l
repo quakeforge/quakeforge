@@ -1782,7 +1782,9 @@ rua_parse_string (const char *str, rua_parser_t *parser, rua_ctx_t *ctx)
 	int status = rua_do_scan (ctx->scanner, ctx);
 	rua_destroy_scanner (ctx->scanner, &extra);
 	ctx->scanner = nullptr;
-	pr.loc = loc;
+	if (ctx->restore_location) {
+		pr.loc = loc;
+	}
 	return status;
 }
 

@@ -240,6 +240,7 @@ typedef struct rua_ctx_s {
 	bool        extdecl;
 	bool        force_lookup;
 	bool        sub_parse;
+	bool        restore_location;
 } rua_ctx_t;
 
 extern language_t lang_qc;
