@@ -100,7 +100,7 @@ QCDIRS=-I$(top_srcdir) -I$(top_srcdir)/ruamoko/include -I$(top_srcdir)/include
 QCPPFLAGS=$(QCSYSTEM) $(QCDIRS) --embed-dir=$(top_builddir)
 QCLINKFLAGS=--no-default-paths -Lruamoko/lib
 QCOMPILE=$(QFCC) $(QCFLAGS) -Wno-integer-divide $(QCPPFLAGS)
-QSPIRV=$(QFCC) $(QCFLAGS) -Ctarget=spir-v
+QSPIRV=$(QFCC) $(QCFLAGS) -Ctarget=spir-v $(QCSYSTEM) -I$(top_srcdir)/ruamoko/shader
 QLINK=$(QFCC) $(QCFLAGS) $(QCLINKFLAGS)
 MKDIR_P = @MKDIR_P@
 
