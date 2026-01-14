@@ -42,9 +42,7 @@
 
 //FIXME these shouldn't exist (use param attributes
 #define highp
-#define inout @inout
 #define lowp
-#define out @out
 #define readonly
 #define writeonly
 

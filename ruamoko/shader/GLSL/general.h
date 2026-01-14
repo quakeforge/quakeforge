@@ -66,8 +66,8 @@ genFType mod(genFType x, float y) = SPV(OpFMod) [x, @construct (genFType, y)];
 genFType mod(genFType x, genFType y) = SPV(OpFMod);
 genDType mod(genDType x, double y) = SPV(OpFMod) [x, @construct (genDType, y)];
 genDType mod(genDType x, genDType y) = SPV(OpFMod);
-genFType modf(genFType x, out genFType i);
-genDType modf(genDType x, out genDType i);
+genFType modf(genFType x, @out genFType i);
+genDType modf(genDType x, @out genDType i);
 genFType min(genFType x, genFType y) = GLSL(FMin);
 genFType min(genFType x, float y) = GLSL(FMin) [x, @construct (genFType, y)];
 genDType min(genDType x, genDType y) = GLSL(FMin);
@@ -150,8 +150,8 @@ gvec(genIType) intBitsToFloat(highp genIType value) = SPV(OpBitcast);
 gvec(genUType) uintBitsToFloat(highp genUType value) = SPV(OpBitcast);
 genFType fma(genFType a, genFType b, genFType c) = GLSL(Fma);
 genDType fma(genDType a, genDType b, genDType c) = GLSL(Fma);
-genFType frexp(highp genFType x, out highp genIType exp) = GLSL(Frexp);
-genDType frexp(genDType x, out genIType exp) = GLSL(Frexp);
+genFType frexp(highp genFType x, @out highp genIType exp) = GLSL(Frexp);
+genDType frexp(genDType x, @out genIType exp) = GLSL(Frexp);
 genFType ldexp(highp genFType x, highp genIType exp) = GLSL(Ldexp);
 genDType ldexp(genDType x, genIType exp) = GLSL(Ldexp);
 
@@ -241,15 +241,15 @@ bvec not(bvec x) = SPV(OpLogicalNot);
 
 //integer functions
 genUType uaddCarry(highp genUType x, highp genUType y,
-                   out lowp genUType carry);
+                   @out lowp genUType carry);
 genUType usubBorrow(highp genUType x, highp genUType y,
-                    out lowp genUType borrow);
+                    @out lowp genUType borrow);
 void umulExtended(highp genUType x, highp genUType y,
-                  out highp genUType msb,
-                  out highp genUType lsb);
+                  @out highp genUType msb,
+                  @out highp genUType lsb);
 void imulExtended(highp genIType x, highp genIType y,
-                  out highp genIType msb,
-                  out highp genIType lsb);
+                  @out highp genIType msb,
+                  @out highp genIType lsb);
 genIType bitfieldExtract(genIType value, int offset, int bits)
 	= SPV(OpBitFieldSExtract);
 genUType bitfieldExtract(genUType value, int offset, int bits)
