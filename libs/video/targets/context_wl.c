@@ -269,27 +269,30 @@ WL_Init_Cvars (void)
 void
 WL_CreateWindow (int width, int height)
 {
-    wl_surf = wl_compositor_create_surface (wl_comp);
-    xdg_surface = xdg_wm_base_get_xdg_surface (xdg_wm_base, wl_surf);
-    xdg_surface_add_listener (xdg_surface, &surface_listener, nullptr);
+	wl_surf = wl_compositor_create_surface (wl_comp);
+	xdg_surface = xdg_wm_base_get_xdg_surface (xdg_wm_base, wl_surf);
+	xdg_surface_add_listener (xdg_surface, &surface_listener, nullptr);
 
-    xdg_toplevel = xdg_surface_get_toplevel (xdg_surface);
-    xdg_toplevel_add_listener (xdg_toplevel, &toplevel_listener, nullptr);
-    xdg_toplevel_set_title (xdg_toplevel, "Hello");
+	xdg_toplevel = xdg_surface_get_toplevel (xdg_surface);
+	xdg_toplevel_add_listener (xdg_toplevel, &toplevel_listener, nullptr);
+	xdg_toplevel_set_title (xdg_toplevel, "Hello");
 
-    if (decoration_manager) {
-        Sys_MaskPrintf (SYS_wayland, "Initializing decorations\n");
+	if (decoration_manager) {
+		Sys_MaskPrintf (SYS_wayland, "Initializing decorations\n");
 
-        toplevel_decoration = zxdg_decoration_manager_v1_get_toplevel_decoration (
-                decoration_manager, xdg_toplevel);
-        zxdg_toplevel_decoration_v1_add_listener (toplevel_decoration, &toplevel_decoration_listener, nullptr);
+		toplevel_decoration = zxdg_decoration_manager_v1_get_toplevel_decoration (
+				decoration_manager, xdg_toplevel);
+		zxdg_toplevel_decoration_v1_add_listener (toplevel_decoration,
+				&toplevel_decoration_listener, nullptr);
 
-        zxdg_toplevel_decoration_v1_set_mode (toplevel_decoration,
-                ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
-    }
+		zxdg_toplevel_decoration_v1_set_mode (toplevel_decoration,
+			ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+	}
 
-    wl_surface_commit (wl_surf);
-    wl_display_roundtrip (wl_disp);
+	wl_surface_commit (wl_surf);
+	wl_display_roundtrip (wl_disp);
+
+	WL_SetCaption (va ("%s", PACKAGE_STRING));
 }
 
 void
@@ -307,6 +310,18 @@ WL_OpenDisplay (void)
 
 	wl_registry_add_listener (wl_reg, &registry_listener, nullptr);
 	wl_display_roundtrip (wl_disp);
+}
+
+void
+WL_SetCaption (const char *text)
+{
+	if (!xdg_toplevel) {
+		return;
+	}
+
+	Sys_MaskPrintf(SYS_wayland, "WL_SetCaption: %s\n", text);
+
+	xdg_toplevel_set_title(xdg_toplevel, text);
 }
 
 extern int wl_force_link;

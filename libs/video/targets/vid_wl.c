@@ -141,6 +141,14 @@ vid_system_t vid_system = {
 void
 VID_SetCaption (const char *text)
 {
+	if (text && *text) {
+		char       *temp = strdup (text);
+
+		WL_SetCaption (va ("%s: %s", PACKAGE_STRING, temp));
+		free (temp);
+	} else {
+		WL_SetCaption (va ("%s", PACKAGE_STRING));
+	}
 }
 
 bool
