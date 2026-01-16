@@ -2,6 +2,7 @@ ruamoko_libdir = $(datarootdir)/qfcc/lib
 ruamoko_lib_LIBRARIES =
 
 include ruamoko/include/Makemodule.am
+include ruamoko/shader/Makemodule.am
 include ruamoko/lib/Makemodule.am
 include ruamoko/game/Makemodule.am
 include ruamoko/cl_menu/Makemodule.am

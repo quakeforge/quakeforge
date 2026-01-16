@@ -273,6 +273,8 @@ EXTRA_DIST += \
 	ruamoko/qwaq/editor/editbuffer.h \
 	ruamoko/qwaq/editor/editor.h \
 	ruamoko/qwaq/editor/status.h \
+	ruamoko/qwaq/gui/editview.h \
+	ruamoko/qwaq/gui/editwindow.h \
 	ruamoko/qwaq/gui/filewindow.h \
 	ruamoko/qwaq/gui/listview.h \
 	ruamoko/qwaq/input-app.h \
@@ -297,11 +299,19 @@ EXTRA_DIST += \
 	ruamoko/qwaq/ui/titlebar.h \
 	ruamoko/qwaq/ui/view.h \
 	ruamoko/qwaq/ui/window.h \
+	ruamoko/qwaq/atmosphere.r \
+	ruamoko/qwaq/planetary.r \
+	ruamoko/qwaq/planetary.h \
 	ruamoko/qwaq/armature.h \
+	ruamoko/qwaq/camera.h \
+	ruamoko/qwaq/gizmo.h \
 	ruamoko/qwaq/pga3d.h \
+	ruamoko/qwaq/player.h \
+	ruamoko/qwaq/playercam.h \
 	ruamoko/qwaq/config/qwaq-ed-in.cfg \
 	ruamoko/qwaq/config/qwaq-ed-rg.plist
 CLEANFILES += \
 	ruamoko/qwaq/qwaq-curses.log \
 	ruamoko/qwaq/*.dat \
+	ruamoko/qwaq/*.spv \
 	ruamoko/qwaq/*.sym

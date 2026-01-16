@@ -157,6 +157,7 @@ include_qf_progs_gen = \
 
 include_qf_scene = \
 	include/QF/scene/camera.h \
+	include/QF/scene/efrags.h \
 	include/QF/scene/entity.h \
 	include/QF/scene/light.h \
 	include/QF/scene/transform.h \
@@ -172,6 +173,11 @@ include_qf_simd = \
 	include/QF/simd/vec4d.h \
 	include/QF/simd/vec4f.h \
 	include/QF/simd/vec4i.h
+
+include_qf_thread = \
+	include/QF/thread/deque.h \
+	include/QF/thread/notifier.h \
+	include/QF/thread/schedule.h
 
 include_qf_ui = \
 	include/QF/ui/canvas.h \
@@ -205,6 +211,7 @@ include_qf_vulkan = \
 	include/QF/Vulkan/qf_bsp.h \
 	include/QF/Vulkan/qf_compose.h \
 	include/QF/Vulkan/qf_draw.h \
+	include/QF/Vulkan/qf_gizmo.h \
 	include/QF/Vulkan/qf_iqm.h \
 	include/QF/Vulkan/qf_lighting.h \
 	include/QF/Vulkan/qf_lightmap.h \
@@ -276,6 +283,7 @@ EXTRA_DIST += \
 	$(include_qf_progs) \
 	$(include_qf_scene) \
 	$(include_qf_simd) \
+	$(include_qf_thread) \
 	$(include_qf_ui) \
 	$(include_qf_vulkan) \
 	$(qfcc_include_qf) \

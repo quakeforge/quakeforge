@@ -356,6 +356,7 @@ lighting_nonef_src = $(vkshaderpath)/lighting_none.r
 lighting_nonef_c = $(vkshaderpath)/lighting_none.r.spv
 lighting_planef_src = $(vkshaderpath)/lighting_plane.r
 lighting_planef_c = $(vkshaderpath)/lighting_plane.r.spv
+input_attach = $(vkshaderpath)/input_attach.h
 lighting_h = $(vkshaderpath)/lighting.h
 composef_src = $(vkshaderpath)/compose.r
 composef_c = $(vkshaderpath)/compose.r.spv
@@ -383,7 +384,9 @@ painter_c = $(vkshaderpath)/painter.r.spv
 expand_src = $(vkshaderpath)/expand.r
 expand_c = $(vkshaderpath)/expand.r.spv
 queueobj_src = $(vkshaderpath)/queueobj.r
+queueobj_h = $(vkshaderpath)/queueobj.h
 queueobj_c = $(vkshaderpath)/queueobj.r.spv
+normal_offset_r = $(vkshaderpath)/normal_offset.r
 gizmo_src = $(vkshaderpath)/gizmo.r
 gizmo_c = $(vkshaderpath)/gizmo.r.spv
 gizmo_h = $(vkshaderpath)/gizmo.h
@@ -457,17 +460,17 @@ $(light_debug_c): $(light_debug_src) $(lighting_h)
 
 $(light_oit_c): $(light_oit_src) $(lighting_h)
 
-$(lighting_nonef_c): $(lighting_nonef_src) $(lighting_h) $(lighting_main) $(fog_h)
+$(lighting_nonef_c): $(lighting_nonef_src) $(input_attach) $(lighting_h) $(lighting_main) $(fog_h)
 
-$(lighting_cascadef_c): $(lighting_cascadef_src) $(lighting_h) $(lighting_main) $(fog_h)
+$(lighting_cascadef_c): $(lighting_cascadef_src) $(input_attach) $(lighting_h) $(lighting_main) $(fog_h)
 
-$(lighting_cubef_c): $(lighting_cubef_src) $(lighting_h) $(lighting_main) $(fog_h)
+$(lighting_cubef_c): $(lighting_cubef_src) $(input_attach) $(lighting_h) $(lighting_main) $(fog_h)
 
-$(lighting_planef_c): $(lighting_planef_src) $(lighting_h) $(lighting_main) $(fog_h)
+$(lighting_planef_c): $(lighting_planef_src) $(input_attach) $(lighting_h) $(lighting_main) $(fog_h)
 
-$(composef_c): $(composef_src) $(oit_blend) $(oit_h)
+$(composef_c): $(composef_src) $(input_attach) $(oit_blend) $(oit_h)
 
-$(compose_fwdf_c): $(compose_fwdf_src) $(oit_blend) $(oit_h)
+$(compose_fwdf_c): $(compose_fwdf_src) $(input_attach) $(oit_blend) $(oit_h)
 
 $(mesh_c): $(mesh_src) $(matrices_h)
 
@@ -570,6 +573,20 @@ vkshader_c_geom=$(call spvautoc,$(vkshader_src_geom))
 vkshader_c_frag=$(call spvautoc,$(vkshader_src_frag))
 vkshader_c_comp=$(call spvautoc,$(vkshader_src_comp))
 
+vkshader_h = \
+	$(entity_h) \
+	$(fog) \
+	$(gizmo_h) \
+	$(infplane) \
+	$(input_attach) \
+	$(lighting_h) \
+	$(lighting_main) \
+	$(matrices_h) \
+	$(normal_offset_r) \
+	$(oit_h) \
+	$(oit_blend) \
+	$(oit_store) \
+	$(queueobj_h)
 vkshader_src = $(vkshader_src_vert) $(vkshader_src_geom) $(vkshader_src_frag) \
 			   $(vkshader_src_comp)
 vkshader_dep = $(call spvautodep, $(vkshader_src))
@@ -611,65 +628,5 @@ EXTRA_DIST += \
 	$(rp_main_def_src) \
 	$(rp_main_fwd_src) \
 	$(smp_quake_src) \
-	$(fog) \
-	$(infplane) \
-	$(oit_blend) \
-	$(oit_store) \
-	$(oit_h) \
-	$(matrices_h) \
-	$(entity_h) \
-	$(slice_src) \
-	$(linev_src) \
-	$(linef_src) \
-	$(partphysicsc_src) \
-	$(partupdatec_src) \
-	$(particlev_src) \
-	$(particleg_src) \
-	$(particlef_src) \
-	$(spritef_src) \
-	$(sprite_gbufv_src) \
-	$(sprite_gbuff_src) \
-	$(sprite_depthv_src) \
-	$(sprite_depthf_src) \
-	$(twod_depthf_src) \
-	$(twodv_src) \
-	$(twodf_src) \
-	$(quakebspv_src) \
-	$(quakebspf_src) \
-	$(bsp_depth_src) \
-	$(bsp_gbufv_src) \
-	$(bsp_gbuff_src) \
-	$(bsp_shadow_src) \
-	$(bsp_skyf_src) \
-	$(bsp_turbf_src) \
-	$(debug_src) \
-	$(entid_src) \
-	$(expand_src) \
-	$(gizmo_src) \
-	$(gizmo_h) \
-	$(light_entid_src) \
-	$(light_splatv_src) \
-	$(light_debug_src) \
-	$(light_oit_src) \
-	$(lighting_cascadef_src) \
-	$(lighting_cubef_src) \
-	$(lighting_main) \
-	$(lighting_nonef_src) \
-	$(lighting_planef_src) \
-	$(lighting_h) \
-	$(composef_src) \
-	$(compose_fwdf_src) \
-	$(mesh_src) \
-	$(mesh_shadow_src) \
-	$(qskin_fwdf_src) \
-	$(mesh_depth_src) \
-	$(qskin_gbuf_src) \
-	$(mesh_shadow_src) \
-	$(output_src) \
-	$(passthrough_src) \
-	$(fstriangle_src) \
-	$(fstrianglest_src) \
-	$(gridplane_src) \
-	$(pushcolor_src) \
-	$(fisheye_src) \
-	$(waterwarp_src)
+	$(vkshader_src) \
+	$(vkshader_h)
