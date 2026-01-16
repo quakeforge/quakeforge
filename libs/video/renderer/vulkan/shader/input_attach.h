@@ -1,6 +1,6 @@
 #ifndef __input_attach_h
 #define __input_attach_h
-#include "subpassInput.h"
+#include "GLSL/fragment.h"
 
 typedef @image(float, SubpassData) subpassInput;
 

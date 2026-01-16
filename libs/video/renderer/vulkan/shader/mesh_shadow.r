@@ -1,14 +1,4 @@
-//#extension GL_EXT_multiview : enable
-
-#define GLSL(op) @intrinsic(OpExtInst, "GLSL.std.450", op)
-@generic(genFType=@vector(float)) {
-genFType normalize(genFType x) = GLSL(Normalize);
-genFType mix(genFType x, genFType y, genFType a) = GLSL(FMix);
-genFType mix(genFType x, genFType y, float a) = GLSL(FMix)
-	[x, y, @construct (genFType, a)];
-};
-
-//void DebugPrintf(string fmt, ...) = @intrinsic(OpExtInst, "NonSemantic.DebugPrintf", DebugPrintf);
+#include "GLSL/general.h"
 
 [out("Position")] vec4 gl_Position;
 [in("ViewIndex")] int gl_ViewIndex;

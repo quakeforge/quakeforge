@@ -1,82 +1,8 @@
-#include "../../libs/video/renderer/vulkan/shader/general.h"
-
-#define GLSL(op) @intrinsic(OpExtInst, "GLSL.std.450", op)
-#define SPV(op) @intrinsic(op)
-
-@generic(genFType=@vector(float),
-		 genDType=@vector(double),
-		 genIType=@vector(int),
-		 genUType=@vector(uint),
-		 genBType=@vector(bool),
-		 mat=@matrix(float),
-		 vec=[vec2,vec3,vec4,dvec2,dvec3,dvec4],
-		 ivec=[ivec2,ivec3,ivec4],
-		 uvec=[uvec2,uvec3,uvec4],
-		 bvec=[bvec2,bvec3,bvec4]) {
-genFType atan(genFType y, genFType x) = GLSL(Atan2);
-genFType atan(genFType y_over_x) = GLSL(Atan);
-float length(genFType x) = GLSL(Length);
-genFType sign(genFType x) = GLSL(FSign);
-genIType sign(genIType x) = GLSL(SSign);
-genDType sign(genDType x) = GLSL(FSign);
-genFType dFdx(genFType p) = SPV(OpDPdx);
-genFType dFdy(genFType p) = SPV(OpDPdy);
-genFType dFdxFine(genFType p) = SPV(OpDPdxFine);
-genFType dFdyFine(genFType p) = SPV(OpDPdyFine);
-genFType dFdxCoarse(genFType p) = SPV(OpDPdxCoarse);
-genFType dFdyCoarse(genFType p) = SPV(OpDPdyCoarse);
-genFType fwidth(genFType p) = SPV(OpFwidth);
-genFType normalize(genFType x) =  GLSL(Normalize);
-genDType normalize(genDType x) =  GLSL(Normalize);
-};
+#include "GLSL/general.h"
+#include "GLSL/texture.h"
+#include "GLSL/fragment.h"
 
 #include "planetary.h"
-
-#define highp
-#define gvec4 @vector(gsampler.sample_type, 4)
-#define gtex_coord gsampler.tex_coord
-#define gshadow_coord gsamplerSh.shadow_coord
-#define gproj_coord gsampler.proj_coord
-#define __sampler(...) @sampler(@image(__VA_ARGS__))
-#define _sampler(...) __sampler(float __VA_OPT__(,) __VA_ARGS__), \
-                      __sampler(int __VA_OPT__(,) __VA_ARGS__),   \
-                      __sampler(uint __VA_OPT__(,) __VA_ARGS__)
-@generic(gsampler=[_sampler(1D),   _sampler(1D,Array),
-                   _sampler(2D),   _sampler(2D,Array),
-                   _sampler(Cube), _sampler(Cube,Array),
-                   _sampler(3D)],
-         gsamplerSh=[__sampler(float,1D,Depth),
-                     __sampler(float,1D,Array,Depth),
-                     __sampler(float,2D,Depth),
-                     __sampler(float,2D,Array,Depth),
-                     __sampler(float,Cube,Depth)],
-         gsamplerCAS=[__sampler(float,Cube,Array,Depth)]) {
-gvec4 texture(gsampler sampler, gtex_coord P, float bias)
-	= SPV(OpImageSampleImplicitLod) [sampler, P, =ImageOperands.Bias, bias];
-gvec4 texture(gsampler sampler, gtex_coord P)
-	= SPV(OpImageSampleImplicitLod)[sampler, P];
-float texture(gsamplerSh sampler, gshadow_coord P, float bias)
-	= SPV(OpImageSampleDrefImplicitLod)
-		[sampler, [gsamplerSh shadow_coord(P)], [gsamplerSh comp(P)],
-		 =ImageOperands.Bias, bias];
-float texture(gsamplerSh sampler, gshadow_coord P)
-	= SPV(OpImageSampleDrefImplicitLod)
-		[sampler, [gsamplerSh shadow_coord(P)], [gsamplerSh comp(P)]];
-float texture(gsamplerCAS sampler, vec4 P, float comp)
-	= SPV(OpImageSampleDrefImplicitLod)[sampler, P, comp];
-gvec4 textureProj(gsampler sampler, gproj_coord P, float bias)
-	= SPV(OpImageSampleProjImplicitLod) [sampler, P, =ImageOperands.Bias, bias];
-gvec4 textureProj(gsampler sampler, gproj_coord P)
-	= SPV(OpImageSampleProjImplicitLod)[sampler, P];
-};
-vec4 unpackUnorm4x8(highp uint p) = GLSL(UnpackUnorm4x8);
-vec4 unpackSnorm4x8(highp uint p) = GLSL(UnpackSnorm4x8);
-#undef highp
-#undef __sampler
-#undef _sampler
-#undef gtex_coord
-#undef gvec4
-#undef SPV
 
 [uniform, set(1), binding(0)] @sampler(@image(float,2D)) Palette;
 [uniform, set(3), binding(0)] @sampler(@image(float,2D,Array)) SurfMap;

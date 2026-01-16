@@ -1,6 +1,10 @@
 #ifndef __qfcc_shader_glsl_atomic_h
 #define __qfcc_shader_glsl_atomic_h
 
+#ifndef __GLSL__
+#include "_defines.h"
+#endif
+
 // atomic functions
 @overload uint atomicAdd(uintr mem, const uint data)
 	= SPV(OpAtomicIAdd) [mem, Scope.Device, MemorySemantics.Relaxed, data];

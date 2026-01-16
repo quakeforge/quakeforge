@@ -19,31 +19,13 @@
 #define gbvec(base) @vector(bool, @width(base))
 #define gdvec(base) @vector(double, @width(base))
 #define givec(base) @vector(int, @width(base))
-//#define gproj_coord gsampler.proj_coord
-//#define gproj_coord gtexture.proj_coord
-//#define gshadow_coord gsamplerSh.shadow_coord
-//#define gshadow_coord gtextureSh.shadow_coord
-//#define gtex_coord gsampler.tex_coord
-//#define gtex_coord gtexture.tex_coord
 #define guvec(base) @vector(uint, @width(base))
 #define gvec(base) @vector(float, @width(base))
-//#define gvec4 @vector(gimage.sample_type, 4)
-//#define gvec4 @vector(gsampler.sample_type, 4)
-//#define gvec4 @vector(gsubpassInput.sample_type, 4)
-//#define gvec4 @vector(gtexture.sample_type, 4)
-//#define gvec4B @vector(gsamplerB.sample_type, 4)
-//#define gvec4B @vector(gtextureB.sample_type, 4)
-//#define gvec4MS @vector(gimageMS.sample_type, 4)
-//#define gvec4MS @vector(gsamplerMS.sample_type, 4)
-//#define gvec4MS @vector(gsubpassInputMS.sample_type, 4)
-//#define gvec4MS @vector(gtextureMS.sample_type, 4)
 #define intr @reference(int)
 #define uintr @reference(uint)
 
 //FIXME these shouldn't exist (use param attributes
 #define highp
 #define lowp
-#define readonly
-#define writeonly
 
 #endif//__qfcc_shader_glsl_defines_h

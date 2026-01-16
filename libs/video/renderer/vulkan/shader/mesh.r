@@ -1,15 +1,4 @@
-//#extension GL_EXT_multiview : enable
-
-#define GLSL(op) @intrinsic(OpExtInst, "GLSL.std.450", op)
-#define SPV(op) @intrinsic(op)
-@generic(genFType=@vector(float),genBType=@vector(bool)) {
-genFType normalize(genFType x) = GLSL(Normalize);
-genFType clamp(genFType x, genFType minVal, genFType maxVal) = GLSL(FClamp);
-genFType mix(genFType x, genFType y, genFType a) = GLSL(FMix);
-genFType mix(genFType x, genFType y, float a) = GLSL(FMix)
-	[x, y, @construct (genFType, a)];
-genFType mix(genFType x, genFType y, genBType a) = SPV(OpSelect) [a, y, x];
-};
+#include "GLSL/general.h"
 
 [out("Position")] vec4 gl_Position;
 [in("ViewIndex")] int gl_ViewIndex;

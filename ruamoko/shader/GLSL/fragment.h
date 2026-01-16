@@ -1,6 +1,10 @@
 #ifndef __qfcc_shader_glsl_fragment_h
 #define __qfcc_shader_glsl_fragment_h
 
+#ifndef __GLSL__
+#include "_defines.h"
+#endif
+
 //fragment processing functions
 void __discard() =  SPV(OpKill);
 @generic(genFType=@vector(float)) {

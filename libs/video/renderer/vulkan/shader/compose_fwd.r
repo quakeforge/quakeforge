@@ -1,4 +1,4 @@
-#include "general.h"
+#include "GLSL/general.h"
 
 [in("ViewIndex"), flat] int gl_ViewIndex;
 [in("FragCoord")] vec4 gl_FragCoord;

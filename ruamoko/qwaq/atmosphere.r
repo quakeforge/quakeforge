@@ -1,12 +1,10 @@
-#define SHADER "../../libs/video/renderer/vulkan/shader/"
-
 [uniform, readonly, set(1), binding(0)] @block
 #include "../../libs/video/renderer/vulkan/shader/matrices.h"
 ;
 
-#include "../../libs/video/renderer/vulkan/shader/general.h"
+#include "GLSL/general.h"
+#include "GLSL/fragment.h"
 
-#include "../../libs/video/renderer/vulkan/shader/subpassInput.h"
 #define INPUT_ATTACH(ind) \
 	[uniform, input_attachment_index(ind), set(0), binding(ind)] \
 	@image(float, SubpassData)

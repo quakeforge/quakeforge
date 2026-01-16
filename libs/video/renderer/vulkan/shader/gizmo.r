@@ -1,9 +1,8 @@
 //·×÷†•∗∧∨⋀⋆‖⊥△▽ඞ
 //e𝅘e𝅗 ⁰ⁱ²³⁴⁵⁶⁷⁸⁹ ₀₁₂₃₄₅₆₇₈₉
 
-#include "image.h"
-#include "general.h"
-#include "matrix.h"
+#include "GLSL/image.h"
+#include "GLSL/general.h"
 
 [uniform, set(0), binding(0)] @block
 #include "matrices.h"

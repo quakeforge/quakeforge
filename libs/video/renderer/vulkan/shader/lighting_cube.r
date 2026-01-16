@@ -1,8 +1,8 @@
+#include "GLSL/general.h"
+#include "GLSL/texture.h"
+
 #define SHADOW_SAMPLER @sampler(@image(float,Cube,Array,Depth))
 #include "lighting.h"
-#include "general.h"
-#include "integer.h"
-#include "texture.h"
 
 #include "normal_offset.r"
 

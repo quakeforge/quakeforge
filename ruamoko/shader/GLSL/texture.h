@@ -1,5 +1,10 @@
 #ifndef __qfcc_shader_glsl_texture_h
 #define __qfcc_shader_glsl_texture_h
+
+#ifndef __GLSL__
+#include "_defines.h"
+#endif
+
 // texture size functions
 @generic(gsamplerLod=[_sampler(1D),   _sampler(1D,Array),
                       _sampler(2D),   _sampler(2D,Array),

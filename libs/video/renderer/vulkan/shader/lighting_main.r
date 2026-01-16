@@ -1,6 +1,4 @@
-#include "general.h"
-#include "integer.h"
-#include "fppack.h"
+#include "GLSL/general.h"
 
 [buffer, readonly, set(0), binding(2)] @block
 #include "matrices.h"

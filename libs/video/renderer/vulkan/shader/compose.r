@@ -1,4 +1,4 @@
-#include "general.h"
+#include "GLSL/general.h"
 
 #define INPUT_ATTACH_SET 0
 #include "input_attach.h"

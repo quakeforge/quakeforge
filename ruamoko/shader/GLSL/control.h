@@ -1,6 +1,10 @@
 #ifndef __qfcc_shader_glsl_control_h
 #define __qfcc_shader_glsl_control_h
 
+#ifndef __GLSL__
+#include "_defines.h"
+#endif
+
 #if 0
 //shader invocation control functions
 void barrier()
