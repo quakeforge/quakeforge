@@ -68,43 +68,43 @@ typedef struct {
 
 #define Vulkan_vertex_vars_path "ruamoko/shader/GLSL/_vertex_vars.glsl"
 static const char glsl_Vulkan_vertex_vars_str[] = {
-#embed Vulkan_vertex_vars_path
+#embed Vulkan_vertex_vars_path suffix(, 0)
 };
 PARSE_EMBED(Vulkan_vertex_vars, glsl);
 
 #define tessctrl_vars_path "ruamoko/shader/GLSL/_tessctrl_vars.glsl"
 static const char glsl_tessctrl_vars_str[] = {
-#embed "ruamoko/shader/GLSL/_tessctrl_vars.glsl"
+#embed "ruamoko/shader/GLSL/_tessctrl_vars.glsl" suffix(, 0)
 };
 PARSE_EMBED(tessctrl_vars, glsl);
 
 #define tesseval_vars_path "ruamoko/shader/GLSL/_tesseval_vars.glsl"
 static const char glsl_tesseval_vars_str[] = {
-#embed tesseval_vars_path
+#embed tesseval_vars_path suffix(, 0)
 };
 PARSE_EMBED(tesseval_vars, glsl);
 
 #define geometry_vars_path "ruamoko/shader/GLSL/_geometry_vars.glsl"
 static const char glsl_geometry_vars_str[] = {
-#embed geometry_vars_path
+#embed geometry_vars_path suffix(, 0)
 };
 PARSE_EMBED(geometry_vars, glsl);
 
 #define fragment_vars_path "ruamoko/shader/GLSL/_fragment_vars.glsl"
 static const char glsl_fragment_vars_str[] = {
-#embed fragment_vars_path
+#embed fragment_vars_path suffix(, 0)
 };
 PARSE_EMBED(fragment_vars, glsl);
 
 #define compute_vars_path "ruamoko/shader/GLSL/_compute_vars.glsl"
 static const char glsl_compute_vars_str[] = {
-#embed compute_vars_path
+#embed compute_vars_path suffix(, 0)
 };
 PARSE_EMBED(compute_vars, glsl);
 
 #define _system_const_path "ruamoko/shader/GLSL/_system_const.glsl"
 static const char glsl__system_const_str[] = {
-#embed _system_const_path
+#embed _system_const_path suffix(, 0)
 };
 PARSE_EMBED(_system_const, glsl);
 
@@ -113,43 +113,43 @@ PARSE_EMBED(_system_const, glsl);
 
 #define _defines_path "ruamoko/shader/GLSL/_defines.h"
 static const char glsl__defines_str[] = {
-#embed _defines_path
+#embed _defines_path suffix(, 0)
 };
 PARSE_EMBED(_defines, qc);
 
 #define general_functions_path "ruamoko/shader/GLSL/general.h"
 static const char glsl_general_functions_str[] = {
-#embed general_functions_path
+#embed general_functions_path suffix(, 0)
 };
 PARSE_EMBED(general_functions, qc);
 
 #define texture_functions_path "ruamoko/shader/GLSL/texture.h"
 static const char glsl_texture_functions_str[] = {
-#embed texture_functions_path
+#embed texture_functions_path suffix(, 0)
 };
 PARSE_EMBED(texture_functions, qc);
 
 #define atomic_functions_path "ruamoko/shader/GLSL/atomic.h"
 static const char glsl_atomic_functions_str[] = {
-#embed atomic_functions_path
+#embed atomic_functions_path suffix(, 0)
 };
 PARSE_EMBED(atomic_functions, qc);
 
 #define image_functions_path "ruamoko/shader/GLSL/image.h"
 static const char glsl_image_functions_str[] = {
-#embed image_functions_path
+#embed image_functions_path suffix(, 0)
 };
 PARSE_EMBED(image_functions, qc);
 
 #define geometry_functions_path "ruamoko/shader/GLSL/geometry.h"
 static const char glsl_geometry_functions_str[] = {
-#embed geometry_functions_path
+#embed geometry_functions_path suffix(, 0)
 };
 PARSE_EMBED(geometry_functions, qc);
 
 #define fragment_functions_path "ruamoko/shader/GLSL/fragment.h"
 static const char glsl_fragment_functions_str[] = {
-#embed fragment_functions_path
+#embed fragment_functions_path suffix(, 0)
 };
 PARSE_EMBED(fragment_functions, qc);
 
