@@ -28,9 +28,6 @@
 		Boston, MA  02111-1307, USA
 
 */
-#include <sys/mman.h>
-#include <wayland-client-core.h>
-#include <wayland-client-protocol.h>
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -54,6 +51,7 @@
 #include <stdlib.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/types.h>
 
@@ -69,21 +67,94 @@
 #include "vid_internal.h"
 #include "vid_sw.h"
 
-static struct wl_buffer *wl_buf;
+#include <wayland-client.h>
+
+typedef union {
+	byte        bgra[4];
+	uint32_t    value;
+} wl_palette_t;
+
+static wl_palette_t st2d_8to32table[256];
+static byte current_palette[768];
+static bool palette_changed;
+
+typedef struct wl_buffer_data_s {
+    struct wl_buffer *buf;
+    uint32_t *buf_data;
+    size_t size;
+    size_t stride;
+} wl_buffer_data_t;
+
+static wl_buffer_data_t* buffer_data;
 
 static void
 wl_set_palette (sw_ctx_t *ctx, const byte *palette)
 {
+    palette_changed = true;
+
+    if (palette != current_palette) {
+        memcpy (current_palette, palette, sizeof (current_palette));
+    }
+
+	for (int i = 0; i < 256; i++) {
+		const byte *pal = palette + 3 * i;
+		st2d_8to32table[i].bgra[0] = viddef.gammatable[pal[2]];
+		st2d_8to32table[i].bgra[1] = viddef.gammatable[pal[1]];
+		st2d_8to32table[i].bgra[2] = viddef.gammatable[pal[0]];
+		st2d_8to32table[i].bgra[3] = 255;
+	}
+}
+
+static void
+wl_commit_surface (void)
+{
+    if (wl_surface_configured) {
+        wl_surface_attach (wl_surf, buffer_data->buf, 0, 0);
+        wl_surface_damage_buffer (wl_surf, 0, 0, INT32_MAX, INT32_MAX);
+        wl_surface_commit (wl_surf);
+    }
+}
+
+static void
+wl_blit_rect (sw_ctx_t *ctx, vrect_t *rect)
+{
+    sw_framebuffer_t *fb = ctx->framebuffer->buffer;
+
+    auto src = fb->color + rect->y * fb->rowbytes + rect->x;
+    auto dst = buffer_data->buf_data;
+
+    for (int y = rect->height; y-- > 0; ) {
+        for (int x = rect->width; x-- > 0; ) {
+            *dst++ = st2d_8to32table[*src++].value;
+        }
+
+        src += fb->rowbytes - rect->width;
+        dst += buffer_data->stride - rect->width;
+    }
+
+    wl_commit_surface ();
 }
 
 static void
 wl_sw8_8_update (sw_ctx_t *ctx, vrect_t *rects)
 {
-    if (wl_surface_configured) {
-        wl_surface_attach (wl_surf, wl_buf, 0, 0);
-        wl_surface_damage_buffer (wl_surf, 0, 0, INT32_MAX, INT32_MAX);
-        wl_surface_commit (wl_surf);
+    vrect_t full_rect;
+    if (palette_changed) {
+        palette_changed = false;
+        full_rect.x = 0;
+        full_rect.y = 0;
+        full_rect.width = viddef.width;
+        full_rect.height = viddef.height;
+        full_rect.next = nullptr;
+        rects = &full_rect;
     }
+
+    while (rects) {
+        wl_blit_rect (ctx, rects);
+        rects = rects->next;
+    }
+
+    wl_commit_surface ();
 }
 
 static sw_framebuffer_t swfb;
@@ -93,7 +164,7 @@ static void
 shm_name (char *buf)
 {
     struct timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
+	clock_gettime (CLOCK_REALTIME, &ts);
 	auto r = ts.tv_nsec;
 	for (int i = 0; i < 6; ++i) {
 		buf[i] = 'A' + (r & 15) + (r & 16) * 2;
@@ -107,13 +178,13 @@ create_shm_file (void)
     int retries = 100;
     do {
         char name[] = "/wl_shm-XXXXXX";
-        shm_name(name + sizeof(name) - 7);
+        shm_name (name + sizeof(name) - 7);
         
         retries--;
 
-        auto fd = shm_open(name, O_RDWR | O_CREAT | O_EXCL, 0600);
+        auto fd = shm_open (name, O_RDWR | O_CREAT | O_EXCL, 0600);
         if (fd >= 0) {
-            shm_unlink(name);
+            shm_unlink (name);
             return fd;
         }
 
@@ -140,13 +211,46 @@ allocate_shm_file (size_t size)
     return fd;
 }
 
-static struct wl_buffer *
-allocate_shm_buffer (int fb)
+static void
+wl_release_buffer (void *data, struct wl_buffer *buf)
+{
+    Sys_MaskPrintf (SYS_wayland, "Wayland: releasing buffer");
+
+    wl_buffer_destroy (buf);
+
+    wl_buffer_data_t* bdata = data;
+    munmap (bdata->buf_data, bdata->size);
+    free (bdata);
+}
+
+static const struct wl_buffer_listener wl_buf_listener = {
+    .release = wl_release_buffer
+};
+
+static void
+wl_allocate_framebuffer (void)
 {
     auto stride = viddef.width * 4;
-    auto offset = viddef.height * stride * fb;
-    return wl_shm_pool_create_buffer(wl_shm_pool, offset, viddef.width, viddef.height,
-                                    stride, WL_SHM_FORMAT_XRGB8888);
+    auto size = viddef.height * stride;
+    auto fd = allocate_shm_file (size);
+    byte *data = mmap (nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+    if (data == MAP_FAILED) {
+        close (fd);
+        Sys_Error ("wl_init_buffers: Failed to map pool memory");
+    }
+
+    buffer_data = calloc (1, sizeof (wl_buffer_data_t));
+    buffer_data->buf_data = (uint32_t *) data;
+    buffer_data->size = size;
+    buffer_data->stride = stride / 4;
+
+    auto pool = wl_shm_create_pool (wl_shm, fd, size);
+    buffer_data->buf = wl_shm_pool_create_buffer (pool, 0, viddef.width, viddef.height,
+                                                stride, WL_SHM_FORMAT_XRGB8888);
+    wl_buffer_add_listener (buffer_data->buf, &wl_buf_listener, buffer_data);
+    wl_shm_pool_destroy (pool);
+    close (fd);
 }
 
 static void
@@ -156,30 +260,18 @@ wl_init_buffers (void *data)
 
     ctx->framebuffer = &fb;
 
+    wl_allocate_framebuffer ();
+
     fb.width = viddef.width;
     fb.height = viddef.height;
 
-    auto stride = viddef.width * 4;
-    auto pool_size = viddef.height * stride * 2;
-    auto fd = allocate_shm_file(pool_size);
-    uint8_t *pool_data = mmap (nullptr, pool_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    wl_shm_pool = wl_shm_create_pool(wl_shm, fd, pool_size);
-
-    wl_buf = allocate_shm_buffer(0);
-
-    auto offset = viddef.height * stride * 0;
-    auto pixels = (uint32_t*)&pool_data[offset];
-    memset (pixels, 0, viddef.width * viddef.height * 4);
-
-    swfb.color = pool_data;
-    swfb.depth = nullptr;
-    swfb.rowbytes = stride;
-
-    if (wl_surface_configured) {
-        wl_surface_attach (wl_surf, wl_buf, 0, 0);
-        wl_surface_damage (wl_surf, 0, 0, UINT32_MAX, UINT32_MAX);
-        wl_surface_commit (wl_surf);
+    if (swfb.color) {
+        free (swfb.color);
     }
+
+    swfb.rowbytes = viddef.width;
+    swfb.color = calloc (swfb.rowbytes, viddef.height);
+    swfb.depth = 0;
 }
 
 static void

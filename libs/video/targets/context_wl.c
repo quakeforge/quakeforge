@@ -46,8 +46,8 @@
 #include <locale.h>
 
 #include <wayland-client.h>
-#include "libs/video/targets/xdg-shell-client-protocol.h"
-#include "libs/video/targets/xdg-decoration-client-protocol.h"
+#include "libs/video/targets/xdg-shell-client-protocol.hinc"
+#include "libs/video/targets/xdg-decoration-client-protocol.hinc"
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -97,6 +97,14 @@ static void
 toplevel_configure (void *data, struct xdg_toplevel *toplvl,
                     int32_t width, int32_t height, struct wl_array *states)
 {
+    if (width == 0 || height == 0) {
+        return;
+    }
+
+    Sys_MaskPrintf (SYS_wayland, "toplevel_configure: width = %d, height = %d\n",
+            width, height);
+
+    VID_SetWindow (0, 0, width, height);
 }
 
 static void

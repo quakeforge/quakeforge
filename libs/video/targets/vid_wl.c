@@ -101,7 +101,7 @@ WL_VID_Init (byte *palette, byte *colormap)
 
 	R_LoadModule (&vid_internal);
 
-	viddef.numpages = 2;
+	viddef.numpages = 1;
 
 	srandom (getpid ());
 
