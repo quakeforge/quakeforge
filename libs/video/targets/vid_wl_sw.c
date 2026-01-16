@@ -214,7 +214,7 @@ allocate_shm_file (size_t size)
 static void
 wl_release_buffer (void *data, struct wl_buffer *buf)
 {
-    Sys_MaskPrintf (SYS_wayland, "Wayland: releasing buffer");
+    Sys_MaskPrintf (SYS_wayland, "Wayland: releasing buffer\n");
 
     wl_buffer_destroy (buf);
 

@@ -166,7 +166,7 @@ registry_handle_global (void *data, struct wl_registry *reg, uint32_t name,
         wl_shm = wl_registry_bind (wl_reg, name, &wl_shm_interface, 2);
     } else if (strcmp (interface, xdg_wm_base_interface.name) == 0) {
         xdg_wm_base = wl_registry_bind (wl_reg, name, &xdg_wm_base_interface, 6);
-        xdg_wm_base_add_listener(xdg_wm_base, &xdg_base_listener, nullptr);
+        xdg_wm_base_add_listener (xdg_wm_base, &xdg_base_listener, nullptr);
     } else if (strcmp (interface, zxdg_decoration_manager_v1_interface.name) == 0) {
         decoration_manager = wl_registry_bind (wl_reg, name, &zxdg_decoration_manager_v1_interface, 1);
     }
@@ -232,11 +232,11 @@ WL_CreateWindow (int width, int height)
     xdg_toplevel_set_title (xdg_toplevel, "Hello");
 
     if (decoration_manager) {
-        Sys_MaskPrintf(SYS_wayland, "Initializing decorations\n");
+        Sys_MaskPrintf (SYS_wayland, "Initializing decorations\n");
 
         toplevel_decoration = zxdg_decoration_manager_v1_get_toplevel_decoration (
                 decoration_manager, xdg_toplevel);
-        zxdg_toplevel_decoration_v1_add_listener(toplevel_decoration, &toplevel_decoration_listener, nullptr);
+        zxdg_toplevel_decoration_v1_add_listener (toplevel_decoration, &toplevel_decoration_listener, nullptr);
 
         zxdg_toplevel_decoration_v1_set_mode (toplevel_decoration,
                 ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
@@ -250,14 +250,14 @@ WL_OpenDisplay (void)
 {
     wl_disp = wl_display_connect (nullptr);
     if (!wl_disp) {
-        Sys_Error("WL_OpenDisplay: Could not open display\n");
+        Sys_Error ("WL_OpenDisplay: Could not open display\n");
     }
 
-    Sys_MaskPrintf(SYS_wayland, "WL_OpenDisplay: SUCCESS\n");
+    Sys_MaskPrintf (SYS_wayland, "WL_OpenDisplay: SUCCESS\n");
 
     wl_reg = wl_display_get_registry (wl_disp);
     if (!wl_reg) {
-        Sys_Error("WL_OpenDisplay: Could not get registry for display\n");
+        Sys_Error ("WL_OpenDisplay: Could not get registry for display\n");
     }
 
     wl_registry_add_listener (wl_reg, &registry_listener, nullptr);
