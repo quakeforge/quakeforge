@@ -60,6 +60,43 @@
 #include "vid_vulkan.h"
 
 static void
+recreate_swapchain (vulkan_ctx_t *ctx)
+{
+    auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto rctx = ctx->render_context;
+	auto octx = ctx->output_context;
+	auto oframe = &octx->frames.a[ctx->curFrame];
+	auto sc = ctx->swapchain;
+
+    if (octx->framebuffers) {
+        uint32_t frames = rctx->frames.size;
+        for (uint32_t i = 0; i < sc->imageViews->size; i++) {
+            qfv_delete_t del = {
+                .framebuffer = octx->framebuffers[i],
+                .semaphore = octx->outputSemaphores[i],
+                .deletion_frame = ctx->frameNumber + frames,
+            };
+            PQUEUE_INSERT (&rctx->deletion_queue, del);
+        }
+    }
+    free (octx->framebuffers);
+    free (octx->outputSemaphores);
+    octx->framebuffers = 0;
+    octx->outputSemaphores = 0;
+    Vulkan_CreateSwapchain (ctx);
+    sc = ctx->swapchain;
+    QFV_Capture_Renew (ctx);
+
+    dfunc->vkDestroySemaphore (device->dev, oframe->imageAvailableSemaphore,
+                               0);
+    oframe->imageAvailableSemaphore = QFV_CreateSemaphore (device);
+    QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
+                         oframe->imageAvailableSemaphore,
+                         vac (ctx->va_ctx, "sc image:%d", ctx->curFrame));
+}
+
+static void
 acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
@@ -71,7 +108,6 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto octx = ctx->output_context;
 	auto rframe = &rctx->frames.a[ctx->curFrame];
 	auto oframe = &octx->frames.a[ctx->curFrame];
-	auto sc = ctx->swapchain;
 
 	auto res = dfunc->vkWaitForFences (device->dev, 1, &oframe->fence,
 									   VK_TRUE, 2000000000);
@@ -80,36 +116,19 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 	QFV_CmdPoolManager_Reset (&rframe->output_cmdpool);
 	rframe->active_pool = &rframe->output_cmdpool;
+
+	if (octx->recreate_swapchain) {
+		recreate_swapchain (ctx);
+		octx->recreate_swapchain = false;
+	}
+
+	auto sc = ctx->swapchain;
+
 	//dfunc->vkResetFences (device->dev, 1, &oframe->fence);
 	uint32_t imageIndex = 0;
 	while (!QFV_AcquireNextImage (sc, oframe->imageAvailableSemaphore,
 								  0/*oframe->fence*/, &imageIndex)) {
-		if (octx->framebuffers) {
-			auto rctx = ctx->render_context;
-			uint32_t frames = rctx->frames.size;
-			for (uint32_t i = 0; i < sc->imageViews->size; i++) {
-				qfv_delete_t del = {
-					.framebuffer = octx->framebuffers[i],
-					.semaphore = octx->outputSemaphores[i],
-					.deletion_frame = ctx->frameNumber + frames,
-				};
-				PQUEUE_INSERT (&rctx->deletion_queue, del);
-			}
-		}
-		free (octx->framebuffers);
-		free (octx->outputSemaphores);
-		octx->framebuffers = 0;
-		octx->outputSemaphores = 0;
-		Vulkan_CreateSwapchain (ctx);
-		sc = ctx->swapchain;
-		QFV_Capture_Renew (ctx);
-
-		dfunc->vkDestroySemaphore (device->dev, oframe->imageAvailableSemaphore,
-								   0);
-		oframe->imageAvailableSemaphore = QFV_CreateSemaphore (device);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
-							 oframe->imageAvailableSemaphore,
-							 vac (ctx->va_ctx, "sc image:%d", ctx->curFrame));
+		recreate_swapchain (ctx);
 	}
 
 	//FIXME clean this up
@@ -436,6 +455,17 @@ output_startup (exprctx_t *ectx)
 }
 
 static void
+output_vidsize_listener (void *data, const viddef_t *vid)
+{
+	vulkan_ctx_t *ctx = data;
+	ctx->window_width = vid->width;
+	ctx->window_height = vid->height;
+
+	auto octx = ctx->output_context;
+	octx->recreate_swapchain = true;
+}
+
+static void
 output_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneScoped (true);
@@ -463,6 +493,8 @@ output_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		&octx->swapchain_info,
 	};
 	QFV_Render_AddAttachments (ctx, 1, attachments);
+
+	VID_OnVidResize_AddListener (output_vidsize_listener, ctx);
 }
 
 static exprtype_t *stepref_param[] = {
