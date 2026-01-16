@@ -44,9 +44,12 @@ get_frame_data (double time, const anim_t *anim, uint32_t framenum,
 				const void *base)
 {
 	if (framenum >= anim->numclips) {
-		Sys_MaskPrintf (SYS_dev, "R_GetFrame: no such frame # %d\n",
+		Sys_MaskPrintf (SYS_anim, "R_GetFrame: no such frame # %d\n",
 						framenum);
-		return 0;
+		if (!anim->numclips) {
+			return 0;
+		}
+		framenum = 0;
 	}
 
 	auto clip = (clipdesc_t *) (base + anim->clips);
