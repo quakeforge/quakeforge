@@ -303,8 +303,8 @@ sw_bind_framebuffer (framebuffer_t *framebuffer)
 	d_zbuffer = fb->depth;
 
 	if (changed) {
-		vrect_t r = { 0, 0, framebuffer->width, framebuffer->height };
-		sw_set_viewport (&r);
+		//FIXME the viewport data should probably be a part of the framebuffer
+		sw_set_viewport (&r_refdef.vrect);
 	}
 }
 
