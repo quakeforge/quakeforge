@@ -77,6 +77,9 @@ struct zxdg_toplevel_decoration_v1 *toplevel_decoration;
 
 bool wl_surface_configured = false;
 
+static bool wl_is_fullscreen = false;
+static bool wl_fullscreen_supported = false;
+
 static void
 zxdg_toplevel_decoration_configure (void *data,
 			                        struct zxdg_toplevel_decoration_v1 *toplevel_decoration,
@@ -119,10 +122,36 @@ toplevel_configure_bounds (void *data, struct xdg_toplevel *toplvl,
 {
 }
 
+static const char *
+toplevel_wm_capability_name (enum xdg_toplevel_wm_capabilities cap)
+{
+	switch (cap) {
+		case XDG_TOPLEVEL_WM_CAPABILITIES_WINDOW_MENU: return "XDG_TOPLEVEL_WM_CAPABILITIES_WINDOW_MENU";
+		case XDG_TOPLEVEL_WM_CAPABILITIES_MAXIMIZE: return "XDG_TOPLEVEL_WM_CAPABILITIES_MAXIMIZE";
+		case XDG_TOPLEVEL_WM_CAPABILITIES_FULLSCREEN: return "XDG_TOPLEVEL_WM_CAPABILITIES_FULLSCREEN";
+		case XDG_TOPLEVEL_WM_CAPABILITIES_MINIMIZE: return "XDG_TOPLEVEL_WM_CAPABILITIES_MINIMIZE";
+		default:
+			Sys_Error ("toplevel_wm_capability_name: Unknown capability %d", cap);
+	}
+}
+
 static void
 toplevel_wm_capabilities (void *data, struct xdg_toplevel *toplvl,
-                            struct wl_array *capabilities)
+                            struct wl_array *caps)
 {
+	Sys_MaskPrintf (SYS_wayland, "Supported Wayland Capabilities:\n");
+
+	enum xdg_toplevel_wm_capabilities* cap;
+	wl_array_for_each (cap, caps) {
+		Sys_MaskPrintf (SYS_wayland, "\t- %s\n", toplevel_wm_capability_name(*cap));
+		switch (*cap) {
+			case XDG_TOPLEVEL_WM_CAPABILITIES_FULLSCREEN:
+				wl_fullscreen_supported = true;
+				break;
+			default:
+				break;
+		}
+	};
 }
 
 static const struct xdg_toplevel_listener toplevel_listener = {
@@ -213,6 +242,23 @@ WL_CloseDisplay (void)
 void
 WL_UpdateFullscreen (int fullscreen)
 {
+	if (!xdg_toplevel) {
+		return;
+	}
+
+	if (!wl_fullscreen_supported) {
+		Sys_MaskPrintf (SYS_wayland, "WL_UpdateFullscreen: changing fullscreen "
+									"state not supported by compositor.\n");
+		return;
+	}
+
+	if (fullscreen && !wl_is_fullscreen) {
+		xdg_toplevel_set_fullscreen (xdg_toplevel, nullptr);
+		wl_is_fullscreen = true;
+	} else if (wl_is_fullscreen) {
+		xdg_toplevel_unset_fullscreen (xdg_toplevel);
+		wl_is_fullscreen = false;
+	}
 }
 
 void
@@ -243,25 +289,24 @@ WL_CreateWindow (int width, int height)
     }
 
     wl_surface_commit (wl_surf);
+    wl_display_roundtrip (wl_disp);
 }
 
 void
 WL_OpenDisplay (void)
 {
-    wl_disp = wl_display_connect (nullptr);
-    if (!wl_disp) {
-        Sys_Error ("WL_OpenDisplay: Could not open display\n");
-    }
+	wl_disp = wl_display_connect (nullptr);
+	if (!wl_disp) {
+		Sys_Error ("WL_OpenDisplay: Could not open display\n");
+	}
 
-    Sys_MaskPrintf (SYS_wayland, "WL_OpenDisplay: SUCCESS\n");
+	wl_reg = wl_display_get_registry (wl_disp);
+	if (!wl_reg) {
+		Sys_Error ("WL_OpenDisplay: Could not get registry for display\n");
+	}
 
-    wl_reg = wl_display_get_registry (wl_disp);
-    if (!wl_reg) {
-        Sys_Error ("WL_OpenDisplay: Could not get registry for display\n");
-    }
-
-    wl_registry_add_listener (wl_reg, &registry_listener, nullptr);
-    wl_display_roundtrip (wl_disp);
+	wl_registry_add_listener (wl_reg, &registry_listener, nullptr);
+	wl_display_roundtrip (wl_disp);
 }
 
 extern int wl_force_link;
