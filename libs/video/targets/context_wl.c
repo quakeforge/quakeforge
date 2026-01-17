@@ -48,6 +48,9 @@
 #include <wayland-client.h>
 #include "libs/video/targets/xdg-shell-client-protocol.hinc"
 #include "libs/video/targets/xdg-decoration-client-protocol.hinc"
+#include "libs/video/targets/relative-pointer-client-protocol.hinc"
+#include "libs/video/targets/pointer-constraints-client-protocol.hinc"
+#include "libs/video/targets/cursor-shape-client-protocol.hinc"
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -69,6 +72,8 @@ struct wl_registry *wl_reg;
 struct wl_compositor *wl_comp;
 struct wl_surface *wl_surf;
 struct wl_seat *wl_seat;
+struct wl_pointer *wl_pointer;
+struct wl_keyboard *wl_keyboard;
 struct wl_shm *wl_shm;
 struct wl_shm_pool *wl_shm_pool;
 struct xdg_wm_base *xdg_wm_base;
@@ -76,6 +81,11 @@ struct xdg_surface *xdg_surface;
 struct xdg_toplevel *xdg_toplevel;
 struct zxdg_decoration_manager_v1 *decoration_manager;
 struct zxdg_toplevel_decoration_v1 *toplevel_decoration;
+struct zwp_relative_pointer_manager_v1 *wl_relative_pointer_manager;
+struct zwp_relative_pointer_v1 *wl_relative_pointer;
+struct zwp_pointer_constraints_v1 *zwp_pointer_constraints_v1;
+struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1;
+struct wp_cursor_shape_device_v1 *wp_cursor_shape_device_v1;
 
 bool wl_surface_configured = false;
 
@@ -196,6 +206,15 @@ registry_handle_global (void *data, struct wl_registry *reg, uint32_t name,
     } else if (strcmp (interface, wl_seat_interface.name) == 0) {
         wl_seat = wl_registry_bind (wl_reg, name, &wl_seat_interface, 7);
 		IN_WL_RegisterSeat ();
+	} else if (strcmp (interface, zwp_relative_pointer_manager_v1_interface.name) == 0) {
+		wl_relative_pointer_manager = wl_registry_bind (wl_reg, name,
+						&zwp_relative_pointer_manager_v1_interface, 1);
+	} else if (strcmp (interface, zwp_pointer_constraints_v1_interface.name) == 0) {
+        zwp_pointer_constraints_v1 = wl_registry_bind (wl_reg, name,
+						&zwp_pointer_constraints_v1_interface, 1);
+	} else if (strcmp (interface, wp_cursor_shape_manager_v1_interface.name) == 0) {
+		wp_cursor_shape_manager_v1 = wl_registry_bind (wl_reg, name,
+						&wp_cursor_shape_manager_v1_interface, 1);
 	} else if (strcmp (interface, wl_shm_interface.name) == 0) {
         wl_shm = wl_registry_bind (wl_reg, name, &wl_shm_interface, 2);
     } else if (strcmp (interface, xdg_wm_base_interface.name) == 0) {

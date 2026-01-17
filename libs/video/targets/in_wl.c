@@ -68,11 +68,15 @@
 #include "qfselect.h"
 #include "vid_internal.h"
 
+#include "libs/video/targets/relative-pointer-client-protocol.hinc"
+#include "libs/video/targets/pointer-constraints-client-protocol.hinc"
+#include "libs/video/targets/cursor-shape-client-protocol.hinc"
+
 #define SIZE(x) (sizeof (x) / sizeof (x[0]))
 
 static int wl_driver_handle = -1;
-static struct wl_pointer  *wl_pointer;
-static struct wl_keyboard *wl_keyboard;
+static struct zwp_locked_pointer_v1 *zwp_locked_pointer_v1;
+static uint32_t wl_last_pointer_serial;
 
 typedef struct wl_idevice_s {
 	const char *name;
@@ -92,7 +96,7 @@ static in_axisinfo_t wl_mouse_axes[WL_MAX_MOUSE_AXES];
 // linux/input-event-codes.h defines 8 named buttons
 static constexpr size_t WL_MAX_MOUSE_BUTTONS = 8;
 static in_buttoninfo_t wl_mouse_buttons[WL_MAX_MOUSE_BUTTONS];
-//static IE_mouse_event_t wl_mouse;
+static IE_mouse_event_t wl_mouse;
 
 static wl_idevice_t wl_mouse_device = {
 	"core:mouse",
@@ -103,7 +107,7 @@ static wl_idevice_t wl_mouse_device = {
 static void
 wl_seat_name (void *data, struct wl_seat *seat, const char *name)
 {
-	Sys_MaskPrintf(SYS_wayland, "Wayland: Got seat '%s'\n", name);
+	Sys_MaskPrintf (SYS_wayland, "Wayland: Got seat '%s'\n", name);
 }
 
 static void
@@ -114,6 +118,7 @@ wl_pointer_enter (void *data,
 		      wl_fixed_t surface_x,
 		      wl_fixed_t surface_y)
 {
+	wl_last_pointer_serial = serial;
 }
 
 static void
@@ -131,7 +136,11 @@ wl_pointer_motion (void *data,
 		       wl_fixed_t surface_x,
 		       wl_fixed_t surface_y)
 {
+	wl_mouse.x = wl_fixed_to_int (surface_x);
+	wl_mouse.y = wl_fixed_to_int (surface_y);
 }
+
+static int32_t btn = -1;
 
 static void
 wl_pointer_button (void *data,
@@ -141,6 +150,19 @@ wl_pointer_button (void *data,
 		       uint32_t button,
 		       uint32_t state)
 {
+	auto bid = button - BTN_MOUSE;
+	auto pressed = state == WL_POINTER_BUTTON_STATE_PRESSED;
+	wl_mouse_buttons[bid].state = pressed;
+
+	if (pressed) {
+		wl_mouse.buttons |= 1 << bid;
+		wl_mouse.type = ie_mousedown;
+	} else {
+		wl_mouse.buttons &= ~(1 << bid);
+		wl_mouse.type = ie_mouseup;
+	}
+
+	btn = bid;
 }
 
 
@@ -157,6 +179,25 @@ static void
 wl_pointer_frame (void *data,
 		      struct wl_pointer *wl_pointer)
 {
+	IE_event_t event = {
+		.type = ie_mouse,
+		.when = Sys_LongTime (),
+		.mouse = wl_mouse
+	};
+
+	if (!IE_Send_Event (&event)) {
+		IE_event_t btn_event = {
+			.type = ie_button,
+			.when = Sys_LongTime (),
+			.button = {
+				.data = wl_mouse_device.event_data,
+				.devid = wl_mouse_device.devid,
+				.button = wl_mouse_buttons[btn].button,
+				.state = wl_mouse_buttons[btn].state,
+			},
+		};
+		IE_Send_Event (&btn_event);
+	}
 }
 
 static void
@@ -192,6 +233,40 @@ static const struct wl_pointer_listener wl_pointer_listener = {
 	.axis_source = wl_pointer_axis_source,
 	.axis_stop = wl_pointer_axis_stop,
 	.axis_discrete = wl_pointer_axis_discrete,
+};
+
+static void
+send_axis_event (int32_t axis, int32_t value)
+{
+	wl_mouse_axes[axis].value = value;
+
+	IE_event_t event = {
+		.type = ie_axis,
+		.when = Sys_LongTime (),
+		.axis = {
+			.data = wl_mouse_device.event_data,
+			.devid = wl_mouse_device.devid,
+			.axis = axis,
+			.value = value
+		}
+	};
+	IE_Send_Event (&event);
+}
+
+static void
+wl_relative_pointer_motion (void *data,
+							struct zwp_relative_pointer_v1 *zwp_relative_pointer_v1,
+							uint32_t utime_hi, uint32_t utime_lo,
+							wl_fixed_t dx, wl_fixed_t dy,
+							wl_fixed_t dx_unaccel, wl_fixed_t dy_unaccel)
+{
+	// TODO: CVar for using unaccelerated vs accelerated
+	send_axis_event (0, wl_fixed_to_int (dx_unaccel));
+	send_axis_event (1, wl_fixed_to_int (dy_unaccel));
+}
+
+static const struct zwp_relative_pointer_v1_listener wl_relative_pointer_listener = {
+	.relative_motion = wl_relative_pointer_motion
 };
 
 static void
@@ -254,6 +329,31 @@ in_wl_axis_info (void *data, void *device, in_axisinfo_t *axes, int *numaxes)
 }
 
 static void
+in_wl_grab_input (void *data, int grab)
+{
+	if (!zwp_pointer_constraints_v1) {
+		// TODO: Queue up this event for when we get the global registered
+		return;
+	}
+
+	if (grab && !zwp_locked_pointer_v1) {
+		zwp_locked_pointer_v1 = zwp_pointer_constraints_v1_lock_pointer (
+				zwp_pointer_constraints_v1,
+				wl_surf, wl_pointer, nullptr,
+				ZWP_POINTER_CONSTRAINTS_V1_LIFETIME_PERSISTENT);
+		wl_pointer_set_cursor (wl_pointer,
+				wl_last_pointer_serial, nullptr, 0, 0);
+	} else if (!grab && zwp_locked_pointer_v1) {
+		wp_cursor_shape_device_v1_set_shape (
+				wp_cursor_shape_device_v1,
+				wl_last_pointer_serial,
+				WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
+		zwp_locked_pointer_v1_destroy (zwp_locked_pointer_v1);
+		zwp_locked_pointer_v1 = nullptr;
+	}
+}
+
+static void
 wl_add_device (wl_idevice_t *dev)
 {
 	for (int32_t i = 0; i < dev->num_axes; ++i) {
@@ -270,6 +370,14 @@ wl_add_device (wl_idevice_t *dev)
 static void
 in_wl_init (void *data)
 {
+	wl_relative_pointer = zwp_relative_pointer_manager_v1_get_relative_pointer (
+			wl_relative_pointer_manager, wl_pointer);
+	zwp_relative_pointer_v1_add_listener (wl_relative_pointer,
+			&wl_relative_pointer_listener, nullptr);
+
+	wp_cursor_shape_device_v1 = wp_cursor_shape_manager_v1_get_pointer (
+			wp_cursor_shape_manager_v1, wl_pointer);
+
 	wl_add_device (&wl_mouse_device);
 }
 
@@ -279,6 +387,7 @@ static in_driver_t in_wl_driver = {
 	.set_device_event_data = wl_set_device_event_data,
 	.get_device_event_data = wl_get_device_event_data,
 	.axis_info = in_wl_axis_info,
+	.grab_input = in_wl_grab_input,
 };
 
 static void __attribute__((constructor))
