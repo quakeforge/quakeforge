@@ -1,29 +1,29 @@
 /*
-	context_wl.c
+	context_wl.h
 
-	general wayland context layer
+	General Wayland Context Layer
 
-	copyright (c) 1996-1997  id software, inc.
-	copyright (c) 2000       zephaniah e. hull <warp@whitestar.soark.net>
-	copyright (c) 2000, 2001 jeff teunissen <deek@quakeforge.net>
+	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2026 Peter Nilsson <peter8nilsson@live.se>
+	Please see the file "AUTHORS" for a list of contributors
 
-	this program is free software; you can redistribute it and/or
-	modify it under the terms of the gnu general public license
-	as published by the free software foundation; either version 2
-	of the license, or (at your option) any later version.
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
 
-	this program is distributed in the hope that it will be useful,
-	but without any warranty; without even the implied warranty of
-	merchantability or fitness for a particular purpose.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-	see the gnu general public license for more details.
+	See the GNU General Public License for more details.
 
-	you should have received a copy of the gnu general public license
+	You should have received a copy of the GNU General Public License
 	along with this program; if not, write to:
 
-		free software foundation, inc.
-		59 temple place - suite 330
-		boston, ma  02111-1307, usa
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
 
 */
 #ifdef HAVE_CONFIG_H
@@ -61,12 +61,14 @@
 #include "QF/input/event.h"
 
 #include "context_wl.h"
+#include "in_wl.h"
 #include "vid_internal.h"
 
 struct wl_display *wl_disp;
 struct wl_registry *wl_reg;
 struct wl_compositor *wl_comp;
 struct wl_surface *wl_surf;
+struct wl_seat *wl_seat;
 struct wl_shm *wl_shm;
 struct wl_shm_pool *wl_shm_pool;
 struct xdg_wm_base *xdg_wm_base;
@@ -191,7 +193,10 @@ registry_handle_global (void *data, struct wl_registry *reg, uint32_t name,
  
     if (strcmp (interface, wl_compositor_interface.name) == 0) {
         wl_comp = wl_registry_bind (wl_reg, name, &wl_compositor_interface, 6);
-    } else if (strcmp (interface, wl_shm_interface.name) == 0) {
+    } else if (strcmp (interface, wl_seat_interface.name) == 0) {
+        wl_seat = wl_registry_bind (wl_reg, name, &wl_seat_interface, 7);
+		IN_WL_RegisterSeat ();
+	} else if (strcmp (interface, wl_shm_interface.name) == 0) {
         wl_shm = wl_registry_bind (wl_reg, name, &wl_shm_interface, 2);
     } else if (strcmp (interface, xdg_wm_base_interface.name) == 0) {
         xdg_wm_base = wl_registry_bind (wl_reg, name, &xdg_wm_base_interface, 6);

@@ -3,10 +3,7 @@
 
 	Wayland input handling
 
-	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
-
-	Author: Bill Currie <bill@taniwha.org>
-	Date: 2021/11/21
+	Copyright (C) 2026 Peter Nilsson <peter8nilsson@live.se>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -30,5 +27,7 @@
 
 #ifndef __in_wl_h
 #define __in_wl_h
+
+void IN_WL_RegisterSeat (void);
 
 #endif//__in_wl_h

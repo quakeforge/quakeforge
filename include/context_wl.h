@@ -1,10 +1,10 @@
 /*
 	context_wl.h
 
-	(description)
+	General Wayland Context Layer
 
-	Copyright (C) 1996-1997  Id Software, Inc.
-	Copyright (C) 1999,2000  contributors of the QuakeForge project
+	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2026 Peter Nilsson <peter8nilsson@live.se>
 	Please see the file "AUTHORS" for a list of contributors
 
 	This program is free software; you can redistribute it and/or
@@ -35,9 +35,10 @@
 extern struct wl_display *wl_disp;
 extern struct wl_registry *wl_reg;
 extern struct wl_compositor *wl_comp;
+extern struct wl_surface *wl_surf;
+extern struct wl_seat *wl_seat;
 extern struct wl_shm *wl_shm;
 extern struct wl_shm_pool *wl_shm_pool;
-extern struct wl_surface *wl_surf;
 extern struct xdg_wm_base *xdg_wm_base;
 extern struct xdg_surface *xdg_surface;
 extern struct xdg_toplevel *xdg_toplevel;
