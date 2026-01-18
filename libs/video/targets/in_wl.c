@@ -83,6 +83,9 @@ static struct zwp_locked_pointer_v1 *zwp_locked_pointer_v1;
 static uint32_t wl_last_pointer_serial;
 static struct xkb_context *xkb_context;
 static struct xkb_keymap *xkb_keymap;
+static xkb_mod_index_t xkb_mod_shift_index;
+static xkb_mod_index_t xkb_mod_control_index;
+static xkb_mod_index_t xkb_mod_alt_index;
 static struct xkb_state *xkb_state;
 
 typedef struct wl_idevice_s {
@@ -333,6 +336,9 @@ in_wl_keyboard_keymap (void *data,
 	xkb_state_unref (xkb_state);
 	xkb_keymap = keymap;
 	xkb_state = state;
+	xkb_mod_shift_index = xkb_map_mod_get_index (xkb_keymap, XKB_MOD_NAME_SHIFT);
+	xkb_mod_control_index = xkb_map_mod_get_index (xkb_keymap, XKB_MOD_NAME_CTRL);
+	xkb_mod_alt_index = xkb_map_mod_get_index (xkb_keymap, XKB_MOD_NAME_ALT);
 }
 
 static void
@@ -760,6 +766,14 @@ in_wl_process_key (uint32_t scancode, xkb_keysym_t keysym, int32_t *keycode, int
 	*keycode = key;
 }
 
+static bool
+in_wl_mod_is_active (xkb_mod_index_t mod)
+{
+	return xkb_state_mod_index_is_active (xkb_state,
+										  xkb_mod_control_index,
+										  XKB_STATE_MODS_EFFECTIVE);
+}
+
 static void
 in_wl_keyboard_key (void *data,
 		struct wl_keyboard *keyboard,
@@ -793,12 +807,24 @@ in_wl_keyboard_key (void *data,
 		return;
 	}
 
+	if (in_wl_mod_is_active(xkb_mod_shift_index)) {
+		wl_key_event.shift |= ies_shift;
+	}
+
+	if (in_wl_mod_is_active(xkb_mod_control_index)) {
+		wl_key_event.shift |= ies_control;
+	}
+
+	if (in_wl_mod_is_active(xkb_mod_alt_index)) {
+		wl_key_event.shift |= ies_alt;
+	}
+
 	if (!(pressed && in_wl_send_key_event ())) {
 		wl_keyboard_button_event.data = wl_keyboard_device.event_data;
 		wl_keyboard_button_event.devid = wl_keyboard_device.devid;
 		wl_keyboard_button_event.button = key;
 		wl_keyboard_button_event.state = pressed;
-		in_wl_send_button_event(&wl_keyboard_button_event);
+		in_wl_send_button_event (&wl_keyboard_button_event);
 	}
 }
 
