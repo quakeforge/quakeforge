@@ -204,7 +204,7 @@ registry_handle_global (void *data, struct wl_registry *reg, uint32_t name,
     if (strcmp (interface, wl_compositor_interface.name) == 0) {
         wl_comp = wl_registry_bind (wl_reg, name, &wl_compositor_interface, 6);
     } else if (strcmp (interface, wl_seat_interface.name) == 0) {
-        wl_seat = wl_registry_bind (wl_reg, name, &wl_seat_interface, 7);
+        wl_seat = wl_registry_bind (wl_reg, name, &wl_seat_interface, 10);
 		IN_WL_RegisterSeat ();
 	} else if (strcmp (interface, zwp_relative_pointer_manager_v1_interface.name) == 0) {
 		wl_relative_pointer_manager = wl_registry_bind (wl_reg, name,
