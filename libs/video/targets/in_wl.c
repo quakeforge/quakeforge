@@ -351,13 +351,411 @@ in_wl_keyboard_leave (void *data,
 }
 
 static void
-in_wl_keysym_to_keycode (xkb_keysym_t keysym, int32_t *keycode)
+in_wl_process_key (uint32_t scancode, xkb_keysym_t keysym, int32_t *keycode, int32_t *unicode)
 {
+	int32_t key;
+
+	*unicode = 0;
+
+	auto utf8len = xkb_state_key_get_utf8 (xkb_state,
+										   scancode, nullptr, 0);
+	if (utf8len == -1) {
+		Sys_Error ("in_wl_process_key: passed an invalid keysym: %u", keysym);
+	} else if (utf8len > 0) {
+		wl_utf8->size = utf8len + 1;
+		dstring_adjust (wl_utf8);
+		utf8len = xkb_state_key_get_utf8 (xkb_state, scancode,
+										  wl_utf8->str, wl_utf8->size);
+
+		if (utf8len == 1) {
+			// FIXME "unicode" in IE_key_event_t is named incorrectly as it doesn't
+			//		 *actually* represent a unicode code point
+			*unicode = (byte)wl_utf8->str[0];
+		}
+	}
+
 	switch (keysym) {
+		case XKB_KEY_KP_Page_Up:
+			key = QFK_KP9;
+			break;
+		case XKB_KEY_Page_Up:
+			key = QFK_PAGEUP;
+			break;
+
+		case XKB_KEY_KP_Page_Down:
+			key = QFK_KP3;
+			break;
+		case XKB_KEY_Page_Down:
+			key = QFK_PAGEDOWN;
+			break;
+
+		case XKB_KEY_KP_Home:
+			key = QFK_KP7;
+			break;
+		case XKB_KEY_Home:
+			key = QFK_HOME;
+			break;
+
+		case XKB_KEY_KP_End:
+			key = QFK_KP1;
+			break;
+		case XKB_KEY_End:
+			key = QFK_END;
+			break;
+
+		case XKB_KEY_KP_Left:
+			key = QFK_KP4;
+			break;
+		case XKB_KEY_Left:
+			key = QFK_LEFT;
+			break;
+
+		case XKB_KEY_KP_Right:
+			key = QFK_KP6;
+			break;
+		case XKB_KEY_Right:
+			key = QFK_RIGHT;
+			break;
+
+		case XKB_KEY_KP_Down:
+			key = QFK_KP2;
+			break;
+		case XKB_KEY_Down:
+			key = QFK_DOWN;
+			break;
+
+		case XKB_KEY_KP_Up:
+			key = QFK_KP8;
+			break;
+		case XKB_KEY_Up:
+			key = QFK_UP;
+			break;
+
+		case XKB_KEY_Escape:
+			key = QFK_ESCAPE;
+			break;
+
+		case XKB_KEY_KP_Enter:
+			key = QFK_KP_ENTER;
+			break;
+		case XKB_KEY_Return:
+			key = QFK_RETURN;
+			break;
+
+		case XKB_KEY_Tab:
+			key = QFK_TAB;
+			break;
+
+		case XKB_KEY_F1:
+			key = QFK_F1;
+			break;
+		case XKB_KEY_F2:
+			key = QFK_F2;
+			break;
+		case XKB_KEY_F3:
+			key = QFK_F3;
+			break;
+		case XKB_KEY_F4:
+			key = QFK_F4;
+			break;
+		case XKB_KEY_F5:
+			key = QFK_F5;
+			break;
+		case XKB_KEY_F6:
+			key = QFK_F6;
+			break;
+		case XKB_KEY_F7:
+			key = QFK_F7;
+			break;
+		case XKB_KEY_F8:
+			key = QFK_F8;
+			break;
+		case XKB_KEY_F9:
+			key = QFK_F9;
+			break;
+		case XKB_KEY_F10:
+			key = QFK_F10;
+			break;
+		case XKB_KEY_F11:
+			key = QFK_F11;
+			break;
+		case XKB_KEY_F12:
+			key = QFK_F12;
+			break;
+
+		case XKB_KEY_BackSpace:
+			key = QFK_BACKSPACE;
+			break;
+
+		case XKB_KEY_KP_Delete:
+			key = QFK_KP_PERIOD;
+			break;
+		case XKB_KEY_Delete:
+			key = QFK_DELETE;
+			break;
+
+		case XKB_KEY_Pause:
+			key = QFK_PAUSE;
+			break;
+
+		case XKB_KEY_Shift_L:
+			key = QFK_LSHIFT;
+			break;
+		case XKB_KEY_Shift_R:
+			key = QFK_RSHIFT;
+			break;
+
+		case XKB_KEY_Execute:
+		case XKB_KEY_Control_L:
+			key = QFK_LCTRL;
+			break;
+		case XKB_KEY_Control_R:
+			key = QFK_RCTRL;
+			break;
+
+		case XKB_KEY_Mode_switch:
+		case XKB_KEY_Alt_L:
+			key = QFK_LALT;
+			break;
+		case XKB_KEY_Meta_L:
+			key = QFK_LMETA;
+			break;
+		case XKB_KEY_Alt_R:
+			key = QFK_RALT;
+			break;
+		case XKB_KEY_Meta_R:
+			key = QFK_RMETA;
+			break;
+		case XKB_KEY_Super_L:
+			key = QFK_LSUPER;
+			break;
+		case XKB_KEY_Super_R:
+			key = QFK_RSUPER;
+			break;
+
+		case XKB_KEY_Multi_key:
+			key = QFK_COMPOSE;
+			break;
+
+		case XKB_KEY_Menu:
+			key = QFK_MENU;
+			break;
+
+		case XKB_KEY_Caps_Lock:
+			key = QFK_CAPSLOCK;
+			break;
+
+		case XKB_KEY_KP_Begin:
+			key = QFK_KP5;
+			break;
+
+		case XKB_KEY_Print:
+			key = QFK_PRINT;
+			break;
+
+		case XKB_KEY_Scroll_Lock:
+			key = QFK_SCROLLOCK;
+			break;
+
+		case XKB_KEY_Num_Lock:
+			key = QFK_NUMLOCK;
+			break;
+
+		case XKB_KEY_Insert:
+			key = QFK_INSERT;
+			break;
+		case XKB_KEY_KP_Insert:
+			key = QFK_KP0;
+			break;
+
+		case XKB_KEY_KP_Multiply:
+			key = QFK_KP_MULTIPLY;
+			break;
+		case XKB_KEY_KP_Add:
+			key = QFK_KP_PLUS;
+			break;
+		case XKB_KEY_KP_Subtract:
+			key = QFK_KP_MINUS;
+			break;
+		case XKB_KEY_KP_Divide:
+			key = QFK_KP_DIVIDE;
+			break;
+
+		// For Sun keyboards
+		case XKB_KEY_F27:
+			key = QFK_HOME;
+			break;
+		case XKB_KEY_F29:
+			key = QFK_PAGEUP;
+			break;
+		case XKB_KEY_F33:
+			key = QFK_END;
+			break;
+		case XKB_KEY_F35:
+			key = QFK_PAGEDOWN;
+			break;
+
+		// Some high ASCII symbols, for azerty keymaps
+		case XKB_KEY_twosuperior:
+			key = QFK_WORLD_18;
+			break;
+		case XKB_KEY_eacute:
+			key = QFK_WORLD_63;
+			break;
+		case XKB_KEY_section:
+			key = QFK_WORLD_7;
+			break;
+		case XKB_KEY_egrave:
+			key = QFK_WORLD_72;
+			break;
+		case XKB_KEY_ccedilla:
+			key = QFK_WORLD_71;
+			break;
+		case XKB_KEY_agrave:
+			key = QFK_WORLD_64;
+			break;
+
+		case XKB_KEY_Kanji:
+			key = QFK_KANJI;
+			break;
+		case XKB_KEY_Muhenkan:
+			key = QFK_MUHENKAN;
+			break;
+		case XKB_KEY_Henkan:
+			key = QFK_HENKAN;
+			break;
+		case XKB_KEY_Romaji:
+			key = QFK_ROMAJI;
+			break;
+		case XKB_KEY_Hiragana:
+			key = QFK_HIRAGANA;
+			break;
+		case XKB_KEY_Katakana:
+			key = QFK_KATAKANA;
+			break;
+		case XKB_KEY_Hiragana_Katakana:
+			key = QFK_HIRAGANA_KATAKANA;
+			break;
+		case XKB_KEY_Zenkaku:
+			key = QFK_ZENKAKU;
+			break;
+		case XKB_KEY_Hankaku:
+			key = QFK_HANKAKU;
+			break;
+		case XKB_KEY_Zenkaku_Hankaku:
+			key = QFK_ZENKAKU_HANKAKU;
+			break;
+		case XKB_KEY_Touroku:
+			key = QFK_TOUROKU;
+			break;
+		case XKB_KEY_Massyo:
+			key = QFK_MASSYO;
+			break;
+		case XKB_KEY_Kana_Lock:
+			key = QFK_KANA_LOCK;
+			break;
+		case XKB_KEY_Kana_Shift:
+			key = QFK_KANA_SHIFT;
+			break;
+		case XKB_KEY_Eisu_Shift:
+			key = QFK_EISU_SHIFT;
+			break;
+		case XKB_KEY_Eisu_toggle:
+			key = QFK_EISU_TOGGLE;
+			break;
+		case XKB_KEY_Kanji_Bangou:
+			key = QFK_KANJI_BANGOU;
+			break;
+		case XKB_KEY_Zen_Koho:
+			key = QFK_ZEN_KOHO;
+			break;
+		case XKB_KEY_Mae_Koho:
+			key = QFK_MAE_KOHO;
+			break;
+		case XKB_KEY_XF86HomePage:
+			key = QFK_HOMEPAGE;
+			break;
+		case XKB_KEY_XF86Search:
+			key = QFK_SEARCH;
+			break;
+		case XKB_KEY_XF86Mail:
+			key = QFK_MAIL;
+			break;
+		case XKB_KEY_XF86Favorites:
+			key = QFK_FAVORITES;
+			break;
+		case XKB_KEY_XF86AudioMute:
+			key = QFK_AUDIOMUTE;
+			break;
+		case XKB_KEY_XF86AudioLowerVolume:
+			key = QFK_AUDIOLOWERVOLUME;
+			break;
+		case XKB_KEY_XF86AudioRaiseVolume:
+			key = QFK_AUDIORAISEVOLUME;
+			break;
+		case XKB_KEY_XF86AudioPlay:
+			key = QFK_AUDIOPLAY;
+			break;
+		case XKB_KEY_XF86Calculator:
+			key = QFK_CALCULATOR;
+			break;
+		case XKB_KEY_Help:
+			key = QFK_HELP;
+			break;
+		case XKB_KEY_Undo:
+			key = QFK_UNDO;
+			break;
+		case XKB_KEY_Redo:
+			key = QFK_REDO;
+			break;
+		case XKB_KEY_XF86New:
+			key = QFK_NEW;
+			break;
+		case XKB_KEY_XF86Reload:	// eh? it's open (hiraku) on my kb
+			key = QFK_RELOAD;
+			break;
+		case XKB_KEY_SunOpen:
+			//FALL THROUGH
+		case XKB_KEY_XF86Open:
+			key = QFK_OPEN;
+			break;
+		case XKB_KEY_XF86Close:
+			key = QFK_CLOSE;
+			break;
+		case XKB_KEY_XF86Reply:
+			key = QFK_REPLY;
+			break;
+		case XKB_KEY_XF86MailForward:
+			key = QFK_MAILFORWARD;
+			break;
+		case XKB_KEY_XF86Send:
+			key = QFK_SEND;
+			break;
+		case XKB_KEY_XF86Save:
+			key = QFK_SAVE;
+			break;
+		case XKB_KEY_KP_Equal:
+			key = QFK_KP_EQUALS;
+			break;
+		case XKB_KEY_parenleft:
+			key = QFK_LEFTPAREN;
+			break;
+		case XKB_KEY_parenright:
+			key = QFK_RIGHTPAREN;
+			break;
+		case XKB_KEY_XF86Back:
+			key = QFK_BACK;
+			break;
+		case XKB_KEY_XF86Forward:
+			key = QFK_FORWARD;
+			break;
+
 		default:
-			*keycode = xkb_keysym_to_lower (keysym);
+			key = xkb_keysym_to_lower (keysym);
 			break;
 	}
+
+	*keycode = key;
 }
 
 static void
@@ -370,24 +768,21 @@ in_wl_keyboard_key (void *data,
 {
 	auto scancode = key + 8;
 	auto sym = xkb_state_key_get_one_sym (xkb_state, scancode);
-	auto utf8len = xkb_state_key_get_utf8 (xkb_state,
-										   scancode, nullptr, 0);
-	if (utf8len == -1) {
-		Sys_Error ("xkb_state_key_get_utf8 passed an invalid keysym: %u", sym);
-	}
-	wl_utf8->size = utf8len + 1;
-	dstring_adjust (wl_utf8);
-	utf8len = xkb_state_key_get_utf8 (xkb_state, scancode,
-									  wl_utf8->str, wl_utf8->size);
-	if (utf8len == -1) {
-		Sys_Error ("xkb_state_key_get_utf8 passed an invalid keysym: %u", sym);
+
+	if (sym == XKB_KEY_NoSymbol) {
+		Sys_Error ("in_wl_keyboard_key: Failed to get keysym for key %d, scancode %d\n",
+					key, scancode);
 	}
 
-	if (utf8len == 1) {
-		wl_key_event.unicode = (byte)wl_utf8->str[0];
-	}
+	in_wl_process_key (scancode, sym,
+					   &wl_key_event.code, &wl_key_event.unicode);
 
-	in_wl_keysym_to_keycode (sym, &wl_key_event.code);
+	if ((size_t)wl_key_event.code >= WL_MAX_KEY_BUTTONS) {
+		Sys_MaskPrintf (SYS_wayland,
+						"Key %u (sc %u) not supported! %s\n",
+						key, scancode, wl_utf8->str);
+		return;
+	}
 
 	auto pressed = state == WL_KEYBOARD_KEY_STATE_PRESSED ||
 				   state == WL_KEYBOARD_KEY_STATE_REPEATED;
@@ -409,6 +804,9 @@ in_wl_keyboard_modifiers (void *data,
 		  uint32_t mods_locked,
 		  uint32_t group)
 {
+	xkb_state_update_mask (xkb_state,
+						   mods_depressed, mods_latched,
+						   mods_locked, 0, 0, group);
 }
 
 static void
