@@ -104,6 +104,7 @@ static in_axisinfo_t wl_mouse_axes[WL_MAX_MOUSE_AXES];
 static constexpr size_t WL_MAX_MOUSE_BUTTONS = 8;
 static in_buttoninfo_t wl_mouse_buttons[WL_MAX_MOUSE_BUTTONS];
 static IE_mouse_event_t wl_mouse;
+static IE_button_event_t wl_mouse_button_event;
 
 static wl_idevice_t wl_mouse_device = {
 	"core:mouse",
@@ -116,6 +117,8 @@ static wl_idevice_t wl_mouse_device = {
 static constexpr size_t WL_MAX_KEY_BUTTONS = KEY_MAX;
 static in_buttoninfo_t wl_keyboard_buttons[WL_MAX_KEY_BUTTONS];
 static IE_key_event_t wl_key_event;
+static IE_button_event_t wl_keyboard_button_event;
+
 static wl_idevice_t wl_keyboard_device = {
 	"core:keyboard",
 	0, SIZE (wl_keyboard_buttons),
@@ -195,17 +198,12 @@ wl_pointer_axis (void *data,
 }
 
 static void
-in_wl_send_button_event (in_buttoninfo_t *btn)
+in_wl_send_button_event (IE_button_event_t *btn)
 {
 	IE_event_t event = {
 		.type = ie_button,
 		.when = Sys_LongTime (),
-		.button = {
-			.data = wl_mouse_device.event_data,
-			.devid = wl_mouse_device.devid,
-			.button = btn->button,
-			.state = btn->state,
-		},
+		.button = *btn
 	};
 	IE_Send_Event (&event);
 }
@@ -221,7 +219,11 @@ wl_pointer_frame (void *data,
 	};
 
 	if (!IE_Send_Event (&event)) {
-		in_wl_send_button_event (&wl_mouse_buttons[btn]);
+		wl_mouse_button_event.data = wl_mouse_device.event_data;
+		wl_mouse_button_event.devid = wl_mouse_device.devid;
+		wl_mouse_button_event.button = wl_mouse_buttons[btn].button;
+		wl_mouse_button_event.state = wl_mouse_buttons[btn].state;
+		in_wl_send_button_event (&wl_mouse_button_event);
 	}
 }
 
@@ -774,9 +776,16 @@ in_wl_keyboard_key (void *data,
 					key, scancode);
 	}
 
+	auto pressed = state == WL_KEYBOARD_KEY_STATE_PRESSED ||
+				   state == WL_KEYBOARD_KEY_STATE_REPEATED;
+
+	wl_keyboard_buttons[key].state = pressed;
+
 	in_wl_process_key (scancode, sym,
 					   &wl_key_event.code, &wl_key_event.unicode);
 
+	// FIXME: Certain valid keys that need special handling
+	// 		  triggers this error
 	if ((size_t)wl_key_event.code >= WL_MAX_KEY_BUTTONS) {
 		Sys_MaskPrintf (SYS_wayland,
 						"Key %u (sc %u) not supported! %s\n",
@@ -784,14 +793,12 @@ in_wl_keyboard_key (void *data,
 		return;
 	}
 
-	auto pressed = state == WL_KEYBOARD_KEY_STATE_PRESSED ||
-				   state == WL_KEYBOARD_KEY_STATE_REPEATED;
-
-	// TODO: For wl_seat >= 10 we need to check for REPEAT state as well
-	wl_keyboard_buttons[wl_key_event.code].state = pressed;
-
 	if (!(pressed && in_wl_send_key_event ())) {
-		in_wl_send_button_event(&wl_keyboard_buttons[key]);
+		wl_keyboard_button_event.data = wl_keyboard_device.event_data;
+		wl_keyboard_button_event.devid = wl_keyboard_device.devid;
+		wl_keyboard_button_event.button = key;
+		wl_keyboard_button_event.state = pressed;
+		in_wl_send_button_event(&wl_keyboard_button_event);
 	}
 }
 
