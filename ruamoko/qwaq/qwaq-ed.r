@@ -914,21 +914,25 @@ color_window (void)
 	}
 }
 
+bool draw_editor_overlay = true;
+
 void
 draw_2d (void)
 {
 	int         width = Draw_Width ();
 	int         height = Draw_Height ();
-	Draw_String (8, height - 8,
-				 sprintf ("%5.2f\xd0\xd2\xc0\xc2", frametime*1000));
+	//\xd0\xd2\xc0\xc2
+	Draw_String (8, height - 8, sprintf ("%5.2f", frametime*1000));
 
-	IMUI_SetSize (imui_ctx, Draw_Width (), Draw_Height ());
-	IMUI_BeginFrame (imui_ctx);
-	IMUI_Style_Update (imui_ctx, &current_style);
+	if (draw_editor_overlay) {
+		IMUI_SetSize (imui_ctx, Draw_Width (), Draw_Height ());
+		IMUI_BeginFrame (imui_ctx);
+		IMUI_Style_Update (imui_ctx, &current_style);
 
-	[windows makeObjectsPerformSelector: @selector (draw)];
-	//color_window ();
-	IMUI_Draw (imui_ctx);
+		[windows makeObjectsPerformSelector: @selector (draw)];
+		//color_window ();
+		IMUI_Draw (imui_ctx);
+	}
 }
 
 static int
@@ -1088,13 +1092,10 @@ main (int argc, string *argv)
 	arp_start ();
 
 	plitem_t *config = PL_GetPropertyList (render_graph_cfg);
-
-	IN_LoadConfig (config);
 	init_graphics (config);
 	PL_Release (config);
 
 	IN_SendConnectedDevices ();
-
 	setup_bindings ();
 
 	//Draw_SetScale (1);
@@ -1108,8 +1109,12 @@ main (int argc, string *argv)
 	int key_devid = IN_FindDeviceId ("core:keyboard");
 	int lctrl_key = IN_GetButtonNumber (key_devid, "Control_L");
 	int rctrl_key = IN_GetButtonNumber (key_devid, "Control_R");
+	int lalt_key = IN_GetButtonNumber (key_devid, "Alt_L");
+	int ralt_key = IN_GetButtonNumber (key_devid, "Alt_R");
 	int q_key = IN_GetButtonNumber (key_devid, "q");
+	int e_key = IN_GetButtonNumber (key_devid, "e");
 	int bspace = IN_GetButtonNumber (key_devid, "BackSpace");
+	bool editor_key_pressed = false;
 
 #if 0
 	uint count = clipinfo.num_frames * clipinfo.num_channels;
@@ -1366,11 +1371,21 @@ main (int argc, string *argv)
 		//	printf ("c:%9q d:%g x+y:%g\n", c, sqrt(d•d), c.x+c.y);
 		//}
 
-		in_buttoninfo_t info[2] = {};
+		in_buttoninfo_t info[4] = {};
 		IN_GetButtonInfo (key_devid, lctrl_key, &info[0]);
-		IN_GetButtonInfo (key_devid, q_key, &info[1]);
-		if (info[0].state && info[1].state) {
+		IN_GetButtonInfo (key_devid, lalt_key, &info[1]);
+		IN_GetButtonInfo (key_devid, q_key, &info[2]);
+		IN_GetButtonInfo (key_devid, e_key, &info[3]);
+		if (info[0].state && info[2].state) {
 			break;
+		}
+		if (info[0].state && info[1].state && info[3].state) {
+			if (!editor_key_pressed) {
+				draw_editor_overlay = !draw_editor_overlay;
+			}
+			editor_key_pressed = true;
+		} else {
+			editor_key_pressed = false;
 		}
 	}
 	[player release];
