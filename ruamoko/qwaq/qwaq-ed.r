@@ -104,8 +104,16 @@ ulong Render_BufferSize (string name) = #0;
 #include "planetary.h"
 
 void
-update_orrery ()
+update_orrery (entity_t earth, double time)
 {
+	float ph = float(0.05 * (time - double (1ul<<32)));
+	quaternion trot = { 0, 0, sin(ph), cos(ph) };
+	quaternion vrot = '0 0 0 1';//{ 0, -sqrt(0.5f), 0, sqrt(0.5f) };
+
+	auto xform = Entity_GetTransform (earth);
+	Transform_SetLocalRotation(xform, vrot * trot);
+	vec4 pos = Transform_GetWorldPosition (xform);
+
 	ulong addr = Render_BufferAddress ("planetary");
 	PlanetaryData planetary = {
 		.numOpticalDepthPoints = 10,
@@ -120,7 +128,7 @@ update_orrery ()
 		.planetRadius = 695700e3,
 		},
 		{// earth
-		.planetCenter = vec3(12770e3, -20, 20),
+		.planetCenter = pos.xyz,
 		.planetRadius = 6370e3,
 		},
 		{// moon
@@ -673,67 +681,6 @@ camera_lookat (point_t eye, point_t target, point_t up)
 	}
 }
 
-@interface CamTest : Object
-{
-	entity_t ent;
-	transform_t xform;
-}
-+camtest:(scene_t) scene;
--think:(float)frametime state:(state_t)state;
-@end
-
-@implementation CamTest
--initInScene:(scene_t) scene
-{
-	if (!(self = [super init])) {
-		return nil;
-	}
-
-	ent = Scene_CreateEntity (scene);
-	auto main = Scene_CreateEntity (scene);
-	auto fwd = Scene_CreateEntity (scene);
-	auto up = Scene_CreateEntity (scene);
-	printf ("%08lx %08lx %08lx %08lx\n", ent, main, fwd, up);
-
-	Entity_SetModel (main, Model_Load ("progs/Octahedron.mdl"));
-	Entity_SetModel (fwd, Model_Load ("progs/Cube.mdl"));
-	Entity_SetModel (up, Model_Load ("progs/Capsule.mdl"));
-
-	xform = Entity_GetTransform (ent);
-	auto main_xform = Entity_GetTransform (main);
-	auto fwd_xform = Entity_GetTransform (fwd);
-	auto up_xform = Entity_GetTransform (up);
-	Transform_SetParent (main_xform, xform);
-	Transform_SetParent (fwd_xform, main_xform);
-	Transform_SetParent (up_xform, main_xform);
-	Transform_SetLocalPosition(xform, {0, 0, 0, 1});
-	Transform_SetLocalPosition(main_xform, {0, 0, 0, 1});
-	Transform_SetLocalPosition(fwd_xform, {0.5, 0, 0, 1});
-	Transform_SetLocalScale(fwd_xform, {0.125, 0.125, 0.125, 1});
-	Transform_SetLocalPosition(up_xform, {0, 0, 0.5, 1});
-	Transform_SetLocalScale(up_xform, {0.125, 0.125, 0.125, 1});
-
-	return self;
-}
-
--(void)dealloc
-{
-	Scene_DestroyEntity (ent);
-	[super dealloc];
-}
-
-+camtest:(scene_t) scene
-{
-	return [[[self alloc] initInScene:scene] autorelease];
-}
-
--think:(float)frametime state:(state_t)state
-{
-	set_transform (state.M, xform);
-	return self;
-}
-@end
-
 void
 camera_first_person (state_t *state)
 {
@@ -1081,6 +1028,115 @@ draw_principle_axes (motor_t M, bivector_t I)
 	}
 }
 
+state_t
+update_block_state(state_t state, body_t body, transform_t xform)
+{
+	state.M = body.R * state.M;
+	state.B = body.R * state.B * ~body.R;
+
+	float h = frametime / 100;
+	bivector_t f = {
+		.bvect = '0 0 0.1',
+		.bvecp = '0 0 1',
+	};
+	for (int i = 0; i < 100; i++) {
+		auto ds = dState (state, f, &body);
+		state.M += h * ds.M;
+		state.B += h * ds.B;
+		state.M = normalize (state.M);
+	}
+	state.M = state.M * ~body.R;
+	state.B = ~body.R * state.B * body.R;
+	set_transform (state.M, xform);
+	draw_principle_axes (state.M, body.I);
+	return state;
+}
+
+void
+draw_quadsphere_gizmos (int key_devid, int bspace, int subdiv,
+						msgbuf_t quadsphere, qf_mesh_t qsmesh, mat4 mat)
+{
+	static uint base = 0;
+	static double inc_time = -1;
+	static double key_time = -1;
+	in_buttoninfo_t info = {};
+	IN_GetButtonInfo (key_devid, bspace, &info);
+	if (realtime > key_time && info.state) {
+		key_time = realtime + 0.2;
+		base += 4 * (1 << (2 * subdiv));
+	}
+	if (0&&realtime > inc_time) {
+		inc_time = realtime + 3;
+		base += 4 * (1 << (2 * subdiv));
+	}
+	if (base >= qsmesh.adjacency.count) {
+		base = 0;
+	}
+	//float len = 0;
+	uint count = 0;
+	if (subdiv > 0) {
+		count = 4u * (1 << (2 * subdiv));
+	} else {
+		count = qsmesh.adjacency.count;
+	}
+	for (uint i = 0; i < count; i++) {
+		int adjacency = qsmesh.adjacency.offset;
+		int verts = qsmesh.vertices.offset;
+		int offset = adjacency + (i + base) * sizeof (quarteredge_t);
+		quarteredge_t h[2];
+		MsgBuf_ReadSeek (quadsphere, offset, msg_set);
+		MsgBuf_ReadBytes (quadsphere, &h[0], sizeof (quarteredge_t));
+		//printf ("%d: %d %d %d\n", i + base, h[0].twin, h[0].vert, h[0].edge);
+//#define NEXT(i) h[0].next
+#define NEXT(i) (((i) & ~3) | (((i)+1) & 3))
+		offset = adjacency + NEXT(i + base) * sizeof (quarteredge_t);
+		MsgBuf_ReadSeek (quadsphere, offset, msg_set);
+		MsgBuf_ReadBytes (quadsphere, &h[1], sizeof (quarteredge_t));
+		vec4 v[2] = {'0 0 0 1', '0 0 0 1'};
+		vec4 n = {};
+		offset = verts + h[0].vert * sizeof (vec3) * 2;
+		MsgBuf_ReadSeek (quadsphere, offset, msg_set);
+		MsgBuf_ReadBytes (quadsphere, &v[0], sizeof (vec3));
+		MsgBuf_ReadBytes (quadsphere, &n, sizeof (vec3));
+		offset = verts + h[1].vert * sizeof (vec3) * 2;
+		MsgBuf_ReadSeek (quadsphere, offset, msg_set);
+		MsgBuf_ReadBytes (quadsphere, &v[1], sizeof (vec3));
+		v[0] = mat * v[0];
+		v[1] = mat * v[1];
+		//printf ("%d %q %q\n", i, v[0], v[1]);
+		Gizmo_AddCapsule (v[0], v[1], 3e3,//0.005,// { 1, 0, 0, 0});
+						  vec4 (i & 1, (i>>1)&1, (i>>2)&1, -1)*0.5+0.5);
+		//auto d = v[1] - v[0];
+		//float l = d • d;
+		//if (l > len) len = l;
+	}
+	//printf ("max len: %g\n", sqrt(len));
+}
+
+bool
+check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
+{
+	static bool editor_key_pressed = false;
+
+	in_buttoninfo_t info[4] = {};
+	IN_GetButtonInfo (key_devid, lctrl_key, &info[0]);
+	IN_GetButtonInfo (key_devid, lalt_key, &info[1]);
+	IN_GetButtonInfo (key_devid, q_key, &info[2]);
+	IN_GetButtonInfo (key_devid, e_key, &info[3]);
+	if (info[0].state && info[2].state) {
+		return true;
+	}
+	if (info[0].state && info[1].state && info[3].state) {
+		if (!editor_key_pressed) {
+			draw_editor_overlay = !draw_editor_overlay;
+		}
+		editor_key_pressed = true;
+	} else {
+		editor_key_pressed = false;
+	}
+	return false;
+}
+
 int
 main (int argc, string *argv)
 {
@@ -1114,7 +1170,6 @@ main (int argc, string *argv)
 	int q_key = IN_GetButtonNumber (key_devid, "q");
 	int e_key = IN_GetButtonNumber (key_devid, "e");
 	int bspace = IN_GetButtonNumber (key_devid, "BackSpace");
-	bool editor_key_pressed = false;
 
 #if 0
 	uint count = clipinfo.num_frames * clipinfo.num_channels;
@@ -1206,9 +1261,7 @@ main (int argc, string *argv)
 	[player setCamera:playercam];
 	[main_window addCamera:playercam];
 
-	//id camtest = [[CamTest camtest:[main_window scene]] retain];
-
-	#define SUBDIV 8
+	#define SUBDIV 5
 	auto quadsphere = create_quadsphere();
 	int planetary_queue = Scene_Entqueue ([main_window scene], "planetary");
 
@@ -1230,7 +1283,6 @@ main (int argc, string *argv)
 	Entity_SetTexture (QuadSphere_ent, "8k_earth_daymap");
 	Transform_SetLocalPosition(Entity_GetTransform (QuadSphere_ent), { 12770e3, -20, 20, 1});
 	Transform_SetLocalScale(Entity_GetTransform (QuadSphere_ent), { 6370e3, 6370e3, 6370e3, 1});
-	mat4 mat = Transform_GetWorldMatrix(Entity_GetTransform (QuadSphere_ent));
 	qf_mesh_t qsmesh;
 	vec4 stuff = {};
 	{
@@ -1264,128 +1316,36 @@ main (int argc, string *argv)
 				break;
 			}
 		}
-		//static bool fish = false;
-		//if (realtime > (10 + double (1ul<<32)) && !fish) {
-		//	Cvar_SetInteger ("fisheye", true);
-		//	fish = true;
-		//}
+		if (0) {
+			static bool fish = false;
+			if (realtime > (10 + double (1ul<<32)) && !fish) {
+				Cvar_SetInteger ("fisheye", true);
+				fish = true;
+			}
+		}
 
-		update_orrery ();
+		update_orrery (QuadSphere_ent, realtime);
 
 		//update_cube(frametime);
 		//draw_cube();
-		auto bs = block_state;
-		bs.M = block_body.R * bs.M;
-		bs.B = block_body.R * bs.B * ~block_body.R;
-
-		float ph = float(0.05 * (realtime - double (1ul<<32)));
-		quaternion trot = { 0, 0, sin(ph), cos(ph) };
-		quaternion vrot = '0 0 0 1';//{ 0, -sqrt(0.5f), 0, sqrt(0.5f) };
-		Transform_SetLocalRotation(Entity_GetTransform (QuadSphere_ent),
-			vrot * trot);
-
-		float h = frametime / 100;
-		bivector_t f = {
-			.bvect = '0 0 0.1',
-			.bvecp = '0 0 1',
-		};
-		for (int i = 0; i < 100; i++) {
-			auto ds = dState (bs, f, &block_body);
-			bs.M += h * ds.M;
-			bs.B += h * ds.B;
-			bs.M = normalize (bs.M);
-		}
-		bs.M = bs.M * ~block_body.R;
-		bs.B = ~block_body.R * bs.B * block_body.R;
-		block_state = bs;
-		set_transform (block_state.M, block_xform);
-		draw_principle_axes (block_state.M, block_body.I);
+		block_state = update_block_state (block_state, block_body, block_xform);
 
 		[player think:frametime];
 		[playercam think:frametime];
-		//[camtest think:frametime state:[playercam state]];
 		[main_window nextClip:frametime];
-
 		[main_window updateCamera];
-		{
-			static uint base = 0;
-			static double inc_time = -1;
-			static double key_time = -1;
-			in_buttoninfo_t info = {};
-			IN_GetButtonInfo (key_devid, bspace, &info);
-			if (realtime > key_time && info.state) {
-				key_time = realtime + 0.2;
-				base += 4 * (1 << (2 * SUBDIV));
-			}
-			if (0&&realtime > inc_time) {
-				inc_time = realtime + 3;
-				base += 4 * (1 << (2 * SUBDIV));
-			}
-			if (base >= qsmesh.adjacency.count) {
-				base = 0;
-			}
-			//float len = 0;
-			for (uint i = 0; 0&&i < 4u * (1 << (2 * SUBDIV)); i++) {
-			//for (uint i = 0; i < qsmesh.adjacency.count; i++) {
-				int adjacency = qsmesh.adjacency.offset;
-				int verts = qsmesh.vertices.offset;
-				int offset = adjacency + (i + base) * sizeof (quarteredge_t);
-				quarteredge_t h[2];
-				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
-				MsgBuf_ReadBytes (quadsphere, &h[0], sizeof (quarteredge_t));
-				//printf ("%d: %d %d %d\n", i + base, h[0].twin, h[0].vert, h[0].edge);
-//#define NEXT(i) h[0].next
-#define NEXT(i) (((i) & ~3) | (((i)+1) & 3))
-				offset = adjacency + NEXT(i + base) * sizeof (quarteredge_t);
-				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
-				MsgBuf_ReadBytes (quadsphere, &h[1], sizeof (quarteredge_t));
-				vec4 v[2] = {'0 0 0 1', '0 0 0 1'};
-				vec4 n = {};
-				offset = verts + h[0].vert * sizeof (vec3) * 2;
-				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
-				MsgBuf_ReadBytes (quadsphere, &v[0], sizeof (vec3));
-				MsgBuf_ReadBytes (quadsphere, &n, sizeof (vec3));
-				offset = verts + h[1].vert * sizeof (vec3) * 2;
-				MsgBuf_ReadSeek (quadsphere, offset, msg_set);
-				MsgBuf_ReadBytes (quadsphere, &v[1], sizeof (vec3));
-				//v[0] += '-20 20 0 0';
-				//v[1] += '-20 20 0 0';
-				v[0] = mat * v[0];
-				v[1] = mat * v[1];
-				Gizmo_AddCapsule (v[0], v[1], 3e3,//0.005,// { 1, 0, 0, 0});
-								  vec4 (i & 1, (i>>1)&1, (i>>2)&1, -1)*0.5+0.5);
-				//auto d = v[1] - v[0];
-				//float l = d • d;
-				//if (l > len) len = l;
-			}
-			//printf ("max len: %g\n", sqrt(len));
-		}
-		leafnode ();
-		//set_transform ([playercam state].M, camera);
-		//{
-		//	auto p = (vec4)[player pos];
-		//	auto c = Transform_GetWorldPosition (camera);
-		//	auto n = (vec4)[playercam getNest];
-		//	auto d = c - p;
-		//	printf ("n:%9q\n", n);
-		//	printf ("c:%9q d:%g x+y:%g\n", c, sqrt(d•d), c.x+c.y);
-		//}
 
-		in_buttoninfo_t info[4] = {};
-		IN_GetButtonInfo (key_devid, lctrl_key, &info[0]);
-		IN_GetButtonInfo (key_devid, lalt_key, &info[1]);
-		IN_GetButtonInfo (key_devid, q_key, &info[2]);
-		IN_GetButtonInfo (key_devid, e_key, &info[3]);
-		if (info[0].state && info[2].state) {
-			break;
+		if (0) {
+			auto xform = Entity_GetTransform (QuadSphere_ent);
+			mat4 mat = Transform_GetWorldMatrix(xform);
+			draw_quadsphere_gizmos (key_devid, bspace, SUBDIV, quadsphere,
+									qsmesh, mat);
 		}
-		if (info[0].state && info[1].state && info[3].state) {
-			if (!editor_key_pressed) {
-				draw_editor_overlay = !draw_editor_overlay;
-			}
-			editor_key_pressed = true;
-		} else {
-			editor_key_pressed = false;
+
+		leafnode ();
+
+		if (check_keys (key_devid, lctrl_key, lalt_key, q_key, e_key)) {
+			break;
 		}
 	}
 	[player release];
