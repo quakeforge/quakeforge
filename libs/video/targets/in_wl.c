@@ -162,6 +162,7 @@ wl_pointer_motion (void *data,
 		       wl_fixed_t surface_x,
 		       wl_fixed_t surface_y)
 {
+	wl_mouse.type = ie_mousemove;
 	wl_mouse.x = wl_fixed_to_int (surface_x);
 	wl_mouse.y = wl_fixed_to_int (surface_y);
 }
