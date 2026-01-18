@@ -1677,7 +1677,7 @@ create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, jobptr_t jp,
 }
 
 static void
-create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
+create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 {
 	qfZoneScoped (true);
 	__auto_type rctx = ctx->render_context;
@@ -1820,13 +1820,13 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 		}
 	}
 	if (s.inds.num_graph_pipelines) {
-		dfunc->vkCreateGraphicsPipelines (device->dev, 0,
+		dfunc->vkCreateGraphicsPipelines (device->dev, cache,
 										  s.inds.num_graph_pipelines,
 										  s.ptr.gplCreate, 0, pipelines);
 	}
 	if (s.inds.num_comp_pipelines) {
 		__auto_type p = &pipelines[s.inds.num_graph_pipelines];
-		dfunc->vkCreateComputePipelines (device->dev, 0,
+		dfunc->vkCreateComputePipelines (device->dev, cache,
 										 s.inds.num_comp_pipelines,
 										 s.ptr.cplCreate, 0, p);
 	}
@@ -1892,17 +1892,28 @@ dump_job (vulkan_ctx_t *ctx)
 }
 
 void
-QFV_BuildRender (vulkan_ctx_t *ctx)
+QFV_BuildRender (vulkan_ctx_t *ctx, dstring_t *cache_data)
 {
 	qfZoneScoped (true);
-	__auto_type rctx = ctx->render_context;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto rctx = ctx->render_context;
 
 	objcount_t  counts = {};
 	count_stuff (rctx->jobinfo, &counts);
 
-	create_objects (ctx, &counts);
+	VkPipelineCache cache = VK_NULL_HANDLE;
+	if (cache_data) {
+		cache = QFV_CreatePipelineCache (device, cache_data);
+	}
+
+	create_objects (ctx, &counts, cache);
 	if (developer & SYS_vulkan) {
 		dump_job (ctx);
+	}
+	if (cache_data) {
+		QFV_GetPipelineCacheData (device, cache, cache_data);
+		dfunc->vkDestroyPipelineCache (device->dev, cache, nullptr);
 	}
 	QFV_Render_Run_Startup (ctx);
 }

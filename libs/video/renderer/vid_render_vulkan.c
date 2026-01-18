@@ -152,7 +152,7 @@ vulkan_R_Init (struct plitem_s *config)
 		QFV_LoadSamplerInfo (vulkan_ctx, samplers);
 		QFV_LoadRenderInfo (vulkan_ctx, render_graph);
 	}
-	QFV_BuildRender (vulkan_ctx);
+	QFV_BuildRender (vulkan_ctx, nullptr);
 
 	Skin_Init ();
 

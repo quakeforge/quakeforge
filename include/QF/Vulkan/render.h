@@ -333,6 +333,7 @@ typedef struct scene_s scene_t;
 typedef struct imui_ctx_s imui_ctx_t;
 typedef struct qfv_dsmanager_s qfv_dsmanager_t;
 typedef struct qfv_resobj_s qfv_resobj_t;
+typedef struct dstring_s dstring_t;
 
 typedef struct qfv_time_s {
 	int64_t     cur_time;
@@ -550,7 +551,7 @@ void QFV_LoadEntqueueInfo (vulkan_ctx_t *ctx, struct plitem_s *item);
 uint32_t QFV_GetDSIndex (vulkan_ctx_t *ctx, const char *name);
 void QFV_SetDescriptorSet (vulkan_ctx_t *ctx, uint32_t frame,
 						   uint32_t ds_index, VkDescriptorSet set);
-void QFV_BuildRender (vulkan_ctx_t *ctx);
+void QFV_BuildRender (vulkan_ctx_t *ctx, dstring_t *cache_data);
 void QFV_Render_Init (vulkan_ctx_t *ctx);
 void QFV_Render_Run_Init (vulkan_ctx_t *ctx);
 void QFV_Render_Run_Startup (vulkan_ctx_t *ctx);
