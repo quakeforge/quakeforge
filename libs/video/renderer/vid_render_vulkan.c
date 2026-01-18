@@ -34,6 +34,7 @@
 #include "QF/cvar.h"
 #include "QF/darray.h"
 #include "QF/dstring.h"
+#include "QF/hash.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -82,6 +83,21 @@
 #include "vid_internal.h"
 #include "vid_vulkan.h"
 #include "vulkan/vkparse.h"
+
+typedef struct qfv_cachehead_s {
+	uint32_t    magic;
+	uint32_t    size;
+	uint64_t    hash;
+	uint32_t    vendorID;
+	uint32_t    deviceID;
+	uint32_t    driverVersion;
+	uint32_t    driverABI;
+	uint8_t     uuid[VK_UUID_SIZE];
+} qfv_cachehead_t;
+
+//QFVK little endian
+#define QFV_CACHE_MAGIC 0x4b564651
+#define QFV_CACHE_NAME "qfv_pipeline_cache.bin"
 
 static vulkan_ctx_t *vulkan_ctx;
 
@@ -152,7 +168,59 @@ vulkan_R_Init (struct plitem_s *config)
 		QFV_LoadSamplerInfo (vulkan_ctx, samplers);
 		QFV_LoadRenderInfo (vulkan_ctx, render_graph);
 	}
-	QFV_BuildRender (vulkan_ctx, nullptr);
+
+	uint64_t start = Sys_LongTime ();
+	auto cache_data = dstring_new ();
+	auto f = QFS_FOpenFile (QFV_CACHE_NAME);
+	if (f) {
+		qfv_cachehead_t head;
+		if (Qread (f, &head, sizeof (head)) != (int) sizeof (head)) {
+			goto cache_bail;
+		}
+		auto prop = &vulkan_ctx->device->physDev->p.properties;
+		if (head.magic != QFV_CACHE_MAGIC
+			|| head.vendorID != prop->vendorID
+			|| head.deviceID != prop->deviceID
+			|| head.driverVersion != prop->driverVersion
+			|| head.driverABI != sizeof (void *)
+			|| memcmp (head.uuid, prop->pipelineCacheUUID, VK_UUID_SIZE) != 0) {
+			goto cache_bail;
+		}
+		cache_data->size = head.size;
+		dstring_adjust (cache_data);
+		if (Qread (f, cache_data->str, head.size) != (int) head.size
+			|| Hash_Buffer (cache_data->str, cache_data->size) != head.hash) {
+			dstring_clear (cache_data);
+			goto cache_bail;
+		}
+		Sys_MaskPrintf (SYS_vulkan, GRN"using cache in %s"DFL"\n",
+						qfs_foundfile.realname);
+cache_bail:
+		Qclose (f);
+	}
+	QFV_BuildRender (vulkan_ctx, cache_data);
+	if (cache_data->size) {
+		auto prop = &vulkan_ctx->device->physDev->p.properties;
+		qfv_cachehead_t head = {
+			.magic = QFV_CACHE_MAGIC,
+			.size = cache_data->size,
+			.hash = Hash_Buffer (cache_data->str, cache_data->size),
+			.vendorID = prop->vendorID,
+			.deviceID = prop->deviceID,
+			.driverVersion = prop->driverVersion,
+			.driverABI = sizeof (void *),
+		};
+		memcpy (head.uuid, prop->pipelineCacheUUID, VK_UUID_SIZE);
+		f = QFS_WOpen (vac (vulkan_ctx->va_ctx, "%s/%s",
+							qfs_gamedir->dir.def, QFV_CACHE_NAME), 0);
+		Qwrite (f, &head, sizeof (head));
+		Qwrite (f, cache_data->str, cache_data->size);
+		Qclose (f);
+	}
+	dstring_delete (cache_data);
+	uint64_t end = Sys_LongTime ();
+	Sys_MaskPrintf (SYS_vulkan, GRN"render build time: %"PRId64"us"DFL"\n",
+					end - start);
 
 	Skin_Init ();
 
