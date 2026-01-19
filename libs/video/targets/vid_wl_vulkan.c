@@ -132,7 +132,7 @@ wl_vulkan_init_presentation (vulkan_ctx_t *ctx)
 	}
 #include "QF/Vulkan/funclist.h"
 
-    pres->display = wl_disp;
+    pres->display = wl_display;
 }
 
 static int
@@ -170,8 +170,8 @@ wl_vulkan_create_surface (vulkan_ctx_t *ctx)
 
     VkWaylandSurfaceCreateInfoKHR createInfo = {
         .sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
-        .display = wl_disp,
-        .surface = wl_surf
+        .display = wl_display,
+        .surface = wl_surface
     };
 
     ctx->window_width = viddef.width;

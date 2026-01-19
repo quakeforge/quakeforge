@@ -109,9 +109,9 @@ static void
 wl_commit_surface (void)
 {
     if (wl_surface_configured) {
-        wl_surface_attach (wl_surf, buffer_data->buf, 0, 0);
-        wl_surface_damage_buffer (wl_surf, 0, 0, INT32_MAX, INT32_MAX);
-        wl_surface_commit (wl_surf);
+        wl_surface_attach (wl_surface, buffer_data->buf, 0, 0);
+        wl_surface_damage_buffer (wl_surface, 0, 0, INT32_MAX, INT32_MAX);
+        wl_surface_commit (wl_surface);
     }
 }
 

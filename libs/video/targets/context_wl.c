@@ -67,25 +67,9 @@
 #include "in_wl.h"
 #include "vid_internal.h"
 
-struct wl_display *wl_disp;
-struct wl_registry *wl_reg;
-struct wl_compositor *wl_comp;
-struct wl_surface *wl_surf;
-struct wl_seat *wl_seat;
-struct wl_pointer *wl_pointer;
-struct wl_keyboard *wl_keyboard;
-struct wl_shm *wl_shm;
-struct wl_shm_pool *wl_shm_pool;
-struct xdg_wm_base *xdg_wm_base;
-struct xdg_surface *xdg_surface;
-struct xdg_toplevel *xdg_toplevel;
-struct zxdg_decoration_manager_v1 *decoration_manager;
-struct zxdg_toplevel_decoration_v1 *toplevel_decoration;
-struct zwp_relative_pointer_manager_v1 *wl_relative_pointer_manager;
-struct zwp_relative_pointer_v1 *wl_relative_pointer;
-struct zwp_pointer_constraints_v1 *zwp_pointer_constraints_v1;
-struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1;
-struct wp_cursor_shape_device_v1 *wp_cursor_shape_device_v1;
+#define WL_IFACE(iface) struct iface *iface
+	WL_ITER_IFACES ();
+#undef WL_IFACE
 
 bool wl_surface_configured = false;
 
@@ -194,35 +178,43 @@ static const struct xdg_wm_base_listener xdg_base_listener = {
     .ping = xdg_wm_base_ping
 };
 
+static bool
+match_interface (const char *name, uint32_t iface_id, const struct wl_interface *iface,
+				 uint32_t version, void **global)
+{
+	if (strcmp (name, iface->name) != 0) {
+		return false;
+	}
+
+	*global = wl_registry_bind (wl_registry, iface_id, iface, version);
+	return *global != nullptr;
+}
+
 static void
 registry_handle_global (void *data, struct wl_registry *reg, uint32_t name,
                         const char *interface, uint32_t version)
 {
-    /*Sys_MaskPrintf (SYS_wayland, "Interface '%s', version: %d, name: %d\n",
-                    interface, version, name);*/
- 
-    if (strcmp (interface, wl_compositor_interface.name) == 0) {
-        wl_comp = wl_registry_bind (wl_reg, name, &wl_compositor_interface, 6);
-    } else if (strcmp (interface, wl_seat_interface.name) == 0) {
-        wl_seat = wl_registry_bind (wl_reg, name, &wl_seat_interface, 10);
-		IN_WL_RegisterSeat ();
-	} else if (strcmp (interface, zwp_relative_pointer_manager_v1_interface.name) == 0) {
-		wl_relative_pointer_manager = wl_registry_bind (wl_reg, name,
-						&zwp_relative_pointer_manager_v1_interface, 1);
-	} else if (strcmp (interface, zwp_pointer_constraints_v1_interface.name) == 0) {
-        zwp_pointer_constraints_v1 = wl_registry_bind (wl_reg, name,
-						&zwp_pointer_constraints_v1_interface, 1);
-	} else if (strcmp (interface, wp_cursor_shape_manager_v1_interface.name) == 0) {
-		wp_cursor_shape_manager_v1 = wl_registry_bind (wl_reg, name,
-						&wp_cursor_shape_manager_v1_interface, 1);
-	} else if (strcmp (interface, wl_shm_interface.name) == 0) {
-        wl_shm = wl_registry_bind (wl_reg, name, &wl_shm_interface, 2);
-    } else if (strcmp (interface, xdg_wm_base_interface.name) == 0) {
-        xdg_wm_base = wl_registry_bind (wl_reg, name, &xdg_wm_base_interface, 6);
+#define MATCH_BEGIN() if (false) {}
+#define MATCH_IFACE(iface, v) else if (match_interface (interface, name,\
+									   &iface##_interface, v, (void **)&iface))
+#define MATCH_END() else { Sys_MaskPrintf(SYS_wayland, "wl_interface: %s, v%d\n", interface, version); }
+
+	MATCH_BEGIN ()
+	MATCH_IFACE (wl_compositor, 6) {}
+	MATCH_IFACE (wl_seat, 10) { IN_WL_RegisterSeat (); }
+	MATCH_IFACE (wl_shm, 2) {}
+	MATCH_IFACE (xdg_wm_base, 6) {
         xdg_wm_base_add_listener (xdg_wm_base, &xdg_base_listener, nullptr);
-    } else if (strcmp (interface, zxdg_decoration_manager_v1_interface.name) == 0) {
-        decoration_manager = wl_registry_bind (wl_reg, name, &zxdg_decoration_manager_v1_interface, 1);
-    }
+	}
+	MATCH_IFACE (zxdg_decoration_manager_v1, 1) {}
+	MATCH_IFACE (zwp_relative_pointer_manager_v1, 1) {}
+	MATCH_IFACE (zwp_pointer_constraints_v1, 1) {}
+	MATCH_IFACE (wp_cursor_shape_manager_v1, 1) {}
+    MATCH_END ()
+
+#undef MATCH_BEGIN
+#undef MATCH_IFACE
+#undef MATCH_END
 }
 
 static void
@@ -239,7 +231,7 @@ void
 WL_ProcessEvents (void)
 {
     struct timespec ts = {};
-    wl_display_dispatch_timeout (wl_disp, &ts);
+    wl_display_dispatch_timeout (wl_display, &ts);
 }
 
 static void
@@ -247,7 +239,7 @@ wl_destroy_window (void)
 {
     xdg_toplevel_destroy (xdg_toplevel);
     xdg_surface_destroy (xdg_surface);
-    wl_surface_destroy (wl_surf);
+    wl_surface_destroy (wl_surface);
 }
 
 void
@@ -259,8 +251,8 @@ WL_CloseDisplay (void)
 
     // TODO: Remove registry globals
 
-    wl_registry_destroy (wl_reg);
-    wl_display_disconnect (wl_disp);
+    wl_registry_destroy (wl_registry);
+    wl_display_disconnect (wl_display);
 }
 
 void
@@ -272,7 +264,7 @@ WL_UpdateFullscreen (int fullscreen)
 
 	if (!wl_fullscreen_supported) {
 		Sys_MaskPrintf (SYS_wayland, "WL_UpdateFullscreen: changing fullscreen "
-									"state not supported by compositor.\n");
+									 "state not supported by compositor.\n");
 		return;
 	}
 
@@ -293,28 +285,29 @@ WL_Init_Cvars (void)
 void
 WL_CreateWindow (int width, int height)
 {
-	wl_surf = wl_compositor_create_surface (wl_comp);
-	xdg_surface = xdg_wm_base_get_xdg_surface (xdg_wm_base, wl_surf);
+	wl_surface = wl_compositor_create_surface (wl_compositor);
+	xdg_surface = xdg_wm_base_get_xdg_surface (xdg_wm_base, wl_surface);
 	xdg_surface_add_listener (xdg_surface, &surface_listener, nullptr);
 
 	xdg_toplevel = xdg_surface_get_toplevel (xdg_surface);
 	xdg_toplevel_add_listener (xdg_toplevel, &toplevel_listener, nullptr);
 	xdg_toplevel_set_title (xdg_toplevel, "Hello");
 
-	if (decoration_manager) {
+	if (zxdg_decoration_manager_v1) {
 		Sys_MaskPrintf (SYS_wayland, "Initializing decorations\n");
 
-		toplevel_decoration = zxdg_decoration_manager_v1_get_toplevel_decoration (
-				decoration_manager, xdg_toplevel);
-		zxdg_toplevel_decoration_v1_add_listener (toplevel_decoration,
+		zxdg_toplevel_decoration_v1 =
+			zxdg_decoration_manager_v1_get_toplevel_decoration (
+				zxdg_decoration_manager_v1, xdg_toplevel);
+		zxdg_toplevel_decoration_v1_add_listener (zxdg_toplevel_decoration_v1,
 				&toplevel_decoration_listener, nullptr);
 
-		zxdg_toplevel_decoration_v1_set_mode (toplevel_decoration,
+		zxdg_toplevel_decoration_v1_set_mode (zxdg_toplevel_decoration_v1,
 			ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
 	}
 
-	wl_surface_commit (wl_surf);
-	wl_display_roundtrip (wl_disp);
+	wl_surface_commit (wl_surface);
+	wl_display_roundtrip (wl_display);
 
 	WL_SetCaption (va ("%s", PACKAGE_STRING));
 }
@@ -322,18 +315,18 @@ WL_CreateWindow (int width, int height)
 void
 WL_OpenDisplay (void)
 {
-	wl_disp = wl_display_connect (nullptr);
-	if (!wl_disp) {
+	wl_display = wl_display_connect (nullptr);
+	if (!wl_display) {
 		Sys_Error ("WL_OpenDisplay: Could not open display\n");
 	}
 
-	wl_reg = wl_display_get_registry (wl_disp);
-	if (!wl_reg) {
+	wl_registry = wl_display_get_registry (wl_display);
+	if (!wl_registry) {
 		Sys_Error ("WL_OpenDisplay: Could not get registry for display\n");
 	}
 
-	wl_registry_add_listener (wl_reg, &registry_listener, nullptr);
-	wl_display_roundtrip (wl_disp);
+	wl_registry_add_listener (wl_registry, &registry_listener, nullptr);
+	wl_display_roundtrip (wl_display);
 }
 
 void

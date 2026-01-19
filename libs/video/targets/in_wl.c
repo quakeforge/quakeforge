@@ -218,8 +218,6 @@ wl_pointer_axis (void *data,
 	//Sys_MaskPrintf (SYS_wayland, "wl_pointer_axis\n");
 }
 
-
-
 static bool
 in_wl_send_mouse_event (void)
 {
@@ -1038,7 +1036,7 @@ in_wl_grab_input (void *data, int grab)
 	if (grab && !zwp_locked_pointer_v1) {
 		zwp_locked_pointer_v1 = zwp_pointer_constraints_v1_lock_pointer (
 				zwp_pointer_constraints_v1,
-				wl_surf, wl_pointer, nullptr,
+				wl_surface, wl_pointer, nullptr,
 				ZWP_POINTER_CONSTRAINTS_V1_LIFETIME_PERSISTENT);
 		wl_pointer_set_cursor (wl_pointer,
 				wl_last_pointer_serial, nullptr, 0, 0);
@@ -1069,9 +1067,9 @@ wl_add_device (wl_idevice_t *dev)
 static void
 in_wl_init (void *data)
 {
-	wl_relative_pointer = zwp_relative_pointer_manager_v1_get_relative_pointer (
-			wl_relative_pointer_manager, wl_pointer);
-	zwp_relative_pointer_v1_add_listener (wl_relative_pointer,
+	zwp_relative_pointer_v1 = zwp_relative_pointer_manager_v1_get_relative_pointer (
+			zwp_relative_pointer_manager_v1, wl_pointer);
+	zwp_relative_pointer_v1_add_listener (zwp_relative_pointer_v1,
 			&wl_relative_pointer_listener, nullptr);
 
 	wp_cursor_shape_device_v1 = wp_cursor_shape_manager_v1_get_pointer (

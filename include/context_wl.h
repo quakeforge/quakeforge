@@ -32,25 +32,32 @@
 
 #include <QF/qtypes.h>
 
-extern struct wl_display *wl_disp;
-extern struct wl_registry *wl_reg;
-extern struct wl_compositor *wl_comp;
-extern struct wl_surface *wl_surf;
-extern struct wl_seat *wl_seat;
-extern struct wl_pointer *wl_pointer;
-extern struct wl_keyboard *wl_keyboard;
-extern struct wl_shm *wl_shm;
-extern struct wl_shm_pool *wl_shm_pool;
-extern struct xdg_wm_base *xdg_wm_base;
-extern struct xdg_surface *xdg_surface;
-extern struct xdg_toplevel *xdg_toplevel;
-extern struct zxdg_decoration_manager_v1 *decoration_manager;
-extern struct zxdg_toplevel_decoration_v1 *toplevel_decoration;
-extern struct zwp_relative_pointer_manager_v1 *wl_relative_pointer_manager;
-extern struct zwp_relative_pointer_v1 *wl_relative_pointer;
-extern struct zwp_pointer_constraints_v1 *zwp_pointer_constraints_v1;
-extern struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1;
-extern struct wp_cursor_shape_device_v1 *wp_cursor_shape_device_v1;
+#define WL_IFACE(...)
+#define WL_ITER_IFACES() \
+	WL_IFACE (wl_display); \
+	WL_IFACE (wl_registry); \
+	WL_IFACE (wl_compositor); \
+	WL_IFACE (wl_surface); \
+	WL_IFACE (wl_seat); \
+	WL_IFACE (wl_pointer); \
+	WL_IFACE (wl_keyboard); \
+	WL_IFACE (wl_shm); \
+	WL_IFACE (wl_shm_pool); \
+	WL_IFACE (xdg_wm_base); \
+	WL_IFACE (xdg_surface); \
+	WL_IFACE (xdg_toplevel); \
+	WL_IFACE (zxdg_decoration_manager_v1); \
+	WL_IFACE (zxdg_toplevel_decoration_v1); \
+	WL_IFACE (zwp_relative_pointer_manager_v1); \
+	WL_IFACE (zwp_relative_pointer_v1); \
+	WL_IFACE (zwp_pointer_constraints_v1); \
+	WL_IFACE (wp_cursor_shape_manager_v1); \
+	WL_IFACE (wp_cursor_shape_device_v1)
+#undef WL_IFACE
+
+#define WL_IFACE(iface) extern struct iface *iface
+	WL_ITER_IFACES ();
+#undef WL_IFACE
 
 extern bool wl_surface_configured;
 
