@@ -153,6 +153,7 @@ extern const char * const st_type_names[];
 const char *optype_str (op_type_e type) __attribute__((const));
 
 int op_is_identifier (operand_t *op) __attribute__((pure));
+bool op_is_arg (operand_t *op) __attribute__((pure));
 int op_is_constant (operand_t *op) __attribute__((pure));
 int op_is_temp (operand_t *op) __attribute__((pure));
 bool op_is_alias (operand_t *op) __attribute__((pure));
