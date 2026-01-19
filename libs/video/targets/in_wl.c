@@ -254,6 +254,22 @@ wl_pointer_axis_discrete (void *data,
 {
 }
 
+static void
+wl_pointer_axis_value120 (void *data,
+			      struct wl_pointer *wl_pointer,
+			      uint32_t axis,
+			      int32_t value120)
+{
+}
+
+static void
+wl_pointer_axis_relative_direction (void *data,
+					struct wl_pointer *wl_pointer,
+					uint32_t axis,
+					uint32_t direction)
+{
+}
+
 static const struct wl_pointer_listener wl_pointer_listener = {
 	.enter = wl_pointer_enter,
 	.leave = wl_pointer_leave,
@@ -264,6 +280,8 @@ static const struct wl_pointer_listener wl_pointer_listener = {
 	.axis_source = wl_pointer_axis_source,
 	.axis_stop = wl_pointer_axis_stop,
 	.axis_discrete = wl_pointer_axis_discrete,
+	.axis_value120 = wl_pointer_axis_value120,
+	.axis_relative_direction = wl_pointer_axis_relative_direction
 };
 
 static void
