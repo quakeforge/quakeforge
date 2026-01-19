@@ -104,13 +104,13 @@ static in_axisinfo_t wl_mouse_axes[WL_MAX_MOUSE_AXES];
 // linux/input-event-codes.h defines 8 named buttons (+2 for mouse wheel, blame X11)
 static constexpr size_t WL_MAX_MOUSE_BUTTONS = 8 + 2;
 static in_buttoninfo_t wl_mouse_buttons[WL_MAX_MOUSE_BUTTONS];
+static int32_t wl_mouse_accumulated_scroll[2] = { 0 };
 static const char *wl_mouse_button_names[] = {
 	"M_BUTTON1",    "M_BUTTON2",  "M_BUTTON3",  "M_WHEEL_UP",
 	"M_WHEEL_DOWN", "M_BUTTON6",  "M_BUTTON7",  "M_BUTTON8",
 	"M_BUTTON9",
 };
 static IE_mouse_event_t wl_mouse;
-static IE_button_event_t wl_mouse_button_event;
 
 static wl_idevice_t wl_mouse_device = {
 	"core:mouse",
@@ -123,7 +123,6 @@ static wl_idevice_t wl_mouse_device = {
 static constexpr size_t WL_MAX_KEY_BUTTONS = KEY_MAX;
 static in_buttoninfo_t wl_keyboard_buttons[WL_MAX_KEY_BUTTONS];
 static IE_key_event_t wl_key_event;
-static IE_button_event_t wl_keyboard_button_event;
 
 static wl_idevice_t wl_keyboard_device = {
 	"core:keyboard",
@@ -183,7 +182,7 @@ wl_pointer_motion (void *data,
 	wl_mouse.y = wl_fixed_to_int (surface_y);
 }
 
-static int32_t btn = -1;
+static int32_t wl_last_button_idx = -1;
 
 static void
 wl_pointer_button (void *data,
@@ -193,20 +192,20 @@ wl_pointer_button (void *data,
 		       uint32_t button,
 		       uint32_t state)
 {
-	auto bid = button - BTN_MOUSE;
-	bid = in_wl_adjust_mouse_button_idx (bid);
+	auto btn = button - BTN_MOUSE;
+	btn = in_wl_adjust_mouse_button_idx (btn);
 	auto pressed = state == WL_POINTER_BUTTON_STATE_PRESSED;
-	wl_mouse_buttons[bid].state = pressed;
+	wl_mouse_buttons[btn].state = pressed;
 
 	if (pressed) {
-		wl_mouse.buttons |= 1 << bid;
+		wl_mouse.buttons |= 1 << btn;
 		wl_mouse.type = ie_mousedown;
 	} else {
-		wl_mouse.buttons &= ~(1 << bid);
+		wl_mouse.buttons &= ~(1 << btn);
 		wl_mouse.type = ie_mouseup;
 	}
 
-	btn = bid;
+	wl_last_button_idx = btn;
 }
 
 static void
@@ -216,35 +215,72 @@ wl_pointer_axis (void *data,
 		     uint32_t axis,
 		     wl_fixed_t value)
 {
+	//Sys_MaskPrintf (SYS_wayland, "wl_pointer_axis\n");
 }
 
-static void
-in_wl_send_button_event (IE_button_event_t *btn)
-{
-	IE_event_t event = {
-		.type = ie_button,
-		.when = Sys_LongTime (),
-		.button = *btn
-	};
-	IE_Send_Event (&event);
-}
 
-static void
-wl_pointer_frame (void *data,
-		      struct wl_pointer *wl_pointer)
+
+static bool
+in_wl_send_mouse_event (void)
 {
 	IE_event_t event = {
 		.type = ie_mouse,
 		.when = Sys_LongTime (),
 		.mouse = wl_mouse
 	};
+	return IE_Send_Event (&event);
+}
 
-	if (!IE_Send_Event (&event)) {
-		wl_mouse_button_event.data = wl_mouse_device.event_data;
-		wl_mouse_button_event.devid = wl_mouse_device.devid;
-		wl_mouse_button_event.button = wl_mouse_buttons[btn].button;
-		wl_mouse_button_event.state = wl_mouse_buttons[btn].state;
-		in_wl_send_button_event (&wl_mouse_button_event);
+static void
+in_wl_send_button_event (wl_idevice_t *dev, int32_t btn)
+{
+	auto btn_info = dev->buttons[btn];
+	IE_event_t event = {
+		.type = ie_button,
+		.when = Sys_LongTime (),
+		.button = {
+			.data   = dev->event_data,
+			.devid  = dev->devid,
+			.button = btn_info.button,
+			.state  = btn_info.state
+		}
+	};
+	IE_Send_Event (&event);
+}
+
+static void
+in_wl_send_scroll_button_event (IE_mouse_type type, int32_t btn)
+{
+	wl_mouse.buttons |= 1 << btn;
+	wl_mouse_buttons[btn].state = type == ie_mousedown;
+	wl_mouse.type = type;
+	if (!in_wl_send_mouse_event ()) {
+		in_wl_send_button_event (&wl_mouse_device, btn);
+	}
+}
+
+static void
+wl_pointer_frame (void *data,
+		      struct wl_pointer *wl_pointer)
+{
+	if (!in_wl_send_mouse_event () && wl_last_button_idx != -1) {
+		in_wl_send_button_event (&wl_mouse_device, wl_last_button_idx);
+	}
+	wl_last_button_idx = -1;
+
+	for (size_t i = 0; i < countof (wl_mouse_accumulated_scroll); ++i) {
+		auto value = wl_mouse_accumulated_scroll[i] / 120;
+		if (value == 0) {
+			continue;
+		}
+
+		auto btn = value > 0 ? 4 : 3;
+		for (int32_t j = 0; j < abs (value); ++j) {
+			in_wl_send_scroll_button_event(ie_mousedown, btn);
+			in_wl_send_scroll_button_event(ie_mouseup, btn);
+		}
+
+		wl_mouse_accumulated_scroll[i] -= value * 120;
 	}
 }
 
@@ -264,19 +300,12 @@ wl_pointer_axis_stop (void *data,
 }
 
 static void
-wl_pointer_axis_discrete (void *data,
-			      struct wl_pointer *wl_pointer,
-			      uint32_t axis,
-			      int32_t discrete)
-{
-}
-
-static void
 wl_pointer_axis_value120 (void *data,
 			      struct wl_pointer *wl_pointer,
 			      uint32_t axis,
 			      int32_t value120)
 {
+	wl_mouse_accumulated_scroll[axis] += value120;
 }
 
 static void
@@ -285,6 +314,7 @@ wl_pointer_axis_relative_direction (void *data,
 					uint32_t axis,
 					uint32_t direction)
 {
+	// TODO: Account for inverted direction
 }
 
 static const struct wl_pointer_listener wl_pointer_listener = {
@@ -296,7 +326,6 @@ static const struct wl_pointer_listener wl_pointer_listener = {
 	.frame = wl_pointer_frame,
 	.axis_source = wl_pointer_axis_source,
 	.axis_stop = wl_pointer_axis_stop,
-	.axis_discrete = wl_pointer_axis_discrete,
 	.axis_value120 = wl_pointer_axis_value120,
 	.axis_relative_direction = wl_pointer_axis_relative_direction
 };
@@ -856,11 +885,7 @@ in_wl_keyboard_key (void *data,
 	}
 
 	if (!(pressed && in_wl_send_key_event ())) {
-		wl_keyboard_button_event.data = wl_keyboard_device.event_data;
-		wl_keyboard_button_event.devid = wl_keyboard_device.devid;
-		wl_keyboard_button_event.button = key;
-		wl_keyboard_button_event.state = pressed;
-		in_wl_send_button_event (&wl_keyboard_button_event);
+		in_wl_send_button_event (&wl_keyboard_device, key);
 	}
 }
 
@@ -1034,14 +1059,8 @@ wl_add_device (wl_idevice_t *dev)
 		dev->axes[i].axis = i;
 	}
 
-	if (dev == &wl_mouse_device) {
-		for (int32_t i = 0; i < dev->num_buttons; ++i) {
-			dev->buttons[i].button = in_wl_adjust_mouse_button_idx (i);
-		}
-	} else {
-		for (int32_t i = 0; i < dev->num_buttons; ++i) {
-			dev->buttons[i].button = i;
-		}
+	for (int32_t i = 0; i < dev->num_buttons; ++i) {
+		dev->buttons[i].button = i;
 	}
 
 	dev->devid = IN_AddDevice (wl_driver_handle, dev, dev->name, dev->name);
