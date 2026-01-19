@@ -93,6 +93,8 @@ typedef struct dag_s {
 	int        *topo;			///< nodes in topological sort order
 	int         num_topo;		///< number of nodes in topo (may be <
 								///< num_nodes after dead node removal)
+	int         call_node;		///< number of last call node (for arg asign
+								///< sequencing)
 	int         num_labels;
 	daglabel_t **labels;		///< array of all daglabels in this dag
 	struct set_s *roots;		///< set of root nodes
