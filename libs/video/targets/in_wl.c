@@ -74,8 +74,6 @@
 #include "libs/video/targets/pointer-constraints-client-protocol.hinc"
 #include "libs/video/targets/cursor-shape-client-protocol.hinc"
 
-#define SIZE(x) (sizeof (x) / sizeof (x[0]))
-
 // TODO: Reduce global state by having a wayland input state struct
 
 static int wl_driver_handle = -1;
@@ -103,15 +101,20 @@ static constexpr size_t WL_MAX_MOUSE_AXES = 2;
 static in_axisinfo_t wl_mouse_axes[WL_MAX_MOUSE_AXES];
 //static const char *wl_mouse_axis_names[] = {"M_X", "M_Y"};
 
-// linux/input-event-codes.h defines 8 named buttons
-static constexpr size_t WL_MAX_MOUSE_BUTTONS = 8;
+// linux/input-event-codes.h defines 8 named buttons (+2 for mouse wheel, blame X11)
+static constexpr size_t WL_MAX_MOUSE_BUTTONS = 8 + 2;
 static in_buttoninfo_t wl_mouse_buttons[WL_MAX_MOUSE_BUTTONS];
+static const char *wl_mouse_button_names[] = {
+	"M_BUTTON1",    "M_BUTTON2",  "M_BUTTON3",  "M_WHEEL_UP",
+	"M_WHEEL_DOWN", "M_BUTTON6",  "M_BUTTON7",  "M_BUTTON8",
+	"M_BUTTON9",
+};
 static IE_mouse_event_t wl_mouse;
 static IE_button_event_t wl_mouse_button_event;
 
 static wl_idevice_t wl_mouse_device = {
 	"core:mouse",
-	SIZE (wl_mouse_axes), SIZE (wl_mouse_buttons),
+	countof (wl_mouse_axes), countof (wl_mouse_buttons),
 	wl_mouse_axes, wl_mouse_buttons
 };
 
@@ -124,7 +127,7 @@ static IE_button_event_t wl_keyboard_button_event;
 
 static wl_idevice_t wl_keyboard_device = {
 	"core:keyboard",
-	0, SIZE (wl_keyboard_buttons),
+	0, countof (wl_keyboard_buttons),
 	nullptr, wl_keyboard_buttons
 };
 
@@ -134,6 +137,19 @@ static void
 wl_seat_name (void *data, struct wl_seat *seat, const char *name)
 {
 	Sys_MaskPrintf (SYS_wayland, "Wayland: Got seat '%s'\n", name);
+}
+
+/*
+	Adjusts the given mouse button idx
+	to compensate for mouse wheel up / down
+	being considered a button. This is behavior
+	imposed by X11, and unfortunately we have
+	to compensate for that at the moment.
+*/
+static int32_t
+in_wl_adjust_mouse_button_idx (int32_t button)
+{
+	return button <= 2 ? button : button + 2;
 }
 
 static void
@@ -178,6 +194,7 @@ wl_pointer_button (void *data,
 		       uint32_t state)
 {
 	auto bid = button - BTN_MOUSE;
+	bid = in_wl_adjust_mouse_button_idx (bid);
 	auto pressed = state == WL_POINTER_BUTTON_STATE_PRESSED;
 	wl_mouse_buttons[bid].state = pressed;
 
@@ -957,12 +974,28 @@ in_wl_axis_info (void *data, void *device, in_axisinfo_t *axes, int *numaxes)
 	}
 }
 
-static int
-in_wl_get_button_info (void *data, void *device, int button_num,
-						in_buttoninfo_t *info)
+static const char *
+in_wl_get_button_name (void *data, void *device, int button_num)
 {
 	wl_idevice_t *dev = device;
-	if (button_num < 0 || button_num > dev->num_buttons) {
+	const char *name = nullptr;
+	if (button_num < 0 || button_num >= dev->num_buttons) {
+		return name;
+	}
+
+	if (dev == &wl_mouse_device) {
+		return wl_mouse_button_names[button_num];
+	}
+
+	return name;
+}
+
+static int
+in_wl_get_button_info (void *data, void *device, int button_num,
+					   in_buttoninfo_t *info)
+{
+	wl_idevice_t *dev = device;
+	if (button_num < 0 || button_num >= dev->num_buttons) {
 		return 0;
 	}
 	*info = dev->buttons[button_num];
@@ -1001,8 +1034,14 @@ wl_add_device (wl_idevice_t *dev)
 		dev->axes[i].axis = i;
 	}
 
-	for (int32_t i = 0; i < dev->num_buttons; ++i) {
-		dev->buttons[i].button = i;
+	if (dev == &wl_mouse_device) {
+		for (int32_t i = 0; i < dev->num_buttons; ++i) {
+			dev->buttons[i].button = in_wl_adjust_mouse_button_idx (i);
+		}
+	} else {
+		for (int32_t i = 0; i < dev->num_buttons; ++i) {
+			dev->buttons[i].button = i;
+		}
 	}
 
 	dev->devid = IN_AddDevice (wl_driver_handle, dev, dev->name, dev->name);
@@ -1035,7 +1074,9 @@ static in_driver_t in_wl_driver = {
 	.button_info = in_wl_button_info,
 	.axis_info = in_wl_axis_info,
 
-	.get_button_info = in_wl_get_button_info
+	.get_button_name = in_wl_get_button_name,
+
+	.get_button_info = in_wl_get_button_info,
 };
 
 static void __attribute__((constructor))
