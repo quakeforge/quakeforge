@@ -896,13 +896,31 @@ dag_collect_reachable (dag_t *dag, dagnode_t *node, set_t *reachable,
 static bool
 dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 {
-	if (!l->op)
+	if (!l->op) {
 		internal_error (0, "attempt to attach operator label to dagnode "
 						"identifiers");
-	if (!op_is_identifier (l->op))
-		internal_error (l->op->expr,
-						"attempt to attach non-identifer label to dagnode "
-						"identifiers");
+	}
+	if (!op_is_identifier (l->op)) {
+		internal_error (l->op->expr, "attempt to attach non-identifer label "
+						"to dagnode identifiers");
+	}
+
+	if (op_is_arg (l->op)) {
+		// assigning to a function call argument: the assignment must happen
+		// after the previous call
+		if (n->number < dag->call_node) {
+			// FIXME this can be optimized by having a set of arg vars and
+			// testing against that set instead of calling op_is_arg for
+			// every attached label (however, there usually won't be many
+			// attached labels, so it may not be worth it)
+			for (auto li = set_first (n->identifiers); li; li = set_next (li)) {
+				auto label = dag->labels[li->element];
+				if (op_is_arg (label->op)) {
+					return false;
+				}
+			}
+		}
+	}
 
 	auto label_set = set_new ();
 
@@ -1244,6 +1262,7 @@ dag_analyze_node (dag_t *dag, dagnode_t *node, statement_t *s)
 		}
 	}
 	if (s->type == st_func && strcmp (s->opcode, "call") == 0) {
+		dag->call_node = node->number;
 		dag_kill_nodes (dag, node, true);
 	}
 }

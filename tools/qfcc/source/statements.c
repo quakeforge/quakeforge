@@ -109,6 +109,20 @@ op_is_identifier (operand_t *op)
 	return 1;
 }
 
+bool
+op_is_arg (operand_t *op)
+{
+	if (op->op_type != op_def) {
+		return false;
+	}
+	auto def = op->def;
+	if (strncmp (def->name, ".arg", 4) == 0
+		|| strncmp (def->name, ".param", 6) == 0) {
+		return true;
+	}
+	return false;
+}
+
 int
 op_is_constant (operand_t *op)
 {
