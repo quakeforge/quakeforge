@@ -43,6 +43,9 @@
 # include <unistd.h>
 #endif
 
+#include <wayland-client.h>
+#include "libs/video/targets/cursor-shape-client-protocol.hinc"
+
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/qendian.h"
@@ -87,6 +90,19 @@ WL_VID_SetPalette (byte *palette, byte *colormap)
 static void
 WL_VID_SetCursor (bool visible)
 {
+	if (!wp_cursor_shape_device_v1) {
+		return;
+	}
+
+	if (!visible) {
+		wl_pointer_set_cursor (wl_pointer,
+							   wl_last_pointer_serial, nullptr, 0, 0);
+	} else {
+		wp_cursor_shape_device_v1_set_shape (
+			wp_cursor_shape_device_v1,
+			wl_last_pointer_serial,
+			WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
+	}
 }
 
 static void

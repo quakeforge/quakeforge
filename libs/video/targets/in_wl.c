@@ -78,7 +78,7 @@
 
 static int wl_driver_handle = -1;
 static struct zwp_locked_pointer_v1 *zwp_locked_pointer_v1;
-static uint32_t wl_last_pointer_serial;
+uint32_t wl_last_pointer_serial;
 static struct xkb_context *xkb_context;
 static struct xkb_keymap *xkb_keymap;
 static xkb_mod_index_t xkb_mod_shift_index;
@@ -1038,13 +1038,7 @@ in_wl_grab_input (void *data, int grab)
 				zwp_pointer_constraints_v1,
 				wl_surface, wl_pointer, nullptr,
 				ZWP_POINTER_CONSTRAINTS_V1_LIFETIME_PERSISTENT);
-		wl_pointer_set_cursor (wl_pointer,
-				wl_last_pointer_serial, nullptr, 0, 0);
 	} else if (!grab && zwp_locked_pointer_v1) {
-		wp_cursor_shape_device_v1_set_shape (
-				wp_cursor_shape_device_v1,
-				wl_last_pointer_serial,
-				WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
 		zwp_locked_pointer_v1_destroy (zwp_locked_pointer_v1);
 		zwp_locked_pointer_v1 = nullptr;
 	}

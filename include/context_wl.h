@@ -60,6 +60,7 @@
 #undef WL_IFACE
 
 extern bool wl_surface_configured;
+extern uint32_t wl_last_pointer_serial;
 
 bool WL_SetGamma (double);
 void WL_SetScreenSaver (void);
