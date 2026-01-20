@@ -135,7 +135,7 @@ R_ScrapInit (rscrap_t *scrap, int width, int height)
 	width = pow2rup (width);
 	height = pow2rup (height);
 	if (width > 4096 || height > 4096) {
-		Sys_Printf ("%dx%d scrap not supported", width, height);
+		Sys_Error ("%dx%d scrap not supported", width, height);
 	}
 	*scrap = (rscrap_t) {
 		.width = width,
