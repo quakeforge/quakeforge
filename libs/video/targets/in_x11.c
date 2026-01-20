@@ -122,17 +122,15 @@ static XIM x11_xim;
 static XIC x11_ic;
 static dstring_t *x11_utf8;
 
-#define SIZE(x) (sizeof (x) / sizeof (x[0]))
-
 static x11_device_t x11_keyboard_device = {
 	"core:keyboard",
-	0, SIZE (x11_key_buttons),
+	0, countof (x11_key_buttons),
 	0, x11_key_buttons,
 };
 
 static x11_device_t x11_mouse_device = {
 	"core:mouse",
-	SIZE (x11_mouse_axes), SIZE (x11_mouse_buttons),
+	countof (x11_mouse_axes), countof (x11_mouse_buttons),
 	x11_mouse_axes, x11_mouse_buttons,
 };
 
@@ -1330,7 +1328,7 @@ in_x11_get_axis_name (void *data, void *device, int axis_num)
 	if (dev == &x11_keyboard_device) {
 		// keyboards don't have axes...
 	} else if (dev == &x11_mouse_device) {
-		if ((unsigned) axis_num < SIZE (x11_mouse_axis_names)) {
+		if ((unsigned) axis_num < countof (x11_mouse_axis_names)) {
 			name = x11_mouse_axis_names[axis_num];
 		}
 	}
@@ -1352,7 +1350,7 @@ in_x11_get_button_name (void *data, void *device, int button_num)
 			name = XKeysymToString (keysym);
 		}
 	} else if (dev == &x11_mouse_device) {
-		if ((unsigned) button_num < SIZE (x11_mouse_button_names)) {
+		if ((unsigned) button_num < countof (x11_mouse_button_names)) {
 			name = x11_mouse_button_names[button_num];
 		}
 	}
@@ -1364,7 +1362,7 @@ in_x11_get_axis_info (void *data, void *device, int axis_num,
 					  in_axisinfo_t *info)
 {
 	x11_device_t *dev = device;
-	if (axis_num < 0 || axis_num > dev->num_axes) {
+	if (axis_num < 0 || axis_num >= dev->num_axes) {
 		return 0;
 	}
 	*info = dev->axes[axis_num];
@@ -1376,7 +1374,7 @@ in_x11_get_button_info (void *data, void *device, int button_num,
 						in_buttoninfo_t *info)
 {
 	x11_device_t *dev = device;
-	if (button_num < 0 || button_num > dev->num_buttons) {
+	if (button_num < 0 || button_num >= dev->num_buttons) {
 		return 0;
 	}
 	*info = dev->buttons[button_num];
@@ -1392,7 +1390,7 @@ in_x11_get_axis_num (void *data, void *device, const char *axis_name)
 	if (dev == &x11_keyboard_device) {
 		// keyboards don't have axes...
 	} else if (dev == &x11_mouse_device) {
-		for (size_t i = 0; i < SIZE (x11_mouse_axis_names); i++) {
+		for (size_t i = 0; i < countof (x11_mouse_axis_names); i++) {
 			if (strcasecmp (axis_name, x11_mouse_axis_names[i]) == 0) {
 				num = i;
 				break;
@@ -1419,7 +1417,7 @@ in_x11_get_button_num (void *data, void *device, const char *button_name)
 			}
 		}
 	} else if (dev == &x11_mouse_device) {
-		for (size_t i = 0; i < SIZE (x11_mouse_button_names); i++) {
+		for (size_t i = 0; i < countof (x11_mouse_button_names); i++) {
 			if (strcasecmp (button_name, x11_mouse_button_names[i]) == 0) {
 				num = i;
 				break;

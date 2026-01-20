@@ -151,6 +151,7 @@ void//FIXME remove when sw warp is cleaned up
 R_SetVrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
 {
 	set_vrect (vrectin, vrect, lineadj);
+	SCR_SetFOV (scr_fov);
 }
 
 void
