@@ -882,7 +882,7 @@ event_mousewheel (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	int         x = LOWORD (lParam);
 	int         y = HIWORD (lParam);
 	short       w = HIWORD (wParam);
-	int         button = w < 0 ? 5 : 4;
+	int         button = w < 0 ? 4 : 3;
 	// FIXME should (also) treat as an axis
 	event_button (true, button, x, y);
 	event_button (false, button, x, y);
