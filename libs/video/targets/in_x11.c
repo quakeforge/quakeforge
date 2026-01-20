@@ -1362,7 +1362,7 @@ in_x11_get_axis_info (void *data, void *device, int axis_num,
 					  in_axisinfo_t *info)
 {
 	x11_device_t *dev = device;
-	if (axis_num < 0 || axis_num > dev->num_axes) {
+	if (axis_num < 0 || axis_num >= dev->num_axes) {
 		return 0;
 	}
 	*info = dev->axes[axis_num];
@@ -1374,7 +1374,7 @@ in_x11_get_button_info (void *data, void *device, int button_num,
 						in_buttoninfo_t *info)
 {
 	x11_device_t *dev = device;
-	if (button_num < 0 || button_num > dev->num_buttons) {
+	if (button_num < 0 || button_num >= dev->num_buttons) {
 		return 0;
 	}
 	*info = dev->buttons[button_num];
