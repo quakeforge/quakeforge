@@ -186,7 +186,15 @@ match_interface (const char *name, uint32_t iface_id, const struct wl_interface 
 		return false;
 	}
 
+	// FIXME: Handle unsupported verisons more gracefully (currently just segfaults)
 	*global = wl_registry_bind (wl_registry, iface_id, iface, version);
+
+	if (*global == nullptr) {
+		Sys_Error ("Failed to bind registry interface %s", iface->name);
+	}
+
+	Sys_MaskPrintf (SYS_wayland, "Successfully bound interface %s\n", iface->name);
+
 	return *global != nullptr;
 }
 
@@ -201,7 +209,7 @@ registry_handle_global (void *data, struct wl_registry *reg, uint32_t name,
 
 	MATCH_BEGIN ()
 	MATCH_IFACE (wl_compositor, 6) {}
-	MATCH_IFACE (wl_seat, 10) { IN_WL_RegisterSeat (); }
+	MATCH_IFACE (wl_seat, 9) { IN_WL_RegisterSeat (); }
 	MATCH_IFACE (wl_shm, 2) {}
 	MATCH_IFACE (xdg_wm_base, 6) {
         xdg_wm_base_add_listener (xdg_wm_base, &xdg_base_listener, nullptr);
