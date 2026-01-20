@@ -160,8 +160,6 @@ static const char *win_key_button_names[] = {
     0,              "Menu",         0,              0,
 };
 
-#define SIZE(x) (sizeof (x) / sizeof (x[0]))
-
 static unsigned short scantokey[512] = {
 //  0               1               2               3
 //  4               5               6               7
@@ -208,13 +206,13 @@ static unsigned short scantokey[512] = {
 
 static win_device_t win_keyboard_device = {
 	"core:keyboard",
-	0, SIZE (win_key_buttons),
+	0, countof (win_key_buttons),
 	0, win_key_buttons,
 };
 
 static win_device_t win_mouse_device = {
 	"core:mouse",
-	SIZE (win_mouse_axes), SIZE (win_mouse_buttons),
+	countof (win_mouse_axes), countof (win_mouse_buttons),
 	win_mouse_axes, win_mouse_buttons,
 };
 
@@ -397,7 +395,7 @@ in_win_get_axis_name (void *data, void *device, int axis_num)
 	if (dev == &win_keyboard_device) {
 		// keyboards don't have axes...
 	} else if (dev == &win_mouse_device) {
-		if ((unsigned) axis_num < SIZE (win_mouse_axis_names)) {
+		if ((unsigned) axis_num < countof (win_mouse_axis_names)) {
 			name = win_mouse_axis_names[axis_num];
 		}
 	}
@@ -411,11 +409,11 @@ in_win_get_button_name (void *data, void *device, int button_num)
 	const char *name = 0;
 
 	if (dev == &win_keyboard_device) {
-		if ((unsigned) button_num < SIZE (win_key_button_names)) {
+		if ((unsigned) button_num < countof (win_key_button_names)) {
 			name = win_key_button_names[button_num];
 		}
 	} else if (dev == &win_mouse_device) {
-		if ((unsigned) button_num < SIZE (win_mouse_button_names)) {
+		if ((unsigned) button_num < countof (win_mouse_button_names)) {
 			name = win_mouse_button_names[button_num];
 		}
 	}
@@ -431,7 +429,7 @@ in_win_get_axis_num (void *data, void *device, const char *axis_name)
 	if (dev == &win_keyboard_device) {
 		// keyboards don't have axes...
 	} else if (dev == &win_mouse_device) {
-		for (size_t i = 0; i < SIZE (win_mouse_axis_names); i++) {
+		for (size_t i = 0; i < countof (win_mouse_axis_names); i++) {
 			if (strcasecmp (axis_name, win_mouse_axis_names[i]) == 0) {
 				num = i;
 				break;
@@ -448,14 +446,14 @@ in_win_get_button_num (void *data, void *device, const char *button_name)
 	int         num = -1;
 
 	if (dev == &win_keyboard_device) {
-		for (size_t i = 0; i < SIZE (win_key_button_names); i++) {
+		for (size_t i = 0; i < countof (win_key_button_names); i++) {
 			if (strcasecmp (button_name, win_key_button_names[i]) == 0) {
 				num = i;
 				break;
 			}
 		}
 	} else if (dev == &win_mouse_device) {
-		for (size_t i = 0; i < SIZE (win_mouse_button_names); i++) {
+		for (size_t i = 0; i < countof (win_mouse_button_names); i++) {
 			if (strcasecmp (button_name, win_mouse_button_names[i]) == 0) {
 				num = i;
 				break;
