@@ -928,7 +928,7 @@ wl_seat_capabilities (void *data, struct wl_seat *seat, uint32_t caps)
 	if ((caps & WL_SEAT_CAPABILITY_KEYBOARD) > 0) {
 		wl_keyboard = wl_seat_get_keyboard (seat);
 		xkb_context = xkb_context_new (XKB_CONTEXT_NO_FLAGS);
-		wl_utf8 = dstring_new ();
+		wl_utf8 = dstring_newstr ();
 		wl_key_event.utf8 = wl_utf8;
 		wl_keyboard_add_listener (wl_keyboard, &wl_keyboard_listener, nullptr);
 	}
@@ -1006,8 +1006,13 @@ in_wl_get_button_name (void *data, void *device, int button_num)
 		return name;
 	}
 
-	if (dev == &wl_mouse_device) {
-		return wl_mouse_button_names[button_num];
+	if (dev == &wl_keyboard_device) {
+		auto keysym = xkb_state_key_get_one_sym (xkb_state, button_num + 8);
+		wl_utf8->size = xkb_keysym_get_name (keysym, nullptr, 0) + 1;
+		xkb_keysym_get_name (keysym, wl_utf8->str, wl_utf8->size);
+		name = wl_utf8->str;
+	} else if (dev == &wl_mouse_device) {
+		name = wl_mouse_button_names[button_num];
 	}
 
 	return name;
@@ -1061,7 +1066,8 @@ wl_add_device (wl_idevice_t *dev)
 static void
 in_wl_init (void *data)
 {
-	zwp_relative_pointer_v1 = zwp_relative_pointer_manager_v1_get_relative_pointer (
+	zwp_relative_pointer_v1 =
+		zwp_relative_pointer_manager_v1_get_relative_pointer (
 			zwp_relative_pointer_manager_v1, wl_pointer);
 	zwp_relative_pointer_v1_add_listener (zwp_relative_pointer_v1,
 			&wl_relative_pointer_listener, nullptr);
