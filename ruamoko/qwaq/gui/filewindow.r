@@ -107,6 +107,9 @@ int file_item_cmp (void *a, void *b)
 	if (!(self = [super init])) {
 		return nil;
 	}
+	if (str_char (filePath, 0) != '/') {
+		filePath = QFS_CompressPath (Qgetcwd () + "/" + filePath);
+	}
 	self.fileSpec = str_hold (fileSpec);
 	self.filePath = str_hold (filePath);
 	self.forSave = forSave;
@@ -162,7 +165,10 @@ int file_item_cmp (void *a, void *b)
 	}
 	if (accepted_item) {
 		if ([accepted_item isdir]) {
-			string path = filePath + "/" + [accepted_item name];
+			string path = [accepted_item name];
+			if (filePath) {
+				path = filePath + "/" + path;
+			}
 			str_free (filePath);
 			path = QFS_CompressPath (path);
 			filePath = str_hold (path);
