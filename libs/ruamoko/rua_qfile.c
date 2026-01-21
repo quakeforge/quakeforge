@@ -367,6 +367,21 @@ bi (Qwait)
 #endif
 }
 
+bi (Qgetcwd)
+{
+	auto res = (qfile_resources_t *) _res;
+	if (!(res->buffer->size = res->buffer->truesize)) {
+		res->buffer->size = 1024;
+		dstring_adjust (res->buffer);
+	}
+	char *s;
+	while (!(s = getcwd (res->buffer->str, res->buffer->size))) {
+		res->buffer->size += 1024;
+		dstring_adjust (res->buffer);
+	}
+	RETURN_STRING (pr, s);
+}
+
 static qfile_t * __attribute__((pure))
 get_handle (progs_t *pr, qfile_resources_t *res, const char *name, int handle)
 {
@@ -573,6 +588,7 @@ static builtin_t secure_builtins[] = {
 	bi(Qopen,   2, p(string), p(string)),
 	bi(Qpipe,   5, p(ptr), p(int), p(int), p(int), p(int)),
 	bi(Qwait,   1, p(int)),
+	bi(Qgetcwd, 0),
 	{0}
 };
 
@@ -584,6 +600,7 @@ static builtin_t insecure_builtins[] = {
 	bi(Qopen,   2, p(string), p(string)),
 	bi(Qpipe,   5, p(ptr), p(int), p(int), p(int), p(int)),
 	bi(Qwait,   1, p(int)),
+	bi(Qgetcwd, 0),
 	{0}
 };
 
