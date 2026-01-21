@@ -68,8 +68,7 @@ check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
 
 #define bi(x) static void bi_##x (progs_t *pr, void *_res)
 
-static void
-bi_QFS_Open (progs_t *pr, void *data)
+bi (QFS_Open)
 {
 	qfZoneScoped (true);
 	QFile      *file;
@@ -84,8 +83,7 @@ bi_QFS_Open (progs_t *pr, void *data)
 		Qclose (file);
 }
 
-static void
-bi_QFS_WOpen (progs_t *pr, void *data)
+bi (QFS_WOpen)
 {
 	qfZoneScoped (true);
 	QFile      *file;
@@ -100,8 +98,7 @@ bi_QFS_WOpen (progs_t *pr, void *data)
 		Qclose (file);
 }
 
-static void
-bi_QFS_Rename (progs_t *pr, void *data)
+bi (QFS_Rename)
 {
 	qfZoneScoped (true);
 	const char *old = P_GSTRING (pr, 0);
@@ -110,8 +107,7 @@ bi_QFS_Rename (progs_t *pr, void *data)
 	R_INT (pr) = QFS_Rename (old, new);
 }
 
-static void
-bi_QFS_LoadFile (progs_t *pr, void *data)
+bi (QFS_LoadFile)
 {
 	qfZoneScoped (true);
 	const char *filename = P_GSTRING (pr, 0);
@@ -136,8 +132,7 @@ bi_QFS_LoadFile (progs_t *pr, void *data)
 	RETURN_POINTER (pr, buffer);
 }
 
-static void
-bi_QFS_OpenFile (progs_t *pr, void *data)
+bi (QFS_OpenFile)
 {
 	qfZoneScoped (true);
 	QFile      *file;
@@ -152,8 +147,7 @@ bi_QFS_OpenFile (progs_t *pr, void *data)
 		Qclose (file);
 }
 
-static void
-bi_QFS_WriteFile (progs_t *pr, void *data)
+bi (QFS_WriteFile)
 {
 	qfZoneScoped (true);
 	const char *filename = P_GSTRING (pr, 0);
@@ -164,8 +158,7 @@ bi_QFS_WriteFile (progs_t *pr, void *data)
 	QFS_WriteFile (va ("%s/%s", qfs_gamedir->dir.def, filename), buf, count);
 }
 
-static void
-bi_QFS_Filelist (progs_t *pr, void *data)
+bi (QFS_Filelist)
 {
 	qfZoneScoped (true);
 	filelist_t *filelist = QFS_FilelistNew ();
@@ -185,8 +178,7 @@ bi_QFS_Filelist (progs_t *pr, void *data)
 	RETURN_POINTER (pr, list);
 }
 
-static void
-bi_QFS_FilelistFree (progs_t *pr, void *data)
+bi (QFS_FilelistFree)
 {
 	qfZoneScoped (true);
 	qfslist_t  *list = &P_STRUCT (pr, qfslist_t, 0);
@@ -198,8 +190,7 @@ bi_QFS_FilelistFree (progs_t *pr, void *data)
 	PR_Zone_Free (pr, list);
 }
 
-static void
-bi_QFS_GetDirectory (progs_t *pr, void *data)
+bi (QFS_GetDirectory)
 {
 	qfZoneScoped (true);
 	RETURN_STRING (pr, qfs_gamedir->dir.def);
