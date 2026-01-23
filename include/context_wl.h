@@ -52,7 +52,9 @@
 	WL_IFACE (zwp_relative_pointer_v1); \
 	WL_IFACE (zwp_pointer_constraints_v1); \
 	WL_IFACE (wp_cursor_shape_manager_v1); \
-	WL_IFACE (wp_cursor_shape_device_v1)
+	WL_IFACE (wp_cursor_shape_device_v1); \
+	WL_IFACE (zwp_text_input_manager_v3); \
+	WL_IFACE (zwp_text_input_v3)
 #undef WL_IFACE
 
 #define WL_IFACE(iface) extern struct iface *iface

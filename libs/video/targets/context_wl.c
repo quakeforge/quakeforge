@@ -51,6 +51,7 @@
 #include "libs/video/targets/relative-pointer-client-protocol.hinc"
 #include "libs/video/targets/pointer-constraints-client-protocol.hinc"
 #include "libs/video/targets/cursor-shape-client-protocol.hinc"
+#include "libs/video/targets/text-input-unstable-v3-client-protocol.hinc"
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -218,6 +219,7 @@ registry_handle_global (void *data, struct wl_registry *reg, uint32_t name,
 	MATCH_IFACE (zwp_relative_pointer_manager_v1, 1) {}
 	MATCH_IFACE (zwp_pointer_constraints_v1, 1) {}
 	MATCH_IFACE (wp_cursor_shape_manager_v1, 1) {}
+	MATCH_IFACE (zwp_text_input_manager_v3, 1) {}
     MATCH_END ()
 
 #undef MATCH_BEGIN

@@ -73,6 +73,7 @@
 #include "libs/video/targets/relative-pointer-client-protocol.hinc"
 #include "libs/video/targets/pointer-constraints-client-protocol.hinc"
 #include "libs/video/targets/cursor-shape-client-protocol.hinc"
+#include "libs/video/targets/text-input-unstable-v3-client-protocol.hinc"
 
 // TODO: Reduce global state by having a wayland input state struct
 
@@ -945,6 +946,89 @@ IN_WL_RegisterSeat (void)
 	wl_seat_add_listener (wl_seat, &wl_seat_listener, nullptr);
 }
 
+static uint32_t text_input_serial = 0;
+
+static void
+text_input_commit (void)
+{
+	zwp_text_input_v3_commit (zwp_text_input_v3);
+	text_input_serial++;
+}
+
+static void
+text_input_enter (void *data,
+				struct zwp_text_input_v3 *zwp_text_input_v3,
+				struct wl_surface *surface)
+{
+	Sys_MaskPrintf (SYS_wayland, "text_input_enter\n");
+	zwp_text_input_v3_enable (zwp_text_input_v3);
+	zwp_text_input_v3_set_content_type (zwp_text_input_v3,
+									   ZWP_TEXT_INPUT_V3_CONTENT_HINT_NONE,
+									   ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NORMAL);
+
+	text_input_commit ();
+}
+
+static void
+text_input_leave (void *data,
+				struct zwp_text_input_v3 *zwp_text_input_v3,
+				struct wl_surface *surface)
+{
+	Sys_MaskPrintf (SYS_wayland, "text_input_leave\n");
+	zwp_text_input_v3_disable (zwp_text_input_v3);
+	text_input_commit ();
+}
+
+static void
+text_input_preedit_string (void *data,
+						   struct zwp_text_input_v3 *zwp_text_input_v3,
+						   const char *text,
+						   int32_t cursor_begin,
+						   int32_t cursor_end)
+{
+	Sys_MaskPrintf (SYS_wayland, "text_input_preedit_string\n");
+}
+
+static void
+text_input_commit_string (void *data,
+						  struct zwp_text_input_v3 *zwp_text_input_v3,
+						  const char *text)
+{
+	Sys_MaskPrintf (SYS_wayland, "text_input_commit_string: %s\n", text);
+
+	dstring_copystr (wl_utf8, text);
+	wl_key_event.code = QFK_STRING;
+	wl_key_event.unicode = 0;
+
+	in_wl_send_key_event ();
+}
+
+static void
+text_input_delete_surrounding_text (void *data,
+									struct zwp_text_input_v3 *zwp_text_input_v3,
+									uint32_t before_length,
+									uint32_t after_length)
+{
+	Sys_MaskPrintf (SYS_wayland, "text_input_delete_surrounding_text\n");
+}
+
+static void
+text_input_done (void *data,
+				struct zwp_text_input_v3 *zwp_text_input_v3,
+				uint32_t serial)
+{
+	Sys_MaskPrintf (SYS_wayland, "text_input_done\n");
+}
+
+static const struct zwp_text_input_v3_listener zwp_text_input_v3_listener = {
+	.enter = text_input_enter,
+	.leave = text_input_leave,
+	.preedit_string = text_input_preedit_string,
+	.commit_string = text_input_commit_string,
+	.delete_surrounding_text = text_input_delete_surrounding_text,
+	.done = text_input_done
+};
+
 static void
 in_wl_process_events (void *data)
 {
@@ -1074,6 +1158,12 @@ in_wl_init (void *data)
 
 	wp_cursor_shape_device_v1 = wp_cursor_shape_manager_v1_get_pointer (
 			wp_cursor_shape_manager_v1, wl_pointer);
+
+	zwp_text_input_v3 =
+		zwp_text_input_manager_v3_get_text_input (zwp_text_input_manager_v3,
+												 wl_seat);
+	zwp_text_input_v3_add_listener (zwp_text_input_v3,
+									&zwp_text_input_v3_listener, nullptr);
 
 	wl_add_device (&wl_mouse_device);
 	wl_add_device (&wl_keyboard_device);
