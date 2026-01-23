@@ -194,6 +194,27 @@ ruamoko_qwaq_qwaq_x11_LDADD= $(qwaq_x11_libs) $(QWAQ_LIBS) \
 ruamoko_qwaq_qwaq_x11_LDFLAGS= $(common_ldflags)
 ruamoko_qwaq_qwaq_x11_DEPENDENCIES= $(qwaq_x11_libs) $(QWAQ_DEPS)
 
+qwaq_wl_libs= \
+	$(qwaq_cl_plugin_libs) \
+	${top_builddir}/libs/gib/libQFgib.la \
+    ${top_builddir}/libs/ruamoko/libQFruamoko_client.la \
+	$(top_builddir)/libs/ui/libQFgui.la \
+	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
+	$(top_builddir)/libs/models/libQFmodels.la \
+	$(top_builddir)/libs/video/targets/libQFwl.la \
+	$(qwaq_client_libs)
+ruamoko_qwaq_qwaq_wl_SOURCES= \
+	ruamoko/qwaq/builtins/editbuffer.c \
+	ruamoko/qwaq/builtins/main.c \
+	ruamoko/qwaq/builtins/qwaq-graphics.c \
+	ruamoko/qwaq/builtins/graphics.c $(tracy_src) $(tracyvk_src)
+ruamoko_qwaq_qwaq_wl_LDADD= $(qwaq_wl_libs) $(QWAQ_LIBS) \
+		$(VIDMODE_LIBS) $(WAYLAND_LIBS) \
+		$(PTHREAD_LDFLAGS) \
+		$(DL_LIBS)
+ruamoko_qwaq_qwaq_wl_LDFLAGS= $(common_ldflags)
+ruamoko_qwaq_qwaq_wl_DEPENDENCIES= $(qwaq_wl_libs) $(QWAQ_DEPS)
+
 ruamoko_qwaq_qwaq_app_dat_SOURCES=$(qwaq_app_dat_src)
 ruamoko_qwaq_qwaq_app_obj=$(ruamoko_qwaq_qwaq_app_dat_SOURCES:.r=.o)
 ruamoko_qwaq_qwaq_app_dep=$(call qcautodep,$(ruamoko_qwaq_qwaq_app_dat_SOURCES:.o=.Qo))
@@ -238,7 +259,8 @@ EXTRA_PROGRAMS += \
 	ruamoko/qwaq/qwaq-cmd \
 	ruamoko/qwaq/qwaq-curses \
 	ruamoko/qwaq/qwaq-win \
-	ruamoko/qwaq/qwaq-x11
+	ruamoko/qwaq/qwaq-x11 \
+	ruamoko/qwaq/qwaq-wl
 
 EXTRA_DIST += \
 	ruamoko/qwaq/debugger/debug.h \

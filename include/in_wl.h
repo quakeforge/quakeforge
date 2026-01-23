@@ -1,9 +1,9 @@
 /*
-	sys_developer.h
+	in_wl.h
 
-	Developer flags
+	Wayland input handling
 
-	Copyright (C) 2021      Bill Currie <bill@taniwha.org>
+	Copyright (C) 2026 Peter Nilsson <peter8nilsson@live.se>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -25,32 +25,9 @@
 
 */
 
-#ifndef SYS_DEVELOPER
-#define SYS_DEVELOPER(developer)
-#endif
+#ifndef __in_wl_h
+#define __in_wl_h
 
-SYS_DEVELOPER (warn)
-SYS_DEVELOPER (cache)
-SYS_DEVELOPER (hunk)
-SYS_DEVELOPER (zone)
-SYS_DEVELOPER (vid)
-SYS_DEVELOPER (input)
-SYS_DEVELOPER (fs_nf)
-SYS_DEVELOPER (fs_f)
-SYS_DEVELOPER (fs)
-SYS_DEVELOPER (net)
-SYS_DEVELOPER (rua_resolve)
-SYS_DEVELOPER (rua_obj)
-SYS_DEVELOPER (rua_msg)
-SYS_DEVELOPER (snd)
-SYS_DEVELOPER (glt)
-SYS_DEVELOPER (glsl)
-SYS_DEVELOPER (skin)
-SYS_DEVELOPER (model)
-SYS_DEVELOPER (anim)
-SYS_DEVELOPER (lighting)
-SYS_DEVELOPER (vulkan)
-SYS_DEVELOPER (vulkan_parse)
-SYS_DEVELOPER (wayland)
+void IN_WL_RegisterSeat (void);
 
-#undef SYS_DEVELOPER
+#endif//__in_wl_h

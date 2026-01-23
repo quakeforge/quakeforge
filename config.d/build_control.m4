@@ -5,7 +5,7 @@ dnl ==================================================================
 QF_WITH_TARGETS(
 	clients,
 	[compile clients],
-	[fbdev,sdl,svga,win,x11],dummy
+	[fbdev,sdl,svga,win,x11,wl],dummy
 )
 QF_WITH_TARGETS(
 	servers,
@@ -194,6 +194,38 @@ if test "x$mingw" = xyes; then
 		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
 	fi
 fi
+if test "x$HAVE_WAYLAND" = xyes; then
+	if test "x$ENABLE_clients_wl" = xyes; then
+		QW_TARGETS="$QW_TARGETS qw-client-wl\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-wl\$(EXEEXT)"
+		QWAQ_TARGETS="$QWAQ_TARGETS ruamoko/qwaq/qwaq-wl\$(EXEEXT)"
+		CL_TARGETS="$CL_TARGETS WL"
+		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFwl.la"
+		if test "$HAVE_VULKAN" = "yes"; then
+			QF_NEED(vid_render, [vulkan])
+			QF_NEED(render, [vulkan])
+			QF_NEED(models, [vulkan])
+			QF_NEED(alias, [vulkan])
+			QF_NEED(brush, [vulkan])
+			QF_NEED(iqm, [vulkan])
+			QF_NEED(sprite, [vulkan])
+		fi
+		QF_NEED(vid_render, [sw gl glsl])
+		QF_NEED(models, [sw gl glsl])
+		QF_NEED(alias, [sw gl glsl])
+		QF_NEED(brush, [sw gl glsl])
+		QF_NEED(iqm, [sw gl glsl])
+		QF_NEED(sprite, [sw gl glsl])
+		if test "x$ASM_ARCH" = "xyes"; then
+			QF_NEED(swrend, [asm])
+		fi
+		QF_NEED(vid, [common wl])
+		QF_NEED(qw, [client common])
+		QF_NEED(nq, [client common])
+		QF_NEED(console, [client])
+		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
+	fi
+fi
 
 unset SV_TARGETS
 if test "x$ENABLE_servers_nq" = xyes; then
@@ -369,7 +401,7 @@ QF_PROCESS_NEED_LIBS(mesh, [gl glsl sw vulkan], [libs/models/mesh])
 QF_PROCESS_NEED_LIBS(sprite, [gl glsl sw vulkan], [libs/models/sprite])
 
 QF_PROCESS_NEED_LIBS(input, [evdev], [libs/input])
-QF_PROCESS_NEED_LIBS(vid, [common sdl svga win x11], [libs/video/targets])
+QF_PROCESS_NEED_LIBS(vid, [common sdl svga win x11 wl], [libs/video/targets])
 QF_PROCESS_NEED_LIBS(qw, [client common sdl win server], [qw/source], a)
 QF_PROCESS_NEED_LIBS(nq, [client common sdl win server], [nq/source], a)
 

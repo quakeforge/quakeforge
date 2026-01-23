@@ -82,10 +82,10 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	rframe->active_pool = &rframe->output_cmdpool;
 	//dfunc->vkResetFences (device->dev, 1, &oframe->fence);
 	uint32_t imageIndex = 0;
-	while (!QFV_AcquireNextImage (sc, oframe->imageAvailableSemaphore,
+	while (octx->recreate_swapchain ||
+			!QFV_AcquireNextImage (sc, oframe->imageAvailableSemaphore,
 								  0/*oframe->fence*/, &imageIndex)) {
 		if (octx->framebuffers) {
-			auto rctx = ctx->render_context;
 			uint32_t frames = rctx->frames.size;
 			for (uint32_t i = 0; i < sc->imageViews->size; i++) {
 				qfv_delete_t del = {
@@ -110,6 +110,8 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
 							 oframe->imageAvailableSemaphore,
 							 vac (ctx->va_ctx, "sc image:%d", ctx->curFrame));
+
+		octx->recreate_swapchain = false;
 	}
 
 	//FIXME clean this up
@@ -431,6 +433,17 @@ output_startup (exprctx_t *ectx)
 }
 
 static void
+output_vidsize_listener (void *data, const viddef_t *vid)
+{
+	vulkan_ctx_t *ctx = data;
+	ctx->window_width = vid->width;
+	ctx->window_height = vid->height;
+
+	auto octx = ctx->output_context;
+	octx->recreate_swapchain = true;
+}
+
+static void
 output_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneScoped (true);
@@ -464,6 +477,8 @@ output_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		&octx->swapchain_info,
 	};
 	QFV_Render_AddAttachments (ctx, 1, attachments);
+
+	VID_OnVidResize_AddListener (output_vidsize_listener, ctx);
 }
 
 static exprtype_t *stepref_param[] = {
