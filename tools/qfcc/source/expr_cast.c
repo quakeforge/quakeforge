@@ -190,7 +190,7 @@ do_cast (const type_t *dstType, const expr_t *e, bool value)
 			}
 		}
 		c = typed_unary_expr (dstType, 'C', e);
-	} else if (e->type == ex_uexpr && e->expr.op == '.') {
+	} else if (is_deref (e) && current_target.pointer_direct_cast) {
 		auto n = new_expr_copy (e);
 		n->expr.type = dstType;
 		c = n;

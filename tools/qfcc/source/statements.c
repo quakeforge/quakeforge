@@ -2657,6 +2657,19 @@ expr_bitfield (sblock_t *sblock, const expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_ptroffset (sblock_t *sblock, const expr_t *e, operand_t **op)
+{
+	auto ptr_type = get_type (e);
+	auto ptr = e->ptroffset.ptr;
+	auto offs = e->ptroffset.offset;
+	ptr = cast_expr (&type_int, ptr);
+	offs = cast_expr (&type_int, offs);
+	auto ptroffset = binary_expr ('+', ptr, offs);
+	ptroffset = cast_expr (ptr_type, ptroffset);
+	return statement_subexpr (sblock, ptroffset, op);
+}
+
+static sblock_t *
 statement_subexpr (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	static expr_f sfuncs[ex_count] = {
@@ -2683,6 +2696,7 @@ statement_subexpr (sblock_t *sblock, const expr_t *e, operand_t **op)
 		[ex_array] = expr_field_array,
 		[ex_xvalue] = expr_xvalue,
 		[ex_bitfield] = expr_bitfield,
+		[ex_ptroffset] = expr_ptroffset,
 	};
 	if (!e) {
 		*op = 0;

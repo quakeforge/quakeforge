@@ -59,4 +59,7 @@ struct qfv_jobinfo_s *QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item,
 struct qfv_samplerinfo_s *QFV_ParseSamplerInfo (vulkan_ctx_t *ctx,
 												plitem_t *item,
 												struct qfv_renderctx_s *rctx);
+struct qfv_entqueueinfo_s *QFV_ParseEntqueueInfo (vulkan_ctx_t *ctx,
+												  plitem_t *item,
+												  struct qfv_renderctx_s *rctx);
 #endif//__vkparse_h

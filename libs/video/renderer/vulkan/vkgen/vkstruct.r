@@ -168,6 +168,29 @@ write_auto_parse (Struct *self, string field, int name)
 	fprintf (output_file, "\t\t} while (0);\n");
 }
 
+static void
+write_safe_name (Struct *self, string field)
+{
+	string str = "vkstrdup (context, field->name)";
+	fprintf (output_file, "\t\tif (field->name) {\n");
+	fprintf (output_file, "\t\t\t((%s *) data)->%s = %s;\n", [self outname],
+			 field, str);
+	fprintf (output_file, "\t\t}\n");
+}
+
+static void
+write_reference (Struct *self, bool indent)
+{
+	string ind = indent ? "\t" : "";
+	fprintf (output_file,
+			 "%s\tif (PL_Type (item) == QFString\n"
+			 "%s\t\t&& !(item = parse_reference (item, \"%s\", messages, "
+			 "context))) {\n"
+			 "%s\t\treturn 0;\n"
+			 "%s\t}\n",
+			 ind, ind, [self outname], ind, ind);
+}
+
 static int
 check_need_table (Struct *self, PLItem *field_dict, string type)
 {
@@ -229,6 +252,10 @@ write_type (Struct *self, PLItem *field_dict, string type)
 			write_parse_type (self, item);
 			continue;
 		}
+		if (field == ".reference") {
+			write_reference (self, true);
+			continue;
+		}
 
 		switch (str) {
 			case "$item.string":
@@ -238,8 +265,8 @@ write_type (Struct *self, PLItem *field_dict, string type)
 				str = "PL_Line (item)";
 				break;
 			case "$name":
-				str = "vkstrdup (context, field->name)";
-				break;
+				write_safe_name (self, field);
+				continue;
 			case "$index":
 				str = "field->offset";
 				break;
@@ -283,15 +310,11 @@ write_parser (Struct *self, bool have_sType, PLItem *only)
 				 "\treturn f->parser (f, item, flddata, messages, "
 				 "context);\n");
 	} else {
+		write_reference (self, false);
 		fprintf (output_file,
-				 "\tif (PL_Type (item) == QFString\n"
-				 "\t\t&& !(item = parse_reference (item, \"%s\", "
-				 "messages, context))) {\n"
-				 "\t\treturn 0;\n"
-				 "\t}\n"
 				 "\treturn PL_ParseStruct (%s_fields, item, data, "
 				 "messages, context);\n",
-				 [self outname], [self outname]);
+				 [self outname]);
 	}
 	write_function_tail (self);
 }

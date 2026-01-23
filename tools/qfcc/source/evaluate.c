@@ -279,6 +279,7 @@ evaluate_run_sblock (sblock_t *sblock, operand_t *return_op)
 const expr_t *
 evaluate_constexpr (const expr_t *e)
 {
+	auto res_type = get_type (e);
 	debug (e, "fold_constants");
 	bool implicit = false;
 	if (e->type == ex_uexpr) {
@@ -291,6 +292,21 @@ evaluate_constexpr (const expr_t *e)
 			return e;
 		}
 		implicit = e->expr.e1->implicit && e->expr.e2->implicit;
+		auto t1 = get_type (e->expr.e1);
+		auto t2 = get_type (e->expr.e2);
+		if (type_size (t1) < 1 && type_size (t2) < 1) {
+			auto e1 = cast_expr (is_ushort (t1) ? &type_uint : &type_int,
+								 e->expr.e1);
+			auto e2 = cast_expr (is_ushort (t2) ? &type_uint : &type_int,
+								 e->expr.e2);
+			if (!is_ushort (res_type) && !is_short (res_type)) {
+				internal_error (e, "non-short result for short binary expr");
+			}
+			auto tr = is_ushort (res_type) ? &type_uint : &type_int;
+			auto n = new_binary_expr (e->expr.op, e1, e2);
+			n->expr.type = tr;
+			e = n;
+		}
 	} else if (e->type == ex_alias) {
 		// offsets are always constant
 		if (!is_constant (e->alias.expr)) {
@@ -341,7 +357,7 @@ evaluate_constexpr (const expr_t *e)
 	edag_pop_state ();
 
 	evaluate_run_sblock (&sblock, nullptr);
-	auto val = new_type_value (get_type (e), value_pr.pr_return_buffer);
+	auto val = new_type_value (res_type, value_pr.pr_return_buffer);
 	e = new_value_expr (val, implicit);
 	return e;
 }

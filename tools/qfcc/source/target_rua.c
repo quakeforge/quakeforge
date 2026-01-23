@@ -423,8 +423,26 @@ ruamoko_test_expr (const expr_t *expr)
 	if (is_boolean (type)) {
 		// the above is_bool and is_lbool tests ensure a boolean type
 		// is a vector (there are no bool matrices)
+		if (is_relational (expr)) {
+			return error (expr, "ambiguous conversion to bool");
+		}
+		int op = '&';
+		if (is_equality (expr)) {
+			if (expr->expr.op == QC_NE) {
+				op = '|';
+			}
+		} else if (expr->type == ex_uexpr && expr->expr.op == '!') {
+			auto val = expr->expr.e1;
+			auto type = get_type (val);
+			auto zero = new_zero_expr (type);
+			auto btype = bool_type (type);
+			expr = typed_binary_expr (btype, QC_EQ, val, zero);
+			op = '&';
+		} else {
+			return error (expr, "ambiguous conversion to bool");
+		}
 		type = base_type (type);
-		expr = new_horizontal_expr ('|', expr, type);
+		expr = new_horizontal_expr (op, expr, type);
 		if (type_size (type) > 1) {
 			expr = fold_constants (expr);
 			expr = edag_add_expr (expr);
@@ -449,7 +467,7 @@ ruamoko_test_expr (const expr_t *expr)
 		case ev_ushort:
 		{
 			// short and ushort handled with the same code as float/double
-			// because they have no backing type and and thus constants, which
+			// because they have no backing type and thus constants, which
 			// fold_constants will take care of.
 			auto zero = new_zero_expr (type);
 			auto btype = bool_type (type);
@@ -520,6 +538,22 @@ ruamoko_test_expr (const expr_t *expr)
 	return error (expr, "cannot convert to bool");
 }
 
+const expr_t *
+ruamoko_pointer_diff (const expr_t *ptra, const expr_t *ptrb)
+{
+	auto e1 = cast_expr (&type_int, ptra);
+	auto e2 = cast_expr (&type_int, ptrb);
+	auto type = get_type (ptra)->fldptr.type;
+	auto psize = new_int_expr (ruamoko_ptr_type_size (type), true);
+	return binary_expr ('/', binary_expr ('-', e1, e2), psize);
+}
+
+int
+ruamoko_ptr_type_size (const type_t *type)
+{
+	return type_aligned_size (type);
+}
+
 target_t ruamoko_target = {
 	.value_too_large = ruamoko_value_too_large,
 	.build_scope = ruamoko_build_scope,
@@ -533,7 +567,11 @@ target_t ruamoko_target = {
 	.vector_compare = ruamoko_vector_compare,
 	.shift_op = ruamoko_shift_op,
 	.test_expr = ruamoko_test_expr,
+	.pointer_diff = ruamoko_pointer_diff,
+	.ptr_type_size = ruamoko_ptr_type_size,
 
 	.short_circuit = true,
 	.zero_memory = true,
+	.pointer_scale = 1,
+	.pointer_direct_cast = true,
 };

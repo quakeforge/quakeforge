@@ -42,6 +42,7 @@
 
 typedef struct model_s model_t;
 typedef struct efrag_db_s efrag_db_t;
+typedef struct entqueue_s entqueue_t;
 
 enum scene_components {
 	scene_href,			//hierarchical transform
@@ -53,6 +54,7 @@ enum scene_components {
 	scene_animation,
 	scene_visibility,
 	scene_renderer,
+	scene_entqueue,
 	scene_active,
 	scene_old_origin,	//XXX FIXME XXX should not be here
 	scene_colormap,
@@ -83,6 +85,8 @@ typedef struct scene_s {
 	struct ecs_registry_s *reg;
 	uint32_t base;
 
+	struct exprenum_s *entqueue_enum;
+	entqueue_t *ent_queue;
 	efrag_db_t *efrag_db;
 	model_t    *worldmodel;
 	int         num_models;

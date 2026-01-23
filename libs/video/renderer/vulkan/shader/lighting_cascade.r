@@ -1,8 +1,9 @@
+#include "GLSL/texture.h"
+#include "GLSL/general.h"
+
 #define SHADOW_SAMPLER @sampler(@image(float,2D,Array,Depth))
 #include "lighting.h"
 #include "normal_offset.r"
-#include "texture.h"
-#include "general.h"
 
 bool
 find_cascade (float fd, uint mat_id, @out uint ind, @out float texel_size)

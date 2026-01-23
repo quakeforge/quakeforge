@@ -13,6 +13,7 @@ typedef struct qpipe_s {
 qpipe_t Qpipe (string *argv, int argc,
 			   bool do_stdin, bool do_stdout, bool do_stderr);
 int Qwait (int pid);
+string Qgetcwd ();
 
 @extern int Qrename (string old, string new);
 @extern int Qremove (string path);

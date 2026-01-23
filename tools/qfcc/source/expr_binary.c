@@ -151,21 +151,19 @@ pointer_arithmetic (int op, const expr_t *e1, const expr_t *e2)
 			return error (e2, "cannot use %c on pointers of different types",
 						  op);
 		}
-		e1 = cast_expr (&type_int, e1);
-		e2 = cast_expr (&type_int, e2);
-		psize = new_int_expr (type_size (t1->fldptr.type), false);
-		return binary_expr ('/', binary_expr ('-', e1, e2), psize);
+		return current_target.pointer_diff (e1, e2);
 	} else if (is_pointer (t1)) {
-		offset = cast_expr (&type_int, e2);
+		offset = e2;
 		ptr = e1;
 		ptype = t1;
 	} else if (is_pointer (t2)) {
-		offset = cast_expr (&type_int, e1);
+		offset = e1;
 		ptr = e2;
 		ptype = t2;
 	}
 	// op is known to be + or -
-	psize = new_int_expr (type_size (ptype->fldptr.type), false);
+	int size = type_size (ptype->fldptr.type) * current_target.pointer_scale;
+	psize = new_int_expr (size, true);
 	offset = unary_expr (op, binary_expr ('*', offset, psize));
 	return offset_pointer_expr (ptr, offset);
 }
@@ -549,10 +547,10 @@ scalar_dot_product_expr (int op, const expr_t *a, const expr_t *b)
 static const expr_t *
 boolean_op (int op, const expr_t *a, const expr_t *b)
 {
-	if (!is_boolean (get_type (a))) {
+	if (!is_boolean (get_type (a)) || !is_scalar (get_type (a))) {
 		a = test_expr (a);
 	}
-	if (!is_boolean (get_type (b))) {
+	if (!is_boolean (get_type (b)) || !is_scalar (get_type (b))) {
 		b = test_expr (b);
 	}
 	if (!promote_exprs (&a, &b)) {
@@ -910,7 +908,8 @@ static expr_type_t bit_ops[] = {
 };
 
 static expr_type_t bool_ops[] = {
-	{   .match_a = is_boolean, .match_b = is_boolean, },
+	{   .match_a = is_boolean, .match_b = is_boolean,
+			.process = boolean_op },
 	{   .match_a = is_scalar, .match_b = is_scalar,
 			.process = boolean_op },
 

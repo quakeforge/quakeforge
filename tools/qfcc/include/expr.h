@@ -417,6 +417,7 @@ typedef struct {
 	const type_t *res_type;
 	ex_list_t   operands;
 	const expr_t *extra;
+	bool  is_pure;
 } ex_intrinsic_t;
 
 typedef struct {
@@ -451,6 +452,12 @@ typedef struct {
 	const expr_t *insert;		///< value to insert (null for extract)
 	const type_t *type;			///< result type for extract
 } ex_bitfield_t;
+
+typedef struct {
+	const expr_t *ptr;
+	const expr_t *offset;
+	const type_t *type;
+} ex_ptroffset_t;
 
 typedef struct expr_s {
 	expr_t     *next;
@@ -509,6 +516,7 @@ typedef struct expr_s {
 		ex_xvalue_t xvalue;				///< lvalue/rvalue specific expression
 		ex_process_t process;			///< expression than needs processing
 		ex_bitfield_t bitfield;			///< bitfield insert/extract expression
+		ex_ptroffset_t ptroffset;		///< pointer offset expression
 	};
 } expr_t;
 
@@ -974,6 +982,20 @@ bool is_selector (const expr_t *e) __attribute__((pure));
 	\return			A new expression holding the value of \a e or \e itself.
 */
 const expr_t *constant_expr (const expr_t *e);
+
+/**	Check if the op-code is a relational.
+
+	\param op		The op-code to check.
+	\return			True if the expression is relational (< <= >= >).
+*/
+bool is_relational (const expr_t *e) __attribute__((pure));
+
+/**	Check if the op-code is an equality.
+
+	\param op		The op-code to check.
+	\return			True if the expression is equality (== !=).
+*/
+bool is_equality (const expr_t *e) __attribute__((pure));
 
 /**	Check if the op-code is a comparison.
 

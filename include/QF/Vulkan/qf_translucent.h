@@ -42,6 +42,8 @@ typedef struct translucentctx_s {
 	struct qfv_resource_s *resource_array;
 	uint32_t active_resources;
 	uint32_t num_resources;
+
+	uint32_t ds_index;
 } translucentctx_t;
 
 struct vulkan_ctx_s;

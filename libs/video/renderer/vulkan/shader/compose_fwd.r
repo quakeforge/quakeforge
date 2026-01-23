@@ -1,4 +1,4 @@
-#include "general.h"
+#include "GLSL/general.h"
 
 [in("ViewIndex"), flat] int gl_ViewIndex;
 [in("FragCoord")] vec4 gl_FragCoord;
@@ -8,6 +8,8 @@
 
 #define COLOR_ONLY
 #include "input_attach.h"
+
+INPUT_ATTACH(0) subpassInput color;
 
 [out(0)] vec4 frag_color;
 

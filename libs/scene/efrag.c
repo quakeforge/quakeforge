@@ -155,8 +155,6 @@ Efrags_DelEfrag (efrag_db_t *db, uint32_t efragid)
 	ECS_DelId (&db->idpool, efragid);
 }
 
-entqueue_t *r_ent_queue;
-
 uint32_t
 R_LinkEfrag (scene_t *scene, mleaf_t *leaf, entity_t ent, uint32_t queue,
 			 uint32_t efrag)
@@ -301,7 +299,12 @@ R_AddEfrags (scene_t *scene, entity_t ent)
 	VectorAdd (org, entmodel->mins, emins);
 	VectorAdd (org, entmodel->maxs, emaxs);
 
-	R_SplitEntityOnNode (scene, ent, rend->model->type, vis, emins, emaxs);
+	int queue = rend->model->type;
+	int *entqueue = Entity_GetEntqueue (ent);
+	if (entqueue) {
+		queue = *entqueue;
+	}
+	R_SplitEntityOnNode (scene, ent, queue, vis, emins, emaxs);
 }
 
 void
@@ -318,6 +321,6 @@ R_StoreEfrags (scene_t *scene, mleaf_t *leaf)
 			.id = efrag->entity,
 			.base = scene->base,
 		};
-		EntQueue_AddEntity (r_ent_queue, ent, efrag->queue_num);
+		EntQueue_AddEntity (scene->ent_queue, ent, efrag->queue_num);
 	}
 }

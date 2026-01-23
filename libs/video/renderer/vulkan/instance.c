@@ -42,7 +42,8 @@
 #include "libs/video/renderer/vulkan/vkparse.hinc"
 
 int vulkan_use_validation;
-int vulkan_validation_feature;
+int vulkan_validation_feature_enable;
+int vulkan_validation_feature_disable;
 
 static uint32_t numLayers;
 static VkLayerProperties *instanceLayerProperties;
@@ -152,24 +153,30 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
 		msgSev = "error: ";
 	}
-	fprintf (stderr, "validation layer: %s%s\n", msgSev,
-			 callbackData->pMessage);
-	for (uint32_t i = 0; i < callbackData->objectCount; i++) {
-		fprintf (stderr, "    Object Handle[%d] = 0x%" PRIx64, i,
-				 callbackData->pObjects[i].objectHandle);
-		if (callbackData->pObjects[i].pObjectName) {
-			fprintf (stderr, " [%s]", callbackData->pObjects[i].pObjectName);
+	if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
+		&& strcmp (callbackData->pMessageIdName, "VVL-DEBUG-PRINTF") == 0) {
+		fprintf (stderr, "%s\n", callbackData->pMessage);
+	} else {
+		fprintf (stderr, "validation layer: %s%s\n", msgSev,
+				 callbackData->pMessage);
+		for (uint32_t i = 0; i < callbackData->objectCount; i++) {
+			fprintf (stderr, "    Object Handle[%d] = 0x%" PRIx64, i,
+					 callbackData->pObjects[i].objectHandle);
+			if (callbackData->pObjects[i].pObjectName) {
+				fprintf (stderr, " [%s]",
+						 callbackData->pObjects[i].pObjectName);
+			}
+			exprval_t val = {
+				.type = &VkObjectType_type,
+				.value = (void *) &callbackData->pObjects[i].objectType,
+			};
+			auto vactx = va_create_context (4);
+			fprintf (stderr, " %s\n", val.type->get_string (&val, vactx));
+			va_destroy_context (vactx);
 		}
-		exprval_t val = {
-			.type = &VkObjectType_type,
-			.value = (void *) &callbackData->pObjects[i].objectType,
-		};
-		auto vactx = va_create_context (4);
-		fprintf (stderr, " %s\n", val.type->get_string (&val, vactx));
-		va_destroy_context (vactx);
-	}
-	for (size_t i = instance->debug_stack.size; i-- > 0; ) {
-		fprintf (stderr, "    %s\n", instance->debug_stack.a[i]);
+		for (size_t i = instance->debug_stack.size; i-- > 0; ) {
+			fprintf (stderr, "    %s\n", instance->debug_stack.a[i]);
+		}
 	}
 	debug_breakpoint (messageSeverity);
 	return VK_FALSE;
@@ -234,18 +241,28 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 		.engineVersion = 0x000702ff, //FIXME version
 		.apiVersion = VK_API_VERSION_1_4,
 	};
-	int valfeat_count = count_bits (vulkan_validation_feature);
-	VkValidationFeatureEnableEXT valfeat_enable[valfeat_count + 1] = {};
-	for (uint32_t feat = vulkan_validation_feature, ind = 0, bit = 0; feat;
-		 feat >>= 1, bit++) {
+	int envalfeat_count = count_bits (vulkan_validation_feature_enable);
+	int disvalfeat_count = count_bits (vulkan_validation_feature_disable);
+	VkValidationFeatureEnableEXT envalfeat_enable[envalfeat_count + 1] = {};
+	VkValidationFeatureDisableEXT disvalfeat_enable[disvalfeat_count + 1] = {};
+	for (uint32_t feat = vulkan_validation_feature_enable, ind = 0, bit = 0;
+		 feat; feat >>= 1, bit++) {
 		if (feat & 1) {
-			valfeat_enable[ind++] = bit;
+			envalfeat_enable[ind++] = bit;
+		}
+	}
+	for (uint32_t feat = vulkan_validation_feature_disable, ind = 0, bit = 0;
+		 feat; feat >>= 1, bit++) {
+		if (feat & 1) {
+			disvalfeat_enable[ind++] = bit;
 		}
 	}
 	VkValidationFeaturesEXT validation_features= {
 		.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
-		.enabledValidationFeatureCount = valfeat_count,
-		.pEnabledValidationFeatures = valfeat_enable,
+		.enabledValidationFeatureCount = envalfeat_count,
+		.pEnabledValidationFeatures = envalfeat_enable,
+		.disabledValidationFeatureCount = disvalfeat_count,
+		.pDisabledValidationFeatures = disvalfeat_enable,
 	};
 	VkInstanceCreateInfo createInfo = {
 		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,

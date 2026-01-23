@@ -143,6 +143,12 @@ parse_error (rua_ctx_t *ctx)
 %type <expr>    unary_expr expr id defined defined_id line_expr
 %type <t>		body_token embed_macro
 
+%printer { fprintf (yyo, "%s", $$ ?: "(null)"); } <t.text>;
+%printer { fprintf (yyo, "$%s", $$->name); } <macro>;
+%printer { fprintf (yyo, "\"%s\"", quote_string ($$->str)); } <dstr>;
+%printer { fprintf (yyo, "%p", $$); } <expr>;
+%printer { fprintf (yyo, "[%d]", $$.token); } <t>;
+
 %{
 #define TEXPR(c,t,f) new_long_expr (expr_long (c) ? expr_long (t) \
 												  : expr_long (f), false)

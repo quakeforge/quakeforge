@@ -403,6 +403,13 @@ typedef struct bspctx_s {
 	uint32_t    *index_data;
 	uint32_t    *entid_data;
 	bspframeset_t frames;
+
+	uint32_t    *matrix_base;
+	vec4f_t     *fog;
+	float       *time;
+	float       *alpha;
+	float       *turb_scale;
+	uint32_t    *control;
 } bspctx_t;
 
 struct vulkan_ctx_s;

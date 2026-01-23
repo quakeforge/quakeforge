@@ -63,6 +63,7 @@ bool        r_cache_thrash;		// set if surface cache is thrashing
 bool        r_lock_viewleaf;	// prevent vis updates (for debug camera)
 bool        r_override_camera;
 transform_t r_camera;
+entqueue_t *r_ent_queue;
 
 visstate_t r_visstate;		//FIXME per renderer
 
@@ -251,28 +252,31 @@ SCR_UpdateScreen_legacy (SCR_Func *scr_funcs)
 	if (r_dowarp) {
 		r_funcs->bind_framebuffer (warp_buffer);
 	}
-	if (scr_fisheye && fisheye_cube_map) {
-		int         side = fisheye_cube_map->width;
-		vrect_t     feye = { 0, 0, side, side };
-		r_funcs->set_viewport (&feye);
-		r_funcs->set_fov (1, 1);	//FIXME shouldn't be every frame (2d stuff)
-		switch (scr_fviews) {
-			case 6: render_side (BOX_BEHIND);
-			case 5: render_side (BOX_BOTTOM);
-			case 4: render_side (BOX_TOP);
-			case 3: render_side (BOX_LEFT);
-			case 2: render_side (BOX_RIGHT);
-			default:render_side (BOX_FRONT);
-		}
-		r_funcs->bind_framebuffer (0);
-		r_funcs->set_viewport (&r_refdef.vrect);
-		r_funcs->post_process (fisheye_cube_map);
-	} else {
-		r_funcs->set_viewport (&r_refdef.vrect);
-		render_scene ();
-		if (r_dowarp) {
+	if (r_refdef.scene) {
+		if (scr_fisheye && fisheye_cube_map) {
+			int         side = fisheye_cube_map->width;
+			vrect_t     feye = { 0, 0, side, side };
+			r_funcs->set_viewport (&feye);
+			//FIXME shouldn't be every frame (2d stuff)
+			r_funcs->set_fov (1, 1);
+			switch (scr_fviews) {
+				case 6: render_side (BOX_BEHIND);
+				case 5: render_side (BOX_BOTTOM);
+				case 4: render_side (BOX_TOP);
+				case 3: render_side (BOX_LEFT);
+				case 2: render_side (BOX_RIGHT);
+				default:render_side (BOX_FRONT);
+			}
 			r_funcs->bind_framebuffer (0);
-			r_funcs->post_process (warp_buffer);
+			r_funcs->set_viewport (&r_refdef.vrect);
+			r_funcs->post_process (fisheye_cube_map);
+		} else {
+			r_funcs->set_viewport (&r_refdef.vrect);
+			render_scene ();
+			if (r_dowarp) {
+				r_funcs->bind_framebuffer (0);
+				r_funcs->post_process (warp_buffer);
+			}
 		}
 	}
 	r_funcs->set_2d (0);
@@ -480,8 +484,6 @@ SCR_Init (void)
 
 	scr_initialized = true;
 
-	r_ent_queue = EntQueue_New (mod_num_types);
-
 	cvar_t     *var = Cvar_FindVar ("viewsize");
 	Cvar_AddListener (var, viewsize_listener, 0);
 	VID_OnVidResize_AddListener (vidsize_listener, 0);
@@ -516,6 +518,7 @@ SCR_NewScene (scene_t *scene)
 		r_refdef.registry = scene->reg;
 		r_funcs->set_fov (tan_fov_x, tan_fov_y);
 		r_funcs->R_NewScene (scene);
+		r_ent_queue = scene->ent_queue;
 	} else {
 		r_visstate = (visstate_t) {};
 		r_funcs->R_ClearState ();

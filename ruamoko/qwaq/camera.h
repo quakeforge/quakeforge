@@ -19,6 +19,7 @@ typedef @handle(long) transform_h transform_t;
 -(entity_t) entity;
 -setTransformFromMotor:(motor_t)M;
 -draw;
+-drawExcept:(Camera *) skip;
 @end
 
 #endif//__camera_h

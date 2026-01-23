@@ -185,8 +185,7 @@ get_charbuff (progs_t *pr, draw_resources_t *res, const char *name, int charbuff
 
 #define bi(x) static void bi_##x (progs_t *pr, void *_res)
 
-static void
-bi_Draw_FreePic (progs_t *pr, void *_res)
+bi(Draw_FreePic)
 {
 	qfZoneScoped (true);
 	draw_resources_t *res = _res;
@@ -197,8 +196,7 @@ bi_Draw_FreePic (progs_t *pr, void *_res)
 	qpic_free (res, qp);
 }
 
-static void
-bi_Draw_MakePic (progs_t *pr, void *_res)
+bi(Draw_MakePic)
 {
 	qfZoneScoped (true);
 	draw_resources_t *res = _res;
@@ -222,8 +220,7 @@ bi_Draw_MakePic (progs_t *pr, void *_res)
 	RETURN_POINTER (pr, qp->bq);
 }
 
-static void
-bi_Draw_CachePic (progs_t *pr, void *_res)
+bi(Draw_CachePic)
 {
 	qfZoneScoped (true);
 	draw_resources_t *res = _res;
@@ -252,8 +249,7 @@ bi_Draw_CachePic (progs_t *pr, void *_res)
 	RETURN_POINTER (pr, qp->bq);
 }
 
-static void
-bi_Draw_Pic (progs_t *pr, void *_res)
+bi(Draw_Pic)
 {
 	qfZoneScoped (true);
 	draw_resources_t *res = _res;
@@ -266,8 +262,7 @@ bi_Draw_Pic (progs_t *pr, void *_res)
 	r_funcs->draw.Pic (x, y, pic);
 }
 
-static void
-bi_Draw_Picf (progs_t *pr, void *_res)
+bi(Draw_Picf)
 {
 	qfZoneScoped (true);
 	draw_resources_t *res = _res;
@@ -280,8 +275,7 @@ bi_Draw_Picf (progs_t *pr, void *_res)
 	r_funcs->draw.Picf (x, y, pic);
 }
 
-static void
-bi_Draw_SubPic (progs_t *pr, void *_res)
+bi(Draw_SubPic)
 {
 	qfZoneScoped (true);
 	draw_resources_t *res = _res;
@@ -298,8 +292,7 @@ bi_Draw_SubPic (progs_t *pr, void *_res)
 	r_funcs->draw.SubPic (x, y, pic, srcx, srcy, width, height);
 }
 
-static void
-bi_Draw_CenterPic (progs_t *pr, void *_res)
+bi(Draw_CenterPic)
 {
 	qfZoneScoped (true);
 	draw_resources_t *res = _res;
@@ -312,8 +305,7 @@ bi_Draw_CenterPic (progs_t *pr, void *_res)
 	r_funcs->draw.Pic (x - pic->width / 2, y, pic);
 }
 
-static void
-bi_Draw_Character (progs_t *pr, void *_res)
+bi(Draw_Character)
 {
 	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
@@ -323,8 +315,7 @@ bi_Draw_Character (progs_t *pr, void *_res)
 	r_funcs->draw.Character (x, y, c);
 }
 
-static void
-bi_Draw_String (progs_t *pr, void *_res)
+bi(Draw_String)
 {
 	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
@@ -334,8 +325,7 @@ bi_Draw_String (progs_t *pr, void *_res)
 	r_funcs->draw.String (x, y, text);
 }
 
-static void
-bi_Draw_nString (progs_t *pr, void *_res)
+bi(Draw_nString)
 {
 	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
@@ -346,8 +336,7 @@ bi_Draw_nString (progs_t *pr, void *_res)
 	r_funcs->draw.nString (x, y, text, n);
 }
 
-static void
-bi_Draw_AltString (progs_t *pr, void *_res)
+bi(Draw_AltString)
 {
 	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
@@ -363,8 +352,7 @@ bi_Draw_AltString (progs_t *pr, void *_res)
 	Draws a filled area with a color
 	(only a wrapper function to original qf-api)
 */
-static void
-bi_Draw_Fill (progs_t *pr, void *_res)
+bi(Draw_Fill)
 {
 	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
@@ -376,8 +364,7 @@ bi_Draw_Fill (progs_t *pr, void *_res)
 	r_funcs->draw.Fill (x, y, w, h, color);
 }
 
-static void
-bi_Draw_Line (progs_t *pr, void *_res)
+bi(Draw_Line)
 {
 	qfZoneScoped (true);
 	int         x0 = P_INT (pr, 0);
@@ -389,8 +376,7 @@ bi_Draw_Line (progs_t *pr, void *_res)
 	r_funcs->draw.Line (x0, y0, x1, y1, color);
 }
 
-static void
-bi_Draw_Crosshair (progs_t *pr, void *_res)
+bi(Draw_Crosshair)
 {
 	qfZoneScoped (true);
 	int         ch = P_INT (pr, 0);
@@ -400,22 +386,19 @@ bi_Draw_Crosshair (progs_t *pr, void *_res)
 	r_funcs->draw.CrosshairAt (ch, x, y);
 }
 
-static void
-bi_Draw_Width (progs_t *pr, void *_res)
+bi(Draw_Width)
 {
 	qfZoneScoped (true);
 	R_INT (pr) = r_data->vid->width;
 }
 
-static void
-bi_Draw_Height (progs_t *pr, void *_res)
+bi(Draw_Height)
 {
 	qfZoneScoped (true);
 	R_INT (pr) = r_data->vid->height;
 }
 
-static void
-bi_Draw_CreateBuffer (progs_t *pr, void *_res)
+bi(Draw_CreateBuffer)
 {
 	qfZoneScoped (true);
 	draw_resources_t *res = _res;
@@ -432,8 +415,7 @@ bi_Draw_CreateBuffer (progs_t *pr, void *_res)
 	R_INT (pr) = charbuff_index (res, cbuff);
 }
 
-static void
-bi_Draw_DestroyBuffer (progs_t *pr, void *_res)
+bi(Draw_DestroyBuffer)
 {
 	qfZoneScoped (true);
 	draw_resources_t *res = _res;
@@ -443,8 +425,7 @@ bi_Draw_DestroyBuffer (progs_t *pr, void *_res)
 	charbuff_free (res, cbuff);
 }
 
-static void
-bi_Draw_ClearBuffer (progs_t *pr, void *_res)
+bi(Draw_ClearBuffer)
 {
 	qfZoneScoped (true);
 	draw_resources_t *res = _res;
@@ -454,8 +435,7 @@ bi_Draw_ClearBuffer (progs_t *pr, void *_res)
 	Draw_ClearBuffer (cbuff->buffer);
 }
 
-static void
-bi_Draw_ScrollBuffer (progs_t *pr, void *_res)
+bi(Draw_ScrollBuffer)
 {
 	qfZoneScoped (true);
 	draw_resources_t *res = _res;
@@ -466,8 +446,7 @@ bi_Draw_ScrollBuffer (progs_t *pr, void *_res)
 	Draw_ScrollBuffer (cbuff->buffer, lines);
 }
 
-static void
-bi_Draw_CharBuffer (progs_t *pr, void *_res)
+bi(Draw_CharBuffer)
 {
 	qfZoneScoped (true);
 	draw_resources_t *res = _res;
@@ -479,8 +458,7 @@ bi_Draw_CharBuffer (progs_t *pr, void *_res)
 	Draw_CharBuffer (x, y, cbuff->buffer);
 }
 
-static void
-bi_Draw_PrintBuffer (progs_t *pr, void *_res)
+bi(Draw_PrintBuffer)
 {
 	qfZoneScoped (true);
 	draw_resources_t *res = _res;
@@ -491,8 +469,7 @@ bi_Draw_PrintBuffer (progs_t *pr, void *_res)
 	Draw_PrintBuffer (cbuff->buffer, str);
 }
 
-static void
-bi_Draw_SetScale (progs_t *pr, void *_res)
+bi(Draw_SetScale)
 {
 	qfZoneScoped (true);
 	Draw_SetScale (P_INT (pr, 0));
@@ -616,6 +593,45 @@ bi(Painter_AddBezier)
 	}
 }
 
+bi (Render_UpdateBuffer)
+{
+	qfZoneScoped (true);
+	if (r_funcs->UpdateBuffer) {
+		const char *name = P_GSTRING (pr, 0);
+		uint32_t    offset = P_UINT (pr, 1);
+		void       *ptr = P_GPOINTER (pr, 2);
+		uint32_t    size = P_UINT (pr, 3);
+		r_funcs->UpdateBuffer (name, offset, ptr, size);
+	}
+}
+
+bi (Render_BufferAddress)
+{
+	qfZoneScoped (true);
+	if (r_funcs->UpdateBuffer) {
+		const char *name = P_GSTRING (pr, 0);
+		R_ULONG (pr) = r_funcs->BufferAddress (name);
+	}
+}
+
+bi (Render_BufferOffset)
+{
+	qfZoneScoped (true);
+	if (r_funcs->UpdateBuffer) {
+		const char *name = P_GSTRING (pr, 0);
+		R_ULONG (pr) = r_funcs->BufferOffset (name);
+	}
+}
+
+bi (Render_BufferSize)
+{
+	qfZoneScoped (true);
+	if (r_funcs->UpdateBuffer) {
+		const char *name = P_GSTRING (pr, 0);
+		R_ULONG (pr) = r_funcs->BufferSize (name);
+	}
+}
+
 static const char *
 bi_draw_get_key (const void *p, void *unused)
 {
@@ -701,6 +717,10 @@ static builtin_t builtins[] = {
 	bi(Painter_AddBezier, 6, p(vec2), p(vec2), p(vec2), p(vec2),
 							 p(float), p(vec4)),
 
+	bi(Render_UpdateBuffer,    4, p(string), p(uint), p(ptr), p(uint)),
+	bi(Render_BufferAddress,   1, p(string)),
+	bi(Render_BufferOffset,    1, p(string)),
+	bi(Render_BufferSize,      1, p(string)),
 	{0}
 };
 

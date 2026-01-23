@@ -1,4 +1,4 @@
-#include "general.h"
+#include "GLSL/general.h"
 
 [uniform, set(0), binding(0)] @block
 #include "matrices.h"

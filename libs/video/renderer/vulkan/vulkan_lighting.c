@@ -60,6 +60,7 @@
 #include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/barrier.h"
@@ -709,7 +710,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	const dlight_t *dynamic_lights[MaxLights];
 	int ndlight = 0;
 
-	auto entqueue = r_ent_queue;   //FIXME fetch from scene
+	auto entqueue = Vulkan_Scene_EntQueue (ctx);
 	for (size_t i = 0; i < entqueue->ent_queues[mod_light].size; i++) {
 		entity_t    ent = entqueue->ent_queues[mod_light].a[i];
 		if (has_dynlight (ent)) {
@@ -1006,68 +1007,6 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 }
 
 static void
-lighting_update_descriptors (const exprval_t **params, exprval_t *result,
-							 exprctx_t *ectx)
-{
-	qfZoneNamed (zone, true);
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto lctx = ctx->lighting_context;
-
-	auto lframe = &lctx->frames.a[ctx->curFrame];
-
-	auto job = ctx->render_context->job;
-	auto step = QFV_GetStep (params[0], job);
-	auto render = step->render;
-	auto fb = &render->active->framebuffer;
-	if (fb->update_frame == lframe->update_frame) {
-		return;
-	}
-	lframe->update_frame = fb->update_frame;
-	VkDescriptorImageInfo attachInfo[] = {
-		{	.imageView = fb->views[QFV_attachColor],
-			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-		{	.imageView = fb->views[QFV_attachEmission],
-			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-		{	.imageView = fb->views[QFV_attachNormal],
-			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-		{	.imageView = fb->views[QFV_attachDepth],
-			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-	};
-	VkWriteDescriptorSet attachWrite[] = {
-		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = lframe->attach_set,
-			.dstBinding = 0,
-			.descriptorCount = 1,
-			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-			.pImageInfo = &attachInfo[0], },
-		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = lframe->attach_set,
-			.dstBinding = 1,
-			.descriptorCount = 1,
-			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-			.pImageInfo = &attachInfo[1], },
-		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = lframe->attach_set,
-			.dstBinding = 2,
-			.descriptorCount = 1,
-			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-			.pImageInfo = &attachInfo[2], },
-		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = lframe->attach_set,
-			.dstBinding = 3,
-			.descriptorCount = 1,
-			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-			.pImageInfo = &attachInfo[3], },
-	};
-	dfunc->vkUpdateDescriptorSets (device->dev,
-								   LIGHTING_ATTACH_INFOS, attachWrite,
-								   0, 0);
-}
-
-static void
 lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 						   exprctx_t *ectx)
 {
@@ -1109,19 +1048,24 @@ lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 		dfunc->vkCmdBindIndexBuffer (cmd, lctx->splat_inds, 0,
 									 VK_INDEX_TYPE_UINT32);
 	} else {
-		VkDescriptorSet sets[] = {
-			lframe->shadowmat_set,
-			lframe->lights_set,
-			lframe->attach_set,
+		auto set =
 			(VkDescriptorSet[]) {
 				lctx->shadow_2d_set,
 				lctx->shadow_2d_set,
 				lctx->shadow_2d_set,
 				lctx->shadow_cube_set
-			}[shadow_type],
-		};
-		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-										layout, 0, countof(sets), sets, 0, 0);
+			}[shadow_type];
+		QFV_SetDescriptorSet (ctx, ctx->curFrame, lctx->lighting_shadow, set);
+
+		auto lframe = &lctx->frames.a[ctx->curFrame];
+		vec4f_t fog = Fog_Get ();
+		// convert scatter to transmission (FIXME ignoring absorbtion)
+		fog = (vec4f_t) { 1, 1, 1, 0 } - fog;
+		fog[3] = -fog[3];
+		*lctx->fog = fog;
+		*lctx->near_plane = r_nearclip;
+		*lctx->queue = lframe->light_queue[shadow_type];
+		*lctx->num_cascades = NUM_CASCADE;
 	}
 }
 
@@ -1495,13 +1439,6 @@ lighting_draw_hulls (const exprval_t **params, exprval_t *result,
 	}
 }
 
-typedef struct {
-	vec4f_t     fog;
-	float       near_plane;
-	uint32_t    queue;
-	uint32_t    num_cascade;
-} light_push_constants_t;
-
 static void
 lighting_draw_lights (const exprval_t **params, exprval_t *result,
 					  exprctx_t *ectx)
@@ -1512,40 +1449,18 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto lctx = ctx->lighting_context;
-	auto layout = taskctx->pipeline->layout;
+	auto pipeline = taskctx->pipeline;
 	auto cmd = taskctx->cmd;
 
 	auto lframe = &lctx->frames.a[ctx->curFrame];
 	auto shadow_type = *(int *) params[0]->value;
 	auto queue = lframe->light_queue[shadow_type];
-	float near_plane = r_nearclip;
-	uint32_t num_cascade = NUM_CASCADE;
 
 	if (!queue.count) {
 		return;
 	}
-
-	vec4f_t fog = Fog_Get ();
-	// convert scatter to transmission (FIXME ignoring absorbtion)
-	fog = (vec4f_t) { 1, 1, 1, 0 } - fog;
-	fog[3] = -fog[3];
-
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (light_push_constants_t, fog),
-			sizeof (fog), &fog },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (light_push_constants_t, near_plane),
-			sizeof (near_plane), &near_plane },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (light_push_constants_t, queue),
-			sizeof (queue), &queue },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (light_push_constants_t, num_cascade),
-			sizeof (num_cascade), &num_cascade },
-	};
-	QFV_PushConstants (device, cmd, layout, countof (push_constants),
-					   push_constants);
+	QFV_BindDescriptors (ctx, cmd, pipeline);
+	QFV_PushBlackboard (ctx, cmd, pipeline);
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
@@ -1960,6 +1875,7 @@ lighting_startup (exprctx_t *ectx)
 	lctx->default_view_2d = default_view_2d[0].image_view.view;
 
 	auto shadow_mgr = QFV_Render_DSManager (ctx, "lighting_shadow");
+	lctx->lighting_shadow = QFV_GetDSIndex (ctx, "lighting_shadow");
 	lctx->shadow_cube_set = QFV_DSManager_AllocSet (shadow_mgr);
 	lctx->shadow_2d_set = QFV_DSManager_AllocSet (shadow_mgr);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
@@ -1968,15 +1884,15 @@ lighting_startup (exprctx_t *ectx)
 						 lctx->shadow_2d_set, "lighting:shadow_2d_set");
 	lctx->shadow_sampler = QFV_Render_Sampler (ctx, "shadow_sampler");
 
-	auto attach_mgr = QFV_Render_DSManager (ctx, "lighting_attach");
 	auto lights_mgr = QFV_Render_DSManager (ctx, "lighting_lights");
 	auto shadowmat_mgr = QFV_Render_DSManager (ctx, "shadowmat_set");
+	uint32_t lighting_lights = QFV_GetDSIndex (ctx, "lighting_lights");
+	uint32_t shadowmat_set = QFV_GetDSIndex (ctx, "shadowmat_set");
 	for (size_t i = 0; i < frames; i++) {
 		auto lframe = &lctx->frames.a[i];
 		*lframe = (lightingframe_t) {
 			.shadowmat_set = QFV_DSManager_AllocSet (shadowmat_mgr),
 			.lights_set = QFV_DSManager_AllocSet (lights_mgr),
-			.attach_set = QFV_DSManager_AllocSet (attach_mgr),
 			.update_frame = ~UINT64_C(0),
 			.shadowmat_buffer = light_mats[i].buffer.buffer,
 			.shadowmat_id_buffer = light_mat_ids[i].buffer.buffer,
@@ -1988,10 +1904,9 @@ lighting_startup (exprctx_t *ectx)
 			.radius_buffer = light_radii[i].buffer.buffer,
 			.entid_buffer = light_entids[i].buffer.buffer,
 		};
+		QFV_SetDescriptorSet (ctx, i, shadowmat_set, lframe->shadowmat_set);
+		QFV_SetDescriptorSet (ctx, i, lighting_lights, lframe->lights_set);
 
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
-							 lframe->attach_set,
-							 vac (ctx->va_ctx, "lighting:attach_set:%zd", i));
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
 							 lframe->lights_set,
 							 vac (ctx->va_ctx, "lighting:lights_set:%zd", i));
@@ -2150,19 +2065,25 @@ lighting_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_Render_AddStartup (ctx, lighting_startup);
 	QFV_Render_AddClearState (ctx, lighting_clearstate);
 
-	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
+	lightingctx_t *lctx = malloc (sizeof (lightingctx_t));
 	ctx->lighting_context = lctx;
 
-	lctx->shadow_info = (qfv_attachmentinfo_t) {
-		.name = "$shadow",
-		.format = VK_FORMAT_D32_SFLOAT,
-		.samples = 1,
-		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-		.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,//FIXME plist
+	*lctx = (lightingctx_t) {
+		.shadow_info = (qfv_attachmentinfo_t) {
+			.name = "$shadow",
+			.format = VK_FORMAT_D32_SFLOAT,
+			.samples = 1,
+			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+			.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,//FIXME plist
+		},
+		.fog          = QFV_GetBlackboardVar (ctx, "fog"),
+		.near_plane   = QFV_GetBlackboardVar (ctx, "near_plane"),
+		.queue        = QFV_GetBlackboardVar (ctx, "queue"),
+		.num_cascades = QFV_GetBlackboardVar (ctx, "num_cascades"),
 	};
 	qfv_attachmentinfo_t *attachments[] = {
 		&lctx->shadow_info,
@@ -2228,11 +2149,6 @@ static exprfunc_t lighting_update_lights_func[] = {
 	{ .func = lighting_update_lights },
 	{}
 };
-static exprfunc_t lighting_update_descriptors_func[] = {
-	{ .func = lighting_update_descriptors, .num_params = 1,
-		.param_types = stepref_param },
-	{}
-};
 static exprfunc_t lighting_bind_descriptors_func[] = {
 	{ .func = lighting_bind_descriptors, .num_params = 2,
 		.param_types = shadow_type_param },
@@ -2283,8 +2199,6 @@ static exprfunc_t lighting_init_func[] = {
 
 static exprsym_t lighting_task_syms[] = {
 	{ "lighting_update_lights", &cexpr_function, lighting_update_lights_func },
-	{ "lighting_update_descriptors", &cexpr_function,
-		lighting_update_descriptors_func },
 	{ "lighting_bind_descriptors", &cexpr_function,
 		lighting_bind_descriptors_func },
 	{ "lighting_draw_splats", &cexpr_function, lighting_draw_splats_func },

@@ -203,13 +203,13 @@ iface_block_array_property (const type_t *type, const attribute_t *attr,
 	return expr;
 }
 
-static const type_t *
-block_block_type (const type_t *type, const char *pre_tag)
+const type_t *
+iface_block_type (const type_t *type, const char *pre_tag)
 {
 	unsigned uint = sizeof (uint32_t);
 	if (is_array (type)) {
 		type = unalias_type (type);
-		auto ele_type = block_block_type (type->array.type, pre_tag);
+		auto ele_type = iface_block_type (type->array.type, pre_tag);
 		type_t new = {
 			.type = ev_invalid,
 			.meta = ty_array,
@@ -254,7 +254,7 @@ block_block_type (const type_t *type, const char *pre_tag)
 			if (s->sy_type != sy_offset && s->sy_type != sy_convert) {
 				continue;
 			}
-			auto ftype = block_block_type (s->type, tag);
+			auto ftype = iface_block_type (s->type, tag);
 			auto sym = new_symbol_type (s->name, ftype);
 			sym->sy_type = s->sy_type;
 			if (s->sy_type == sy_convert) {
@@ -275,6 +275,11 @@ block_block_type (const type_t *type, const char *pre_tag)
 				alignment = type_align (ftype);
 			}
 			offset = RUP (offset, type_align (ftype) * uint);
+			if (s->sy_type == sy_convert) {
+				sym->convert = s->convert;
+			} else {
+				sym->offset = offset;
+			}
 			add_attribute (&sym->attributes,
 						   new_attrfunc ("Offset", new_uint_expr (offset)));
 			offset += type_size (ftype) * uint;
@@ -371,7 +376,7 @@ declare_block_instance (specifier_t spec, iface_block_t *block,
 		.symtab = block->members,
 		.attributes = new_attrfunc ("Block", nullptr),
 	};
-	auto inst_type = block_block_type (&type, nullptr);
+	auto inst_type = iface_block_type (&type, nullptr);
 	block->members = inst_type->symtab;
 	spec = (specifier_t) {
 		.sym = instance_name,

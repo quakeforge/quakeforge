@@ -3,8 +3,6 @@
 #ifndef __gizmo_h
 #define __gizmo_h
 
-#include "integer.h"
-
 typedef @algebra(float(3,0,1)) PGA;
 typedef PGA.group_mask(0x0a) bivec_t;
 typedef PGA.group_mask(0x1e) motor_t;
@@ -12,14 +10,8 @@ typedef PGA.tvec point_t;
 typedef PGA.vec plane_t;
 typedef bivec_t line_t;
 
-#define SPV(op) @intrinsic(op)
-#define GLSL(op) @intrinsic(OpExtInst,"GLSL.std.450",op)
-
 float asfloat (uint x) = SPV(OpBitcast);
 vec4 asrgba (uint x) = GLSL(UnpackUnorm4x8);
-
-#undef SPV
-#undef GLSL
 
 ivec4 getsbytes (uint ind)
 {

@@ -38,6 +38,7 @@
 typedef struct symbol_s symbol_t;
 typedef struct expr_s expr_t;
 typedef struct pr_info_s pr_info_t;
+typedef struct hashtab_s hashtab_t;
 
 typedef struct entrypoint_s {
 	struct entrypoint_s *next;
@@ -82,6 +83,8 @@ typedef struct module_s {
 	// functions
 	defspace_t *func_declarations;
 	defspace_t *func_definitions;
+
+	hashtab_t  *forward_structs;
 } module_t;
 
 void spirv_add_capability (module_t *module, SpvCapability capability);

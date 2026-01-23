@@ -479,10 +479,8 @@ parse_fixed_array (const plfield_t *field, const plitem_t *item,
 static char *
 vkstrdup (parsectx_t *context, const char *str)
 {
-	size_t      len = strlen (str) + 1;
-	char       *dup = vkparse_alloc (context, len);
-	memcpy (dup, str, len);
-	return dup;
+	parsectx_t *pctx = context;
+	return cmemstrdup (pctx->ectx->memsuper, str);
 }
 
 static __attribute__((used)) parse_string_t parse_string_array = { 0 };
@@ -1207,15 +1205,26 @@ static cvar_t vulkan_use_validation_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &validation_type, .value = &vulkan_use_validation },
 };
-static cvar_t vulkan_validation_feature_cvar = {
-	.name = "vulkan_validation_feature",
+static cvar_t vulkan_validation_feature_enable_cvar = {
+	.name = "vulkan_validation_feature_enable",
 	.description =
 		"KRONOS Validation Layer feature enable options.",
 	.default_value = "0",
 	.flags = CVAR_NONE,
 	.value = {
 		.type = &VkValidationFeatureEnableEXT_type,
-		.value = &vulkan_validation_feature,
+		.value = &vulkan_validation_feature_enable,
+	},
+};
+static cvar_t vulkan_validation_feature_disable_cvar = {
+	.name = "vulkan_validation_feature_disable",
+	.description =
+		"KRONOS Validation Layer feature disable options.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = {
+		.type = &VkValidationFeatureDisableEXT_type,
+		.value = &vulkan_validation_feature_disable,
 	},
 };
 
@@ -1250,7 +1259,8 @@ Vulkan_Init_Cvars (void)
 		validation_symtab.symbols[num_syms] = *sym;
 	}
 	Cvar_Register (&vulkan_use_validation_cvar, 0, 0);
-	Cvar_Register (&vulkan_validation_feature_cvar, 0, 0);
+	Cvar_Register (&vulkan_validation_feature_enable_cvar, 0, 0);
+	Cvar_Register (&vulkan_validation_feature_disable_cvar, 0, 0);
 	// FIXME implement fallback choices (instead of just fifo)
 	Cvar_Register (&vulkan_presentation_mode_cvar, 0, 0);
 	Cvar_Register (&vulkan_frame_count_cvar, vulkan_frame_count_f, 0);
@@ -1548,7 +1558,7 @@ QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 	return ji;
 }
 
-struct qfv_samplerinfo_s *
+qfv_samplerinfo_t *
 QFV_ParseSamplerInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 {
 	memsuper_t *memsuper = new_memsuper ();
@@ -1585,6 +1595,43 @@ QFV_ParseSamplerInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 		}
 	}
 	QFV_DestroySymtab (exprctx.external_variables);
+	PL_Release (messages);
+	if (!ret) {
+		delete_memsuper (memsuper);
+		si = 0;
+	}
+
+	return si;
+}
+
+qfv_entqueueinfo_t *
+QFV_ParseEntqueueInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
+{
+	memsuper_t *memsuper = new_memsuper ();
+	qfv_entqueueinfo_t *si = cmemalloc (memsuper, sizeof (qfv_entqueueinfo_t));
+	*si = (qfv_entqueueinfo_t) { .memsuper = memsuper };
+
+	scriptctx_t *sctx = ctx->script_context;
+	plitem_t   *messages = PL_NewArray ();
+
+	exprctx_t   exprctx = {
+		.symtab = &root_symtab,
+		.messages = messages,
+		.hashctx = &sctx->hashctx,
+		.memsuper = memsuper,
+	};
+	parsectx_t  parsectx = {
+		.ectx = &exprctx,
+		.vctx = ctx,
+		.data = rctx,
+	};
+
+	int         ret;
+	if (!(ret = parse_qfv_entqueueinfo_t (0, item, si, messages, &parsectx))) {
+		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+		}
+	}
 	PL_Release (messages);
 	if (!ret) {
 		delete_memsuper (memsuper);

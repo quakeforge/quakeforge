@@ -36,19 +36,10 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
 
-#define COMPOSE_IMAGE_INFOS 5
-
-typedef struct composeframe_s {
-	VkDescriptorImageInfo imageInfo[COMPOSE_IMAGE_INFOS];
-	VkWriteDescriptorSet descriptors[COMPOSE_IMAGE_INFOS];
-	uint64_t    update_frame;
-} composeframe_t;
-
-typedef struct composeframeset_s
-    DARRAY_TYPE (composeframe_t) composeframeset_t;
-
 typedef struct composectx_s {
-	composeframeset_t frames;
+	vec4f_t    *fog;
+	vec4f_t    *camera;
+	float      *near_plane;
 } composectx_t;
 
 struct vulkan_ctx_s;

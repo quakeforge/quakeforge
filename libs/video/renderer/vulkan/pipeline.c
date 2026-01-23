@@ -49,18 +49,31 @@ QFV_CreatePipelineCache (qfv_device_t *device, dstring_t *cacheData)
 	return cache;
 }
 
-dstring_t *
-QFV_GetPipelineCacheData (qfv_device_t *device, VkPipelineCache cache)
+bool
+QFV_GetPipelineCacheData (qfv_device_t *device, VkPipelineCache cache,
+						  dstring_t *cacheData)
 {
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	dstring_t  *cacheData = dstring_new ();
+	// ensure cacheData is altered only on success, but the correct allocator
+	// is used
+	dstring_t   cd = { .mem = cacheData->mem };
 
-	dfunc->vkGetPipelineCacheData (dev, cache, &cacheData->size, 0);
-	dstring_adjust (cacheData);
-	dfunc->vkGetPipelineCacheData (dev, cache,
-								   &cacheData->size, cacheData->str);
-	return cacheData;
+	if (dfunc->vkGetPipelineCacheData (dev, cache, &cd.size, 0)
+		!= VK_SUCCESS) {
+		return false;
+	}
+	dstring_adjust (&cd);
+	if (dfunc->vkGetPipelineCacheData (dev, cache, &cd.size, cd.str)
+		!= VK_SUCCESS) {
+		cd.mem->free (cd.mem->data, cd.str);
+		return false;
+	}
+	cacheData->mem->free (cacheData->mem->data, cacheData->str);
+	cacheData->size = cd.size;
+	cacheData->truesize = cd.truesize;
+	cacheData->str = cd.str;
+	return true;
 }
 
 void

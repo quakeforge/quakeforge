@@ -110,8 +110,9 @@ handle_index (qfile_resources_t *res, qfile_t *handle)
 	return PR_RESINDEX(res->handle_map, handle);
 }
 
-static void
-bi_qfile_clear (progs_t *pr, void *_res)
+#define bi(x) static void bi_##x (progs_t *pr, void *_res)
+
+bi (qfile_clear)
 {
 	qfZoneScoped (true);
 	qfile_resources_t *res = (qfile_resources_t *) _res;
@@ -123,8 +124,7 @@ bi_qfile_clear (progs_t *pr, void *_res)
 	handle_reset (res);
 }
 
-static void
-bi_qfile_destroy (progs_t *pr, void *_res)
+bi (qfile_destroy)
 {
 	qfZoneScoped (true);
 	qfile_resources_t *res = _res;
@@ -176,8 +176,7 @@ QFile_AllocHandle (progs_t *pr, QFile *file)
 	return alloc_handle (res, file);
 }
 
-static void
-bi_Qrename (progs_t *pr, void *_res)
+bi (Qrename)
 {
 	qfZoneScoped (true);
 	const char *old = P_GSTRING (pr, 0);
@@ -186,8 +185,7 @@ bi_Qrename (progs_t *pr, void *_res)
 	R_INT (pr) = Qrename (old, new);
 }
 
-static void
-bi_Qremove (progs_t *pr, void *_res)
+bi (Qremove)
 {
 	qfZoneScoped (true);
 	const char *path = P_GSTRING (pr, 0);
@@ -195,8 +193,7 @@ bi_Qremove (progs_t *pr, void *_res)
 	R_INT (pr) = Qremove (path);
 }
 
-static void
-bi_Qopen (progs_t *pr, void *_res)
+bi (Qopen)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -221,8 +218,7 @@ qf_pipe (int pipefd[2])
 #endif
 }
 
-static void
-bi_Qpipe (progs_t *pr, void *_res)
+bi (Qpipe)
 {
 	qfZoneScoped (true);
 	auto res = (qfile_resources_t *) _res;
@@ -361,8 +357,7 @@ pipe_error:
 	return;
 }
 
-static void
-bi_Qwait (progs_t *pr, void *_res)
+bi (Qwait)
 {
 	int pid = P_INT (pr, 0);
 #ifdef _WIN32
@@ -370,6 +365,21 @@ bi_Qwait (progs_t *pr, void *_res)
 #else
 	waitpid (pid, &R_INT (pr), 0);
 #endif
+}
+
+bi (Qgetcwd)
+{
+	auto res = (qfile_resources_t *) _res;
+	if (!(res->buffer->size = res->buffer->truesize)) {
+		res->buffer->size = 1024;
+		dstring_adjust (res->buffer);
+	}
+	char *s;
+	while (!(s = getcwd (res->buffer->str, res->buffer->size))) {
+		res->buffer->size += 1024;
+		dstring_adjust (res->buffer);
+	}
+	RETURN_STRING (pr, s);
 }
 
 static qfile_t * __attribute__((pure))
@@ -393,8 +403,7 @@ QFile_GetFile (progs_t *pr, int handle)
 	return h->file;
 }
 
-static void
-bi_Qclose (progs_t *pr, void *_res)
+bi (Qclose)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -402,8 +411,7 @@ bi_Qclose (progs_t *pr, void *_res)
 	close_handle (res, handle);
 }
 
-static void
-bi_Qgetline (progs_t *pr, void *_res)
+bi (Qgetline)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -418,8 +426,7 @@ bi_Qgetline (progs_t *pr, void *_res)
 		R_STRING (pr) = 0;
 }
 
-static void
-bi_Qreadstring (progs_t *pr, void *_res)
+bi (Qreadstring)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -448,8 +455,7 @@ check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
 		PR_RunError (pr, "%s: bad buffer", name);
 }
 
-static void
-bi_Qread (progs_t *pr, void *_res)
+bi (Qread)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -462,8 +468,7 @@ bi_Qread (progs_t *pr, void *_res)
 	R_INT (pr) = Qread (h->file, buf, count);
 }
 
-static void
-bi_Qwrite (progs_t *pr, void *_res)
+bi (Qwrite)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -476,8 +481,7 @@ bi_Qwrite (progs_t *pr, void *_res)
 	R_INT (pr) = Qwrite (h->file, buf, count);
 }
 
-static void
-bi_Qputs (progs_t *pr, void *_res)
+bi (Qputs)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -488,8 +492,7 @@ bi_Qputs (progs_t *pr, void *_res)
 	R_INT (pr) = Qputs (h->file, str);
 }
 #if 0
-static void
-bi_Qgets (progs_t *pr, void *_res)
+bi (Qgets)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -502,8 +505,7 @@ bi_Qgets (progs_t *pr, void *_res)
 	RETURN_POINTER (pr, Qgets (h->file, (char *) buf, count));
 }
 #endif
-static void
-bi_Qgetc (progs_t *pr, void *_res)
+bi (Qgetc)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -513,8 +515,7 @@ bi_Qgetc (progs_t *pr, void *_res)
 	R_INT (pr) = Qgetc (h->file);
 }
 
-static void
-bi_Qputc (progs_t *pr, void *_res)
+bi (Qputc)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -525,8 +526,7 @@ bi_Qputc (progs_t *pr, void *_res)
 	R_INT (pr) = Qputc (h->file, c);
 }
 
-static void
-bi_Qseek (progs_t *pr, void *_res)
+bi (Qseek)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -538,8 +538,7 @@ bi_Qseek (progs_t *pr, void *_res)
 	R_INT (pr) = Qseek (h->file, offset, whence);
 }
 
-static void
-bi_Qtell (progs_t *pr, void *_res)
+bi (Qtell)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -549,8 +548,7 @@ bi_Qtell (progs_t *pr, void *_res)
 	R_INT (pr) = Qtell (h->file);
 }
 
-static void
-bi_Qflush (progs_t *pr, void *_res)
+bi (Qflush)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -560,8 +558,7 @@ bi_Qflush (progs_t *pr, void *_res)
 	R_INT (pr) = Qflush (h->file);
 }
 
-static void
-bi_Qeof (progs_t *pr, void *_res)
+bi (Qeof)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -571,8 +568,7 @@ bi_Qeof (progs_t *pr, void *_res)
 	R_INT (pr) = Qeof (h->file);
 }
 
-static void
-bi_Qfilesize (progs_t *pr, void *_res)
+bi (Qfilesize)
 {
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
@@ -582,6 +578,7 @@ bi_Qfilesize (progs_t *pr, void *_res)
 	R_INT (pr) = Qfilesize (h->file);
 }
 
+#undef bi
 #define bi(x,np,params...) {#x, RUA_Secured, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
@@ -591,6 +588,7 @@ static builtin_t secure_builtins[] = {
 	bi(Qopen,   2, p(string), p(string)),
 	bi(Qpipe,   5, p(ptr), p(int), p(int), p(int), p(int)),
 	bi(Qwait,   1, p(int)),
+	bi(Qgetcwd, 0),
 	{0}
 };
 
@@ -602,6 +600,7 @@ static builtin_t insecure_builtins[] = {
 	bi(Qopen,   2, p(string), p(string)),
 	bi(Qpipe,   5, p(ptr), p(int), p(int), p(int), p(int)),
 	bi(Qwait,   1, p(int)),
+	bi(Qgetcwd, 0),
 	{0}
 };
 

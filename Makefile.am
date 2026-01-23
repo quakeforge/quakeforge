@@ -27,7 +27,7 @@ NOCONV_DIST= \
 BUILT_SOURCES = $(top_srcdir)/.version
 AM_CFLAGS= $(TRACY_CFLAGS) -fexceptions -include qftracy.h
 AM_CXXFLAGS= $(TRACY_CFLAGS) -include qftracy.h
-AM_CPPFLAGS= --embed-dir=$(top_builddir) -I$(top_srcdir)/include $(UNWIND_CFLAGS) $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS) $(FREETYPE_CFLAGS) $(HARFBUZZ_CFLAGS) $(VULKAN_CPPFLAGS) $(LIBCURL_CFLAGS)
+AM_CPPFLAGS= --embed-dir=$(top_srcdir) --embed-dir=$(top_builddir) -I$(top_srcdir)/include $(UNWIND_CFLAGS) $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS) $(FREETYPE_CFLAGS) $(HARFBUZZ_CFLAGS) $(VULKAN_CPPFLAGS) $(LIBCURL_CFLAGS)
 
 common_ldflags= -export-dynamic @STATIC@ @PTHREAD_LDFLAGS@
 
@@ -94,12 +94,13 @@ V_QFCCLD_ = $(V_QFCCLD_@AM_DEFAULT_V@)
 V_QFCCLD_0 = @echo "  QFCCLD  " $@;
 V_QFCCLD_1 =
 
-QCSYSTEM=--no-default-paths -I$(top_srcdir) -I$(top_srcdir)/ruamoko/include -I$(top_srcdir)/include
-QCFLAGS=-qq -O -g -Werror -Wall -Wno-integer-divide
-QCPPFLAGS=$(QCSYSTEM)
+QCSYSTEM=--no-default-paths
+QCFLAGS=-qq -O -g -Werror -Wall
+QCDIRS=-I$(top_srcdir) -I$(top_srcdir)/ruamoko/include -I$(top_srcdir)/include
+QCPPFLAGS=$(QCSYSTEM) $(QCDIRS) --embed-dir=$(top_builddir)
 QCLINKFLAGS=--no-default-paths -Lruamoko/lib
-QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
-QSPIRV=$(QCOMPILE) -Ctarget=spir-v
+QCOMPILE=$(QFCC) $(QCFLAGS) -Wno-integer-divide $(QCPPFLAGS)
+QSPIRV=$(QFCC) $(QCFLAGS) -Ctarget=spir-v $(QCSYSTEM) -I$(top_srcdir)/ruamoko/shader
 QLINK=$(QFCC) $(QCFLAGS) $(QCLINKFLAGS)
 MKDIR_P = @MKDIR_P@
 

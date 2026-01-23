@@ -225,7 +225,7 @@ CL_ModelEffects (entity_t ent, int glow_color, double time)
 				set_trail (ent, R_Trail_Create (cl_tsystem, 30, ent_origin));
 			}
 		}
-		renderer->noshadows = 1;
+		renderer->noshadowcast = 1;
 	} else if (model->effects & ME_GRENADE)
 		clp_funcs->GrenadeTrail (*old_origin, ent_origin);
 	else if (model->effects & ME_GIB)

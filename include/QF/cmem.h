@@ -107,6 +107,7 @@ memsuper_t *new_memsuper (void);
 void delete_memsuper (memsuper_t *super);
 void *cmemalloc (memsuper_t *super, size_t size);
 void cmemfree (memsuper_t *super, void *mem);
+char *cmemstrdup (memsuper_t *super, const char *str);
 
 /**	High-tide structure allocator for use in linked lists.
 

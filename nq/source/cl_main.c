@@ -302,7 +302,7 @@ CL_ClearState (void)
 	CL_Init_Entity (cl.viewstate.weapon_entity);
 	auto renderer = Entity_GetRenderer (cl.viewstate.weapon_entity);
 	renderer->depthhack = 1;
-	renderer->noshadows = cl_player_shadows;
+	renderer->noshadowcast = cl_player_shadows;
 	r_data->view_model = cl.viewstate.weapon_entity;
 
 	CL_TEnts_Precache ();

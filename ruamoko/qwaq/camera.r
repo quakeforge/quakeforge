@@ -51,4 +51,12 @@
 	return self;
 }
 
+-drawExcept:(Camera *) skip
+{
+	if (skip != self) {
+		return [self draw];
+	}
+	return self;
+}
+
 @end

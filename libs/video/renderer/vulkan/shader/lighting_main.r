@@ -1,6 +1,4 @@
-#include "general.h"
-#include "integer.h"
-#include "fppack.h"
+#include "GLSL/general.h"
 
 [buffer, readonly, set(0), binding(2)] @block
 #include "matrices.h"
@@ -8,6 +6,9 @@
 
 #define INPUT_ATTACH_SET 2
 #include "input_attach.h"
+
+INPUT_ATTACH(0) subpassInput normal;
+INPUT_ATTACH(1) subpassInput depth;
 
 [in("FragCoord")] vec4 gl_FragCoord;
 [flat, in("ViewIndex")] int gl_ViewIndex;

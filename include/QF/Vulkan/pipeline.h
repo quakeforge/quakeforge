@@ -9,12 +9,13 @@ typedef struct qfv_pipelinecacheset_s
 #define QFV_AllocPipelineCacheSet(num, allocator) \
     DARRAY_ALLOCFIXED (qfv_pipelinecacheset_t, num, allocator)
 
-struct dstring_s;
-VkPipelineCache QFV_CreatePipelineCache (struct qfv_device_s *device,
-										 struct dstring_s *cacheData);
-struct dstring_s *QFV_GetPipelineCacheData (struct qfv_device_s *device,
-											VkPipelineCache cache);
-void QFV_MergePipelineCaches (struct qfv_device_s *device,
+typedef struct qfv_device_s qfv_device_t;
+typedef struct dstring_s dstring_t;
+VkPipelineCache QFV_CreatePipelineCache (qfv_device_t *device,
+										 dstring_t *cacheData);
+bool QFV_GetPipelineCacheData (qfv_device_t *device, VkPipelineCache cache,
+							   dstring_t *cacheData);
+void QFV_MergePipelineCaches (qfv_device_t *device,
 							  VkPipelineCache targetCache,
 							  qfv_pipelinecacheset_t *sourceCaches);
 

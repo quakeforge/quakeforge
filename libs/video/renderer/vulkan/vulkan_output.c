@@ -237,15 +237,15 @@ output_select_renderpass (const exprval_t **params, exprval_t *result,
 }
 
 static void
-output_draw (qfv_taskctx_t *taskctx,
-			 int num_push_constants, qfv_push_constants_t *push_constants)
+output_draw (qfv_taskctx_t *taskctx)
 {
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto octx = ctx->output_context;
 	auto oframe = &octx->frames.a[ctx->curFrame];
-	auto layout = taskctx->pipeline->layout;
+	auto pipeline = taskctx->pipeline;
+	auto layout = pipeline->layout;
 	auto cmd = taskctx->cmd;
 
 	qftVkScopedZone (taskctx->frame->qftVkCtx, taskctx->cmd, "flat");
@@ -255,10 +255,7 @@ output_draw (qfv_taskctx_t *taskctx,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 2, set, 0, 0);
-	if (num_push_constants) {
-		QFV_PushConstants (device, cmd, layout,
-						   num_push_constants, push_constants);
-	}
+	QFV_PushBlackboard (ctx, cmd, pipeline);
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
@@ -268,7 +265,7 @@ output_draw_flat (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
-	output_draw (taskctx, 0, 0);
+	output_draw (taskctx);
 }
 
 static void
@@ -276,11 +273,10 @@ output_draw_waterwarp (const exprval_t **params, exprval_t *result, exprctx_t *e
 {
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
-	float time = vr_data.realtime;
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &time },
-	};
-	output_draw (taskctx, 1, push_constants);
+	auto ctx = taskctx->ctx;
+	auto octx = ctx->output_context;
+	*octx->time = vr_data.realtime;
+	output_draw (taskctx);
 }
 
 static void
@@ -288,16 +284,15 @@ output_draw_fisheye (const exprval_t **params, exprval_t *result, exprctx_t *ect
 {
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto octx = ctx->output_context;
+
 	float width = r_refdef.vrect.width;
 	float height = r_refdef.vrect.height;
 
-	float ffov = scr_ffov * M_PI / 360;
-	float aspect = height / width;
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &ffov },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT, 4, sizeof (float), &aspect },
-	};
-	output_draw (taskctx, 2, push_constants);
+	*octx->fov = scr_ffov * M_PI / 360;
+	*octx->aspect = height / width;
+	output_draw (taskctx);
 }
 
 static void
@@ -458,19 +453,25 @@ output_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_Render_AddShutdown (ctx, output_shutdown);
 	QFV_Render_AddStartup (ctx, output_startup);
 
-	outputctx_t *octx = calloc (1, sizeof (outputctx_t));
+	outputctx_t *octx = malloc (sizeof (outputctx_t));
 	ctx->output_context = octx;
 
-	octx->swapchain_info = (qfv_attachmentinfo_t) {
-		.name = "$swapchain",
-		.format = ctx->swapchain->format,
-		.samples = 1,
-		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-		.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+	*octx = (outputctx_t) {
+		.swapchain_info = {
+			.name = "$swapchain",
+			.format = ctx->swapchain->format,
+			.samples = 1,
+			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+			.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+		},
+
+		.time   = QFV_GetBlackboardVar (ctx, "time"),
+		.fov    = QFV_GetBlackboardVar (ctx, "fov"),
+		.aspect = QFV_GetBlackboardVar (ctx, "aspect"),
 	};
 	qfv_attachmentinfo_t *attachments[] = {
 		&octx->swapchain_info,

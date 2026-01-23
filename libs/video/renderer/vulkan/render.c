@@ -42,6 +42,7 @@
 #include "QF/hash.h"
 #include "QF/mathlib.h"
 #include "QF/va.h"
+#include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
@@ -51,6 +52,7 @@
 #include "QF/Vulkan/pipeline.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
+#include "QF/Vulkan/staging.h"
 #include "QF/Vulkan/swapchain.h"
 #include "vid_vulkan.h"
 
@@ -70,6 +72,22 @@ QFV_AppendCmdBuffer (vulkan_ctx_t *ctx, VkCommandBuffer cmd)
 	__auto_type rctx = ctx->render_context;
 	__auto_type job = rctx->job;
 	DARRAY_APPEND (&job->commands, cmd);
+}
+
+void
+QFV_SetDescriptorSet (vulkan_ctx_t *ctx, uint32_t frame,
+					  uint32_t ds_index, VkDescriptorSet set)
+{
+	auto rctx = ctx->render_context;
+	if (frame == ~0u) {
+		for (size_t i = 0; i < rctx->frames.size; i++) {
+			auto rframe = &rctx->frames.a[i];
+			rframe->descriptor_sets[ds_index] = set;
+		}
+	} else {
+		auto rframe = &rctx->frames.a[frame];
+		rframe->descriptor_sets[ds_index] = set;
+	}
 }
 
 static void
@@ -148,6 +166,35 @@ run_subpass (qfv_subpass_t *sp, qfv_taskctx_t *taskctx)
 {
 	qfv_device_t *device = taskctx->ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+
+	if (sp->num_inputs) {
+		auto ctx = taskctx->ctx;
+		auto rctx = ctx->render_context;
+		auto rframe = &rctx->frames.a[ctx->curFrame];
+		auto input = &rframe->subpass_inputs[sp->frame_index];
+		auto fb = &taskctx->renderpass->framebuffer;
+		if (fb->update_frame != input->update_frame) {
+			input->update_frame = fb->update_frame;
+			VkDescriptorImageInfo image_info[sp->num_inputs];
+			VkWriteDescriptorSet image_write[sp->num_inputs];
+			for (uint32_t i = 0; i < sp->num_inputs; i++) {
+				image_info[i] = (VkDescriptorImageInfo) {
+					.imageView = fb->views[sp->input_indices[i]],
+					.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				};
+				image_write[i] = (VkWriteDescriptorSet) {
+					.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+					.dstSet = input->set,
+					.dstBinding = i,
+					.descriptorCount = 1,
+					.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+					.pImageInfo = &image_info[i],
+				};
+			}
+			dfunc->vkUpdateDescriptorSets (device->dev, sp->num_inputs,
+										   image_write, 0, 0);
+		}
+	}
 	dfunc->vkBeginCommandBuffer (taskctx->cmd, &sp->beginInfo);
 	QFV_duCmdBeginLabel (device, taskctx->cmd, sp->label.name,
 						 {VEC4_EXP (sp->label.color)});
@@ -189,6 +236,7 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 			.ctx = ctx,
 			.frame = frame,
 			.renderpass = rp,
+			.subpass = sp,
 			.cmd = QFV_GetCmdBuffer (ctx, true),
 			.data = data,
 		};
@@ -603,6 +651,29 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 }
 
 static void
+fullscreen_pass (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto renderpass = taskctx->renderpass;
+	auto subpass = taskctx->subpass;
+	auto pipeline = taskctx->pipeline;
+	auto cmd = taskctx->cmd;
+
+	if (!subpass->num_inputs) {
+		Sys_Error ("fullscreen_pass with no subpass inputs: %s:%s:%s",
+				   renderpass->label.name, subpass->label.name,
+				   pipeline->label.name);
+	}
+	QFV_BindDescriptors (ctx, cmd, pipeline);
+	QFV_PushBlackboard (ctx, cmd, pipeline);
+	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
+}
+
+static void
 submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
@@ -627,6 +698,39 @@ submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	DARRAY_RESIZE (&job->commands, 0);
 }
 
+static void
+blackboard_set_bufferptr (const exprval_t **params, exprval_t *result,
+						  exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto rctx = ctx->render_context;
+	auto varname = *(const char **) params[1]->value;
+	auto bufname = *(const char **) params[0]->value;
+
+	auto bb = &rctx->blackboard;
+	if (!bb->symbols) {
+		Sys_Error ("no blackboard");
+	}
+
+	auto pc = (qfv_pushconstantinfo_t *) Hash_Find (bb->symbols, varname);
+	if (!pc) {
+		Sys_Error ("invalid blackboard var %s\n", varname);
+	}
+	if (pc->type != qfv_ptr) {
+		Sys_Error ("blackboard var %s not a pointer\n", varname);
+	}
+
+	auto addr = QFV_GetBufferAddress (ctx, bufname, ctx->curFrame);
+	if (!addr) {
+		Sys_Error ("invalid buffer %s\n", bufname);
+	}
+
+	auto ptr = (VkDeviceAddress *) (bb->data + pc->offset);
+	*ptr = addr;
+}
+
 static exprfunc_t wait_on_fence_func[] = {
 	{ .func = wait_on_fence },
 	{}
@@ -639,16 +743,34 @@ static exprfunc_t update_framebuffer_func[] = {
 	{ .func = update_framebuffer, .num_params = 1, update_framebuffer_params },
 	{}
 };
+static exprfunc_t fullscreen_pass_func[] = {
+	{ .func = fullscreen_pass },
+	{}
+};
 
 static exprfunc_t submit_render_func[] = {
 	{ .func = submit_render },
 	{}
 };
 
+static exprtype_t *blackboard_set_bufferptr_params[] = {
+	&cexpr_string,
+	&cexpr_string,
+};
+static exprfunc_t blackboard_set_bufferptr_func[] = {
+	{ .func = blackboard_set_bufferptr, .num_params = 2,
+		blackboard_set_bufferptr_params },
+	{}
+};
+
 static exprsym_t render_task_syms[] = {
 	{ "wait_on_fence", &cexpr_function, wait_on_fence_func },
 	{ "update_framebuffer", &cexpr_function, update_framebuffer_func },
+	{ "fullscreen_pass", &cexpr_function, fullscreen_pass_func },
 	{ "submit_render", &cexpr_function, submit_render_func },
+
+	{ "blackboard_set_bufferptr", &cexpr_function,
+		blackboard_set_bufferptr_func },
 	{}
 };
 
@@ -688,10 +810,13 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 	auto device = ctx->device;
 	for (size_t i = 0; i < rctx->frames.size; i++) {
 		auto frame = &rctx->frames.a[i];
-		frame->fence = QFV_CreateFence (device, 1);
+		*frame = (qfv_renderframe_t) {
+			.fence = QFV_CreateFence (device, 1),
+			.renderDoneSemaphore = QFV_CreateSemaphore (device),
+			.active_pool = &frame->render_cmdpool,
+		};
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_FENCE, frame->fence,
 							 vac (ctx->va_ctx, "render:%zd", i));
-		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
 							 frame->renderDoneSemaphore,
 							 vac (ctx->va_ctx, "render done:%zd", i));
@@ -699,7 +824,6 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 								 vac (ctx->va_ctx, "render pool:%zd", i));
 		QFV_CmdPoolManager_Init (&frame->output_cmdpool, device,
 								 vac (ctx->va_ctx, "output pool:%zd", i));
-		frame->active_pool = &frame->render_cmdpool;
 #ifdef TRACY_ENABLE
 		auto instance = ctx->instance->instance;
 		auto physdev = ctx->device->physDev->dev;
@@ -816,6 +940,7 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 		for (uint32_t i = 0; i < job->num_dsmanagers; i++) {
 			QFV_DSManager_Destroy (job->dsmanager[i]);
 		}
+		QFV_DestroyResource (device, job->resources);
 		free (rctx->job);
 	}
 
@@ -831,9 +956,14 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 	}
 	DARRAY_CLEAR (&rctx->frames);
 
+	if (rctx->blackboard.symbols) {
+		Hash_DelTable (rctx->blackboard.symbols);
+	}
+
 	if (rctx->jobinfo) {
-		__auto_type jinfo = rctx->jobinfo;
-		for (uint32_t i = 0; i < jinfo->num_dslayouts; i++) {
+		auto jinfo = rctx->jobinfo;
+		uint32_t count = jinfo->num_dslayouts + jinfo->num_splayouts;
+		for (uint32_t i = 0; i < count; i++) {
 			__auto_type setLayout = jinfo->dslayouts[i].setLayout;
 			dfunc->vkDestroyDescriptorSetLayout (device->dev, setLayout, 0);
 		}
@@ -852,6 +982,10 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 				dfunc->vkDestroySampler (device->dev, sci->sampler, 0);
 			}
 		}
+	}
+	if (rctx->entqueueinfo) {
+		Hash_DelTable (rctx->entqueue_symtab.tab);
+		delete_memsuper (rctx->entqueueinfo->memsuper);
 	}
 	Hash_DelContext (rctx->hashctx);
 
@@ -937,6 +1071,147 @@ QFV_FindStep (const char *name, qfv_job_t *job)
 		}
 	}
 	return 0;
+}
+
+#define MAX_BUFFER_BYTES (16*1024*1024)
+
+VkDeviceAddress
+QFV_GetBufferAddress (vulkan_ctx_t *ctx, const char *name, uint32_t frame)
+{
+	auto rctx = ctx->render_context;
+	auto job = rctx->job;
+	auto jinfo = rctx->jobinfo;
+	auto buffer = QFV_FindBufferInfo (ctx, name);
+	if (!buffer) {
+		return 0;
+	}
+	uint32_t ind = buffer - jinfo->buffers;
+	VkDeviceAddress offset = 0;
+	if (buffer->perframe) {
+		offset = frame * buffer->size;
+	}
+	return job->resources->objects[ind].buffer.address + offset;
+}
+
+VkDeviceAddress
+QFV_GetBufferOffset (vulkan_ctx_t *ctx, const char *name, uint32_t frame)
+{
+	auto buffer = QFV_FindBufferInfo (ctx, name);
+	if (!buffer) {
+		return 0;
+	}
+	VkDeviceAddress offset = 0;
+	if (buffer->perframe) {
+		offset = frame * buffer->size;
+	}
+	return offset;
+}
+
+VkDeviceSize
+QFV_GetBufferSize (vulkan_ctx_t *ctx, const char *name)
+{
+	auto buffer = QFV_FindBufferInfo (ctx, name);
+	if (!buffer) {
+		return 0;
+	}
+	return buffer->size;
+}
+
+void
+QFV_UpdateBuffer (vulkan_ctx_t *ctx, const char *name, uint32_t offset,
+				  void *data, uint32_t size)
+{
+	auto rctx = ctx->render_context;
+	auto job = rctx->job;
+	auto jinfo = rctx->jobinfo;
+	auto bufferinfo = QFV_FindBufferInfo (ctx, name);
+	if (!bufferinfo) {
+		return;
+	}
+	uint32_t ind = bufferinfo - jinfo->buffers;
+	auto buffer = job->resources->objects[ind].buffer.buffer;
+
+	if (offset + size > bufferinfo->size) {
+		Sys_Error ("bad offset + size in update to %s: %u %u:%"PRIu64,
+				   name, offset, size, bufferinfo->size);
+	}
+	uint32_t frame = ctx->curFrame;
+	auto dstOffset = offset;
+	if (bufferinfo->perframe) {
+		dstOffset += frame * bufferinfo->size;
+	}
+	qfv_packet_t *packet = nullptr;
+	while (size) {
+		uint32_t count = size;
+		if (count > MAX_BUFFER_BYTES) {
+			count = MAX_BUFFER_BYTES;
+		}
+		if (packet) {
+			QFV_PacketSubmit (packet);
+		}
+		packet = QFV_PacketAcquire (ctx->staging, "QFV_UpdateBuffer");
+		void *pkt_data = QFV_PacketExtend (packet, count);
+		memcpy (pkt_data, data, count);
+		auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+		//FIXME config?
+		auto db = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+		QFV_PacketCopyBuffer (packet, buffer, dstOffset, sb, db);
+		dstOffset += count;
+		size -= count;
+	}
+	QFV_PacketSubmit (packet);
+}
+
+void
+QFV_PushBlackboard (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
+					qfv_pipeline_t *pipeline)
+{
+	auto rctx = ctx->render_context;
+	auto device = ctx->device;
+
+	if (pipeline->num_push_constants) {
+		auto layout = pipeline->layout;
+		auto blackboard = &rctx->blackboard;
+		auto first = pipeline->first_push_constant;
+		auto count = pipeline->num_push_constants;
+		auto push_constants = blackboard->push_constants + first;
+		QFV_PushConstants (device, cmd, layout, count, push_constants);
+	}
+}
+
+void
+QFV_BindDescriptors (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
+					 qfv_pipeline_t *pipeline)
+{
+	if (pipeline->num_indices) {
+		auto device = ctx->device;
+		auto dfunc = device->funcs;
+		auto rctx = ctx->render_context;
+		auto rframe = &rctx->frames.a[ctx->curFrame];
+		VkDescriptorSet sets[pipeline->num_indices];
+		for (uint32_t i = 0; i < pipeline->num_indices; i++) {
+			sets[i] = rframe->descriptor_sets[pipeline->ds_indices[i]];
+		}
+		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+										pipeline->layout,
+										0, pipeline->num_indices, sets, 0, 0);
+	}
+}
+
+
+void *
+QFV_GetBlackboardVar (struct vulkan_ctx_s *ctx, const char *name)
+{
+	auto rctx = ctx->render_context;
+	auto bb = &rctx->blackboard;
+	if (!bb->symbols) {
+		return nullptr;
+	}
+	auto pc = (qfv_pushconstantinfo_t *) Hash_Find (bb->symbols, name);
+	if (!pc) {
+		return nullptr;
+	}
+	return bb->data + pc->offset;
 }
 
 qfv_step_t *

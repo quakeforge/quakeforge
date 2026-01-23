@@ -79,6 +79,7 @@ typedef struct vid_model_funcs_s {
 	void (*Mod_SpriteLoadFrames) (struct mod_sprite_ctx_s *sprite_ctx);
 
 	uint32_t (*skin_set) (const char *skinname);
+	uint32_t (*texture_set) (const char *skinname);
 	void (*skin_setupskin) (skin_t *skin);
 	void (*skin_destroy) (skin_t *skin);
 } vid_model_funcs_t;
@@ -172,6 +173,12 @@ typedef struct vid_render_funcs_s {
 	void (*capture_screen) (capfunc_t callback, void *data);
 
 	void (*debug_ui) (struct imui_ctx_s *imui_ctx);
+
+	void (*UpdateBuffer) (const char *name, uint32_t offset,
+						  void *data, uint32_t size);
+	uint64_t (*BufferAddress) (const char *name);
+	uint64_t (*BufferOffset) (const char *name);
+	uint64_t (*BufferSize) (const char *name);
 
 	vid_model_funcs_t *model_funcs;
 } vid_render_funcs_t;

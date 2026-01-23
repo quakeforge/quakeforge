@@ -1,6 +1,6 @@
 #ifndef __input_attach_h
 #define __input_attach_h
-#include "subpassInput.h"
+#include "GLSL/fragment.h"
 
 typedef @image(float, SubpassData) subpassInput;
 
@@ -13,13 +13,5 @@ typedef @image(float, SubpassData) subpassInput;
 	 input_attachment_index(ind), \
 	 set(INPUT_ATTACH_SET), \
 	 binding(ind)]
-
-INPUT_ATTACH(0) subpassInput color;
-#ifndef COLOR_ONLY
-INPUT_ATTACH(1) subpassInput emission;
-INPUT_ATTACH(2) subpassInput normal;
-INPUT_ATTACH(3) subpassInput depth;
-INPUT_ATTACH(4) subpassInput light;
-#endif
 
 #endif//__input_attach_h

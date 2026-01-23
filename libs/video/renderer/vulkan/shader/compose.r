@@ -1,7 +1,12 @@
-#include "general.h"
+#include "GLSL/general.h"
 
 #define INPUT_ATTACH_SET 0
 #include "input_attach.h"
+
+INPUT_ATTACH(0) subpassInput color;
+INPUT_ATTACH(1) subpassInput emission;
+INPUT_ATTACH(2) subpassInput depth;
+INPUT_ATTACH(3) subpassInput light;
 
 [in("ViewIndex"), flat] int gl_ViewIndex;
 [in("FragCoord")] vec4 gl_FragCoord;

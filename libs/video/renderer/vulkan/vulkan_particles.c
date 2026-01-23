@@ -61,11 +61,6 @@
 //FIXME make dynamic
 #define MaxParticles 2048
 
-typedef struct {
-	vec4f_t     gravity;
-	float       dT;
-} particle_push_constants_t;
-
 static void
 create_buffers (vulkan_ctx_t *ctx)
 {
@@ -166,7 +161,8 @@ particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto pctx = ctx->particle_context;
 	auto pframe = &pctx->frames.a[ctx->curFrame];
-	auto layout = taskctx->pipeline->layout;
+	auto pipeline = taskctx->pipeline;
+	auto layout = pipeline->layout;
 	auto cmd = taskctx->cmd;
 
 	VkDescriptorSet sets[] = {
@@ -177,14 +173,10 @@ particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 3, sets, 0, 0);
 
-	mat4f_t     mat;
-	mat4fidentity (mat);
-	vec4f_t     fog = Fog_Get ();
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat4f_t), &mat },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof (fog), &fog },
-	};
-	QFV_PushConstants (device, cmd, layout, 2, push_constants);
+	mat4fidentity (*pctx->mat);
+	*pctx->fog = Fog_Get ();
+	QFV_PushBlackboard (ctx, cmd, pipeline);
+
 	VkDeviceSize offsets[] = { 0 };
 	VkBuffer    buffers[] = {
 		pframe->states,
@@ -339,7 +331,8 @@ particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto pctx = ctx->particle_context;
 	auto pframe = &pctx->frames.a[ctx->curFrame];
-	auto layout = taskctx->pipeline->layout;
+	auto pipeline = taskctx->pipeline;
+	auto layout = pipeline->layout;
 	auto cmd = taskctx->cmd;
 
 	dfunc->vkResetEvent (device->dev, pframe->physicsEvent);
@@ -352,19 +345,10 @@ particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
 									layout, 0, 1, set, 0, 0);
 
-	particle_push_constants_t constants = {
-		.gravity = pctx->psystem->gravity,
-		.dT = vr_data.frametime,
-	};
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_COMPUTE_BIT,
-			offsetof (particle_push_constants_t, gravity),
-			sizeof (vec4f_t), &constants.gravity },
-		{ VK_SHADER_STAGE_COMPUTE_BIT,
-			offsetof (particle_push_constants_t, dT),
-			sizeof (float), &constants.dT },
-	};
-	QFV_PushConstants (device, cmd, layout, 2, push_constants);
+	*pctx->gravity = pctx->psystem->gravity;
+	*pctx->dT = vr_data.frametime;
+	QFV_PushBlackboard (ctx, cmd, pipeline);
+
 	dfunc->vkCmdDispatch (cmd, MaxParticles, 1, 1);
 	dfunc->vkCmdSetEvent (cmd, pframe->physicsEvent,
 						  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -473,8 +457,15 @@ particle_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_Render_AddShutdown (ctx, particle_shutdown);
 	QFV_Render_AddStartup (ctx, particle_startup);
 
-	particlectx_t *pctx = calloc (1, sizeof (particlectx_t));
+	particlectx_t *pctx = malloc (sizeof (particlectx_t));
 	ctx->particle_context = pctx;
+
+	*pctx = (particlectx_t) {
+		.mat     = QFV_GetBlackboardVar (ctx, "Model"),
+		.fog     = QFV_GetBlackboardVar (ctx, "fog"),
+		.gravity = QFV_GetBlackboardVar (ctx, "gravity"),
+		.dT      = QFV_GetBlackboardVar (ctx, "dT"),
+	};
 }
 
 static exprfunc_t particles_draw_func[] = {

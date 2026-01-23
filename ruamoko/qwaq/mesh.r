@@ -720,7 +720,7 @@ create_quadsphere ()
 		}
 	}
 
-	const int levels = 9;
+	const int levels = 6;
 	const int subdiv = levels - 1;
 
 	qf_model_t model = {

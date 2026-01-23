@@ -51,6 +51,11 @@ typedef struct particlectx_s {
 	struct qfv_resource_s *resources;
 
 	psystem_t  *psystem;
+
+	mat4f_t    *mat;
+	vec4f_t    *fog;
+	vec4f_t    *gravity;
+	float      *dT;
 } particlectx_t;
 
 struct vulkan_ctx_s;

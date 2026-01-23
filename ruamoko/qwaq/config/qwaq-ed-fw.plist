@@ -1,4 +1,7 @@
 {
+entqueues = {
+	queues = (planetary);
+};
 samplers = {
 	samplers = {
 		quakepic = {
@@ -214,14 +217,25 @@ render_graph = {
 				access = memory_read;
 			};
 		};
-		depth_dependency = {
+		depthtest_dependency = {
 			src = {
 				stage = early_fragment_tests|late_fragment_tests;
 				access = depth_stencil_attachment_write;
 			};
 			dst = {
-				stage = fragment_shader|early_fragment_tests|late_fragment_tests;
-				access = input_attachment_read|depth_stencil_attachment_read;
+				stage = early_fragment_tests|late_fragment_tests;
+				access = depth_stencil_attachment_read;
+			};
+			flags = by_region;
+		};
+		depthread_dependency = {
+			src = {
+				stage = early_fragment_tests|late_fragment_tests;
+				access = depth_stencil_attachment_read;
+			};
+			dst = {
+				stage = fragment_shader;
+				access = input_attachment_read;
 			};
 			flags = by_region;
 		};
@@ -537,13 +551,11 @@ render_graph = {
 				//                            palette                skin
 				descriptorSets = (matrix_set, texture_set, bone_set, texture_set);
 				pushConstants = {
-					vertex   = {
+					vertex|fragment = {
 						Model = mat4;
 						enabled_mask = uint;
 						blend = float;
 						debug_bone = uint;
-					};
-					fragment = {
 						colors = uint;
 						base_color = vec4;
 						fog = vec4;
@@ -726,43 +738,6 @@ render_graph = {
 				};
 			};
 		};
-		lighting = {
-			shader = {
-				vertex_splat = {
-					stage = vertex;
-					name = main;
-					module = $builtin/light_splat.vert;
-				};
-				fragment = {
-					stage = fragment;
-					name = main;
-					module = $builtin/lighting.frag;
-				};
-				debug_fragment = {
-					stage = fragment;
-					name = main;
-					module = $builtin/light_debug.frag;
-				};
-			};
-			vertexInput_splat = {
-				bindings = (
-					{ binding = 0; stride = "4"; inputRate = instance; },
-					{ binding = 1; stride = "3 * 4"; inputRate = vertex; },
-				);
-				attributes = (
-					{ location = 0; binding = 0; format = r32_uint; offset = 0; },
-					{ location = 1; binding = 1; format = r32g32b32_sfloat; offset = 0;  },
-				);
-			};
-			inputAssembly = {
-				topology = triangle_fan;
-				primitiveRestartEnable = true;
-			};
-			layout = {
-				descriptorSets = (matrix_set, lighting_lights,
-								  lighting_attach, lighting_shadow);
-			};
-		};
 		compose = {
 			shader = {
 				fragment = {
@@ -772,7 +747,7 @@ render_graph = {
 				};
 			};
 			layout = {
-				descriptorSets = (compose_attach, oit_set);
+				descriptorSets = ($input, oit_set);
 			};
 		};
 		output = {
@@ -1359,7 +1334,7 @@ render_graph = {
 				};
 			};
 			subpasses = {
-				solid = {
+				solid = {// subpass 0
 					color = "[ 0.3,  0.7,  0.3, 1]";
 					dependencies = (
 						{@inherit = $extdepth_dependency; name = $external;},
@@ -1436,10 +1411,10 @@ render_graph = {
 						};
 					};
 				};
-				translucent = {
+				translucent = {// subpass 1
 					color = "[ 0.25, 0.25, 0.6, 1]";
 					dependencies = {
-						solid = $depth_dependency;
+						solid = $depthtest_dependency;
 					};
 					attachments = {
 						depth = {
@@ -1502,13 +1477,13 @@ render_graph = {
 						};
 					};
 				};
-				compose = {
+				compose = {// subpass 2
 					color = "[ 0.7,  0.3,  0.3, 1]";
-					dependencies = {
-						solid = $color_dependency;
-						translucent = $color_dependency;//FIXME is this right? no op
-						$external = $extcolor_dependency;
-					};
+					dependencies = (
+						{@inherit = $color_dependency; name = solid;},
+						{@inherit = $color_dependency; name = translucent;},
+						{@inherit = $depthread_dependency; name = solid;},
+					);
 					attachments = {
 						input = {
 							color = shader_read_only_optimal;
@@ -1527,8 +1502,7 @@ render_graph = {
 
 							color = $color.compose;
 							tasks = (
-								{ func = compose_draw;
-								  params = (1); },
+								{ func = fullscreen_pass; },
 							);
 							stages = (
 								$fstriangle.shader.vertex,
@@ -1893,6 +1867,7 @@ render_graph = {
 					  params = ("\"gizmo_cmd\"", "\"main\""); },
 					{ func = clear_translucent;
 					  params = ("\"main\""); },
+					{ func = compose_update; },
 					{ func = particle_wait_physics; },
 					{ func = gizmo_flush; },
 				);

@@ -234,11 +234,13 @@ typedef struct language_s {
 typedef struct rua_ctx_s {
 	struct rua_extra_s *extra;
 	void       *scanner;
+	symtab_t   *macros;
 	language_t *language;
 	struct switch_block_s *switch_block;
 	bool        extdecl;
 	bool        force_lookup;
 	bool        sub_parse;
+	bool        restore_location;
 } rua_ctx_t;
 
 extern language_t lang_qc;

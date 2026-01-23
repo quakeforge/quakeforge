@@ -64,6 +64,7 @@ typedef struct qfv_mesh_s {
 
 typedef struct qfv_skin_s {
 	struct qfv_resource_s *resource;
+	struct qfv_tex_s *tex;
 	VkImageView view;
 	byte        colors[4];
 	VkDescriptorSet descriptor;
@@ -86,6 +87,18 @@ typedef struct meshctx_s {
 	struct qfv_resource_s *resource;
 	VkBuffer     null_bone;
 	qfv_skin_t   default_skin;
+
+	uint32_t   *matrix_base;
+	mat4f_t    *mat;
+	uint32_t   *enabled_mask;
+	float      *blend;
+	uint32_t   *debug_bone;
+	byte       *colors;
+	vec4f_t    *base_color;
+	vec4f_t    *fog;
+	vec4f_t    *lightvec;
+	float      *ambient;
+	float      *shadelight;
 } meshctx_t;
 
 typedef struct vulkan_ctx_s vulkan_ctx_t;

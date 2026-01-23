@@ -3,6 +3,7 @@
 qpipe_t Qpipe (string *argv, int argc,
 			   bool do_stdin, bool do_stdout, bool do_stderr) = #0;
 int Qwait (int pid) = #0;
+string Qgetcwd () = #0;
 
 int Qrename (string old, string new) = #0;
 int Qremove (string path) = #0;

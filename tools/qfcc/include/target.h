@@ -51,6 +51,7 @@ typedef struct {
 
 	bool      (*create_entry_point) (const char *name, const char *model_name,
 									 attribute_t *mode);
+	void      (*finish_struct) (const type_t *type);
 
 	const expr_t *(*initialized_temp) (const type_t *type, const expr_t *src);
 	const expr_t *(*assign_vector) (const expr_t *dst, const expr_t *src);
@@ -64,6 +65,8 @@ typedef struct {
 	const expr_t *(*cast_expr) (const type_t *dstType, const expr_t *expr);
 	const expr_t *(*check_types_compatible) (const expr_t **dst,
 											 const expr_t **src);
+	const expr_t *(*pointer_diff) (const expr_t *ptra, const expr_t *ptrb);
+	int       (*ptr_type_size) (const type_t *type);
 	bool      (*type_assignable) (const type_t *dst, const type_t *src);
 	bool      (*init_type_ok) (const type_t *dst, const type_t *src);
 
@@ -75,6 +78,10 @@ typedef struct {
 	bool        zero_memory;
 
 	unsigned    label_id;
+	const type_t *(*pointer_type) (const type_t *aux);
+	int         pointer_scale;
+	int         pointer_size;
+	bool        pointer_direct_cast;
 } target_t;
 
 extern target_t current_target;
@@ -90,5 +97,7 @@ const expr_t *ruamoko_proc_caselabel (const expr_t *expr, rua_ctx_t *ctx);
 const expr_t *ruamoko_field_array (const expr_t *e);
 const expr_t *ruamoko_proc_address (const expr_t *expr, rua_ctx_t *ctx);
 const expr_t *ruamoko_test_expr (const expr_t *expr);
+const expr_t *ruamoko_pointer_diff (const expr_t *ptra, const expr_t *ptrb);
+int ruamoko_ptr_type_size (const type_t *type)__attribute__((pure));
 
 #endif//__target_h

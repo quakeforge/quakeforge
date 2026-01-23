@@ -13,6 +13,6 @@ export MINGW_USR=$MINGW/usr/x86_64-w64-mingw32.static
 export PKG_CONFIG_LIBDIR=$MINGW_USR/lib/pkgconfig
 export PKG_CONFIG_PATH=$MINGW_USR/local/lib/pkgconfig
 export PATH=$MINGW/usr/bin:$PATH
-export VULKAN_SDK=/opt/vulkan/1.4.321.1
+export VULKAN_SDK=/opt/vulkan/current/x86_64
 
 make PAK='$(top_builddir)/pak' QFCC='$(top_builddir)/qfcc' QWAQ='$(top_builddir)/qwaq-cmd' VKGENUSRINC=$MINGW_USR/include $*

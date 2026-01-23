@@ -1,6 +1,7 @@
 search = (
 	VkDebugUtilsMessageSeverityFlagBitsEXT,
 	VkValidationFeatureEnableEXT,
+	VkValidationFeatureDisableEXT,
 	VkObjectType,
 	VkPresentModeKHR,
 	VkSpecializationInfo,
@@ -45,9 +46,11 @@ search = (
 	qfv_jobinfo_t,
 	qfv_samplercreateinfo_t,
 	qfv_samplerinfo_t,
+	qfv_entqueueinfo_t,
 );
 parse = {
 	VkValidationFeatureEnableEXT = expflags;
+	VkValidationFeatureDisableEXT = expflags;
 	VkPhysicalDeviceLimits = readonly;
 	VkSpecializationInfo = {
 		mapEntries = {
@@ -398,12 +401,35 @@ parse = {
 		};
 		layout = auto;
 	};
+	qfv_dependencyinfo_s = {
+		.name = qfv_dependencyinfo_t;
+		.type = (QFDictionary, QFString);
+		.string = {
+			name = $name;
+			line = $item.line;
+			.reference = $item;
+			.parse = auto;
+		};
+		.dictionary = {
+			.parse = auto;
+			name = $name;
+			line = $item.line;
+		};
+		name = {
+			type = string;
+			string = name;
+		};
+		src = auto;
+		dst = auto;
+		flags = auto;
+	};
 	qfv_subpassinfo_s = {
 		.name = qfv_subpassinfo_t;
 		.type = (QFDictionary);
 		.dictionary = {
 			.parse = auto;
 			name = $name;
+			line = $item.line;
 		};
 		color = auto;
 		dependencies = {
@@ -414,16 +440,17 @@ parse = {
 			type = (single, qfv_attachmentsetinfo_t);
 			value = attachments;
 		};
-		pipelines = {
-			type = (labeledarray, qfv_pipelineinfo_t, name);
-			size = num_pipelines;
-			values = pipelines;
-		};
 		base_pipeline = {
 			//type = (labeledsingle, qfv_pipelineinfo_t, name);
 			type = (single, qfv_pipelineinfo_t, name);
 			value = base_pipeline;
 		};
+		pipelines = {
+			type = (labeledarray, qfv_pipelineinfo_t, name);
+			size = num_pipelines;
+			values = pipelines;
+		};
+		subpass_input = ignore;
 	};
 	qfv_attachmentinfo_s = {
 		.name = qfv_attachmentinfo_t;
@@ -660,6 +687,20 @@ parse = {
 			type = (labeledarray, qfv_samplercreateinfo_t, name);
 			size = num_samplers;
 			values = samplers;
+		};
+		plitem = ignore;
+	};
+	qfv_entqueueinfo_s = {
+		.name = qfv_entqueueinfo_t;
+		queues = {
+			type = (array,	{
+								parse_type = QFString;
+								type = "char *";
+								parser = parse_string;
+								data = parse_string_array;
+							}, name);
+			size = num_queues;
+			values = queue_names;
 		};
 		plitem = ignore;
 	};

@@ -1,0 +1,22 @@
+ruamoko_shader = \
+	ruamoko/shader/GLSL/_defines.h \
+	ruamoko/shader/GLSL/atomic.h \
+	ruamoko/shader/GLSL/control.h \
+	ruamoko/shader/GLSL/fragment.h \
+	ruamoko/shader/GLSL/general.h \
+	ruamoko/shader/GLSL/geometry.h \
+	ruamoko/shader/GLSL/image.h \
+	ruamoko/shader/GLSL/texture.h
+
+ruamoko_shaderdir = $(datarootdir)/qfcc/shader
+
+ruamoko_shader_HEADERS = $(ruamoko_shader)
+
+EXTRA_DIST += \
+	ruamoko/shader/GLSL/_compute_vars.glsl \
+	ruamoko/shader/GLSL/_fragment_vars.glsl \
+	ruamoko/shader/GLSL/_geometry_vars.glsl \
+	ruamoko/shader/GLSL/_system_const.glsl \
+	ruamoko/shader/GLSL/_tessctrl_vars.glsl \
+	ruamoko/shader/GLSL/_tesseval_vars.glsl \
+	ruamoko/shader/GLSL/_vertex_vars.glsl

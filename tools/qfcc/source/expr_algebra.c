@@ -1170,11 +1170,16 @@ scale_expr (const expr_t *a, const expr_t *b)
 		// propagated zero
 		return 0;
 	}
+	//FIXME need to sort out types in expr_optimize or may
+	//just use binary_expr all the time in expr_optimize
+	if (!is_real (get_type (a)) && !is_real (get_type (b))) {
+		return binary_expr ('*', a, b);
+	}
 	if (!is_scalar (get_type (b)) || !is_real (get_type (b))) {
 		internal_error (b, "not a real scalar type");
 	}
-	if (!is_real (get_type (b))) {
-		internal_error (b, "not a real scalar type");
+	if (!is_real (get_type (a))) {
+		internal_error (a, "not a real type");
 	}
 	if (is_constant (b)) {
 		double s = expr_floating (b);

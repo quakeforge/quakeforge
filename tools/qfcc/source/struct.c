@@ -62,6 +62,7 @@
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -500,6 +501,9 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 	if (!type && type_encodings.a[sym->type->id]->external) {
 		unsigned id = sym->type->id;
 		type_encodings.a[id] = qfo_encode_type (sym->type, pr.type_data);
+	}
+	if (current_target.finish_struct) {
+		current_target.finish_struct (sym->type);
 	}
 	return sym;
 }

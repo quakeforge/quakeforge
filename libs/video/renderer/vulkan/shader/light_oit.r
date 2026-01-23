@@ -1,5 +1,5 @@
-#include "atomic.h"
-#include "image.h"
+#include "GLSL/atomic.h"
+#include "GLSL/image.h"
 
 [in("ViewIndex"), flat] int gl_ViewIndex;
 [in("FrontFacing")] bool gl_FrontFacing;

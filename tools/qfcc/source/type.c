@@ -841,6 +841,9 @@ tagged_pointer_type (unsigned tag, const type_t *aux)
 const type_t *
 pointer_type (const type_t *aux)
 {
+	if (current_target.pointer_type) {
+		return current_target.pointer_type (aux);
+	}
 	return tagged_pointer_type (0, aux);
 }
 
@@ -2056,6 +2059,9 @@ type_size (const type_t *type)
 		case ty_handle:
 		case ty_bool:
 		case ty_basic:
+			if (type->type == ev_ptr && current_target.pointer_size) {
+				return current_target.pointer_size;
+			}
 			if (type->type != ev_short && (!type->columns || !type->width)) {
 				internal_error (0, "%s:%d:%d", pr_type_name[type->type],
 								type->columns, type->width);
@@ -2097,6 +2103,9 @@ int
 type_align (const type_t *type)
 {
 	type = unalias_type (type);
+	if (is_ptr (type) && current_target.pointer_size) {
+		return current_target.pointer_size;
+	}
 	return type->alignment;
 }
 

@@ -165,6 +165,10 @@ scene_draw_viewmodel (const exprval_t **params, exprval_t *result,
 					  exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto sctx = ctx->scene_context;
+
 	entity_t    ent = vr_data.view_model;
 	if (!Entity_Valid (ent)) {
 		return;
@@ -176,7 +180,7 @@ scene_draw_viewmodel (const exprval_t **params, exprval_t *result,
 		|| !renderer->model)
 		return;
 
-	EntQueue_AddEntity (r_ent_queue, ent, renderer->model->type);
+	EntQueue_AddEntity (sctx->scene->ent_queue, ent, renderer->model->type);
 }
 
 static void
@@ -308,6 +312,7 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	auto sctx = ctx->scene_context;
+	auto rctx = ctx->render_context;
 	sctx->scene = scene;
 
 	for (int i = 0; i < 256; i++) {
@@ -315,9 +320,24 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 	}
 
 	r_refdef.worldmodel = scene->worldmodel;
-	EntQueue_Clear (r_ent_queue);
+	if (rctx->entqueue_count > scene->ent_queue->num_queues) {
+		EntQueue_Delete (scene->ent_queue);
+		scene->ent_queue = EntQueue_New (rctx->entqueue_count);
+		scene->entqueue_enum = &rctx->entqueue_enum;
+	}
+	EntQueue_Clear (scene->ent_queue);
 
 	R_ClearParticles ();
 
 	QFV_Render_NewScene (scene, ctx);
+}
+
+entqueue_t *
+Vulkan_Scene_EntQueue (vulkan_ctx_t *ctx)
+{
+	auto sctx = ctx->scene_context;
+	if (!sctx->scene) {
+		return nullptr;
+	}
+	return sctx->scene->ent_queue;
 }

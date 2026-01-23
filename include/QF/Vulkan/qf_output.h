@@ -53,6 +53,10 @@ typedef struct outputctx_s {
 	VkSemaphore *outputSemaphores;		// one per swapchain image
 	qfv_attachmentinfo_t swapchain_info;
 	bool recreate_swapchain;
+
+	float *time;
+	float *fov;
+	float *aspect;
 } outputctx_t;
 
 struct vulkan_ctx_s;

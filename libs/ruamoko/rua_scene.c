@@ -37,6 +37,7 @@
 #endif
 
 #include "QF/animation.h"
+#include "QF/cexpr.h"
 #include "QF/cmem.h"
 #include "QF/hash.h"
 #include "QF/model.h"
@@ -72,6 +73,7 @@ typedef struct rua_scene_resources_s {
 	PR_RESMAP (rua_lighting_t) lighting_map;
 	rua_scene_t *scenes;
 	rua_lighting_t *ldatas;
+	memsuper_t *memsuper;
 } rua_scene_resources_t;
 
 static rua_scene_t *
@@ -312,6 +314,27 @@ bi (Scene_SetCamera)
 	scene->scene->camera = ent.id;
 }
 
+bi (Scene_Entqueue)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t   scene_id = P_ULONG (pr, 0);
+	rua_scene_t *scene = rua_scene_get (res, scene_id);
+	const char *entqueue_name = P_GSTRING (pr, 1);
+	R_INT(pr) = -1;
+	if (scene->scene->entqueue_enum) {
+		if (!res->memsuper) {
+			res->memsuper = new_memsuper ();
+		}
+		int         entqueue;
+		exprctx_t   ectx = { .memsuper = res->memsuper };
+		if (!cexpr_parse_enum (scene->scene->entqueue_enum, entqueue_name,
+							   &ectx, &entqueue)) {
+			R_INT(pr) = entqueue;
+		}
+	}
+}
+
 bi (Entity_GetTransform)
 {
 	qfZoneScoped (true);
@@ -338,6 +361,21 @@ bi (Entity_SetModel)
 	R_AddEfrags (scene->scene, ent);
 }
 
+bi (Entity_SetEntqueue)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	pr_int_t    entqueue = P_INT (pr, 1);
+	entity_t    ent = rua_entity_get (res, ent_id);
+	pr_ulong_t  scene_id = ent_id & 0xffffffff;
+	// bad scene caught above
+	rua_scene_t *scene = rua_scene_get (res, scene_id);
+
+	Entity_SetEntqueue (ent, entqueue);
+	R_AddEfrags (scene->scene, ent);
+}
+
 bi (Entity_SetSubmeshMask)
 {
 	qfZoneScoped (true);
@@ -348,6 +386,46 @@ bi (Entity_SetSubmeshMask)
 
 	auto renderer = Entity_GetRenderer (ent);
 	renderer->submesh_mask = submesh_mask;
+}
+
+bi (Entity_SetShadowFlags)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	bool        noshadowcast = P_INT (pr, 1);
+	bool        noshadowreceive = P_INT (pr, 2);
+	bool        onlyshadows = P_INT (pr, 3);
+	entity_t    ent = rua_entity_get (res, ent_id);
+
+	auto renderer = Entity_GetRenderer (ent);
+	renderer->noshadowcast = noshadowcast;
+	renderer->noshadowreceive = noshadowreceive;
+	renderer->onlyshadows = onlyshadows;
+}
+
+bi (Entity_SetSkin)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	const char *skinname = P_GSTRING (pr, 1);
+	entity_t    ent = rua_entity_get (res, ent_id);
+
+	auto renderer = Entity_GetRenderer (ent);
+	renderer->skin = mod_funcs->skin_set (skinname);;
+}
+
+bi (Entity_SetTexture)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	const char *skinname = P_GSTRING (pr, 1);
+	entity_t    ent = rua_entity_get (res, ent_id);
+
+	auto renderer = Entity_GetRenderer (ent);
+	renderer->skin = mod_funcs->texture_set (skinname);;
 }
 
 bi (Entity_GetPoseMotors)
@@ -724,10 +802,15 @@ static builtin_t builtins[] = {
 	bi(Scene_DestroyEntity,         1, p(ulong)),
 	bi(Scene_SetLighting,           2, p(ulong), p(ulong)),
 	bi(Scene_SetCamera,				2, p(ulong), p(ulong)),
+	bi(Scene_Entqueue,				2, p(ulong), p(string)),
 
 	bi(Entity_GetTransform,         1, p(ulong)),
 	bi(Entity_SetModel,             2, p(ulong), p(int)),
+	bi(Entity_SetEntqueue,          2, p(ulong), p(int)),
 	bi(Entity_SetSubmeshMask,       2, p(ulong), p(uint)),
+	bi(Entity_SetShadowFlags,       4, p(ulong), p(int), p(int), p(int)),
+	bi(Entity_SetSkin,              2, p(ulong), p(string)),
+	bi(Entity_SetTexture,           2, p(ulong), p(string)),
 	bi(Entity_GetPoseMotors,		3, p(ulong), p(ptr), p(double)),
 	bi(Entity_GetAnimation,         1, p(ulong)),
 	bi(Entity_SetAnimation,         1, p(ulong), p(ptr)),
@@ -795,6 +878,9 @@ bi_scene_destroy (progs_t *pr, void *_res)
 	rua_scene_resources_t *res = _res;
 	PR_RESDELMAP (res->scene_map);
 	PR_RESDELMAP (res->lighting_map);
+	if (res->memsuper) {
+		delete_memsuper (res->memsuper);
+	}
 	free (res);
 }
 

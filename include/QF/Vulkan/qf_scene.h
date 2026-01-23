@@ -80,5 +80,6 @@ void Vulkan_Scene_Clear (struct vulkan_ctx_s *ctx);
 void Vulkan_Scene_Flush (struct vulkan_ctx_s *ctx);
 
 void Vulkan_NewScene (struct scene_s *scene, struct vulkan_ctx_s *ctx);
+struct entqueue_s *Vulkan_Scene_EntQueue (struct vulkan_ctx_s *ctx) __attribute__((pure));
 
 #endif//__QF_Vulkan_qf_scene_h

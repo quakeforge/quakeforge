@@ -1,4 +1,7 @@
 {
+entqueues = {
+	queues = (planetary);
+};
 samplers = {
 	samplers = {
 		quakepic = {
@@ -90,9 +93,9 @@ samplers = {
 			magFilter = linear;
 			minFilter = linear;
 			mipmapMode = linear;
-			addressModeU = clamp_to_edge;
-			addressModeV = clamp_to_edge;
-			addressModeW = clamp_to_edge;
+			addressModeU = repeat;
+			addressModeV = repeat;
+			addressModeW = repeat;
 			mipLodBias = 0;
 			anisotropyEnable = false;
 			maxAnisotropy = 0;
@@ -214,14 +217,25 @@ render_graph = {
 				access = memory_read;
 			};
 		};
-		depth_dependency = {
+		depthtest_dependency = {
 			src = {
 				stage = early_fragment_tests|late_fragment_tests;
 				access = depth_stencil_attachment_write;
 			};
 			dst = {
 				stage = fragment_shader|early_fragment_tests|late_fragment_tests;
-				access = input_attachment_read|depth_stencil_attachment_read;
+				access = depth_stencil_attachment_read;
+			};
+			flags = by_region|view_local;
+		};
+		depthread_dependency = {
+			src = {
+				stage = early_fragment_tests|late_fragment_tests;
+				access = depth_stencil_attachment_read;
+			};
+			dst = {
+				stage = fragment_shader;
+				access = input_attachment_read;
 			};
 			flags = by_region|view_local;
 		};
@@ -586,6 +600,11 @@ render_graph = {
 					name = main;
 					module = $builtin/mesh.r;
 				};
+				planetary = {
+					stage = fragment;
+					name = main;
+					module = planetary.r.spv;
+				};
 			};
 			vertexInput = {
 				bindings = (
@@ -609,14 +628,43 @@ render_graph = {
 				//                            palette                skin
 				descriptorSets = (matrix_set, texture_set, bone_set, texture_set);
 				pushConstants = {
-					vertex   = { Model = mat4; enabled_mask = uint; blend = float; debug_bone = uint; };
-					fragment = { colors = uint; base_color = vec4; fog = vec4; };
+					vertex|fragment = {
+						Model = mat4;
+						enabled_mask = uint;
+						blend = float;
+						debug_bone = uint;
+						colors = uint;
+						base_color = vec4;
+						fog = vec4;
+					};
+				};
+			};
+			planetary = {
+				//                            palette                skin
+				descriptorSets = (matrix_set, texture_set, bone_set, texture_set);
+				pushConstants = {
+					vertex|fragment = {
+						Model = mat4;
+						enabled_mask = uint;
+						blend = float;
+						debug_bone = uint;
+						colors = uint;
+						base_color = vec4;
+						fog = vec4;
+						planetary = ptr;
+						near_plane = float;
+					};
 				};
 			};
 			depth_layout = {
 				descriptorSets = (matrix_set, texture_set, bone_set);
 				pushConstants = {
-					vertex = { Model = mat4; enabled_mask = uint; blend = float; MatrixBase = uint; };
+					vertex|fragment = {
+						Model = mat4;
+						enabled_mask = uint;
+						blend = float;
+						MatrixBase = uint;
+					};
 				};
 			};
 			shadow_layout = {
@@ -835,7 +883,7 @@ render_graph = {
 			};
 			layout = {
 				descriptorSets = (shadowmat_set, lighting_lights,
-								  lighting_attach, lighting_shadow);
+								  $input, lighting_shadow);
 				pushConstants = {
 					fragment = {
 						fog = vec4;
@@ -855,7 +903,7 @@ render_graph = {
 				};
 			};
 			layout = {
-				descriptorSets = (compose_attach, oit_set);
+				descriptorSets = ($input, oit_set);
 				pushConstants = {
 					fragment = {
 						fog = vec4;
@@ -863,6 +911,31 @@ render_graph = {
 						near_plane = float;
 					};
 				};
+			};
+		};
+		atmosphere = {
+			shader = {
+				fragment = {
+					stage = fragment;
+					name = main;
+					module = atmosphere.r.spv;
+				};
+			};
+			layout = {
+				descriptorSets = ($input, matrix_set);
+				pushConstants = {
+					fragment = {
+						planetary = ptr;
+						near_plane = float;
+					};
+				};
+				//pushConstants = {
+				//	fragment = {
+				//		fog = vec4;
+				//		camera = vec4;
+				//		near_plane = float;
+				//	};
+				//};
 			};
 		};
 		output = {
@@ -1199,34 +1272,6 @@ render_graph = {
 				},
 			);
 		};
-		lighting_attach = {
-			bindings = (
-				{
-					binding = 0;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 1;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 2;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 3;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-			);
-		};
 		lighting_lights = {
 			bindings = (
 				{
@@ -1273,40 +1318,6 @@ render_graph = {
 					binding = 0;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 32;
-					stageFlags = fragment;
-				},
-			);
-		};
-		compose_attach = {
-			bindings = (
-				{
-					binding = 0;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 1;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 2;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 3;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 4;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
 					stageFlags = fragment;
 				},
 			);
@@ -1393,6 +1404,10 @@ render_graph = {
 			@inherit = $image_base;
 			format = r16g16b16a16_sfloat;
 		};
+		compo = {
+			@inherit = $image_base;
+			format = r16g16b16a16_sfloat;
+		};
 		output = {
 			@inherit = $image_base;
 			usage = color_attachment|input_attachment|sampled;
@@ -1427,6 +1442,10 @@ render_graph = {
 			format = r16g16b16a16_sfloat;
 		};
 		cube_light = {
+			@inherit = $cube_image_base;
+			format = r16g16b16a16_sfloat;
+		};
+		cube_compo = {
 			@inherit = $cube_image_base;
 			format = r16g16b16a16_sfloat;
 		};
@@ -1479,6 +1498,11 @@ render_graph = {
 			image = light;
 			format = $images.light.format;
 		};
+		compo = {
+			@inherit = $view_base;
+			image = compo;
+			format = $images.compo.format;
+		};
 		output = {
 			@inherit = $view_base;
 			image = output;
@@ -1524,6 +1548,11 @@ render_graph = {
 			image = cube_light;
 			format = $images.cube_light.format;
 		};
+		cube_compo = {
+			@inherit = $cube_view_base;
+			image = cube_compo;
+			format = $images.cube_compo.format;
+		};
 		cube_output = {
 			@inherit = $cube_view_base;
 			viewType = cube;
@@ -1533,6 +1562,13 @@ render_graph = {
 		cube_entid = {
 			@inherit = $cube_view_base;
 			image = cube_entid;
+		};
+	};
+	buffers = {
+		planetary = {
+			size = 1048576;
+			usage = transfer_dst|shader_device_address|storage_buffer;
+			perframe = true;
 		};
 	};
 	output = {
@@ -1603,7 +1639,7 @@ render_graph = {
 				lightcull = {
 					color = "[ 0.7,  0.5,  0, 1]";
 					dependencies = {
-						depth = $depth_dependency;
+						depth = $depthtest_dependency;
 					};
 					attachments = {
 						depth = {
@@ -1691,6 +1727,7 @@ render_graph = {
 								$gizmo.shader.queueobj,
 							);
 							vertexInput = $gizmo.vertexInput;
+							rasterization = $cw_cull_front;
 							inputAssembly = $gizmo.inputAssembly;
 							layout = $gizmo.layout;
 						};
@@ -1743,6 +1780,11 @@ render_graph = {
 						format = $images.light.format;
 						view = light;
 					};
+					compo = {
+						@inherit = $color_base;
+						format = $images.compo.format;
+						view = compo;
+					};
 					entid = {
 						@inherit = $entid_base;
 						format = $images.entid.format;
@@ -1757,7 +1799,7 @@ render_graph = {
 				};
 			};
 			subpasses = {
-				depth = {
+				depth = {// subpass 0
 					color = "[ 0.5,  0.5,  0.5, 1]";
 					dependencies = (
 						{@inherit = $extdepth_dependency; name = $external;},
@@ -1806,6 +1848,8 @@ render_graph = {
 							tasks = (
 								{ func = mesh_draw;
 								  params = (main, 0); },
+								{ func = mesh_draw_queue;
+								  params = (main, 0, planetary); },
 							);
 
 							stages = (
@@ -1850,10 +1894,10 @@ render_graph = {
 						};
 					};
 				};
-				translucent = {
+				translucent = {// subpass 1
 					color = "[ 0.25, 0.25, 0.6, 1]";
 					dependencies = {
-						depth = $depth_dependency;
+						depth = $depthtest_dependency;
 						$external = $extcolor_dependency;
 					};
 					attachments = {
@@ -1867,24 +1911,6 @@ render_graph = {
 						rasterization = $cw_cull_back;
 					};
 					pipelines = {
-						bsp:sky = {
-							color = $color.bsp;
-							tasks = (
-								// FIXME background and sky should not use OIT
-								{ func = bsp_draw_queue;
-								  params = (main, background, 1); },
-								{ func = bsp_draw_queue;
-								  params = (main, sky, 1); },
-							);
-
-							stages = (
-								$brush.shader.quake_vertex,
-								$brush.shader.sky_fragment,
-							);
-							vertexInput = $brush.vertexInput;
-							inputAssembly = $brush.inputAssembly;
-							layout = $brush.layout;
-						};
 						bsp:trans = {
 							color = $color.bsp;
 							tasks = (
@@ -1940,11 +1966,11 @@ render_graph = {
 						};
 					};
 				};
-				gbuffer = {
+				gbuffer = {// subpass 2
 					color = "[ 0.3,  0.7,  0.3, 1]";
 					dependencies = {
-						depth = $depth_dependency;
-						translucent = $depth_dependency;//FIXME why?
+						depth = $depthtest_dependency;
+						translucent = $depthtest_dependency;//FIXME why?
 						$external = $extcolor_dependency;
 					};
 					attachments = {
@@ -2024,16 +2050,83 @@ render_graph = {
 						};
 					};
 				};
-				lighting = {
+				unlit = {// subpass 3
+					color = "[ 0.25, 0.25, 0.3, 1]";
+					dependencies = {
+						depth = $depthtest_dependency;
+						gbuffer = $color_dependency;
+						$external = $extcolor_dependency;
+					};
+					attachments = {
+						color = {
+							emission = {
+								layout = color_attachment_optimal;
+								blend = $blend_disable;
+							};
+						};
+						depth = {
+							depth = depth_stencil_read_only_optimal;
+						};
+						preserve = (color, normal, output);
+					};
+					base_pipeline = {
+						@inherit = $pipeline_base;
+						rasterization = $cw_cull_back;
+					};
+					pipelines = {
+						bsp:sky = {
+							color = $color.bsp;
+							tasks = (
+								// FIXME background and sky should not use OIT
+								{ func = bsp_draw_queue;
+								  params = (main, background, 1); },
+								{ func = bsp_draw_queue;
+								  params = (main, sky, 1); },
+							);
+
+							stages = (
+								$brush.shader.quake_vertex,
+								$brush.shader.sky_fragment,
+							);
+							vertexInput = $brush.vertexInput;
+							inputAssembly = $brush.inputAssembly;
+							layout = $brush.layout;
+						};
+						planetary:gbuffer = {
+							color = $color.mesh;
+							tasks = (
+								{ func = mesh_draw_queue;
+								  params = (main, 1, planetary); },
+							);
+
+							stages = (
+								$mesh.shader.gbuf_vertex,
+								$mesh.shader.planetary,
+							);
+							vertexInput = $mesh.vertexInput;
+							inputAssembly = $mesh.inputAssembly;
+							layout = $mesh.planetary;
+							dynamic = {
+								dynamicState = (
+									viewport,
+									scissor,
+									vertex_input_ext,
+								);
+							};
+						};
+					};
+				};
+				lighting = {// subpass 4
 					color = "[ 0.8,  0.8,  0.8, 1]";
 					dependencies = {
+						translucent = $depthread_dependency;
+						gbuffer = $depthread_dependency;
+						unlit = $depthread_dependency;
 						gbuffer = $color_dependency;
 						$external = $extcolor_dependency;
 					};
 					attachments = {
 						input = {
-							color = shader_read_only_optimal;
-							emission = shader_read_only_optimal;
 							normal = shader_read_only_optimal;
 							depth = shader_read_only_optimal;
 						};
@@ -2043,7 +2136,7 @@ render_graph = {
 								blend = $additive_blend;
 							};
 						};
-						preserve = (output);
+						preserve = (output, emission);
 					};
 					pipelines = {
 						lights_none = {
@@ -2116,24 +2209,24 @@ render_graph = {
 						};
 					};
 				};
-				compose = {
+				compose = {// subpass 5
 					color = "[ 0.7,  0.3,  0.3, 1]";
 					dependencies = {
 						translucent = $color_dependency;
 						gbuffer = $color_dependency;
 						lighting = $color_dependency;
+						unlit = $color_dependency;
 						$external = $extcolor_dependency;
 					};
 					attachments = {
 						input = {
 							color = shader_read_only_optimal;
 							emission = shader_read_only_optimal;
-							normal = shader_read_only_optimal;
 							depth = shader_read_only_optimal;
 							light = shader_read_only_optimal;
 						};
 						color = {
-							output = {
+							compo = {
 								layout = color_attachment_optimal;
 								blend = $additive_blend;
 							};
@@ -2145,8 +2238,7 @@ render_graph = {
 
 							color = $color.compose;
 							tasks = (
-								{ func = compose_draw;
-								  params = (0); },
+								{ func = fullscreen_pass; },
 							);
 
 							stages = (
@@ -2247,10 +2339,45 @@ render_graph = {
 						};
 					};
 				};
-				entid = {
+				atmosphere = {// subpass 6
+					color = "[ 0.0784313725490196, 0.19607843137254902, 0.37254901960784315, 1]";
+					dependencies = {
+						compose = $color_dependency;
+						$external = $extcolor_dependency;
+					};
+					attachments = {
+						input = {
+							compo = shader_read_only_optimal;
+							depth = shader_read_only_optimal;
+						};
+						color = {
+							output = {
+								layout = color_attachment_optimal;
+								blend = $additive_blend;
+							};
+						};
+					};
+					pipelines = {
+						atmosphere = {
+							@inherit = $compose_base;
+
+							color = $color.compose;
+							tasks = (
+								{ func = fullscreen_pass; },
+							);
+
+							stages = (
+								$fstriangle.shader.vertexst,
+								$atmosphere.shader.fragment,
+							);
+							layout = $atmosphere.layout;
+						};
+					};
+				};
+				entid = {// subpass 7
 					color = "[ 1,  0,  0, 1]";
 					dependencies = {
-						depth = $depth_dependency;
+						depth = $depthtest_dependency;
 						$external = $extcolor_dependency;
 					};
 					attachments = {
@@ -2291,7 +2418,9 @@ render_graph = {
 						translucent = $extcolor_outdep;
 						gbuffer = $extcolor_outdep;
 						lighting = $extcolor_outdep;
-						compose = {
+						unlit = $extcolor_outdep;
+						lighting = $extcolor_outdep;
+						atmosphere = {
 							src = {
 								stage = color_attachment_output;
 								access = color_attachment_write;
@@ -2310,7 +2439,7 @@ render_graph = {
 		deferred_cube = {
 			@inherit = $renderpasses.deferred;
 			@next = (VkRenderPassMultiviewCreateInfo, {
-				viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
+				viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
 			});
 			framebuffer = {
 				width = "min($render_output.extent.width,$render_output.extent.height)";
@@ -2342,6 +2471,11 @@ render_graph = {
 						@inherit = $light_base;
 						format = $images.cube_light.format;
 						view = cube_light;
+					};
+					compo = {
+						@inherit = $color_base;
+						format = $images.cube_compo.format;
+						view = cube_compo;
 					};
 					entid = {
 						@inherit = $entid_base;
@@ -2910,10 +3044,11 @@ render_graph = {
 					  params = ("\"gizmo_cmd\"", "\"main\""); },
 					{ func = clear_translucent;
 					  params = ("\"main\""); },
+					{ func = compose_update; },
 					{ func = particle_wait_physics; },
-					{ func = lighting_update_descriptors;
-					  params = ("\"main\""); },
 					{ func = gizmo_flush; },
+					{ func = blackboard_set_bufferptr;
+					  params = ("\"planetary\"", "\"planetary\"") },
 				);
 			};
 		};
