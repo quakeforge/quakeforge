@@ -1552,6 +1552,8 @@ renderpasses = {
 				color = "[ 0.3,  0.7,  0.3, 1]";
 				dependencies = {
 					depth = $depthtest_dependency;
+					translucent = $depthtest_dependency;
+					$external = $extcolor_dependency;
 				};
 				attachments = {
 					color = {
@@ -1634,8 +1636,10 @@ renderpasses = {
 			lighting = {
 				color = "[ 0.8,  0.8,  0.8, 1]";
 				dependencies = {
-					depth = $depthread_dependency;
+					translucent = $depthread_dependency;
+					gbuffer = $depthread_dependency;
 					gbuffer = $color_dependency;
+					$external = $extcolor_dependency;
 				};
 				attachments = {
 					input = {
