@@ -121,7 +121,7 @@ text_input_unstable_v3_protocol_cinc = libs/video/targets/text-input-unstable-v3
 $(text_input_unstable_v3_protocol_cinc): $(text_input_unstable_v3_protocol_xml)
 	wayland-scanner private-code $< $@.t && $(am__mv) $@.t $@
 
-BUILT_SOURCES += \
+WL_BUILT_SOURCES = \
 	$(xdg_shell_client_protocol_hinc) \
 	$(xdg_shell_protocol_cinc) \
 	$(xdg_decoration_client_protocol_hinc) \
@@ -136,6 +136,9 @@ BUILT_SOURCES += \
 	$(tablet_v2_protocol_cinc) \
 	$(text_input_unstable_v3_client_protocol_hinc) \
 	$(text_input_unstable_v3_protocol_cinc)
+
+BUILT_SOURCES = \
+	@WL_BUILT_SOURCES@
 
 CLEANFILES += \
 	$(xdg_shell_client_protocol_hinc) \
