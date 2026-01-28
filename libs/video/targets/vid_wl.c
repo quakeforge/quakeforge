@@ -167,6 +167,7 @@ VID_SetCaption (const char *text)
 	}
 }
 
+bool VID_SetGamma (double gamma) __attribute__((const));
 bool
 VID_SetGamma (double gamma)
 {

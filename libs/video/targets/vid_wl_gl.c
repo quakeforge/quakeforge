@@ -54,6 +54,7 @@
 #include "vid_internal.h"
 #include "vid_gl.h"
 
+gl_ctx_t *WL_GL_Context (vid_internal_t *vi) __attribute__((const));
 gl_ctx_t *
 WL_GL_Context (vid_internal_t *vi)
 {
