@@ -169,6 +169,15 @@ write_auto_parse (Struct *self, string field, int name)
 }
 
 static void
+write_tracker (Struct *self, string field)
+{
+	fprintf (output_file,
+			 "\t\t((%s *) data)->%s = vkparse_field_set (%s_fields, item, "
+														"context);\n",
+			 [self outname], field, [self outname]);
+}
+
+static void
 write_safe_name (Struct *self, string field)
 {
 	string str = "vkstrdup (context, field->name)";
@@ -275,6 +284,9 @@ write_type (Struct *self, PLItem *field_dict, string type)
 				continue;
 			case "$name.auto":
 				write_auto_parse (self, field, 1);
+				continue;
+			case "$tracker":
+				write_tracker (self, field);
 				continue;
 		}
 		fprintf (output_file, "\t\t((%s *) data)->%s = %s;\n", [self outname],

@@ -35,6 +35,7 @@
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
+#include "QF/set.h"
 #include "QF/va.h"
 
 #include "QF/Vulkan/debug.h"
@@ -310,6 +311,39 @@ parse_ignore (const plfield_t *field, const plitem_t *item,
 			  void *data, plitem_t *messages, void *context)
 {
 	return 1;
+}
+
+static set_t *
+vkparse_field_set (const plfield_t *fields, const plitem_t *item,
+				   void *context)
+{
+	uint32_t num_fields = 0;
+	for (auto f = fields; f->name; f++) {
+		if (strcmp (f->name, "@inherit") != 0) {
+			num_fields++;
+		}
+	}
+	uint32_t max_field = num_fields - 1;
+	set_t *set = vkparse_alloc (context, sizeof (set_t));
+	*set = (set_t) {
+		.map = SET_LARGE_SET (max_field) ? nullptr : set->defmap,
+		.size = SET_SAFE_SIZE (max_field),
+	};
+	if (!set->map) {
+		uint32_t size = SET_SAFE_SIZE (max_field) / 8;
+		set->map = vkparse_alloc (context, size);
+		memset (set->map, 0, size);
+	}
+	uint32_t field_num = 0;
+	for (auto f = fields; f->name; f++) {
+		if (strcmp (f->name, "@inherit") != 0) {
+			if (PL_ObjectForKey (item, f->name)) {
+				set_add (set, field_num);
+			}
+			field_num++;
+		}
+	}
+	return set;
 }
 
 static int __attribute__((used))
