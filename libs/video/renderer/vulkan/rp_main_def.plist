@@ -57,11 +57,11 @@ properties = {
 	depthtest_dependency = {
 		src = {
 			stage = early_fragment_tests|late_fragment_tests;
-			access = depth_stencil_attachment_write;
+			access = depth_stencil_attachment_write|depth_stencil_attachment_read;
 		};
 		dst = {
 			stage = early_fragment_tests|late_fragment_tests;
-			access = depth_stencil_attachment_read;
+			access = depth_stencil_attachment_read|depth_stencil_attachment_write;
 		};
 		flags = by_region|view_local;
 	};
@@ -83,6 +83,16 @@ properties = {
 		};
 		dst = {
 			stage = early_fragment_tests;
+			access = depth_stencil_attachment_write|depth_stencil_attachment_read;
+		};
+	};
+	extdepth_outdep = {
+		src = {
+			stage = late_fragment_tests;
+			access = depth_stencil_attachment_write;
+		};
+		dst = {
+			stage = late_fragment_tests;
 			access = depth_stencil_attachment_write;
 		};
 	};
@@ -1493,6 +1503,11 @@ renderpasses = {
 					};
 				};
 			};
+			$external = {
+				dependencies = {
+					translucent = $extdepth_outdep;
+				};
+			};
 		};
 	};
 	depth_cube = {
@@ -1597,9 +1612,10 @@ renderpasses = {
 		subpasses = {
 			gbuffer = {
 				color = "[ 0.3,  0.7,  0.3, 1]";
-				dependencies = {
-					$external = $extcolor_dependency;
-				};
+				dependencies = (
+					{@inherit = $extdepth_dependency; name = $external;},
+					{@inherit = $extcolor_dependency; name = $external;},
+				);
 				attachments = {
 					color = {
 						color = {
