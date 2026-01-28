@@ -2433,7 +2433,7 @@ steps = {
 				{ func = update_framebuffer;
 				  params = ("\"depth\""); },
 				{ func = clear_translucent;
-				  params = ("\"main\""); },
+				  params = ("\"depth\""); },
 			);
 		};
 	};
@@ -2527,6 +2527,7 @@ steps = {
 			tasks = (
 				{ func = compose_update; },
 				{ func = particle_wait_physics; },
+				{ func = sync_translucent; },
 			);
 		};
 	};

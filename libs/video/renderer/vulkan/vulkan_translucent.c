@@ -217,6 +217,12 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 								 0, 0, 0, 0, 0,
 								 1, &ib.barrier);
 
+	auto bb = bufferBarriers[qfv_BB_ShaderRO_to_ShaderWrite];
+	bb.barrier.buffer = obj[tframe->frags].buffer.buffer;
+	bb.barrier.size = VK_WHOLE_SIZE;
+	dfunc->vkCmdPipelineBarrier (cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
+
 	dfunc->vkEndCommandBuffer (cmd);
 	QFV_AppendCmdBuffer (ctx, cmd);
 
@@ -238,6 +244,40 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			},
 		});
 	QFV_PacketSubmit (packet);
+}
+
+static void
+sync_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto tctx = ctx->translucent_context;
+	auto tframe = &tctx->frames.a[ctx->curFrame];
+
+	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 vac (ctx->va_ctx, "trans.sync"));
+
+	VkCommandBufferBeginInfo beginInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	auto resources = &tctx->resources.array[tctx->resources.active];
+	auto obj = resources->objects;
+
+	auto bb = bufferBarriers[qfv_BB_ShaderWrite_to_ShaderRO];
+	bb.barrier.buffer = obj[tframe->frags].buffer.buffer;
+	bb.barrier.size = VK_WHOLE_SIZE;
+	dfunc->vkCmdPipelineBarrier (cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
+
+	dfunc->vkEndCommandBuffer (cmd);
+	QFV_AppendCmdBuffer (ctx, cmd);
 }
 
 static void
@@ -437,6 +477,14 @@ static exprfunc_t clear_translucent_func[] = {
 	{}
 };
 
+static exprtype_t *sync_translucent_params[] = {
+	&cexpr_string,
+};
+static exprfunc_t sync_translucent_func[] = {
+	{ .func = sync_translucent, .num_params = 1, sync_translucent_params },
+	{}
+};
+
 static exprfunc_t translucent_init_func[] = {
 	{ .func = translucent_init },
 	{}
@@ -444,6 +492,7 @@ static exprfunc_t translucent_init_func[] = {
 
 static exprsym_t translucent_task_syms[] = {
 	{ "clear_translucent", &cexpr_function, clear_translucent_func },
+	{ "sync_translucent", &cexpr_function, sync_translucent_func },
 	{ "translucent_init", &cexpr_function, translucent_init_func },
 	{}
 };
