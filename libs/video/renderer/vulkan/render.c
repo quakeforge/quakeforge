@@ -725,6 +725,29 @@ fullscreen_pass (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
+//FIXME probably should be part of submit_render but with options, or maybe
+//need sync, dunno yet
+static void
+submit_depth (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto rctx = ctx->render_context;
+	auto job = rctx->job;
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto queue = &device->queue;
+	VkSubmitInfo submitInfo = {
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+		.commandBufferCount = job->commands.size,
+		.pCommandBuffers = job->commands.a,
+	};
+	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, VK_NULL_HANDLE);
+	DARRAY_RESIZE (&job->commands, 0);
+}
+
 static void
 submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
@@ -800,6 +823,11 @@ static exprfunc_t fullscreen_pass_func[] = {
 	{}
 };
 
+static exprfunc_t submit_depth_func[] = {
+	{ .func = submit_depth },
+	{}
+};
+
 static exprfunc_t submit_render_func[] = {
 	{ .func = submit_render },
 	{}
@@ -819,6 +847,7 @@ static exprsym_t render_task_syms[] = {
 	{ "wait_on_fence", &cexpr_function, wait_on_fence_func },
 	{ "update_framebuffer", &cexpr_function, update_framebuffer_func },
 	{ "fullscreen_pass", &cexpr_function, fullscreen_pass_func },
+	{ "submit_depth", &cexpr_function, submit_depth_func },
 	{ "submit_render", &cexpr_function, submit_render_func },
 
 	{ "blackboard_set_bufferptr", &cexpr_function,
