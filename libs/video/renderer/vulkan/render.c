@@ -54,6 +54,8 @@
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/staging.h"
 #include "QF/Vulkan/swapchain.h"
+
+#include "r_cvar.h"
 #include "vid_vulkan.h"
 
 #include "vkparse.h"
@@ -648,24 +650,55 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto job = ctx->render_context->job;
+	auto rctx = ctx->render_context;
+	auto job = rctx->job;
+
+	VkExtent2D *extent = nullptr;
+	if (job->num_framebuffers) {
+		//FIXME select framebuffer robustly
+		auto fb = &job->framebuffers[scr_fisheye != 0];
+		extent = &fb->extent;
+	}
 	auto step = QFV_GetStep (params[0], job);
-	auto render = step->render;
-	auto rp = render->active;
+	if (step) {
+		extent = &step->render->output.extent;
+	}
 
 	qfv_output_t output = {};
 	Vulkan_ConfigOutput (ctx, &output);
-	int64_t size_time = ctx->render_context->size_time;
-	if ((output.extent.width != render->output.extent.width
-		|| output.extent.height != render->output.extent.height)
+	int64_t size_time = rctx->size_time;
+	if ((output.extent.width != extent->width
+		|| output.extent.height != extent->height)
 		&& (size_time < 0 || Sys_LongTime () - size_time > 2*1000*1000)) {
-		QFV_DestroyFramebuffer (ctx, rp);
-		QFV_UpdateViewportScissor (render, &output);
-		render->output.extent = output.extent;
+		if (step) {
+			auto render = step->render;
+			auto rp = render->active;
+			QFV_DestroyFramebuffer (ctx, rp);
+			QFV_UpdateViewportScissor (render, &output);
+		} else {
+			for (uint32_t i = 0; i < job->num_framebuffers; i++) {
+				auto fbr = &job->framebuffer_resources[i];
+				auto res = &fbr->array[fbr->active];
+				if (res->memory) {
+					uint32_t frames = rctx->frames.size;
+					qfv_delete_t del = {
+						.resources = res,
+						.deletion_frame = ctx->frameNumber + frames,
+					};
+					PQUEUE_INSERT (&rctx->deletion_queue, del);
+					fbr->active++;
+				}
+			}
+		}
+		*extent = output.extent;
 	}
 
-	if (!rp->beginInfo.framebuffer) {
-		QFV_CreateFramebuffer (ctx, rp, render->output.extent);
+	if (step) {
+		auto render = step->render;
+		auto rp = render->active;
+		if (!rp->beginInfo.framebuffer) {
+			QFV_CreateFramebuffer (ctx, rp, render->output.extent);
+		}
 	}
 }
 

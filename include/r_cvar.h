@@ -1,6 +1,11 @@
+#ifndef __r_cvar_h
+#define __r_cvar_h
+
 #include "QF/mathlib.h"
 
-extern void gl_overbright_f (void *data, const struct cvar_s *cvar);
+typedef struct cvar_s cvar_t;
+
+extern void gl_overbright_f (void *data, const cvar_t *cvar);
 
 extern int cl_crossx;
 extern int cl_crossy;
@@ -91,3 +96,5 @@ extern int scr_showpause;
 extern int scr_showram;
 extern int scr_showturtle;
 extern int scr_viewsize;
+
+#endif//__r_cvar_h

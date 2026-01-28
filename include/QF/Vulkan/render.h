@@ -400,8 +400,7 @@ typedef struct qfv_subpassinput_s {
 } qfv_subpassinput_t;
 
 typedef struct qfv_framebuffer_s {
-	uint32_t    width;
-	uint32_t    height;
+	VkExtent2D  extent;
 	uint32_t    layers;
 	uint32_t    num_attachments;
 	VkImageView *views;
