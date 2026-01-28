@@ -496,14 +496,14 @@ QFV_DestroyFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 	auto rctx = ctx->render_context;
 	uint32_t frames = rctx->frames.size;
 	qfv_delete_t del = {
-		.resources = &rp->resource_array[rp->active_resources],
+		.resources = &rp->resources.array[rp->resources.active],
 		.framebuffer = rp->beginInfo.framebuffer,
 		.deletion_frame = ctx->frameNumber + frames,
 	};
 	if (del.resources) {
-		rp->active_resources++;
-		if (rp->active_resources >= rp->num_resources) {
-			rp->active_resources = 0;
+		rp->resources.active++;
+		if (rp->resources.active >= rp->resources.count) {
+			rp->resources.active = 0;
 		}
 	}
 	PQUEUE_INSERT (&rctx->deletion_queue, del);
@@ -516,7 +516,7 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 {
 	auto rctx = ctx->render_context;
 
-	auto resources = &rp->resource_array[rp->active_resources];
+	auto resources = &rp->resources.array[rp->resources.active];
 
 	if (resources && !resources->memory) {
 		for (uint32_t i = 0; i < resources->num_objects; i++) {
@@ -921,13 +921,13 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 				auto render = job->steps[i].render;
 				for (uint32_t j = 0; j < render->num_renderpasses; j++) {
 					auto rp = &render->renderpasses[j];
-					for (uint32_t k = 0; k < rp->num_resources; k++) {
-						auto resources = &rp->resource_array[k];
+					for (uint32_t k = 0; k < rp->resources.count; k++) {
+						auto resources = &rp->resources.array[k];
 						if (resources && resources->memory) {
 							QFV_DestroyResource (ctx->device, resources);
 						}
 					}
-					free (rp->resource_array);
+					free (rp->resources.array);
 					auto bi = &rp->beginInfo;
 					if (bi->framebuffer) {
 						dfunc->vkDestroyFramebuffer (device->dev,
@@ -1048,10 +1048,10 @@ QFV_Render_AddAttachments (vulkan_ctx_t *ctx, uint32_t num_attachments,
 qfv_resobj_t *
 QFV_FindResource (const char *name, qfv_renderpass_t *rp)
 {
-	if (!rp->resource_array) {
+	if (!rp->resources.array) {
 		return 0;
 	}
-	auto resources = &rp->resource_array[rp->active_resources];
+	auto resources = &rp->resources.array[rp->resources.active];
 	for (uint32_t i = 0; i < resources->num_objects; i++) {
 		auto obj = &resources->objects[i];
 		if (!strcmp (obj->name, name)) {

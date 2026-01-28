@@ -41,6 +41,7 @@
 #include "QF/cmem.h"
 #include "QF/hash.h"
 #include "QF/model.h"
+#include "QF/set.h"
 #include "QF/va.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
@@ -173,6 +174,7 @@ typedef struct {
 	uint32_t    num_imageviews;
 	uint32_t    num_buffers;
 	uint32_t    num_bufferviews;
+	uint32_t    num_framebuffers;
 	uint32_t    num_layouts;
 
 	uint32_t    num_pushconstantranges;
@@ -326,6 +328,11 @@ count_stuff (qfv_jobinfo_t *jobinfo, objcount_t *counts)
 	counts->num_imageviews += jobinfo->num_imageviews;
 	counts->num_buffers += jobinfo->num_buffers;
 	counts->num_bufferviews += jobinfo->num_bufferviews;
+	counts->num_framebuffers += jobinfo->num_framebuffers;
+	for (uint32_t i = 0; i < jobinfo->num_framebuffers; i++) {
+		auto fb = &jobinfo->framebuffers[i];
+		counts->num_attachments += fb->num_attachments;
+	}
 	for (uint32_t i = 0; i < jobinfo->num_steps; i++) {
 		count_step_stuff (&jobinfo->steps[i], counts);
 	}
@@ -378,6 +385,34 @@ find_bufferinfo (qfv_jobinfo_t *jobinfo, const qfv_reference_t *ref)
 	return 0;
 }
 
+static uint32_t __attribute__((pure))
+find_framebuffer (const qfv_reference_t *ref, qfv_jobinfo_t *jinfo,
+				  qfv_renderpassinfo_t *rpi)
+{
+	for (uint32_t i = 0; i < jinfo->num_framebuffers; i++) {
+		auto fb = &jinfo->framebuffers[i];
+		if (strcmp (fb->name, ref->name) == 0) {
+			return i;
+		}
+	}
+	Sys_Error ("%s:%d: invalid framebuffer: %s",
+			   rpi->name, ref->line, ref->name);
+}
+
+qfv_framebufferinfo_t *
+QFV_FindFramebufferInfo (vulkan_ctx_t *ctx, const qfv_reference_t *ref,
+						 const char *rpname)
+{
+	auto rctx = ctx->render_context;
+	auto jinfo = rctx->jobinfo;
+	qfv_renderpassinfo_t rpi = {
+		.name = rpname,
+		.framebuffer.use = *ref,
+	};
+	uint32_t ind = find_framebuffer (ref, jinfo, &rpi);
+	return &jinfo->framebuffers[ind];
+}
+
 qfv_bufferinfo_t *
 QFV_FindBufferInfo (vulkan_ctx_t *ctx, const char *name)
 {
@@ -388,16 +423,16 @@ QFV_FindBufferInfo (vulkan_ctx_t *ctx, const char *name)
 }
 
 static bool
-setup_resources (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
+setup_resources (vulkan_ctx_t *ctx,
+				 qfv_framebufferinfo_t *fbi, const char *name,
 				 uint32_t num_attachments, qfv_resource_t *resources,
 				 qfv_resobj_t *images, qfv_resobj_t *image_views)
 {
 	auto rctx = ctx->render_context;
 	auto jinfo = rctx->jobinfo;
-	auto fbi = rp->framebufferinfo;
 
 	resources[0] = (qfv_resource_t) {
-		.name = rp->label.name,
+		.name = name,
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		.num_objects = 2 * num_attachments,
@@ -454,47 +489,6 @@ setup_resources (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 	return !error;
 }
 
-static void
-create_resources (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
-{
-	auto rctx = ctx->render_context;
-
-	auto fbi = rp->framebufferinfo;
-	uint32_t num_attachments = 0;
-	for (uint32_t i = 0; i < fbi->num_attachments; i++) {
-		auto attach = &fbi->attachments[i];
-		if (!attach->external) {
-			num_attachments++;
-		}
-	}
-	if (!num_attachments) {
-		rp->resource_array = 0;
-		return;
-	}
-
-	uint32_t    frames = rctx->frames.size;
-
-	size_t      size = sizeof (qfv_resource_t);
-	size += sizeof (qfv_resobj_t [num_attachments]);
-	size += sizeof (qfv_resobj_t [num_attachments]);
-
-	rp->resource_array = malloc (frames * size);
-	rp->active_resources = 0;
-	rp->num_resources = frames;
-	void *res = &rp->resource_array[frames];
-	for (uint32_t i = 0; i < frames; i++) {
-		auto images = (qfv_resobj_t *) res;
-		auto image_views = &images[num_attachments];
-		res = &image_views[num_attachments];
-		if (!setup_resources (ctx, rp, num_attachments, &rp->resource_array[i],
-							  images, image_views)) {
-			free (rp->resource_array);
-			rp->resource_array = 0;
-			break;
-		}
-	}
-}
-
 typedef struct {
 	VkRenderPassCreateInfo *rpCreate;
 	VkAttachmentDescription *attach;
@@ -535,6 +529,49 @@ typedef struct {
 	qfv_pipelineinfo_t *pli;
 	VkGraphicsPipelineCreateInfo *plc;
 } objstate_t;
+
+static qfv_resourcearray_t
+create_resource_array (objstate_t *s, qfv_framebufferinfo_t *fbi,
+					   const char *name)
+{
+	auto ctx = s->ctx;
+	auto rctx = ctx->render_context;
+
+	uint32_t num_attachments = 0;
+	for (uint32_t i = 0; i < fbi->num_attachments; i++) {
+		auto attach = &fbi->attachments[i];
+		if (!attach->external && !fbi->use.name) {
+			num_attachments++;
+		}
+	}
+	if (!num_attachments) {
+		return (qfv_resourcearray_t) {};
+	}
+
+	uint32_t    frames = rctx->frames.size;
+
+	size_t      size = sizeof (qfv_resource_t);
+	size += sizeof (qfv_resobj_t [num_attachments]);
+	size += sizeof (qfv_resobj_t [num_attachments]);
+
+	qfv_resourcearray_t resources = {
+		.array = malloc (frames * size),
+		.count = frames,
+	};
+	auto res = (qfv_resobj_t *) &resources.array[frames];
+	for (uint32_t i = 0; i < frames; i++) {
+		auto images = res;
+		auto image_views = &images[num_attachments];
+		res = &image_views[num_attachments];
+		if (!setup_resources (ctx, fbi, name,
+							  num_attachments, &resources.array[i],
+							  images, image_views)) {
+			free (resources.array);
+			return (qfv_resourcearray_t) {};
+		}
+	}
+	return resources;
+}
 
 static uint32_t __attribute__((pure))
 find_subpass (qfv_dependencyinfo_t *d, uint32_t spind,
@@ -922,10 +959,9 @@ init_spCreate (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
 }
 
 static void
-init_atCreate (uint32_t index, qfv_attachmentinfo_t *attachments, objstate_t *s)
+init_atCreate (qfv_attachmentinfo_t *ati, objstate_t *s)
 {
 	auto rctx = s->ctx->render_context;
-	auto ati = &attachments[index];
 	auto atc = &s->ptr.attach[s->inds.num_attachments];
 	auto cvc = &s->ptr.clear[s->inds.num_attachments];
 
@@ -975,12 +1011,74 @@ init_rpCreate (uint32_t index, const qfv_renderinfo_t *rinfo, objstate_t *s)
 	s->rpc = &s->ptr.rpCreate[s->inds.num_renderpasses];
 	s->ptr.rpName[s->inds.num_renderpasses] = s->rpi->name;
 
-	__auto_type attachments = &s->ptr.attach[s->inds.num_attachments];
-	__auto_type subpasses = &s->ptr.subpass[s->inds.num_subpasses];
-	__auto_type dependencies = &s->ptr.depend[s->inds.num_dependencies];
+	auto fbi = &s->rpi->framebuffer;
+	auto attachments = &s->ptr.attach[s->inds.num_attachments];
+	auto subpasses = &s->ptr.subpass[s->inds.num_subpasses];
+	auto dependencies = &s->ptr.depend[s->inds.num_dependencies];
 
-	for (uint32_t i = 0; i < s->rpi->framebuffer.num_attachments; i++) {
-		init_atCreate (i, s->rpi->framebuffer.attachments, s);
+	qfv_framebufferinfo_t *use_fb = nullptr;
+	fbi->use_index = ~0u;
+	if (fbi->use.name) {
+		fbi->use_index = find_framebuffer (&fbi->use, s->jinfo, s->rpi);
+		use_fb = &s->jinfo->framebuffers[fbi->use_index];
+	}
+
+	for (uint32_t i = 0; i < fbi->num_attachments; i++) {
+		auto attachment = &fbi->attachments[i];
+		attachment->index = ~0u;
+		auto attach = *attachment;
+		if (use_fb) {
+			bool found = false;
+			for (uint32_t j = 0; j < use_fb->num_attachments; j++) {
+				auto use_attach = &use_fb->attachments[i];
+				if (strcmp (attach.name, use_attach->name) == 0) {
+					attachment->index = j;
+					attach.index = j;
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				Sys_Error ("%s:%d: invalid use attachment '%s'",
+						   s->rpi->name, attach.line, attach.name);
+			}
+			auto use_attach = &use_fb->attachments[attach.index];
+			//FIXME this is very dependent on field order in vkparse.plist
+			if (!set_is_member (attach.specified, 0)) {
+				attach.flags = use_attach->flags;
+			}
+			if (!set_is_member (attach.specified, 1)) {
+				attach.format = use_attach->format;
+			}
+			if (!set_is_member (attach.specified, 2)) {
+				attach.samples = use_attach->samples;
+			}
+			if (!set_is_member (attach.specified, 3)) {
+				attach.loadOp = use_attach->loadOp;
+			}
+			if (!set_is_member (attach.specified, 4)) {
+				attach.storeOp = use_attach->storeOp;
+			}
+			if (!set_is_member (attach.specified, 5)) {
+				attach.stencilLoadOp = use_attach->stencilLoadOp;
+			}
+			if (!set_is_member (attach.specified, 6)) {
+				attach.stencilStoreOp = use_attach->stencilStoreOp;
+			}
+			if (!set_is_member (attach.specified, 7)) {
+				attach.initialLayout = use_attach->initialLayout;
+			}
+			if (!set_is_member (attach.specified, 8)) {
+				attach.finalLayout = use_attach->finalLayout;
+			}
+			if (!set_is_member (attach.specified, 9)) {
+				attach.clearValue = use_attach->clearValue;
+			}
+			if (!set_is_member (attach.specified, 10)) {
+				attach.view = use_attach->view;
+			}
+		}
+		init_atCreate (&attach, s);
 		s->inds.num_attachments++;
 	}
 
@@ -1151,7 +1249,8 @@ init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
 		.framebufferinfo = &rpinfo->framebuffer,
 		.outputref = rpinfo->output,
 	};
-	create_resources (s->ctx, rp);
+	rp->resources = create_resource_array (s, rp->framebufferinfo,
+										   rp->label.name);
 	s->inds.num_attachments += rpinfo->framebuffer.num_attachments;
 	for (uint32_t i = 0; i < rpinfo->num_subpasses; i++) {
 		init_subpass (&rp->subpasses[i], &rpinfo->subpasses[i], jp, s);
@@ -1249,6 +1348,8 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 	size += sizeof (qfv_pipeline_t   [counts->num_comp_pipelines]);
 	size += sizeof (qfv_taskinfo_t   [counts->num_tasks]);
 
+	size += sizeof (qfv_framebuffer_t[counts->num_framebuffers]);
+	size += sizeof (qfv_resourcearray_t[counts->num_framebuffers]);
 	size += sizeof (VkClearValue     [counts->num_attachments]);
 	size += sizeof (VkRenderPass     [counts->num_renderpasses]);
 	size += sizeof (VkPipeline       [counts->num_graph_pipelines]);
@@ -1271,6 +1372,7 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 		.num_steps = counts->num_steps,
 		.commands = DARRAY_STATIC_INIT (16),
 		.num_dsmanagers = num_dslayouts,
+		.num_framebuffers = counts->num_framebuffers,
 		.startup_funcs = DARRAY_STATIC_INIT (16),
 		.shutdown_funcs = DARRAY_STATIC_INIT (16),
 		.clearstate_funcs = DARRAY_STATIC_INIT (16),
@@ -1284,7 +1386,11 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 	auto pl = (qfv_pipeline_t *) &sp[counts->num_subpasses];
 	auto ti = (qfv_taskinfo_t *) &pl[job->num_pipelines];
 
-	auto cv = (VkClearValue *) &ti[counts->num_tasks];
+	auto fb = (qfv_framebuffer_t *) &ti[counts->num_tasks];
+	auto fbr = (qfv_resourcearray_t *) &fb[counts->num_framebuffers];
+	job->framebuffers = fb;
+	job->framebuffer_resources = fbr;
+	auto cv = (VkClearValue *) &fbr[counts->num_framebuffers];
 	job->renderpasses = (VkRenderPass *) &cv[counts->num_attachments];
 	job->pipelines = (VkPipeline *) &job->renderpasses[job->num_renderpasses];
 	job->layouts = (VkPipelineLayout *) &job->pipelines[job->num_pipelines];
@@ -1294,6 +1400,21 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 	auto si = (qfv_subpassinput_t *) &ds[frames * job->num_dsmanagers];
 	auto ii = (uint32_t *) &si[frames * counts->num_subpass_inputs];
 	auto dsi = (uint32_t *) &ii[counts->num_input_indices];
+
+	for (uint32_t i = 0; i < counts->num_framebuffers; i++) {
+		auto fb = &job->framebuffers[i];
+		auto fbi = &jobinfo->framebuffers[i];
+		*fb = (qfv_framebuffer_t) {
+			.layers = fbi->layers,
+			.num_attachments = fbi->num_attachments,
+			.views = &av[s->inds.num_attachments],
+			.update_frame = ~UINT64_C(0),
+		};
+		for (uint32_t j = 0; j < fbi->num_attachments; j++) {
+			fb->views[j] = nullptr;
+		}
+		s->inds.num_attachments += fbi->num_attachments;
+	}
 
 	return (jobptr_t) {
 		.steps = job->steps,

@@ -459,11 +459,13 @@ parse = {
 			name = $name;
 			line = $item.line;
 			external = $item.string;
+			specified = $tracker;
 		};
 		.dictionary = {
 			.parse = auto;
 			name = $name;
 			line = $item.line;
+			specified = $tracker;
 		};
 		flags = auto;
 		format = auto;
@@ -482,6 +484,7 @@ parse = {
 		width = auto;
 		height = auto;
 		layers = auto;
+		use = auto;
 		attachments = {
 			type = (labeledarray, qfv_attachmentinfo_t, name);
 			size = num_attachments;
@@ -616,8 +619,6 @@ parse = {
 		.name = qfv_jobinfo_t;
 		properties = ignore;
 		output = ignore;
-		images = ignore;
-		views = ignore;
 		renderpasses = ignore;
 		images = {
 			type = (labeledarray, qfv_imageinfo_t, name);
@@ -639,6 +640,11 @@ parse = {
 			size = num_bufferviews;
 			values = bufferviews;
 		};
+		framebuffers = {
+			type = (labeledarray, qfv_framebufferinfo_t, name);
+			size = num_framebuffers;
+			values = framebuffers;
+		};
 		steps = {
 			type = (labeledarray, qfv_stepinfo_t, name);
 			size = num_steps;
@@ -659,7 +665,6 @@ parse = {
 			size = init_num_tasks;
 			values = init_tasks;
 		};
-		plitem = ignore;
 	};
 	qfv_samplercreateinfo_s = {
 		.name = qfv_samplercreateinfo_t;
