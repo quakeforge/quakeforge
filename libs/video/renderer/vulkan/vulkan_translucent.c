@@ -477,11 +477,8 @@ static exprfunc_t clear_translucent_func[] = {
 	{}
 };
 
-static exprtype_t *sync_translucent_params[] = {
-	&cexpr_string,
-};
 static exprfunc_t sync_translucent_func[] = {
-	{ .func = sync_translucent, .num_params = 1, sync_translucent_params },
+	{ .func = sync_translucent },
 	{}
 };
 
