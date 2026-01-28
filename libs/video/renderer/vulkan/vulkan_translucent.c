@@ -65,11 +65,11 @@ trans_delete_buffers (vulkan_ctx_t *ctx)
 {
 	auto tctx = ctx->translucent_context;
 
-	auto resources = &tctx->resource_array[tctx->active_resources];
+	auto resources = &tctx->resources.array[tctx->resources.active];
 	if (resources->memory) {
 		QFV_QueueResourceDelete (ctx, resources);
-		if (++tctx->active_resources >= tctx->num_resources) {
-			tctx->active_resources = 0;
+		if (++tctx->resources.active >= tctx->resources.count) {
+			tctx->resources.active = 0;
 		}
 	}
 }
@@ -81,7 +81,7 @@ trans_create_buffers (vulkan_ctx_t *ctx)
 	auto tctx = ctx->translucent_context;
 	size_t frames = tctx->frames.size;
 
-	auto resources = &tctx->resource_array[tctx->active_resources];
+	auto resources = &tctx->resources.array[tctx->resources.active];
 
 	for (uint32_t i = 0; i < resources->num_objects; i++) {
 		auto obj = &resources->objects[i];
@@ -111,7 +111,7 @@ trans_update_descriptors (vulkan_ctx_t *ctx, int i)
 	auto dfunc = device->funcs;
 	auto tctx = ctx->translucent_context;
 
-	auto resources = &tctx->resource_array[tctx->active_resources];
+	auto resources = &tctx->resources.array[tctx->resources.active];
 	auto obj = resources->objects;
 
 	auto tframe = &tctx->frames.a[i];
@@ -191,7 +191,7 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
-	auto resources = &tctx->resource_array[tctx->active_resources];
+	auto resources = &tctx->resources.array[tctx->resources.active];
 	auto obj = resources->objects;
 	auto img = scr_fisheye ? &obj[tframe->cube_heads] : &obj[tframe->heads];
 	auto image = img->image.image;
@@ -331,10 +331,10 @@ trans_create_resources (vulkan_ctx_t *ctx)
 				// fragment count
 				+ sizeof (qfv_resobj_t[frames]);
 
-	tctx->resource_array = malloc (frames * size);
-	tctx->active_resources = 0;
-	tctx->num_resources = frames;
-	void *res = &tctx->resource_array[frames];
+	tctx->resources.array = malloc (frames * size);
+	tctx->resources.active = 0;
+	tctx->resources.count = frames;
+	void *res = &tctx->resources.array[frames];
 	for (uint32_t j = 0; j < frames; j++) {
 		auto heads_objs = (qfv_resobj_t *) res;
 		auto cube_heads_objs = &heads_objs[frames];
@@ -344,13 +344,13 @@ trans_create_resources (vulkan_ctx_t *ctx)
 		auto count_objs = &buffer_objs[frames];
 		res = &count_objs[frames];
 
-		trans_setup_resources (ctx, &tctx->resource_array[j],
+		trans_setup_resources (ctx, &tctx->resources.array[j],
 							   heads_objs, cube_heads_objs,
 							   head_views_objs, cube_head_views_objs,
 							   buffer_objs, count_objs);
 
 		for (size_t i = 0; i < frames; i++) {
-			auto objects = tctx->resource_array[j].objects;
+			auto objects = tctx->resources.array[j].objects;
 			auto tframe = &tctx->frames.a[i];
 			tframe->heads = &heads_objs[i] - objects;
 			tframe->cube_heads = &cube_heads_objs[i] - objects;
@@ -371,9 +371,9 @@ translucent_shutdown (exprctx_t *ectx)
 	qfv_device_t *device = ctx->device;
 	translucentctx_t *tctx = ctx->translucent_context;
 
-	if (tctx->resource_array) {
-		for (uint32_t j = 0; j < tctx->num_resources; j++) {
-			auto resources = &tctx->resource_array[j];
+	if (tctx->resources.array) {
+		for (uint32_t j = 0; j < tctx->resources.count; j++) {
+			auto resources = &tctx->resources.array[j];
 			QFV_DestroyResource (device, resources);
 			for (uint32_t i = 0; i < resources->num_objects; i++) {
 				auto obj = &resources->objects[i];
@@ -381,7 +381,7 @@ translucent_shutdown (exprctx_t *ectx)
 			}
 		}
 	}
-	free (tctx->resource_array);
+	free (tctx->resources.array);
 	free (tctx->frames.a);
 	free (tctx);
 }

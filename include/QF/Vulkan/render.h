@@ -620,8 +620,8 @@ void QFV_BindDescriptors (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_job_t *job);
 qfv_step_t *QFV_FindStep (const char *step, qfv_job_t *job)
 	__attribute__((pure));
-qfv_resobj_t *QFV_FindResource (const char *name, qfv_renderpass_t *rp)
-	__attribute__((pure));
+qfv_resobj_t *QFV_FindResource (vulkan_ctx_t *ctx, const char *name,
+								qfv_renderpass_t *rp) __attribute__((pure));
 
 void QFV_Render_NewScene (scene_t *scene, vulkan_ctx_t *ctx);
 

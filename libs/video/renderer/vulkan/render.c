@@ -495,12 +495,19 @@ QFV_DestroyFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 {
 	auto rctx = ctx->render_context;
 	uint32_t frames = rctx->frames.size;
+	auto resources = &rp->resources;
+	qfv_resource_t *res = nullptr;
+	// destroy the resources only if the renderpass owns the resources
+	// (ie, don't touch the shared resources)
+	if (resources->array) {
+		res = &rp->resources.array[rp->resources.active];
+	}
 	qfv_delete_t del = {
-		.resources = &rp->resources.array[rp->resources.active],
+		.resources = res,
 		.framebuffer = rp->beginInfo.framebuffer,
 		.deletion_frame = ctx->frameNumber + frames,
 	};
-	if (del.resources) {
+	if (res) {
 		rp->resources.active++;
 		if (rp->resources.active >= rp->resources.count) {
 			rp->resources.active = 0;
@@ -515,44 +522,56 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 					   VkExtent2D extent)
 {
 	auto rctx = ctx->render_context;
+	auto job = rctx->job;
 
-	auto resources = &rp->resources.array[rp->resources.active];
+	auto resources = &rp->resources;
+	if (!resources->array && rp->framebufferinfo->use.name) {
+		uint32_t use_index = rp->framebufferinfo->use_index;
+		resources = &job->framebuffer_resources[use_index];
+	}
 
-	if (resources && !resources->memory) {
-		for (uint32_t i = 0; i < resources->num_objects; i++) {
-			auto obj = &resources->objects[i];
+	auto res = &resources->array[resources->active];
+
+	if (res && !res->memory) {
+		for (uint32_t i = 0; i < res->num_objects; i++) {
+			auto obj = &res->objects[i];
 			if (obj->type == qfv_res_image) {
 				obj->image.extent.width = extent.width;
 				obj->image.extent.height = extent.height;
 			}
 		}
-		QFV_CreateResource (ctx->device, resources);
+		QFV_CreateResource (ctx->device, res);
 	}
 
 	auto fb = rp->framebufferinfo;
-	auto attachments = rp->framebuffer.views;
+	uint32_t layers = fb->layers;
+	if (fb->use.name) {
+		auto jobinfo = rctx->jobinfo;
+		layers = jobinfo->framebuffers[fb->use_index].layers;
+	}
+	auto views = rp->framebuffer.views;
 	VkFramebufferCreateInfo cInfo = {
 		.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
 		.attachmentCount = fb->num_attachments,
-		.pAttachments = attachments,
+		.pAttachments = views,
 		.renderPass = rp->beginInfo.renderPass,
 		.width = extent.width,
 		.height = extent.height,
-		.layers = fb->layers,
+		.layers = layers,
 	};
 	for (uint32_t i = 0; i < fb->num_attachments; i++) {
 		if (fb->attachments[i].external) {
-			attachments[i] = 0;
+			views[i] = 0;
 			if (!strcmp (fb->attachments[i].external, "$swapchain")) {
 				auto sc = ctx->swapchain;
-				attachments[i] = sc->imageViews->a[ctx->swapImageIndex];
+				views[i] = sc->imageViews->a[ctx->swapImageIndex];
 				cInfo.width = sc->extent.width;
 				cInfo.height = sc->extent.height;
 			}
 		} else {
-			auto objects = resources->objects;
+			auto objects = res->objects;
 			auto viewinfo = find_imageview (&fb->attachments[i].view, rp, rctx);
-			attachments[i] = objects[viewinfo->object].image_view.view;
+			views[i] = objects[viewinfo->object].image_view.view;
 			if (rp->outputref.name) {
 				viewinfo = find_imageview (&rp->outputref, rp, rctx);
 				rp->output = objects[viewinfo->object].image_view.view;
@@ -893,6 +912,18 @@ QFV_Render_Run_ClearState (vulkan_ctx_t *ctx)
 	}
 }
 
+static void
+destroy_resource_array (vulkan_ctx_t *ctx, qfv_resourcearray_t *resources)
+{
+	for (uint32_t k = 0; k < resources->count; k++) {
+		auto res = &resources->array[k];
+		if (res && res->memory) {
+			QFV_DestroyResource (ctx->device, res);
+		}
+	}
+	free (resources->array);
+}
+
 void
 QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 {
@@ -921,20 +952,17 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 				auto render = job->steps[i].render;
 				for (uint32_t j = 0; j < render->num_renderpasses; j++) {
 					auto rp = &render->renderpasses[j];
-					for (uint32_t k = 0; k < rp->resources.count; k++) {
-						auto resources = &rp->resources.array[k];
-						if (resources && resources->memory) {
-							QFV_DestroyResource (ctx->device, resources);
-						}
-					}
-					free (rp->resources.array);
 					auto bi = &rp->beginInfo;
 					if (bi->framebuffer) {
 						dfunc->vkDestroyFramebuffer (device->dev,
 													 bi->framebuffer, 0);
 					}
+					destroy_resource_array (ctx, &rp->resources);
 				}
 			}
+		}
+		for (uint32_t i = 0; i < job->num_framebuffers; i++) {
+			destroy_resource_array (ctx, &job->framebuffer_resources[i]);
 		}
 		DARRAY_CLEAR (&job->commands);
 		for (uint32_t i = 0; i < job->num_dsmanagers; i++) {
@@ -1046,14 +1074,20 @@ QFV_Render_AddAttachments (vulkan_ctx_t *ctx, uint32_t num_attachments,
 }
 
 qfv_resobj_t *
-QFV_FindResource (const char *name, qfv_renderpass_t *rp)
+QFV_FindResource (vulkan_ctx_t *ctx, const char *name, qfv_renderpass_t *rp)
 {
-	if (!rp->resources.array) {
-		return 0;
+	auto rctx = ctx->render_context;
+	auto job = rctx->job;
+
+	auto resources = &rp->resources;
+
+	if (!resources->array) {
+		uint32_t use_index = rp->framebufferinfo->use_index;
+		resources = &job->framebuffer_resources[use_index];
 	}
-	auto resources = &rp->resources.array[rp->resources.active];
-	for (uint32_t i = 0; i < resources->num_objects; i++) {
-		auto obj = &resources->objects[i];
+	auto res = &resources->array[resources->active];
+	for (uint32_t i = 0; i < res->num_objects; i++) {
+		auto obj = &res->objects[i];
 		if (!strcmp (obj->name, name)) {
 			return obj;
 		}

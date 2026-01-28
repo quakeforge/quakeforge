@@ -6,6 +6,7 @@
 #include "QF/simd/types.h"
 
 #include "QF/Vulkan/command.h"
+#include "QF/Vulkan/render.h"
 
 typedef struct qfv_transfrag_s {
 	vec4f_t     color;
@@ -39,9 +40,7 @@ typedef struct translucentctx_s {
 
 	int         maxFragments;
 
-	struct qfv_resource_s *resource_array;
-	uint32_t active_resources;
-	uint32_t num_resources;
+	qfv_resourcearray_t resources;
 
 	uint32_t ds_index;
 } translucentctx_t;

@@ -1030,9 +1030,10 @@ init_rpCreate (uint32_t index, const qfv_renderinfo_t *rinfo, objstate_t *s)
 		if (use_fb) {
 			bool found = false;
 			for (uint32_t j = 0; j < use_fb->num_attachments; j++) {
-				auto use_attach = &use_fb->attachments[i];
+				auto use_attach = &use_fb->attachments[j];
 				if (strcmp (attach.name, use_attach->name) == 0) {
 					attachment->index = j;
+					attachment->view = use_attach->view;
 					attach.index = j;
 					found = true;
 					break;
@@ -1073,9 +1074,6 @@ init_rpCreate (uint32_t index, const qfv_renderinfo_t *rinfo, objstate_t *s)
 			}
 			if (!set_is_member (attach.specified, 9)) {
 				attach.clearValue = use_attach->clearValue;
-			}
-			if (!set_is_member (attach.specified, 10)) {
-				attach.view = use_attach->view;
 			}
 		}
 		init_atCreate (&attach, s);
@@ -1404,6 +1402,7 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 	for (uint32_t i = 0; i < counts->num_framebuffers; i++) {
 		auto fb = &job->framebuffers[i];
 		auto fbi = &jobinfo->framebuffers[i];
+		auto fbr = &job->framebuffer_resources[i];
 		*fb = (qfv_framebuffer_t) {
 			.layers = fbi->layers,
 			.num_attachments = fbi->num_attachments,
@@ -1413,6 +1412,7 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 		for (uint32_t j = 0; j < fbi->num_attachments; j++) {
 			fb->views[j] = nullptr;
 		}
+		*fbr = create_resource_array (s, fbi, fbi->name);
 		s->inds.num_attachments += fbi->num_attachments;
 	}
 

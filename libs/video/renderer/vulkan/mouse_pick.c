@@ -236,7 +236,7 @@ QFV_MousePick_Read (vulkan_ctx_t *ctx, uint32_t x, uint32_t y,
 		auto job = ctx->render_context->job;
 		auto step = QFV_FindStep ("main", job);
 		auto rp = &step->render->renderpasses[0];
-		mpctx->entid_res = QFV_FindResource ("entid", rp);
+		mpctx->entid_res = QFV_FindResource (ctx, "entid", rp);
 	}
 	frame->entid_image = mpctx->entid_res->image.image;
 	VkExtent3D extent = mpctx->entid_res->image.extent;
