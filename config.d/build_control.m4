@@ -201,7 +201,7 @@ if test "x$HAVE_WAYLAND" = xyes; then
 		QWAQ_TARGETS="$QWAQ_TARGETS ruamoko/qwaq/qwaq-wl\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS WL"
 		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFwl.la"
-		WL_BUILT_SOURCES=WL_BUILT_SOURCES
+		WL_BUILT_SOURCES="\$(WL_BUILT_SOURCES)"
 		if test "$HAVE_VULKAN" = "yes"; then
 			QF_NEED(vid_render, [vulkan])
 			QF_NEED(render, [vulkan])
