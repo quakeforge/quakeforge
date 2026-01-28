@@ -220,11 +220,11 @@ render_graph = {
 		depthtest_dependency = {
 			src = {
 				stage = early_fragment_tests|late_fragment_tests;
-				access = depth_stencil_attachment_write;
+				access = depth_stencil_attachment_write|depth_stencil_attachment_read;
 			};
 			dst = {
 				stage = fragment_shader|early_fragment_tests|late_fragment_tests;
-				access = depth_stencil_attachment_read;
+				access = depth_stencil_attachment_read|depth_stencil_attachment_write;
 			};
 			flags = by_region|view_local;
 		};
@@ -241,11 +241,21 @@ render_graph = {
 		};
 		extdepth_dependency = {
 			src = {
-				stage = early_fragment_tests|late_fragment_tests;
+				stage = late_fragment_tests;
 				access = depth_stencil_attachment_read|depth_stencil_attachment_write;
 			};
 			dst = {
-				stage = early_fragment_tests|late_fragment_tests;
+				stage = early_fragment_tests;
+				access = depth_stencil_attachment_write|depth_stencil_attachment_read;
+			};
+		};
+		extdepth_outdep = {
+			src = {
+				stage = late_fragment_tests;
+				access = depth_stencil_attachment_write;
+			};
+			dst = {
+				stage = late_fragment_tests;
 				access = depth_stencil_attachment_write;
 			};
 		};
@@ -306,7 +316,7 @@ render_graph = {
 		depth_base = {
 			@inherit = $attachment_base;
 			loadOp = clear;
-			finalLayout = depth_stencil_read_only_optimal;
+			finalLayout = shader_read_only_optimal;
 			clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 		};
 		color_base = {
@@ -1576,226 +1586,121 @@ render_graph = {
 		format = r16g16b16a16_sfloat;
 		finalLayout = shader_read_only_optimal;
 	};
-	renderpasses = {
-		occlusion = {
-			color = "[0.8, 0.6, 0, 1]";
-			framebuffer = {
-				width = $render_output.extent.width;
-				height = $render_output.extent.height;
-				layers = 1;
-				attachments = {
-					depth = {
-						@inherit = $depth_base;
-						format = $images.depth.format;
-						view = occlusion_depth;
-					};
-				};
-			};
-			subpasses = {
+	framebuffers = {
+		flat = {
+			width = $render_output.extent.width;
+			height = $render_output.extent.height;
+			layers = 1;
+			attachments = {
 				depth = {
-					color = "[ 0.5,  0.5,  0.5, 1]";
-					dependencies = {
-						$external = $extdepth_dependency;
-					};
-					attachments = {
-						depth = {
-							depth = depth_stencil_attachment_optimal;
-						};
-					};
-
-					base_pipeline = {
-						@inherit = $pipeline_base;
-						depthStencil = $depth_test_and_write;
-						rasterization = $cw_cull_back;
-					};
-					pipelines = {
-						bsp:depth = {
-							color = $color.bsp;
-							tasks = (
-								{ func = bsp_draw_queue;
-								  params = (main, solid, 0); },
-								{ func = bsp_draw_queue;
-								  params = (main, sky, 0); },
-							);
-
-							stages = (
-								$brush.shader.depth_vertex,
-							);
-							vertexInput = {
-								bindings = (
-									"$brush.vertexInput.bindings[0]",
-									"$brush.vertexInput.bindings[1]",
-								);
-								attributes = (
-									"$brush.vertexInput.attributes[0]",
-									"$brush.vertexInput.attributes[3]",
-								);
-							};
-							inputAssembly = $brush.inputAssembly;
-							layout = $brush.layout;
-						};
-					};
+					@inherit = $depth_base;
+					format = $images.depth.format;
+					view = depth;
 				};
-				lightcull = {
-					color = "[ 0.7,  0.5,  0, 1]";
-					dependencies = {
-						depth = $depthtest_dependency;
-					};
-					attachments = {
-						depth = {
-							depth = depth_stencil_attachment_optimal;
-						};
-					};
-
-					base_pipeline = {
-						@inherit = $pipeline_base;
-						depthStencil = $depth_test_only;
-						rasterization = $cw_cull_back;
-					};
-					pipelines = {
-						cull_lights = {
-							@inherit = $compose_base;
-
-							color = $color.lights;
-							tasks = (
-								{ func = lighting_bind_descriptors;
-								  params = (hull, none); },
-								{ func = lighting_draw_hulls; },
-							);
-
-							stages = (
-								$lighting.shader.vertex_splat,
-							);
-							vertexInput = $lighting.vertexInput_splat;
-							inputAssembly = $lighting.inputAssembly;
-							layout = $lighting.splat_layout;
-							rasterization = $counter_cw_cull_back;
-							depthStencil = $depth_test_only;
-						};
-					};
+				color = {
+					@inherit = $color_base;
+					format = $images.color.format;
+					view = color;
+				};
+				emission = {
+					@inherit = $emission_base;
+					format = $images.emission.format;
+					view = emission;
+				};
+				normal = {
+					@inherit = $normal_base;
+					format = $images.normal.format;
+					view = normal;
+				};
+				light = {
+					@inherit = $light_base;
+					format = $images.light.format;
+					view = light;
+				};
+				compo = {
+					@inherit = $color_base;
+					format = $images.compo.format;
+					view = compo;
+				};
+				entid = {
+					@inherit = $entid_base;
+					format = $images.entid.format;
+					view = entid;
+				};
+				output = {
+					@inherit = $output_base;
+					format = $render_output.format;
+					finalLayout = $render_output.finalLayout;
+					view = output;
 				};
 			};
 		};
-		occlusion_cube = {
-			@inherit = $renderpasses.occlusion;
-			@next = (VkRenderPassMultiviewCreateInfo, {
-				viewMasks   = (0x3fu, 0x3fu);
-			});
-			framebuffer = {
-				width = "min($render_output.extent.width,$render_output.extent.height)";
-				height = "min($render_output.extent.width,$render_output.extent.height)";
-				layers = 1;
-				attachments = {
-					depth = {
-						@inherit = $depth_base;
-						format = $images.cube_depth.format;
-						view = occlusion_cube_depth;
-					};
+		cube = {
+			width = "min($render_output.extent.width,$render_output.extent.height)";
+			height = "min($render_output.extent.width,$render_output.extent.height)";
+			layers = 1;
+			attachments = {
+				depth = {
+					@inherit = $depth_base;
+					format = $images.cube_depth.format;
+					view = cube_depth;
+				};
+				color = {
+					@inherit = $color_base;
+					format = $images.cube_color.format;
+					view = cube_color;
+				};
+				emission = {
+					@inherit = $emission_base;
+					format = $images.cube_emission.format;
+					loadOp = clear;
+					view = cube_emission;
+				};
+				normal = {
+					@inherit = $normal_base;
+					format = $images.cube_normal.format;
+					view = cube_normal;
+				};
+				light = {
+					@inherit = $light_base;
+					format = $images.cube_light.format;
+					view = cube_light;
+				};
+				compo = {
+					@inherit = $color_base;
+					format = $images.cube_compo.format;
+					view = cube_compo;
+				};
+				entid = {
+					@inherit = $entid_base;
+					format = $images.cube_entid.format;
+					view = cube_entid;
+				};
+				output = {
+					@inherit = $output_base;
+					format = $render_output.format;
+					finalLayout = $render_output.finalLayout;
+					view = cube_output;
 				};
 			};
 		};
-		gizmo = {
+	};
+	renderpasses = {
+		depth = {
 			color = "[0, 1, 0, 1]";
 			framebuffer = {
-				width = "($render_output.extent.width + 7u) / 8u";
-				height = "($render_output.extent.height + 7u) / 8u";
-				layers = 1;
-				attachments = { };
-			};
-			subpasses = {
-				gizmo_cmd = {
-					color = "[ 0.5,  0.5,  0.5, 1]";
-					dependencies = {
-						$external = $extcolor_dependency;
-					};
-					attachments = { };
-
-					base_pipeline = {
-						@inherit = $pipeline_base;
-						depthStencil = $depth_disable;
-						rasterization = $cw_cull_back;
-					};
-					pipelines = {
-						gizmo_cmd = {
-							color = $color.bsp;
-							tasks = (
-								{ func = gizmo_draw_cmd; },
-							);
-
-							stages = (
-								$gizmo.shader.expand,
-								$gizmo.shader.queueobj,
-							);
-							vertexInput = $gizmo.vertexInput;
-							rasterization = $cw_cull_front;
-							inputAssembly = $gizmo.inputAssembly;
-							layout = $gizmo.layout;
-						};
-					};
-				};
-			};
-		};
-		gizmo_cube = {
-			@inherit = $renderpasses.gizmo;
-			@next = (VkRenderPassMultiviewCreateInfo, {
-				viewMasks   = (0x3fu);
-			});
-			framebuffer = {
-				width = "(min($render_output.extent.width,$render_output.extent.height) + 7u) / 8u";
-				height = "(min($render_output.extent.width,$render_output.extent.height) + 7u) / 8u";
-				layers = 1;
-				attachments = {
-				};
-			};
-		};
-		deferred = {
-			color = "[0, 1, 0, 1]";
-			framebuffer = {
-				width = $render_output.extent.width;
-				height = $render_output.extent.height;
-				layers = 1;
+				use = flat;
 				attachments = {
 					depth = {
-						@inherit = $depth_base;
-						format = $images.depth.format;
-						view = depth;
+						storeOp = store;
 					};
-					color = {
-						@inherit = $color_base;
-						format = $images.color.format;
-						view = color;
-					};
-					emission = {
-						@inherit = $emission_base;
-						format = $images.emission.format;
-						view = emission;
-					};
-					normal = {
-						@inherit = $normal_base;
-						format = $images.normal.format;
-						view = normal;
-					};
-					light = {
-						@inherit = $light_base;
-						format = $images.light.format;
-						view = light;
-					};
-					compo = {
-						@inherit = $color_base;
-						format = $images.compo.format;
-						view = compo;
-					};
-					entid = {
-						@inherit = $entid_base;
-						format = $images.entid.format;
-						view = entid;
-					};
-					output = {
-						@inherit = $output_base;
-						format = $render_output.format;
-						finalLayout = $render_output.finalLayout;
-						view = output;
-					};
+					color = { };
+					emission = { };
+					normal = { };
+					light = { };
+					compo = { };
+					entid = { };
+					output = { };
 				};
 			};
 			subpasses = {
@@ -1803,13 +1708,11 @@ render_graph = {
 					color = "[ 0.5,  0.5,  0.5, 1]";
 					dependencies = (
 						{@inherit = $extdepth_dependency; name = $external;},
-						{@inherit = $extcolor_dependency; name = $external;},
 					);
 					attachments = {
 						depth = {
 							depth = depth_stencil_attachment_optimal;
 						};
-						preserve = (color, emission, normal, output);
 					};
 
 					base_pipeline = {
@@ -1898,13 +1801,11 @@ render_graph = {
 					color = "[ 0.25, 0.25, 0.6, 1]";
 					dependencies = {
 						depth = $depthtest_dependency;
-						$external = $extcolor_dependency;
 					};
 					attachments = {
 						depth = {
 							depth = depth_stencil_read_only_optimal;
 						};
-						preserve = (color, emission, normal, output);
 					};
 					base_pipeline = {
 						@inherit = $pipeline_base;
@@ -1966,13 +1867,175 @@ render_graph = {
 						};
 					};
 				};
-				gbuffer = {// subpass 2
-					color = "[ 0.3,  0.7,  0.3, 1]";
+				$external = {
 					dependencies = {
-						depth = $depthtest_dependency;
-						translucent = $depthtest_dependency;//FIXME why?
+						translucent = $extdepth_outdep;
+					};
+				};
+			};
+			output = output;
+		};
+		depth_cube = {
+			@inherit = $renderpasses.depth;
+			@next = (VkRenderPassMultiviewCreateInfo, {
+				viewMasks   = (0x3fu, 0x3fu);
+			});
+			framebuffer = {
+				use = cube;
+				attachments = {
+					depth = {
+						storeOp = store;
+					};
+				};
+			};
+			output = cube_output;
+		};
+		occlusion = {
+			color = "[0.8, 0.6, 0, 1]";
+			framebuffer = {
+				use = flat;
+				attachments = {
+					depth = {
+						initialLayout = shader_read_only_optimal;
+						loadOp = load;
+					};
+				};
+			};
+			subpasses = {
+				lightcull = {
+					color = "[ 0.7,  0.5,  0, 1]";
+					//dependencies = {
+					//	depth = $depthtest_dependency;
+					//};
+					attachments = {
+						depth = {
+							depth = depth_stencil_attachment_optimal;
+						};
+					};
+
+					base_pipeline = {
+						@inherit = $pipeline_base;
+						depthStencil = $depth_test_only;
+						rasterization = $cw_cull_back;
+					};
+					pipelines = {
+						cull_lights = {
+							@inherit = $compose_base;
+
+							color = $color.lights;
+							tasks = (
+								{ func = lighting_bind_descriptors;
+								  params = (hull, none); },
+								{ func = lighting_draw_hulls; },
+							);
+
+							stages = (
+								$lighting.shader.vertex_splat,
+							);
+							vertexInput = $lighting.vertexInput_splat;
+							inputAssembly = $lighting.inputAssembly;
+							layout = $lighting.splat_layout;
+							rasterization = $counter_cw_cull_back;
+							depthStencil = $depth_test_only;
+						};
+					};
+				};
+			};
+		};
+		occlusion_cube = {
+			@inherit = $renderpasses.occlusion;
+			@next = (VkRenderPassMultiviewCreateInfo, {
+				viewMasks   = (0x3fu);
+			});
+			framebuffer = {
+				use = cube;
+				attachments = {
+					depth = {
+						initialLayout = shader_read_only_optimal;
+						loadOp = load;
+					};
+				};
+			};
+		};
+		gizmo = {
+			color = "[0, 1, 0, 1]";
+			framebuffer = {
+				width = "($render_output.extent.width + 7u) / 8u";
+				height = "($render_output.extent.height + 7u) / 8u";
+				layers = 1;
+				attachments = { };
+			};
+			subpasses = {
+				gizmo_cmd = {
+					color = "[ 0.5,  0.5,  0.5, 1]";
+					dependencies = {
 						$external = $extcolor_dependency;
 					};
+					attachments = { };
+
+					base_pipeline = {
+						@inherit = $pipeline_base;
+						depthStencil = $depth_disable;
+						rasterization = $cw_cull_back;
+					};
+					pipelines = {
+						gizmo_cmd = {
+							color = $color.bsp;
+							tasks = (
+								{ func = gizmo_draw_cmd; },
+							);
+
+							stages = (
+								$gizmo.shader.expand,
+								$gizmo.shader.queueobj,
+							);
+							vertexInput = $gizmo.vertexInput;
+							rasterization = $cw_cull_front;
+							inputAssembly = $gizmo.inputAssembly;
+							layout = $gizmo.layout;
+						};
+					};
+				};
+			};
+		};
+		gizmo_cube = {
+			@inherit = $renderpasses.gizmo;
+			@next = (VkRenderPassMultiviewCreateInfo, {
+				viewMasks   = (0x3fu);
+			});
+			framebuffer = {
+				width = "(min($render_output.extent.width,$render_output.extent.height) + 7u) / 8u";
+				height = "(min($render_output.extent.width,$render_output.extent.height) + 7u) / 8u";
+				layers = 1;
+				attachments = {
+				};
+			};
+		};
+		deferred = {
+			color = "[0, 1, 0, 1]";
+			framebuffer = {
+				use = flat;
+				attachments = {
+					depth = {
+						initialLayout = shader_read_only_optimal;
+						loadOp = load;
+					};
+					color = { };
+					emission = { };
+					normal = { };
+					light = { };
+					compo = { };
+					entid = { };
+					output = { };
+				};
+			};
+			subpasses = {
+				gbuffer = {// subpass 2
+					color = "[ 0.3,  0.7,  0.3, 1]";
+					dependencies = (
+						{@inherit = $extdepth_dependency; name = $external;},
+						{@inherit = $extcolor_dependency; name = $external;},
+					);
 					attachments = {
 						color = {
 							color = {
@@ -2052,11 +2115,11 @@ render_graph = {
 				};
 				unlit = {// subpass 3
 					color = "[ 0.25, 0.25, 0.3, 1]";
-					dependencies = {
-						depth = $depthtest_dependency;
-						gbuffer = $color_dependency;
-						$external = $extcolor_dependency;
-					};
+					dependencies = (
+						{@inherit = $extdepth_dependency; name = $external;},
+						{@inherit = $extcolor_dependency; name = $external;},
+						{@inherit = $color_dependency; name = gbuffer;},
+					);
 					attachments = {
 						color = {
 							emission = {
@@ -2119,8 +2182,6 @@ render_graph = {
 				lighting = {// subpass 4
 					color = "[ 0.8,  0.8,  0.8, 1]";
 					dependencies = {
-						translucent = $depthread_dependency;
-						gbuffer = $depthread_dependency;
 						unlit = $depthread_dependency;
 						gbuffer = $color_dependency;
 						$external = $extcolor_dependency;
@@ -2212,7 +2273,6 @@ render_graph = {
 				compose = {// subpass 5
 					color = "[ 0.7,  0.3,  0.3, 1]";
 					dependencies = {
-						translucent = $color_dependency;
 						gbuffer = $color_dependency;
 						lighting = $color_dependency;
 						unlit = $color_dependency;
@@ -2376,10 +2436,10 @@ render_graph = {
 				};
 				entid = {// subpass 7
 					color = "[ 1,  0,  0, 1]";
-					dependencies = {
-						depth = $depthtest_dependency;
-						$external = $extcolor_dependency;
-					};
+					dependencies = (
+						{@inherit = $extdepth_dependency; name = $external;},
+						{@inherit = $extcolor_dependency; name = $external;},
+					);
 					attachments = {
 						color = {
 							entid = {
@@ -2415,7 +2475,6 @@ render_graph = {
 				};
 				$external = {
 					dependencies = {
-						translucent = $extcolor_outdep;
 						gbuffer = $extcolor_outdep;
 						lighting = $extcolor_outdep;
 						unlit = $extcolor_outdep;
@@ -2439,55 +2498,22 @@ render_graph = {
 		deferred_cube = {
 			@inherit = $renderpasses.deferred;
 			@next = (VkRenderPassMultiviewCreateInfo, {
-				viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
+				viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
 			});
 			framebuffer = {
-				width = "min($render_output.extent.width,$render_output.extent.height)";
-				height = "min($render_output.extent.width,$render_output.extent.height)";
-				layers = 1;
+				use = cube;
 				attachments = {
 					depth = {
-						@inherit = $depth_base;
-						format = $images.cube_depth.format;
-						view = cube_depth;
+						initialLayout = shader_read_only_optimal;
+						loadOp = load;
 					};
-					color = {
-						@inherit = $color_base;
-						format = $images.cube_color.format;
-						view = cube_color;
-					};
-					emission = {
-						@inherit = $emission_base;
-						format = $images.cube_emission.format;
-						loadOp = clear;
-						view = cube_emission;
-					};
-					normal = {
-						@inherit = $normal_base;
-						format = $images.cube_normal.format;
-						view = cube_normal;
-					};
-					light = {
-						@inherit = $light_base;
-						format = $images.cube_light.format;
-						view = cube_light;
-					};
-					compo = {
-						@inherit = $color_base;
-						format = $images.cube_compo.format;
-						view = cube_compo;
-					};
-					entid = {
-						@inherit = $entid_base;
-						format = $images.cube_entid.format;
-						view = cube_entid;
-					};
-					output = {
-						@inherit = $output_base;
-						format = $render_output.format;
-						finalLayout = $render_output.finalLayout;
-						view = cube_output;
-					};
+					color = { };
+					emission = { };
+					normal = { };
+					light = { };
+					compo = { };
+					entid = { };
+					output = { };
 				};
 			};
 			output = cube_output;
@@ -2955,14 +2981,41 @@ render_graph = {
 					  params = (main); },
 					{ func = scene_draw_viewmodel; },
 					{ func = lighting_update_lights; },
+					{ func = output_select_renderpass;
+					  params = ("\"depth\""); },
+					{ func = output_select_renderpass;
+					  params = ("\"main\""); },
+					{ func = output_select_renderpass;
+					  params = ("\"gizmo_cmd\""); },
+					{ func = update_framebuffer;
+					  params = ("\"\""); },
+					{ func = update_framebuffer;
+					  params = ("\"main\""); },
+					{ func = update_framebuffer;
+					  params = ("\"depth\""); },
+					{ func = gizmo_update_framebuffer;
+					  params = ("\"gizmo_cmd\"", "\"main\""); },
+					{ func = clear_translucent;
+					  params = ("\"depth\""); },
 				);
+			};
+		};
+		depth = {
+			color = "[0.1, 0.1, 0.1]";
+			dependencies = (world);
+			render = {
+				renderpasses = {
+					depth = $renderpasses.depth;
+					depth_cube = $renderpasses.depth_cube;
+				};
 			};
 		};
 		light_cull = {
 			color = "[0.8, 0.6, 0, 1]";
-			dependencies = (world);
+			dependencies = (depth);
 			process = {
 				tasks = (
+					{ func = submit_depth; },
 					{ func = lighting_cull_select_renderpass;
 					  params = ("\"light_cull\""); },
 					{ func = update_framebuffer;
@@ -3034,18 +3087,9 @@ render_graph = {
 			dependencies = (start_frame);
 			process = {
 				tasks = (
-					{ func = output_select_renderpass;
-					  params = ("\"main\""); },
-					{ func = output_select_renderpass;
-					  params = ("\"gizmo_cmd\""); },
-					{ func = update_framebuffer;
-					  params = ("\"main\""); },
-					{ func = gizmo_update_framebuffer;
-					  params = ("\"gizmo_cmd\"", "\"main\""); },
-					{ func = clear_translucent;
-					  params = ("\"main\""); },
 					{ func = compose_update; },
 					{ func = particle_wait_physics; },
+					{ func = sync_translucent; },
 					{ func = gizmo_flush; },
 					{ func = blackboard_set_bufferptr;
 					  params = ("\"planetary\"", "\"planetary\"") },
