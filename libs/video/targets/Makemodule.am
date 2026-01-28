@@ -144,7 +144,7 @@ CLEANFILES += \
 	$(xdg_shell_client_protocol_hinc) \
 	$(xdg_shell_protocol_cinc) \
 	$(xdg_decoration_client_protocol_hinc) \
-	$(xdg_decoration_protocol_cinc)
+	$(xdg_decoration_protocol_cinc) \
 	$(relative_pointer_client_protocol_hinc) \
 	$(relative_pointer_protocol_cinc) \
 	$(pointer_constraints_client_protocol_hinc) \
