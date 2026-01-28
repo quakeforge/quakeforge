@@ -3106,9 +3106,18 @@ render_graph = {
 				};
 			};
 		};
+		gizmo_sync = {
+			color = "[0.4, 0.8, 0.3]";
+			dependencies = (gizmo_cmd);
+			process = {
+				tasks = (
+					{ func = gizmo_sync; },
+				);
+			};
+		};
 		main = {
 			color = "[0.3, 0.8, 0.0]";
-			dependencies = (gizmo_cmd, particles, shadow);
+			dependencies = (gizmo_sync, particles, shadow);
 			render = {
 				renderpasses = {
 					deferred = $renderpasses.deferred;

@@ -477,6 +477,40 @@ gizmo_draw_cmd (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 }
 
 static void
+gizmo_sync (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto gctx = ctx->gizmo_context;
+	auto frame = &gctx->frames.a[ctx->curFrame];
+
+	auto cmd = QFV_GetCmdBuffer (ctx, false);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 vac (ctx->va_ctx, "gizmo.sync"));
+
+	VkCommandBufferBeginInfo beginInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	auto ib = imageBarriers[qfv_LT_Undefined_to_General];
+	ib.srcStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	ib.dstStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	ib.barrier.image = frame->queue_heads_image;
+	ib.barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+	ib.barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
+								 0, 0, 0, 0, 0,
+								 1, &ib.barrier);
+
+	dfunc->vkEndCommandBuffer (cmd);
+	QFV_AppendCmdBuffer (ctx, cmd);
+}
+
+static void
 gizmo_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
@@ -539,6 +573,10 @@ static exprfunc_t gizmo_draw_cmd_func[] = {
 	{ .func = gizmo_draw_cmd },
 	{}
 };
+static exprfunc_t gizmo_sync_func[] = {
+	{ .func = gizmo_sync },
+	{}
+};
 static exprfunc_t gizmo_draw_func[] = {
 	{ .func = gizmo_draw },
 	{}
@@ -561,6 +599,7 @@ static exprfunc_t gizmo_update_framebuffer_func[] = {
 static exprsym_t gizmo_task_syms[] = {
 	{ "gizmo_flush", &cexpr_function, gizmo_flush_func },
 	{ "gizmo_draw_cmd", &cexpr_function, gizmo_draw_cmd_func },
+	{ "gizmo_sync", &cexpr_function, gizmo_sync_func },
 	{ "gizmo_draw", &cexpr_function, gizmo_draw_func },
 	{ "gizmo_init", &cexpr_function, gizmo_init_func },
 	{ "gizmo_update_framebuffer", &cexpr_function,
