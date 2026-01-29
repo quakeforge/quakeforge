@@ -1283,14 +1283,14 @@ hop_string (pr_debug_data_t *data, pr_uint_t hop)
 }
 
 static const char *
-swizzle_string (pr_debug_data_t *data, pr_uint_t swiz)
+swizzle_string (pr_debug_data_t *data, pr_uint_t swiz, int width)
 {
 	progs_t    *pr = data->pr;
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	static char swizzle_components[] = "xyzw";
 	const char *swizzle = "";
 
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < width; i++) {
 		if (swiz & (0x1000 << i)) {
 			swizzle = vac (res->va, "%s0", swizzle);
 		} else {
@@ -1982,7 +1982,8 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						str = hop_string (&data, opval);
 						break;
 					case 'S':
-						str = swizzle_string (&data, opval);
+						// swizzles are always W 1 W, so use c's width
+						str = swizzle_string (&data, opval, op_width[2]);
 						break;
 					case 'X':
 						str = extend_string (&data, opval);
