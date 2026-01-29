@@ -670,18 +670,26 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 			while (init->type == ex_alias) {
 				init = init->alias.expr;
 			}
-			if (init->type != ex_value && !is_nil (init)) {	//FIXME enum etc
+			if (init->type != ex_value
+				&& !is_nil (init)
+				&& !(init->type == ex_symbol
+					 && init->symbol->sy_type == sy_const)) {
 				internal_error (0, "initializier not a value");
 				return;
 			}
-			if (init->value->lltype == ev_ptr
-				|| init->value->lltype == ev_field) {
+			if (init->type == ex_value
+				&& (init->value->lltype == ev_ptr
+					|| init->value->lltype == ev_field)) {
 				// FIXME offset pointers
 				D_INT (sym->def) = init->value->pointer.val;
 				if (init->value->pointer.def)
 					reloc_def_field (init->value->pointer.def, sym->def);
 			} else {
 				ex_value_t *v = init->value;
+				if (init->type == ex_symbol
+					&& init->symbol->sy_type == sy_const) {
+					v = init->symbol->value;
+				}
 				if (!init->implicit
 					&& is_double (init_type)
 					&& (is_integral (sym->type) || is_float (sym->type))) {
