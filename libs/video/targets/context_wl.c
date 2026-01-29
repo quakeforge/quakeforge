@@ -46,12 +46,12 @@
 #include <locale.h>
 
 #include <wayland-client.h>
-#include "libs/video/targets/xdg-shell-client-protocol.hinc"
-#include "libs/video/targets/xdg-decoration-client-protocol.hinc"
-#include "libs/video/targets/relative-pointer-client-protocol.hinc"
-#include "libs/video/targets/pointer-constraints-client-protocol.hinc"
-#include "libs/video/targets/cursor-shape-client-protocol.hinc"
-#include "libs/video/targets/text-input-unstable-v3-client-protocol.hinc"
+#include "libs/video/targets/xdg-shell.h"
+#include "libs/video/targets/xdg-decoration-unstable-v1.h"
+#include "libs/video/targets/relative-pointer-unstable-v1.h"
+#include "libs/video/targets/pointer-constraints-unstable-v1.h"
+#include "libs/video/targets/cursor-shape-v1.h"
+#include "libs/video/targets/text-input-unstable-v3.h"
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"

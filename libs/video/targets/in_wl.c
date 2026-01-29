@@ -70,10 +70,10 @@
 #include "qfselect.h"
 #include "vid_internal.h"
 
-#include "libs/video/targets/relative-pointer-client-protocol.hinc"
-#include "libs/video/targets/pointer-constraints-client-protocol.hinc"
-#include "libs/video/targets/cursor-shape-client-protocol.hinc"
-#include "libs/video/targets/text-input-unstable-v3-client-protocol.hinc"
+#include "libs/video/targets/relative-pointer-unstable-v1.h"
+#include "libs/video/targets/pointer-constraints-unstable-v1.h"
+#include "libs/video/targets/cursor-shape-v1.h"
+#include "libs/video/targets/text-input-unstable-v3.h"
 
 // TODO: Reduce global state by having a wayland input state struct
 

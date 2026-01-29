@@ -44,7 +44,7 @@
 #endif
 
 #include <wayland-client.h>
-#include "libs/video/targets/cursor-shape-client-protocol.hinc"
+#include "libs/video/targets/cursor-shape-v1.h"
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
