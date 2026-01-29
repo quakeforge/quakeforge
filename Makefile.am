@@ -84,6 +84,11 @@ QWAQ=$(top_builddir)/ruamoko/qwaq/qwaq-cmd$(EXEEXT)
 
 GZ=@progs_gz@
 
+V_WS = $(V_WS_@AM_V@)
+V_WS_ = $(V_WS_@AM_DEFAULT_V@)
+V_WS_0 = @echo "  WS      " $@;
+V_WS_1 =
+
 V_QFCC = $(V_QFCC_@AM_V@)
 V_QFCC_ = $(V_QFCC_@AM_DEFAULT_V@)
 V_QFCC_0 = @echo "  QFCC    " $@;
