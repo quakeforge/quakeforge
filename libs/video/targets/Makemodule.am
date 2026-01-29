@@ -76,6 +76,7 @@ text_input_unstable_v3_protocol_xml = $(WAYLAND_PROTOCOLS)/unstable/text-input/t
 
 VID_TARGETS_DIR=libs/video/targets
 ws_source = $(addsuffix $(1),$(addprefix $(VID_TARGETS_DIR)/,$(basename $(notdir $(2)))))
+ws_autodep = $(addsuffix .Plo,$(addprefix $(VID_TARGETS_DIR)/$(DEPDIR)/,$(basename $(notdir $(1)))))
 
 xdg_shell_protocol_c =              $(call ws_source,.c,$(xdg_shell_protocol_xml))
 xdg_decoration_protocol_c =         $(call ws_source,.c,$(xdg_decoration_protocol_xml))
@@ -123,41 +124,6 @@ $(cursor_shape_protocol_h): $(cursor_shape_protocol_xml)
 $(text_input_unstable_v3_protocol_h): $(text_input_unstable_v3_protocol_xml)
 	$(V_WS)wayland-scanner client-header $< $@.t && $(am__mv) $@.t $@
 
-WL_BUILT_SOURCES = \
-	$(xdg_shell_protocol_h) \
-	$(xdg_shell_protocol_c) \
-	$(xdg_decoration_protocol_h) \
-	$(xdg_decoration_protocol_c) \
-	$(relative_pointer_protocol_h) \
-	$(relative_pointer_protocol_c) \
-	$(pointer_constraints_protocol_h) \
-	$(pointer_constraints_protocol_c) \
-	$(cursor_shape_protocol_h) \
-	$(cursor_shape_protocol_c) \
-	$(tablet_v2_protocol_h) \
-	$(tablet_v2_protocol_c) \
-	$(text_input_unstable_v3_protocol_h) \
-	$(text_input_unstable_v3_protocol_c)
-
-BUILT_SOURCES += \
-	@WL_BUILT_SOURCES@
-
-CLEANFILES += \
-	$(xdg_shell_protocol_h) \
-	$(xdg_shell_protocol_c) \
-	$(xdg_decoration_protocol_h) \
-	$(xdg_decoration_protocol_c) \
-	$(relative_pointer_protocol_h) \
-	$(relative_pointer_protocol_c) \
-	$(pointer_constraints_protocol_h) \
-	$(pointer_constraints_protocol_c) \
-	$(cursor_shape_protocol_h) \
-	$(cursor_shape_protocol_c) \
-	$(tablet_v2_protocol_h) \
-	$(tablet_v2_protocol_c) \
-	$(text_input_unstable_v3_protocol_h) \
-	$(text_input_unstable_v3_protocol_c)
-
 wl_xml = \
 	$(xdg_shell_protocol_xml) \
 	$(xdg_decoration_protocol_xml) \
@@ -166,6 +132,15 @@ wl_xml = \
 	$(cursor_shape_protocol_xml) \
 	$(tablet_v2_protocol_xml) \
 	$(text_input_unstable_v3_protocol_xml)
+
+WL_BUILT_SOURCES = \
+	$(call ws_source,.c,$(wl_xml)) \
+	$(call ws_source,.h,$(wl_xml))
+WL_AUTODEP = $(call ws_autodep,$(wl_xml))
+
+BUILT_SOURCES += @WL_BUILT_SOURCES@
+CLEANFILES += @WL_BUILT_SOURCES@
+DISTCLEANFILES += @WL_AUTODEP@
 
 libs_video_targets_libvid_wl_la_SOURCES = \
 	libs/video/targets/in_wl.c \

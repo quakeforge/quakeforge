@@ -16,6 +16,7 @@ EXTRA_DIST += \
 	include/compat.h \
 	include/context_sdl.h \
 	include/context_win.h \
+	include/context_wl.h \
 	include/context_x11.h \
 	include/d_iface.h \
 	include/d_ifacea.h \
@@ -42,6 +43,7 @@ EXTRA_DIST += \
 	include/gib_vars.h \
 	include/gl_warp_sin.h \
 	include/in_win.h \
+	include/in_wl.h \
 	include/in_x11.h \
 	include/logos.h \
 	include/mod_internal.h \
