@@ -1461,11 +1461,15 @@ get_category (symbol_t *class_name, const char *category_name, int create)
 				category_get_hash, category_compare);
 	}
 	class = get_class (class_name, 0);
-	if (!class) {
-		error (0, "undefined class %s", class_name->name);
-		return 0;
-	}
 	if (class_name && category_name) {
+		if (!class || !class->ivars) {
+			if (class_name) {
+				error (0, "cannot find interface delcaration for %s",
+					   class_name->name);
+			}
+			return get_category (0, 0, 1);
+		}
+
 		category_t  _c = {0, category_name, class};
 
 		category = Hash_FindElement (category_hash, &_c);
