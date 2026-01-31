@@ -427,7 +427,7 @@ d_lbool_func (void *ptr, plitem_t *item)
 static void
 d_basic_func (qfot_type_t *type, void *ptr, plitem_t *item)
 {
-	if (type.encoding == "@") {
+	if (str_char(type.encoding, 0) == '@') {
 		*(id *)ptr = [Object fromPropertyList:item];
 		return;
 	}
@@ -693,7 +693,7 @@ s_lbool_func (@inout void *ptr)
 static plitem_t *
 s_basic_func (qfot_type_t *type, void *ptr)
 {
-	if (type.encoding == "@") {
+	if (str_char(type.encoding, 0) == '@') {
 		// id
 		auto obj = [*(id*)ptr serialize];
 		if (obj) {
@@ -813,6 +813,9 @@ serialize_value (qfot_type_t *type, void *ptr)
 -(plitem_t *)serialize
 {
 	plitem_t *pl = PL_NewDictionary ();
+	auto clsname = object_get_class_name (self);
+	PL_D_AddObject (pl, "@classname", PL_NewString (clsname));
+
 	Class cls = [self class];
 	while (cls && cls != [Object class]) {
 		int *ivar_ptr = cls.ivars;
@@ -829,5 +832,29 @@ serialize_value (qfot_type_t *type, void *ptr)
 		cls = cls.super_class;
 	}
 	return pl;
+}
+@end
+
+@implementation Array (PLItem)
++(id)fromPropertyList:(plitem_t *)plitem
+{
+	uint count = PL_A_NumObjects (plitem);
+	auto array = [Array arrayWithCapacity:count];
+	for (uint i = 0; i < count; i++) {
+		auto obj = PL_ObjectAtIndex (plitem, i);
+		[array addObject: [Object fromPropertyList:obj]];
+	}
+	return array;
+}
+
+-(plitem_t *)serialize
+{
+	auto array = PL_NewArray ();
+	for (uint i = 0; i < count; i++) {
+		id obj = _objs[i];
+		auto item = [obj serialize];
+		PL_A_AddObject (array, item);
+	}
+	return array;
 }
 @end

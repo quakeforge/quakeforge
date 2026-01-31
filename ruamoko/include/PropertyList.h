@@ -3,6 +3,7 @@
 
 #include <plist.h>
 #include <Object.h>
+#include <Array.h>
 
 @class PLItem;
 
@@ -86,6 +87,11 @@
 @end
 
 @interface Object (PLItem)
++(id)fromPropertyList:(plitem_t *)plitem;
+-(plitem_t *)serialize;
+@end
+
+@interface Array (PLItem)
 +(id)fromPropertyList:(plitem_t *)plitem;
 -(plitem_t *)serialize;
 @end
