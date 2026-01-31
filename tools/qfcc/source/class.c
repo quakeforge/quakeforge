@@ -506,14 +506,13 @@ is_method_description (const type_t *type)
 	return type == &type_method_description;
 }
 
-static protocollist_t *
-obj_get_class_protos (const type_t *type)
+static class_t *
+obj_get_class (const type_t *type)
 {
-	if (is_pointer (type))
+	if (is_pointer (type)) {
 		type = type->fldptr.type;
-	if (is_class (type))
-		return type->class->protocols;
-	return 0;
+	}
+	return type->class;
 }
 
 static protocollist_t *
@@ -522,16 +521,6 @@ obj_get_protos (const type_t *type)
 	if (is_pointer (type))
 		type = type->fldptr.type;
 	return type->protos;
-}
-
-static category_t *
-obj_get_categories (const type_t *type)
-{
-	if (is_pointer (type))
-		type = type->fldptr.type;
-	if (is_class (type))
-		return type->class->categories;
-	return 0;
 }
 
 static const char *
@@ -570,11 +559,26 @@ category_implements (category_t *cat, protocol_t *protocol)
 	return 0;
 }
 
+static bool __attribute__((pure))
+class_conforms_to_protocol (class_t *src_class, protocol_t *proto)
+{
+	if (src_class->super_class
+		&& class_conforms_to_protocol (src_class->super_class, proto)) {
+		return true;
+	}
+	auto src_protos = src_class->protocols;
+	if (procollist_find_protocol (src_protos, proto))
+		return true;
+	auto cat = src_class->categories;
+	if (cat && category_implements (cat, proto))
+		return true;
+	return false;
+}
+
 int
 obj_type_assignable (const type_t *dst, const type_t *src)
 {
 	class_t    *dst_class, *src_class = 0;
-	category_t *cat;
 	int         dst_is_proto, src_is_proto;
 	protocollist_t *dst_protos = 0, *src_protos = 0;
 	int         i;
@@ -604,16 +608,13 @@ obj_type_assignable (const type_t *dst, const type_t *src)
 				}
 			}
 		} else if (!is_id (src)) {
-			src_protos = obj_get_class_protos (src);
+			src_class = obj_get_class (src);
 			for (i = 0; i < dst_protos->count; i++) {
-				if (procollist_find_protocol (src_protos, dst_protos->list[i]))
-					continue;
-				cat = obj_get_categories (src);
-				if (cat && category_implements (cat, dst_protos->list[i]))
-					continue;
-				warning (0, "class %s does not implement the %s protocol",
-						 obj_classname (src), dst_protos->list[i]->name);
-				return 1;
+				auto proto = dst_protos->list[i];
+				if (!class_conforms_to_protocol (src_class, proto)) {
+					warning (0, "class %s does not implement the %s protocol",
+							 obj_classname (src), dst_protos->list[i]->name);
+				}
 			}
 			return 1;
 		}
