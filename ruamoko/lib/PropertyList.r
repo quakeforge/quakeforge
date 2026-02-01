@@ -361,7 +361,7 @@ d_ptr_func (void *ptr, plitem_t *item, qfot_type_t *type)
 	id obj = nil;
 	if (type.meta == ty_class) {
 		auto class = obj_lookup_class (type.class);
-		obj = [class fromPropertyList:item];
+		obj = [[class fromPropertyList:item] retain];
 	}
 	auto p = (id *) ptr;
 	*p++ = obj;
@@ -428,7 +428,7 @@ static void
 d_basic_func (qfot_type_t *type, void *ptr, plitem_t *item)
 {
 	if (str_char(type.encoding, 0) == '@') {
-		*(id *)ptr = [Object fromPropertyList:item];
+		*(id *)ptr = [[Object fromPropertyList:item] retain];
 		return;
 	}
 	if (type.type == ev_ptr) {
