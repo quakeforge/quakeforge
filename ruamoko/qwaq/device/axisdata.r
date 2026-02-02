@@ -10,7 +10,7 @@
 	}
 	numaxes = device.numaxes;
 	axes = device.axes;
-	axis_views = obj_malloc (numaxes);
+	axis_views = obj_malloc (numaxes * sizeof (AxisView *));
 	for (int i = 0; i < numaxes; i++) {
 		axis_views[i] = [[AxisView withAxis:&axes[i]] retain];
 	}

@@ -15,7 +15,7 @@
 	if (!(self = [super init])) {
 		return nil;
 	}
-	buffer = obj_malloc (size.width * size.height);
+	buffer = obj_malloc (size.width * size.height * sizeof (int));
 	self.size = size;
 	return self;
 }
@@ -34,7 +34,7 @@
 - (void) resizeTo: (Extent) newSize
 {
 	size = newSize;
-	buffer = obj_realloc (buffer, size.width * size.height);
+	buffer = obj_realloc (buffer, size.width * size.height * sizeof (int));
 }
 
 - (int *) buffer

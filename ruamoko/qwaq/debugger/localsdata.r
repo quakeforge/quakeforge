@@ -73,7 +73,7 @@ free_defs (LocalsData *self)
 	}
 	func = qdb_get_function (target, fnum);
 	if (func && func.local_size) {
-		data = obj_malloc (func.local_size);
+		data = obj_malloc (func.local_size * sizeof (int));
 	}
 	aux_func = qdb_get_auxfunction (target, fnum);
 	num_user_defs = 0;
@@ -85,8 +85,8 @@ free_defs (LocalsData *self)
 				num_user_defs++;
 			}
 		}
-		def_views = obj_malloc (num_user_defs);
-		def_rows = obj_malloc (num_user_defs + 1);
+		def_views = obj_malloc (num_user_defs * sizeof (DefView *));
+		def_rows = obj_malloc ((num_user_defs + 1) * sizeof (int));
 		def_rows[0] = 0;
 		for (unsigned i = 0, j = 0; i < aux_func.num_locals; i++) {
 			string def_name = qdb_get_string (target, defs[i].name);

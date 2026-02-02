@@ -105,7 +105,7 @@ static void type_free (void *t, void *unused)
 	if ((type = Hash_Find (dynamic_encodings, encoding))) {
 		return type;
 	}
-	type = obj_calloc (1, buffer.size);
+	type = obj_calloc (1, buffer.size * sizeof (uint));
 	if (qdb_get_data (target, typeAddr, buffer.size, type) < 0) {
 		goto error;
 	}
