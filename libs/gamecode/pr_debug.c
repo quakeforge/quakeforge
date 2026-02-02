@@ -1799,7 +1799,8 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 		const char *source_line = PR_Get_Source_Line (pr, addr);
 
 		if (source_line) {
-			dasprintf (res->line, "%s%s", source_line, dump_code ? "\n" : "");
+			dasprintf (res->line, ONG"%s"DFL"%s", source_line,
+					   dump_code ? "\n" : "");
 			if (!dump_code)
 				goto do_print;
 		}

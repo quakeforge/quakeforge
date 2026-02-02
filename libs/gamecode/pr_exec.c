@@ -225,7 +225,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 	pr_ptr_t    paramofs = 0;
 
 	if (pr->pr_trace && !pr->debug_handler) {
-		Sys_Printf ("Entering function %s\n",
+		Sys_Printf (GRN"Entering function %s"DFL"\n",
 					PR_GetString (pr, f->descriptor->name));
 	}
 
@@ -323,14 +323,14 @@ PR_LeaveFunction (progs_t *pr, int to_engine)
 	PR_PopFrame (pr);
 
 	if (pr->pr_trace && !pr->debug_handler) {
-		Sys_Printf ("Leaving function %s\n",
+		Sys_Printf (CYN"Leaving function %s"DFL"\n",
 					PR_GetString (pr, f->descriptor->name));
 		if (to_engine) {
-			Sys_Printf ("Returning to engine\n");
+			Sys_Printf (RED"Returning to engine"DFL"\n");
 		} else {
 			bfunction_t *rf = pr->pr_xfunction;
 			if (rf) {
-				Sys_Printf ("Returning to function %s\n",
+				Sys_Printf (GRN"Returning to function %s"DFL"\n",
 							PR_GetString (pr, rf->descriptor->name));
 			}
 		}
@@ -450,7 +450,7 @@ PR_CallFunction (progs_t *pr, pr_func_t fnum, pr_type_t *return_ptr)
 			PR_SetupParams (pr, 0, 0);
 		}
 		if (pr->pr_trace && !pr->debug_handler) {
-			Sys_Printf ("Calling builtin %s @ %p\n",
+			Sys_Printf (MAG"Calling builtin %s @ %p"DFL"\n",
 						PR_GetString (pr, f->descriptor->name), f->func);
 		}
 		pr_type_t  *saved_return = pr->pr_return;
