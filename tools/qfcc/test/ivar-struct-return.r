@@ -12,11 +12,27 @@ typedef struct Point Point;
 	int   foo;
 	Point origin;
 }
-+(Point) origin;
++ (id) alloc;
+- (id) init;
+-(Point) origin;
 @end
 
+id (Class class) class_create_instance = #0;
+int obj_increment_retaincount (id object) = #0;
+
 @implementation Object
-+(Point) origin
++ (id) alloc
+{
+    return class_create_instance (self);
+}
+
+- (id) init
+{
+	obj_increment_retaincount (self);
+	return self;
+}
+
+-(Point) origin
 {
 	origin = {1, 2};
 	return origin;
@@ -24,6 +40,7 @@ typedef struct Point Point;
 @end
 int main()
 {
-	Point p = [Object origin];
+	id obj = [[Object alloc] init];
+	Point p = [obj origin];
 	return !(p.x == 1 && p.y == 2);
 }
