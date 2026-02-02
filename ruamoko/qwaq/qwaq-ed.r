@@ -128,7 +128,7 @@ update_orrery (entity_t earth, double time)
 	};
 	BodyParams bodies[] = {
 		{// sun
-		.planetCenter = vec3(-71987230000.0, -96000000020.0, 90000000020.0),//FIXME doesn't like 'x y z'f
+		.planetCenter = '-71987230000.0 -96000000020.0 90000000020.0',
 		.planetRadius = 695700e3,
 		},
 		{// earth
@@ -136,7 +136,7 @@ update_orrery (entity_t earth, double time)
 		.planetRadius = 6370e3,
 		},
 		{// moon
-		.planetCenter = vec3(-171550000.0, -245760020.0, 230400020.0),
+		.planetCenter = '-171550000.0 -245760020.0 230400020.0',
 		.planetRadius = 1738e3,
 		},
 	};
@@ -145,14 +145,14 @@ update_orrery (entity_t earth, double time)
 		.atmosphereRadius = 13655700e3,
 		.oceanRadius = 695700e3,
 		.densityFalloff = 4e2,
-		//.scatteringCoefficients = '0.10662224073302788 0.32444156446229333 0.6830134553650706'f,
-		.scatteringCoefficients = '0.6830134553650706 0.5830134553650706 0.32444156446229333'f,
+		//.scatteringCoefficients = '0.10662224073302788 0.32444156446229333 0.6830134553650706',
+		.scatteringCoefficients = '0.6830134553650706 0.5830134553650706 0.32444156446229333',
 		},
 		{// earth
 		.atmosphereRadius = 6470e3,
 		.oceanRadius = 6370e3,
 		.densityFalloff = 4,
-		.scatteringCoefficients = '0.10662224073302788 0.32444156446229333 0.6830134553650706'f,
+		.scatteringCoefficients = '0.10662224073302788 0.32444156446229333 0.6830134553650706',
 		}
 	};
 	Render_UpdateBuffer ("planetary", 0, &planetary, sizeof (planetary));
