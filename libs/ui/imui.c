@@ -103,7 +103,9 @@ struct imui_ctx_s {
 	struct DARRAY_TYPE(imui_state_t *) windows;
 	struct DARRAY_TYPE(imui_state_t *) links;
 	struct DARRAY_TYPE(imui_state_t *) scrollers;
+	struct DARRAY_TYPE(imui_state_map_t *) state_map_ptrs;
 	struct DARRAY_TYPE(imui_window_t *) registered_windows;
+	struct DARRAY_TYPE(imui_window_t *) modal_stack;
 	int32_t     draw_order;
 	imui_window_t *current_menu;
 	imui_state_t *current_state;
@@ -179,15 +181,25 @@ static imui_state_t *
 imui_state_new (imui_ctx_t *ctx, uint32_t entity)
 {
 	auto state = PR_RESNEW (ctx->state_map);
+	uint32_t sid = ECS_NewId (&ctx->state_ids);
 	*state = (imui_state_map_t) {
 		.next = ctx->state_wrappers,
 		.prev = &ctx->state_wrappers,
 		.state = {
-			.self = ECS_NewId (&ctx->state_ids),
+			.self = sid,
 			.old_entity = nullent,
 			.entity = entity,
 		},
 	};
+	if (ctx->state_map_ptrs.size != ctx->state_ids.max_ids) {
+		size_t old_size = ctx->state_map_ptrs.size;
+		size_t delta = ctx->state_ids.max_ids - old_size;
+		DARRAY_RESIZE (&ctx->state_map_ptrs, ctx->state_ids.max_ids);
+		memset (ctx->state_map_ptrs.a + old_size, 0,
+				delta * sizeof (imui_state_map_t *));
+	}
+	ctx->state_map_ptrs.a[Ent_Index (sid)] = state;
+
 	if (ctx->state_wrappers) {
 		ctx->state_wrappers->prev = &state->next;
 	}
@@ -290,7 +302,9 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.windows = DARRAY_STATIC_INIT (8),
 		.links = DARRAY_STATIC_INIT (8),
 		.scrollers = DARRAY_STATIC_INIT (8),
+		.state_map_ptrs = DARRAY_STATIC_INIT (8),
 		.registered_windows = DARRAY_STATIC_INIT (8),
+		.modal_stack = DARRAY_STATIC_INIT (8),
 		.dstr = dstring_newstr (),
 		.hot = nullent,
 		.active = nullent,
@@ -358,6 +372,7 @@ clear_items (imui_ctx_t *ctx)
 	DARRAY_RESIZE (&ctx->links, 0);
 	DARRAY_RESIZE (&ctx->scrollers, 0);
 	DARRAY_RESIZE (&ctx->style_stack, 0);
+	DARRAY_RESIZE (&ctx->modal_stack, 0);
 }
 
 void
@@ -470,6 +485,23 @@ IMUI_SetSize (imui_ctx_t *ctx, int xlen, int ylen)
 	Canvas_SetLen (ctx->csys, ctx->canvas, (view_pos_t) { xlen, ylen });
 }
 
+static bool
+is_inside (view_pos_t mp, view_pos_t abs, view_pos_t len)
+{
+	return (mp.x >= abs.x && mp.y >= abs.y
+			&& mp.x < abs.x + len.x && mp.y < abs.y + len.y);
+}
+
+static imui_state_t *
+get_state_from_id (imui_ctx_t *ctx, uint32_t id)
+{
+	if (!ECS_IdValid (&ctx->state_ids, id)) {
+		return nullptr;
+	}
+	uint32_t ind = Ent_Index (id);
+	return &ctx->state_map_ptrs.a[ind]->state;
+}
+
 bool
 IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 {
@@ -485,6 +517,21 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 			ctx->mouse_pressed = (old ^ new) & new;
 			ctx->mouse_released = (old ^ new) & ~new;
 			ctx->mouse_buttons = m->buttons;
+		}
+		if (ie_event->mouse.type == ie_mousedown) {
+			while (ctx->modal_stack.size) {
+				auto modal = ctx->modal_stack.a[ctx->modal_stack.size - 1];
+				auto state = get_state_from_id (ctx, modal->state);
+				auto view = View_FromEntity (ctx->vsys, state->entity);
+				auto pos = View_GetAbs (view);
+				auto len = View_GetLen (view);
+				if (is_inside (ctx->mouse_position, pos, len)
+					|| modal->no_collapse) {
+					break;
+				}
+				modal->is_open = false;
+				ctx->modal_stack.size--;
+			}
 		}
 		handled = true;
 	} else if (ie_event->type == ie_key) {
@@ -1023,13 +1070,6 @@ layout_objects (imui_ctx_t *ctx, view_t root_view)
 
 	position_views (ctx, root_view);
 	//dump_tree (href, 0, ctx);
-}
-
-static bool
-is_inside (view_pos_t mp, view_pos_t abs, view_pos_t len)
-{
-	return (mp.x >= abs.x && mp.y >= abs.y
-			&& mp.x < abs.x + len.x && mp.y < abs.y + len.y);
 }
 
 static void
@@ -1968,11 +2008,13 @@ IMUI_StartMenu (imui_ctx_t *ctx, imui_window_t *menu, bool vertical)
 		ctx->current_menu = IMUI_GetWindow (ctx, menu->parent);
 		return 1;
 	}
+	DARRAY_APPEND (&ctx->modal_stack, menu);
 
 	IMUI_StartPanel (ctx, menu);
 
 	auto state = ctx->windows.a[ctx->windows.size - 1];
-	state->menu = menu->self;
+	menu->state = state->self;
+	state->window = menu->self;
 
 	auto menu_view = ctx->current_parent;
 	if (vertical) {
@@ -1991,6 +2033,11 @@ IMUI_StartMenu (imui_ctx_t *ctx, imui_window_t *menu, bool vertical)
 void
 IMUI_EndMenu (imui_ctx_t *ctx)
 {
+	auto menu = ctx->current_menu;
+	if (menu->parent) {
+		auto parent = IMUI_GetWindow (ctx, menu->parent);
+		ctx->current_menu = parent;
+	}
 	IMUI_PopLayout (ctx);
 }
 
@@ -2011,7 +2058,6 @@ IMUI_MenuItem (imui_ctx_t *ctx, const char *label, bool collapse)
 void
 IMUI_TitleBar (imui_ctx_t *ctx, imui_window_t *window)
 {
-	auto state = ctx->windows.a[ctx->windows.size - 1];
 	auto title_bar = View_New (ctx->vsys, ctx->current_parent);
 
 	auto tb_state = imui_get_state (ctx, va ("###title_bar:%08x",
@@ -2021,7 +2067,7 @@ IMUI_TitleBar (imui_ctx_t *ctx, imui_window_t *window)
 
 	auto delta = check_drag_delta (ctx, tb_state->entity);
 	if (ctx->active == tb_state->entity) {
-		state->draw_order = imui_ontop;
+		IMUI_RaiseWindow (ctx, window);
 		window->xpos += delta.x;
 		window->ypos += delta.y;
 	}
@@ -2061,6 +2107,8 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 	}
 	IMUI_StartPanel (ctx, window);
 	auto state = ctx->windows.a[ctx->windows.size - 1];
+	window->state = state->self;
+	state->window = window->self;
 
 	UI_Horizontal {
 		if (window->auto_fit) {
@@ -2080,6 +2128,20 @@ void
 IMUI_EndWindow (imui_ctx_t *ctx)
 {
 	IMUI_PopLayout (ctx);
+}
+
+void
+IMUI_RaiseWindow (imui_ctx_t *ctx, imui_window_t *window)
+{
+	auto state = get_state_from_id (ctx, window->state);
+	state->draw_order = imui_ontop;
+}
+
+void
+IMUI_LowerWindow (imui_ctx_t *ctx, imui_window_t *window)
+{
+	auto state = get_state_from_id (ctx, window->state);
+	state->draw_order = imui_onbottom;
 }
 
 int

@@ -106,6 +106,7 @@ typedef struct imui_window_s {
 	grav_t      reference_gravity;
 	grav_t      anchor_gravity;
 	uint32_t    parent;	// for submenus
+	uint32_t    state;
 } imui_window_t;
 
 typedef struct imui_state_s {
@@ -113,7 +114,7 @@ typedef struct imui_state_s {
 	uint32_t    self;
 	uint32_t    label_len;
 	int         key_offset;
-	uint32_t    menu;
+	uint32_t    window;
 	int32_t		draw_order;	// for window canvases
 	int32_t     draw_group;
 	uint32_t    first_link;
@@ -219,6 +220,9 @@ void IMUI_CloseButton (imui_ctx_t *ctx, imui_window_t *window);
 
 int IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window);
 void IMUI_EndWindow (imui_ctx_t *ctx);
+
+void IMUI_RaiseWindow (imui_ctx_t *ctx, imui_window_t *window);
+void IMUI_LowerWindow (imui_ctx_t *ctx, imui_window_t *window);
 
 int IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name);
 void IMUI_EndScrollBox (imui_ctx_t *ctx);

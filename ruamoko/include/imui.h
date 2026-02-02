@@ -81,7 +81,9 @@ void IMUI_Window_SetReference (imui_window_t *window, string reference);
 void IMUI_Window_SetReferenceGravity (imui_window_t *window, grav_t gravity);
 void IMUI_Window_SetAnchorGravity (imui_window_t *window, grav_t gravity);
 void IMUI_Window_SetParent (imui_window_t *window, uint parent);
+void IMUI_Window_SetGroupOffset (imui_window_t *window, int parent);
 
+string IMUI_Window_GetName (imui_window_t *window);
 ivec2 IMUI_Window_GetPos (imui_window_t *window);
 ivec2 IMUI_Window_GetSize (imui_window_t *window);
 bool IMUI_Window_IsOpen (imui_window_t *window);
@@ -92,6 +94,7 @@ string IMUI_Window_GetReference (imui_window_t *window);
 grav_t IMUI_Window_GetReferenceGravity (imui_window_t *window);
 grav_t IMUI_Window_GetAnchorGravity (imui_window_t *window);
 uint IMUI_Window_GetParent (imui_window_t *window);
+int IMUI_Window_GetGroupOffset (imui_window_t *window);
 
 void IMUI_State_SetPos (imui_ctx_t ctx, string state, ivec2 pos);
 void IMUI_State_SetLen (imui_ctx_t ctx, string state, ivec2 pos);
@@ -152,6 +155,9 @@ int IMUI_MenuItem (imui_ctx_t ctx, string label, int collapse);
 
 int IMUI_StartWindow (imui_ctx_t ctx, imui_window_t *window);
 void IMUI_EndWindow (imui_ctx_t ctx);
+
+void IMUI_RaiseWindow (imui_ctx_t ctx, imui_window_t *window);
+void IMUI_LowerWindow (imui_ctx_t ctx, imui_window_t *window);
 
 int IMUI_StartScrollBox (imui_ctx_t ctx, string name);
 void IMUI_EndScrollBox (imui_ctx_t ctx);

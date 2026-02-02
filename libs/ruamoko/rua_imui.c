@@ -171,7 +171,7 @@ bi(IMUI_Window_SetOpen)
 {
 	qfZoneScoped (true);
 	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
-	R_INT (pr) = window->is_open;
+	window->is_open = P_INT (pr, 1);
 }
 
 bi(IMUI_Window_SetCollapsed)
@@ -221,6 +221,20 @@ bi(IMUI_Window_SetParent)
 	qfZoneScoped (true);
 	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
 	window->parent = P_UINT (pr, 1);
+}
+
+bi(IMUI_Window_SetGroupOffset)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	window->group_offset = P_UINT (pr, 1);
+}
+
+bi(IMUI_Window_GetName)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	RETURN_STRING (pr, window->name);
 }
 
 bi(IMUI_Window_GetPos)
@@ -291,6 +305,13 @@ bi(IMUI_Window_GetParent)
 	qfZoneScoped (true);
 	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
 	R_UINT (pr) = window->parent;
+}
+
+bi(IMUI_Window_GetGroupOffset)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	R_UINT (pr) = window->group_offset;
 }
 
 bi(IMUI_NewContext)
@@ -728,9 +749,11 @@ bi (IMUI_StartMenu)
 	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
-	R_INT (pr) = IMUI_StartMenu (bi_ctx->imui_ctx,
-								 &P_PACKED (pr, imui_window_t, 1),
-								 P_INT (pr, 2));
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 1);
+	if (!window->self) {
+		IMUI_RegisterWindow (bi_ctx->imui_ctx, window);
+	}
+	R_INT (pr) = IMUI_StartMenu (bi_ctx->imui_ctx, window, P_INT (pr, 2));
 }
 
 bi (IMUI_EndMenu)
@@ -768,6 +791,24 @@ bi (IMUI_EndWindow)
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_EndWindow (bi_ctx->imui_ctx);
+}
+
+bi (IMUI_RaiseWindow)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 1);
+	IMUI_RaiseWindow (bi_ctx->imui_ctx, window);
+}
+
+bi (IMUI_LowerWindow)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 1);
+	IMUI_LowerWindow (bi_ctx->imui_ctx, window);
 }
 
 bi (IMUI_StartScrollBox)
@@ -858,7 +899,9 @@ static builtin_t builtins[] = {
 	bi(IMUI_Window_SetReferenceGravity, 2, p(ptr), p(int)),
 	bi(IMUI_Window_SetAnchorGravity, 2, p(ptr), p(int)),
 	bi(IMUI_Window_SetParent,       2, p(ptr), p(uint)),
+	bi(IMUI_Window_SetGroupOffset,  2, p(ptr), p(int)),
 
+	bi(IMUI_Window_GetName,         2, p(ptr)),
 	bi(IMUI_Window_GetPos,          1, p(ptr)),
 	bi(IMUI_Window_GetSize,         1, p(ptr)),
 	bi(IMUI_Window_IsOpen,          1, p(ptr)),
@@ -869,6 +912,7 @@ static builtin_t builtins[] = {
 	bi(IMUI_Window_GetReferenceGravity, 1, p(ptr)),
 	bi(IMUI_Window_GetAnchorGravity, 1, p(ptr)),
 	bi(IMUI_Window_GetParent,       1, p(ptr)),
+	bi(IMUI_Window_GetGroupOffset,  2, p(ptr)),
 
 	bi(IMUI_State_SetPos,       3, p(int), p(string), p(ivec2)),
 	bi(IMUI_State_SetLen,       3, p(int), p(string), p(ivec2)),
@@ -918,6 +962,8 @@ static builtin_t builtins[] = {
 	bi(IMUI_MenuItem,           3, p(int), p(string), p(int)),
 	bi(IMUI_StartWindow,        2, p(int), p(ptr)),
 	bi(IMUI_EndWindow,          1, p(int)),
+	bi(IMUI_RaiseWindow,        2, p(int), p(ptr)),
+	bi(IMUI_LowerWindow,        2, p(int), p(ptr)),
 	bi(IMUI_StartScrollBox,     2, p(int), p(string)),
 	bi(IMUI_EndScrollBox,       1, p(int)),
 	bi(IMUI_ScrollBar,          2, p(int), p(string)),
