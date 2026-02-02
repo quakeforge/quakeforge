@@ -21,13 +21,12 @@ center (uint v, uint len)
 
 -initWithName:(string)name file:(string)filepath ctx:(imui_ctx_t)ctx
 {
-	if (!(self = [super init])) {
+	if (!(self = [super initWithContext:ctx])) {
 		return nil;
 	}
 	self.name = str_hold (name);
 	//filepath is owned by the window
 	self.filepath = filepath;
-	IMUI_context = ctx;
 
 	buffer = [[EditBuffer withFile:filepath] retain];
 	line_count = [buffer countLines: {0, [buffer textSize]}];

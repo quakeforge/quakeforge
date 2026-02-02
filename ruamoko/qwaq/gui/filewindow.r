@@ -104,16 +104,18 @@ int file_item_cmp (void *a, void *b)
 -initWithSpec:(string)fileSpec at:(string)filePath forSave:(bool)forSave
 		  ctx:(imui_ctx_t)ctx
 {
-	if (!(self = [super init])) {
+	string name = forSave ? "Save a File" : "Open a File";
+	if (!(self = [super initWithContext:ctx name:name])) {
 		return nil;
 	}
+	IMUI_Window_SetSize (window, {400, 300});
+
 	if (str_char (filePath, 0) != '/') {
 		filePath = QFS_CompressPath (Qgetcwd () + "/" + filePath);
 	}
 	self.fileSpec = str_hold (fileSpec);
 	self.filePath = str_hold (filePath);
 	self.forSave = forSave;
-	IMUI_context = ctx;
 
 	items = [[Array array] retain];
 	listView = [[ListView list:"FileWindow:files" ctx:ctx] retain];
@@ -121,8 +123,6 @@ int file_item_cmp (void *a, void *b)
 
 	[self readdir];
 
-	window = IMUI_NewWindow (forSave ? "Save a File" : "Open a File");
-	IMUI_Window_SetSize (window, {400, 300});
 	return self;
 }
 
@@ -151,6 +151,9 @@ int file_item_cmp (void *a, void *b)
 
 -draw
 {
+	if (![super draw]) {
+		return nil;
+	}
 	imui_style_t style;
 	IMUI_Style_Fetch (IMUI_context, &style);
 	UI_Window (window) {
@@ -177,9 +180,9 @@ int file_item_cmp (void *a, void *b)
 			printf ("item accepted:%s\n", [accepted_item name]);
 			string path = filePath + "/" + [accepted_item name];
 			path = QFS_CompressPath (path);
+			accepted_item = nil;
 			[target openFile:path forSave:forSave];
 		}
-		accepted_item = nil;
 	}
 	return self;
 }

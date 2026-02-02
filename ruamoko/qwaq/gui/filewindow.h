@@ -1,13 +1,10 @@
 #ifndef __qwaq_gui_filewindow_h
 #define __qwaq_gui_filewindow_h
 
-#include <Object.h>
 #include <dirent.h>
 
+#include "window.h"
 #include "listview.h"
-
-typedef @handle imui_ctx_h imui_ctx_t;
-typedef struct imui_window_s imui_window_t;
 
 @class FileWindow;
 
@@ -34,7 +31,7 @@ typedef struct imui_window_s imui_window_t;
 -(void)openFile:(string) path forSave:(bool)forSave;
 @end
 
-@interface FileWindow : Object <ListView>
+@interface FileWindow : Window <ListView>
 {
 	string fileSpec;
 	string filePath;
@@ -44,9 +41,6 @@ typedef struct imui_window_s imui_window_t;
 
 	Array *items;
 	ListView *listView;
-
-	imui_ctx_t IMUI_context;
-	struct imui_window_s *window;
 }
 +(FileWindow *) openFile:(string)fileSpec at:(string)filePath
 					 ctx:(imui_ctx_t)ctx;

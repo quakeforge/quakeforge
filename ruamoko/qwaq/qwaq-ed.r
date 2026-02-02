@@ -14,6 +14,7 @@
 #include "gui/editwindow.h"
 #include "gui/filewindow.h"
 #include "gui/listview.h"
+#include "gui/window.h"
 #include "armature.h"
 #include "camera.h"
 #include "gizmo.h"
@@ -68,6 +69,9 @@ in_button_t *target_lock;
 vec2 mouse_start;
 bool mouse_dragging_mmb;
 bool mouse_dragging_rmb;
+
+bool draw_editor_overlay = true;
+bool quit_editor = false;
 
 void camera_first_person (state_t *camera_state);
 void camera_mouse_trackball (state_t *camera_state);
@@ -181,17 +185,15 @@ imui_style_t current_style = {
 double realtime = double (1ul<<32);
 float frametime;
 
-Array *windows;
+@class MainMenu;
+MainMenu *main_menu;
 
-@interface MainWindow : Object <FileWindow, ListView>
+@interface MainWindow : Window <ListView>
 {
 	Array *clips;
 	ListView *clipsView;
 	Array *bones;
 	ListView *bonesView;
-
-	imui_ctx_t IMUI_context;
-	imui_window_t *window;
 
 	scene_t scene;
 
@@ -224,10 +226,9 @@ Array *windows;
 
 -initWithContext:(imui_ctx_t)ctx
 {
-	if (!(self = [super init])) {
+	if (!(self = [super initWithContext:ctx name:"MainWindow"])) {
 		return nil;
 	}
-	IMUI_context = ctx;
 
 	clips = [[Array array] retain];
 	clipsView = [[ListView list:"MainWindow:clips" ctx:ctx] retain];
@@ -236,7 +237,6 @@ Array *windows;
 	bones = [[Array array] retain];
 	bonesView = [[ListView list:"MainWindow:bones" ctx:ctx] retain];
 
-	window = IMUI_NewWindow ("MainWindow");
 	IMUI_Window_SetSize (window, {400, 300});
 
 	scene = Scene_NewScene ();
@@ -308,14 +308,6 @@ Array *windows;
 	[clipsView release];
 	[clips release];
 	[super dealloc];
-}
-
--(void)openFile:(string)path forSave:(bool)forSave
-{
-	if (forSave) {
-	} else {
-		[windows addObject:[EditWindow openFile:path ctx:imui_ctx]];
-	}
 }
 
 -addCamera:(Camera *) camera
@@ -408,6 +400,9 @@ static gizmo_node_t covered_step[] = {
 
 -draw
 {
+	if (![super draw]) {
+		return nil;
+	}
 	if (ent && anim && arm && show_armature) {
 		qfa_update_anim (anim, frametime);
 		qfa_update_anim (root_anim, frametime);
@@ -861,7 +856,90 @@ color_window (void)
 	}
 }
 
-bool draw_editor_overlay = true;
+@interface MainMenu : UI_Object<FileWindow>
+{
+	imui_window_t *main_menu;
+	imui_window_t *file_menu;
+	imui_window_t *window_menu;
+	FileWindow *file_window;
+}
++(imui_window_t *)create_menu:(string)name;
++(MainMenu *) menu:(imui_ctx_t)ctx;
+-draw;
+@end
+
+@implementation MainMenu
++(imui_window_t *)create_menu:(string)name
+{
+	auto menu = IMUI_NewWindow (name);
+	IMUI_Window_SetOpen (menu, false);
+	IMUI_Window_SetGroupOffset (menu, 1);
+	IMUI_Window_SetReferenceGravity (menu, grav_northwest);
+	IMUI_Window_SetAnchorGravity (menu, grav_southwest);
+	IMUI_Window_SetAutoFit (menu, true);
+	return menu;
+}
+
+static void
+hs (imui_ctx_t ctx)
+{
+	IMUI_Spacer (ctx, imui_size_pixels, 10, imui_size_expand, 100);
+}
+
+-initWithContext:(imui_ctx_t)ctx
+{
+	if (!(self = [super initWithContext:ctx])) {
+		return nil;
+	}
+	main_menu = IMUI_NewWindow ("MainMenu");
+	IMUI_Window_SetOpen (main_menu, true);
+	IMUI_Window_SetNoCollapse (main_menu, true);
+	IMUI_Window_SetAutoFit (main_menu, true);
+
+	file_menu = [MainMenu create_menu:"File"];
+	window_menu = [MainMenu create_menu:"Window"];
+
+	file_window = nil;
+
+	return self;
+}
+
++(MainMenu *) menu:(imui_ctx_t)ctx
+{
+	return [[[MainMenu alloc] initWithContext:ctx] autorelease];
+}
+
+-draw
+{
+	UI_MenuBar (main_menu) {
+		UI_Menu (file_menu) {
+			if (UI_MenuItem (sprintf ("Open##%p", file_menu))) {
+				file_window = [FileWindow openFile:"*.r" at:"."
+									ctx:imui_ctx];
+				[file_window setTarget:self];
+			}
+			if (UI_MenuItem (sprintf ("Quit##%p", file_menu))) {
+				quit_editor = true;
+			}
+		}
+		hs (IMUI_context);
+		UI_Menu (window_menu) {
+			[Window drawMenuItems];
+		}
+	}
+	return self;
+}
+
+-(void)openFile:(string)path forSave:(bool)forSave
+{
+	if (forSave) {
+	} else {
+		[EditWindow openFile:path ctx:imui_ctx];
+		[file_window close];
+		file_window = nil;
+	}
+}
+@end
 
 void
 draw_2d (void)
@@ -876,7 +954,8 @@ draw_2d (void)
 		IMUI_BeginFrame (imui_ctx);
 		IMUI_Style_Update (imui_ctx, &current_style);
 
-		[windows makeObjectsPerformSelector: @selector (draw)];
+		[main_menu draw];
+		[Window drawWindows];
 		//color_window ();
 		IMUI_Draw (imui_ctx);
 	}
@@ -1196,13 +1275,9 @@ main (int argc, string *argv)
 	}
 #endif
 
-	windows = [[Array array] retain];
+	main_menu = [[MainMenu menu:imui_ctx] retain];
 
-	auto main_window = [MainWindow window:imui_ctx];
-	auto file_window = [FileWindow openFile:"*.r" at:"." ctx:imui_ctx];
-	[file_window setTarget:main_window];
-	[windows addObject:main_window];
-	[windows addObject:file_window];
+	auto main_window = [[MainWindow window:imui_ctx] retain];
 
 	[main_window setModel:Model_Load ("progs/girl14.iqm")];
 
@@ -1344,12 +1419,13 @@ main (int argc, string *argv)
 
 		leafnode ();
 
-		if (check_keys (key_devid, lctrl_key, lalt_key, q_key, e_key)) {
+		if (quit_editor ||
+			check_keys (key_devid, lctrl_key, lalt_key, q_key, e_key)) {
 			break;
 		}
 	}
 	[player release];
-	[windows release];
+	[Window shutdown];
 	arp_end ();
 	return 0;
 }

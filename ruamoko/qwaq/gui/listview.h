@@ -1,18 +1,13 @@
 #ifndef __qwaq_gui_listview_h
 #define __qwaq_gui_listview_h
 
-#include <Object.h>
-#include <dirent.h>
-
-typedef @handle imui_ctx_h imui_ctx_t;
-typedef struct imui_window_s imui_window_t;
+#include "ui_object.h"
 
 @class ListView;
 
-@interface ListItem : Object
+@interface ListItem : UI_Object
 {
 	string name;
-	imui_ctx_t IMUI_context;
 	ListView *owner;
 
 	bool   isselected;
@@ -30,12 +25,11 @@ typedef struct imui_window_s imui_window_t;
 -(void)itemAccepted:(int)item in:(Array *)items;
 @end
 
-@interface ListView : Object
+@interface ListView : UI_Object
 {
 	Array *items;
 	string name;
 
-	imui_ctx_t IMUI_context;
 	int    selected_item;
 	id<ListView> target;
 }

@@ -1,18 +1,14 @@
 #ifndef __qwaq_gui_editview_h
 #define __qwaq_gui_editview_h
 
-#include <Object.h>
 #include <dirent.h>
 
+#include "ui_object.h"
 #include "../editor/editbuffer.h"
 
-typedef @handle imui_ctx_h imui_ctx_t;
-typedef struct imui_window_s imui_window_t;
-
-@interface EditView : Object
+@interface EditView : UI_Object
 {
 	string name;
-	imui_ctx_t IMUI_context;
 
 	uvec2       X_size;
 	ivec2       scroll_pos;

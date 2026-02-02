@@ -12,13 +12,12 @@ void printf(string, ...);
 
 -initWithName:(string)name ctx:(imui_ctx_t)ctx
 {
-	if (!(self = [super init])) {
+	if (!(self = [super initWithContext:ctx])) {
 		return nil;
 	}
 	self.name = str_hold (name);
 	self.owner = nil;
 	isselected = false;
-	IMUI_context = ctx;
 	return self;
 }
 
@@ -86,12 +85,11 @@ void printf(string, ...);
 
 -initWithName:(string)name ctx:(imui_ctx_t)ctx
 {
-	if (!(self = [super init])) {
+	if (!(self = [super initWithContext:ctx])) {
 		return nil;
 	}
 	self.name = str_hold (name);
 	selected_item = -1;
-	IMUI_context = ctx;
 	return self;
 }
 

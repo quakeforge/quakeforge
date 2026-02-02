@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <imui.h>
+#include <qfs.h>
 #include <string.h>
+#include "editview.h"
 #include "editwindow.h"
 
 void printf(string, ...);
@@ -12,12 +14,10 @@ void printf(string, ...);
 
 -initWithFile:(string)filePath ctx:(imui_ctx_t)ctx
 {
-	if (!(self = [super init])) {
+	window_name = str_hold ("*" + QFS_FileBase (filePath));
+	if (!(self = [super initWithContext:ctx name:str_mid (window_name, 1)])) {
 		return nil;
 	}
-	IMUI_context = ctx;
-	window_name = str_hold ("*" + filePath);
-	window = IMUI_NewWindow (str_mid (window_name, 1));
 
 	string evname = sprintf ("EditView:%08x", window);
 	editView = [[EditView edit:evname file:filePath ctx:ctx] retain];
@@ -42,6 +42,9 @@ void printf(string, ...);
 
 -draw
 {
+	if (![super draw]) {
+		return nil;
+	}
 	imui_style_t style;
 	IMUI_Style_Fetch (IMUI_context, &style);
 	string name = str_mid (window_name, [editView modified] ? 0 : 1);
