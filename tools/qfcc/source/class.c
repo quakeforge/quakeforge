@@ -2000,6 +2000,13 @@ class_dereference_ivar (symbol_t *sym, void *_self)
 	return field_expr (self, new_symbol_expr (new_symbol (sym->name)));
 }
 
+static const expr_t *
+class_dereference_ivar_warn (symbol_t *sym, void *_self)
+{
+	warning (0, "instance variable ‘%s’ accessed in class method", sym->name);
+	return class_dereference_ivar (sym, _self);
+}
+
 void
 class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 						 symtab_t *param_scope)
@@ -2009,23 +2016,26 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 	symbol_t   *sym;
 	symbol_t   *self;
 
-	if (!ivar_scope)
+	if (!ivar_scope) {
 		return;
+	}
 	self = symtab_lookup (param_scope, "self");
 	if (!self) {
 		internal_error (0, "I've lost my self!");
 	}
 	const expr_t *self_expr = new_symbol_expr (self);
+	auto conv = class_dereference_ivar;
 	if (self->type != class_ptr) {
 		debug (0, "class method scope");
 		//FIXME should generate a warning on access
 		self_expr = cast_expr (class_ptr, self_expr);
+		conv = class_dereference_ivar_warn;
 	}
 	for (sym = ivar_scope->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy_offset)
 			continue;
 		sym->sy_type = sy_convert;
-		sym->convert.conv = class_dereference_ivar;
+		sym->convert.conv = conv;
 		sym->convert.data = (void *) self_expr;
 	}
 }
