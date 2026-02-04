@@ -129,6 +129,8 @@ struct imui_ctx_s {
 	imui_key_t  key;
 	dstring_t  *key_utf8;
 
+	uint32_t    drag_id;
+
 	imui_style_t style;
 	struct DARRAY_TYPE(imui_style_t) style_stack;
 	uint32_t    fg_palette[64];
@@ -311,6 +313,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.focused = nullent,
 		.mouse_position = {-1, -1},
 		.key_utf8 = dstring_newstr (),
+		.drag_id = nullent,
 		.style_stack = DARRAY_STATIC_INIT (8),
 		.style = {
 			.background = {
@@ -560,6 +563,7 @@ IMUI_GetIO (imui_ctx_t *ctx)
 	return (imui_io_t) {
 		.mouse = ctx->mouse_position,
 		.mouse_hot = VP_sub (ctx->mouse_position, ctx->hot_position),
+		.mouse_active = VP_sub (ctx->mouse_position, ctx->active_position),
 		.buttons = ctx->mouse_buttons,
 		.pressed = ctx->mouse_pressed,
 		.released = ctx->mouse_released,
@@ -567,6 +571,7 @@ IMUI_GetIO (imui_ctx_t *ctx)
 		.hot = ctx->hot,
 		.active = ctx->active,
 		.shift = ctx->shift,
+		.drag_id = ctx->drag_id,
 	};
 }
 
@@ -619,6 +624,7 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 	ctx->frame_count++;
 	ctx->current_parent = ctx->root_view;
 	ctx->current_menu = 0;
+	ctx->drag_id = nullent;
 }
 
 static void
@@ -707,6 +713,10 @@ dump_tree (hierref_t href, int level, imui_ctx_t *ctx)
 			if (j == c_reference) {
 				auto ref = *(imui_reference_t *) Ent_GetComponent (e, j, reg);
 				printf ("(%08x)", ref.ref_id);
+			}
+			if (j == c_fill) {
+				byte fill = *(byte*) Ent_GetComponent (e, j, reg);
+				printf ("(%02x)", fill);
 			}
 		}
 	}
@@ -1097,10 +1107,11 @@ check_inside (imui_ctx_t *ctx, view_t root_view)
 			check_inside (ctx, sub_view);
 			continue;
 		}
-		if ((cont[i].active | cont[i].focus)
+		if ((cont[i].active | cont[i].focus | cont[i].drop_target)
 			&& is_inside (mp, abs[i], len[i])) {
-			if (cont[i].active) {
-				if (ctx->active == ent[i] || ctx->active == nullent) {
+			if (cont[i].active | cont[i].drop_target) {
+				if (cont[i].drop_target
+					|| ctx->active == ent[i] || ctx->active == nullent) {
 					ctx->hot = ent[i];
 					ctx->hot_position = abs[i];
 				}
@@ -1192,6 +1203,12 @@ IMUI_Draw (imui_ctx_t *ctx)
 	}
 
 	ctx->frame_end = Sys_LongTime ();
+}
+
+void
+IMUI_SetDragId (imui_ctx_t *ctx, uint32_t drag_id)
+{
+	ctx->drag_id = drag_id;
 }
 
 int
@@ -1433,7 +1450,6 @@ IMUI_TextSize (imui_ctx_t *ctx, const char *str)
 {
 	return Text_Size (ctx->font, str, strlen (str), nullptr, nullptr,
 					  ctx->shaper);
-
 }
 
 void
@@ -1443,6 +1459,15 @@ IMUI_SetActive (imui_ctx_t *ctx, bool active)
 	auto view = View_FromEntity (ctx->vsys, state->entity);
 	auto control = View_Control (view);
 	control->active = active;
+}
+
+void
+IMUI_SetDropTarget (imui_ctx_t *ctx, bool drop_target)
+{
+	auto state = ctx->current_state;
+	auto view = View_FromEntity (ctx->vsys, state->entity);
+	auto control = View_Control (view);
+	control->drop_target = drop_target;
 }
 
 void
@@ -1709,6 +1734,17 @@ sized_view (imui_ctx_t *ctx,
 	return view;
 }
 
+uint32_t
+IMUI_ActiveItem (imui_ctx_t *ctx,
+				 imui_size_t xsize, int xvalue,
+				 imui_size_t ysize, int yvalue,
+				 const char *name)
+{
+	auto view = sized_view (ctx, xsize, xvalue, ysize, yvalue, true);
+	auto state = imui_get_state (ctx, name, view.id);
+	return state->entity;
+}
+
 void
 IMUI_Spacer (imui_ctx_t *ctx,
 			 imui_size_t xsize, int xvalue,
@@ -1854,6 +1890,9 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 
 	auto panel_name = IMUI_PanelId (ctx, panel);
 	auto state = imui_get_state (ctx, panel_name, panel_view.id);
+	panel->state = state->self;
+	state->window = panel->self;
+
 	//fetch the stable string (va's result is ephemeral)
 	panel_name = state->label;
 	state->draw_group = draw_group;
@@ -1962,6 +2001,7 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 	state->auto_fit = panel->auto_fit;
 	ctx->style.background.normal = bg;
 	ctx->current_parent = panel_view;
+	ctx->current_state = state;
 	state->content = panel_view.id;
 	return 0;
 }
@@ -2011,10 +2051,7 @@ IMUI_StartMenu (imui_ctx_t *ctx, imui_window_t *menu, bool vertical)
 	DARRAY_APPEND (&ctx->modal_stack, menu);
 
 	IMUI_StartPanel (ctx, menu);
-
 	auto state = ctx->windows.a[ctx->windows.size - 1];
-	menu->state = state->self;
-	state->window = menu->self;
 
 	auto menu_view = ctx->current_parent;
 	if (vertical) {
@@ -2107,8 +2144,6 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 	}
 	IMUI_StartPanel (ctx, window);
 	auto state = ctx->windows.a[ctx->windows.size - 1];
-	window->state = state->self;
-	state->window = window->self;
 
 	UI_Horizontal {
 		if (window->auto_fit) {

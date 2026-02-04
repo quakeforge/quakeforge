@@ -504,6 +504,14 @@ bi (IMUI_Draw)
 	Canvas_Draw (res->canvas_sys);
 }
 
+bi (IMUI_SetDragId)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	IMUI_SetDragId (bi_ctx->imui_ctx, P_UINT (pr, 1));
+}
+
 bi (IMUI_PushLayout)
 {
 	qfZoneScoped (true);
@@ -595,12 +603,32 @@ bi (IMUI_TextSize)
 	R_var (pr, ivec2) = (pr_ivec2_t) { size.x, size.y };
 }
 
+bi (IMUI_ActiveItem)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	uint32_t id = IMUI_ActiveItem (bi_ctx->imui_ctx,
+								   P_INT (pr, 1), P_INT (pr, 2),
+								   P_INT (pr, 3), P_INT (pr, 4),
+								   P_GSTRING (pr, 5));
+	R_UINT (pr) = id;
+}
+
 bi (IMUI_SetActive)
 {
 	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_SetActive (bi_ctx->imui_ctx, P_INT (pr, 1));
+}
+
+bi (IMUI_SetDropTarget)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	IMUI_SetDropTarget (bi_ctx->imui_ctx, P_INT (pr, 1));
 }
 
 bi (IMUI_SetFocus)
@@ -719,13 +747,27 @@ bi (IMUI_FlexibleSpace)
 	IMUI_Spacer(bi_ctx->imui_ctx, imui_size_expand, 100, imui_size_expand, 100);
 }
 
+bi (IMUI_Dragable)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	auto delta = IMUI_Dragable (bi_ctx->imui_ctx, P_INT (pr, 1), P_INT (pr, 2),
+								P_INT (pr, 3), P_INT (pr, 4),
+								P_GSTRING (pr, 5));
+	R_var (pr, ivec2) = (pr_ivec2_t) { delta.x, delta.y };
+}
+
 bi (IMUI_StartPanel)
 {
 	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
-	R_INT (pr) = IMUI_StartPanel (bi_ctx->imui_ctx,
-								  &P_PACKED (pr, imui_window_t, 1));
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 1);
+	if (!window->self) {
+		IMUI_RegisterWindow (bi_ctx->imui_ctx, window);
+	}
+	R_INT (pr) = IMUI_StartPanel (bi_ctx->imui_ctx, window);
 }
 
 bi (IMUI_ExtendPanel)
@@ -930,6 +972,7 @@ static builtin_t builtins[] = {
 	bi(IMUI_ProcessEvent,       2, p(int), p(ptr)),
 	bi(IMUI_BeginFrame,         1, p(int)),
 	bi(IMUI_Draw,               1, p(int)),
+	bi(IMUI_SetDragId,          1, p(int), p(uint)),
 	bi(IMUI_PushLayout,         2, p(int), p(int)),
 	bi(IMUI_PopLayout,          1, p(int)),
 	bi(IMUI_Layout_SetXSize,    3, p(int), p(int), p(int)),
@@ -941,7 +984,10 @@ static builtin_t builtins[] = {
 	bi(IMUI_CheckButtonState,   1, p(int)),
 	bi(IMUI_UpdateHotActive,    1, p(int)),
 	bi(IMUI_TextSize,           2, p(int), p(string)),
+	bi(IMUI_ActiveItem,         6, p(int), p(int), p(int), p(int), p(int),
+								   p(string)),
 	bi(IMUI_SetActive,          2, p(int), p(int)),
+	bi(IMUI_SetDropTarget,      2, p(int), p(int)),
 	bi(IMUI_SetFocus,           2, p(int), p(int)),
 	bi(IMUI_SetFill,            2, p(int), p(uint)),
 	bi(IMUI_Label,              2, p(int), p(string)),
@@ -951,9 +997,12 @@ static builtin_t builtins[] = {
 	bi(IMUI_Button,             2, p(int), p(string)),
 	bi(IMUI_Checkbox,           3, p(int), p(ptr), p(string)),
 	bi(IMUI_Radio,              4, p(int), p(ptr), p(int), p(string)),
-	bi(IMUI_Slider,             5, p(int), p(ptr), p(float), p(float), p(string)),
+	bi(IMUI_Slider,             5, p(int), p(ptr), p(float), p(float),
+								   p(string)),
 	bi(IMUI_Spacer,             5, p(int), p(int), p(int), p(int), p(int)),
 	bi(IMUI_FlexibleSpace,      1, p(int)),
+	bi(IMUI_Dragable,           6, p(int), p(int), p(int), p(int), p(int),
+								   p(string)),
 	bi(IMUI_StartPanel,         2, p(int), p(ptr)),
 	bi(IMUI_ExtendPanel,        3, p(int), p(string)),
 	bi(IMUI_EndPanel,           1, p(int)),

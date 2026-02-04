@@ -132,6 +132,7 @@ typedef struct imui_state_s {
 typedef struct imui_io_s {
 	view_pos_t  mouse;
 	view_pos_t  mouse_hot;
+	view_pos_t  mouse_active;
 	uint32_t    buttons;
 	uint32_t    pressed;
 	uint32_t    released;
@@ -139,6 +140,7 @@ typedef struct imui_io_s {
 	uint32_t    hot;
 	uint32_t    active;
 	uint32_t    shift;
+	uint32_t    drag_id;
 } imui_io_t;
 
 typedef struct imui_key_s {
@@ -169,6 +171,7 @@ imui_io_t IMUI_GetIO (imui_ctx_t *ctx) __attribute__((pure));
 bool IMUI_GetKey (imui_ctx_t *ctx, imui_key_t *key);
 void IMUI_BeginFrame (imui_ctx_t *ctx);
 void IMUI_Draw (imui_ctx_t *ctx);
+void IMUI_SetDragId (imui_ctx_t *ctx, uint32_t drag_id);
 
 int IMUI_PushLayout (imui_ctx_t *ctx, bool vertical);
 void IMUI_PopLayout (imui_ctx_t *ctx);
@@ -185,7 +188,12 @@ int IMUI_UpdateHotActive (imui_ctx_t *ctx);
 
 view_pos_t IMUI_TextSize (imui_ctx_t *ctx, const char *str);
 
+uint32_t IMUI_ActiveItem (imui_ctx_t *ctx,
+						  imui_size_t xsize, int xvalue,
+						  imui_size_t ysize, int yvalue,
+						  const char *name);
 void IMUI_SetActive (imui_ctx_t *ctx, bool active);
+void IMUI_SetDropTarget (imui_ctx_t *ctx, bool drop_target);
 void IMUI_SetFocus (imui_ctx_t *ctx, bool focus);
 void IMUI_SetFill (imui_ctx_t *ctx, byte color);
 void IMUI_Label (imui_ctx_t *ctx, const char *label);

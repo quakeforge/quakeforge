@@ -46,6 +46,7 @@ void IMUI_SetSize (imui_ctx_t ctx, int xlen, int ylen) = #0;
 int IMUI_ProcessEvent (imui_ctx_t ctx, /*const*/ struct IE_event_s *ie_event) = #0;
 void IMUI_BeginFrame (imui_ctx_t ctx) = #0;
 void IMUI_Draw (imui_ctx_t ctx) = #0;
+void IMUI_SetDragId (imui_ctx_t ctx, uint drag_id) = #0;
 
 int IMUI_PushLayout (imui_ctx_t ctx, int vertical) = #0;
 void IMUI_PopLayout (imui_ctx_t ctx) = #0;
@@ -63,6 +64,7 @@ int IMUI_UpdateHotActive (imui_ctx_t ctx) = #0;
 ivec2 IMUI_TextSize (imui_ctx_t ctx, string str) = #0;
 
 void IMUI_SetActive (imui_ctx_t ctx, bool active) = #0;
+void IMUI_SetDropTarget (imui_ctx_t ctx, bool drop_target) = #0;
 void IMUI_SetFocus (imui_ctx_t ctx, bool focus) = #0;
 void IMUI_SetFill (imui_ctx_t ctx, uint color) = #0;
 void IMUI_Label (imui_ctx_t ctx, string label) = #0;
@@ -77,7 +79,14 @@ void IMUI_Slider (imui_ctx_t ctx, float *value, float minval, float maxval,
 void IMUI_Spacer (imui_ctx_t ctx,
 				  imui_size_t xsize, int xvalue,
 				  imui_size_t ysize, int yvalue) = #0;
-
+uint IMUI_ActiveItem (imui_ctx_t ctx,
+					  imui_size_t xsize, int xvalue,
+					  imui_size_t ysize, int yvalue,
+					  string name) = #0;
+ivec2 IMUI_Dragable (imui_ctx_t ctx,
+					 imui_size_t xsize, int xvalue,
+					 imui_size_t ysize, int yvalue,
+					 string name) = #0;
 int IMUI_StartPanel (imui_ctx_t ctx, imui_window_t *panel) = #0;
 int IMUI_ExtendPanel (imui_ctx_t ctx, string panel_name) = #0;
 void IMUI_EndPanel (imui_ctx_t ctx) = #0;

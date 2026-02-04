@@ -49,6 +49,7 @@ typedef struct imui_reference_s {
 typedef struct imui_io_s {
 	ivec2       mouse;
 	ivec2       mouse_hot;
+	ivec2       mouse_active;
 	uint        buttons;
 	uint        pressed;
 	uint        released;
@@ -56,6 +57,7 @@ typedef struct imui_io_s {
 	uint        hot;
 	uint        active;
 	uint        shift;
+	uint        drag_id;
 } imui_io_t;
 
 typedef struct imui_key_s {
@@ -113,6 +115,7 @@ void IMUI_SetSize (imui_ctx_t ctx, int xlen, int ylen);
 /*bool*/int IMUI_ProcessEvent (imui_ctx_t ctx, /*const*/ struct IE_event_s *ie_event);
 void IMUI_BeginFrame (imui_ctx_t ctx);
 void IMUI_Draw (imui_ctx_t ctx);
+void IMUI_SetDragId (imui_ctx_t ctx, uint drag_id);
 
 int IMUI_PushLayout (imui_ctx_t ctx, int vertical);
 void IMUI_PopLayout (imui_ctx_t ctx);
@@ -130,6 +133,7 @@ int IMUI_UpdateHotActive (imui_ctx_t ctx);
 ivec2 IMUI_TextSize (imui_ctx_t ctx, string str);
 
 void IMUI_SetActive (imui_ctx_t ctx, bool active);
+void IMUI_SetDropTarget (imui_ctx_t ctx, bool drop_target);
 void IMUI_SetFocus (imui_ctx_t ctx, bool focus);
 void IMUI_SetFill (imui_ctx_t ctx, uint color);
 void IMUI_Label (imui_ctx_t ctx, string label);
@@ -144,7 +148,14 @@ void IMUI_Slider (imui_ctx_t ctx, float *value, float minval, float maxval,
 void IMUI_Spacer (imui_ctx_t ctx,
 				  imui_size_t xsize, int xvalue,
 				  imui_size_t ysize, int yvalue);
-
+uint IMUI_ActiveItem (imui_ctx_t ctx,
+					  imui_size_t xsize, int xvalue,
+					  imui_size_t ysize, int yvalue,
+					  string name);
+ivec2 IMUI_Dragable (imui_ctx_t ctx,
+					 imui_size_t xsize, int xvalue,
+					 imui_size_t ysize, int yvalue,
+					 string name);
 int IMUI_StartPanel (imui_ctx_t ctx, imui_window_t *panel);
 int IMUI_ExtendPanel (imui_ctx_t ctx, string panel_name);
 void IMUI_EndPanel (imui_ctx_t ctx);
