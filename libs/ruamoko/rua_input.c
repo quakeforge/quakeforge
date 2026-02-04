@@ -62,14 +62,14 @@ typedef struct input_resources_s {
 	ptrset_t    axes;
 } input_resources_t;
 
-static void
-bi_IN_SendConnectedDevices (progs_t *pr, void *_res)
+#define bi(x) static void bi_##x (progs_t *pr, void *_res)
+
+bi (IN_SendConnectedDevices)
 {
 	IN_SendConnectedDevices ();
 }
 
-static void
-bi_IN_FindDeviceId (progs_t *pr, void *_res)
+bi (IN_FindDeviceId)
 {
 	qfZoneScoped (true);
 	const char *id = P_GSTRING (pr, 0);
@@ -77,8 +77,7 @@ bi_IN_FindDeviceId (progs_t *pr, void *_res)
 	R_INT (pr) = IN_FindDeviceId (id);
 }
 
-static void
-bi_IN_GetDeviceName (progs_t *pr, void *_res)
+bi (IN_GetDeviceName)
 {
 	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
@@ -86,8 +85,7 @@ bi_IN_GetDeviceName (progs_t *pr, void *_res)
 	RETURN_STRING (pr, IN_GetDeviceName (devid));
 }
 
-static void
-bi_IN_GetDeviceId (progs_t *pr, void *_res)
+bi (IN_GetDeviceId)
 {
 	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
@@ -95,20 +93,17 @@ bi_IN_GetDeviceId (progs_t *pr, void *_res)
 	RETURN_STRING (pr, IN_GetDeviceId (devid));
 }
 
-static void
-bi_IN_AxisInfo (progs_t *pr, void *_res)
+bi (IN_AxisInfo)
 {
 	qfZoneScoped (true);
 }
 
-static void
-bi_IN_ButtonInfo (progs_t *pr, void *_res)
+bi (IN_ButtonInfo)
 {
 	qfZoneScoped (true);
 }
 
-static void
-bi_IN_GetAxisName (progs_t *pr, void *_res)
+bi (IN_GetAxisName)
 {
 	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
@@ -117,8 +112,7 @@ bi_IN_GetAxisName (progs_t *pr, void *_res)
 	RETURN_STRING (pr, IN_GetAxisName (devid, axis));
 }
 
-static void
-bi_IN_GetButtonName (progs_t *pr, void *_res)
+bi (IN_GetButtonName)
 {
 	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
@@ -127,8 +121,7 @@ bi_IN_GetButtonName (progs_t *pr, void *_res)
 	RETURN_STRING (pr, IN_GetButtonName (devid, button));
 }
 
-static void
-bi_IN_GetAxisNumber (progs_t *pr, void *_res)
+bi (IN_GetAxisNumber)
 {
 	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
@@ -137,8 +130,7 @@ bi_IN_GetAxisNumber (progs_t *pr, void *_res)
 	R_INT (pr) = IN_GetAxisNumber (devid, axis_name);
 }
 
-static void
-bi_IN_GetButtonNumber (progs_t *pr, void *_res)
+bi (IN_GetButtonNumber)
 {
 	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
@@ -147,30 +139,26 @@ bi_IN_GetButtonNumber (progs_t *pr, void *_res)
 	R_INT (pr) = IN_GetButtonNumber (devid, button_name);
 }
 
-static void
-bi_IN_UpdateGrab (progs_t *pr, void *_res)
+bi (IN_UpdateGrab)
 {
 	qfZoneScoped (true);
 	IN_UpdateGrab (P_INT (pr, 0));
 }
 
-static void
-bi_IN_ProcessEvents (progs_t *pr, void *_res)
+bi (IN_ProcessEvents)
 {
 	qfZoneScoped (true);
 	IN_ProcessEvents ();
 }
 
-static void
-bi_IN_UpdateAxis (progs_t *pr, void *_res)
+bi (IN_UpdateAxis)
 {
 	qfZoneScoped (true);
 	in_axis_t  *axis = &P_STRUCT (pr, in_axis_t, 0);
 	R_FLOAT(pr) = IN_UpdateAxis (axis);
 }
 
-static void
-bi_IN_ClearStates (progs_t *pr, void *_res)
+bi (IN_ClearStates)
 {
 	qfZoneScoped (true);
 	IN_ClearStates ();
@@ -198,8 +186,7 @@ bi_add_pointer (ptrset_t *pointers, pr_ptr_t ptr)
 	DARRAY_INSERT_AT (pointers, ptr, ind);
 }
 
-static void
-bi_IN_CreateButton (progs_t *pr, void *_res)
+bi (IN_CreateButton)
 {
 	qfZoneScoped (true);
 	input_resources_t *res = _res;
@@ -214,8 +201,7 @@ bi_IN_CreateButton (progs_t *pr, void *_res)
 	bi_add_pointer (&res->buttons, R_POINTER (pr));
 }
 
-static void
-bi_IN_CreateAxis (progs_t *pr, void *_res)
+bi (IN_CreateAxis)
 {
 	qfZoneScoped (true);
 	input_resources_t *res = _res;
@@ -230,8 +216,7 @@ bi_IN_CreateAxis (progs_t *pr, void *_res)
 	bi_add_pointer (&res->axes, R_POINTER (pr));
 }
 
-static void
-bi_IN_GetAxisInfo (progs_t *pr, void *_res)
+bi (IN_GetAxisInfo)
 {
 	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
@@ -246,8 +231,7 @@ bi_IN_GetAxisInfo (progs_t *pr, void *_res)
 	}
 }
 
-static void
-bi_IN_GetButtonInfo (progs_t *pr, void *_res)
+bi (IN_GetButtonInfo)
 {
 	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
@@ -479,48 +463,43 @@ rua_IN_AxisRemoveListener_method (progs_t *pr, void *_res)
 	rua_remove_axis_listener (pr, res, rua_axis_listener_method);
 }
 
-static void
-bi_IN_LoadConfig (progs_t *pr, void *_res)
+bi (IN_LoadConfig)
 {
 	qfZoneScoped (true);
 	IN_LoadConfig (Plist_GetItem (pr, P_INT (pr, 0)));
 }
 
-static void
-bi_IMT_CreateContext (progs_t *pr, void *_res)
+bi (IMT_CreateContext)
 {
 	qfZoneScoped (true);
 	const char *name = P_GSTRING (pr, 0);
 	R_INT (pr) = IMT_CreateContext (name);
 }
 
-static void
-bi_IMT_GetContext (progs_t *pr, void *_res)
+bi (IMT_GetContext)
 {
 	qfZoneScoped (true);
 	R_INT (pr) = IMT_GetContext ();
 }
 
-static void
-bi_IMT_SetContext (progs_t *pr, void *_res)
+bi (IMT_SetContext)
 {
 	qfZoneScoped (true);
 	IMT_SetContext (P_INT (pr, 0));
 }
 
-static void
-bi_IMT_SetContextCbuf (progs_t *pr, void *_res)
+bi (IMT_SetContextCbuf)
 {
 }
 
-static void
-bi_IN_Binding_HandleEvent (progs_t *pr, void *_res)
+bi (IN_Binding_HandleEvent)
 {
 	qfZoneScoped (true);
 	auto ie_event = (struct IE_event_s *) P_GPOINTER (pr, 0);
 	IN_Binding_HandleEvent (ie_event);
 }
 
+#undef bi
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 #define bi(x,np,params...) {#x, RUA_Secured, -1, np, {params}}
