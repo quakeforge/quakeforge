@@ -1216,6 +1216,80 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 	return false;
 }
 
+@interface NodePanel : Window
+{
+}
++panel:(imui_ctx_t)ctx;
+@end
+@implementation NodePanel
+-initWithContext:(imui_ctx_t)ctx
+{
+	if (!(self = [super initWithContext:ctx name:"NodePanel"])) {
+		return nil;
+	}
+	IMUI_Window_SetAutoFit (window, false);
+	return self;
+}
+
++panel:(imui_ctx_t)ctx
+{
+	return [[[self alloc] initWithContext:ctx] autorelease];
+}
+
+-draw
+{
+	if (![super draw]) {
+		return nil;
+	}
+	int         width = Draw_Width ();
+	int         height = Draw_Height ();
+	UI_Panel(window) {
+		IMUI_State_SetPos (IMUI_context, nil, {50, 50});
+		IMUI_State_SetLen (IMUI_context, nil, {width-100, height-100});
+		UI_SetFill (current_style.background.normal);
+
+		uint dent = IMUI_ActiveItem (IMUI_context,
+									 imui_size_pixels, 25,
+									 imui_size_pixels, 25,
+									 sprintf ("source_%p", self));
+		IMUI_SetDropTarget (IMUI_context, true);
+		IMUI_SetViewPos (IMUI_context, {50, 50});
+		IMUI_SetViewFree (IMUI_context, {true, true});
+
+		int mode = IMUI_UpdateHotActive (IMUI_context);
+		IMUI_CheckButtonState (IMUI_context);
+		UI_SetFill (current_style.foreground.color[mode]);
+
+		uint tent = IMUI_ActiveItem (IMUI_context,
+									 imui_size_pixels, 25,
+									 imui_size_pixels, 25,
+									 sprintf ("target_%p", self));
+		IMUI_SetDropTarget (IMUI_context, true);
+		IMUI_SetViewPos (IMUI_context, {width - 175, height - 175});
+		IMUI_SetViewFree (IMUI_context, {true, true});
+
+		mode = IMUI_UpdateHotActive (IMUI_context);
+		IMUI_CheckButtonState (IMUI_context);
+		UI_SetFill (current_style.foreground.color[mode]);
+
+		auto io = IMUI_GetIO (IMUI_context);
+		vec2 start = vec2(io.mouse - io.mouse_active) + 13;
+		vec2 end = vec2(io.mouse);
+		if (io.active == dent || io.active == tent) {
+			IMUI_SetDragId (IMUI_context, io.active);
+		}
+		io = IMUI_GetIO (IMUI_context);
+		if (!io.pressed && io.drag_id != ~0u) {
+			Painter_AddBezier (start, {(start.x + end.x)/2, start.y},
+							   {(start.x + end.x)/2, end.y}, end,
+							   3, {0.85, 0.5, 0.77, 1});
+		}
+	}
+	return self;
+}
+@end
+
+
 int
 main (int argc, string *argv)
 {
@@ -1276,6 +1350,8 @@ main (int argc, string *argv)
 #endif
 
 	main_menu = [[MainMenu menu:imui_ctx] retain];
+
+	//auto node_panel = [[NodePanel panel:imui_ctx] retain];
 
 	auto main_window = [[MainWindow window:imui_ctx] retain];
 

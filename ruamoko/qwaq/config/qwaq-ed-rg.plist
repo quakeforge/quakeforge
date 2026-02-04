@@ -2586,20 +2586,6 @@ render_graph = {
 							);
 							layout = $fisheye.layout;
 						};
-						painter = {
-							@inherit = $compose_base;
-
-							color = $color.painter;
-							tasks = (
-								{ func = painter_draw; },
-							);
-
-							stages = (
-								$fstriangle.shader.vertex,
-								$painter.shader.fragment,
-							);
-							layout = $painter.layout;
-						};
 						slice = {
 							@inherit = $compose_base;
 
@@ -2615,6 +2601,20 @@ render_graph = {
 							vertexInput = $slice.vertexInput;
 							inputAssembly = $slice.inputAssembly;
 							layout = $slice.layout;
+						};
+						painter = {
+							@inherit = $compose_base;
+
+							color = $color.painter;
+							tasks = (
+								{ func = painter_draw; },
+							);
+
+							stages = (
+								$fstriangle.shader.vertex,
+								$painter.shader.fragment,
+							);
+							layout = $painter.layout;
 						};
 						lines = {
 							@inherit = $compose_base;
