@@ -172,6 +172,9 @@ int file_item_cmp (void *a, void *b)
 			if (filePath) {
 				path = filePath + "/" + path;
 			}
+			[accepted_item release];
+			accepted_item = nil;
+
 			str_free (filePath);
 			path = QFS_CompressPath (path);
 			filePath = str_hold (path);
@@ -179,8 +182,9 @@ int file_item_cmp (void *a, void *b)
 		} else {
 			printf ("item accepted:%s\n", [accepted_item name]);
 			string path = filePath + "/" + [accepted_item name];
-			path = QFS_CompressPath (path);
+			[accepted_item release];
 			accepted_item = nil;
+			path = QFS_CompressPath (path);
 			[target openFile:path forSave:forSave];
 		}
 	}
@@ -194,7 +198,7 @@ int file_item_cmp (void *a, void *b)
 
 -(void)itemAccepted:(int)item in:(Array *) items
 {
-	accepted_item = [items objectAtIndex:item];
+	accepted_item = [[items objectAtIndex:item] retain];
 }
 
 @end
