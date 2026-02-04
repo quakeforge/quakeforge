@@ -2030,11 +2030,76 @@ render_graph = {
 				};
 			};
 			subpasses = {
-				gbuffer = {// subpass 2
+				unlit = {// subpass 0
+					color = "[ 0.25, 0.25, 0.3, 1]";
+					dependencies = (
+						{@inherit = $extdepth_dependency; name = $external;},
+						{@inherit = $extcolor_dependency; name = $external;},
+					);
+					attachments = {
+						color = {
+							emission = {
+								layout = color_attachment_optimal;
+								blend = $alpha_blend;
+							};
+						};
+						depth = {
+							depth = depth_stencil_read_only_optimal;
+						};
+						preserve = (color, normal, output);
+					};
+					base_pipeline = {
+						@inherit = $pipeline_base;
+						rasterization = $cw_cull_back;
+					};
+					pipelines = {
+						bsp:sky = {
+							color = $color.bsp;
+							tasks = (
+								{ func = bsp_draw_queue;
+								  params = (main, background, 1); },
+								{ func = bsp_draw_queue;
+								  params = (main, sky, 1); },
+							);
+
+							stages = (
+								$brush.shader.quake_vertex,
+								$brush.shader.sky_fragment,
+							);
+							vertexInput = $brush.vertexInput;
+							inputAssembly = $brush.inputAssembly;
+							layout = $brush.layout;
+						};
+						planetary:gbuffer = {
+							color = $color.mesh;
+							tasks = (
+								{ func = mesh_draw_queue;
+								  params = (main, 1, planetary); },
+							);
+
+							stages = (
+								$mesh.shader.gbuf_vertex,
+								$mesh.shader.planetary,
+							);
+							vertexInput = $mesh.vertexInput;
+							inputAssembly = $mesh.inputAssembly;
+							layout = $mesh.planetary;
+							dynamic = {
+								dynamicState = (
+									viewport,
+									scissor,
+									vertex_input_ext,
+								);
+							};
+						};
+					};
+				};
+				gbuffer = {// subpass 1
 					color = "[ 0.3,  0.7,  0.3, 1]";
 					dependencies = (
 						{@inherit = $extdepth_dependency; name = $external;},
 						{@inherit = $extcolor_dependency; name = $external;},
+						{@inherit = $color_dependency; name = unlit;},
 					);
 					attachments = {
 						color = {
@@ -2113,73 +2178,7 @@ render_graph = {
 						};
 					};
 				};
-				unlit = {// subpass 3
-					color = "[ 0.25, 0.25, 0.3, 1]";
-					dependencies = (
-						{@inherit = $extdepth_dependency; name = $external;},
-						{@inherit = $extcolor_dependency; name = $external;},
-						{@inherit = $color_dependency; name = gbuffer;},
-					);
-					attachments = {
-						color = {
-							emission = {
-								layout = color_attachment_optimal;
-								blend = $blend_disable;
-							};
-						};
-						depth = {
-							depth = depth_stencil_read_only_optimal;
-						};
-						preserve = (color, normal, output);
-					};
-					base_pipeline = {
-						@inherit = $pipeline_base;
-						rasterization = $cw_cull_back;
-					};
-					pipelines = {
-						bsp:sky = {
-							color = $color.bsp;
-							tasks = (
-								// FIXME background and sky should not use OIT
-								{ func = bsp_draw_queue;
-								  params = (main, background, 1); },
-								{ func = bsp_draw_queue;
-								  params = (main, sky, 1); },
-							);
-
-							stages = (
-								$brush.shader.quake_vertex,
-								$brush.shader.sky_fragment,
-							);
-							vertexInput = $brush.vertexInput;
-							inputAssembly = $brush.inputAssembly;
-							layout = $brush.layout;
-						};
-						planetary:gbuffer = {
-							color = $color.mesh;
-							tasks = (
-								{ func = mesh_draw_queue;
-								  params = (main, 1, planetary); },
-							);
-
-							stages = (
-								$mesh.shader.gbuf_vertex,
-								$mesh.shader.planetary,
-							);
-							vertexInput = $mesh.vertexInput;
-							inputAssembly = $mesh.inputAssembly;
-							layout = $mesh.planetary;
-							dynamic = {
-								dynamicState = (
-									viewport,
-									scissor,
-									vertex_input_ext,
-								);
-							};
-						};
-					};
-				};
-				lighting = {// subpass 4
+				lighting = {// subpass 2
 					color = "[ 0.8,  0.8,  0.8, 1]";
 					dependencies = {
 						unlit = $depthread_dependency;
@@ -2270,7 +2269,7 @@ render_graph = {
 						};
 					};
 				};
-				compose = {// subpass 5
+				compose = {// subpass 3
 					color = "[ 0.7,  0.3,  0.3, 1]";
 					dependencies = {
 						gbuffer = $color_dependency;
@@ -2399,7 +2398,7 @@ render_graph = {
 						};
 					};
 				};
-				atmosphere = {// subpass 6
+				atmosphere = {// subpass 4
 					color = "[ 0.0784313725490196, 0.19607843137254902, 0.37254901960784315, 1]";
 					dependencies = {
 						compose = $color_dependency;
@@ -2434,7 +2433,7 @@ render_graph = {
 						};
 					};
 				};
-				entid = {// subpass 7
+				entid = {// subpass 5
 					color = "[ 1,  0,  0, 1]";
 					dependencies = (
 						{@inherit = $extdepth_dependency; name = $external;},

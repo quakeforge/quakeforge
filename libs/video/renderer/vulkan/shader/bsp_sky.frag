@@ -4,8 +4,6 @@
 
 #include "fog.finc"
 
-#include "oit_store.finc"
-
 layout (set = 3, binding = 0) uniform sampler2DArray SkySheet;
 layout (set = 4, binding = 0) uniform samplerCube SkyBox;
 layout (set = 5, binding = 0) uniform sampler2D SkyMap;
@@ -23,7 +21,7 @@ layout (location = 1) in vec3 direction;
 layout (location = 2) in vec4 color;
 
 layout(early_fragment_tests) in;
-//layout (location = 0) out vec4 frag_color;
+layout (location = 0) out vec4 frag_color;
 
 const float SCALE = 189.0 / 64.0;
 
@@ -113,6 +111,5 @@ main (void)
 	} else {
 		c = vec4 (0, 0, 0, 1);
 	}
-	c = FogBlend (c, fog);
-	StoreFrag (c, gl_FragCoord.z);
+	frag_color = c;
 }
