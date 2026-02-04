@@ -648,10 +648,6 @@ center (uint v, uint len)
 			IMUI_Layout_SetXSize (IMUI_context, imui_size_none, 0);
 			IMUI_Layout_SetYSize (IMUI_context, imui_size_none, 0);
 			ivec2 cpos = (cursor - base) * X_size - ivec2(1,0);
-			//FIXME with this call *before* IMUI_SetViewPos (use of cpos)
-			//qfcc ices
-			//printf ("%d,%d %d,%d %d,%d\n", cursor.x, cursor.y, base.x, base.y,
-			//		cpos.x, cpos.y);
 			IMUI_SetViewPos (IMUI_context, cpos);
 			IMUI_SetViewLen (IMUI_context, {3, X_size.y});
 			IMUI_SetViewFree (IMUI_context, {true, true});
