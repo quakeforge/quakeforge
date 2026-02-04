@@ -72,7 +72,7 @@ static const uint32_t qfm_type_size[] = {
 	[qfm_s16n]    = 2,
 	[qfm_u16n]    = 2,
 
-	[qfm_f16]     = 3,
+	[qfm_f16]     = 2,
 	[qfm_f32]     = 4,
 	[qfm_f64]     = 8,
 
