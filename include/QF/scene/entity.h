@@ -102,7 +102,6 @@ typedef struct renderer_s {
 	uint32_t    submesh_mask;
 	uint32_t    skin;				//FIXME these two likely to be confusing
 	uint32_t    skindesc;			//FIXME ^^
-	struct trail_s *trail;
 	unsigned    fullbright:1;
 	unsigned    noshadowcast:1;
 	unsigned    noshadowreceive:1;
