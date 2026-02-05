@@ -269,11 +269,16 @@ copy_maps (uint32_t start, uint32_t count, int stage_id,
 	}
 
 	auto ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	ib.barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = 0;
+	ib.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	ib.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.subresourceRange.layerCount = 0;
 
-	VkImageMemoryBarrier barriers[num_regions];
+	VkImageMemoryBarrier2 barriers[num_regions];
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = countof (barriers),
+		.pImageMemoryBarriers = barriers,
+	};
 	VkImageCopy2 regions[num_regions];
 	VkCopyImageInfo2 copies[num_copies];
 	num_regions = 0;
@@ -300,7 +305,7 @@ copy_maps (uint32_t start, uint32_t count, int stage_id,
 
 			ind = num_regions++;
 
-			barriers[ind] = ib.barrier;
+			barriers[ind] = ib;
 			barriers[ind].subresourceRange.baseArrayLayer = tgt >> 5;
 			barriers[ind].image = lctx->map_images[tgt & 0x1f];
 
@@ -340,8 +345,7 @@ copy_maps (uint32_t start, uint32_t count, int stage_id,
 		for (int i = 0; i < num_copies; i++) {
 			dfunc->vkCmdCopyImage2 (cmd, &copies[i]);
 		}
-		dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
-									 0, 0, 0, 0, 0, num_regions, barriers);
+		dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 	}
 	dfunc->vkEndCommandBuffer (cmd);
 	QFV_AppendCmdBuffer (ctx, cmd);
@@ -622,11 +626,15 @@ transition_shadow_targets (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 	}
 
 	auto ib = imageBarriers[qfv_LT_ShaderReadOnly_to_TransferDst];
-	ib.barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = 0;
+	ib.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	ib.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.subresourceRange.layerCount = 0;
 
-	VkImageMemoryBarrier barriers[num_barriers];
+	VkImageMemoryBarrier2 barriers[num_barriers];
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.pImageMemoryBarriers = barriers,
+	};
 	num_barriers = 0;
 	last = ~0u;
 	for (int i = 0; i < LIGHTING_STAGES; i++) {
@@ -636,7 +644,7 @@ transition_shadow_targets (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 			int ind = num_barriers - 1;
 			// if the map id is different or if the layers aren't sequential
 			if (tgt != last + 0x20) {
-				barriers[num_barriers++] = ib.barrier;
+				barriers[num_barriers++] = ib;
 				ind = num_barriers - 1;
 				barriers[ind].subresourceRange.baseArrayLayer = tgt >> 5;
 				barriers[ind].image = lctx->map_images[tgt & 0x1f];
@@ -653,8 +661,8 @@ transition_shadow_targets (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 	});
-	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0, num_barriers, barriers);
+	dep.imageMemoryBarrierCount = num_barriers;
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 	dfunc->vkEndCommandBuffer (cmd);
 	QFV_AppendCmdBuffer (ctx, cmd);
 }
@@ -964,27 +972,23 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 			}
 		}
 		QFV_PacketScatterBuffer (packet, lframe->entid_buffer, 1, &eid_scatter,
-				&(qfv_bufferbarrier_t) {
-					.srcStages = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
-					.dstStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
-					.barrier = {
-						.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
-						.srcAccessMask = VK_ACCESS_SHADER_READ_BIT,
-						.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-						.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-						.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-					},
+				&(VkBufferMemoryBarrier2) {
+					.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+					.srcStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
+					.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+					.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+					.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+					.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+					.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 				},
-				&(qfv_bufferbarrier_t) {
-					.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
-					.dstStages = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
-					.barrier = {
-						.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
-						.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-						.dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
-						.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-						.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-					},
+				&(VkBufferMemoryBarrier2) {
+					.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+					.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+					.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
+					.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+					.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+					.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+					.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 				});
 
 		memset (lframe->id_radius, -1, MaxLights * sizeof (light_idrad_t));
@@ -1201,43 +1205,37 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 		enqueue_map (matrix_ids, lframe, r);
 	}
 
-	static qfv_bufferbarrier_t transfer_dst = {
-		.srcStages = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
-				   | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-		.dstStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
-		.barrier = {
-			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
-			.srcAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT
-						   | VK_ACCESS_SHADER_READ_BIT,
-			.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		},
+	static VkBufferMemoryBarrier2 transfer_dst = {
+		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+		.srcStageMask = VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT
+					  | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+		.srcAccessMask = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT
+					   | VK_ACCESS_2_SHADER_READ_BIT,
+		.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 	};
-	static qfv_bufferbarrier_t vtxattr_read = {
-		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
-		.dstStages = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
-				   | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-		.barrier = {
-			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
-			.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-			.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT
-						   | VK_ACCESS_SHADER_READ_BIT,
-			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		},
+	static VkBufferMemoryBarrier2 vtxattr_read = {
+		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+		.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT
+					  | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+		.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+		.dstAccessMask = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT
+					   | VK_ACCESS_2_SHADER_READ_BIT,
+		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 	};
-	static qfv_bufferbarrier_t storage_read = {
-		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
-		.dstStages = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
+	static VkBufferMemoryBarrier2 storage_read = {
+		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+		.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT
 				   | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-		.barrier = {
-			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
-			.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-			.dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
-			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		},
+		.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+		.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 	};
 
 	QFV_PacketScatterBuffer (packet, lframe->id_buffer, 1, &id_scatter,
@@ -1494,12 +1492,16 @@ make_default_map (int size, VkImage default_map, vulkan_ctx_t *ctx)
 	}
 
 	auto ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	ib.barrier.image = default_map;
-	ib.barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0, 1, &ib.barrier);
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &ib,
+	};
+	ib.image = default_map;
+	ib.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	ib.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 
 	VkBufferImageCopy copy_region[6];
 	for (int i = 0; i < 6; i++) {
@@ -1517,12 +1519,11 @@ make_default_map (int size, VkImage default_map, vulkan_ctx_t *ctx)
 								   6, copy_region);
 
 	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	ib.barrier.image = default_map;
-	ib.barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0, 1, &ib.barrier);
+	ib.image = default_map;
+	ib.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	ib.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 	QFV_PacketSubmit (packet);
 }
 
@@ -2828,31 +2829,34 @@ transition_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	dfunc->vkBeginCommandBuffer (cmd, &bInfo);
 
 	auto ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	ib.barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	VkImageMemoryBarrier barriers[lctx->num_maps];
+	ib.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	ib.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	VkImageMemoryBarrier2 barriers[lctx->num_maps];
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = countof (barriers),
+		.pImageMemoryBarriers = barriers,
+	};
 	for (int i = 0; i < lctx->num_maps; i++) {
-		barriers[i] = ib.barrier;
+		barriers[i] = ib;
 		barriers[i].image = lctx->map_images[i];
 	}
-	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0, lctx->num_maps, barriers);
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 	VkImageLayout layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	VkClearDepthStencilValue value = {};
-	VkImageSubresourceRange range = ib.barrier.subresourceRange;
+	VkImageSubresourceRange range = ib.subresourceRange;
 	for (int i = 0; i < lctx->num_maps; i++) {
 		dfunc->vkCmdClearDepthStencilImage (cmd, lctx->map_images[i], layout,
 											&value, 1, &range);
 	}
 	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	ib.barrier.subresourceRange = range;
+	ib.subresourceRange = range;
 	for (int i = 0; i < lctx->num_maps; i++) {
-		barriers[i] = ib.barrier;
+		barriers[i] = ib;
 		barriers[i].image = lctx->map_images[i];
 	}
-	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0, lctx->num_maps, barriers);
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 	dfunc->vkEndCommandBuffer (cmd);
 
 	VkSubmitInfo submitInfo = {

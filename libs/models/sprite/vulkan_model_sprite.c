@@ -153,29 +153,33 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 		sprite_ctx->frames[i]->data = i;
 	}
 
-	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
-	bb.barrier.buffer = sprite->verts;
-	bb.barrier.size = numverts * sizeof (spritevrt_t);
-	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
-								 0, 0, 0, 1, &bb.barrier, 0, 0);
+	auto bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.bufferMemoryBarrierCount = 1,
+		.pBufferMemoryBarriers = &bb,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &ib,
+	};
+	bb.buffer = sprite->verts;
+	bb.size = numverts * sizeof (spritevrt_t);
+	ib.image = sprite->image;
+	ib.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
+
 	VkBufferCopy copy_region[] = {
 		{ packet->offset, 0, numverts * sizeof (spritevrt_t) },
 	};
 	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer,
 							sprite->verts, 1, &copy_region[0]);
 	bb = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
-	bb.barrier.buffer = sprite->verts;
-	bb.barrier.size = numverts * sizeof (spritevrt_t);
-	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
-								 0, 0, 0, 1, &bb.barrier, 0, 0);
-
-	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	ib.barrier.image = sprite->image;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
+	bb.buffer = sprite->verts;
+	bb.size = numverts * sizeof (spritevrt_t);
+	dep.imageMemoryBarrierCount = 0;
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 
 	VkBufferImageCopy copy = {
 		packet->offset + numverts * sizeof (spritevrt_t), 0, 0,

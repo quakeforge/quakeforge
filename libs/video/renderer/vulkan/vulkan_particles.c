@@ -251,22 +251,21 @@ update_particles (const exprval_t **p, exprval_t *result, exprctx_t *ectx)
 
 	dfunc->vkResetEvent (device->dev, pframe->updateEvent);
 
-	VkBufferMemoryBarrier pl_barrier[] = {
-		{ .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
-			.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT,
-			.dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
-			.buffer = packet->stage->buffer,
-			.offset = sysoffs,
-			.size = paramoffs + paramsize,
-		},
+	VkBufferMemoryBarrier2 pl_barrier = {
+		.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+		.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT,
+		.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+		.buffer = packet->stage->buffer,
+		.offset = sysoffs,
+		.size = paramoffs + paramsize,
 	};
-	dfunc->vkCmdPipelineBarrier (packet->cmd,
-								 VK_PIPELINE_STAGE_HOST_BIT,
-								 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-								 0,
-								 0, 0,
-								 1, pl_barrier,
-								 0, 0);
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &(VkDependencyInfo) {
+				.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+				.bufferMemoryBarrierCount = 1,
+				.pBufferMemoryBarriers = &pl_barrier,
+			});
 
 	dfunc->vkCmdBindPipeline (packet->cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
 							  taskctx->pipeline->pipeline);

@@ -118,7 +118,7 @@ debug_planes_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto buffer = &pctx->resources->objects[ctx->curFrame].buffer;
 	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
 	auto db = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
-	db.dstStages |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	db.dstStageMask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	QFV_PacketCopyBuffer (packet, buffer->buffer, 0, &sb, &db);
 	QFV_PacketSubmit (packet);
 

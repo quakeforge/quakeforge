@@ -195,12 +195,19 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto obj = resources->objects;
 	auto img = scr_fisheye ? &obj[tframe->cube_heads] : &obj[tframe->heads];
 	auto image = img->image.image;
-	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	ib.barrier.image = image;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
+
+	auto ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	auto bb = bufferBarriers[qfv_BB_ShaderRO_to_ShaderWrite];
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.bufferMemoryBarrierCount = 0,
+		.pBufferMemoryBarriers = &bb,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &ib,
+	};
+	ib.image = image;
+	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 	VkClearColorValue clear_color[] = {
 		{ .int32 = {-1, -1, -1, -1} },
 	};
@@ -210,18 +217,15 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdClearColorImage (cmd, image,
 								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								 clear_color, 1, ranges);
-	ib = imageBarriers[qfv_LT_TransferDst_to_General];
-	ib.barrier.image = image;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
 
-	auto bb = bufferBarriers[qfv_BB_ShaderRO_to_ShaderWrite];
-	bb.barrier.buffer = obj[tframe->frags].buffer.buffer;
-	bb.barrier.size = VK_WHOLE_SIZE;
-	dfunc->vkCmdPipelineBarrier (cmd, bb.srcStages, bb.dstStages,
-								 0, 0, 0, 1, &bb.barrier, 0, 0);
+	ib = imageBarriers[qfv_LT_TransferDst_to_General];
+	ib.image = image;
+	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+	bb.buffer = obj[tframe->frags].buffer.buffer;
+	bb.size = VK_WHOLE_SIZE;
+	dep.bufferMemoryBarrierCount = 1;
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 
 	dfunc->vkEndCommandBuffer (cmd);
 	QFV_AppendCmdBuffer (ctx, cmd);
@@ -231,17 +235,15 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	*state = (qfv_transtate_t) { 0, tctx->maxFragments };
 	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
 	QFV_PacketCopyBuffer (packet, obj[tframe->state].buffer.buffer, 0, &sb,
-		&(qfv_bufferbarrier_t) {
-			.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
-			.dstStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-			.barrier = {
-				.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
-				.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-				.dstAccessMask = VK_ACCESS_SHADER_READ_BIT
-							   | VK_ACCESS_SHADER_WRITE_BIT,
-				.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-				.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			},
+		&(VkBufferMemoryBarrier2) {
+			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+			.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+			.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+			.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+			.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT
+						   | VK_ACCESS_2_SHADER_WRITE_BIT,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		});
 	QFV_PacketSubmit (packet);
 }
@@ -271,10 +273,14 @@ sync_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto obj = resources->objects;
 
 	auto bb = bufferBarriers[qfv_BB_ShaderWrite_to_ShaderRO];
-	bb.barrier.buffer = obj[tframe->frags].buffer.buffer;
-	bb.barrier.size = VK_WHOLE_SIZE;
-	dfunc->vkCmdPipelineBarrier (cmd, bb.srcStages, bb.dstStages,
-								 0, 0, 0, 1, &bb.barrier, 0, 0);
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.bufferMemoryBarrierCount = 0,
+		.pBufferMemoryBarriers = &bb,
+	};
+	bb.buffer = obj[tframe->frags].buffer.buffer;
+	bb.size = VK_WHOLE_SIZE;
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 
 	dfunc->vkEndCommandBuffer (cmd);
 	QFV_AppendCmdBuffer (ctx, cmd);

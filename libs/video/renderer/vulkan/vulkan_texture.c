@@ -600,11 +600,14 @@ Vulkan_UpdateTex (vulkan_ctx_t *ctx, qfv_tex_t *tex, tex_t *src,
 	}
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.update");
 
-	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_ShaderReadOnly_to_TransferDst];
-	ib.barrier.image = tex->image;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
+	auto ib = imageBarriers[qfv_LT_ShaderReadOnly_to_TransferDst];
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &ib,
+	};
+	ib.image = tex->image;
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 
 	auto data = stage_tex_data_rows (packet, src, 0, src->height, bpp, 0, 0);
 	auto offset = QFV_PacketOffset (packet, data);
@@ -629,14 +632,12 @@ Vulkan_UpdateTex (vulkan_ctx_t *ctx, qfv_tex_t *tex, tex_t *src,
 								   1, &copy);
 	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
 	if (vert) {
-		ib.dstStages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+		ib.dstStageMask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
 	}
-	ib.barrier.image = tex->image;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
+	ib.image = tex->image;
+	ib.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 	QFV_PacketSubmit (packet);
 }
 

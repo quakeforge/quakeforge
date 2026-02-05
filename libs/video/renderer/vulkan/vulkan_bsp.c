@@ -1093,16 +1093,19 @@ create_default_skys (vulkan_ctx_t *ctx, qfv_packet_t *packet, qfv_resobj_t *res)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	VkImageMemoryBarrier barriers[] = { [0 ... 2] = ib.barrier };
+	auto ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	ib.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	VkImageMemoryBarrier2 barriers[] = { [0 ... 2] = ib };
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = countof (barriers),
+		.pImageMemoryBarriers = barriers,
+	};
 	barriers[0].image = res[0].image.image;
 	barriers[1].image = res[1].image.image;
 	barriers[2].image = res[2].image.image;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 3, barriers);
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 
 	VkClearColorValue color = {};
 	VkImageSubresourceRange range = {
@@ -1115,17 +1118,15 @@ create_default_skys (vulkan_ctx_t *ctx, qfv_packet_t *packet, qfv_resobj_t *res)
 								 &color, 1, &range);
 
 	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	barriers[0] = ib.barrier;
-	barriers[1] = ib.barrier;
-	barriers[2] = ib.barrier;
+	ib.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	barriers[0] = ib;
+	barriers[1] = ib;
+	barriers[2] = ib;
 	barriers[0].image = res[0].image.image;
 	barriers[1].image = res[1].image.image;
 	barriers[2].image = res[2].image.image;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 3, barriers);
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 }
 
 static void

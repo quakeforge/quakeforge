@@ -131,11 +131,14 @@ QFV_CreateScrap (qfv_device_t *device, const char *name, int size,
 
 	qfv_packet_t *packet = QFV_PacketAcquire (stage, "scrap.create");
 	// no data for the packet
-	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	ib.barrier.image = scrap->image;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
+	auto ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	ib.image = scrap->image;
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &ib,
+	};
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 	VkClearColorValue color = {
 		.float32 = {0xde/255.0, 0xad/255.0, 0xbe/255.0, 0xef/255.0},
 	};
@@ -144,10 +147,8 @@ QFV_CreateScrap (qfv_device_t *device, const char *name, int size,
 								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								 &color, 1, &range);
 	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	ib.barrier.image = scrap->image;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
+	ib.image = scrap->image;
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 	QFV_PacketSubmit (packet);
 	return scrap;
 }
@@ -299,14 +300,17 @@ QFV_ScrapFlush (scrap_t *scrap)
 	qfv_packet_t *packet = scrap->packet;
 	qfv_stagebuf_t *stage = packet->stage;
 
-	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_ShaderReadOnly_to_TransferDst];
-	ib.barrier.image = scrap->image;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
+	auto ib = imageBarriers[qfv_LT_ShaderReadOnly_to_TransferDst];
+	ib.image = scrap->image;
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &ib,
+	};
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 
-	auto sb = imageBarriers[qfv_LT_TransferDst_to_TransferDst];
-	sb.barrier.image = scrap->image;
+	ib = imageBarriers[qfv_LT_TransferDst_to_TransferDst];
+	ib.image = scrap->image;
 
 	size_t      offset = packet->offset;
 	vrect_t    *batch = scrap->batch;
@@ -340,18 +344,13 @@ QFV_ScrapFlush (scrap_t *scrap)
 									   i, copy->a);
 		scrap->batch_count -= i;
 		if (scrap->batch_count) {
-			dfunc->vkCmdPipelineBarrier (packet->cmd,
-										 sb.srcStages, sb.dstStages,
-										 0, 0, 0, 0, 0,
-										 1, &sb.barrier);
+			dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 		}
 	}
 
 	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	ib.barrier.image = scrap->image;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
+	ib.image = scrap->image;
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 
 	*scrap->batch_tail = scrap->batch_free;
 	scrap->batch_free = scrap->batch;

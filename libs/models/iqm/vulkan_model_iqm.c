@@ -244,56 +244,54 @@ vulkan_iqm_load_arrays (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 	}
 	memcpy (idata, indices, index_bytes);
 
-	qfv_bufferbarrier_t bb[] = {
-		bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+	VkBufferMemoryBarrier2 vbb[] = {
 		bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
 		bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
 	};
-	bb[0].barrier.buffer = rmesh->geom_buffer;
-	bb[0].barrier.size = vsizes[0];
-	bb[1].barrier.buffer = rmesh->rend_buffer;
-	bb[1].barrier.size = vsizes[2];
-	bb[2].barrier.buffer = rmesh->index_buffer;
-	bb[2].barrier.size = index_bytes;
+	VkBufferMemoryBarrier2 ibb[] = {
+		bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+	};
+	VkDependencyInfo vdep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.bufferMemoryBarrierCount = countof (vbb),
+		.pBufferMemoryBarriers = vbb,
+	};
+	VkDependencyInfo idep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.bufferMemoryBarrierCount = countof (ibb),
+		.pBufferMemoryBarriers = ibb,
+	};
+	vbb[0].buffer = rmesh->geom_buffer;
+	vbb[0].size = vsizes[0];
+	vbb[1].buffer = rmesh->rend_buffer;
+	vbb[1].size = vsizes[2];
+	ibb[0].buffer = rmesh->index_buffer;
+	ibb[0].size = index_bytes;
 	VkBufferCopy copy_region[] = {
 		{ vpackets[0]->offset, 0, vsizes[0] },
 		{ vpackets[2]->offset, 0, vsizes[2] },
 		{ ipacket->offset, 0, index_bytes },
 	};
 
-	dfunc->vkCmdPipelineBarrier (vpackets[0]->cmd,
-								 bb[0].srcStages, bb[0].dstStages,
-								 0, 0, 0, 1, &bb[0].barrier, 0, 0);
-	dfunc->vkCmdPipelineBarrier (vpackets[2]->cmd,
-								 bb[0].srcStages, bb[0].dstStages,
-								 0, 0, 0, 1, &bb[1].barrier, 0, 0);
-	dfunc->vkCmdPipelineBarrier (ipacket->cmd,
-								 bb[0].srcStages, bb[0].dstStages,
-								 0, 0, 0, 1, &bb[2].barrier, 0, 0);
+	dfunc->vkCmdPipelineBarrier2 (vpackets[0]->cmd, &vdep);
+	dfunc->vkCmdPipelineBarrier2 (vpackets[2]->cmd, &idep);
 	dfunc->vkCmdCopyBuffer (vpackets[0]->cmd, ctx->staging->buffer,
 							rmesh->geom_buffer, 1, &copy_region[0]);
 	dfunc->vkCmdCopyBuffer (vpackets[0]->cmd, ctx->staging->buffer,
 							rmesh->rend_buffer, 1, &copy_region[1]);
 	dfunc->vkCmdCopyBuffer (ipacket->cmd, ctx->staging->buffer,
 							rmesh->index_buffer, 1, &copy_region[2]);
-	bb[0] = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
-	bb[1] = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
-	bb[2] = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
-	bb[0].barrier.buffer = rmesh->geom_buffer;
-	bb[0].barrier.size = vsizes[0];
-	bb[1].barrier.buffer = rmesh->rend_buffer;
-	bb[1].barrier.size = vsizes[2];
-	bb[2].barrier.buffer = rmesh->index_buffer;
-	bb[2].barrier.size = index_bytes;
-	dfunc->vkCmdPipelineBarrier (vpackets[0]->cmd,
-								 bb[0].srcStages, bb[0].dstStages,
-								 0, 0, 0, 1, &bb[0].barrier, 0, 0);
-	dfunc->vkCmdPipelineBarrier (vpackets[2]->cmd,
-								 bb[0].srcStages, bb[0].dstStages,
-								 0, 0, 0, 1, &bb[1].barrier, 0, 0);
-	dfunc->vkCmdPipelineBarrier (ipacket->cmd,
-								 bb[0].srcStages, bb[0].dstStages,
-								 0, 0, 0, 1, &bb[2].barrier, 0, 0);
+	vbb[0] = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
+	vbb[1] = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
+	ibb[0] = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
+	vbb[0].buffer = rmesh->geom_buffer;
+	vbb[0].size = vsizes[0];
+	vbb[1].buffer = rmesh->rend_buffer;
+	vbb[1].size = vsizes[2];
+	ibb[0].buffer = rmesh->index_buffer;
+	ibb[0].size = index_bytes;
+	dfunc->vkCmdPipelineBarrier2 (vpackets[0]->cmd, &vdep);
+	dfunc->vkCmdPipelineBarrier2 (vpackets[2]->cmd, &idep);
 	QFV_PacketSubmit (vpackets[0]);
 	QFV_PacketSubmit (vpackets[2]);
 	QFV_PacketSubmit (ipacket);

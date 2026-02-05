@@ -474,16 +474,21 @@ QFV_PacketWait (qfv_packet_t *packet)
 void
 QFV_PacketCopyBuffer (qfv_packet_t *packet,
 					  VkBuffer dstBuffer, VkDeviceSize offset,
-					  const qfv_bufferbarrier_t *srcBarrier,
-					  const qfv_bufferbarrier_t *dstBarrier)
+					  const VkBufferMemoryBarrier2 *srcBarrier,
+					  const VkBufferMemoryBarrier2 *dstBarrier)
 {
-	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
-	qfv_bufferbarrier_t bb = *srcBarrier;
-	bb.barrier.buffer = dstBuffer;
-	bb.barrier.offset = offset;
-	bb.barrier.size = packet->length;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
-								 0, 0, 0, 1, &bb.barrier, 0, 0);
+	auto dfunc = packet->stage->device->funcs;
+	auto bb = *srcBarrier;
+
+	bb.buffer = dstBuffer;
+	bb.offset = offset;
+	bb.size = packet->length;
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.bufferMemoryBarrierCount = 1,
+		.pBufferMemoryBarriers = &bb,
+	};
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 	VkBufferCopy copy_region = {
 		.srcOffset = packet->offset,
 		.dstOffset = offset,
@@ -492,24 +497,28 @@ QFV_PacketCopyBuffer (qfv_packet_t *packet,
 	dfunc->vkCmdCopyBuffer (packet->cmd, packet->stage->buffer, dstBuffer,
 							1, &copy_region);
 	bb = *dstBarrier;
-	bb.barrier.buffer = dstBuffer;
-	bb.barrier.offset = offset;
-	bb.barrier.size = packet->length;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
-								 0, 0, 0, 1, &bb.barrier, 0, 0);
+	bb.buffer = dstBuffer;
+	bb.offset = offset;
+	bb.size = packet->length;
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 }
 
 void
 QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 						 uint32_t count, qfv_scatter_t *scatter,
-						 const qfv_bufferbarrier_t *srcBarrier,
-						 const qfv_bufferbarrier_t *dstBarrier)
+						 const VkBufferMemoryBarrier2 *srcBarrier,
+						 const VkBufferMemoryBarrier2 *dstBarrier)
 {
 	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
 	VkBufferCopy copy_regions[count];
-	VkBufferMemoryBarrier barriers[count] = {};//FIXME arm gcc sees as uninit
+	VkBufferMemoryBarrier2 barriers[count];
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.bufferMemoryBarrierCount = count,
+		.pBufferMemoryBarriers = barriers,
+	};
 	for (uint32_t i = 0; i < count; i++) {
-		barriers[i] = srcBarrier->barrier;
+		barriers[i] = *srcBarrier;
 		barriers[i].buffer = dstBuffer;
 		barriers[i].offset = scatter[i].dstOffset;
 		barriers[i].size = scatter[i].length;
@@ -520,28 +529,24 @@ QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 			.size = scatter[i].length,
 		};
 	}
-	dfunc->vkCmdPipelineBarrier (packet->cmd,
-								 srcBarrier->srcStages, srcBarrier->dstStages,
-								 0, 0, 0, count, barriers, 0, 0);
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 	dfunc->vkCmdCopyBuffer (packet->cmd, packet->stage->buffer, dstBuffer,
 							count, copy_regions);
 	for (uint32_t i = 0; i < count; i++) {
-		barriers[i] = dstBarrier->barrier;
+		barriers[i] = *dstBarrier;
 		barriers[i].buffer = dstBuffer;
 		barriers[i].offset = scatter[i].dstOffset;
 		barriers[i].size = scatter[i].length;
 	}
-	dfunc->vkCmdPipelineBarrier (packet->cmd,
-								 dstBarrier->srcStages, dstBarrier->dstStages,
-								 0, 0, 0, count, barriers, 0, 0);
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 }
 
 void
 QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 					 qfv_offset_t imgOffset, qfv_extent_t imgExtent,
 					 size_t offset,
-					 const qfv_imagebarrier_t *srcBarrier,
-					 const qfv_imagebarrier_t *dstBarrier)
+					 const VkImageMemoryBarrier2 *srcBarrier,
+					 const VkImageMemoryBarrier2 *dstBarrier)
 {
 	if (offset >= packet->length) {
 		Sys_Error ("offset outside of packet");
@@ -549,11 +554,15 @@ QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
 	if (srcBarrier) {
 		auto ib = *srcBarrier;
-		ib.barrier.image = dstImage;
-		ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-		ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-		dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-									 0, 0, 0, 0, 0, 1, &ib.barrier);
+		ib.image = dstImage;
+		ib.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+		ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+		VkDependencyInfo dep = {
+			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+			.imageMemoryBarrierCount = 1,
+			.pImageMemoryBarriers = &ib,
+		};
+		dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 	}
 	VkBufferImageCopy copy_region = {
 		.bufferOffset = packet->offset + offset,
@@ -582,11 +591,15 @@ QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 								   1, &copy_region);
 	if (dstBarrier) {
 		auto ib = *dstBarrier;
-		ib.barrier.image = dstImage;
-		ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-		ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-		dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-									 0, 0, 0, 0, 0, 1, &ib.barrier);
+		ib.image = dstImage;
+		ib.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+		ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+		VkDependencyInfo dep = {
+			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+			.imageMemoryBarrierCount = 1,
+			.pImageMemoryBarriers = &ib,
+		};
+		dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 	}
 }
 

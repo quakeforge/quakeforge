@@ -68,21 +68,19 @@ qfv_packet_t *QFV_PacketAcquire (qfv_stagebuf_t *stage, const char *name);
 void *QFV_PacketExtend (qfv_packet_t *packet, size_t size);
 void QFV_PacketSubmit (qfv_packet_t *packet);
 VkResult QFV_PacketWait (qfv_packet_t *packet);
-typedef struct qfv_bufferbarrier_s qfv_bufferbarrier_t;
 void QFV_PacketCopyBuffer (qfv_packet_t *packet,
 						   VkBuffer dstBuffer, VkDeviceSize offset,
-						   const qfv_bufferbarrier_t *srcBarrier,
-						   const qfv_bufferbarrier_t *dstBarrier);
+						   const VkBufferMemoryBarrier2 *srcBarrier,
+						   const VkBufferMemoryBarrier2 *dstBarrier);
 void QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 							  uint32_t count, qfv_scatter_t *scatter,
-							  const qfv_bufferbarrier_t *srcBarrier,
-							  const qfv_bufferbarrier_t *dstBarrier);
-typedef struct qfv_imagebarrier_s qfv_imagebarrier_t;
+							  const VkBufferMemoryBarrier2 *srcBarrier,
+							  const VkBufferMemoryBarrier2 *dstBarrier);
 void QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 						  qfv_offset_t imgOffset, qfv_extent_t imgExtent,
 						  size_t offset,
-						  const qfv_imagebarrier_t *srcBarrier,
-						  const qfv_imagebarrier_t *dstBarrier);
+						  const VkImageMemoryBarrier2 *srcBarrier,
+						  const VkImageMemoryBarrier2 *dstBarrier);
 size_t QFV_PacketOffset (qfv_packet_t *packet, void *ptr);
 size_t QFV_PacketFullOffset (qfv_packet_t *packet, void *ptr);
 
