@@ -215,6 +215,16 @@ IN_UnregisterButton (in_button_t *button)
 	return 1;
 }
 
+VISIBLE in_button_t **
+IN_ListButtons (void)
+{
+	auto buttons = (regbutton_t **) Hash_GetList (button_tab);
+	for (auto b = buttons; *b; b++) {
+		*b = (regbutton_t *) (*b)->button;
+	}
+	return (in_button_t **) buttons;
+}
+
 in_button_t *
 IN_FindButton (const char *name)
 {

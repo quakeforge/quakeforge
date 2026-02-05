@@ -3,6 +3,12 @@
 void IN_LoadConfig (struct plitem_s *config) = #0;
 in_button_t *IN_CreateButton (string name, string description) = #0;
 in_axis_t *IN_CreateAxis (string name, string description) = #0;
+string *IN_ListButtons () = #0;
+string *IN_ListAxes () = #0;
+in_button_t IN_GetButton (string name) = #0;
+in_axis_t IN_GetAxis (string name) = #0;
+string IN_GetButtonDescription (string name) = #0;
+string IN_GetAxisDescription (string name) = #0;
 void IN_SendConnectedDevices (void) = #0;
 int IN_FindDeviceId (string _id) = #0;
 string IN_GetDeviceName (int devid) = #0;

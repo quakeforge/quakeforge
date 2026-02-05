@@ -1352,6 +1352,16 @@ main (int argc, string *argv)
 	main_menu = [[MainMenu menu:imui_ctx] retain];
 
 	//auto node_panel = [[NodePanel panel:imui_ctx] retain];
+	auto buttons = IN_ListButtons ();
+	for (auto b = buttons; *b; b++) {
+		printf ("button %s\n", *b);
+		printf ("    %s\n", IN_GetButtonDescription (*b));
+	}
+	auto axes = IN_ListAxes ();
+	for (auto a = axes; *a; a++) {
+		printf ("axis %s\n", *a);
+		printf ("    %s\n", IN_GetAxisDescription (*a));
+	}
 
 	auto main_window = [[MainWindow window:imui_ctx] retain];
 

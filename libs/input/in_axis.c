@@ -82,6 +82,12 @@ IN_UnregisterAxis (in_axis_t *axis)
 	return 1;
 }
 
+VISIBLE in_axis_t **
+IN_ListAxes (void)
+{
+	return (in_axis_t **) Hash_GetList (axis_tab);
+}
+
 VISIBLE in_axis_t *
 IN_FindAxis (const char *name)
 {

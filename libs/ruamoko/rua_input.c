@@ -43,6 +43,8 @@
 #include "QF/input.h"
 #include "QF/progs.h"
 
+#include "QF/simd/types.h"
+
 #include "rua_internal.h"
 
 typedef struct rua_in_cookie_s {
@@ -469,6 +471,88 @@ bi (IN_LoadConfig)
 	IN_LoadConfig (Plist_GetItem (pr, P_INT (pr, 0)));
 }
 
+bi(IN_ListButtons)
+{
+	qfZoneScoped (true);
+	auto button_list = IN_ListButtons ();
+	int num_buttons = 0;
+	for (auto b = button_list; *b; b++) {
+		num_buttons++;
+	}
+	auto block = PR_AllocTempBlock (pr, sizeof (pr_string_t[num_buttons + 1]));
+	auto buttons = (pr_string_t *) PR_GetString (pr, block);
+	for (int i = 0; i < num_buttons; i++) {
+		buttons[i] = PR_SetTempString (pr, button_list[i]->name);
+	}
+	buttons[num_buttons] = 0;
+	free (button_list);
+	RETURN_POINTER (pr, buttons);
+}
+
+bi(IN_GetButton)
+{
+	typedef struct {
+		int         down[2];
+		int         state;
+	} rua_button_t;
+
+	qfZoneScoped (true);
+	auto button = IN_FindButton (P_GSTRING (pr, 0));
+	R_PACKED (pr, rua_button_t) = (rua_button_t) {
+		.down = { VEC2_EXP (button->down) },
+		.state = button->state,
+	};
+}
+
+bi(IN_GetButtonDescription)
+{
+	auto button = IN_FindButton (P_GSTRING (pr, 0));
+	RETURN_STRING (pr, button->description);
+}
+
+bi(IN_ListAxes)
+{
+	qfZoneScoped (true);
+	auto axis_list = IN_ListAxes ();
+	int num_axes = 0;
+	for (auto a = axis_list; *a; a++) {
+		num_axes++;
+	}
+	auto block = PR_AllocTempBlock (pr, sizeof (pr_string_t[num_axes + 1]));
+	auto axes = (pr_string_t *) PR_GetString (pr, block);
+	for (int i = 0; i < num_axes; i++) {
+		axes[i] = PR_SetTempString (pr, axis_list[i]->name);
+	}
+	axes[num_axes] = 0;
+	free (axis_list);
+	RETURN_POINTER (pr, axes);
+}
+
+bi (IN_GetAxis)
+{
+	typedef struct {
+		float       value;
+		in_axis_mode mode;
+		float       abs_input;
+		float       rel_input;
+	} rua_axis_t;
+
+	qfZoneScoped (true);
+	auto axis = IN_FindAxis (P_GSTRING (pr, 0));
+	R_PACKED (pr, rua_axis_t) = (rua_axis_t) {
+		.value = axis->value,
+		.mode = axis->mode,
+		.abs_input = axis->abs_input,
+		.rel_input = axis->rel_input,
+	};
+}
+
+bi(IN_GetAxisDescription)
+{
+	auto axis = IN_FindAxis (P_GSTRING (pr, 0));
+	RETURN_STRING (pr, axis->description);
+}
+
 bi (IMT_CreateContext)
 {
 	qfZoneScoped (true);
@@ -535,6 +619,14 @@ static builtin_t builtins[] = {
 	bi(IN_ClearStates,      0),
 	bi(IN_GetAxisInfo,      3, p(int), p(int), p(ptr)),
 	bi(IN_GetButtonInfo,    3, p(int), p(int), p(ptr)),
+
+	bi(IN_ListButtons,      0),
+	bi(IN_GetButton,        1, p(string)),
+	bi(IN_GetButtonDescription, 1, p(string)),
+	bi(IN_ListAxes,         0),
+	bi(IN_GetAxis,          1, p(string)),
+	bi(IN_GetAxisDescription, 1, p(string)),
+
 	{"IN_ButtonAddListener|^{tag in_button_s=}^(v^v^{tag in_button_s=})^v",
 		rua_IN_ButtonAddListener_func, -1,      3, {p(ptr), p(func), p(ptr)}},
 	{"IN_ButtonRemoveListener|^{tag in_button_s=}^(v^v^{tag in_button_s=})^v",
