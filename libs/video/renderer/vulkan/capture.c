@@ -72,42 +72,50 @@ capture_initiate (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto scImage = sc->images->a[ctx->swapImageIndex];
 	auto buffer = frame->buffer->buffer.buffer;
 
-	VkBufferMemoryBarrier start_buffer_barriers[] = {
+	VkBufferMemoryBarrier2 start_buffer_barriers[] = {
 		{
-			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+			.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+			.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
 			.srcAccessMask = 0,
-			.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+			.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
 			.buffer = buffer,
 			.offset = 0,
 			.size = VK_WHOLE_SIZE,
 		},
 	};
-	VkImageMemoryBarrier start_image_barriers[] = {
+	VkImageMemoryBarrier2 start_image_barriers[] = {
 		{
-			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-			.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT,
-			.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
+			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+			.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+			.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+			.srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT,
+			.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
 			.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 			.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 			.image = scImage,
 			.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
 		},
 	};
-	VkBufferMemoryBarrier end_buffer_barriers[] = {
+	VkBufferMemoryBarrier2 end_buffer_barriers[] = {
 		{
-			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
-			.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-			.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
+			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+			.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+			.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+			.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+			.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT,
 			.buffer = buffer,
 			.offset = 0,
 			.size = VK_WHOLE_SIZE,
 		},
 	};
-	VkImageMemoryBarrier end_image_barriers[] = {
+	VkImageMemoryBarrier2 end_image_barriers[] = {
 		{
-			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-			.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
-			.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
+			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+			.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+			.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+			.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
+			.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT,
 			.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 			.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 			.image = scImage,
@@ -115,12 +123,22 @@ capture_initiate (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		},
 	};
 
-	dfunc->vkCmdPipelineBarrier (cmd,
-								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 0, 0, 0,
-								 1, start_buffer_barriers,
-								 1, start_image_barriers);
+	VkDependencyInfo start_dependency = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.bufferMemoryBarrierCount = 1,
+		.pBufferMemoryBarriers = start_buffer_barriers,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = start_image_barriers,
+	};
+	VkDependencyInfo end_dependency = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.bufferMemoryBarrierCount = 1,
+		.pBufferMemoryBarriers = end_buffer_barriers,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = end_image_barriers,
+	};
+
+	dfunc->vkCmdPipelineBarrier2 (cmd, &start_dependency);
 
 	VkBufferImageCopy copy = {
 		.bufferOffset = 0,
@@ -134,12 +152,7 @@ capture_initiate (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 								   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 								   buffer, 1, &copy);
 
-	dfunc->vkCmdPipelineBarrier (cmd,
-								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 0, 0, 0,
-								 1, end_buffer_barriers,
-								 1, end_image_barriers);
+	dfunc->vkCmdPipelineBarrier2 (cmd, &end_dependency);
 	dfunc->vkEndCommandBuffer (cmd);
 	QFV_AppendCmdBuffer (ctx, cmd);
 

@@ -189,22 +189,38 @@ QFV_GenerateMipMaps (qfv_device_t *device, VkCommandBuffer cmd,
 {
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	qfv_imagebarrier_t pre=imageBarriers[qfv_LT_TransferDst_to_TransferSrc];
-	qfv_imagebarrier_t pst=imageBarriers[qfv_LT_TransferSrc_to_ShaderReadOnly];
-	qfv_imagebarrier_t fnl=imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	auto pre=imageBarriers[qfv_LT_TransferDst_to_TransferSrc];
+	auto pst=imageBarriers[qfv_LT_TransferSrc_to_ShaderReadOnly];
+	auto fnl=imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
 
-	pre.barrier.image = image;
-	pre.barrier.subresourceRange.baseMipLevel = first_mip;
-	pre.barrier.subresourceRange.levelCount = 1;
-	pre.barrier.subresourceRange.layerCount = layers;
-	pst.barrier.image = image;
-	pst.barrier.subresourceRange.baseMipLevel = first_mip;
-	pst.barrier.subresourceRange.levelCount = 1;
-	pst.barrier.subresourceRange.layerCount = layers;
-	fnl.barrier.image = image;
-	fnl.barrier.subresourceRange.baseMipLevel = first_mip;
-	fnl.barrier.subresourceRange.levelCount = 1;
-	fnl.barrier.subresourceRange.layerCount = layers;
+	pre.image = image;
+	pre.subresourceRange.baseMipLevel = first_mip;
+	pre.subresourceRange.levelCount = 1;
+	pre.subresourceRange.layerCount = layers;
+	pst.image = image;
+	pst.subresourceRange.baseMipLevel = first_mip;
+	pst.subresourceRange.levelCount = 1;
+	pst.subresourceRange.layerCount = layers;
+	fnl.image = image;
+	fnl.subresourceRange.baseMipLevel = first_mip;
+	fnl.subresourceRange.levelCount = 1;
+	fnl.subresourceRange.layerCount = layers;
+
+	VkDependencyInfo pre_dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &pre,
+	};
+	VkDependencyInfo pst_dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &pst,
+	};
+	VkDependencyInfo fnl_dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &fnl,
+	};
 
 	VkImageBlit blit = {
 		{VK_IMAGE_ASPECT_COLOR_BIT, first_mip, 0, layers},
@@ -214,17 +230,13 @@ QFV_GenerateMipMaps (qfv_device_t *device, VkCommandBuffer cmd,
 	};
 
 	while (--mips > 0) {
-		dfunc->vkCmdPipelineBarrier (cmd, pre.srcStages, pre.dstStages, 0,
-									 0, 0, 0, 0,
-									 1, &pre.barrier);
+		dfunc->vkCmdPipelineBarrier2 (cmd, &pre_dep);
 		dfunc->vkCmdBlitImage (cmd,
 							   image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 							   image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 							   1, &blit, VK_FILTER_LINEAR);
 
-		dfunc->vkCmdPipelineBarrier (cmd, pst.srcStages, pst.dstStages, 0,
-									 0, 0, 0, 0,
-									 1, &pst.barrier);
+		dfunc->vkCmdPipelineBarrier2 (cmd, &pst_dep);
 
 		blit.srcSubresource.mipLevel++;
 		blit.srcOffsets[1].x = blit.dstOffsets[1].x;
@@ -232,13 +244,11 @@ QFV_GenerateMipMaps (qfv_device_t *device, VkCommandBuffer cmd,
 		blit.dstSubresource.mipLevel++;
 		blit.dstOffsets[1].x = max (blit.dstOffsets[1].x >> 1, 1);
 		blit.dstOffsets[1].y = max (blit.dstOffsets[1].y >> 1, 1);
-		pre.barrier.subresourceRange.baseMipLevel++;
-		pst.barrier.subresourceRange.baseMipLevel++;
-		fnl.barrier.subresourceRange.baseMipLevel++;
+		pre.subresourceRange.baseMipLevel++;
+		pst.subresourceRange.baseMipLevel++;
+		fnl.subresourceRange.baseMipLevel++;
 	}
-	dfunc->vkCmdPipelineBarrier (cmd, fnl.srcStages, fnl.dstStages, 0,
-								 0, 0, 0, 0,
-								 1, &fnl.barrier);
+	dfunc->vkCmdPipelineBarrier2 (cmd, &fnl_dep);
 }
 
 static int

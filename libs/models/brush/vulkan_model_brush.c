@@ -195,13 +195,16 @@ transfer_texture (texture_t *tx, VkImage image, qfv_packet_t *packet,
 		}
 	}
 
-	auto sb = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	sb.barrier.image = image;
-	sb.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	sb.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, sb.srcStages, sb.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &sb.barrier);
+	auto ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &ib,
+	};
+	ib.image = image;
+	ib.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 
 	unsigned width = tx->width;
 	unsigned height = tx->height;
@@ -228,18 +231,16 @@ transfer_texture (texture_t *tx, VkImage image, qfv_packet_t *packet,
 		copy_mips (packet, tx, glow, image, 1, MIPLEVELS, dfunc);
 	}
 
-	auto db = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
 	unsigned levelCount = MIPLEVELS;
 	if (levelCount < mip) {
 		levelCount -= 1;
 	}
-	db.barrier.image = image;
-	db.barrier.subresourceRange.baseMipLevel = 0;
-	db.barrier.subresourceRange.levelCount = levelCount;
-	db.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, db.srcStages, db.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &db.barrier);
+	ib.image = image;
+	ib.subresourceRange.baseMipLevel = 0;
+	ib.subresourceRange.levelCount = levelCount;
+	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 	if (levelCount < mip) {
 		mip -= levelCount;
 		width = max (width >> levelCount, 1);

@@ -418,20 +418,22 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
 	auto bb = bufferBarriers[qfv_BB_Unknown_to_ShaderWrite];
-	bb.barrier.buffer = frame->queue;
-	bb.barrier.size = VK_WHOLE_SIZE;
-	dfunc->vkCmdPipelineBarrier (cmd, bb.srcStages, bb.dstStages, 0,
-								 0, nullptr,
-								 1, &bb.barrier,
-								 0, nullptr);
-
-	auto image = frame->queue_heads_image;
 	auto ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	ib.barrier.image = image;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.bufferMemoryBarrierCount = 1,
+		.pBufferMemoryBarriers = &bb,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &ib,
+	};
+
+	bb.buffer = frame->queue;
+	bb.size = VK_WHOLE_SIZE;
+	auto image = frame->queue_heads_image;
+	ib.image = image;
+	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
+
 	VkClearColorValue clear_color[] = {
 		{ .int32 = {-1, -1, -1, -1} },
 	};
@@ -442,11 +444,10 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								 clear_color, 1, ranges);
 	ib = imageBarriers[qfv_LT_TransferDst_to_General];
-	ib.barrier.image = image;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
+	ib.image = image;
+	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dep.bufferMemoryBarrierCount = 0;
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 	dfunc->vkEndCommandBuffer (cmd);
 	QFV_AppendCmdBuffer (ctx, cmd);
 
@@ -506,24 +507,26 @@ gizmo_sync (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
 	auto bb = bufferBarriers[qfv_BB_ShaderWrite_to_ShaderRO];
-	bb.srcStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	bb.dstStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	bb.barrier.buffer = frame->queue;
-	bb.barrier.size = VK_WHOLE_SIZE;
-	dfunc->vkCmdPipelineBarrier (cmd, bb.srcStages, bb.dstStages, 0,
-								 0, nullptr,
-								 1, &bb.barrier,
-								 0, nullptr);
-
 	auto ib = imageBarriers[qfv_LT_Undefined_to_General];
-	ib.srcStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	ib.dstStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	ib.barrier.image = frame->queue_heads_image;
-	ib.barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-	ib.barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.bufferMemoryBarrierCount = 1,
+		.pBufferMemoryBarriers = &bb,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &ib,
+	};
+	bb.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	bb.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	bb.buffer = frame->queue;
+	bb.size = VK_WHOLE_SIZE;
+
+	ib.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	ib.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	ib.image = frame->queue_heads_image;
+	ib.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+	ib.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 
 	dfunc->vkEndCommandBuffer (cmd);
 	QFV_AppendCmdBuffer (ctx, cmd);
