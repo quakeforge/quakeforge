@@ -36,6 +36,7 @@ enum {
 // buffer barriers
 enum {
 	qfv_BB_Unknown_to_TransferWrite,
+	qfv_BB_Unknown_to_ShaderWrite,
 	qfv_BB_UniformRead_to_TransferWrite,
 	qfv_BB_VertexAttrRead_to_TransferWrite,
 	qfv_BB_TransferWrite_to_VertexAttrRead,

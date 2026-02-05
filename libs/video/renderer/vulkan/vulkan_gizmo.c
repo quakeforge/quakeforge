@@ -355,9 +355,6 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto packet = QFV_PacketAcquire (ctx->staging, "gizmo.flush");
 	auto frame = &gctx->frames.a[ctx->curFrame];
 
-	auto sb = &bufferBarriers[qfv_BB_UniformRead_to_TransferWrite];
-	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
-
 	size_t size = sizeof (giz_count_t)
 				+ sizeof (uint32_t[gctx->objects.size])
 				+ sizeof (uint32_t[gctx->obj_ids.size]);
@@ -372,7 +369,9 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto counts = (giz_count_t *) packet_data;
 	packet_data += sizeof (giz_count_t);
 	*counts = (giz_count_t) { .maxObjects = MAX_QUEUE_BUFFER };
-	QFV_PacketScatterBuffer (packet, frame->counts, 1, &counts_scatter, sb, bb);
+	QFV_PacketScatterBuffer (packet, frame->counts, 1, &counts_scatter,
+			&bufferBarriers[qfv_BB_UniformRead_to_TransferWrite],
+			&bufferBarriers[qfv_BB_TransferWrite_to_ShaderRW]);
 
 	if (gctx->objects.size) {
 		qfv_scatter_t objects_scatter = {
@@ -385,7 +384,8 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		memcpy (objects, gctx->objects.a,
 				sizeof (uint32_t[gctx->objects.size]));
 		QFV_PacketScatterBuffer (packet, frame->objects, 1, &objects_scatter,
-								 sb, bb);
+				&bufferBarriers[qfv_BB_UniformRead_to_TransferWrite],
+				&bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
 	}
 
 	frame->num_obj_ids = gctx->obj_ids.size;
@@ -400,7 +400,8 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		memcpy (obj_ids, gctx->obj_ids.a,
 				sizeof (uint32_t[gctx->obj_ids.size]));
 		QFV_PacketScatterBuffer (packet, frame->obj_ids, 1, &obj_ids_scatter,
-								 sb, bb);
+				&bufferBarriers[qfv_BB_UniformRead_to_TransferWrite],
+				&bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
 	}
 
 	QFV_PacketSubmit (packet);
@@ -415,6 +416,14 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	auto bb = bufferBarriers[qfv_BB_Unknown_to_ShaderWrite];
+	bb.barrier.buffer = frame->queue;
+	bb.barrier.size = VK_WHOLE_SIZE;
+	dfunc->vkCmdPipelineBarrier (cmd, bb.srcStages, bb.dstStages, 0,
+								 0, nullptr,
+								 1, &bb.barrier,
+								 0, nullptr);
 
 	auto image = frame->queue_heads_image;
 	auto ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
@@ -495,6 +504,16 @@ gizmo_sync (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	auto bb = bufferBarriers[qfv_BB_ShaderWrite_to_ShaderRO];
+	bb.srcStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	bb.dstStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	bb.barrier.buffer = frame->queue;
+	bb.barrier.size = VK_WHOLE_SIZE;
+	dfunc->vkCmdPipelineBarrier (cmd, bb.srcStages, bb.dstStages, 0,
+								 0, nullptr,
+								 1, &bb.barrier,
+								 0, nullptr);
 
 	auto ib = imageBarriers[qfv_LT_Undefined_to_General];
 	ib.srcStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
