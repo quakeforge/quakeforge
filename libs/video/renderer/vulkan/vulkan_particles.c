@@ -298,6 +298,7 @@ wait_on_event (VkBuffer states, VkBuffer params, VkBuffer system,
 	VkAccessFlags dstAccess = draw
 		? VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT
 		: VK_ACCESS_SHADER_READ_BIT
+			| VK_ACCESS_INDIRECT_COMMAND_READ_BIT
 			| VK_ACCESS_SHADER_WRITE_BIT;
 	VkBufferMemoryBarrier barrier[] = {
 		{ .sType = type,
@@ -316,7 +317,8 @@ wait_on_event (VkBuffer states, VkBuffer params, VkBuffer system,
 	VkAccessFlags dstStage = draw
 		? VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
 			| VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
-		: VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+		: VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+			| VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
 	dfunc->vkCmdWaitEvents (cmd, 1, &event, srcStage, dstStage,
 							0, 0, 3, barrier, 0, 0);
 }
