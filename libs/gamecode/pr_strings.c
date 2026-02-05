@@ -155,12 +155,12 @@ new_string_ref (prstr_resources_t *res)
 		res->string_map[res->dyn_str_size - 1] = res->free_string_refs;
 		for (i = 0, sr = res->free_string_refs; i < 1023; i++, sr++)
 			sr->next = sr + 1;
-		sr->next = 0;
+		sr->next = nullptr;
 	}
 	sr = res->free_string_refs;
 	res->free_string_refs = sr->next;
-	sr->next = 0;
-	sr->rs_slot = 0;
+	sr->next = nullptr;
+	sr->rs_slot = nullptr;
 	return sr;
 }
 
@@ -223,7 +223,7 @@ pr_strings_clear (progs_t *pr, void *data)
 	for (i = 0; i < PR_RS_SLOTS; i++) {
 		if (res->return_strings[i].strref)
 			free_string_ref (res, res->return_strings[i].strref);
-		res->return_strings[i].strref = 0;
+		res->return_strings[i].strref = nullptr;
 	}
 	if (!res->rs_slot) {
 		strref_slot_t * const rs = res->return_strings;
@@ -234,7 +234,7 @@ pr_strings_clear (progs_t *pr, void *data)
 		res->rs_slot = rs;
 	}
 
-	pr->pr_xtstr = 0;
+	pr->pr_xtstr = nullptr;
 }
 
 static void
@@ -244,7 +244,7 @@ pr_strings_destroy (progs_t *pr, void *_res)
 	dstring_delete (res->print_str);
 	Hash_DelTable (res->strref_hash);
 	free (res->static_strings);
-	res->static_strings = 0;
+	res->static_strings = nullptr;
 
 	for (unsigned i = 0; i < res->dyn_str_size; i++) {
 		free (res->string_map[i]);
@@ -256,7 +256,7 @@ pr_strings_destroy (progs_t *pr, void *_res)
 	}
 	DARRAY_CLEAR (&res->fmt_item_blocks);
 
-	pr->pr_string_resources = 0;
+	pr->pr_string_resources = nullptr;
 	free (res);
 }
 
@@ -269,7 +269,7 @@ PR_LoadStrings (progs_t *pr)
 	char   *str = pr->pr_strings;
 	int		count = 0;
 
-	pr->float_promoted = 0;
+	pr->float_promoted = false;
 
 	while (str < end) {
 		count++;
@@ -281,7 +281,7 @@ PR_LoadStrings (progs_t *pr)
 		str += strlen (str) + 1;
 	}
 	if (pr->progs->version == PROG_VERSION) {
-		pr->float_promoted = 1;
+		pr->float_promoted = true;
 	}
 
 	res->ds_mem.alloc = pr_strings_alloc;
@@ -341,13 +341,13 @@ get_strref (prstr_resources_t *res, pr_string_t num)
 		num = ~num % 1024;
 
 		if (row >= res->dyn_str_size)
-			return 0;
+			return nullptr;
 		ref = &res->string_map[row][num];
 		if (ref->type == str_free)
-			return 0;
+			return nullptr;
 		return ref;
 	}
-	return 0;
+	return nullptr;
 }
 
 static inline __attribute__((pure)) const char *
@@ -357,7 +357,7 @@ get_string (progs_t *pr, pr_string_t num)
 	if (num < 0) {
 		strref_t   *ref = get_strref (res, num);
 		if (!ref)
-			return 0;
+			return nullptr;
 		switch (ref->type) {
 			case str_return:
 				requeue_strref (res, ref);
@@ -374,7 +374,7 @@ get_string (progs_t *pr, pr_string_t num)
 		PR_Error (pr, "internal string error: line:%d", __LINE__);
 	} else {
 		if (num >= pr->pr_stringsize)
-			return 0;
+			return nullptr;
 		return pr->pr_strings + num;
 	}
 }
@@ -385,7 +385,7 @@ PR_StringValid (progs_t *pr, pr_string_t num)
 	if (num >= 0) {
 		return num < pr->pr_stringsize;
 	}
-	return get_strref (pr->pr_string_resources, num) != 0;
+	return !!get_strref (pr->pr_string_resources, num);
 }
 
 VISIBLE bool
@@ -393,7 +393,7 @@ PR_StringMutable (progs_t *pr, pr_string_t num)
 {
 	strref_t   *sr;
 	if (num >= 0) {
-		return 0;
+		return false;
 	}
 	sr = get_strref (pr->pr_string_resources, num);
 	return  sr && sr->type == str_mutable;
@@ -658,8 +658,8 @@ PR_HoldString (progs_t *pr, pr_string_t str)
 			case str_temp:
 				break;
 			case str_return:
-				sr->rs_slot->strref = 0;
-				sr->rs_slot = 0;
+				sr->rs_slot->strref = nullptr;
+				sr->rs_slot = nullptr;
 				break;
 			case str_static:
 			case str_engine:
@@ -738,7 +738,7 @@ PR_FreeTempStrings (progs_t *pr)
 			free_string_ref (res, sr);
 		}
 	}
-	pr->pr_xtstr = 0;
+	pr->pr_xtstr = nullptr;
 }
 
 #define hasprintf ((char *(*)(dstring_t *, const char *, ...))dasprintf)
@@ -858,7 +858,7 @@ new_fmt_item (prstr_resources_t *res)
 		res->free_fmt_items = malloc (16 * sizeof (fmt_item_t));
 		for (i = 0; i < 15; i++)
 			res->free_fmt_items[i].next = res->free_fmt_items + i + 1;
-		res->free_fmt_items[i].next = 0;
+		res->free_fmt_items[i].next = nullptr;
 		DARRAY_APPEND (&res->fmt_item_blocks, res->free_fmt_items);
 	}
 
@@ -950,7 +950,7 @@ static void
 fmt_state_flags (fmt_state_t *state)
 {
 	state->c++;	// skip over %
-	while (1) {
+	while (true) {
 		switch (*state->c) {
 			case '%':
 				state->c++;
@@ -1231,7 +1231,7 @@ fmt_state_conversion (fmt_state_t *state)
 	if (*state->c) {
 		state->state = fmt_state_format;
 	} else {
-		state->state = 0;	// finished
+		state->state = nullptr;	// finished
 	}
 }
 
@@ -1254,7 +1254,7 @@ fmt_state_format (fmt_state_t *state)
 	if (*state->c) {
 		state->state = fmt_state_flags;
 	} else {
-		state->state = 0;	// finished
+		state->state = nullptr;	// finished
 	}
 }
 ///@}

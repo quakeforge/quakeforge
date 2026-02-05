@@ -2109,7 +2109,7 @@ struct progs_s {
 	struct prstr_resources_s *pr_string_resources;
 	strref_t   *pr_xtstr;
 	strref_t   *pr_pushtstr;
-	int         float_promoted;	///< for PR_Sprintf
+	bool        float_promoted;	///< for PR_Sprintf
 	///@}
 
 	/// \name memory map
