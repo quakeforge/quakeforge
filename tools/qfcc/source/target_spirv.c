@@ -1838,7 +1838,19 @@ spirv_compound (const expr_t *e, spirvctx_t *ctx)
 	unsigned ele_ids[num_ele];
 	int ind = 0;
 	for (auto ele = e->compound.head; ele; ele = ele->next) {
-		ele_ids[ind++] = spirv_emit_expr (ele->expr, ctx);
+		auto expr = ele->expr;
+		auto type = get_type (expr);
+		if (type != ele->type
+			&& (type_promotes (ele->type, type)
+				|| type_demotes (ele->type, type))) {
+			if (!expr->implicit
+				&& !type_promotes (ele->type, type)) {
+				warning (expr, "initialization of %s with %s (use a cast)\n)",
+						 get_type_string (ele->type), get_type_string (type));
+			}
+			expr = cast_expr (ele->type, expr);
+		}
+		ele_ids[ind++] = spirv_emit_expr (expr, ctx);
 	}
 
 	auto space = ctx->code_space;

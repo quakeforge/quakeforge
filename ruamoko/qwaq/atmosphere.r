@@ -44,7 +44,7 @@ raySphere (vec3 sphereCenter, float sphereRadius, vec3 rayOrigin, vec3 rayDir)
 		}
 	}
 	// Ray did not intersect sphere
-	return {__INFINITY__, 0f};//FIXME no promote on init
+	return {__INFINITY__, 0};
 }
 
 float
