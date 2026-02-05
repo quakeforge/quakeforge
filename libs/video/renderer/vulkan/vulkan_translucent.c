@@ -222,6 +222,10 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	ib.image = image;
 	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
+	bb.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+	bb.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+	bb.srcAccessMask |= VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
+	bb.dstAccessMask |= VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
 	bb.buffer = obj[tframe->frags].buffer.buffer;
 	bb.size = VK_WHOLE_SIZE;
 	dep.bufferMemoryBarrierCount = 1;
@@ -275,9 +279,13 @@ sync_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto bb = bufferBarriers[qfv_BB_ShaderWrite_to_ShaderRO];
 	VkDependencyInfo dep = {
 		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-		.bufferMemoryBarrierCount = 0,
+		.bufferMemoryBarrierCount = 1,
 		.pBufferMemoryBarriers = &bb,
 	};
+	bb.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+	bb.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+	bb.srcAccessMask |= VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
+	bb.dstAccessMask |= VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
 	bb.buffer = obj[tframe->frags].buffer.buffer;
 	bb.size = VK_WHOLE_SIZE;
 	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
