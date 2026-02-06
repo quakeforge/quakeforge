@@ -2034,6 +2034,8 @@ extern const char *pr_gametype;
 
 typedef struct strref_s strref_t;
 
+void PR_MoveTempStrings (strref_t **dst, strref_t **src);
+
 typedef struct {
 	pr_uvec4_t  bases;				///< base registers on entry to function
 	pr_uint_t   staddr;				///< Return statement.

@@ -108,6 +108,7 @@ typedef enum {
 
 struct strref_s {
 	strref_t   *next;
+	strref_t  **prev;
 	strref_slot_t *rs_slot;
 	str_e       type;
 	union {
@@ -160,15 +161,50 @@ new_string_ref (prstr_resources_t *res)
 	sr = res->free_string_refs;
 	res->free_string_refs = sr->next;
 	sr->next = nullptr;
+	sr->prev = nullptr;
 	sr->rs_slot = nullptr;
 	return sr;
+}
+
+static inline void
+unlinktempstring (strref_t *sr)
+{
+	if (sr->next) {
+		sr->next->prev = sr->prev;
+	}
+	*sr->prev = sr->next;
+}
+
+static inline void
+linktempstring (strref_t **dst, strref_t *sr)
+{
+	sr->next = *dst;
+	sr->prev = dst;
+	if (*dst) {
+		(*dst)->prev = &sr->next;
+	}
+	*dst = sr;
+}
+
+void
+PR_MoveTempStrings (strref_t **dst, strref_t **src)
+{
+	*dst = *src;
+	if (*src) {
+		(*src)->prev = dst;
+	}
+	*src = nullptr;
 }
 
 static void
 free_string_ref (prstr_resources_t *res, strref_t *sr)
 {
+	if (sr->type == str_temp) {
+		unlinktempstring (sr);
+	}
 	sr->type = str_free;
 	sr->next = res->free_string_refs;
+	sr->prev = nullptr;
 	res->free_string_refs = sr;
 }
 
@@ -531,8 +567,7 @@ pr_settempstring (progs_t *pr, prstr_resources_t *res, char *s)
 	sr = new_string_ref (res);
 	sr->type = str_temp;
 	sr->s.string = s;
-	sr->next = pr->pr_xtstr;
-	pr->pr_xtstr = sr;
+	linktempstring (&pr->pr_xtstr, sr);
 	return string_index (res, sr);
 }
 
@@ -580,18 +615,14 @@ PR_PushTempString (progs_t *pr, pr_string_t num)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
 	strref_t   *ref = get_strref (res, num);
-	strref_t  **temp_ref;
 
 	if (!ref || ref->type != str_temp) {
 		PR_Error (pr, "attempt to push a non-temp string");
 	}
-	for (temp_ref = &pr->pr_xtstr; *temp_ref; temp_ref = &(*temp_ref)->next) {
-		if (*temp_ref == ref) {
-			*temp_ref = ref->next;
-			ref->next = pr->pr_pushtstr;
-			pr->pr_pushtstr = ref;
-			return;
-		}
+	if (ref->prev) {
+		unlinktempstring (ref);
+		linktempstring (&pr->pr_pushtstr, ref);
+		return;
 	}
 	PR_Error (pr, "attempt to push stale temp string");
 }
@@ -633,8 +664,7 @@ PR_MakeTempString (progs_t *pr, pr_string_t str)
 	if (!sr->s.string)
 		sr->s.string = pr_strdup (pr, "");
 	sr->type = str_temp;
-	sr->next = pr->pr_xtstr;
-	pr->pr_xtstr = sr;
+	linktempstring (&pr->pr_xtstr, sr);
 }
 
 VISIBLE pr_string_t
@@ -656,6 +686,7 @@ PR_HoldString (progs_t *pr, pr_string_t str)
 	if (sr) {
 		switch (sr->type) {
 			case str_temp:
+				unlinktempstring (sr);
 				break;
 			case str_return:
 				sr->rs_slot->strref = nullptr;
@@ -719,6 +750,7 @@ PR_FreeTempStrings (progs_t *pr)
 		if (sr->type == str_dynamic) {
 			// the string has been held, so simply remove the ref from the
 			// queue
+			unlinktempstring (sr);
 			continue;
 		}
 		if (sr->type != str_temp)
@@ -731,8 +763,8 @@ PR_FreeTempStrings (progs_t *pr)
 			// longer than to remove it prematurely. This allows functions
 			// to return the result of "str a" + "str b"
 			prstack_t  *frame = pr->pr_stack + pr->pr_depth - 1;
-			sr->next = frame->tstr;
-			frame->tstr = sr;
+			unlinktempstring (sr);
+			linktempstring (&frame->tstr, sr);
 		} else {
 			pr_strfree (pr, sr->s.string);
 			free_string_ref (res, sr);

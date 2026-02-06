@@ -150,11 +150,10 @@ PR_PushFrame (progs_t *pr)
 	}
 	frame->bases  = pr->pr_bases;
 	frame->func   = pr->pr_xfunction;
-	frame->tstr   = pr->pr_xtstr;
+	PR_MoveTempStrings (&frame->tstr, &pr->pr_xtstr);
 	frame->return_ptr = pr->pr_return;
 
-	pr->pr_xtstr = pr->pr_pushtstr;
-	pr->pr_pushtstr = 0;
+	PR_MoveTempStrings (&pr->pr_xtstr, &pr->pr_pushtstr);
 	pr->pr_xfunction = 0;
 }
 
@@ -175,8 +174,7 @@ PR_PopFrame (progs_t *pr)
 	// however, not if a temp string survived: better to hold on to the push
 	// strings a little longer than lose one erroneously
 	if (!pr->pr_xtstr && pr->pr_pushtstr) {
-		pr->pr_xtstr = pr->pr_pushtstr;
-		pr->pr_pushtstr = 0;
+		PR_MoveTempStrings (&pr->pr_xtstr, &pr->pr_pushtstr);
 		PR_FreeTempStrings (pr);
 	}
 
@@ -186,7 +184,7 @@ PR_PopFrame (progs_t *pr)
 	pr->pr_return     = frame->return_ptr;
 	pr->pr_xfunction  = frame->func;
 	pr->pr_xstatement = frame->staddr;
-	pr->pr_xtstr      = frame->tstr;
+	PR_MoveTempStrings (&pr->pr_xtstr, &frame->tstr);
 	pr->pr_bases      = frame->bases;
 	// restore data stack (discard any locals)
 	if (pr->globals.stack) {
