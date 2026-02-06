@@ -143,6 +143,7 @@ typedef void (*view_move_f) (view_t view, view_pos_t abs);
 
 VIEWINLINE view_pos_t VP_add (view_pos_t a, view_pos_t b);
 VIEWINLINE view_pos_t VP_sub (view_pos_t a, view_pos_t b);
+#define VP_exp(a) a.x, a.y
 
 VIEWINLINE view_t View_FromEntity (ecs_system_t viewsys, uint32_t ent);
 view_t View_New (ecs_system_t viewsys, view_t parent);

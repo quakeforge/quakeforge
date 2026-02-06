@@ -1083,49 +1083,51 @@ layout_objects (imui_ctx_t *ctx, view_t root_view)
 }
 
 static void
-check_inside (imui_ctx_t *ctx, view_t root_view)
+check_inside (imui_ctx_t *ctx, hierref_t href, int level)
 {
 	auto reg = ctx->vsys.reg;
-	auto href = View_GetRef (root_view);
 	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 
-	uint32_t   *ent = h->ent;
-	view_pos_t *abs = h->components[view_abs];
-	view_pos_t *len = h->components[view_len];
-	viewcont_t *cont = h->components[view_control];
+	uint32_t ind = href.index;
+	uint32_t ent = h->ent[ind];
+	auto abs = ((view_pos_t *)h->components[view_abs])[ind];
+	auto len = ((view_pos_t *)h->components[view_len])[ind];
+	auto c = ((viewcont_t *)h->components[view_control])[ind];
 	auto mp = ctx->mouse_position;
 
-	for (uint32_t i = 0; i < h->num_objects; i++) {
-		// links might have zero size but should still be followed (FIXME
-		// this is probably a design issue with scrollers and automatic sizing
-		// but it works for now because scrollers have two links and the outer
-		// one is correctly sized)
-		if (cont[i].is_link
-			&& (!len[i].x || !len[i].y || is_inside (mp, abs[i], len[i]))) {
-			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
-			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
-			check_inside (ctx, sub_view);
-			continue;
-		}
-		if ((cont[i].active | cont[i].focus | cont[i].drop_target)
-			&& is_inside (mp, abs[i], len[i])) {
-			if (cont[i].active | cont[i].drop_target) {
-				if (cont[i].drop_target
-					|| ctx->active == ent[i] || ctx->active == nullent) {
-					ctx->hot = ent[i];
-					ctx->hot_position = abs[i];
-				}
-			}
-			if (cont[i].focus) {
-				ctx->focused = ent[i];
+	// links might have zero size but should still be followed (FIXME
+	// this is probably a design issue with scrollers and automatic sizing
+	// but it works for now because scrollers have two links and the outer
+	// one is correctly sized)
+	if (c.is_link && (!len.x || !len.y || is_inside (mp, abs, len))) {
+		imui_reference_t *sub = Ent_GetComponent (ent, c_reference, reg);
+		auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
+		check_inside (ctx, View_GetRef (sub_view), level + 1);
+		return;
+	}
+	if ((c.active | c.focus | c.drop_target) && is_inside (mp, abs, len)) {
+		if (c.active | c.drop_target) {
+			if (c.drop_target || ctx->active == ent || ctx->active == nullent) {
+				ctx->hot = ent;
+				ctx->hot_position = abs;
 			}
 		}
-		if (ent[i] == ctx->active) {
-			ctx->active_position = abs[i];
+		if (c.focus) {
+			ctx->focused = ent;
 		}
-		if (ent[i] == ctx->hot) {
-			ctx->hot_position = abs[i];
+	}
+	if (ent == ctx->active) {
+		ctx->active_position = abs;
+	}
+	if (ent == ctx->hot) {
+		ctx->hot_position = abs;
+	}
+	for (uint32_t i = 0; i < h->childCount[ind]; i++) {
+		if (h->childIndex[ind] + i >= h->num_objects) {
+			break;
 		}
+		hierref_t cref = { .id = href.id, .index = h->childIndex[ind] + i };
+		check_inside (ctx, cref, level + 1);
 	}
 	//printf ("check_inside: %8x %8x\n", ctx->hot, ctx->active);
 }
@@ -1186,10 +1188,10 @@ IMUI_Draw (imui_ctx_t *ctx)
 	ctx->hot = nullent;
 	bool was_focused = ctx->focused != nullent;
 	ctx->focused = nullent;
-	check_inside (ctx, ctx->root_view);
+	check_inside (ctx, View_GetRef (ctx->root_view), 0);
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
 		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
-		check_inside (ctx, window);
+		check_inside (ctx, View_GetRef (window), 1);
 	}
 	bool is_focused = ctx->focused != nullent;
 	if (was_focused != is_focused) {
