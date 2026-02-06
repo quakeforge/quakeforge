@@ -1249,41 +1249,6 @@ next_macro_token (rua_macro_t *macro)
 	return e;
 }
 
-static const rua_tok_t *
-get_arg_token (bool last, const rua_tok_t *arg, const rua_macro_t *macro,
-			   yyscan_t scanner, rua_ctx_t *ctx)
-{
-	symbol_t   *sym;
-
-	if (arg->token == -rua_va_opt) {
-		sym = symtab_lookup (macro->params, arg->text);
-		auto m = sym->macro;
-		m->update (m, ctx);
-		if (last) {
-			if (m->tokens) {
-				return (rua_tok_t *) m->tail;
-			}
-			return 0;
-		} else {
-			return m->tokens;
-		}
-	}
-	if (arg->token == -rua_id && macro->params
-	    && (sym = symtab_lookup (macro->params, arg->text))
-	    && !macro->args[sym->offset]->next) {
-		auto a = macro->args[sym->offset];
-		if (last) {
-			if (a->tokens) {
-				return (rua_tok_t *) a->tail;
-			}
-			return 0;
-		} else {
-			return a->tokens;
-		}
-	}
-	return arg;
-}
-
 static void
 copy_token (rua_macro_t *dst, const rua_tok_t *t)
 {
@@ -1292,6 +1257,47 @@ copy_token (rua_macro_t *dst, const rua_tok_t *t)
 	e->next = 0;
 	*dst->tail = e;
 	dst->tail = &e->next;
+}
+
+static rua_macro_t *rua_macro_va_opt (rua_macro_t *macro, rua_ctx_t *ctx);
+
+static const rua_tok_t *
+get_arg_token (rua_macro_t *last, const rua_tok_t *arg,
+			   const rua_macro_t *macro, yyscan_t scanner, rua_ctx_t *ctx)
+{
+	symbol_t   *sym;
+
+	rua_macro_t *a = nullptr;
+	if (arg->token == -rua_va_opt) {
+		sym = symtab_lookup (macro->params, arg->text);
+		a = rua_macro_va_opt (sym->macro, ctx);
+		//a = sym->macro;//->args[0];
+	}
+	if (arg->token == -rua_id && macro->params
+	    && (sym = symtab_lookup (macro->params, arg->text))
+	    && !macro->args[sym->offset]->next) {
+		a = macro->args[sym->offset];
+	}
+	if (!a) {
+		return arg;
+	}
+	if (last) {
+		if (a->tokens) {
+			auto t = a->tokens;
+			while (t->next) {
+				copy_token (last, t);
+				t = t->next;
+			}
+			a->cursor = nullptr;
+			return t;
+		}
+		return 0;
+	} else {
+		if (a->tokens) {
+			a->cursor = a->tokens->next;
+		}
+		return a->tokens;
+	}
 }
 
 static void
@@ -1449,10 +1455,11 @@ check_macro_arg (rua_tok_t *e, rua_ctx_t *ctx)
 			.tail = &m->tokens,
 		};
 
-		auto p = get_arg_token (true, e, macro, scanner, ctx);
+		auto p = get_arg_token (m, e, macro, scanner, ctx);
 		rua_tok_t   con = {};
 		do {
-			auto n = get_arg_token (false, e->next->next, macro, scanner, ctx);
+			auto t = e->next->next;
+			auto n = get_arg_token (nullptr, t, macro, scanner, ctx);
 			rua_tok_t   cat;
 			if (join_tokens (&cat, p, n, extra)) {
 				con = cat;
@@ -1480,7 +1487,10 @@ check_macro_arg (rua_tok_t *e, rua_ctx_t *ctx)
 			return true;
 		}
 		sym = symtab_lookup (macro->params, e->text);
-		rua_macro_va_opt (sym->macro, ctx);
+		auto arg = rua_macro_va_opt (sym->macro, ctx);
+		if (arg) {
+			queue_macro (extra, arg);
+		}
 		return true;
 	} else if (token == -rua_id && macro->params
 			   && (sym = symtab_lookup (macro->params, e->text))
@@ -1954,7 +1964,6 @@ build_va_opt (rua_macro_t *macro, rua_tok_t *t, rua_tok_t *u, int va_opt_ind)
 	auto va_opt = alloc_macro (0, false);
 	*va_opt = (rua_macro_t) {
 		.tail = &va_opt->tokens,
-		.update = rua_macro_va_opt,
 		.args = malloc (sizeof (rua_macro_t *)),
 	};
 	va_opt->args[0] = alloc_macro (0, false);
@@ -2604,7 +2613,7 @@ macro_empty (rua_macro_t *macro, yyscan_t scanner)
 	return true;
 }
 
-void
+static rua_macro_t *
 rua_macro_va_opt (rua_macro_t *macro, rua_ctx_t *ctx)
 {
 	macro->tokens = 0;
@@ -2615,38 +2624,17 @@ rua_macro_va_opt (rua_macro_t *macro, rua_ctx_t *ctx)
 	if (!cur || !cur->params || cur->num_params >= 0) {
 		warning (0, "__VA_OPT__ can appear only in the expansion of a "
 				 "variadic macro");
-		return;
+		return nullptr;
 	}
 	if (macro_empty (cur->args[~cur->num_params], ctx->scanner)) {
-		return;
+		return macro;
 	}
 	auto arg = macro->args[0];
 	arg->params = cur->params;
 	arg->num_params = cur->num_params;
 	arg->num_args = cur->num_args;
 	arg->args = cur->args;
-
-	queue_macro (extra, arg);
-}
-
-void
-rua_macro_va_args (rua_macro_t *macro, rua_ctx_t *ctx)
-{
-	macro->tokens = 0;
-	macro->tail = &macro->tokens;
-
-	auto extra = ctx->extra;
-	auto cur = extra->macro;
-	if (!cur || !cur->params || cur->num_params >= 0) {
-		warning (0, "__VA_ARGS__ can appear only in the expansion of a "
-				 "variadic macro");
-		return;
-	}
-	auto arg = cur->args[~cur->num_params];
-	if (arg->tokens) {
-		macro->tokens = arg->tokens;
-		macro->tail = arg->tail;
-	}
+	return arg;
 }
 
 void
