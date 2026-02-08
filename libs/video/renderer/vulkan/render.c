@@ -434,6 +434,12 @@ run_deletion_queue (vulkan_ctx_t *ctx)
 	}
 }
 
+static inline void
+qfv_resourcearray_next (qfv_resourcearray_t *array)
+{
+	array->active = (array->active + 1 >= array->count) ? 0 : array->active + 1;
+}
+
 void
 QFV_RunRenderJob (vulkan_ctx_t *ctx)
 {
@@ -510,10 +516,7 @@ QFV_DestroyFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 		.deletion_frame = ctx->frameNumber + frames,
 	};
 	if (res) {
-		rp->resources.active++;
-		if (rp->resources.active >= rp->resources.count) {
-			rp->resources.active = 0;
-		}
+		qfv_resourcearray_next (&rp->resources);
 	}
 	PQUEUE_INSERT (&rctx->deletion_queue, del);
 	rp->beginInfo.framebuffer = 0;
@@ -686,7 +689,7 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 						.deletion_frame = ctx->frameNumber + frames,
 					};
 					PQUEUE_INSERT (&rctx->deletion_queue, del);
-					fbr->active++;
+					qfv_resourcearray_next (fbr);
 				}
 			}
 		}
