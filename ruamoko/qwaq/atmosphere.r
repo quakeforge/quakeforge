@@ -5,6 +5,9 @@
 #include "GLSL/general.h"
 #include "GLSL/fragment.h"
 
+void printf (string fmt, ...)
+	= @intrinsic(OpExtInst, "NonSemantic.DebugPrintf", DebugPrintf);
+
 #define INPUT_ATTACH(ind) \
 	[uniform, input_attachment_index(ind), set(0), binding(ind)] \
 	@image(float, SubpassData)
@@ -134,16 +137,17 @@ atmosphere_color (vec4 originalCol, uint body)
 
 	auto hitInfo = raySphere(B.planetCenter, A.atmosphereRadius, rayOrigin, rayDir);
 	float dstToAtmosphere = hitInfo.distance;
-	float dstThroughAtmosphere = min(hitInfo.thickness, dstToSurface - dstToAtmosphere);
 
-	if (dstThroughAtmosphere > 0) {
-		const float epsilon = 0.0001;
-		vec3 pointInAtmosphere = rayOrigin + rayDir * (dstToAtmosphere + epsilon);
-		vec3 light = calculateLight(P, B, A, pointInAtmosphere, rayDir, dstThroughAtmosphere - epsilon * 2, originalCol.rgb, dirToSun);
-		return vec4(light, originalCol.a);
-	} else {
-		return originalCol;
+	if (dstToAtmosphere < __INFINITY__) {
+		float dstThroughAtmosphere = min(hitInfo.thickness, dstToSurface - dstToAtmosphere);
+		if (dstThroughAtmosphere > 0) {
+			const float epsilon = 0.0001;
+			vec3 pointInAtmosphere = rayOrigin + rayDir * (dstToAtmosphere + epsilon);
+			vec3 light = calculateLight(P, B, A, pointInAtmosphere, rayDir, dstThroughAtmosphere - epsilon * 2, originalCol.rgb, dirToSun);
+			return vec4(light, originalCol.a);
+		}
 	}
+	return originalCol;
 }
 
 [shader("Fragment")]
