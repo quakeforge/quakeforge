@@ -267,9 +267,9 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	int         num_tex = bctx->registered_textures.size;
 
 	texture_t **textures = alloca (num_tex * sizeof (texture_t *));
-	textures[0] = &base_tx[0];
-	textures[1] = &base_tx[1];
-	textures[2] = &base_tx[2];
+	for (uint32_t i = 0; i < countof (base_tx); i++) {
+		textures[i] = &base_tx[i];
+	}
 	for (int i = 0, t = countof (base_tx); i < num_models; i++) {
 		model_t    *m = models[i];
 		// sub-models are done as part of the main model
