@@ -211,15 +211,18 @@ free_string_ref (prstr_resources_t *res, strref_t *sr)
 static __attribute__((pure)) pr_string_t
 string_index (prstr_resources_t *res, strref_t *sr)
 {
-	long        o = (long) (sr - res->static_strings);
 	unsigned    i;
 
-	if (o >= 0 && o < res->num_strings)
+	if (sr >= res->static_strings
+		&& sr < res->static_strings + res->num_strings) {
 		return sr->s.string - res->pr->pr_strings;
+	}
 	for (i = 0; i < res->dyn_str_size; i++) {
-		int         d = sr - res->string_map[i];
-		if (d >= 0 && d < 1024)
-			return ~(i * 1024 + d);
+		if (sr >= res->string_map[i] && sr < res->string_map[i] + 1024) {
+			int         d = sr - res->string_map[i];
+			pr_string_t s = ~(i * 1024 + d);
+			return s;
+		}
 	}
 	return 0;
 }
