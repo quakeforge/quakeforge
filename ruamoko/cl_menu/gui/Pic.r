@@ -5,6 +5,9 @@
 @implementation Pic
 -(id)init
 {
+	if (!(self = [super init])) {
+		return self;
+	}
 	pic_name = str_new ();
 	return self;
 }

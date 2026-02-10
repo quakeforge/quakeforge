@@ -5,6 +5,9 @@
 @implementation Text
 - (id) init
 {
+	if (!(self = [super init])) {
+		return self;
+	}
 	text = str_new ();
 	return self;
 }
@@ -22,7 +25,9 @@
 
 - (id) initWithBounds: (Rect)aRect text:(string)str
 {
-	self = [super initWithBounds:aRect];
+	if (!(self = [super initWithBounds:aRect])) {
+		return self;
+	}
 	str_copy (text, str);
 	return self;
 }

@@ -19,7 +19,11 @@ string InputLine_GetText (inputline_t il) = #0;
 
 - (id) initWithBounds: (Rect)aRect promptCharacter: (int)char
 {
-	self = [super initWithComponents:aRect.origin.x :aRect.origin.y :aRect.size.width * 8 :8];
+	if (!(self = [super initWithComponents:aRect.origin.x
+										  :aRect.origin.y
+										  :aRect.size.width * 8 :8])) {
+		return self;
+	}
 
 	il = InputLine_Create (aRect.size.height, aRect.size.width, char);
 	InputLine_SetPos (il, xabs, yabs);
@@ -89,7 +93,9 @@ string InputLine_GetText (inputline_t il) = #0;
 	yp = aRect.origin.y;
 	xl = (aRect.size.width - 2) * 8;
 	yl = 24;
-	self = [self initWithComponents:xp :yp :xl :yl];
+	if (!(self = [self initWithComponents:xp :yp :xl :yl])) {
+		return self;
+	}
 
 	xp = 0;
 	yp = 8;

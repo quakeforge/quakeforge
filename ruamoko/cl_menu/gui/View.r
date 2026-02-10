@@ -7,7 +7,9 @@
 
 - (id) initWithComponents: (int)x : (int)y : (int)w : (int)h
 {
-	self = [self init];
+	if (!(self = [self init])) {
+		return self;
+	}
 	xpos = xabs = x;
 	ypos = yabs = y;
 	xlen = w;

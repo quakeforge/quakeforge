@@ -7,7 +7,9 @@
 
 - (id) initWithBounds: (Rect)aRect size: (int) aSize
 {
-	self = [self initWithBounds:aRect];
+	if (!(self = [self initWithBounds:aRect])) {
+		return self;
+	}
 	dir = ylen > xlen;
 	size = aSize;
 	index = 0;

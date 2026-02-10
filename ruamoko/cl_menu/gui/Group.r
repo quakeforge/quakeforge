@@ -6,7 +6,9 @@
 
 - (id) init
 {
-	self = [super init];
+	if (!(self = [super init])) {
+		return self;
+	}
 	views = [[Array alloc] init];
 	return self;
 }
