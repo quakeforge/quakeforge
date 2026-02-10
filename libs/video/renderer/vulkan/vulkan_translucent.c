@@ -218,7 +218,7 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								 clear_color, 1, ranges);
 
-	ib = imageBarriers[qfv_LT_TransferDst_to_General];
+	ib = imageBarriers[qfv_LT_TransferDst_to_StorageAtomic];
 	ib.image = image;
 	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
@@ -275,12 +275,17 @@ sync_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	auto resources = &tctx->resources.array[tctx->resources.active];
 	auto obj = resources->objects;
+	auto img = scr_fisheye ? &obj[tframe->cube_heads] : &obj[tframe->heads];
+	auto image = img->image.image;
 
 	auto bb = bufferBarriers[qfv_BB_ShaderWrite_to_ShaderRO];
+	auto ib = imageBarriers[qfv_LT_StorageAtomic_to_StorageReadOnly];
 	VkDependencyInfo dep = {
 		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 		.bufferMemoryBarrierCount = 1,
 		.pBufferMemoryBarriers = &bb,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &ib,
 	};
 	bb.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
 	bb.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
@@ -288,6 +293,9 @@ sync_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	bb.dstAccessMask |= VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
 	bb.buffer = obj[tframe->frags].buffer.buffer;
 	bb.size = VK_WHOLE_SIZE;
+
+	ib.image = image;
+
 	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 
 	dfunc->vkEndCommandBuffer (cmd);

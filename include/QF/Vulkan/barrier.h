@@ -9,14 +9,15 @@
 // image layout transitions
 enum {
 	qfv_LT_Undefined_to_TransferDst,
-	qfv_LT_Undefined_to_General,
 	qfv_LT_Undefined_to_ShaderReadOnly,
 	qfv_LT_TransferDst_to_TransferDst,
 	qfv_LT_TransferDst_to_TransferSrc,
-	qfv_LT_TransferDst_to_General,
+	qfv_LT_TransferDst_to_StorageAtomic,
 	qfv_LT_TransferDst_to_ShaderReadOnly,
+	qfv_LT_TransferDst_to_StorageReadOnly,
 	qfv_LT_TransferSrc_to_ShaderReadOnly,
 	qfv_LT_ShaderReadOnly_to_TransferDst,
+	qfv_LT_StorageAtomic_to_StorageReadOnly,
 	qfv_LT_Undefined_to_DepthStencil,
 	qfv_LT_Undefined_to_Color,
 };

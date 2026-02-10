@@ -296,7 +296,7 @@ painter_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_PacketCopyImage (packet, frame->cmd_heads_image,
 						 (qfv_offset_t){}, pctx->cmd_extent, 0,
 						 &imageBarriers[qfv_LT_Undefined_to_TransferDst],
-						 &imageBarriers[qfv_LT_TransferDst_to_General]);
+						 &imageBarriers[qfv_LT_TransferDst_to_StorageReadOnly]);
 	QFV_PacketSubmit (packet);
 
 	if (pctx->cmd_queue.size) {

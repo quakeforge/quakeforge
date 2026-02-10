@@ -443,7 +443,7 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdClearColorImage (cmd, image,
 								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								 clear_color, 1, ranges);
-	ib = imageBarriers[qfv_LT_TransferDst_to_General];
+	ib = imageBarriers[qfv_LT_TransferDst_to_StorageAtomic];
 	ib.image = image;
 	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 	dep.bufferMemoryBarrierCount = 0;
@@ -507,7 +507,7 @@ gizmo_sync (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
 	auto bb = bufferBarriers[qfv_BB_ShaderWrite_to_ShaderRO];
-	auto ib = imageBarriers[qfv_LT_Undefined_to_General];
+	auto ib = imageBarriers[qfv_LT_StorageAtomic_to_StorageReadOnly];
 	VkDependencyInfo dep = {
 		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 		.bufferMemoryBarrierCount = 1,
@@ -520,11 +520,7 @@ gizmo_sync (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	bb.buffer = frame->queue;
 	bb.size = VK_WHOLE_SIZE;
 
-	ib.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	ib.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	ib.image = frame->queue_heads_image;
-	ib.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-	ib.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
 	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 
