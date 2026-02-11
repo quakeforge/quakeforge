@@ -134,10 +134,11 @@ void printf(string, ...);
 				int height = IMUI_TextSize (IMUI_context, "X").y;
 				len.y = count * height;
 				IMUI_State_SetLen (IMUI_context, nil, len);
-				IMUI_SetViewPos (IMUI_context, { 0, -pos.y % height });
-				len = sblen;
-				len.y = (len.y + height - 1) / height + 1;
-				for (uint i = pos.y / height; len.y-- > 0 && i < count; i++) {
+				ivec2 delta = { 0, -pos.y % height } ;
+				IMUI_SetViewPos (IMUI_context, delta);
+				len = sblen - delta;
+				for (uint i = pos.y / height; len.y > 0 && i < count;
+					 i++, len.y -= height) {
 					[[items objectAtIndex:i] draw];
 				}
 			}
