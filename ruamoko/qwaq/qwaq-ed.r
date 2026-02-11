@@ -1282,6 +1282,7 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 		IMUI_SetDropTarget (IMUI_context, true);
 		IMUI_SetViewPos (IMUI_context, {50, 50});
 		IMUI_SetViewFree (IMUI_context, {true, true});
+		IMUI_SetViewGravity (IMUI_context, grav_northwest);
 
 		int mode = IMUI_UpdateHotActive (IMUI_context);
 		IMUI_CheckButtonState (IMUI_context);
@@ -1292,8 +1293,9 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 									 imui_size_pixels, 25,
 									 sprintf ("target_%p", self));
 		IMUI_SetDropTarget (IMUI_context, true);
-		IMUI_SetViewPos (IMUI_context, {width - 175, height - 175});
+		IMUI_SetViewPos (IMUI_context, {50, 50});
 		IMUI_SetViewFree (IMUI_context, {true, true});
+		IMUI_SetViewGravity (IMUI_context, grav_southeast);
 
 		mode = IMUI_UpdateHotActive (IMUI_context);
 		IMUI_CheckButtonState (IMUI_context);
