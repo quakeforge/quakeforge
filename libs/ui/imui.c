@@ -1560,39 +1560,16 @@ IMUI_Label32Attr (imui_ctx_t *ctx, const uint32_t *str, const uint32_t *attr,
 void
 IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 {
-	// Create the scroller content (FIXME: this maybe should be done
-	// separately using IMUI_StartScroller instead of by IMUI_Passage)
-	auto anchor_view = View_New (ctx->vsys, ctx->current_parent);
-	*View_Control (anchor_view) = (viewcont_t) {
-		.gravity = grav_northwest,
-		.visible = 1,
-		.semantic_x = imui_size_expand,
-		.semantic_y = imui_size_fitchildren,
-		.free_y = 1,
-		.vertical = true,
-		.active = 1,
-	};
-	auto reg = ctx->csys.reg;
-	Ent_SetComponent (anchor_view.id, c_fraction_x, reg,
-					  &(imui_frac_t) { 100, 100 });
-
-	uint32_t    parent = ctx->current_parent.id;
-	if (Ent_HasComponent (parent, ecs_name, ctx->csys.reg)) {
-		// override the provided name with the parent's name
-		name = *(char **) Ent_GetComponent (parent, ecs_name, ctx->csys.reg);
-	}
-	auto state = imui_get_state (ctx, va ("%s#content", name), anchor_view.id);
-	DARRAY_APPEND (&ctx->scrollers, state);
-
-	// Position the content based on the scroll inputs: pos is the content's
-	// pixel in the top-left corner of the scroll box
-	View_SetPos (anchor_view, -state->pos.x, -state->pos.y);
+	IMUI_StartScroller (ctx);
+	auto anchor_view = ctx->current_parent;
 
 	auto psg_view = Text_PassageView (ctx->tsys, nullview,
 									  ctx->font, passage, ctx->shaper);
 	Canvas_SetReference (ctx->csys, psg_view.id,
 						 Canvas_Entity (ctx->csys,
 										View_GetRoot (anchor_view).id));
+
+	auto reg = ctx->csys.reg;
 	Ent_SetComponent (psg_view.id, c_passage_glyphs, reg,
 					  Ent_GetComponent (psg_view.id, t_passage_glyphs, reg));
 	*View_Control (psg_view) = (viewcont_t) {
@@ -1616,6 +1593,8 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 		.ref_id = anchor_view.id,
 	};
 	Ent_SetComponent (psg_view.id, c_reference, psg_view.reg, &anchor);
+
+	IMUI_EndScroller (ctx);
 }
 
 bool
