@@ -902,8 +902,13 @@ calc_expansions (imui_ctx_t *ctx, hierref_t href)
 		view_pos_t  ecount = {};
 		for (uint32_t j = 0; j < h->childCount[i]; j++) {
 			uint32_t child = h->childIndex[i] + j;
-			tlen.x += len[child].x;
-			tlen.y += len[child].y;
+			// "free" children do not consume space
+			if (!cont[child].free_x) {
+				tlen.x += len[child].x;
+			}
+			if (!cont[child].free_y) {
+				tlen.y += len[child].y;
+			}
 			if (cont[child].semantic_x == imui_size_expand) {
 				//FIXME uses numerator for weight
 				int *p = Ent_GetComponent (ent[child], c_fraction_x, reg);
