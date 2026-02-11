@@ -670,6 +670,15 @@ view_color (hierarchy_t *h, uint32_t ind, imui_ctx_t *ctx, bool for_y)
 	return BLU;
 }
 
+static const char *size_names[] = {
+	[imui_size_none]        = "no",
+	[imui_size_pixels]      = "px",
+	[imui_size_fittext]     = "ft",
+	[imui_size_fraction]    = "fr",
+	[imui_size_fitchildren] = "fc",
+	[imui_size_expand]      = "ex",
+};
+
 static void __attribute__((used))
 dump_tree (hierref_t href, int level, imui_ctx_t *ctx)
 {
@@ -682,21 +691,24 @@ dump_tree (hierref_t href, int level, imui_ctx_t *ctx)
 	view_move_f *move = h->components[view_onmove];
 	auto c = ((viewcont_t *)h->components[view_control])[ind];
 	uint32_t e = h->ent[ind];
-	printf ("%3d:%08x %*s[%s%d %s%d"DFL"] [%s%d %s%d"DFL"] "
-			"%c%s%s%s%s %s%d %s%d"DFL,
+	printf ("%3d:%08x %*s[%s%d %s%d"DFL"] [%s%d %s%d"DFL"]%s%s%s "
+			"%c%s%s%s%s %s%s %s%s"DFL,
 			ind, e,
 			level * 3, "",
 			view_color (h, ind, ctx, false), abs[ind].x,
 			view_color (h, ind, ctx, true),  abs[ind].y,
 			view_color (h, ind, ctx, false), len[ind].x,
 			view_color (h, ind, ctx, true),  len[ind].y,
+			c.free_x || c.free_y ? " " : "",
+			c.free_x ? "x" : "",
+			c.free_y ? "y" : "",
 			c.vertical ? 'v' : 'h',
 			c.active ? ONG "a" DFL : "",
 			c.focus ? CYN "f" DFL : "",
 			resize[ind] ? "R" : "",
 			move[ind] ? "M" : "",
-			view_color (h, ind, ctx, false), c.semantic_x,
-			view_color (h, ind, ctx, true),  c.semantic_y);
+			view_color (h, ind, ctx, false), size_names[c.semantic_x],
+			view_color (h, ind, ctx, true),  size_names[c.semantic_y]);
 	for (uint32_t j = 0; j < reg->components.size; j++) {
 		if (Ent_HasComponent (e, j, reg)) {
 			printf (", %s", reg->components.a[j].name);
