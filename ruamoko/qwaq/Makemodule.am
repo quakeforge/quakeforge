@@ -90,6 +90,7 @@ qwaq_ed_dat_src= \
 	ruamoko/qwaq/gui/filewindow.r \
 	ruamoko/qwaq/gui/listview.r \
 	ruamoko/qwaq/gui/ui_object.r \
+	ruamoko/qwaq/gui/virtinput.r \
 	ruamoko/qwaq/gui/window.r \
 	ruamoko/qwaq/armature.r \
 	ruamoko/qwaq/camera.r \
@@ -301,6 +302,7 @@ EXTRA_DIST += \
 	ruamoko/qwaq/gui/editwindow.h \
 	ruamoko/qwaq/gui/filewindow.h \
 	ruamoko/qwaq/gui/listview.h \
+	ruamoko/qwaq/gui/virtinput.h \
 	ruamoko/qwaq/input-app.h \
 	ruamoko/qwaq/qwaq-app.h \
 	ruamoko/qwaq/qwaq-input.h \

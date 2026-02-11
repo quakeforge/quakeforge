@@ -3,6 +3,7 @@
 
 #include "ui_object.h"
 
+@class Array;
 @class ListView;
 
 @interface ListItem : UI_Object

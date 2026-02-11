@@ -14,6 +14,7 @@
 #include "gui/editwindow.h"
 #include "gui/filewindow.h"
 #include "gui/listview.h"
+#include "gui/virtinput.h"
 #include "gui/window.h"
 #include "armature.h"
 #include "camera.h"
@@ -1218,22 +1219,42 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 
 @interface NodePanel : Window
 {
+	Array *buttons;
+	Array *axes;
+
+	ListView *virtView;
 }
-+panel:(imui_ctx_t)ctx;
++panel:(imui_ctx_t)ctx buttons:(Array*)buttons axes:(Array*)axes;
 @end
 @implementation NodePanel
--initWithContext:(imui_ctx_t)ctx
+-initWithContext:(imui_ctx_t)ctx buttons:(Array*)buttons axes:(Array*)axes
 {
 	if (!(self = [super initWithContext:ctx name:"NodePanel"])) {
 		return nil;
 	}
-	IMUI_Window_SetAutoFit (window, false);
+	self.buttons = [buttons retain];
+	self.axes = [axes retain];
+	//IMUI_Window_SetAutoFit (window, false);
+	int         width = Draw_Width ();
+	int         height = Draw_Height ();
+	IMUI_Window_SetPos (window, {50, 50});
+	IMUI_Window_SetSize (window, {width-100, height-100});
+
+	virtView = [[ListView list:"NodePanel:virt" ctx:ctx] retain];
+	[virtView setItems:buttons];
 	return self;
 }
 
-+panel:(imui_ctx_t)ctx
+-(void)dealloc
 {
-	return [[[self alloc] initWithContext:ctx] autorelease];
+	[buttons release];
+	[axes release];
+	[super dealloc];
+}
+
++panel:(imui_ctx_t)ctx buttons:(Array*)buttons axes:(Array*)axes
+{
+	return [[[self alloc] initWithContext:ctx buttons:buttons axes:axes] autorelease];
 }
 
 -draw
@@ -1244,9 +1265,15 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 	int         width = Draw_Width ();
 	int         height = Draw_Height ();
 	UI_Panel(window) {
-		IMUI_State_SetPos (IMUI_context, nil, {50, 50});
-		IMUI_State_SetLen (IMUI_context, nil, {width-100, height-100});
-		UI_SetFill (current_style.background.normal);
+		UI_Horizontal {
+			IMUI_Layout_SetYSize (IMUI_context, imui_size_expand, 100);
+			UI_SetFill (current_style.background.normal);
+			UI_Vertical {
+				IMUI_Layout_SetXSize (IMUI_context, imui_size_expand, 100);
+				UI_Label ("hi there");
+			}
+			[virtView draw];
+		};
 
 		uint dent = IMUI_ActiveItem (IMUI_context,
 									 imui_size_pixels, 25,
@@ -1351,17 +1378,21 @@ main (int argc, string *argv)
 
 	main_menu = [[MainMenu menu:imui_ctx] retain];
 
-	//auto node_panel = [[NodePanel panel:imui_ctx] retain];
+	arp_end ();
+	arp_start ();
 	auto buttons = IN_ListButtons ();
+	auto button_set = [Array array];
 	for (auto b = buttons; *b; b++) {
-		printf ("button %s\n", *b);
-		printf ("    %s\n", IN_GetButtonDescription (*b));
+		[button_set addObject:[VirtualInput button:*b ctx:imui_ctx]];
 	}
 	auto axes = IN_ListAxes ();
+	auto axis_set = [Array array];
 	for (auto a = axes; *a; a++) {
-		printf ("axis %s\n", *a);
-		printf ("    %s\n", IN_GetAxisDescription (*a));
+		[axis_set addObject:[VirtualInput axis:*a ctx:imui_ctx]];
 	}
+	auto node_panel = [[NodePanel panel:imui_ctx buttons:button_set axes:axis_set] retain];
+	arp_end ();
+	arp_start ();
 
 	auto main_window = [[MainWindow window:imui_ctx] retain];
 
