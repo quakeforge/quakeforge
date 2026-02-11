@@ -2357,38 +2357,13 @@ IMUI_StartScroller (imui_ctx_t *ctx)
 	}
 	auto state = imui_get_state (ctx, va ("%s#content", name), anchor_view.id);
 	DARRAY_APPEND (&ctx->scrollers, state);
-	update_hot_active (ctx, state);
 
+	// Position the content based on the scroll inputs: pos is the content's
+	// pixel in the top-left corner of the scroll box
 	View_SetPos (anchor_view, -state->pos.x, -state->pos.y);
 
-	auto scroller = View_New (ctx->vsys, nullview);
-	Canvas_SetReference (ctx->csys, scroller.id,
-						 Canvas_Entity (ctx->csys,
-										View_GetRoot (anchor_view).id));
-	*View_Control (scroller) = (viewcont_t) {
-		.gravity = grav_northwest,
-		.visible = 1,
-		.free_x = 1,
-		.free_y = 1,
-		.vertical = true,
-		.active = 1,
-	};
-
-	View_Control (anchor_view)->is_link = 1;
-	imui_reference_t link = {
-		.ref_id = scroller.id,
-		.update = true,
-		.ctx = ctx,
-	};
-	Ent_SetComponent (anchor_view.id, c_reference, anchor_view.reg, &link);
-
-	imui_reference_t anchor = {
-		.ref_id = anchor_view.id,
-	};
-	Ent_SetComponent (scroller.id, c_reference, scroller.reg, &anchor);
-
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
-	ctx->current_parent = scroller;
+	ctx->current_parent = anchor_view;
 	return 0;
 }
 
