@@ -842,6 +842,7 @@ calc_downwards_dependent (imui_ctx_t *ctx, hierref_t href)
 			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
 			calc_downwards_dependent (ctx, View_GetRef (sub_view));
 			len[i] = View_GetLen (sub_view);
+			continue;
 		}
 		view_pos_t  clen = len[i];
 		if (cont[i].semantic_x == imui_size_fitchildren
@@ -977,10 +978,18 @@ calc_expansions (imui_ctx_t *ctx, hierref_t href)
 		if (cont[i].is_link) {
 			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
 			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
+			auto sub_cont = *View_Control (sub_view);
+			if (sub->update) {
+				if (sub_cont.semantic_x == imui_size_fitchildren) {
+					len[i].x = View_GetLen (sub_view).x;
+				}
+				if (sub_cont.semantic_y == imui_size_fitchildren) {
+					len[i].y = View_GetLen (sub_view).y;
+				}
+			}
 			View_SetLen (sub_view, len[i].x, len[i].y);
 			calc_expansions (ctx, View_GetRef (sub_view));
 			if (sub->update) {
-				View_UpdateHierarchy (sub_view);
 				if (cont[i].semantic_x == imui_size_fitchildren) {
 					len[i].x = View_GetLen (sub_view).x;
 				}
@@ -1026,15 +1035,17 @@ position_views (imui_ctx_t *ctx, view_t root_view)
 	viewcont_t *cont = h->components[view_control];
 	uint32_t   *parent = h->parentIndex;
 
+	uint32_t start = 0;
 	if (Ent_HasComponent (root_view.id, c_reference, ctx->vsys.reg)) {
 		auto ent = root_view.id;
 		imui_reference_t *reference = Ent_GetComponent (ent, c_reference, reg);
 		auto anchor = View_FromEntity (ctx->vsys, reference->ref_id);
 		pos[0] = View_GetAbs (anchor);
+		start = 1;
 	}
 	view_pos_t  cpos = {};
 	uint32_t    cur_parent = 0;
-	for (uint32_t i = 0; i < h->num_objects; i++) {
+	for (uint32_t i = start; i < h->num_objects; i++) {
 		if (parent[i] != cur_parent) {
 			cur_parent = parent[i];
 			cpos = (view_pos_t) {};
