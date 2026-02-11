@@ -2398,3 +2398,11 @@ IMUI_SetViewFree (imui_ctx_t *ctx, bool fx, bool fy)
 	control->free_x = fx;
 	control->free_y = fy;
 }
+
+void
+IMUI_SetViewGravity (imui_ctx_t *ctx, grav_t gravity)
+{
+	uint32_t id = ctx->current_state->entity;
+	auto view = View_FromEntity (ctx->vsys, id);
+	View_SetGravity (view, gravity);
+}

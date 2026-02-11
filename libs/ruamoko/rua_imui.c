@@ -922,6 +922,15 @@ bi (IMUI_SetViewFree)
 	IMUI_SetViewFree (bi_ctx->imui_ctx, free[0], free[1]);
 }
 
+bi (IMUI_SetViewGravity)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	grav_t gravity = P_INT (pr, 1);
+	IMUI_SetViewGravity (bi_ctx->imui_ctx, gravity);
+}
+
 #undef bi
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
@@ -1022,6 +1031,7 @@ static builtin_t builtins[] = {
 	bi(IMUI_SetViewPos,         2, p(int), p(ivec2)),
 	bi(IMUI_SetViewLen,         2, p(int), p(ivec2)),
 	bi(IMUI_SetViewFree,        2, p(int), p(ivec2)),
+	bi(IMUI_SetViewGravity,     2, p(int), p(int)),
 
 	{0}
 };

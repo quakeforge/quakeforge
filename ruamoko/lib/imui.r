@@ -111,3 +111,4 @@ void IMUI_EndScroller (imui_ctx_t ctx) = #0;
 void IMUI_SetViewPos (imui_ctx_t ctx, ivec2 pos) = #0;
 void IMUI_SetViewLen (imui_ctx_t ctx, ivec2 len) = #0;
 void IMUI_SetViewFree (imui_ctx_t ctx, bvec2 free) = #0;
+void IMUI_SetViewGravity (imui_ctx_t ctx, grav_t gravity) = #0;
