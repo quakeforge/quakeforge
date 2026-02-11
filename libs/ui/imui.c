@@ -1560,6 +1560,8 @@ IMUI_Label32Attr (imui_ctx_t *ctx, const uint32_t *str, const uint32_t *attr,
 void
 IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 {
+	// Create the scroller content (FIXME: this maybe should be done
+	// separately using IMUI_StartScroller instead of by IMUI_Passage)
 	auto anchor_view = View_New (ctx->vsys, ctx->current_parent);
 	*View_Control (anchor_view) = (viewcont_t) {
 		.gravity = grav_northwest,
@@ -1576,12 +1578,14 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 
 	uint32_t    parent = ctx->current_parent.id;
 	if (Ent_HasComponent (parent, ecs_name, ctx->csys.reg)) {
+		// override the provided name with the parent's name
 		name = *(char **) Ent_GetComponent (parent, ecs_name, ctx->csys.reg);
 	}
 	auto state = imui_get_state (ctx, va ("%s#content", name), anchor_view.id);
 	DARRAY_APPEND (&ctx->scrollers, state);
-	update_hot_active (ctx, state);
 
+	// Position the content based on the scroll inputs: pos is the content's
+	// pixel in the top-left corner of the scroll box
 	View_SetPos (anchor_view, -state->pos.x, -state->pos.y);
 
 	auto psg_view = Text_PassageView (ctx->tsys, nullview,
@@ -1604,6 +1608,7 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 	imui_reference_t link = {
 		.ref_id = psg_view.id,
 		.update = true,
+		//ctx is null to prevent the entity being deleted
 	};
 	Ent_SetComponent (anchor_view.id, c_reference, anchor_view.reg, &link);
 
