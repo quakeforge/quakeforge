@@ -224,8 +224,8 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<expr>		opt_init_semi opt_expr comma_expr
 %type   <expr>		expr
 %type	<expr>		compound_init
-%type	<expr>		opt_cast
-%type   <mut_expr>	element_list expr_list vector_expr
+%type	<expr>		opt_cast cast
+%type   <mut_expr>	element_list expr_list vector_expr compound
 %type	<designator> designator designator_spec
 %type	<element>	element
 %type	<expr>		method_optional_state_expr optional_state_expr
@@ -2063,15 +2063,15 @@ var_initializer
 	;
 
 compound_init
-	: opt_cast '{' element_list optional_comma '}'
+	: opt_cast compound
 		{
-			auto cast = $1;
-			$3->compound.type_expr = cast;
-			$$ = $3;
+			auto cast = $opt_cast;
+			$compound->compound.type_expr = cast;
+			$$ = $compound;
 		}
 	| opt_cast '{' '}'
 		{
-			auto cast = $1;
+			auto cast = $opt_cast;
 			if (cast) {
 				auto elements = new_compound_init ();
 				elements->compound.type_expr = cast;
@@ -2082,9 +2082,17 @@ compound_init
 		}
 	;
 
+compound
+	: '{' element_list optional_comma '}'	{ $$ = $2; }
+	;
+
 opt_cast
-	: '(' typename ')'					{ $$ = new_decl_expr ($2); }
+	: cast			 %prec HYPERUNARY	{ $$ = $1; }
 	| /*empty*/							{ $$ = nullptr; }
+	;
+
+cast
+	: '(' typename ')'					{ $$ = new_decl_expr ($2); }
 	;
 
 method_optional_state_expr
@@ -2469,6 +2477,12 @@ cast_expr
 			auto spec = $2;
 			auto decl = new_decl_expr (spec);
 			$$ = new_binary_expr ('C', decl, $4);
+		}
+	| cast compound
+		{
+			auto cast = $cast;
+			$compound->compound.type_expr = cast;
+			$$ = $compound;
 		}
 	| typespec '(' arg_list[args] ')'
 		{

@@ -551,6 +551,10 @@ proc_compound (const expr_t *expr, rua_ctx_t *ctx)
 		}
 		append_element (comp, new_element (src, ele->designator));
 	}
+	if (comp->compound.type) {
+		auto type = comp->compound.type;
+		return current_target.initialized_temp (type, comp);
+	}
 	return comp;
 }
 
