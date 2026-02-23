@@ -134,7 +134,7 @@ void printf(string, ...);
 				int height = IMUI_TextSize (IMUI_context, "X").y;
 				len.y = count * height;
 				IMUI_State_SetLen (IMUI_context, nil, len);
-				ivec2 delta = { 0, -pos.y % height } ;
+				ivec2 delta = { 0, -pos.y % height };
 				IMUI_SetViewPos (IMUI_context, delta);
 				len = sblen - delta;
 				for (uint i = pos.y / height; len.y > 0 && i < count;
