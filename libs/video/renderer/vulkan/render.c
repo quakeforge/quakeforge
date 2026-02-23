@@ -356,8 +356,9 @@ run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx, qfv_step_t *step)
 }
 
 static void
-run_process (qfv_process_t *proc, vulkan_ctx_t *ctx)
+run_process (qfv_step_t *step, vulkan_ctx_t *ctx)
 {
+	auto proc = step->process;
 	auto rctx = ctx->render_context;
 	auto frame = &rctx->frames.a[ctx->curFrame];
 	qfZoneNamed (zone, true);
@@ -365,6 +366,7 @@ run_process (qfv_process_t *proc, vulkan_ctx_t *ctx)
 	qfZoneColor (zone, proc->label.color32);
 	qfv_taskctx_t taskctx = {
 		.ctx = ctx,
+		.step = step,
 		.frame = frame,
 	};
 	run_tasks (proc->task_count, proc->tasks, &taskctx);
@@ -465,7 +467,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 			}
 		}
 		if (step->process) {
-			run_process (step->process, ctx);
+			run_process (step, ctx);
 		}
 		update_time (&step->time, step_start, Sys_LongTime ());
 	}

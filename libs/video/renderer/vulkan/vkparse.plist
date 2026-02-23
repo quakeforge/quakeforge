@@ -614,6 +614,10 @@ parse = {
 			type = (single, qfv_processinfo_t, name);
 			value = process;
 		};
+		init = {
+			type = (single, qfv_taskinfo_t, name);
+			value = init;
+		};
 	};
 	qfv_jobinfo_s = {
 		.name = qfv_jobinfo_t;

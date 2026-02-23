@@ -266,6 +266,7 @@ typedef struct qfv_stepinfo_s {
 	qfv_renderinfo_t *render;
 	qfv_computeinfo_t *compute;
 	qfv_processinfo_t *process;
+	qfv_taskinfo_t *init;
 } qfv_stepinfo_t;
 
 typedef struct qfv_jobinfo_s {
@@ -450,7 +451,9 @@ typedef struct qfv_step_s {
 	qfv_render_t *render;
 	qfv_compute_t *compute;
 	qfv_process_t *process;
-	qfv_time_t time;
+	qfv_taskinfo_t *init;
+	void       *data;
+	qfv_time_t  time;
 } qfv_step_t;
 
 typedef void (*qfv_initfunc_f) (exprctx_t *ectx);
@@ -474,7 +477,7 @@ typedef struct qfv_job_s {
 	uint32_t    num_framebuffers;
 	qfv_framebuffer_t *framebuffers;
 	qfv_resourcearray_t *framebuffer_resources;
-	qfv_time_t time;
+	qfv_time_t  time;
 
 	qfv_resource_t *resources;
 
@@ -543,6 +546,8 @@ typedef struct qfv_renderctx_s {
 
 typedef struct qfv_taskctx_s {
 	vulkan_ctx_t *ctx;
+	struct memsuper_s *memsuper;
+	qfv_step_t *step;
 	qfv_renderframe_t *frame;
 	qfv_pipeline_t *pipeline;
 	qfv_renderpass_t *renderpass;
