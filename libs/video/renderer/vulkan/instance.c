@@ -344,6 +344,10 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 		};
 		dev->v13Properties = (VkPhysicalDeviceVulkan13Properties) {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES,
+			.pNext = &dev->v14Properties,
+		};
+		dev->v14Properties = (VkPhysicalDeviceVulkan14Properties) {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_PROPERTIES,
 		};
 		ifunc->vkGetPhysicalDeviceProperties2 (physDev, &dev->p);
 		ifunc->vkGetPhysicalDeviceMemoryProperties (physDev,

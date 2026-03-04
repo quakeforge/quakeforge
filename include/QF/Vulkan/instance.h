@@ -46,6 +46,7 @@ typedef struct qfv_physdev_s {
 	VkPhysicalDeviceVulkan11Properties v11Properties;
 	VkPhysicalDeviceVulkan12Properties v12Properties;
 	VkPhysicalDeviceVulkan13Properties v13Properties;
+	VkPhysicalDeviceVulkan14Properties v14Properties;
 	VkPhysicalDeviceMemoryProperties memory_properties;
 } qfv_physdev_t;
 
