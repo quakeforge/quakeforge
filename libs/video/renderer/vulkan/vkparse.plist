@@ -595,12 +595,17 @@ parse = {
 		.dictionary = {
 			.parse = auto;
 			name = $name;
+			line = $item.line;
 		};
 		color = auto;
 		dependencies = {
 			type = (array, qfv_reference_t);
 			size = num_dependencies;
 			values = dependencies;
+		};
+		render_template = {
+			type = (single, qfv_renderinfo_t, name);
+			value = render_template;
 		};
 		render = {
 			type = (single, qfv_renderinfo_t, name);

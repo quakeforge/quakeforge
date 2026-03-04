@@ -295,14 +295,26 @@ count_comp_stuff (qfv_computeinfo_t *ci, objcount_t *counts)
 static void
 count_step_stuff (qfv_stepinfo_t *step, objcount_t *counts)
 {
-	if (step->render && step->compute && !step->process) {
-		Sys_Error ("%s: invalid step: must have process for render+compute",
-				   step->name);
+	if (step->render && step->render_template) {
+		Sys_Error ("%d:%s: invalid step: cannot have both render and "
+				   "render_template", step->line, step->name);
 	}
-	if (!step->render && !step->compute && !step->process) {
-		Sys_Error ("%s: invalid step: must have at least one of "
-				   "process/render/compute", step->name);
+	if (step->render_template && !step->init) {
+		Sys_Error ("%d:%s: invalid step: render_template requires init",
+				   step->line, step->name);
 	}
+	if ((step->render || step->render_template)
+		&& step->compute && !step->process) {
+		Sys_Error ("%d:%s: invalid step: must have process for render+compute",
+				   step->line, step->name);
+	}
+	if (!(step->render || step->render_template)
+		&& !step->compute && !step->process) {
+		Sys_Error ("%d:%s: invalid step: must have at least one of "
+				   "process/render/compute", step->line, step->name);
+	}
+	// render_template stuff not counted here because it is handled by the
+	// step's init function
 	if (step->render) {
 		__auto_type rinfo = step->render;
 		counts->num_renderpasses += rinfo->num_renderpasses;
@@ -1316,6 +1328,7 @@ init_step (uint32_t ind, jobptr_t *jp, objstate_t *s)
 
 	*step = (qfv_step_t) {
 		.label = make_label (sinfo->name, sinfo->color),
+		.step_info = sinfo,
 	};
 	if (sinfo->render) {
 		step->render = &jp->renders[s->inds.num_render++];
@@ -1469,7 +1482,7 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, jobptr_t jp, objstate_t *s)
 		job->layouts[i] = nullptr;
 	}
 	auto cv = jp.clearvalues;
-	memcpy (cv, s->ptr.clear, sizeof (VkClearValue [counts->num_attachments ]));
+	memcpy (cv, s->ptr.clear, sizeof (VkClearValue [counts->num_attachments]));
 
 	for (uint32_t i = 0; i < job->num_dsmanagers; i++) {
 		auto layoutInfo = &jobinfo->dslayouts[i];

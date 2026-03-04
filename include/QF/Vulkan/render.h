@@ -259,10 +259,12 @@ typedef struct qfv_processinfo_s {
 typedef struct qfv_stepinfo_s {
 	vec4f_t     color;
 	const char *name;
+	int         line;
 
 	uint32_t     num_dependencies;
 	qfv_reference_t *dependencies;
 
+	qfv_renderinfo_t *render_template;
 	qfv_renderinfo_t *render;
 	qfv_computeinfo_t *compute;
 	qfv_processinfo_t *process;
@@ -454,6 +456,7 @@ typedef struct qfv_step_s {
 	qfv_taskinfo_t *init;
 	void       *data;
 	qfv_time_t  time;
+	qfv_stepinfo_t *step_info;
 } qfv_step_t;
 
 typedef void (*qfv_initfunc_f) (exprctx_t *ectx);
