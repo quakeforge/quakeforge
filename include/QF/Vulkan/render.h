@@ -551,6 +551,7 @@ typedef struct qfv_taskctx_s {
 	vulkan_ctx_t *ctx;
 	struct memsuper_s *memsuper;
 	qfv_step_t *step;
+	qfv_stepinfo_t *stepinfo;
 	qfv_renderframe_t *frame;
 	qfv_pipeline_t *pipeline;
 	qfv_renderpass_t *renderpass;

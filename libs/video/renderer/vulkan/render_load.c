@@ -184,7 +184,6 @@ typedef struct {
 	uint32_t    num_render;
 	uint32_t    num_compute;
 	uint32_t    num_process;
-	uint32_t    num_init;
 	uint32_t    num_tasks;
 
 	uint32_t    num_renderpasses;
@@ -293,7 +292,8 @@ count_comp_stuff (qfv_computeinfo_t *ci, objcount_t *counts)
 }
 
 static void
-count_step_stuff (qfv_stepinfo_t *step, objcount_t *counts)
+count_step_stuff (qfv_stepinfo_t *step, objcount_t *counts,
+				  qfv_jobinfo_t *jinfo, vulkan_ctx_t *ctx)
 {
 	if (step->render && step->render_template) {
 		Sys_Error ("%d:%s: invalid step: cannot have both render and "
@@ -303,18 +303,25 @@ count_step_stuff (qfv_stepinfo_t *step, objcount_t *counts)
 		Sys_Error ("%d:%s: invalid step: render_template requires init",
 				   step->line, step->name);
 	}
-	if ((step->render || step->render_template)
-		&& step->compute && !step->process) {
+	if (step->init) {
+		qfv_taskctx_t taskctx = {
+			.ctx = ctx,
+			.memsuper = jinfo->memsuper,
+			.stepinfo = step,
+		};
+		auto init = step->init;
+		init->func->func (init->params, 0, (exprctx_t *) &taskctx);
+	}
+	if (step->render && step->compute && !step->process) {
 		Sys_Error ("%d:%s: invalid step: must have process for render+compute",
 				   step->line, step->name);
 	}
-	if (!(step->render || step->render_template)
-		&& !step->compute && !step->process) {
+	if (!step->render && !step->compute && !step->process) {
 		Sys_Error ("%d:%s: invalid step: must have at least one of "
 				   "process/render/compute", step->line, step->name);
 	}
-	// render_template stuff not counted here because it is handled by the
-	// step's init function
+	// render_template stuff not counted because it is handled by the
+	// step's init function and is used to create render
 	if (step->render) {
 		__auto_type rinfo = step->render;
 		counts->num_renderpasses += rinfo->num_renderpasses;
@@ -331,15 +338,11 @@ count_step_stuff (qfv_stepinfo_t *step, objcount_t *counts)
 		counts->num_process++;
 		counts->num_tasks += step->process->num_tasks;
 	}
-	if (step->init) {
-		counts->num_init++;
-		counts->num_tasks++;
-	}
 	counts->num_steps++;
 }
 
 static void
-count_stuff (qfv_jobinfo_t *jobinfo, objcount_t *counts)
+count_stuff (qfv_jobinfo_t *jobinfo, objcount_t *counts, vulkan_ctx_t *ctx)
 {
 	counts->num_images += jobinfo->num_images;
 	counts->num_imageviews += jobinfo->num_imageviews;
@@ -351,7 +354,7 @@ count_stuff (qfv_jobinfo_t *jobinfo, objcount_t *counts)
 		counts->num_attachments += fb->num_attachments;
 	}
 	for (uint32_t i = 0; i < jobinfo->num_steps; i++) {
-		count_step_stuff (&jobinfo->steps[i], counts);
+		count_step_stuff (&jobinfo->steps[i], counts, jobinfo, ctx);
 	}
 	counts->num_tasks += jobinfo->newscene_num_tasks;
 	counts->num_tasks += jobinfo->init_num_tasks;
@@ -1124,7 +1127,6 @@ typedef struct {
 	qfv_render_t *renders;
 	qfv_compute_t *computes;
 	qfv_process_t *processes;
-	qfv_taskinfo_t *inits;
 	qfv_renderpass_t *renderpasses;
 	VkClearValue *clearvalues;
 	qfv_subpass_t *subpasses;
@@ -1343,11 +1345,6 @@ init_step (uint32_t ind, jobptr_t *jp, objstate_t *s)
 		init_process (step->process, sinfo->process, jp, s);
 		step->process->label = step->label;
 	}
-	if (sinfo->init) {
-		step->init = &jp->inits[s->inds.num_init++];
-		uint32_t dummy = 0;
-		init_tasks (&dummy, &step->init, 1, sinfo->init, jp, s);
-	}
 }
 
 static jobptr_t
@@ -1364,7 +1361,6 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 	size += sizeof (qfv_render_t     [counts->num_render]);
 	size += sizeof (qfv_compute_t    [counts->num_compute]);
 	size += sizeof (qfv_process_t    [counts->num_process]);
-	size += sizeof (qfv_process_t    [counts->num_init]);
 	size += sizeof (qfv_renderpass_t [counts->num_renderpasses]);
 	size += sizeof (qfv_subpass_t    [counts->num_subpasses]);
 	size += sizeof (qfv_pipeline_t   [counts->num_graph_pipelines]);
@@ -1404,8 +1400,7 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 	auto rn = (qfv_render_t *) &job->steps[job->num_steps];
 	auto cp = (qfv_compute_t *) &rn[counts->num_render];
 	auto pr = (qfv_process_t *) &cp[counts->num_compute];
-	auto in = (qfv_taskinfo_t *) &pr[counts->num_process];
-	auto rp = (qfv_renderpass_t *) &in[counts->num_init];
+	auto rp = (qfv_renderpass_t *) &pr[counts->num_process];
 	auto sp = (qfv_subpass_t *) &rp[counts->num_renderpasses];
 	auto pl = (qfv_pipeline_t *) &sp[counts->num_subpasses];
 	auto ti = (qfv_taskinfo_t *) &pl[job->num_pipelines];
@@ -1447,7 +1442,6 @@ create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 		.renders = rn,
 		.computes = cp,
 		.processes = pr,
-		.inits = in,
 		.renderpasses = rp,
 		.clearvalues = cv,
 		.subpasses = sp,
@@ -1993,19 +1987,6 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 	s.inds.num_tasks = num_tasks;
 	init_job (ctx, counts, jp, &s);
 
-	for (uint64_t i = 0; i < job->num_steps; i++) {
-		auto step = &job->steps[i];
-		if (step->init) {
-			qfv_taskctx_t taskctx = {
-				.ctx = ctx,
-				.memsuper = jinfo->memsuper,
-				.step = step,
-			};
-			auto init = step->init;
-			init->func->func (init->params, 0, (exprctx_t *) &taskctx);
-		}
-	}
-
 	uint32_t num_subpass_inputs = counts->num_subpass_inputs;
 	for (size_t i = 0; i < rctx->frames.size; i++) {
 		auto frame = &rctx->frames.a[i];
@@ -2061,7 +2042,7 @@ QFV_BuildRender (vulkan_ctx_t *ctx, dstring_t *cache_data)
 	auto rctx = ctx->render_context;
 
 	objcount_t  counts = {};
-	count_stuff (rctx->jobinfo, &counts);
+	count_stuff (rctx->jobinfo, &counts, ctx);
 
 	VkPipelineCache cache = VK_NULL_HANDLE;
 	if (cache_data) {
