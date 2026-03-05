@@ -85,9 +85,6 @@
 #define shadow_quanta 128
 #define lnearclip r_nearclip
 #define NUM_CASCADE 8
-#define max_views 17	// FIXME should be 32 (or really, maxMultiviewViewCount,
-						// but there are other problems there), but nvidia's
-						// drivers segfault for > 17
 
 static vec4f_t  ref_direction = { 1, 0, 0, 0 };
 
@@ -173,22 +170,29 @@ set_lightid (entity_t ent, uint32_t id)
 	Ent_SetComponent (ent.id, ent.base + scene_lightid, ent.reg, &id);
 }
 
+static uint32_t
+lighting_calc_max_views (vulkan_ctx_t *ctx)
+{
+	auto physDev = ctx->device->physDev;
+	uint32_t max_views = physDev->v11Properties.maxMultiviewViewCount;
+	if (lighting_max_views && max_views > lighting_max_views) {
+		max_views = lighting_max_views;
+	}
+	if (max_views < 1) {
+		max_views = 1;
+	}
+	return max_views;
+}
+
 static void
 lighting_init_shadow (const exprval_t **params, exprval_t *result,
 					  exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto physDev = ctx->device->physDev;
-	uint32_t maxViews = physDev->v11Properties.maxMultiviewViewCount;
-	if (lighting_max_views && maxViews > lighting_max_views) {
-		maxViews = lighting_max_views;
-	}
-	if (maxViews < 1) {
-		maxViews = 1;
-	}
+	uint32_t max_views = lighting_calc_max_views (ctx);
 	Sys_MaskPrintf (SYS_lighting, "lighting_init_shadow: %p %d\n",
-					taskctx->stepinfo, maxViews);
+					taskctx->stepinfo, max_views);
 	auto sinfo = taskctx->stepinfo;
 	auto rt = sinfo->render_template;
 	if (rt->num_renderpasses != 1) {
@@ -201,9 +205,9 @@ lighting_init_shadow (const exprval_t **params, exprval_t *result,
 	*render = (qfv_renderinfo_t) {
 		.color = rt->color,
 		.name = "shadow_render",
-		.num_renderpasses = maxViews,
+		.num_renderpasses = max_views,
 		.renderpasses = cmemalloc (memsuper,
-								   sizeof (qfv_renderpassinfo_t[maxViews])),
+								   sizeof (qfv_renderpassinfo_t[max_views])),
 	};
 	auto rpinfo = rt->renderpasses;
 	auto rp = render->renderpasses;
@@ -213,10 +217,10 @@ lighting_init_shadow (const exprval_t **params, exprval_t *result,
 		num_subpasses--;
 	}
 	VkRenderPassMultiviewCreateInfo *mv = cmemalloc (memsuper,
-			sizeof (VkRenderPassMultiviewCreateInfo[maxViews]));
+			sizeof (VkRenderPassMultiviewCreateInfo[max_views]));
 	uint32_t *all_viewmasks = cmemalloc (memsuper,
-			sizeof (uint32_t[maxViews * num_subpasses]));
-	for (uint32_t i = 0; i < maxViews; i++) {
+			sizeof (uint32_t[max_views * num_subpasses]));
+	for (uint32_t i = 0; i < max_views; i++) {
 		auto viewmasks = &all_viewmasks[i * num_subpasses];
 		mv[i] = (VkRenderPassMultiviewCreateInfo) {
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO,
@@ -441,6 +445,7 @@ lighting_draw_shadow_maps (const exprval_t **params, exprval_t *result,
 	}
 
 	uint32_t id_base = 0;
+	int max_views = lctx->max_views;
 	for (int i = 0; i < LIGHTING_STAGES; i++) {
 		auto queue = &lframe->stage_queue[i];
 		int  count;
@@ -2143,6 +2148,7 @@ lighting_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	ctx->lighting_context = lctx;
 
 	*lctx = (lightingctx_t) {
+		.max_views = lighting_calc_max_views (ctx),
 		.shadow_info = (qfv_attachmentinfo_t) {
 			.name = "$shadow",
 			.format = VK_FORMAT_D32_SFLOAT,
@@ -2735,6 +2741,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 
 	lctx->num_maps = mctx.numMaps;
 	int stage_layers[LIGHTING_STAGES] = {};
+	int max_views = lctx->max_views;
 	if (mctx.numMaps) {
 		for (int i = 0; i < mctx.numMaps; i++) {
 			int ind = (maps[i].size / shadow_quanta) - 1;

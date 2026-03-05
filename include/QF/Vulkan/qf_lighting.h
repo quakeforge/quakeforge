@@ -151,6 +151,7 @@ typedef struct lightingctx_s {
 	struct qfv_resource_s *shadow_resources;
 	struct qfv_resource_s *light_resources;
 
+	uint32_t    max_views;
 	qfv_lightmatset_t light_mats;
 	qfv_lightmatdataset_t light_matdata;
 	VkImage *map_images;
