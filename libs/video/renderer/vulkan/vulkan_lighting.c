@@ -41,6 +41,7 @@
 
 #include "qfalloca.h"
 
+#include "QF/cmem.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/heapsort.h"
@@ -113,10 +114,21 @@ static cvar_t dynlight_size_cvar = {
 	.name = "dynlight_size",
 	.description =
 		"Effective radius of dynamic light shadow maps. Needs map reload to "
-		"take effect",
+		"take effect.",
 	.default_value = "256",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &dynlight_size },
+};
+
+static uint32_t lighting_max_views = 0;
+static cvar_t lighting_max_views_cvar = {
+	.name = "lighting_max_views",
+	.description =
+		"Maximum views per pass for rendering shadow maps. 0 means use the "
+		"system limit.",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_uint, .value = &lighting_max_views },
 };
 
 static const light_t *
@@ -159,6 +171,67 @@ static void
 set_lightid (entity_t ent, uint32_t id)
 {
 	Ent_SetComponent (ent.id, ent.base + scene_lightid, ent.reg, &id);
+}
+
+static void
+lighting_init_shadow (const exprval_t **params, exprval_t *result,
+					  exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto physDev = ctx->device->physDev;
+	uint32_t maxViews = physDev->v11Properties.maxMultiviewViewCount;
+	if (lighting_max_views && maxViews > lighting_max_views) {
+		maxViews = lighting_max_views;
+	}
+	if (maxViews < 1) {
+		maxViews = 1;
+	}
+	Sys_MaskPrintf (SYS_lighting, "lighting_init_shadow: %p %d\n",
+					taskctx->stepinfo, maxViews);
+	auto sinfo = taskctx->stepinfo;
+	auto rt = sinfo->render_template;
+	if (rt->num_renderpasses != 1) {
+		Sys_Error ("%d:%s: need exactly one render pass in render template",
+				   sinfo->line, sinfo->name);
+	}
+	auto memsuper = taskctx->memsuper;
+	sinfo->render = cmemalloc (memsuper, sizeof (qfv_renderinfo_t));
+	auto render = sinfo->render;
+	*render = (qfv_renderinfo_t) {
+		.color = rt->color,
+		.name = "shadow_render",
+		.num_renderpasses = maxViews,
+		.renderpasses = cmemalloc (memsuper,
+								   sizeof (qfv_renderpassinfo_t[maxViews])),
+	};
+	auto rpinfo = rt->renderpasses;
+	auto rp = render->renderpasses;
+	uint32_t num_subpasses = rpinfo->num_subpasses;
+	if (num_subpasses > 0 && strcmp (rpinfo->subpasses[num_subpasses - 1].name,
+									 "$external") == 0) {
+		num_subpasses--;
+	}
+	VkRenderPassMultiviewCreateInfo *mv = cmemalloc (memsuper,
+			sizeof (VkRenderPassMultiviewCreateInfo[maxViews]));
+	uint32_t *all_viewmasks = cmemalloc (memsuper,
+			sizeof (uint32_t[maxViews * num_subpasses]));
+	for (uint32_t i = 0; i < maxViews; i++) {
+		auto viewmasks = &all_viewmasks[i * num_subpasses];
+		mv[i] = (VkRenderPassMultiviewCreateInfo) {
+			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO,
+			.pNext = rpinfo->pNext,
+			.subpassCount = num_subpasses,
+			.pViewMasks = viewmasks,
+		};
+		rp[i] = *rpinfo;
+		rp[i].pNext = &mv[i];
+		rp[i].name = cmemstrdup (memsuper, vac (ctx->va_ctx, "%s:%d",
+												rpinfo->name, i + 1));
+		for (uint32_t j = 0; j < num_subpasses; j++) {
+			viewmasks[j] = ~0u >> (31 - i);
+		}
+	}
 }
 
 static void
@@ -2178,6 +2251,10 @@ static exprfunc_t lighting_draw_lights_func[] = {
 		.param_types = shadow_type_param },
 	{}
 };
+static exprfunc_t lighting_init_shadow_func[] = {
+	{ .func = lighting_init_shadow },
+	{}
+};
 static exprfunc_t lighting_setup_shadow_func[] = {
 	{ .func = lighting_setup_shadow },
 	{}
@@ -2208,6 +2285,7 @@ static exprsym_t lighting_task_syms[] = {
 	{ "lighting_cull_lights", &cexpr_function, lighting_cull_lights_func },
 	{ "lighting_draw_hulls", &cexpr_function, lighting_draw_hulls_func },
 	{ "lighting_draw_lights", &cexpr_function, lighting_draw_lights_func },
+	{ "lighting_init_shadow", &cexpr_function, lighting_init_shadow_func },
 	{ "lighting_setup_shadow", &cexpr_function, lighting_setup_shadow_func },
 	{ "lighting_draw_shadow_maps", &cexpr_function,
 		lighting_draw_shadow_maps_func },
@@ -2236,6 +2314,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	qfZoneScoped (true);
 
 	Cvar_Register (&dynlight_size_cvar, dynlight_size_listener, 0);
+	Cvar_Register (&lighting_max_views_cvar, nullptr, 0);
 
 	QFV_Render_AddTasks (ctx, lighting_task_syms);
 }
