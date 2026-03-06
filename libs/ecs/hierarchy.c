@@ -481,12 +481,12 @@ Hierarchy_Insert (hierarchy_t *dst, uint32_t parent)
 	return ref.index;
 }
 
-void
-Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index,
-						   int delEntities)
+static void
+hierarchy_remove_hierarchy (hierarchy_t *hierarchy, uint32_t index,
+							int delEntities)
 {
 	if (hierarchy->tree_mode) {
-		Sys_Error ("Hierarchy_RemoveHierarchy tree mode not implemented");
+		Sys_Error ("hierarchy_remove_hierarchy tree mode not implemented");
 	}
 	uint32_t    parentIndex = hierarchy->parentIndex[index];
 
@@ -759,7 +759,7 @@ Hierref_DestroyComponent (void *href, ecs_registry_t *reg)
 	if (ECS_EntValid (ref.id, reg)) {
 		hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, reg);
 		h->ent[ref.index] = nullent;
-		Hierarchy_RemoveHierarchy (h, ref.index, 1);
+		hierarchy_remove_hierarchy (h, ref.index, 1);
 		if (!h->num_objects) {
 			Hierarchy_Delete (ref.id, reg);
 		}
@@ -783,7 +783,7 @@ Hierref_SetParent (hierref_t dref, hierref_t sref, ecs_registry_t *reg)
 {
 	hierarchy_t *src = Ent_GetComponent (sref.id, ecs_hierarchy, reg);
 	if (src->tree_mode) {
-		Sys_Error ("Hierarchy_SetParent tree mode not implemented");
+		Sys_Error ("Hierref_SetParent tree mode not implemented");
 	}
 	if (ECS_EntValid (dref.id, reg)) {
 		hierarchy_t *dst = Ent_GetComponent (dref.id, ecs_hierarchy, reg);
@@ -800,7 +800,7 @@ Hierref_SetParent (hierref_t dref, hierref_t sref, ecs_registry_t *reg)
 	hierarchy_t *dst = Ent_GetComponent (dref.id, ecs_hierarchy, reg);
 	dref = hierarchy_insertHierarchy (dst, dref.id, src,
 									  dref.index, &sref.index);
-	Hierarchy_RemoveHierarchy (src, sref.index, 0);
+	hierarchy_remove_hierarchy (src, sref.index, 0);
 	if (!src->num_objects) {
 		Hierarchy_Delete (sref.id, reg);
 	}

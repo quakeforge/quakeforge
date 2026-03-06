@@ -229,14 +229,9 @@ Transform_New (ecs_system_t ssys, transform_t parent)
 void
 Transform_Delete (transform_t transform)
 {
-	hierref_t   ref = Transform_GetRef (transform);
-	if (ref.index != 0) {
-		// The transform is not the root, so pull it out of its current
-		// hierarchy so deleting it is easier
-		Transform_SetParent (transform, (transform_t) {});
-	}
-	// Takes care of freeing the transforms
-	Hierarchy_Delete (ref.id, transform.reg);
+	Ent_RemoveComponent (transform.id, transform.comp, transform.reg);
+	// Removing the href component (transform.comp) does not delete the entity
+	ECS_DelEntity (transform.reg, transform.id);
 }
 
 transform_t

@@ -239,12 +239,9 @@ VIEWINLINE
 void
 View_Delete (view_t view)
 {
-	auto ref = View_GetRef (view);
-	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
-	Hierarchy_RemoveHierarchy (h, ref.index, 1);
-	if (!h->num_objects) {
-		Hierarchy_Delete (ref.id, view.reg);
-	}
+	Ent_RemoveComponent (view.id, view.comp, view.reg);
+	// Removing the href component (view.comp) does not delete the entity
+	ECS_DelEntity (view.reg, view.id);
 }
 
 VIEWINLINE

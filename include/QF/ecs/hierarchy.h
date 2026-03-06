@@ -86,9 +86,6 @@ void Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode);
 // returns the index of the inserted object
 uint32_t Hierarchy_Insert (hierarchy_t *dst, uint32_t parent);
 
-void Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index,
-								int delEntities);
-
 void Hierref_DestroyComponent (void *href, struct ecs_registry_s *reg);
 
 
