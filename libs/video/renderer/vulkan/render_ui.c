@@ -134,6 +134,106 @@ show_pipeline (const char *type, qfv_pipeline_t *pipeline,
 	}
 }
 
+static int __attribute__ ((pure))
+count_pipelines (qfv_job_t *job)
+{
+	int count = 0;
+	for (uint32_t i = 0; i < job->num_steps; i++) {
+		auto step = &job->steps[i];
+		count += 1;
+		if (step->render) {
+			auto rp = step->render->active;
+			count += 1;
+			for (uint32_t j = 0; j < rp->subpass_count; j++) {
+				auto sp = &rp->subpasses[j];
+				count += 1;
+				count += sp->pipeline_count;
+			}
+		}
+		if (step->compute) {
+			auto compute = step->compute;
+			count += compute->pipeline_count;
+		}
+	}
+	return count;
+}
+
+static void
+draw_pipelines (const char *type, qfv_pipeline_t *pipeline,
+				uint32_t pipeline_count, imui_ctx_t *imui_ctx,
+				vulkan_ctx_t *ctx)
+{
+	for (uint32_t i = 0; i < pipeline_count; i++) {
+		show_pipeline (type, &pipeline[i], imui_ctx, ctx);
+	}
+}
+
+static void
+draw_render (qfv_renderpass_t *rp, qfv_renderctx_t *rctx, uint32_t stepind,
+			 imui_ctx_t *imui_ctx, vulkan_ctx_t *ctx)
+{
+	UI_Horizontal {
+		hs (imui_ctx, 1);
+		UI_Labelf ("%s##%p.job.step.%d.render", rp->label.name,
+				   rctx, stepind);
+		UI_FlexibleSpace ();
+	}
+	for (uint32_t j = 0; j < rp->subpass_count; j++) {
+		auto sp = &rp->subpasses[j];
+		UI_Horizontal {
+			hs (imui_ctx, 2);
+			UI_Labelf ("%s##%p.job.step.%d.subpass",
+					   sp->label.name, rctx, stepind);
+			UI_FlexibleSpace ();
+		}
+		draw_pipelines ("graphics", sp->pipelines, sp->pipeline_count,
+						imui_ctx, ctx);
+	}
+}
+
+static void
+draw_compute (qfv_compute_t *compute, qfv_renderctx_t *rctx, uint32_t stepind,
+			  imui_ctx_t *imui_ctx, vulkan_ctx_t *ctx)
+{
+	draw_pipelines ("compute", compute->pipelines, compute->pipeline_count,
+					imui_ctx, ctx);
+}
+
+static void
+draw_job (qfv_job_t *job, view_pos_t sblen, qfv_renderctx_t *rctx,
+		  imui_ctx_t *imui_ctx, vulkan_ctx_t *ctx)
+{
+	int count = count_pipelines (job);
+
+	auto state = IMUI_CurrentState (imui_ctx);
+	auto pos = state->pos;
+	auto len = state->len;
+	int height = IMUI_TextSize (imui_ctx, "X").y;
+	len.y = count * height;
+	state->len = len;
+	auto delta = (view_pos_t) { 0, -pos.y };
+	IMUI_SetViewPos (imui_ctx, delta);
+	len = (view_pos_t) {sblen.x, sblen.y - delta.y};
+
+	for (uint32_t i = 0; i < job->num_steps; i++) {
+		auto step = &job->steps[i];
+		UI_Horizontal {
+			UI_Labelf ("%s##%p.job.step.%d", step->label.name, rctx, i);
+			UI_FlexibleSpace ();
+		}
+		if (step->render) {
+			auto rp = step->render->active;
+			draw_render (rp, rctx, i, imui_ctx, ctx);
+		}
+		if (step->compute) {
+			auto compute = step->compute;
+			draw_compute (compute, rctx, i, imui_ctx, ctx);
+		}
+		if (step->process) {
+		}
+	}
+}
+
 static void
 job_control_window (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 {
@@ -142,44 +242,16 @@ job_control_window (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 		if (rctx->debug->job_control_window.is_collapsed) {
 			continue;
 		}
-		auto job = rctx->job;
-		for (uint32_t i = 0; i < job->num_steps; i++) {
-			auto step = &job->steps[i];
-			UI_Horizontal {
-				UI_Labelf ("%s##%p.job.step.%d", step->label.name, rctx, i);
-				UI_FlexibleSpace ();
-			}
-			if (step->render) {
-				auto rp = step->render->active;
-				UI_Horizontal {
-					hs (imui_ctx, 1);
-					UI_Labelf ("%s##%p.job.step.%d.render", rp->label.name,
-							   rctx, i);
-					UI_FlexibleSpace ();
-				}
-				for (uint32_t j = 0; j < rp->subpass_count; j++) {
-					auto sp = &rp->subpasses[j];
-					UI_Horizontal {
-						hs (imui_ctx, 2);
-						UI_Labelf ("%s##%p.job.step.%d.subpass",
-								   sp->label.name, rctx, i);
-						UI_FlexibleSpace ();
-					}
-					for (uint32_t j = 0; j < sp->pipeline_count; j++) {
-						auto pipeline = &sp->pipelines[j];
-						show_pipeline ("graphics", pipeline, imui_ctx, ctx);
-					}
+		UI_Horizontal {
+			IMUI_Layout_SetYSize (imui_ctx, imui_size_expand, 100);
+			UI_ScrollBox ("JobControl##ListView:scroller") {
+				auto sblen = IMUI_CurrentState (imui_ctx)->len;
+				UI_Scroller () {
+					auto job = rctx->job;
+					draw_job (job, sblen, rctx, imui_ctx, ctx);
 				}
 			}
-			if (step->compute) {
-				auto compute = step->compute;
-				for (uint32_t j = 0; j < compute->pipeline_count; j++) {
-					auto pipeline = &compute->pipelines[j];
-					show_pipeline ("compute", pipeline, imui_ctx, ctx);
-				}
-			}
-			if (step->process) {
-			}
+			UI_ScrollBar ("JobControl##ListView:scroller");
 		}
 	}
 }
@@ -401,7 +473,8 @@ QFV_Render_UI (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 				.name = "Job Control",
 				.xpos = 100,
 				.ypos = 50,
-				.auto_fit = true,
+				.xlen = 400,
+				.ylen = 300,
 			},
 			.entid_window = {
 				.name = "Entities",
