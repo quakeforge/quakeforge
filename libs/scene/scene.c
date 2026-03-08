@@ -50,28 +50,32 @@
 #include "QF/scene/transform.h"
 
 static void
-create_active (void *_active, ecs_registry_t *reg)
+create_active (void *_active, ecs_registry_t *reg, uint32_t ent,
+			   const component_t *component)
 {
 	byte       *active = _active;
 	*active = 1;
 }
 
 static void
-create_old_origin (void *_old_origin, ecs_registry_t *reg)
+create_old_origin (void *_old_origin, ecs_registry_t *reg, uint32_t ent,
+				   const component_t *component)
 {
 	vec4f_t    *old_origin = _old_origin;
 	*old_origin = (vec4f_t) {0, 0, 0, 1};
 }
 
 static void
-create_colormap (void *_colormap, ecs_registry_t *reg)
+create_colormap (void *_colormap, ecs_registry_t *reg, uint32_t ent,
+				 const component_t *component)
 {
 	colormap_t *colormap = _colormap;
 	*colormap = (colormap_t) {1, 6};
 }
 
 static void
-create_visibility (void *_visibility, ecs_registry_t *reg)
+create_visibility (void *_visibility, ecs_registry_t *reg, uint32_t ent,
+				   const component_t *component)
 {
 	visibility_t *vis = _visibility;
 	*vis = (visibility_t) {
@@ -81,7 +85,8 @@ create_visibility (void *_visibility, ecs_registry_t *reg)
 }
 
 static void
-destroy_visibility (void *_visibility, ecs_registry_t *reg)
+destroy_visibility (void *_visibility, ecs_registry_t *reg, uint32_t ent,
+					const component_t *component)
 {
 	visibility_t *vis = _visibility;
 	scene_t    *scene = reg->data;
@@ -90,12 +95,14 @@ destroy_visibility (void *_visibility, ecs_registry_t *reg)
 }
 
 static void
-destroy_renderer (void *_renderer, ecs_registry_t *reg)
+destroy_renderer (void *_renderer, ecs_registry_t *reg, uint32_t ent,
+				  const component_t *component)
 {
 }
 
 static void
-create_efrag (void *_efrag, ecs_registry_t *reg)
+create_efrag (void *_efrag, ecs_registry_t *reg, uint32_t ent,
+			  const component_t *component)
 {
 	uint32_t   *efrag = _efrag;
 
@@ -103,7 +110,8 @@ create_efrag (void *_efrag, ecs_registry_t *reg)
 }
 
 static void
-destroy_efrag (void *_efrag, ecs_registry_t *reg)
+destroy_efrag (void *_efrag, ecs_registry_t *reg, uint32_t ent,
+			   const component_t *component)
 {
 	uint32_t   *efrag = _efrag;
 	scene_t    *scene = reg->data;
@@ -112,21 +120,24 @@ destroy_efrag (void *_efrag, ecs_registry_t *reg)
 }
 
 static void
-sw_identity_matrix (void *_mat, ecs_registry_t *reg)
+sw_identity_matrix (void *_mat, ecs_registry_t *reg, uint32_t ent,
+		                       const component_t *component)
 {
 	mat4f_t    *mat = _mat;
 	mat4fidentity (*mat);
 }
 
 static void
-sw_frame_0 (void *_frame, ecs_registry_t *reg)
+sw_frame_0 (void *_frame, ecs_registry_t *reg, uint32_t ent,
+		                       const component_t *component)
 {
 	byte       *frame = _frame;
 	*frame = 0;
 }
 
 static void
-sw_null_brush (void *_brush, ecs_registry_t *reg)
+sw_null_brush (void *_brush, ecs_registry_t *reg, uint32_t ent,
+		                       const component_t *component)
 {
 	struct mod_brush_s **brush = _brush;
 	*brush = 0;

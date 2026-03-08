@@ -56,7 +56,8 @@ enum trails_components {
 };
 
 static void
-pointset_destroy (void *comp, ecs_registry_t *reg)
+pointset_destroy (void *comp, ecs_registry_t *reg, uint32_t ent,
+				  const component_t *component)
 {
 	pointset_t *pointset = comp;
 	int base = pointset->base / 64;

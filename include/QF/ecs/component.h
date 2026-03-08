@@ -43,18 +43,22 @@
 
 typedef struct imui_ctx_s imui_ctx_t;
 typedef struct ecs_registry_s ecs_registry_t;
-typedef struct component_s {
+typedef struct component_s component_t;
+struct component_s {
 	size_t      size;
-	void      (*create) (void *, ecs_registry_t *reg);
-	void      (*destroy) (void *, ecs_registry_t *reg);
+	void      (*create) (void *comp, ecs_registry_t *reg, uint32_t ent,
+						 const component_t *component);
+	void      (*destroy) (void *comp, ecs_registry_t *reg, uint32_t ent,
+						  const component_t *component);
 	// comp is the registry component id (base + system component id)
 	uint32_t  (*rangeid) (ecs_registry_t *reg, uint32_t ent,
 						  uint32_t comp);
 	const char *name;
+	void       *data;
 	void      (*ui) (void *comp, imui_ctx_t *imui_ctx,
 					 ecs_registry_t *reg, uint32_t ent,
-					 void *data);
-} component_t;
+					 const component_t *component);
+};
 
 #define COMPINLINE GNU89INLINE inline
 
@@ -78,11 +82,11 @@ COMPINLINE void *Component_CopyElements (const component_t *component,
 COMPINLINE void *Component_CreateElements (const component_t *component,
 										   void *array,
 										   uint32_t index, uint32_t count,
-										   ecs_registry_t *reg);
+										   uint32_t *ents, ecs_registry_t *reg);
 COMPINLINE void Component_DestroyElements (const component_t *component,
 										   void *array,
 										   uint32_t index, uint32_t count,
-										   ecs_registry_t *reg);
+										   uint32_t *ents, ecs_registry_t *reg);
 
 #undef COMPINLINE
 #ifndef IMPLEMENT_ECS_COMPONENT_Funcs
@@ -180,12 +184,12 @@ Component_CopyElements (const component_t *component,
 COMPINLINE void *
 Component_CreateElements (const component_t *component, void *array,
 						  uint32_t index, uint32_t count,
-						  ecs_registry_t *reg)
+						  uint32_t *ents, ecs_registry_t *reg)
 {
 	if (component->create) {
 		for (uint32_t i = index; count-- > 0; i++) {
 			auto dst = Component_Address (component, array, i);
-			component->create (dst, reg);
+			component->create (dst, reg, *ents++, component);
 		}
 	} else {
 		auto dst = Component_Address (component, array, index);
@@ -197,13 +201,13 @@ Component_CreateElements (const component_t *component, void *array,
 COMPINLINE void
 Component_DestroyElements (const component_t *component, void *array,
 						   uint32_t index, uint32_t count,
-						   ecs_registry_t *reg)
+						   uint32_t *ents, ecs_registry_t *reg)
 {
 	qfZoneScoped (true);
 	if (component->destroy) {
 		for (uint32_t i = index; count-- > 0; i++) {
 			auto dst = Component_Address (component, array, i);
-			component->destroy (dst, reg);
+			component->destroy (dst, reg, *ents++, component);
 		}
 	}
 }

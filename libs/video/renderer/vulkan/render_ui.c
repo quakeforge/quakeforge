@@ -369,13 +369,14 @@ entity_window (uint32_t id, vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 				UI_Label (reg->components.a[i].name);
 				UI_FlexibleSpace ();
 			}
-			if (reg->components.a[i].ui) {
+			auto component = &reg->components.a[i];
+			if (component->ui) {
 				void *comp = Ent_GetComponent (id, i, reg);
 				UI_Horizontal {
 					hs (imui_ctx, 1);
 					UI_Vertical {
 						IMUI_Layout_SetXSize (imui_ctx, imui_size_expand, 100);
-						reg->components.a[i].ui (comp, imui_ctx, reg, id, ctx);
+						component->ui (comp, imui_ctx, reg, id, component);
 					}
 				}
 			}

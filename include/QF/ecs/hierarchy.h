@@ -33,6 +33,9 @@
 
 #include "QF/qtypes.h"
 
+typedef struct ecs_registry_s ecs_registry_t;
+typedef struct component_s component_t;
+
 /** \defgroup entity Hierarchy management
 	\ingroup utils
 */
@@ -42,7 +45,7 @@
 */
 typedef struct hierarchy_type_s {
 	uint32_t    num_components;
-	const struct component_s *components;
+	const component_t *components;
 } hierarchy_type_t;
 
 typedef struct hierref_s {
@@ -62,7 +65,7 @@ typedef struct hierarchy_s {
 	uint32_t   *lastIndex;
 	const hierarchy_type_t *type;
 	void      **components;
-	struct ecs_registry_s *reg;
+	ecs_registry_t *reg;
 	uint32_t    href_comp;
 	bool        tree_mode;	// use for fast building
 } hierarchy_t;
@@ -73,12 +76,12 @@ typedef struct hierarchy_s {
 void Hierarchy_Create (hierarchy_t *hierarchy);
 void Hierarchy_Destroy (hierarchy_t *hierarchy);
 
-uint32_t Hierarchy_New (struct ecs_registry_s *reg, uint32_t href_comp,
+uint32_t Hierarchy_New (ecs_registry_t *reg, uint32_t href_comp,
 						const hierarchy_type_t *type, bool createRoot);
-void Hierarchy_Delete (uint32_t hierarchy, struct ecs_registry_s *reg);
+void Hierarchy_Delete (uint32_t hierarchy, ecs_registry_t *reg);
 
 void Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count);
-uint32_t Hierarchy_Copy (struct ecs_registry_s *reg, uint32_t href_comp,
+uint32_t Hierarchy_Copy (ecs_registry_t *reg, uint32_t href_comp,
 						 const hierarchy_t *src);
 void Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode);
 
@@ -86,13 +89,14 @@ void Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode);
 // returns the index of the inserted object
 uint32_t Hierarchy_Insert (hierarchy_t *dst, uint32_t parent);
 
-void Hierref_DestroyComponent (void *href, struct ecs_registry_s *reg);
+void Hierref_DestroyComponent (void *href, ecs_registry_t *reg, uint32_t ent,
+							   const component_t *component);
 
 
 hierref_t Hierref_InsertHierarchy (hierref_t dref, hierref_t sref,
-								   struct ecs_registry_s *reg);
+								   ecs_registry_t *reg);
 hierref_t Hierref_SetParent (hierref_t dref, hierref_t sref,
-							 struct ecs_registry_s *reg);
+							 ecs_registry_t *reg);
 
 ///@}
 

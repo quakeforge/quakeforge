@@ -78,7 +78,8 @@ canvas_rangeid(outline)
 #undef canvas_rangeid
 
 static void
-canvas_canvas_destroy (void *_canvas, ecs_registry_t *reg)
+canvas_canvas_destroy (void *_canvas, ecs_registry_t *reg, uint32_t ent,
+					   const component_t *component)
 {
 	canvas_t *canvas = _canvas;
 	for (uint32_t i = 0; i < canvas_subpool_count; i++) {

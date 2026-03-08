@@ -35,13 +35,15 @@
 #include "QF/ecs.h"
 
 static void
-ecs_hierarchy_create (void *hierarchy, ecs_registry_t *reg)
+ecs_hierarchy_create (void *hierarchy, ecs_registry_t *reg, uint32_t ent,
+					  const component_t *component)
 {
 	Hierarchy_Create (hierarchy);
 }
 
 static void
-ecs_hierarchy_destroy (void *hierarchy, ecs_registry_t *reg)
+ecs_hierarchy_destroy (void *hierarchy, ecs_registry_t *reg, uint32_t ent,
+					   const component_t *component)
 {
 	Hierarchy_Destroy (hierarchy);
 }
@@ -81,7 +83,8 @@ ECS_DelRegistry (ecs_registry_t *registry)
 	for (uint32_t i = registry->components.size; i-- > 0 ;) {
 		__auto_type comp = &registry->components.a[i];
 		__auto_type pool = &registry->comp_pools[i];
-		Component_DestroyElements (comp, pool->data, 0, pool->count, registry);
+		Component_DestroyElements (comp, pool->data, 0, pool->count,
+								   pool->dense, registry);
 		pool->count = 0;
 	}
 	free (registry->entities.ids);
@@ -279,11 +282,12 @@ ECS_RemoveEntities (ecs_registry_t *registry, uint32_t component)
 {
 	ecs_pool_t *pool = &registry->comp_pools[component];
 	const component_t *comp = &registry->components.a[component];
-	__auto_type destroy = comp->destroy;
+	auto destroy = comp->destroy;
 	if (destroy) {
 		byte       *data = registry->comp_pools[component].data;
+		uint32_t   *ents = registry->comp_pools[component].dense;
 		for (uint32_t i = 0; i < pool->count; i++) {
-			destroy (data + i * comp->size, registry);
+			destroy (data + i * comp->size, registry, *ents++, comp);
 		}
 	}
 	pool->count = 0;

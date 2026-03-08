@@ -56,14 +56,16 @@
 vid_model_funcs_t *m_funcs;
 
 static void
-skin_name_destroy (void *_name, ecs_registry_t *reg)
+skin_name_destroy (void *_name, ecs_registry_t *reg, uint32_t ent,
+				   const component_t *component)
 {
 	char      **name = _name;
 	free (*name);
 }
 
 static void
-skin_destroy (void *_skin, ecs_registry_t *reg)
+skin_destroy (void *_skin, ecs_registry_t *reg, uint32_t ent,
+			  const component_t *component)
 {
 	skin_t     *skin = _skin;
 	if (m_funcs->skin_destroy) {

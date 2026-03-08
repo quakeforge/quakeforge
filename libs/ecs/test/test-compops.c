@@ -14,7 +14,8 @@ enum {
 
 static int counter = 0;
 static void
-create_test_comp (void *comp, ecs_registry_t *reg)
+create_test_comp (void *comp, ecs_registry_t *reg, uint32_t ent,
+				  const component_t *component)
 {
 	*(int *) comp = counter++;
 }
@@ -33,7 +34,8 @@ test_rotation (const component_t *comp, int *array, uint32_t array_count,
 			   int *expect)
 {
 	counter = 0;
-	Component_CreateElements (comp, array, 0, array_count, nullptr);//XXX
+	uint32_t ents[array_count] = {};
+	Component_CreateElements (comp, array, 0, array_count, ents, nullptr);//XXX
 	for (uint32_t i = 0; i < array_count; i++) {
 		if (array[i] != (int) i) {
 			printf ("array initialized incorrectly");

@@ -201,7 +201,7 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 
 		// the component has been fully removed from the pool so it is now
 		// safe to destroy it
-		Component_DestroyElements (c, tmp_comp, 0, 1, registry);
+		Component_DestroyElements (c, tmp_comp, 0, 1, &ent, registry);
 	}
 }
 
@@ -231,7 +231,7 @@ void Ent_AddGroup (uint32_t ent, uint32_t group, ecs_registry_t *reg)
 			pool->sparse[id] = ind;
 			pool->dense[ind] = ent;
 			// FIXME: optionally supply data?
-			Component_CreateElements (c, pool->data, ind, 1, reg);
+			Component_CreateElements (c, pool->data, ind, 1, &ent, reg);
 		}
 		ecs_move_component (pool, subpool, gc[i].rangeid, ind, c);
 	}

@@ -45,21 +45,24 @@
 #include "compat.h"
 
 static void
-text_passage_glyphs_destroy (void *_glyphset, ecs_registry_t *reg)
+text_passage_glyphs_destroy (void *_glyphset, ecs_registry_t *reg,
+							 uint32_t ent, const component_t *component)
 {
 	glyphset_t *glyphset = _glyphset;
 	free (glyphset->glyphs);
 }
 
 static void
-text_features_create (void *_features, ecs_registry_t *reg)
+text_features_create (void *_features, ecs_registry_t *reg, uint32_t ent,
+					  const component_t *component)
 {
 	featureset_t *features = _features;
 	*features = (featureset_t) DARRAY_STATIC_INIT (4);
 }
 
 static void
-text_features_destroy (void *_features, ecs_registry_t *reg)
+text_features_destroy (void *_features, ecs_registry_t *reg, uint32_t ent,
+					   const component_t *component)
 {
 	featureset_t *features = _features;
 	DARRAY_CLEAR (features);

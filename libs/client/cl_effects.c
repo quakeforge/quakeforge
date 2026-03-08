@@ -56,7 +56,8 @@ ecs_system_t effect_system;
 static psystem_t *cl_tsystem;
 
 static void
-cl_destroy_trail (void *comp, ecs_registry_t *reg)
+cl_destroy_trail (void *comp, ecs_registry_t *reg, uint32_t ent,
+				  const component_t *component)
 {
 	auto trail = *(uint32_t *) comp;
 	R_Trail_Destroy (cl_tsystem, trail);

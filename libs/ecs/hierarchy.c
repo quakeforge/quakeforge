@@ -272,7 +272,7 @@ hierarchy_init (hierarchy_t *dst, uint32_t index,
 		for (uint32_t i = 0; i < dst->type->num_components; i++) {
 			Component_CreateElements (&dst->type->components[i],
 									  dst->components[i], index, count,
-									  dst->reg);
+									  &dst->ent[index], dst->reg);
 		}
 	}
 }
@@ -753,7 +753,8 @@ Hierarchy_Copy (ecs_registry_t *dstReg, uint32_t href_comp,
 }
 
 void
-Hierref_DestroyComponent (void *href, ecs_registry_t *reg)
+Hierref_DestroyComponent (void *href, ecs_registry_t *reg, uint32_t ent,
+						  const component_t *component)
 {
 	hierref_t   ref = *(hierref_t *) href;
 	if (ECS_EntValid (ref.id, reg)) {

@@ -70,7 +70,8 @@
 */
 
 static void
-destroy_cluster_group (void *_grp, ecs_registry_t *reg)
+destroy_cluster_group (void *_grp, ecs_registry_t *reg, uint32_t ent,
+					   const component_t *component)
 {
 	qfZoneScoped (true);
 	auto db = (efrag_db_t *) reg;
@@ -121,7 +122,8 @@ Efrags_ClearDB (efrag_db_t *db)
 	free (db->clusters);
 	db->clusters = nullptr;
 	Component_DestroyElements (&cluster_group_component, db->groups.data,
-							   0, db->groups.count, (ecs_registry_t *) db);
+							   0, db->groups.count, db->groups.dense,
+							   (ecs_registry_t *) db);
 	free (db->groups.sparse);
 	free (db->groups.dense);
 	free (db->groups.data);
@@ -143,7 +145,8 @@ Efrags_DelEfrag (efrag_db_t *db, uint32_t efragid)
 	uint32_t    id = Ent_Index (efragid);
 	uint32_t    ind = pool->sparse[id];
 	uint32_t    last = pool->count - 1;
-	Component_DestroyElements (c, pool->data, ind, 1, (ecs_registry_t *) db);
+	Component_DestroyElements (c, pool->data, ind, 1, &efragid,
+							   (ecs_registry_t *) db);
 	if (last > ind) {
 		pool->sparse[Ent_Index (pool->dense[last])] = ind;
 		pool->dense[ind] = pool->dense[last];
@@ -177,7 +180,7 @@ R_LinkEfrag (scene_t *scene, mleaf_t *leaf, entity_t ent, uint32_t queue,
 		pool->sparse[id] = ind;
 		pool->dense[ind] = efrag;
 		Component_CreateElements (&cluster_group_component, db->groups.data,
-								  ind, 1, (ecs_registry_t *) db);
+								  ind, 1, &efrag, (ecs_registry_t *) db);
 	}
 	cluster_group_t *grp = Component_Address (&cluster_group_component,
 											  db->groups.data, ind);

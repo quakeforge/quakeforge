@@ -3036,8 +3036,8 @@ show_leaves (vulkan_ctx_t *ctx, uint32_t leafnum, efrag_t *efrags)
 }
 
 static void
-light_dyn_light_ui (void *comp, imui_ctx_t *imui_ctx,
-					ecs_registry_t *reg, uint32_t ent, void *data)
+light_dynlight_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
+				   uint32_t ent, const component_t *component)
 {
 	dlight_t *dlight = comp;
 	UI_Horizontal {
@@ -3073,8 +3073,8 @@ light_dyn_light_ui (void *comp, imui_ctx_t *imui_ctx,
 }
 
 static void
-light_light_ui (void *comp, imui_ctx_t *imui_ctx,
-				ecs_registry_t *reg, uint32_t ent, void *data)
+light_light_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
+				uint32_t ent, const component_t *component)
 {
 	light_t *light = comp;
 	UI_Horizontal {
@@ -3101,10 +3101,10 @@ light_light_ui (void *comp, imui_ctx_t *imui_ctx,
 }
 
 static void
-scene_efrags_ui (void *comp, imui_ctx_t *imui_ctx,
-				 ecs_registry_t *reg, uint32_t ent, void *data)
+scene_efrags_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
+				 uint32_t ent, const component_t *component)
 {
-	vulkan_ctx_t *ctx = data;
+	vulkan_ctx_t *ctx = component->data;
 	auto efrags = *(efrag_t **) comp;
 	uint32_t len = 0;
 	bool valid = true;
@@ -3121,10 +3121,10 @@ scene_efrags_ui (void *comp, imui_ctx_t *imui_ctx,
 }
 
 static void
-scene_lightleaf_ui (void *comp, imui_ctx_t *imui_ctx,
-					ecs_registry_t *reg, uint32_t ent, void *data)
+scene_lightleaf_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
+					uint32_t ent, const component_t *component)
 {
-	vulkan_ctx_t *ctx = data;
+	vulkan_ctx_t *ctx = component->data;
 	auto leaf = *(uint32_t *) comp;
 	UI_Horizontal {
 		if (UI_Button (vac (ctx->va_ctx, "Show##lightleaf_ui.%08x", ent))) {
@@ -3148,8 +3148,8 @@ scene_lightleaf_ui (void *comp, imui_ctx_t *imui_ctx,
 }
 
 static void
-scene_lightstyle_ui (void *comp, imui_ctx_t *imui_ctx,
-					 ecs_registry_t *reg, uint32_t ent, void *data)
+scene_lightstyle_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
+					 uint32_t ent, const component_t *component)
 {
 	auto style = *(uint32_t *) comp;
 
@@ -3163,8 +3163,8 @@ scene_lightstyle_ui (void *comp, imui_ctx_t *imui_ctx,
 }
 
 static void
-scene_lightid_ui (void *comp, imui_ctx_t *imui_ctx,
-				  ecs_registry_t *reg, uint32_t ent, void *data)
+scene_lightid_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
+				  uint32_t ent, const component_t *component)
 {
 	auto id = *(uint32_t *) comp;
 
@@ -3187,12 +3187,19 @@ Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 	lctx->ldata = 0;
 	if (lctx->scene) {
 		auto reg = lctx->scene->reg;
-		reg->components.a[lctx->scene->base + scene_dynlight].ui = light_dyn_light_ui;
-		reg->components.a[lctx->scene->base + scene_light].ui = light_light_ui;
-		reg->components.a[lctx->scene->base + scene_efrag].ui = scene_efrags_ui;
-		reg->components.a[lctx->scene->base + scene_lightstyle].ui = scene_lightstyle_ui;
-		reg->components.a[lctx->scene->base + scene_lightleaf].ui = scene_lightleaf_ui;
-		reg->components.a[lctx->scene->base + scene_lightid].ui = scene_lightid_ui;
+		uint32_t base = lctx->scene->base;
+		reg->components.a[base + scene_dynlight].ui     = light_dynlight_ui;
+		reg->components.a[base + scene_dynlight].data   = ctx;
+		reg->components.a[base + scene_light].ui        = light_light_ui;
+		reg->components.a[base + scene_light].data      = ctx;
+		reg->components.a[base + scene_efrag].ui        = scene_efrags_ui;
+		reg->components.a[base + scene_efrag].data      = ctx;
+		reg->components.a[base + scene_lightstyle].ui   = scene_lightstyle_ui;
+		reg->components.a[base + scene_lightstyle].data = ctx;
+		reg->components.a[base + scene_lightleaf].ui    = scene_lightleaf_ui;
+		reg->components.a[base + scene_lightleaf].data  = ctx;
+		reg->components.a[base + scene_lightid].ui      = scene_lightid_ui;
+		reg->components.a[base + scene_lightid].data    = ctx;
 
 		auto light_pool = &reg->comp_pools[lctx->scene->base + scene_light];
 		if (light_pool->count) {
