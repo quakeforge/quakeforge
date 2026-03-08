@@ -37,7 +37,7 @@ main (void)
 	vec3 scale = vec3 (sxy, sxy, sz);
 
 	quaternion q = from_to_rotation (vec3 (0, 0, -1), l.axis);
-	vec4 pos = vec4 ((q * splat_vert) * scale, 0);
+	vec4 pos = vec4 (q * (splat_vert * scale), 0);
 
 	gl_Position = Projection3d * (View[gl_ViewIndex] * (pos + l.position));
 	light_index_out = light_index;
