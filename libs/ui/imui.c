@@ -466,6 +466,10 @@ void
 IMUI_SetVisible (imui_ctx_t *ctx, bool visible)
 {
 	if (!visible) {
+		uint32_t    root_ent = ctx->root_view.id;
+		clear_items (ctx);
+		//the root_view entity needs to be valid at all times
+		ctx->root_view = View_AddToEntity (root_ent, ctx->vsys, nullview, true);
 		ctx->active = nullent;
 	}
 	*Canvas_Visible (ctx->csys, ctx->canvas) = visible;

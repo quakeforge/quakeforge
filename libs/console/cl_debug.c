@@ -258,12 +258,13 @@ close_debug (void)
 	con_debug_f (0, &con_debug_cvar);
 }
 
+static bool close_debug_pressed = false;
 static int
 debug_key (const IE_event_t *ie_event)
 {
 	int shift = ie_event->key.shift & ~(ies_capslock | ies_numlock);
 	if (ie_event->key.code == QFK_ESCAPE && shift == ies_control) {
-		close_debug ();
+		close_debug_pressed = true;
 	}
 	IMUI_ProcessEvent (debug_imui, ie_event);
 	return 1;
@@ -643,7 +644,6 @@ input_window (void)
 	}
 }
 
-static bool close_debug_pressed = false;
 static void
 system_info (void)
 {
@@ -727,10 +727,10 @@ Con_Debug_Draw (void)
 		r_funcs->debug_ui (debug_imui);
 	}
 
+	IMUI_Draw (debug_imui);
+
 	if (close_debug_pressed) {
 		close_debug_pressed = false;
 		close_debug ();
 	}
-
-	IMUI_Draw (debug_imui);
 }
