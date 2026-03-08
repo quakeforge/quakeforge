@@ -41,7 +41,6 @@
 */
 ///@{
 
-typedef struct imui_ctx_s imui_ctx_t;
 typedef struct ecs_registry_s ecs_registry_t;
 typedef struct component_s component_t;
 struct component_s {
@@ -51,12 +50,10 @@ struct component_s {
 	void      (*destroy) (void *comp, ecs_registry_t *reg, uint32_t ent,
 						  const component_t *component);
 	// comp is the registry component id (base + system component id)
-	uint32_t  (*rangeid) (ecs_registry_t *reg, uint32_t ent,
-						  uint32_t comp);
+	uint32_t  (*rangeid) (ecs_registry_t *reg, uint32_t ent, uint32_t comp);
 	const char *name;
 	void       *data;
-	void      (*ui) (void *comp, imui_ctx_t *imui_ctx,
-					 ecs_registry_t *reg, uint32_t ent,
+	void      (*ui) (void *comp, ecs_registry_t *reg, uint32_t ent,
 					 const component_t *component);
 };
 

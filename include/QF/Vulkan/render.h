@@ -635,6 +635,7 @@ qfv_resobj_t *QFV_FindResource (vulkan_ctx_t *ctx, const char *name,
 void QFV_Render_NewScene (scene_t *scene, vulkan_ctx_t *ctx);
 
 void QFV_Render_UI (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx);
+imui_ctx_t *QFV_Render_UI_Context (vulkan_ctx_t *ctx) __attribute__((pure));
 void QFV_Render_Menu (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx);
 void QFV_Render_UI_Shutdown (vulkan_ctx_t *ctx);
 

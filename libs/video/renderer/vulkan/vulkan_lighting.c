@@ -3036,9 +3036,11 @@ show_leaves (vulkan_ctx_t *ctx, uint32_t leafnum, efrag_t *efrags)
 }
 
 static void
-light_dynlight_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
-				   uint32_t ent, const component_t *component)
+light_dynlight_ui (void *comp, ecs_registry_t *reg, uint32_t ent,
+				   const component_t *component)
 {
+	vulkan_ctx_t *ctx = component->data;
+	auto imui_ctx = QFV_Render_UI_Context(ctx);
 	dlight_t *dlight = comp;
 	UI_Horizontal {
 		UI_Labelf ("Origin: ");
@@ -3073,9 +3075,11 @@ light_dynlight_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
 }
 
 static void
-light_light_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
-				uint32_t ent, const component_t *component)
+light_light_ui (void *comp, ecs_registry_t *reg, uint32_t ent,
+				const component_t *component)
 {
+	vulkan_ctx_t *ctx = component->data;
+	auto imui_ctx = QFV_Render_UI_Context(ctx);
 	light_t *light = comp;
 	UI_Horizontal {
 		UI_Label ("Color: ");
@@ -3101,10 +3105,11 @@ light_light_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
 }
 
 static void
-scene_efrags_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
-				 uint32_t ent, const component_t *component)
+scene_efrags_ui (void *comp, ecs_registry_t *reg, uint32_t ent,
+				 const component_t *component)
 {
 	vulkan_ctx_t *ctx = component->data;
+	auto imui_ctx = QFV_Render_UI_Context(ctx);
 	auto efrags = *(efrag_t **) comp;
 	uint32_t len = 0;
 	bool valid = true;
@@ -3121,10 +3126,11 @@ scene_efrags_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
 }
 
 static void
-scene_lightleaf_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
-					uint32_t ent, const component_t *component)
+scene_lightleaf_ui (void *comp, ecs_registry_t *reg, uint32_t ent,
+					const component_t *component)
 {
 	vulkan_ctx_t *ctx = component->data;
+	auto imui_ctx = QFV_Render_UI_Context(ctx);
 	auto leaf = *(uint32_t *) comp;
 	UI_Horizontal {
 		if (UI_Button (vac (ctx->va_ctx, "Show##lightleaf_ui.%08x", ent))) {
@@ -3148,9 +3154,11 @@ scene_lightleaf_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
 }
 
 static void
-scene_lightstyle_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
-					 uint32_t ent, const component_t *component)
+scene_lightstyle_ui (void *comp, ecs_registry_t *reg, uint32_t ent,
+					 const component_t *component)
 {
+	vulkan_ctx_t *ctx = component->data;
+	auto imui_ctx = QFV_Render_UI_Context(ctx);
 	auto style = *(uint32_t *) comp;
 
 	UI_Horizontal {
@@ -3163,9 +3171,11 @@ scene_lightstyle_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
 }
 
 static void
-scene_lightid_ui (void *comp, imui_ctx_t *imui_ctx, ecs_registry_t *reg,
-				  uint32_t ent, const component_t *component)
+scene_lightid_ui (void *comp, ecs_registry_t *reg, uint32_t ent,
+				  const component_t *component)
 {
+	vulkan_ctx_t *ctx = component->data;
+	auto imui_ctx = QFV_Render_UI_Context(ctx);
 	auto id = *(uint32_t *) comp;
 
 	UI_Horizontal {

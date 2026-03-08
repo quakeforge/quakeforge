@@ -46,6 +46,7 @@
 #define picked_entity_count (mousepick_size * mousepick_size)
 
 typedef struct qfv_renderdebug_s {
+	imui_ctx_t *imui_ctx;
 	imui_window_t job_timings_window;
 	imui_window_t job_control_window;
 	imui_window_t entid_window;
@@ -448,7 +449,7 @@ entity_window (uint32_t id, vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 					hs (imui_ctx, 1);
 					UI_Vertical {
 						IMUI_Layout_SetXSize (imui_ctx, imui_size_expand, 100);
-						component->ui (comp, imui_ctx, reg, id, component);
+						component->ui (comp, reg, id, component);
 					}
 				}
 			}
@@ -463,6 +464,7 @@ QFV_Render_UI (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 	if (!rctx->debug) {
 		rctx->debug = malloc (sizeof (qfv_renderdebug_t));
 		*rctx->debug = (qfv_renderdebug_t) {
+			.imui_ctx = imui_ctx,
 			.job_timings_window = {
 				.name = "Job Timings",
 				.xpos = 100,
@@ -513,6 +515,16 @@ QFV_Render_UI (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 			}
 		}
 	}
+}
+
+imui_ctx_t *
+QFV_Render_UI_Context (vulkan_ctx_t *ctx)
+{
+	auto rctx = ctx->render_context;
+	if (rctx->debug) {
+		return rctx->debug->imui_ctx;
+	}
+	return nullptr;
 }
 
 void
