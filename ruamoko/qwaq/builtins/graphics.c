@@ -73,10 +73,44 @@ static plugin_list_t client_plugin_list[] = {
 	CLIENT_PLUGIN_LIST
 };
 
-double      con_frametime;
-double      con_realtime, basetime;
-double      old_conrealtime;
+typedef struct qwaq_comp_s {
+	pr_uint_t   size;
+	pr_func_t   create;
+	pr_func_t   destroy;
+	pr_func_t   rangeid;//not supported yet
+	pr_string_t name;
+	pr_ptr_t    data;
+	pr_func_t   ui;
+} qwaq_comp_t;
 
+typedef struct qwaq_ecs_s {
+	progs_t    *pr;
+	struct graphics_resources_s *res;
+
+	component_t *components;
+	pr_func_t  *create;
+	pr_func_t  *destroy;
+	// rangeid not supported yet (too hard basket)
+	// name is redundant (in components)
+	pr_ptr_t   *data;
+	pr_func_t  *ui;
+	uint32_t    base;
+} qwaq_ecs_t;
+
+typedef struct graphics_resources_s {
+	progs_t    *pr;
+	double      con_frametime;
+	double      con_realtime, basetime;
+	double      old_conrealtime;
+
+	pr_func_t   qcevent;
+	pr_ptr_t    qcevent_data;
+	int         event_handler_id;
+	view_t      screen_view;
+	uint32_t    canvas;
+
+	qwaq_ecs_t  ecs;
+} graphics_resources_t;
 
 static void
 quit_f (void)
@@ -88,14 +122,10 @@ quit_f (void)
 
 static byte default_palette[256][3];
 static byte default_colormap[64 * 256 + 1] = { [64 * 256] = 32 };
+
 static progs_t *bi_rprogs;
 static pr_func_t qc2d;
-static pr_func_t qcevent;
-static pr_ptr_t  qcevent_data;
-static int event_handler_id;
 static canvas_system_t canvas_sys;
-static view_t screen_view;
-static uint32_t canvas;
 
 static void
 bi_2d (void)
@@ -114,13 +144,69 @@ static SCR_Func bi_2dfuncs[] = {
 static void
 vidsize_listener (void *data, const viddef_t *vdef)
 {
-	Canvas_SetLen (canvas_sys, canvas,
+	graphics_resources_t *res = data;
+	Canvas_SetLen (canvas_sys, res->canvas,
 				   (view_pos_t) { vdef->width, vdef->height });
+}
+
+static void
+bi_comp_create (void *comp, ecs_registry_t *reg, uint32_t ent,
+				const component_t *component)
+{
+	qwaq_ecs_t *ecs = component->data;
+	auto pr = ecs->pr;
+	uint32_t comp_id = component - ecs->components;
+
+	PR_PushFrame (pr);
+	auto params = PR_SaveParams (pr);
+
+	const size_t param_size = sizeof (pr_quaternion_t);
+	int num = (component->size + param_size - 1) / param_size;
+	// 8 so dvec4 can be used
+	PR_SetupParams (pr, 2 + num, 8);
+	pr->pr_argc = 2;
+	P_POINTER (pr, 0) = PR_SetPointer (pr, &P_INT (pr, 2));
+	P_UINT (pr, 1) = ent;
+	PR_ExecuteProgram (pr, ecs->create[comp_id]);
+	memcpy (comp, &P_INT (pr, 2), component->size);
+	PR_RestoreParams (pr, params);
+	PR_PopFrame (pr);
+}
+
+static void
+bi_comp_destroy (void *comp, ecs_registry_t *reg, uint32_t ent,
+				 const component_t *component)
+{
+	qwaq_ecs_t *ecs = component->data;
+	auto pr = ecs->pr;
+	uint32_t comp_id = component - ecs->components;
+
+	PR_PushFrame (pr);
+	auto params = PR_SaveParams (pr);
+
+	const size_t param_size = sizeof (pr_quaternion_t);
+	int num = (component->size + param_size - 1) / param_size;
+	// 8 so dvec4 can be used
+	PR_SetupParams (pr, 2 + num, 8);
+	pr->pr_argc = 2;
+	P_POINTER (pr, 0) = PR_SetPointer (pr, &P_INT (pr, 2));
+	P_UINT (pr, 1) = ent;
+	memcpy (&P_INT (pr, 2), comp, component->size);
+	PR_ExecuteProgram (pr, ecs->destroy[comp_id]);
+	PR_RestoreParams (pr, params);
+	PR_PopFrame (pr);
+}
+
+static void
+bi_comp_ui (void *comp, ecs_registry_t *reg, uint32_t ent,
+			const component_t *component)
+{
 }
 
 static void
 bi_init_graphics (progs_t *pr, void *_res)
 {
+	graphics_resources_t *res = _res;
 	VID_Init (default_palette[0], default_colormap);
 	IN_Init ();
 	Mod_Init ();
@@ -137,33 +223,65 @@ bi_init_graphics (progs_t *pr, void *_res)
 	Canvas_InitSys (&canvas_sys, reg);
 	if (con_module) {
 		auto cd = con_module->data->console;
-		cd->realtime = &con_realtime;
-		cd->frametime = &con_frametime;
+		cd->realtime = &res->con_realtime;
+		cd->frametime = &res->con_frametime;
 		cd->quit = quit_f;
 		cd->cbuf = qwaq_cbuf;
 		cd->component_base = ECS_RegisterComponents (reg, cd->components,
 													 cd->num_components);
 		cd->canvas_sys = &canvas_sys;
 	}
+
+	int num_components = P_INT (pr, 1);
+	auto components = &P_STRUCT (pr, qwaq_comp_t, 2);
+	if (num_components > 0) {
+		size_t size = sizeof (component_t[num_components])
+					+ sizeof (pr_func_t[num_components])//create
+					+ sizeof (pr_func_t[num_components])//destroy
+					+ sizeof (pr_ptr_t[num_components])//data
+					+ sizeof (pr_func_t[num_components]);//ui
+		res->ecs.components = malloc (size);
+		res->ecs.create = (pr_func_t *) &res->ecs.components[num_components];
+		res->ecs.destroy = (pr_func_t *) &res->ecs.create[num_components];
+		res->ecs.data = (pr_ptr_t *) &res->ecs.destroy[num_components];
+		res->ecs.ui = (pr_func_t *) &res->ecs.data[num_components];
+		for (int i = 0; i < num_components; i++) {
+			res->ecs.components[i] = (component_t) {
+				.size = components[i].size,
+				.create = components[i].create ? bi_comp_create : nullptr,
+				.destroy = components[i].destroy ? bi_comp_destroy : nullptr,
+				.name = PR_GetString (pr, components[i].name),
+				.data = res,
+				.ui = components[i].destroy ? bi_comp_ui : nullptr,
+			};
+			res->ecs.create[i] = components[i].create;
+			res->ecs.destroy[i] = components[i].destroy;
+			res->ecs.data[i] = components[i].data;
+			res->ecs.ui[i] = components[i].ui;
+		}
+		res->ecs.base = ECS_RegisterComponents (reg, res->ecs.components,
+												num_components);
+	}
+
 	ECS_CreateComponentPools (reg);
 
-	canvas = Canvas_New (canvas_sys);
-	screen_view = Canvas_GetRootView (canvas_sys, canvas);
-	View_SetPos (screen_view, 0, 0);
-	View_SetLen (screen_view, viddef.width, viddef.height);
-	View_SetGravity (screen_view, grav_northwest);
-	View_SetVisible (screen_view, 1);
+	res->canvas = Canvas_New (canvas_sys);
+	res->screen_view = Canvas_GetRootView (canvas_sys, res->canvas);
+	View_SetPos (res->screen_view, 0, 0);
+	View_SetLen (res->screen_view, viddef.width, viddef.height);
+	View_SetGravity (res->screen_view, grav_northwest);
+	View_SetVisible (res->screen_view, 1);
 
-	VID_OnVidResize_AddListener (vidsize_listener, 0);
+	VID_OnVidResize_AddListener (vidsize_listener, res);
 
 	//Key_SetKeyDest (key_game);
 	Con_Init ();
 	VID_SendSize ();
 
-	S_Init (0, &con_frametime);
+	S_Init (0, &res->con_frametime);
 	//CDAudio_Init ();
 	Con_NewMap ();
-	basetime = Sys_DoubleTime ();
+	res->basetime = Sys_DoubleTime ();
 }
 
 static void
@@ -220,9 +338,10 @@ static void
 bi_refresh (progs_t *pr, void *_res)
 {
 	qfFrameMark;
-	con_realtime = Sys_DoubleTime () - basetime;
-	con_frametime = con_realtime - old_conrealtime;
-	old_conrealtime = con_realtime;
+	graphics_resources_t *res = _res;
+	res->con_realtime = Sys_DoubleTime () - res->basetime;
+	res->con_frametime = res->con_realtime - res->old_conrealtime;
+	res->old_conrealtime = res->con_realtime;
 	bi_rprogs = pr;
 	IN_ProcessEvents ();
 	//GIB_Thread_Execute ();
@@ -242,7 +361,7 @@ bi_refresh (progs_t *pr, void *_res)
 		auto reg = scene->reg;
 		auto animpool = reg->comp_pools + c_animation;
 		auto rendpool = reg->comp_pools + c_renderer;
-		Anim_Update (con_realtime, animpool, rendpool);
+		Anim_Update (res->con_realtime, animpool, rendpool);
 		if (scene->lights) {
 			auto reg = scene->reg;
 			auto pool = &reg->comp_pools[scene->base + scene_renderer];
@@ -279,8 +398,8 @@ bi_refresh (progs_t *pr, void *_res)
 			Light_CalculateBounds (scene->lights);
 		}
 	}
-	SCR_UpdateScreen (camera, con_realtime, bi_2dfuncs);
-	R_FLOAT (pr) = con_frametime;
+	SCR_UpdateScreen (camera, res->con_realtime, bi_2dfuncs);
+	R_FLOAT (pr) = res->con_frametime;
 }
 
 static void
@@ -300,8 +419,9 @@ bi_setpalette (progs_t *pr, void *_res)
 static void
 bi_setevents (progs_t *pr, void *_res)
 {
-	qcevent = P_FUNCTION (pr, 0);
-	qcevent_data = P_POINTER (pr, 1);
+	graphics_resources_t *res = _res;
+	res->qcevent = P_FUNCTION (pr, 0);
+	res->qcevent_data = P_POINTER (pr, 1);
 }
 
 static void
@@ -331,10 +451,11 @@ static builtin_t builtins[] = {
 };
 
 static int
-event_handler (const IE_event_t *ie_event, void *_pr)
+event_handler (const IE_event_t *ie_event, void *_res)
 {
-	if (qcevent) {
-		progs_t    *pr = _pr;
+	graphics_resources_t *res = _res;
+	if (res->qcevent) {
+		auto pr = res->pr;
 		int num_params = sizeof (IE_event_t) / sizeof (pr_type_t);
 		num_params = (num_params + 3) / 4 + 2;
 
@@ -343,9 +464,9 @@ event_handler (const IE_event_t *ie_event, void *_pr)
 		PR_SetupParams (pr, num_params, 2);
 		auto event = &P_PACKED (pr, IE_event_t, 2);
 		P_POINTER (pr, 0) = PR_SetPointer (pr, event);
-		P_POINTER (pr, 1) = qcevent_data;
+		P_POINTER (pr, 1) = res->qcevent_data;
 		*event = *ie_event;
-		PR_ExecuteProgram (pr, qcevent);
+		PR_ExecuteProgram (pr, res->qcevent);
 		int ret = R_INT (pr);
 		PR_RestoreParams (pr, params);
 		PR_PopFrame (pr);
@@ -520,6 +641,26 @@ generate_colormap (void)
 	Hunk_FreeToLowMark (nullptr, mark);
 }
 
+static void
+graphics_destroy (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	graphics_resources_t *res = _res;
+
+	free (res);
+}
+
+static void
+graphics_clear (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	graphics_resources_t *res = _res;
+
+	// everything is allocated in one block
+	free (res->ecs.components);
+	res->ecs = (qwaq_ecs_t) {};
+}
+
 static const char *bi_dirconf = R"(
 {
 	QF = {
@@ -539,13 +680,21 @@ static const char *bi_dirconf = R"(
 void
 BI_Graphics_Init (progs_t *pr)
 {
-	qwaq_thread_t *thread = PR_Resources_Find (pr, "qwaq_thread");
+	graphics_resources_t *res = malloc (sizeof (graphics_resources_t));
+	*res = (graphics_resources_t) {
+		.pr = pr,
+	};
 
-	PR_RegisterBuiltins (pr, builtins, 0);
+	PR_Resources_Register (pr, "Graphics", res,
+						   graphics_clear, graphics_destroy);
+	PR_RegisterBuiltins (pr, builtins, res);
 	BT_Init (this_program);
 
 	QFS_SetConfig (PL_GetPropertyList (bi_dirconf, nullptr));
+
+	qwaq_thread_t *thread = PR_Resources_Find (pr, "qwaq_thread");
 	QFS_Init (thread->hunk, "qwaq");
+
 	PI_Init ();
 	PI_RegisterPlugins (client_plugin_list);
 
@@ -563,6 +712,6 @@ BI_Graphics_Init (progs_t *pr)
 	generate_palette ();
 	generate_colormap ();
 
-	event_handler_id = IE_Add_Handler (event_handler, pr);
-	IE_Set_Focus (event_handler_id);
+	res->event_handler_id = IE_Add_Handler (event_handler, res);
+	IE_Set_Focus (res->event_handler_id);
 }

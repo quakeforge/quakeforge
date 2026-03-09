@@ -80,7 +80,17 @@ void camera_mouse_first_person (state_t *camera_state);
 
 void printf (string fmt, ...) = #0;
 
-void init_graphics (plitem_t *config) = #0;
+typedef struct component_s {
+	uint size;
+	void (*create) (void *comp, uint ent);
+	void (*destroy) (void *comp, uint ent);
+	string name;
+	void *data;
+	void (*ui) (void *comp, uint ent);
+} component_t;
+
+void init_graphics (plitem_t *config, int num_components,
+					component_t *components) = #0;
 float refresh (scene_t scene) = #0;
 void refresh_2d (void (func)(void)) = #0;
 void setpalette (void *palette, void *colormap) = #0;
@@ -1330,7 +1340,7 @@ main (int argc, string *argv)
 	arp_start ();
 
 	plitem_t *config = PL_GetPropertyList (render_graph_cfg);
-	init_graphics (config);
+	init_graphics (config, 0, nil);
 	PL_Release (config);
 
 	IN_SendConnectedDevices ();
