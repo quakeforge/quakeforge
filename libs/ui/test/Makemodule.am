@@ -1,6 +1,7 @@
 libs_ui_tests = \
 	libs/ui/test/test-flow \
 	libs/ui/test/test-flow-size \
+	libs/ui/test/test-node \
 	libs/ui/test/test-passage \
 	libs/ui/test/test-txtbuffer \
 	libs/ui/test/test-vrect
@@ -18,6 +19,10 @@ libs_ui_test_test_flow_DEPENDENCIES=libs/ui/libQFui.la
 libs_ui_test_test_flow_size_SOURCES=libs/ui/test/test-flow-size.c $(tracy_src)
 libs_ui_test_test_flow_size_LDADD=libs/ui/libQFui.la libs/ecs/libQFecs.la
 libs_ui_test_test_flow_size_DEPENDENCIES=libs/ui/libQFui.la
+
+libs_ui_test_test_node_SOURCES=libs/ui/test/test-node.c $(tracy_src)
+libs_ui_test_test_node_LDADD=libs/ui/libQFui.la libs/ecs/libQFecs.la
+libs_ui_test_test_node_DEPENDENCIES=libs/ui/libQFui.la
 
 libs_ui_test_test_passage_SOURCES=libs/ui/test/test-passage.c $(tracy_src)
 libs_ui_test_test_passage_LDADD=libs/ui/libQFui.la libs/ecs/libQFecs.la
