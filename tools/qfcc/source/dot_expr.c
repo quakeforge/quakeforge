@@ -588,7 +588,7 @@ print_ptroffset (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
 	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
 			   e->ptroffset.offset);
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
-			   "<process>", e->loc.line);
+			   "<ptroffset>", e->loc.line);
 }
 
 static void

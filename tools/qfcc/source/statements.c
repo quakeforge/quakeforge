@@ -1628,6 +1628,16 @@ find_def_operand (const expr_t *ref)
 	return op;
 }
 
+static bool
+check_offset (const expr_t *offset)
+{
+	if (offset && is_constant (offset)) {
+		int offs = expr_integral (offset);
+		return offs >= -32768 && offs < 32768;
+	}
+	return false;
+}
+
 static sblock_t *
 ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 				 operand_t **base, operand_t **offset, pr_ushort_t *mode,
@@ -1669,6 +1679,12 @@ ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 			alias = new_alias_expr (type, lvalue->alias.expr);
 		}
 		return addressing_mode (sblock, alias, base, offset, mode, target);
+	} else if (ref->type == ex_ptroffset
+			   && check_offset (ref->ptroffset.offset)) {
+		sblock = statement_subexpr (sblock, ref->ptroffset.ptr, base);
+		int const_offs = expr_integral (ref->ptroffset.offset);;
+		*mode = 2;
+		*offset = short_operand (const_offs, ref);
 	} else if (ref->type != ex_alias || ref->alias.offset) {
 		// probably just a pointer
 just_a_pointer:
@@ -1695,7 +1711,6 @@ just_a_pointer:
 		} else {
 			const expr_t *ptr = intptr->expr.e1;
 			const expr_t *offs = intptr->expr.e2;
-			int         const_offs;
 			if (target) {
 				if (ptr->type == ex_alias
 					&& is_ptr (get_type (ptr->alias.expr))) {
@@ -1707,9 +1722,8 @@ just_a_pointer:
 			// make the base a pointer again
 			ptr = new_alias_expr (ref->alias.type, ptr);
 			sblock = statement_subexpr (sblock, ptr, base);
-			if (is_constant (offs)
-				&& (const_offs = expr_integral (offs)) < 32768
-				&& const_offs >= -32768) {
+			if (check_offset (offs)) {
+				int const_offs = expr_integral (offs);;
 				*mode = 2;
 				*offset = short_operand (const_offs, ref);
 			} else {
