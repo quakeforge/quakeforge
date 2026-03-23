@@ -1550,7 +1550,7 @@ optimize_core (const expr_t *expr)
 		return new;
 	} else if (is_sum (expr)) {
 		auto type = get_type (expr);
-		{
+		if (0) {
 			int count = count_terms (expr);
 			const expr_t *adds[count + 1] = {};
 			const expr_t *subs[count + 1] = {};
@@ -1582,7 +1582,7 @@ optimize_core (const expr_t *expr)
 			const expr_t *subs[count + 1] = {};
 			scatter_terms (expr, adds, subs);
 
-			if (expr->expr.commutative) {
+			if (expr->expr.commutative || expr->expr.anticommute) {
 				optimize_adds (adds);
 				optimize_adds (subs);
 			}
