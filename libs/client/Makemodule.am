@@ -1,7 +1,5 @@
 noinst_LTLIBRARIES += libs/client/libQFclient.la
 
-particles_src= libs/client/particles.part
-
 SUFFICES += .part .pc
 .part.pc:
 	$(V_SED)sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
@@ -31,8 +29,7 @@ default_input_src = libs/client/default_input.plist
 default_input_gen = libs/client/default_input.plc
 
 EXTRA_DIST += \
-	$(default_input_src) \
-	$(particles_src)
+	$(default_input_src)
 CLEANFILES += \
 	libs/client/*.plc \
 	libs/client/*.pc
