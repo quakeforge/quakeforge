@@ -3558,7 +3558,7 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func)
 					m->next = mode;
 					mode = m;
 				} else {
-					error (0, "capability attribute requires a string");
+					error (0, "shader attribute requires a string");
 				}
 			}
 			spirv_create_entry_point (func->name, model_name, mode);
@@ -3580,7 +3580,7 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func)
 		if (count >= 1 && is_string_val (params[0])) {
 			extension_name = expr_string (params[0]);
 		} else {
-			error (0, "capability attribute requires a string");
+			error (0, "extension attribute requires a string");
 		}
 		spirv_add_extension (pr.module, extension_name);
 		return true;
