@@ -1758,3 +1758,52 @@ expr_optimize (const expr_t *expr)
 	}
 	return expr;
 }
+
+const expr_t *
+optimize_ptroffset (const expr_t *ptr)
+{
+	if (ptr->type != ex_ptroffset) {
+		internal_error (ptr, "expected ptroffset in pt4");
+	}
+	if (!ptr->ptroffset.offset || !is_sum (ptr->ptroffset.offset)) {
+		return ptr;
+	}
+	int count = count_terms (ptr->ptroffset.offset);
+	const expr_t *adds[count + 1] = {};
+	const expr_t *subs[count + 1] = {};
+	const expr_t *const_adds[count + 1] = {};
+	const expr_t *const_subs[count + 1] = {};
+	scatter_terms (ptr->ptroffset.offset, adds, subs);
+	for (int s = 0, c = 0; adds[s]; s++) {
+		if (is_constant (adds[s])) {
+			const_adds[c++] = adds[s];
+			adds[s] = &skip;
+		}
+	}
+	for (int s = 0, c = 0; subs[s]; s++) {
+		if (is_constant (subs[s])) {
+			const_subs[c++] = subs[s];
+			adds[s] = &skip;
+		}
+	}
+	if (!const_adds[0] && !const_subs[0]) {
+		// no constant offset, so leave the expression alone
+		return ptr;
+	}
+	clean_skips (adds);
+	clean_skips (subs);
+	auto var_offs = gather_terms (&type_int, adds, subs);
+	auto const_offs = gather_terms (&type_int, const_adds, const_subs);
+	auto type = ptr->ptroffset.type;
+	auto base = cast_expr (&type_int, ptr->ptroffset.ptr);
+
+	ptr = binary_expr ('+', base, var_offs);
+	auto new = new_expr ();
+	new->type = ex_ptroffset;
+	new->ptroffset = (ex_ptroffset_t) {
+		.ptr = cast_expr (pointer_type (type), ptr),
+		.offset = const_offs,
+		.type = type,
+	};
+	return new;
+}

@@ -1679,12 +1679,18 @@ ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 			alias = new_alias_expr (type, lvalue->alias.expr);
 		}
 		return addressing_mode (sblock, alias, base, offset, mode, target);
-	} else if (ref->type == ex_ptroffset
-			   && check_offset (ref->ptroffset.offset)) {
+	} else if (ref->type == ex_ptroffset) {
+		ref = optimize_ptroffset (ref);
 		sblock = statement_subexpr (sblock, ref->ptroffset.ptr, base);
-		int const_offs = expr_integral (ref->ptroffset.offset);;
-		*mode = 2;
-		*offset = short_operand (const_offs, ref);
+		if (check_offset (ref->ptroffset.offset)) {
+			int const_offs = expr_integral (ref->ptroffset.offset);;
+			*mode = 2;
+			*offset = short_operand (const_offs, ref);
+		} else {
+			auto offs = cast_expr (&type_int, ref->ptroffset.offset);
+			sblock = statement_subexpr (sblock, offs, offset);
+			*mode = 3;
+		}
 	} else if (ref->type != ex_alias || ref->alias.offset) {
 		// probably just a pointer
 just_a_pointer:

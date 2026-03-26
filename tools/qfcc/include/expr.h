@@ -1234,6 +1234,7 @@ bool is_ext (const expr_t *e) __attribute__((const));
 bool is_zero (const expr_t *e) __attribute__((const));
 
 const expr_t *expr_optimize (const expr_t *expr);
+const expr_t *optimize_ptroffset (const expr_t *ptr);
 
 const expr_t *ext_swizzle (const expr_t *ext, const expr_t *swizzle);
 const expr_t *neg_expr (const expr_t *e);
