@@ -62,6 +62,11 @@
 	return [[PLItem itemClass: PL_GetFromFile (file)] autorelease];
 }
 
++ (PLItem *) fromItem:(plitem_t *) item
+{
+	return [[PLItem itemClass: item] autorelease];
+}
+
 - initWithItem:(plitem_t *) item
 {
 	if (!(self = [super init]))

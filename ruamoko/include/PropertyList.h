@@ -46,6 +46,7 @@
 + (PLItem *) newString:(string) str;
 + (PLItem *) fromString:(string) str;
 + (PLItem *) fromFile:(QFile) file;
++ (PLItem *) fromItem:(plitem_t *) item;
 
 - initWithItem:(plitem_t *) item;
 - (plitem_t *) item;
