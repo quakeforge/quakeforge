@@ -352,8 +352,18 @@ PL_String (const plitem_t *string)
 VISIBLE double
 PL_Number (const plitem_t *number)
 {
-	if (!number || number->type != QFNumber) {
+	if (!number || (number->type != QFNumber && number->type != QFString)) {
 		return 0;
+	}
+	if (number->type == QFString) {
+		// Number is a json concept: every non-object item is a string in plist
+		// so try to interpret strings as numbers;
+		char *end = nullptr;
+		double d = strtod (PL_String (number), &end);
+		if (end && *end) {
+			d = 0;
+		}
+		return d;
 	}
 	return number->number;
 }
@@ -361,7 +371,15 @@ PL_Number (const plitem_t *number)
 VISIBLE bool
 PL_Bool (const plitem_t *boolean)
 {
-	if (!boolean || boolean->type != QFBool) {
+	if (!boolean || (boolean->type != QFBool && boolean->type != QFString)) {
+		return false;
+	}
+	if (boolean->type == QFString) {
+		// Bool is a json concept: every non-object item is a string in plist
+		// so try to interpret strings as bools;
+		if (strcmp (PL_String (boolean), "true") == 0) {
+			return true;
+		}
 		return false;
 	}
 	return boolean->boolean;
