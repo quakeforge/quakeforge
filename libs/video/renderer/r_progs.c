@@ -44,6 +44,7 @@
 #include "QF/sys.h"
 
 #include "QF/simd/vec2f.h"
+#include "QF/simd/vec4i.h"
 
 #include "QF/ui/view.h"
 
@@ -494,7 +495,11 @@ bi(Gizmo_AddCapsule)
 		auto p2 = P_var (pr, 1, vec4);
 		float r = P_FLOAT (pr, 2);
 		auto color = P_QUAT (pr, 3);
-		r_funcs->gizmo.AddCapsule (p1, p2, r, color);
+		if (all4i(vabs4f (p2 - p1) < (vec4f_t){1,1,1,1} * 1e-3f)) {
+			r_funcs->gizmo.AddSphere (p1, r, color);
+		} else {
+			r_funcs->gizmo.AddCapsule (p1, p2, r, color);
+		}
 	}
 }
 
