@@ -543,6 +543,10 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item)
 }
 
 @implementation Object (PLItem)
+-(void)setDefaultIvars
+{
+}
+
 +(id)fromPropertyList:(plitem_t *)plitem
 {
 	if (PL_Type (plitem) == QFDictionary) {
@@ -557,6 +561,7 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item)
 		}
 		// emulate Object init
 		id obj = [[[self alloc] retain] autorelease];
+		[obj setDefaultIvars];
 
 		Class class = [self class];
 		while (class && class != [Object class]) {
