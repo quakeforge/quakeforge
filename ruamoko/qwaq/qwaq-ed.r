@@ -1390,19 +1390,19 @@ main (int argc, string *argv)
 
 	main_menu = [[MainMenu menu:imui_ctx] retain];
 
-	arp_end ();
-	arp_start ();
-	auto buttons = IN_ListButtons ();
-	auto button_set = [Array array];
-	for (auto b = buttons; *b; b++) {
-		[button_set addObject:[VirtualInput button:*b ctx:imui_ctx]];
-	}
-	auto axes = IN_ListAxes ();
-	auto axis_set = [Array array];
-	for (auto a = axes; *a; a++) {
-		[axis_set addObject:[VirtualInput axis:*a ctx:imui_ctx]];
-	}
-	auto node_panel = [[NodePanel panel:imui_ctx buttons:button_set axes:axis_set] retain];
+	//arp_end ();
+	//arp_start ();
+	//auto buttons = IN_ListButtons ();
+	//auto button_set = [Array array];
+	//for (auto b = buttons; *b; b++) {
+	//	[button_set addObject:[VirtualInput button:*b ctx:imui_ctx]];
+	//}
+	//auto axes = IN_ListAxes ();
+	//auto axis_set = [Array array];
+	//for (auto a = axes; *a; a++) {
+	//	[axis_set addObject:[VirtualInput axis:*a ctx:imui_ctx]];
+	//}
+	//auto node_panel = [[NodePanel panel:imui_ctx buttons:button_set axes:axis_set] retain];
 	arp_end ();
 	arp_start ();
 
