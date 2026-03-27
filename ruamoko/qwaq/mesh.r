@@ -15,7 +15,7 @@ float sign (float x)
 
 typedef PGA.vec pga_vec_t;
 body_t
-calc_inertia_tensor (msgbuf_t model_buf)
+calc_inertia_tensor (msgbuf_t model_buf, float inv_density)
 {
 	qf_model_t model;
 	qf_mesh_t mesh;
@@ -52,8 +52,10 @@ calc_inertia_tensor (msgbuf_t model_buf)
 	C /= 24;//4!
 
 	vec4 com;
+	float vol;
 	@algebra (PGA) {
-		com = vec4(vec3(C / (e0 ∨ C)), 0);
+		vol = e0 ∨ C;
+		com = vec4(vec3(C / vol), 0);
 	}
 
 	mat3 I = {};
@@ -92,10 +94,12 @@ calc_inertia_tensor (msgbuf_t model_buf)
 	}
 
 	@algebra (PGA) {
-		I /= 60 * (e0 ∨ C);// assumes mass of 1
+		I /= 60;// assumes density of 1 (corrected later)
 	}
 	printf ("C=%q\n", C);
 	printf ("com=%q\n", com);
+	printf ("vol=%g\n", vol);
+	printf ("\n");
 	printf ("  %v\n", I[0]);
 	printf ("I=%v\n", I[1]);
 	printf ("  %v\n", I[2]);
@@ -154,9 +158,11 @@ calc_inertia_tensor (msgbuf_t model_buf)
 			if (!changed) break;
 		}
 	}
+	printf ("\n");
 	printf ("  %v\n", I[0]);
 	printf ("I=%v\n", I[1]);
 	printf ("  %v\n", I[2]);
+	printf ("\n");
 	auto c = @dual(pga_vec_t(com.xyz, 1));
 	@algebra (PGA) {
 		R = R * (0.5 - 0.5 * e123 * c);
@@ -165,13 +171,15 @@ calc_inertia_tensor (msgbuf_t model_buf)
 	auto Ivec = vec3 (I[0][0], I[1][1], I[2][2]);
 	printf ("%v\n", Ivec);
 
+	float density = inv_density ? 1 / inv_density : 0;
+
 	MsgBuf_ReadSeek (model_buf, 0, msg_set);
 	return {
 		.R = R,
-		.I.bvect = PGA.bvect()(1,1,1),
-		.I.bvecp = (PGA.bvecp)Ivec,
-		.Ii.bvect = PGA.bvect()(1,1,1),
-		.Ii.bvecp = (PGA.bvecp)(1/Ivec),
+		.I.bvect = PGA.bvect()(1,1,1) * density * vol,
+		.I.bvecp = (PGA.bvecp)Ivec * density,
+		.Ii.bvect = PGA.bvect()(1,1,1) * inv_density / vol,
+		.Ii.bvecp = (PGA.bvecp)(1/Ivec) * inv_density,
 	};
 }
 

@@ -1101,7 +1101,7 @@ arp_end (void)
 msgbuf_t create_ico();
 msgbuf_t create_block();
 msgbuf_t create_quadsphere();
-body_t calc_inertia_tensor (msgbuf_t model_buf);
+body_t calc_inertia_tensor (msgbuf_t model_buf, float inv_density);
 void leafnode();
 
 static void
@@ -1438,7 +1438,8 @@ main (int argc, string *argv)
 	Entity_SetModel (Tetrahedron_ent, Model_Load ("progs/Tetrahedron.mdl"));
 	auto ico_mesh = create_ico ();
 	auto block_mesh = create_block ();
-	auto block_body = calc_inertia_tensor (block_mesh);
+	// the block's volume is 36m3, want a mass of 1, so a density of 1/36
+	auto block_body = calc_inertia_tensor (block_mesh, 36);
 	printf ("R:[%g %v %v %g] I:[%v %v] Ii:[%v %v]\n",
 			block_body.R.scalar, block_body.R.bvect,
 			block_body.R.bvecp,  block_body.R.qvec,
