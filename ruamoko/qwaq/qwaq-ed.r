@@ -1121,9 +1121,6 @@ draw_principle_axes (motor_t M, bivector_t I)
 state_t
 update_block_state(state_t state, body_t body, transform_t xform)
 {
-	state.M = body.R * state.M;
-	state.B = body.R * state.B * ~body.R;
-
 	float h = frametime / 100;
 	bivector_t f = {
 		.bvect = '0 0 0.1',
@@ -1135,10 +1132,9 @@ update_block_state(state_t state, body_t body, transform_t xform)
 		state.B += h * ds.B;
 		state.M = normalize (state.M);
 	}
-	state.M = state.M * ~body.R;
-	state.B = ~body.R * state.B * body.R;
-	set_transform (state.M, xform);
-	draw_principle_axes (state.M, body.I);
+	auto M = state.M * ~body.R;
+	set_transform (M, xform);
+	draw_principle_axes (M, body.I);
 	return state;
 }
 
@@ -1501,8 +1497,8 @@ main (int argc, string *argv)
 	}
 	//create_cube ();
 	state_t block_state = {
-		.M = make_motor ({-20, 20, 5, 1}, {0, 0, 0, 1}),
-		.B.bvect = (PGA.bvect)'0 0.0005 1',
+		.M = block_body.R * make_motor ({-20, 20, 5, 1}, {0, 0, 0, 1}),
+		.B = block_body.R * (PGA.bvect)'0 0.0005 1' * ~block_body.R,
 	};
 	printf ("block_state M:[%g %v %v %g] B:[%v %v]\n",
 			block_state.M.scalar, block_state.M.bvect,
