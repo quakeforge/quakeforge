@@ -451,6 +451,18 @@ d_basic_func (qfot_type_t *type, void *ptr, plitem_t *item)
 		[ev_long] = d_long_func,
 		[ev_ulong] = d_ulong_func,
 	};
+	static int type_sizes[] = {
+		[ev_string] = sizeof (string),
+		[ev_float] = sizeof (float),
+		[ev_vector] = sizeof (float),
+		[ev_func] = sizeof (@function (void)),
+		[ev_quaternion] = sizeof (float),
+		[ev_int] = sizeof (int),
+		[ev_uint] = sizeof (uint),
+		[ev_double] = sizeof (double),
+		[ev_long] = sizeof (long),
+		[ev_ulong] = sizeof (ulong),
+	};
 	int columns = type.basic.columns;
 	int width = type.basic.width;
 	if (type.type == ev_vector) {
@@ -470,14 +482,18 @@ d_basic_func (qfot_type_t *type, void *ptr, plitem_t *item)
 		return;
 	}
 	if (columns > 1) {
-		for (int i = 0; i < width; i++) {
+		int c_count = PL_A_NumObjects (item);
+		for (int i = 0; i < columns && i < c_count; i++) {
 			auto vec = PL_ObjectAtIndex (item, i);
-			for (int j = 0; j < width; j++) {
+			int count = PL_A_NumObjects (vec);
+			for (int j = 0; j < width && j < count; j++) {
 				ptr = func (ptr, PL_ObjectAtIndex (vec, j));
 			}
+			ptr = (void *)((int)ptr + type_sizes[type.type]);
 		}
 	} else if (width > 1) {
-		for (int j = 0; j < width; j++) {
+		int count = PL_A_NumObjects (item);
+		for (int j = 0; j < width && j < count; j++) {
 			ptr = func (ptr, PL_ObjectAtIndex (item, j));
 		}
 	} else {
