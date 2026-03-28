@@ -95,6 +95,8 @@ typedef struct qwaq_ecs_s {
 	pr_ptr_t   *data;
 	pr_func_t  *ui;
 	uint32_t    base;
+	uint32_t    update;
+	ecs_registry_t *reg;
 } qwaq_ecs_t;
 
 typedef struct graphics_resources_s {
@@ -147,6 +149,50 @@ vidsize_listener (void *data, const viddef_t *vdef)
 	graphics_resources_t *res = data;
 	Canvas_SetLen (canvas_sys, res->canvas,
 				   (view_pos_t) { vdef->width, vdef->height });
+}
+
+static void
+bi_get_component (progs_t *pr, void *_res)
+{
+	graphics_resources_t *res = _res;
+	uint32_t ent = P_UINT (pr, 0);
+	uint32_t comp = P_UINT (pr, 1);
+	void *dst = (byte *) P_GPOINTER (pr, 2);
+	void *src = Ent_GetComponent (ent, comp + res->ecs.base, res->ecs.reg);
+	memcpy (dst, src, res->ecs.components[comp].size);
+}
+
+static void
+bi_set_component (progs_t *pr, void *_res)
+{
+	graphics_resources_t *res = _res;
+	uint32_t ent = P_UINT (pr, 0);
+	uint32_t comp = P_UINT (pr, 1);
+	void *src = (byte *) P_GPOINTER (pr, 2);
+	Ent_SetComponent (ent, comp + res->ecs.base, res->ecs.reg, src);
+}
+
+static void
+bi_set_update (progs_t *pr, void *_res)
+{
+	graphics_resources_t *res = _res;
+	uint32_t ent = P_UINT (pr, 0);
+	pr_func_t func = P_FUNCTION (pr, 1);
+	Ent_SetComponent (ent, res->ecs.update, res->ecs.reg, &func);
+}
+
+static void
+bi_new_entity (progs_t *pr, void *_res)
+{
+	graphics_resources_t *res = _res;
+	R_UINT (pr) = ECS_NewEntity (res->ecs.reg);
+}
+
+static void
+bi_del_entity (progs_t *pr, void *_res)
+{
+	graphics_resources_t *res = _res;
+	ECS_DelEntity (res->ecs.reg, P_UINT (pr, 0));
 }
 
 static void
@@ -204,6 +250,46 @@ bi_comp_ui (void *comp, ecs_registry_t *reg, uint32_t ent,
 }
 
 static void
+bi_create_registry (graphics_resources_t *res, int num_components,
+					qwaq_comp_t *components)
+{
+	size_t size = sizeof (component_t[num_components + 1])
+				+ sizeof (pr_func_t[num_components])//create
+				+ sizeof (pr_func_t[num_components])//destroy
+				+ sizeof (pr_ptr_t[num_components])//data
+				+ sizeof (pr_func_t[num_components]);//ui
+	res->ecs.components = malloc (size);
+	res->ecs.create = (pr_func_t *) &res->ecs.components[num_components + 1];
+	res->ecs.destroy = (pr_func_t *) &res->ecs.create[num_components];
+	res->ecs.data = (pr_ptr_t *) &res->ecs.destroy[num_components];
+	res->ecs.ui = (pr_func_t *) &res->ecs.data[num_components];
+	for (int i = 0; i < num_components; i++) {
+		res->ecs.components[i] = (component_t) {
+			.size = components[i].size,
+			.create = components[i].create ? bi_comp_create : nullptr,
+			.destroy = components[i].destroy ? bi_comp_destroy : nullptr,
+			.name = PR_GetString (res->pr, components[i].name),
+			.data = res,
+			.ui = components[i].destroy ? bi_comp_ui : nullptr,
+		};
+		res->ecs.create[i] = components[i].create;
+		res->ecs.destroy[i] = components[i].destroy;
+		res->ecs.data[i] = components[i].data;
+		res->ecs.ui[i] = components[i].ui;
+	}
+	res->ecs.components[num_components] = (component_t) {
+		.size = sizeof (pr_func_t),
+		.name = "update",
+		.data = res,
+	};
+	res->ecs.reg = ECS_NewRegistry ("qwaq ecs");
+	res->ecs.base = ECS_RegisterComponents (res->ecs.reg, res->ecs.components,
+											num_components + 1);
+	res->ecs.update = res->ecs.base + num_components;
+	ECS_CreateComponentPools (res->ecs.reg);
+}
+
+static void
 bi_init_graphics (progs_t *pr, void *_res)
 {
 	graphics_resources_t *res = _res;
@@ -235,32 +321,7 @@ bi_init_graphics (progs_t *pr, void *_res)
 	int num_components = P_INT (pr, 1);
 	auto components = &P_STRUCT (pr, qwaq_comp_t, 2);
 	if (num_components > 0) {
-		size_t size = sizeof (component_t[num_components])
-					+ sizeof (pr_func_t[num_components])//create
-					+ sizeof (pr_func_t[num_components])//destroy
-					+ sizeof (pr_ptr_t[num_components])//data
-					+ sizeof (pr_func_t[num_components]);//ui
-		res->ecs.components = malloc (size);
-		res->ecs.create = (pr_func_t *) &res->ecs.components[num_components];
-		res->ecs.destroy = (pr_func_t *) &res->ecs.create[num_components];
-		res->ecs.data = (pr_ptr_t *) &res->ecs.destroy[num_components];
-		res->ecs.ui = (pr_func_t *) &res->ecs.data[num_components];
-		for (int i = 0; i < num_components; i++) {
-			res->ecs.components[i] = (component_t) {
-				.size = components[i].size,
-				.create = components[i].create ? bi_comp_create : nullptr,
-				.destroy = components[i].destroy ? bi_comp_destroy : nullptr,
-				.name = PR_GetString (pr, components[i].name),
-				.data = res,
-				.ui = components[i].destroy ? bi_comp_ui : nullptr,
-			};
-			res->ecs.create[i] = components[i].create;
-			res->ecs.destroy[i] = components[i].destroy;
-			res->ecs.data[i] = components[i].data;
-			res->ecs.ui[i] = components[i].ui;
-		}
-		res->ecs.base = ECS_RegisterComponents (reg, res->ecs.components,
-												num_components);
+		bi_create_registry (res, num_components, components);
 	}
 
 	ECS_CreateComponentPools (reg);
@@ -355,6 +416,23 @@ bi_refresh (progs_t *pr, void *_res)
 			camera = Entity_Transform (ent);
 		}
 	}
+	if (res->ecs.reg) {
+		auto reg = res->ecs.reg;
+		auto pool = &reg->comp_pools[res->ecs.update];
+		uint32_t    count = pool->count;
+		uint32_t   *entities = pool->dense;
+		auto funcs = (pr_func_t *) pool->data;
+
+		PR_PushFrame (pr);
+		auto params = PR_SaveParams (pr);
+		while (count-- > 0) {
+			PR_SetupParams (pr, 1, 1);
+			P_UINT (pr, 0) = *entities++;
+			PR_ExecuteProgram (pr, *funcs++);
+		}
+		PR_RestoreParams (pr, params);
+		PR_PopFrame (pr);
+	}
 	if (scene) {
 		uint32_t c_animation = scene->base + scene_animation;
 		uint32_t c_renderer = scene->base + scene_renderer;
@@ -439,6 +517,11 @@ bi_addcbuftxt (progs_t *pr, void *_res)
 #define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
+	bi(get_component, -1, 3, p(uint), p(uint), p(ptr)),
+	bi(set_component, -1, 3, p(uint), p(uint), p(ptr)),
+	bi(set_update,    -1, 2, p(uint), p(func)),
+	bi(new_entity,    -1, 0),
+	bi(del_entity,    -1, 1, p(uint)),
 	bi(init_graphics, -1, 1, p(ptr)),
 	bi(newscene,      -1, 1, p(long)),
 	bi(refresh,       -1, 1, p(long)),
@@ -655,6 +738,8 @@ graphics_clear (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
 	graphics_resources_t *res = _res;
+
+	ECS_DelRegistry (res->ecs.reg);
 
 	// everything is allocated in one block
 	free (res->ecs.components);
