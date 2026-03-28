@@ -1,0 +1,55 @@
+(
+	{
+		name = "Night Heron";
+		model = night_heron.iqm;
+		position = (15, 0, 10, 1);
+		rotation = (0.5, -0.5, 0.5, 0.5);
+		target = true;
+	},
+	{
+		name = "Capsule";
+		model = progs/Capsule.mdl;
+		position = (5, 2, 1, 1);
+		target = true;
+	},
+	{
+		name = "Cube";
+		model = progs/Cube.mdl;
+		position = (5, -2, 0.5, 1);
+		target = true;
+	},
+	{
+		name = "Octahedron";
+		model = progs/Octahedron.mdl;
+		position = (0, -2, 0.5, 1);
+		target = true;
+	},
+	{
+		name = "Tetrahedron";
+		model = progs/Tetrahedron.mdl;
+		position = (0, 2, 0.5, 1);
+		target = true;
+	},
+	{
+		name = "Plane";
+		model = progs/Plane.mdl;
+		scale = (25, 25, 25);
+	},
+	{
+		name = "Icosahedron";
+		mesh = create_ico;
+		position = (-2, 2, 0.5, 1);
+		avel = (0, 0.0005, 1);
+		invDensity = 36;
+		target = true;
+	},
+	{
+		name = "Block";
+		mesh = create_block;
+		mesh_param = (9, 1, 4);
+		position = (-20, 20, 5, 1);
+		avel = (0, 0.0005, 1);
+		target = true;
+		invDensity = 36;
+	},
+)

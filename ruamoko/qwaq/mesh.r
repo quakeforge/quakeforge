@@ -311,15 +311,15 @@ quaternion exp(vector x)
 	return [x * sc[0], sc[1]];
 }
 
-msgbuf_t create_block ()
+msgbuf_t create_block (vec3 block_size)
 {
 	vec3 verts[8];
 	//quaternion q = exp('0.4 0.3 -0.2');//'20 15 0 60'f/65;
 	//printf ("%q\n", q);
 	for (int i = 0; i < 8; i++) {
-		verts[i][0] = (((i & 1) >> 0) - 0.5f) * 9;
-		verts[i][1] = (((i & 2) >> 1) - 0.5f) * 1;
-		verts[i][2] = (((i & 4) >> 2) - 0.5f) * 4;
+		verts[i][0] = (((i & 1) >> 0) - 0.5f) * block_size.x;
+		verts[i][1] = (((i & 2) >> 1) - 0.5f) * block_size.y;
+		verts[i][2] = (((i & 4) >> 2) - 0.5f) * block_size.z;
 		//verts[i] = q * verts[i];
 	}
 

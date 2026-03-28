@@ -1,6 +1,7 @@
 #include <Array.h>
 #include <AutoreleasePool.h>
 #include <plist.h>
+#include <PropertyList.h>
 #include <string.h>
 #include <msgbuf.h>
 #include <math.h>
@@ -25,6 +26,10 @@
 
 void traceon() = #0;
 void traceoff() = #0;
+
+static string scene_plist =
+#embed "config/scene.plist"
+;
 
 static string render_graph_cfg =
 #embed "config/qwaq-ed-rg.plist"
@@ -84,11 +89,17 @@ typedef struct component_s {
 	uint size;
 	void (*create) (void *comp, uint ent);
 	void (*destroy) (void *comp, uint ent);
+	void (*rangeid) ();// not supported yet
 	string name;
 	void *data;
 	void (*ui) (void *comp, uint ent);
 } component_t;
 
+void set_update (uint ent, void (*update) (uint ent)) = #0;
+void get_component (uint ent, uint comp, void *data) = #0;
+void set_component (uint ent, uint comp, void *data) = #0;
+uint new_entity () = #0;
+void del_entity (uint ent) = #0;
 void init_graphics (plitem_t *config, int num_components,
 					component_t *components) = #0;
 float refresh (scene_t scene) = #0;
@@ -115,6 +126,29 @@ void Render_UpdateBuffer (string name, ulong offset, void *data,
 ulong Render_BufferAddress (string name) = #0;
 ulong Render_BufferOffset (string name) = #0;
 ulong Render_BufferSize (string name) = #0;
+
+enum {
+	qent_state,
+	qent_body,
+	qent_transform,
+
+	qent_comp_count
+};
+
+static component_t qwaq_components[] = {
+	[qent_state] = {
+		.size = sizeof (state_t),
+		.name = "state",
+	},
+	[qent_body] = {
+		.size = sizeof (body_t),
+		.name = "body",
+	},
+	[qent_transform] = {
+		.size = sizeof (transform_t),
+		.name = "transform",
+	},
+};
 
 #include "planetary.h"
 
@@ -1099,7 +1133,7 @@ arp_end (void)
 }
 
 msgbuf_t create_ico();
-msgbuf_t create_block();
+msgbuf_t create_block(vec3 block_size);
 msgbuf_t create_quadsphere();
 body_t calc_inertia_tensor (msgbuf_t model_buf, float inv_density);
 void leafnode();
@@ -1122,20 +1156,41 @@ state_t
 update_block_state(state_t state, body_t body, transform_t xform)
 {
 	float h = frametime / 100;
-	bivector_t f = {
-		.bvect = '0 0 0.1',
-		.bvecp = '0 0 1',
-	};
 	for (int i = 0; i < 100; i++) {
-		auto ds = dState (state, f, &body);
+		auto ds = dState (state, &body);
 		state.M += h * ds.M;
 		state.B += h * ds.B;
 		state.M = normalize (state.M);
 	}
-	auto M = state.M * ~body.R;
+	auto M = state.M * body.R;
 	set_transform (M, xform);
-	draw_principle_axes (M, body.I);
+	draw_principle_axes (state.M, body.I);
+	{
+		auto mat = Transform_GetWorldMatrix (xform);
+		vec4 x = mat[0];
+		vec4 y = mat[1];
+		vec4 z = mat[2];
+		vec4 p = mat[3];
+		Gizmo_AddCapsule (p, p + x, 0.025, vec4(1, 0, 0, 0.2));
+		Gizmo_AddCapsule (p, p + y, 0.025, vec4(0, 1, 0, 0.2));
+		Gizmo_AddCapsule (p, p + z, 0.025, vec4(0, 0, 1, 0.2));
+	}
 	return state;
+}
+
+void
+update_physics (uint ent)
+{
+	state_t state;
+	body_t  body;
+	transform_t xform;
+
+	get_component (ent, qent_state, &state);
+	get_component (ent, qent_body, &body);
+	get_component (ent, qent_transform, &xform);
+
+	state = update_block_state (state, body, xform);
+	set_component (ent, qent_state, &state);
 }
 
 void
@@ -1324,6 +1379,96 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 }
 @end
 
+@interface EntityInit : Object
+{
+@public
+	string name;
+	string model;
+	string mesh;
+	vec4 mesh_param;
+	vec4 position;
+	quaternion rotation;
+	vec4 scale;
+	bool target;
+	float invDensity;
+	vec3 vel;
+	vec3 avel;
+}
+@end
+
+@implementation EntityInit : Object
+-(void)setDefaultIvars
+{
+	position = '0 0 0 1';
+	rotation = '0 0 0 1';
+	scale = '1 1 1 1';
+}
+@end
+
+void
+load_scene (plitem_t *scene_item, scene_t scene)
+{
+	id scene_plist = [[PLItem fromItem:scene_item] retain];
+	int count = [scene_plist count];
+	for (int i = 0; i < count; i++) {
+		id ent_item = [scene_plist getObjectAtIndex:i];
+		EntityInit *ent_init = [EntityInit fromPropertyList:[ent_item item]];
+		printf ("name: %s\n", ent_init.name);
+		printf ("model: %s\n", ent_init.model);
+		printf ("position: %q\n", ent_init.position);
+		printf ("rotation: %q\n", ent_init.rotation);
+		printf ("scale: %q\n", ent_init.scale);
+		printf ("target: %s\n", ent_init.target ? "true" : "false");
+		printf ("invDensity: %g\n", ent_init.invDensity);
+
+		entity_t ent = Scene_CreateEntity (scene);
+		transform_t xform = Entity_GetTransform (ent);
+		Transform_SetLocalTransform (xform, ent_init.scale,
+									 ent_init.rotation, ent_init.position);
+		msgbuf_t mesh = nil;
+		model_t model = nil;
+		switch (ent_init.mesh) {
+		case "create_ico":
+			mesh = create_ico ();
+			break;
+		case "create_block":
+			mesh = create_block (ent_init.mesh_param.xyz);
+			break;
+		default:
+			if (ent_init.model) {
+				model = Model_Load (ent_init.model);
+			}
+			break;
+		}
+		if (mesh) {
+			model = Model_LoadMesh (ent_init.name, mesh);
+			//FIXME build from model?
+			auto body = calc_inertia_tensor (mesh, ent_init.invDensity);
+			state_t state = {
+				.M = make_motor (ent_init.position, ent_init.rotation),
+				.B = (PGA.bvect) ent_init.avel + (PGA.bvecp) ent_init.vel,
+			};
+			state.M = state.M * ~body.R;
+			state.B = body.R * state.B * ~body.R;
+			uint e = new_entity ();//FIXME
+			set_component (e, qent_state, &state);
+			set_component (e, qent_body, &body);
+			set_component (e, qent_transform, &xform);
+			set_update (e, update_physics);
+			// create body data from mesh
+			MsgBuf_Delete (mesh);
+		}
+		if (model) {
+			Entity_SetModel (ent, model);
+		}
+		if (ent_init.target) {
+			add_target (ent);
+		}
+
+		arp_end ();
+		arp_start ();
+	}
+}
 
 int
 main (int argc, string *argv)
@@ -1336,7 +1481,7 @@ main (int argc, string *argv)
 	arp_start ();
 
 	plitem_t *config = PL_GetPropertyList (render_graph_cfg);
-	init_graphics (config, 0, nil);
+	init_graphics (config, qent_comp_count, qwaq_components);
 	PL_Release (config);
 
 	IN_SendConnectedDevices ();
@@ -1406,56 +1551,7 @@ main (int argc, string *argv)
 
 	[main_window setModel:Model_Load ("progs/girl14.iqm")];
 
-	entity_t nh_ent = Scene_CreateEntity ([main_window scene]);
-	entity_t Capsule_ent = Scene_CreateEntity ([main_window scene]);
-	entity_t Cube_ent = Scene_CreateEntity ([main_window scene]);
-	entity_t Octahedron_ent = Scene_CreateEntity ([main_window scene]);
-	entity_t Plane_ent = Scene_CreateEntity ([main_window scene]);
-	entity_t Tetrahedron_ent = Scene_CreateEntity ([main_window scene]);
-	entity_t Icosahedron_ent = Scene_CreateEntity ([main_window scene]);
-	entity_t block_ent = Scene_CreateEntity ([main_window scene]);
-
-	add_target (nh_ent);
-	add_target (Capsule_ent);
-	add_target (Cube_ent);
-	add_target (Octahedron_ent);
-	add_target (Tetrahedron_ent);
-	add_target (Icosahedron_ent);
-	add_target (block_ent);
-
-	printf ("Night Heron: %lx\n", nh_ent);
-	printf ("Capsule: %lx\n", Capsule_ent);
-	printf ("Cube: %lx\n", Cube_ent);
-	printf ("Octahedron: %lx\n", Octahedron_ent);
-	printf ("Plane: %lx\n", Plane_ent);
-	printf ("Tetrahedron: %lx\n", Tetrahedron_ent);
-
-	Entity_SetModel (nh_ent, Model_Load ("night_heron.iqm"));
-	Entity_SetModel (Capsule_ent, Model_Load ("progs/Capsule.mdl"));
-	Entity_SetModel (Cube_ent, Model_Load ("progs/Cube.mdl"));
-	Entity_SetModel (Octahedron_ent, Model_Load ("progs/Octahedron.mdl"));
-	Entity_SetModel (Plane_ent, Model_Load ("progs/Plane.mdl"));
-	Entity_SetModel (Tetrahedron_ent, Model_Load ("progs/Tetrahedron.mdl"));
-	auto ico_mesh = create_ico ();
-	auto block_mesh = create_block ();
-	// the block's volume is 36m3, want a mass of 1, so a density of 1/36
-	auto block_body = calc_inertia_tensor (block_mesh, 36);
-	printf ("R:[%g %v %v %g] I:[%v %v] Ii:[%v %v]\n",
-			block_body.R.scalar, block_body.R.bvect,
-			block_body.R.bvecp,  block_body.R.qvec,
-			block_body.I.bvect,  block_body.I.bvecp,
-			block_body.Ii.bvect, block_body.Ii.bvecp);
-	Entity_SetModel (Icosahedron_ent, Model_LoadMesh ("ico", ico_mesh));
-	Entity_SetModel (block_ent, Model_LoadMesh ("block", block_mesh));
-
-	Transform_SetLocalPosition(Entity_GetTransform (nh_ent), {15, 0, 10, 1});
-	Transform_SetLocalRotation(Entity_GetTransform (nh_ent), {0.5, -0.5, 0.5, 0.5});
-	Transform_SetLocalPosition(Entity_GetTransform (Capsule_ent), {5, 2, 1, 1});
-	Transform_SetLocalPosition(Entity_GetTransform (Cube_ent), {5, -2, 0.5, 1});
-	Transform_SetLocalPosition(Entity_GetTransform (Octahedron_ent), {0, -2, 0.5, 1});
-	Transform_SetLocalPosition(Entity_GetTransform (Tetrahedron_ent), {0, 2, 0.5, 1});
-	Transform_SetLocalPosition(Entity_GetTransform (Icosahedron_ent), {-2, 2, 0.5, 1});
-	Transform_SetLocalScale (Entity_GetTransform (Plane_ent), {25, 25, 25, 1});
+	load_scene (PL_GetPropertyList (scene_plist), [main_window scene]);
 
 	id player = [[Player player:[main_window scene]] retain];
 	id playercam = [[PlayerCam inScene:[main_window scene]] retain];
@@ -1497,15 +1593,6 @@ main (int argc, string *argv)
 		qsmesh.vertices.offset += offset;
 	}
 	//create_cube ();
-	state_t block_state = {
-		.M = block_body.R * make_motor ({-20, 20, 5, 1}, {0, 0, 0, 1}),
-		.B = block_body.R * (PGA.bvect)'0 0.0005 1' * ~block_body.R,
-	};
-	printf ("block_state M:[%g %v %v %g] B:[%v %v]\n",
-			block_state.M.scalar, block_state.M.bvect,
-			block_state.M.bvecp,  block_state.M.qvec,
-			block_state.B.bvect,  block_state.B.bvecp);
-	auto block_xform = Entity_GetTransform (block_ent);
 	while (true) {
 		arp_end ();
 		arp_start ();
@@ -1529,7 +1616,6 @@ main (int argc, string *argv)
 
 		//update_cube(frametime);
 		//draw_cube();
-		block_state = update_block_state (block_state, block_body, block_xform);
 
 		[player think:frametime];
 		[playercam think:frametime];
