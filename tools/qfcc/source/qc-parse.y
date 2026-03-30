@@ -2054,13 +2054,7 @@ local_expr
 
 var_initializer
 	: expr									{ $$ = $1; }
-	| compound_init
-		{
-			if (!$1 && is_scalar ($<spec>-1.type)) {
-				error (0, "empty scalar initializer");
-			}
-			$$ = $1 ? $1 : new_nil_expr ();
-		}
+	| compound_init							{ $$ = $1 ? $1 : new_nil_expr (); }
 	| EBUFFER
 	;
 

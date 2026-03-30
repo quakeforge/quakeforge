@@ -521,7 +521,7 @@ vert_colors (uint *colors, halfedge_t *he_in, int hd, int vd, int fd, int ed,
 			vd + FACE(h),
 			vd + ed + EDGE(PREV(h)),
 		};
-		int edges[4];//FIXME empty scalar initializer = {};
+		int edges[4] = {};
 		for (int i = 0, ih = h; i < 4; i++, ih = NEXT(ih)) {
 			edges[i] = EDGE(ih);
 		}
@@ -660,7 +660,7 @@ vert_colors (uint *colors, quarteredge_t *he_in,
 			vd + FACE(h),
 			vd + ed + EDGE(PREV(h)),
 		};
-		int edges[4];//FIXME empty scalar initializer = {};
+		int edges[4] = {};
 		for (int i = 0, ih = h; i < 4; i++, ih = NEXT(ih)) {
 			edges[i] = EDGE(ih);
 		}
