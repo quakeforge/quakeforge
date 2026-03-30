@@ -145,7 +145,7 @@ typedef struct halfedge_s {
    of the level-0 topology).
    https://onrendering.com/data/papers/catmark/HalfedgeCatmullClark.pdf
 
-   quater-edge because it's half the size of a half-edge.
+   quarter-edge because it's half the size of a half-edge.
 */
 typedef struct quarteredge_s {
 	int         twin;
