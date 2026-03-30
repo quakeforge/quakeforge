@@ -154,6 +154,7 @@ vidsize_listener (void *data, const viddef_t *vdef)
 static void
 bi_get_component (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = _res;
 	uint32_t ent = P_UINT (pr, 0);
 	uint32_t comp = P_UINT (pr, 1);
@@ -165,6 +166,7 @@ bi_get_component (progs_t *pr, void *_res)
 static void
 bi_set_component (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = _res;
 	uint32_t ent = P_UINT (pr, 0);
 	uint32_t comp = P_UINT (pr, 1);
