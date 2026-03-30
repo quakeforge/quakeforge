@@ -1134,7 +1134,7 @@ arp_end (void)
 
 msgbuf_t create_ico();
 msgbuf_t create_block(vec3 block_size);
-msgbuf_t create_quadsphere();
+msgbuf_t create_quadsphere(bool do_colors);
 body_t calc_inertia_tensor (msgbuf_t model_buf, float inv_density);
 void leafnode();
 
@@ -1164,7 +1164,7 @@ update_block_state(state_t state, body_t body, transform_t xform)
 	}
 	auto M = state.M * body.R;
 	set_transform (M, xform);
-	draw_principle_axes (state.M, body.I);
+	//draw_principle_axes (state.M, body.I);
 	{
 		auto mat = Transform_GetWorldMatrix (xform);
 		vec4 x = mat[0];
@@ -1385,6 +1385,8 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 	string name;
 	string model;
 	string mesh;
+	bool mesh_flag;
+	uint submesh_mask;
 	vec4 mesh_param;
 	vec4 position;
 	quaternion rotation;
@@ -1428,6 +1430,9 @@ load_scene (plitem_t *scene_item, scene_t scene)
 		msgbuf_t mesh = nil;
 		model_t model = nil;
 		switch (ent_init.mesh) {
+		case "create_quadsphere":
+			mesh = create_quadsphere (ent_init.mesh_flag);
+			break;
 		case "create_ico":
 			mesh = create_ico ();
 			break;
@@ -1457,9 +1462,11 @@ load_scene (plitem_t *scene_item, scene_t scene)
 			set_update (e, update_physics);
 			// create body data from mesh
 			MsgBuf_Delete (mesh);
+
 		}
 		if (model) {
 			Entity_SetModel (ent, model);
+			Entity_SetSubmeshMask (ent, ent_init.submesh_mask);
 		}
 		if (ent_init.target) {
 			add_target (ent);
@@ -1559,7 +1566,7 @@ main (int argc, string *argv)
 	[main_window addCamera:playercam];
 
 	#define SUBDIV 5
-	auto quadsphere = create_quadsphere();
+	auto quadsphere = create_quadsphere(false);
 	int planetary_queue = Scene_Entqueue ([main_window scene], "planetary");
 
 	entity_t moon_ent = Scene_CreateEntity ([main_window scene]);

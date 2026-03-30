@@ -505,6 +505,44 @@ vert_points (vec3 *v_out, vec3 *v_in, halfedge_t *he_in, int hd, int vd, int fd)
 		v_out[v] += (4 * v_out[j] - v_out[i] + (n - 3) * v_in[v]) / (n * n);
 	}
 }
+
+@overload void
+vert_colors (uint *colors, halfedge_t *he_in, int hd, int vd, int fd, int ed,
+			 int num_edges)
+{
+	printf ("vert_colors: %4d %4d %4d %4d %4d\n", hd, vd, fd, ed, num_edges);
+	for (int h = 0; h < hd; h++) {
+		int ind = vd + FACE(h);
+		uint c = colors[ind];
+		//printf ("%d %d %08x\n", h, ind, c);
+		int verts[4] = {
+			VERT(h),
+			vd + fd + EDGE(h),
+			vd + FACE(h),
+			vd + ed + EDGE(PREV(h)),
+		};
+		int ph = PREV(h);
+		int edges[4] = {
+			2 * EDGE(h) + ((h < TWIN(h)) & 1),
+			2 * ed + h,
+			2 * ed + ph,
+			2 * EDGE(h) + ((ph > TWIN(ph)) & 1),
+		};
+		//printf ("v:%d %d %d %d\n", verts[0], verts[1], verts[2], verts[3]);
+		//printf ("e:%d %d %d %d\n", edges[0], edges[1], edges[2], edges[3]);
+		for (int i = 0; i < 4; i++) {
+			if (edges[i] >= num_edges && edges[(i - 1) & 3] >= num_edges) {
+				//printf ("%d %d old: %x new: %x\n", i, edges[i], colors[verts[i]], c);
+				colors[verts[i]] = c;
+			}
+		}
+	}
+	for (int h = 0; h < hd; h++) {
+		int ind = vd + FACE(h);
+		uint c = colors[ind];
+		colors[vd + fd + ed + h] = c;
+	}
+}
 #undef TWIN
 #undef NEXT
 #undef PREV
@@ -595,6 +633,44 @@ vert_points (vec3 *v_out, vec3 *v_in, quarteredge_t *he_in,
 		v_out[v] += (4 * v_out[j] - v_out[i] + (n - 3) * v_in[v]) / (n * n);
 	}
 }
+
+@overload void
+vert_colors (uint *colors, quarteredge_t *he_in,
+			 int hd, int vd, int fd, int ed, int num_edges)
+{
+	printf ("vert_colors: %4d %4d %4d %4d %4d\n", hd, vd, fd, ed, num_edges);
+	for (int h = 0; h < hd; h++) {
+		int ind = vd + FACE(h);
+		uint c = colors[ind];
+		printf ("%d %d %08x\n", h, ind, c);
+		int verts[4] = {
+			VERT(h),
+			vd + fd + EDGE(h),
+			vd + FACE(h),
+			vd + ed + EDGE(PREV(h)),
+		};
+		int ph = PREV(h);
+		int edges[4] = {
+			2 * EDGE(h) + ((h < TWIN(h)) & 1),
+			2 * ed + h,
+			2 * ed + ph,
+			2 * EDGE(h) + ((ph > TWIN(ph)) & 1),
+		};
+		printf ("v:%d %d %d %d\n", verts[0], verts[1], verts[2], verts[3]);
+		printf ("e:%d %d %d %d\n", edges[0], edges[1], edges[2], edges[3]);
+		for (int i = 0; i < 4; i++) {
+			if (edges[i] >= num_edges && edges[(i - 1) & 3] >= num_edges) {
+				printf ("%d %d old: %x new: %x\n", i, edges[i], colors[verts[i]], c);
+				colors[verts[i]] = c;
+			}
+		}
+	}
+	for (int h = 0; h < hd; h++) {
+		int ind = vd + FACE(h);
+		uint c = colors[ind];
+		colors[vd + fd + ed + h] = c;
+	}
+}
 #undef TWIN
 #undef NEXT
 #undef PREV
@@ -666,8 +742,30 @@ calc_extra_faces (int h0, uint D)
 	return ((1 << (2 * D)) - 1) * h0 / 3;
 }
 
+static void
+write_vert_data (msgbuf_t msg, int num_verts,
+				 vec3 *verts, vec3 *normals, uint *colors)
+{
+	if (colors) {
+		for (int i = 0; i < num_verts; i++) {
+			MsgBuf_WriteBytes (msg, &verts[i], sizeof (verts[i]));
+			// normals (verts are normalized)
+			MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]));
+			MsgBuf_WriteLong (msg, colors[i]);
+		}
+	} else {
+		for (int i = 0; i < num_verts; i++) {
+			MsgBuf_WriteBytes (msg, &verts[i], sizeof (verts[i]));
+			// normals (verts are normalized)
+			MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]));
+		}
+	}
+}
+
+void traceon();
+
 msgbuf_t
-create_quadsphere ()
+create_quadsphere (bool do_colors)
 {
 	// start with a simple cube
 	const int num_verts = 8;
@@ -715,7 +813,8 @@ create_quadsphere ()
 		int v = (!neg) & 7;
 		for (int j = 0; j < 4; j++) {
 			bool mid = bool ((j ^ (j>>1)) & 1);
-			halfedges[i * 4 + j] = {
+			int ind = i * 4 + j;
+			halfedges[ind] = {
 				.twin = face[i][j] * 4 + (mid ? j : 3 - j),
 				.next = i * 4 + ((j + 1) & 3),
 				.prev = i * 4 + ((j - 1) & 3),
@@ -723,6 +822,13 @@ create_quadsphere ()
 				.edge = find_edge (v ^ xor, v, edges, edge_count),
 				.face = i,
 			};
+			printf ("%2d: %2d %2d %2d %2d %2d %2d\n", ind,
+					halfedges[ind].twin,
+					halfedges[ind].next,
+					halfedges[ind].prev,
+					halfedges[ind].vert,
+					halfedges[ind].edge,
+					halfedges[ind].face);
 			v ^= xor;
 			xor ^= flip;
 		}
@@ -737,12 +843,18 @@ create_quadsphere ()
 			.count = levels,
 		},
 	};
+	uint stride = 2 * sizeof (vec3);
+	int num_attributes = 2;
+	if (do_colors) {
+		stride += sizeof (uint);
+		num_attributes++;
+	}
 	qf_mesh_t mesh_template = {
 		.index_type = qfm_u32,
 		.attributes = {
-			.count = 2,
+			.count = num_attributes,
 		},
-		.vertex_stride = 2 * sizeof (verts[0]),
+		.vertex_stride = stride,
 		.scale = '1 1 1',
 		.bounds_min = '-1 -1 -1',
 		.bounds_max = ' 1  1  1',
@@ -751,17 +863,24 @@ create_quadsphere ()
 	qfm_attrdesc_t attributes[] = {
 		{
 			.offset = 0,
-			.stride = 2 * sizeof (vec3),
+			.stride = stride,
 			.attr = qfm_position,
 			.type = qfm_f32,
 			.components = 3,
 		},
 		{
 			.offset = sizeof (vec3),
-			.stride = 2 * sizeof (vec3),
+			.stride = stride,
 			.attr = qfm_normal,
 			.type = qfm_f32,
 			.components = 3,
+		},
+		{
+			.offset = 2 * sizeof (vec3),
+			.stride = stride,
+			.attr = qfm_color,
+			.type = qfm_u8n,
+			.components = 4,
 		},
 	};
 
@@ -774,19 +893,35 @@ create_quadsphere ()
 	int extra_faces = calc_extra_faces (num_halfedges, subdiv);
 	uint size = sizeof (qf_model_t)
 			  + sizeof (qf_mesh_t) * levels
-			  + sizeof (qfm_attrdesc_t) * 2// need only one copy
+			  + sizeof (qfm_attrdesc_t) * num_attributes// need only one copy
 			  + sizeof (halfedge_t) * num_halfedges
 			  + sizeof (quarteredge_t) * extra_halfedges
-			  + sizeof (vec3) * 2 * (num_verts + extra_verts)
+			  + stride * (num_verts + extra_verts)
 			  + sizeof (uint) * 6 * (num_faces + extra_faces);
 	quarteredge_t *subdiv_halfedges[2] = {
 		obj_malloc (sizeof (quarteredge_t) * max_halfedges),
 		obj_malloc (sizeof (quarteredge_t) * max_halfedges),
 	};
 	vec3 *subdiv_verts[2] = {
-		obj_malloc (sizeof (quarteredge_t) * max_halfedges),
-		obj_malloc (sizeof (quarteredge_t) * max_halfedges),
+		// each half-edge has only one vertex
+		obj_malloc (sizeof (vec3) * max_halfedges),
+		obj_malloc (sizeof (vec3) * max_halfedges),
 	};
+	uint *colors = nil;
+	if (do_colors) {
+		// each half-edge has only one vertex
+		//traceon();
+		colors = obj_malloc (sizeof (uint) * max_halfedges);
+		for (int i = 0; i < max_halfedges; i++) {
+			// abgr white
+			colors[i] = 0xffffffff;
+		}
+		for (int i = 0; i < num_faces; i++) {
+			bool neg = axes[i] < 0;
+			int axis = neg ? ~axes[i] : axes[i];
+			colors[num_verts + i] = 0xff000000 | (0xff << (axis * 8));
+		}
+	}
 	auto msg = MsgBuf_New (size);
 	MsgBuf_WriteBytes (msg, &model, sizeof (model));
 	int offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
@@ -811,7 +946,8 @@ create_quadsphere ()
 	printf ("attributes_offset: %d\n", attributes_offset);
 	mesh_template.attributes.offset = attributes_offset;
 	mesh_template.attributes.offset -= mesh_offsets[0];
-	MsgBuf_WriteBytes (msg, attributes, sizeof (attributes));
+	MsgBuf_WriteBytes (msg, attributes,
+					   num_attributes * sizeof (attributes[0]));
 
 	mesh_template.adjacency.offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
 	mesh_template.adjacency.offset -= mesh_offsets[0];
@@ -821,10 +957,7 @@ create_quadsphere ()
 	mesh_template.vertices.offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
 	mesh_template.vertices.offset -= mesh_offsets[0];
 	mesh_template.vertices.count = num_verts;
-	for (int i = 0; i < num_verts; i++) {
-		MsgBuf_WriteBytes (msg, &verts[i], sizeof (verts[i]));
-		MsgBuf_WriteBytes (msg, &normals[i], sizeof (normals[i]));
-	}
+	write_vert_data (msg, num_verts, verts, normals, colors);
 
 	mesh_template.indices = MsgBuf_WriteSeek (msg, 0, msg_cur);
 	mesh_template.indices -= mesh_offsets[0];
@@ -872,12 +1005,20 @@ create_quadsphere ()
 						 subdiv_halfedges[ind^1], hd, vd, fd);
 			vert_points (subdiv_verts[ind], subdiv_verts[ind^1],
 						 subdiv_halfedges[ind^1], hd, vd, fd);
+			if (colors) {
+				vert_colors (colors, subdiv_halfedges[ind^1], hd, vd, fd, ed,
+							 num_edges << d);
+			}
 		} else {
 			refine_halfedges (subdiv_halfedges[ind],
 							  halfedges, hd, vd, fd, ed);
 			face_points (subdiv_verts[ind], verts, halfedges, hd, vd);
 			edge_points (subdiv_verts[ind], verts, halfedges, hd, vd, fd);
 			vert_points (subdiv_verts[ind], verts, halfedges, hd, vd, fd);
+			if (colors) {
+				vert_colors (colors, halfedges, hd, vd, fd, ed,
+							 num_edges << d);
+			}
 		}
 		for (int i = 0; i < vd_1; i++) {
 			vec3 v = subdiv_verts[ind][i];
@@ -896,13 +1037,8 @@ create_quadsphere ()
 		mesh_template.vertices.offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
 		mesh_template.vertices.offset -= mesh_offsets[d];
 		mesh_template.vertices.count = vd_1;
-		for (int i = 0; i < vd_1; i++) {
-			MsgBuf_WriteBytes (msg, &subdiv_verts[ind][i],
-							   sizeof (subdiv_verts[ind][i]));
-			// normals (verts are normalized)
-			MsgBuf_WriteBytes (msg, &subdiv_verts[ind][i],
-							   sizeof (subdiv_verts[ind][i]));
-		}
+		write_vert_data (msg, vd_1, subdiv_verts[ind], subdiv_verts[ind],
+						 colors);
 
 		mesh_template.indices = MsgBuf_WriteSeek (msg, 0, msg_cur);
 		mesh_template.indices -= mesh_offsets[d];

@@ -52,4 +52,14 @@
 		target = true;
 		invDensity = 36;
 	},
+	{
+		name = "Sphere";
+		mesh = create_quadsphere;
+		mesh_flag = true;
+		position = (-4, -4, 14.5, 1);
+		avel = (0, 0, 1);
+		target = true;
+		invDensity = 1;
+		submesh_mask = 0xffffffdf;
+	},
 )
