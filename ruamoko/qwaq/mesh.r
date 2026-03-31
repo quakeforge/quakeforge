@@ -510,25 +510,13 @@ vert_points (vec3 *v_out, vec3 *v_in, halfedge_t *he_in, int hd, int vd, int fd)
 vert_colors (uint *colors, quarteredge_t *he_out, halfedge_t *he_in,
 			 int hd, int vd, int fd, int ed, int num_edges)
 {
-	printf ("vert_colors: h:%-4d v:%-4d f:%-4d e:%-4d E:%-4d\n",
-			hd, vd, fd, ed, num_edges);
-	for (int h = 0; h < hd; h++) {
-		int ind = VERT((h & ~3) + 2);
+	for (int f = 0; f < fd; f++) {
+		int ind = VERT(f * 4 + 2);
 		uint c = colors[ind];
-		//printf ("%d %d %08x\n", h, ind, c);
-		int verts[4] = {};
-		int edges[4] = {};
-		for (int i = 0, ih = h; i < 4; i++, ih = NEXT(ih)) {
-			verts[i] = he_out[4 * ih + i].vert;
-			edges[i] = EDGE(ih);
-		}
-		//printf ("v:%d %d %d %d\n", verts[0], verts[1], verts[2], verts[3]);
-		//printf ("e:%d %d %d %d\n", edges[0], edges[1], edges[2], edges[3]);
 		for (int i = 0; i < 4; i++) {
-			if (edges[i] >= num_edges && edges[(i - 1) & 3] >= num_edges) {
-				int v = verts[i];
-				printf ("%4d:%-3d %3d:%-3d %4d old: %x new: %x\n", h, i,
-						edges[i], edges[(i - 1) & 3], v, colors[v], c);
+			int h = f * 4 + i;
+			if (EDGE(h) >= num_edges) {
+				int v= he_out[NEXT(4 * h + i)].vert;
 				colors[v] = c;
 			}
 		}
@@ -641,25 +629,13 @@ vert_points (vec3 *v_out, vec3 *v_in, quarteredge_t *he_in,
 vert_colors (uint *colors, quarteredge_t *he_out, quarteredge_t *he_in,
 			 int hd, int vd, int fd, int ed, int num_edges)
 {
-	printf ("vert_colors: h:%-4d v:%-4d f:%-4d e:%-4d E:%-4d\n",
-			hd, vd, fd, ed, num_edges);
-	for (int h = 0; h < hd; h++) {
-		int ind = VERT((h & ~3) + 2);
+	for (int f = 0; f < fd; f++) {
+		int ind = VERT(f * 4 + 2);
 		uint c = colors[ind];
-		//printf ("%d %d %08x\n", h, ind, c);
-		int verts[4] = {};
-		int edges[4] = {};
-		for (int i = 0, ih = h; i < 4; i++, ih = NEXT(ih)) {
-			verts[i] = he_out[4 * ih + i].vert;
-			edges[i] = EDGE(ih);
-		}
-		//printf ("v:%d %d %d %d\n", verts[0], verts[1], verts[2], verts[3]);
-		//printf ("e:%d %d %d %d\n", edges[0], edges[1], edges[2], edges[3]);
 		for (int i = 0; i < 4; i++) {
-			if (edges[i] >= num_edges && edges[(i - 1) & 3] >= num_edges) {
-				int v = verts[i];
-				printf ("%4d:%-3d %3d:%-3d %4d old: %x new: %x\n", h, i,
-						edges[i], edges[(i - 1) & 3], v, colors[v], c);
+			int h = f * 4 + i;
+			if (EDGE(h) >= num_edges) {
+				int v= he_out[NEXT(4 * h + i)].vert;
 				colors[v] = c;
 			}
 		}
@@ -996,8 +972,8 @@ create_quadsphere (bool do_colors)
 			subdiv_verts[ind][i] = '0 0 0';
 		}
 		if (d > 1) {
-			dump_halfedges (subdiv_halfedges[ind^1], hd, vd, fd, ed,
-							num_edges << (d - 1), subdiv_verts[ind^1], colors);
+			//dump_halfedges (subdiv_halfedges[ind^1], hd, vd, fd, ed,
+			//				num_edges << (d - 1), subdiv_verts[ind^1], colors);
 			refine_halfedges (subdiv_halfedges[ind],
 							  subdiv_halfedges[ind^1], hd, vd, fd, ed);
 			face_points (subdiv_verts[ind], subdiv_verts[ind^1],
@@ -1012,8 +988,8 @@ create_quadsphere (bool do_colors)
 							 num_edges << (d - 1));
 			}
 		} else {
-			dump_halfedges (halfedges, hd, vd, fd, ed,
-							num_edges << (d - 1), verts, colors);
+			//dump_halfedges (halfedges, hd, vd, fd, ed,
+			//				num_edges << (d - 1), verts, colors);
 			refine_halfedges (subdiv_halfedges[ind],
 							  halfedges, hd, vd, fd, ed);
 			face_points (subdiv_verts[ind], verts, halfedges, hd, vd);
