@@ -623,7 +623,7 @@ return_expr (function_t *f, const expr_t *e)
 			 || (is_reference (t) && is_algebra (t = dereference_type (t))))
 			&& !type_same (ret_type, t))) {
 		scoped_src_loc (e);
-		if (!t) {
+		if (!t || is_algebra (ret_type)) {
 			t = ret_type;
 		} else {
 			if (is_reference (t)) {
