@@ -10,6 +10,7 @@ layout (set = 0, binding = 0) uniform
 
 struct PlaneData {
 	mat3x4      p;
+	vec4        gcolor;
 	vec4        scolor;
 	vec4        tcolor;
 };
@@ -58,7 +59,9 @@ main (void)
 		float c1 = abs(st.y) < 0.5 ? g[2] : 0;
 		float c2 = abs(st.x) < 0.5 ? g[1] : 0;
 		float c0 = g[0] * (1 - c1) * (1 - c2);
-		c += vec4(1) * c0 + planes[i].scolor * c1 + planes[i].tcolor * c2;
+		c += planes[i].gcolor * c0
+		   + planes[i].scolor * c1
+		   + planes[i].tcolor * c2;
 		//st = fract(st);
 		//st = st - st * st;
 		//float s = st.x * st.y;

@@ -52,6 +52,7 @@
 
 typedef struct {
 	vec4f_t     p[3];
+	vec4f_t     gcolor;
 	vec4f_t     scolor;
 	vec4f_t     tcolor;
 } qfv_plane_t;
@@ -62,7 +63,8 @@ typedef struct {
 } qfv_planebuf_t;
 
 static qfv_plane_t
-make_plane (vec4f_t s, vec4f_t t, vec4f_t scolor, vec4f_t tcolor)
+make_plane (vec4f_t s, vec4f_t t,
+			vec4f_t gcolor, vec4f_t scolor, vec4f_t tcolor)
 {
 	vec4f_t n = crossf (s, t);
 	vec4f_t d = -r_refdef.camera[3];
@@ -81,6 +83,7 @@ make_plane (vec4f_t s, vec4f_t t, vec4f_t scolor, vec4f_t tcolor)
 			{SS[1], TT[1], nn[1], 0},
 			{SS[2], TT[2], nn[2], 0},
 		},
+		.gcolor = gcolor,
 		.scolor = scolor,
 		.tcolor = tcolor,
 	};
@@ -106,14 +109,15 @@ debug_planes_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	vec4f_t x = {gs, 0, 0, 0};
 	vec4f_t y = {0, gs, 0, 0};
 	vec4f_t z = {0, 0, gs, 0};
+	vec4f_t w = {1, 1, 1, 1 };	// white, not a 4th axis :)
 	vec4f_t r = {1, 0, 0, 1 };
 	vec4f_t g = {0, 1, 0, 1 };
 	vec4f_t b = {0, 0, 1, 1 };
 	*planes = (qfv_planebuf_t) {
 		.num_planes = 3,
-		.planes[0] = make_plane (x, y, r, g),
-		.planes[1] = make_plane (y, z, g, b),
-		.planes[2] = make_plane (z, x, b, r),
+		.planes[0] = make_plane (x, y, w, r, g),
+		.planes[1] = make_plane (y, z, w, g, b),
+		.planes[2] = make_plane (z, x, w, b, r),
 	};
 	auto buffer = &pctx->resources->objects[ctx->curFrame].buffer;
 	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
