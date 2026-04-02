@@ -100,7 +100,7 @@ Mod_LoadMeshModel (model_t *mod, byte *buffer, size_t buf_size)
 			in->inverse.count * sizeof (qfm_motor_t));
 	memcpy (pose, buffer + in->pose.offset,
 			in->pose.count * sizeof (qfm_joint_t));
-	memcpy (text, buffer + in->text.offset, in->pose.count * sizeof (char));
+	memcpy (text, buffer + in->text.offset, in->text.count * sizeof (char));
 
 	*model = (qf_model_t) {
 		.meshes = {
