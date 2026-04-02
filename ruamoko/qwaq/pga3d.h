@@ -32,6 +32,28 @@ typedef struct body_s {
 	bivector_t  Ii;
 } body_t;
 
+typedef enum col_type_e {
+	col_plane,
+	col_ball,
+	col_capsule,
+} col_type_t;
+
+typedef struct collider_s {
+	union {
+		plane_t plane;
+		struct {
+			vec3 offset;	// point_t with implied 0 e123
+			float radius;
+		} ball;
+		struct {
+			vec3 offset;	// point_t with implied 0 e123
+			float radius;
+			vec3 axis;		// point_t with implied 0 e123
+		} capsule;
+	};
+	col_type_t  type;
+} collider_t;
+
 @overload state_t dState (state_t s);
 @overload state_t dState (state_t s, bivector_t f);
 @overload state_t dState (state_t s, body_t *body);

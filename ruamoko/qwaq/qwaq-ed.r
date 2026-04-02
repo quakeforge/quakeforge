@@ -96,6 +96,7 @@ typedef struct component_s {
 } component_t;
 
 void set_update (uint ent, void (*update) (uint ent)) = #0;
+bool has_component (uint ent, uint comp) = #0;
 void get_component (uint ent, uint comp, void *data) = #0;
 void set_component (uint ent, uint comp, void *data) = #0;
 uint new_entity () = #0;
@@ -131,6 +132,7 @@ enum {
 	qent_state,
 	qent_body,
 	qent_transform,
+	qent_collider,
 
 	qent_comp_count
 };
@@ -147,6 +149,10 @@ static component_t qwaq_components[] = {
 	[qent_transform] = {
 		.size = sizeof (transform_t),
 		.name = "transform",
+	},
+	[qent_collider] = {
+		.size = sizeof (collider_t),
+		.name = "collider",
 	},
 };
 
@@ -1191,6 +1197,42 @@ update_physics (uint ent)
 
 	state = update_block_state (state, body, xform);
 	set_component (ent, qent_state, &state);
+
+	if (has_component (ent, qent_collider)) {
+		mat4 mat = Transform_GetWorldMatrix(xform);
+		collider_t col;
+		get_component (ent, qent_collider, &col);
+		switch (col.type) {
+		case col_plane:
+		{
+			auto plane = (vec4)col.plane;
+			auto n = mat * vec4(plane.xyz, 0);
+			n /= sqrt (n • n);
+			auto p1 = vec4(n.xyz, plane.w);
+			auto p2 = vec4(-n.xyz, plane.w - 0.01);
+			gizmo_node_t plane_brush[] = {
+				{ .plane = p1, .children = { -1,  1 } },
+				{ .plane = p2, .children = { -1, -2 } },
+			};
+			Gizmo_AddBrush (mat[3], {-100,-100,-1}, {100,100,1},
+							countof (plane_brush), plane_brush,
+							vec4(0.1, 0.3, 0.05, 0.5));
+			break;
+		}
+		case col_ball:
+			Gizmo_AddSphere (mat * vec4(col.ball.offset, 1), col.ball.radius,
+							 vec4(0.8, 0.4, 0.2, 0.9));
+			break;
+		case col_capsule:
+		{
+			vec4 p1 = vec4 (col.capsule.offset + col.capsule.axis, 1);
+			vec4 p2 = vec4 (col.capsule.offset - col.capsule.axis, 1);
+			Gizmo_AddCapsule (mat * p1, mat * p2, col.capsule.radius,
+							 vec4(0.2, 0.8, 0.9, 0.9));
+			break;
+		}
+		}
+	}
 }
 
 void
@@ -1395,6 +1437,14 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 	float invDensity;
 	vec3 vel;
 	vec3 avel;
+
+	struct {
+		vec4        plane;
+		vec3        offset;
+		float       radius;
+		vec3        axis;
+		col_type_t  type;
+	} collider;
 }
 @end
 
@@ -1445,6 +1495,54 @@ load_scene (plitem_t *scene_item, scene_t scene)
 			}
 			break;
 		}
+		bool have_collider = false;
+		collider_t collider = {
+			.type = ent_init.collider.type,
+		};
+		switch (ent_init.collider.type) {
+		case col_plane:
+			auto plane = (plane_t) ent_init.collider.plane;
+			// if the normal is 0, then no collider was specified
+			if (plane • plane) {
+				have_collider = true;
+				collider.plane = plane;
+				// force infinite mass
+				ent_init.invDensity = 0;
+			}
+			break;
+		case col_ball:
+			have_collider = true;
+			collider.ball.offset = ent_init.collider.offset;
+			collider.ball.radius = ent_init.collider.radius;
+			break;
+		case col_capsule:
+			have_collider = true;
+			collider.capsule.offset = ent_init.collider.offset;
+			collider.capsule.radius = ent_init.collider.radius;
+			collider.capsule.axis = ent_init.collider.axis;
+			break;
+		}
+		uint e = ~0u;//FIXME
+		if (mesh || have_collider) {
+			e = new_entity ();
+			set_component (e, qent_transform, &xform);
+		}
+		if (have_collider) {
+			set_component (e, qent_collider, &collider);
+			if (!mesh) {
+				body_t body = {};//infinite mass
+				body.R = 1;
+				state_t state = {
+					.M = make_motor (ent_init.position, ent_init.rotation),
+					.B = (PGA.bvect) ent_init.avel + (PGA.bvecp) ent_init.vel,
+				};
+				state.M = state.M * ~body.R;
+				state.B = body.R * state.B * ~body.R;
+				set_component (e, qent_state, &state);
+				set_component (e, qent_body, &body);
+				set_update (e, update_physics);
+			}
+		}
 		if (mesh) {
 			model = Model_LoadMesh (ent_init.name, mesh);
 			//FIXME build from model?
@@ -1455,10 +1553,8 @@ load_scene (plitem_t *scene_item, scene_t scene)
 			};
 			state.M = state.M * ~body.R;
 			state.B = body.R * state.B * ~body.R;
-			uint e = new_entity ();//FIXME
 			set_component (e, qent_state, &state);
 			set_component (e, qent_body, &body);
-			set_component (e, qent_transform, &xform);
 			set_update (e, update_physics);
 			// create body data from mesh
 			MsgBuf_Delete (mesh);

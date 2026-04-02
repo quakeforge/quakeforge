@@ -152,6 +152,16 @@ vidsize_listener (void *data, const viddef_t *vdef)
 }
 
 static void
+bi_has_component (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	graphics_resources_t *res = _res;
+	uint32_t ent = P_UINT (pr, 0);
+	uint32_t comp = P_UINT (pr, 1);
+	R_INT (pr) = Ent_HasComponent (ent, comp + res->ecs.base, res->ecs.reg);
+}
+
+static void
 bi_get_component (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
@@ -519,6 +529,7 @@ bi_addcbuftxt (progs_t *pr, void *_res)
 #define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
+	bi(has_component, -1, 3, p(uint), p(uint)),
 	bi(get_component, -1, 3, p(uint), p(uint), p(ptr)),
 	bi(set_component, -1, 3, p(uint), p(uint), p(ptr)),
 	bi(set_update,    -1, 2, p(uint), p(func)),
