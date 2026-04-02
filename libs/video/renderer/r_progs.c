@@ -506,7 +506,7 @@ bi(Gizmo_AddCapsule)
 bi(Gizmo_AddBrush)
 {
 	qfZoneScoped (true);
-	if (r_funcs->gizmo.AddCapsule) {
+	if (r_funcs->gizmo.AddBrush) {
 		auto orig = P_var (pr, 0, vec4);
 		pr_vec4_t bounds[] = {
 			P_var (pr, 1, vec4),
