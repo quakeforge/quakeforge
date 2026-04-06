@@ -135,7 +135,9 @@ extern bool     insubmodel;
 extern vec3_t   r_worldmodelorg;
 
 extern mat4f_t  glsl_projection;
+extern mat4f_t  glsl_inv_projection;
 extern mat4f_t  glsl_view;
+extern mat4f_t  glsl_inv_view;
 
 union refframe_s;
 void R_SetFrustum (plane_t *frustum, const union refframe_s *frame,

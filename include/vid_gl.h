@@ -16,6 +16,7 @@ typedef struct gl_ctx_s {
 	void        (*end_rendering) (void);
 
 	mat4f_t     projection;
+	mat4f_t     inv_projection;
 
 	int         begun;
 	double      start_time;

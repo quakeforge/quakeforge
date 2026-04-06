@@ -97,8 +97,9 @@ static instsurf_t  *free_instsurfs;
 static GLuint   bsp_vbo;
 static mat4f_t  bsp_vp;
 
-static GLuint   skybox_tex;
-static bool skybox_loaded;
+static GLuint   sky_tex;
+static bool sky_is_box;
+static bool sky_loaded;
 static quat_t   sky_rotation[2];
 static quat_t   sky_velocity;
 static quat_t   sky_fix;
@@ -1023,7 +1024,7 @@ sky_begin (void)
 
 	mmulf (bsp_vp, glsl_projection, glsl_view);
 
-	if (skybox_loaded) {
+	if (sky_loaded) {
 		sky_params.mvp_matrix = &quake_skybox.mvp_matrix;
 		sky_params.vertex = &quake_skybox.vertex;
 		sky_params.sky_matrix = &quake_skybox.sky_matrix;
@@ -1035,7 +1036,7 @@ sky_begin (void)
 		qfeglUniform1i (quake_skybox.sky.location, 0);
 		qfeglActiveTexture (GL_TEXTURE0 + 0);
 		qfeglEnable (GL_TEXTURE_CUBE_MAP);
-		qfeglBindTexture (GL_TEXTURE_CUBE_MAP, skybox_tex);
+		qfeglBindTexture (GL_TEXTURE_CUBE_MAP, sky_tex);
 	} else {
 		sky_params.mvp_matrix = &quake_skyid.mvp_matrix;
 		sky_params.sky_matrix = &quake_skyid.sky_matrix;
@@ -1247,7 +1248,7 @@ glsl_R_DrawSky (void)
 		surf = is->surface;
 		if (tex != surf->texinfo->texture->render) {
 			if (tex) {
-				if (!skybox_loaded) {
+				if (!sky_loaded) {
 					qfeglActiveTexture (GL_TEXTURE0 + 0);
 					qfeglBindTexture (GL_TEXTURE_2D, tex->sky_tex[0]);
 					qfeglActiveTexture (GL_TEXTURE0 + 1);
@@ -1264,7 +1265,7 @@ glsl_R_DrawSky (void)
 		add_surf_elements (tex, is, &ec, &el);
 	}
 	if (tex) {
-		if (!skybox_loaded) {
+		if (!sky_loaded) {
 			qfeglActiveTexture (GL_TEXTURE0 + 0);
 			qfeglBindTexture (GL_TEXTURE_2D, tex->sky_tex[0]);
 			qfeglActiveTexture (GL_TEXTURE0 + 1);
@@ -1409,58 +1410,121 @@ glsl_R_LoadSkys (const char *sky)
 	// face. This matches nicely with Blender's default cube in front (num-1)
 	// view.
 	static const char *sky_suffix[] = { "ft", "bk", "up", "dn", "rt", "lf"};
-	static int  sky_coords[][2] = {
-		{2, 0},	// front
-		{0, 0}, // back
-		{1, 1}, // up
-		{0, 1}, // down
-		{2, 1}, // left
-		{1, 0}, // right
+	//blender envmap
+	static int  sky_coords_3x2[][2] = {
+		{2, 0},	// right
+		{0, 0}, // left
+		{1, 1}, // top
+		{0, 1}, // bottom
+		{2, 1}, // front
+		{1, 0}, // back
 	};
+	static int  sky_coords_4x3[][2] = {
+		{2, 1},	// right
+		{0, 1}, // left
+		{1, 0}, // top
+		{1, 2}, // bottom
+		{1, 1}, // front
+		{3, 1}, // back
+	};
+	static int  sky_coords_3x4[][2] = {
+		{2, 1},	// right
+		{0, 1}, // left
+		{1, 0}, // top
+		{1, 2}, // bottom
+		{1, 1}, // front
+		{1, 3}, // back
+	};
+	static int  sky_coords_6x1[][2] = {
+		{0, 0},	// right
+		{1, 0}, // left
+		{2, 0}, // top
+		{3, 0}, // bottom
+		{4, 0}, // front
+		{5, 0}, // back
+	};
+	static int  sky_coords_1x6[][2] = {
+		{0, 0},	// right
+		{0, 1}, // left
+		{0, 2}, // top
+		{0, 3}, // bottom
+		{0, 4}, // front
+		{0, 5}, // back
+	};
+	int (*sky_coords)[2] = nullptr;
 
 	if (!sky || !*sky)
 		sky = r_skyname;
 
 	if (!*sky || !strcasecmp (sky, "none")) {
-		skybox_loaded = false;
+		sky_loaded = false;
 		return;
 	}
 
-	if (!skybox_tex)
-		qfeglGenTextures (1, &skybox_tex);
+	if (!sky_tex)
+		qfeglGenTextures (1, &sky_tex);
 
-	qfeglBindTexture (GL_TEXTURE_CUBE_MAP, skybox_tex);
 
-	//blender envmap
-	// bk rt ft
-	// dn up lt
+	GLenum tex_type = GL_TEXTURE_CUBE_MAP;
 	tex = LoadImage (name = va ("env/%s_map", sky), 1);
-	if (tex && tex->format >= 3 && tex->height * 3 == tex->width * 2
-		&& is_pow2 (tex->height)) {
-		tex_t      *sub;
-		int         size = tex->height / 2;
-
-		skybox_loaded = true;
-		sub = malloc (sizeof (tex_t) + size * size * tex->format);
-		sub->data = (byte *) (sub + 1);
-		sub->width = size;
-		sub->height = size;
-		sub->format = tex->format;
-		sub->palette = tex->palette;
-		for (i = 0; i < 6; i++) {
-			int         x, y;
-			x = sky_coords[i][0] * size;
-			y = sky_coords[i][1] * size;
-			copy_sub_tex (tex, x, y, sub);
-			qfeglTexImage2D (GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
-							sub->format == 3 ? GL_RGB : GL_RGBA,
-							sub->width, sub->height, 0,
-							sub->format == 3 ? GL_RGB : GL_RGBA,
-							GL_UNSIGNED_BYTE, sub->data);
+	if (tex && tex->format >= 3) {
+		int         size;
+		if (tex->height * 3 == tex->width * 2) {
+			sky_coords = sky_coords_3x2;
+			size = tex->height / 2;
+		} else if (tex->height * 4 == tex->width * 3) {
+			sky_coords = sky_coords_4x3;
+			size = tex->width / 4;
+		} else if (tex->height * 3 == tex->width * 4) {
+			sky_coords = sky_coords_3x4;
+			size = tex->height / 4;
+		} else if (tex->height * 6 == tex->width * 1) {
+			sky_coords = sky_coords_6x1;
+			size = tex->height;
+		} else if (tex->height * 1 == tex->width * 6) {
+			sky_coords = sky_coords_1x6;
+			size = tex->width;
 		}
-		free (sub);
+
+		if (sky_coords) {
+			qfeglBindTexture (GL_TEXTURE_CUBE_MAP, sky_tex);
+			sky_loaded = true;
+			sky_is_box = true;
+			tex_t *sub = malloc (sizeof (tex_t) + size * size * tex->format);
+			*sub = (tex_t) {
+				.width = size,
+				.height = size,
+				.format = tex->format,
+				.palette = tex->palette,
+				.data = (byte *) &sub[1],
+			};
+			for (i = 0; i < 6; i++) {
+				int         x, y;
+				x = sky_coords[i][0] * size;
+				y = sky_coords[i][1] * size;
+				copy_sub_tex (tex, x, y, sub);
+				qfeglTexImage2D (GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
+								 sub->format == 3 ? GL_RGB : GL_RGBA,
+								 sub->width, sub->height, 0,
+								 sub->format == 3 ? GL_RGB : GL_RGBA,
+								 GL_UNSIGNED_BYTE, sub->data);
+			}
+			free (sub);
+		} else if (tex->height * 2 == tex->width) {
+			qfeglBindTexture (GL_TEXTURE_2D, sky_tex);
+			sky_loaded = true;
+			sky_is_box = false;
+			tex_type = GL_TEXTURE_2D;
+			qfeglTexImage2D (GL_TEXTURE_2D, 0,
+							 tex->format == 3 ? GL_RGB : GL_RGBA,
+							 tex->width, tex->height, 0,
+							 tex->format == 3 ? GL_RGB : GL_RGBA,
+							 GL_UNSIGNED_BYTE, tex->data);
+		}
 	} else {
-		skybox_loaded = true;
+		qfeglBindTexture (GL_TEXTURE_CUBE_MAP, sky_tex);
+		sky_loaded = true;
+		sky_is_box = true;
 		for (i = 0; i < 6; i++) {
 			tex = LoadImage (name = va ("env/%s%s", sky, sky_suffix[i]), 1);
 			if (!tex || tex->format < 3) {	// FIXME pcx support
@@ -1470,23 +1534,21 @@ glsl_R_LoadSkys (const char *sky)
 											sky_suffix[i]), 1);
 				if (!tex || tex->format < 3) {  // FIXME pcx support
 					Sys_MaskPrintf (SYS_glsl, "Couldn't load %s\n", name);
-					skybox_loaded = false;
+					sky_loaded = false;
 					continue;
 				}
 			}
 			Sys_MaskPrintf (SYS_glsl, "Loaded %s\n", name);
 			qfeglTexImage2D (GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
-							tex->format == 3 ? GL_RGB : GL_RGBA,
-							tex->width, tex->height, 0,
-							tex->format == 3 ? GL_RGB : GL_RGBA,
-							GL_UNSIGNED_BYTE, tex->data);
+							 tex->format == 3 ? GL_RGB : GL_RGBA,
+							 tex->width, tex->height, 0,
+							 tex->format == 3 ? GL_RGB : GL_RGBA,
+							 GL_UNSIGNED_BYTE, tex->data);
 		}
 	}
-	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
-					   GL_CLAMP_TO_EDGE);
-	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T,
-					   GL_CLAMP_TO_EDGE);
-	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	qfeglGenerateMipmap (GL_TEXTURE_CUBE_MAP);
+	qfeglTexParameteri (tex_type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (tex_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (tex_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfeglTexParameteri (tex_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	qfeglGenerateMipmap (tex_type);
 }
