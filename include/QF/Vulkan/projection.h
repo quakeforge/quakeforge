@@ -11,10 +11,6 @@ void QFV_PerspectiveTan (mat4f_t proj, float fov_x, float fov_y,
 						 float nearclip);
 void QFV_InversePerspectiveTan (mat4f_t proj, float fov_x, float fov_y,
 								float nearclip);
-void QFV_PerspectiveTanFar (mat4f_t proj, float fov_x, float fov_y,
-							float nearclip, float farclip);
-void QFV_InversePerspectiveTanFar (mat4f_t proj, float fov_x, float fov_y,
-								   float nearclip, float farclip);
 void QFV_PerspectiveCos (mat4f_t proj, float fov, float nearclip);
 
 extern const mat4f_t qfv_z_up;

@@ -136,35 +136,6 @@ QFV_InversePerspectiveTan (mat4f_t proj, float fov_x, float fov_y,
 }
 
 void
-QFV_PerspectiveTanFar (mat4f_t proj, float fov_x, float fov_y,
-					   float nearclip, float farclip)
-{
-	float       n = nearclip;
-	float       f = farclip;
-	float       fx = fov_x;
-	float       fy = fov_y;
-
-	proj[0] = (vec4f_t) { 1/fx,  0,     0,     0 };
-	proj[1] = (vec4f_t) {   0, 1/fy,    0,     0 };
-	proj[2] = (vec4f_t) {   0,   0, -n/(f-n),  1 };
-	proj[3] = (vec4f_t) {   0,   0, n*f/(f-n), 0 };
-}
-
-void
-QFV_InversePerspectiveTanFar (mat4f_t proj, float fov_x, float fov_y,
-							  float nearclip, float farclip)
-{
-	float       n = r_nearclip;
-	float       f = farclip;
-	float       fx = fov_x;
-	float       fy = fov_y;
-	proj[0] = (vec4f_t) { fx,  0,  0,      0      };
-	proj[1] = (vec4f_t) {  0, fy,  0,      0      };
-	proj[2] = (vec4f_t) {  0,  0,  0, (f-n)/(n*f) };
-	proj[3] = (vec4f_t) {  0,  0,  1,     1/f     };
-}
-
-void
 QFV_PerspectiveCos (mat4f_t proj, float fov, float nearclip)
 {
 	// square first for auto-abs (no support for > 180 degree fov)
