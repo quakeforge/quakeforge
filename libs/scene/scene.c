@@ -269,6 +269,16 @@ static const component_t scene_components[scene_comp_count] = {
 	},
 };
 
+static dmodel_t empty_submodel[] = {
+	[0] = {
+		.mins = {-INFINITY, -INFINITY, -INFINITY},
+		.maxs = { INFINITY,  INFINITY,  INFINITY},
+		.visleafs = 1,
+		.firstface = 0,
+		.numfaces = 1,
+	},
+};
+
 static byte empty_visdata[] = { 0x01 };
 
 static mleaf_t empty_leafs[] = {
@@ -332,6 +342,8 @@ static model_t empty_world = {
 	.mins = {-INFINITY, -INFINITY, -INFINITY},
 	.maxs = { INFINITY,  INFINITY,  INFINITY},
 	.brush = {
+		.numsubmodels = 1,
+		.submodels = empty_submodel,
 		.modleafs = 2,
 		.visleafs = 1,
 		.numnodes = 1,
