@@ -88,7 +88,7 @@ sky_color (vec3 dir, float time)
 		} else {
 			return sky_box (dir, time);
 		}
-	} if (!(control & 6)) {
+	} else if (!(control & 6)) {
 		return sky_sheet (dir, time);
 	} else {
 		// can see through the sheet (may look funny when looking down)
