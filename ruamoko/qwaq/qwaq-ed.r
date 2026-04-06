@@ -1668,7 +1668,9 @@ main (int argc, string *argv)
 	entity_t moon_ent = Scene_CreateEntity ([main_window scene]);
 	add_target (moon_ent);
 	Entity_SetModel (moon_ent, Model_LoadMesh ("quadsphere", quadsphere));
-	Entity_SetEntqueue (moon_ent, planetary_queue);
+	if (planetary_queue >= 0) {
+		Entity_SetEntqueue (moon_ent, planetary_queue);
+	}
 	Entity_SetSubmeshMask (moon_ent, ~(1<<4));
 	Entity_SetShadowFlags (moon_ent, true, true, false);
 	Transform_SetLocalPosition(Entity_GetTransform (moon_ent), { -171550000.0, -245760020.0, 230400020.0, 1});
@@ -1677,7 +1679,9 @@ main (int argc, string *argv)
 	entity_t QuadSphere_ent = Scene_CreateEntity ([main_window scene]);
 	add_target (QuadSphere_ent);
 	Entity_SetModel (QuadSphere_ent, Model_LoadMesh ("quadsphere", quadsphere));
-	Entity_SetEntqueue (QuadSphere_ent, planetary_queue);
+	if (planetary_queue >= 0) {
+		Entity_SetEntqueue (QuadSphere_ent, planetary_queue);
+	}
 	Entity_SetSubmeshMask (QuadSphere_ent, ~(1<<5));
 	Entity_SetShadowFlags (QuadSphere_ent, true, true, false);
 	Entity_SetTexture (QuadSphere_ent, "8k_earth_daymap");
