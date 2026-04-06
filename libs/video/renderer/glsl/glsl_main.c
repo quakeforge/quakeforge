@@ -65,7 +65,9 @@
 #include "vid_gl.h"
 
 mat4f_t glsl_projection;
+mat4f_t glsl_inv_projection;
 mat4f_t glsl_view;
+mat4f_t glsl_inv_view;
 
 static void
 R_SetupView (void)
@@ -76,8 +78,15 @@ R_SetupView (void)
 		{ 0, 1,  0, 0},
 		{ 0, 0,  0, 1},
 	};
+	static mat4f_t inv_z_up = {
+		{ 0, -1, 0, 0},
+		{ 0,  0, 1, 0},
+		{ 1,  0, 0, 0},
+		{ 0,  0, 0, 1},
+	};
 
 	mmulf (glsl_view, z_up, r_refdef.camera_inverse);
+	mmulf (glsl_inv_view, r_refdef.camera, inv_z_up);
 
 	qfeglEnable (GL_CULL_FACE);
 	qfeglEnable (GL_DEPTH_TEST);
@@ -140,6 +149,7 @@ glsl_R_RenderView (void)
 	}
 
 	memcpy (glsl_projection, glsl_ctx->projection, sizeof (mat4f_t));
+	memcpy (glsl_inv_projection, glsl_ctx->inv_projection, sizeof (mat4f_t));
 
 	R_SetupView ();
 	glsl_R_DrawWorld ();
@@ -182,6 +192,9 @@ glsl_R_Init (struct plitem_s *config)
 	R_Init_Cvars ();
 	glsl_Draw_Init ();
 	SCR_Init ();
+
+	qfeglDepthFunc (GL_LEQUAL);
+
 	glsl_R_InitBsp ();
 	glsl_R_InitMesh ();
 	glsl_R_InitSprites ();

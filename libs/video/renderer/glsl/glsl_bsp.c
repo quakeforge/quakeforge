@@ -95,8 +95,11 @@ static instsurf_t **instsurfs_tail = &instsurfs;
 static instsurf_t  *free_instsurfs;
 
 static GLuint   bsp_vbo;
+static GLuint   empty_vao;
 static mat4f_t  bsp_vp;
+static mat4f_t  bsp_ivp;
 
+static glsltex_t background_render;
 static GLuint   sky_tex;
 static bool sky_is_box;
 static bool sky_loaded;
@@ -111,12 +114,14 @@ static glsltex_t glsl_notexture = { };
 
 static const char *bsp_vert_effects[] =
 {
+	"QuakeForge.version.130",
 	"QuakeForge.Vertex.bsp",
 	0
 };
 
 static const char *bsp_lit_effects[] =
 {
+	"QuakeForge.version.130",
 	"QuakeForge.Fragment.fog",
 	"QuakeForge.env.warp.nop",
 	"QuakeForge.Fragment.colormap",
@@ -126,6 +131,7 @@ static const char *bsp_lit_effects[] =
 
 static const char *bsp_turb_effects[] =
 {
+	"QuakeForge.version.130",
 	"QuakeForge.Math.const",
 	"QuakeForge.Fragment.fog",
 	"QuakeForge.Fragment.palette",
@@ -134,19 +140,12 @@ static const char *bsp_turb_effects[] =
 	0
 };
 
-static const char *bsp_sky_cube_effects[] =
+static const char *bsp_sky_effects[] =
 {
-	"QuakeForge.Fragment.fog",
-	"QuakeForge.env.sky.cube",
-	"QuakeForge.Fragment.bsp.sky",
-	0
-};
-
-static const char *bsp_sky_id_effects[] =
-{
+	"QuakeForge.version.130",
 	"QuakeForge.Fragment.fog",
 	"QuakeForge.Fragment.palette",
-	"QuakeForge.env.sky.id",
+	"QuakeForge.env.sky",
 	"QuakeForge.Fragment.bsp.sky",
 	0
 };
@@ -154,6 +153,7 @@ static const char *bsp_sky_id_effects[] =
 static struct {
 	int         program;
 	shaderparam_t mvp_matrix;
+	shaderparam_t control;
 	shaderparam_t tlst;
 	shaderparam_t vertex;
 	shaderparam_t colormap;
@@ -164,6 +164,7 @@ static struct {
 } quake_bsp = {
 	0,
 	{"mvp_mat", 1},
+	{"control", 1},
 	{"tlst", 0},
 	{"vertex", 0},
 	{"colormap", 1},
@@ -176,6 +177,7 @@ static struct {
 static struct {
 	int         program;
 	shaderparam_t mvp_matrix;
+	shaderparam_t control;
 	shaderparam_t tlst;
 	shaderparam_t vertex;
 	shaderparam_t palette;
@@ -186,6 +188,7 @@ static struct {
 } quake_turb = {
 	0,
 	{"mvp_mat", 1},
+	{"control", 1},
 	{"tlst", 0},
 	{"vertex", 0},
 	{"palette", 1},
@@ -200,45 +203,28 @@ static struct {
 	shaderparam_t mvp_matrix;
 	shaderparam_t sky_matrix;
 	shaderparam_t vertex;
+	shaderparam_t sky_box;
+	shaderparam_t sky_map;
 	shaderparam_t palette;
 	shaderparam_t solid;
 	shaderparam_t trans;
 	shaderparam_t time;
+	shaderparam_t control;
 	shaderparam_t fog;
-} quake_skyid = {
+} quake_sky = {
 	0,
 	{"mvp_mat", 1},
 	{"sky_mat", 1},
 	{"vertex", 0},
-	{"palette", 1},
-	{"solid", 1},
-	{"trans", 1},
+	{"sky_box_tex", 1},//texture
+	{"sky_map_tex", 1},//texture
+	{"palette", 1},//texture
+	{"solid_tex", 1},//texture
+	{"trans_tex", 1},//texture
 	{"time", 1},
+	{"control", 1},
 	{"fog", 1},
 };
-
-static struct {
-	int         program;
-	shaderparam_t mvp_matrix;
-	shaderparam_t sky_matrix;
-	shaderparam_t vertex;
-	shaderparam_t sky;
-	shaderparam_t fog;
-} quake_skybox = {
-	0,
-	{"mvp_mat", 1},
-	{"sky_mat", 1},
-	{"vertex", 0},
-	{"sky", 1},
-	{"fog", 1},
-};
-
-static struct {
-	shaderparam_t *mvp_matrix;
-	shaderparam_t *sky_matrix;
-	shaderparam_t *vertex;
-	shaderparam_t *fog;
-} sky_params;
 
 typedef struct glslbspctx_s {
 	mod_brush_t *brush;
@@ -389,7 +375,7 @@ chain_surface (glslbspctx_t *bctx, msurface_t *surf)
 {
 	instsurf_t *is;
 
-	if (surf->flags & SURF_DRAWSKY) {
+	if (surf->flags & (SURF_DRAWSKY | SURF_DRAWBACKGROUND)) {
 		is = CHAIN_SURF_F2B (surf, sky_chain);
 	} else if ((surf->flags & SURF_DRAWTURB)
 			   || (bctx->color && bctx->color[3] < 1.0)) {
@@ -555,6 +541,8 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 	dstring_t  *vertices;
 	mod_brush_t *brush;
 
+	clear_tex_chain (&background_render);
+
 	QuatSet (0, 0, sqrt(0.5), sqrt(0.5), sky_fix);	// proper skies
 	QuatSet (0, 0, 0, 1, sky_rotation[0]);
 	QuatCopy (sky_rotation[0], sky_rotation[1]);
@@ -592,7 +580,18 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 			if (!surf->model_index && m != r_refdef.worldmodel)
 				surf->model_index = -1 - i;	// instanced model
 			tex = surf->texinfo->texture->render;
-			CHAIN_SURF_F2B (surf, tex->tex_chain);
+			if (tex) {
+				CHAIN_SURF_F2B (surf, tex->tex_chain);
+			} else if (!(surf->flags & SURF_DRAWBACKGROUND)) {
+				// SURF_DRAWBACKGROUND "requires" an environment map (skybox)
+				// of some sort (cube map, equirectangular...), but that might
+				// be loaded later and defaults to black if not loaded.
+				Sys_Printf ("R_BuildDisplayLists: texture missing on non-sky"
+							" surface: %d.\n", j);
+			} else {
+				tex = surf->texinfo->texture->render = &background_render;
+				CHAIN_SURF_F2B (surf, tex->tex_chain);
+			}
 		}
 	}
 	// All vertices from all brush models go into one giant vbo.
@@ -897,6 +896,7 @@ bsp_begin (void)
 	mmulf (bsp_vp, glsl_projection, glsl_view);
 
 	qfeglUseProgram (quake_bsp.program);
+	qfeglUniform1i (quake_bsp.control.location, 0);
 	qfeglEnableVertexAttribArray (quake_bsp.vertex.location);
 	qfeglEnableVertexAttribArray (quake_bsp.tlst.location);
 	qfeglDisableVertexAttribArray (quake_bsp.color.location);
@@ -952,6 +952,7 @@ turb_begin (void)
 	mmulf (bsp_vp, glsl_projection, glsl_view);
 
 	qfeglUseProgram (quake_turb.program);
+	qfeglUniform1i (quake_bsp.control.location, 0);
 	qfeglEnableVertexAttribArray (quake_turb.vertex.location);
 	qfeglEnableVertexAttribArray (quake_turb.tlst.location);
 	qfeglDisableVertexAttribArray (quake_turb.color.location);
@@ -1013,6 +1014,19 @@ spin (mat4_t mat)
 }
 
 static void
+sky_set_control (bool is_background)
+{
+	uint32_t control = 0;
+	if (sky_loaded) {
+		control |= sky_is_box ? 2 : 4;
+	} else {
+		control |= 1;
+	}
+	control |= is_background << 3;
+	qfeglUniform1i (quake_sky.control.location, control);
+}
+
+static void
 sky_begin (void)
 {
 	mat4_t      mat;
@@ -1023,51 +1037,50 @@ sky_begin (void)
 	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
 	mmulf (bsp_vp, glsl_projection, glsl_view);
+	mmulf (bsp_ivp, glsl_inv_view, glsl_inv_projection);
+
+	qfeglUseProgram (quake_sky.program);
+	qfeglEnableVertexAttribArray (quake_sky.vertex.location);
+
+	qfeglUniform1f (quake_sky.time.location, vr_data.realtime);
+	sky_set_control (false);
 
 	if (sky_loaded) {
-		sky_params.mvp_matrix = &quake_skybox.mvp_matrix;
-		sky_params.vertex = &quake_skybox.vertex;
-		sky_params.sky_matrix = &quake_skybox.sky_matrix;
-		sky_params.fog = &quake_skybox.fog;
-
-		qfeglUseProgram (quake_skybox.program);
-		qfeglEnableVertexAttribArray (quake_skybox.vertex.location);
-
-		qfeglUniform1i (quake_skybox.sky.location, 0);
+		qfeglUniform1i (quake_sky.sky_box.location, 0);
+		qfeglUniform1i (quake_sky.sky_map.location, 0);
+		qfeglUniform1i (quake_sky.palette.location, 2);
 		qfeglActiveTexture (GL_TEXTURE0 + 0);
-		qfeglEnable (GL_TEXTURE_CUBE_MAP);
-		qfeglBindTexture (GL_TEXTURE_CUBE_MAP, sky_tex);
+		if (sky_is_box) {
+			qfeglEnable (GL_TEXTURE_CUBE_MAP);
+			qfeglBindTexture (GL_TEXTURE_CUBE_MAP, sky_tex);
+		} else {
+			qfeglDisable (GL_TEXTURE_CUBE_MAP);
+			qfeglBindTexture (GL_TEXTURE_2D, sky_tex);
+		}
+		qfeglActiveTexture (GL_TEXTURE0 + 2);
+		qfeglEnable (GL_TEXTURE_2D);
+		qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 	} else {
-		sky_params.mvp_matrix = &quake_skyid.mvp_matrix;
-		sky_params.sky_matrix = &quake_skyid.sky_matrix;
-		sky_params.vertex = &quake_skyid.vertex;
-		sky_params.fog = &quake_skyid.fog;
-
-		qfeglUseProgram (quake_skyid.program);
-		qfeglEnableVertexAttribArray (quake_skyid.vertex.location);
-
-		qfeglUniform1i (quake_skyid.palette.location, 2);
+		qfeglUniform1i (quake_sky.palette.location, 2);
 		qfeglActiveTexture (GL_TEXTURE0 + 2);
 		qfeglEnable (GL_TEXTURE_2D);
 		qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-		qfeglUniform1f (quake_skyid.time.location, vr_data.realtime);
-
-		qfeglUniform1i (quake_skyid.trans.location, 0);
+		qfeglUniform1i (quake_sky.trans.location, 0);
 		qfeglActiveTexture (GL_TEXTURE0 + 0);
 		qfeglEnable (GL_TEXTURE_2D);
 
-		qfeglUniform1i (quake_skyid.solid.location, 1);
+		qfeglUniform1i (quake_sky.solid.location, 1);
 		qfeglActiveTexture (GL_TEXTURE0 + 1);
 		qfeglEnable (GL_TEXTURE_2D);
 	}
 
 	Fog_GetColor (fog);
 	fog[3] = Fog_GetDensity () / 64.0;
-	qfeglUniform4fv (sky_params.fog->location, 1, fog);
+	qfeglUniform4fv (quake_sky.fog.location, 1, fog);
 
 	spin (mat);
-	qfeglUniformMatrix4fv (sky_params.sky_matrix->location, 1, false, mat);
+	qfeglUniformMatrix4fv (quake_sky.sky_matrix.location, 1, false, mat);
 
 	qfeglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
 }
@@ -1075,7 +1088,7 @@ sky_begin (void)
 static void
 sky_end (void)
 {
-	qfeglDisableVertexAttribArray (sky_params.vertex->location);
+	qfeglDisableVertexAttribArray (quake_sky.vertex.location);
 
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
 	qfeglDisable (GL_TEXTURE_2D);
@@ -1159,6 +1172,12 @@ glsl_R_DrawWorld (void)
 		}
 	}
 
+	const char *model_name = r_refdef.worldmodel->name;
+	if (!model_name || !model_name[0]) {
+		model_name = "world bsp";
+	}
+	qfeglPushDebugGroup (GL_DEBUG_SOURCE_APPLICATION, 0,
+						 strlen (model_name), model_name);
 	glsl_R_FlushLightmaps ();
 	bsp_begin ();
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
@@ -1183,6 +1202,7 @@ glsl_R_DrawWorld (void)
 		tex->elechain_tail = &tex->elechain;
 	}
 	bsp_end ();
+	qfeglPopDebugGroup ();
 }
 
 void
@@ -1243,7 +1263,15 @@ glsl_R_DrawSky (void)
 	if (!sky_chain)
 		return;
 
+	const char *model_name = r_refdef.worldmodel->name;
+	if (!model_name || !model_name[0]) {
+		model_name = "world bsp";
+	}
+	qfeglPushDebugGroup (GL_DEBUG_SOURCE_APPLICATION, 0,
+						 strlen (model_name), model_name);
+
 	sky_begin ();
+	uint32_t saw_background = 0;
 	for (is = sky_chain; is; is = is->tex_chain) {
 		surf = is->surface;
 		if (tex != surf->texinfo->texture->render) {
@@ -1255,14 +1283,18 @@ glsl_R_DrawSky (void)
 					qfeglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
 				}
 				for (ec = tex->elechain; ec; ec = ec->next)
-					draw_elechain (ec, sky_params.mvp_matrix->location,
-								   sky_params.vertex->location, -1, -1);
+					draw_elechain (ec, quake_sky.mvp_matrix.location,
+								   quake_sky.vertex.location, -1, -1);
 				tex->elechain = 0;
 				tex->elechain_tail = &tex->elechain;
 			}
 			tex = surf->texinfo->texture->render;
 		}
-		add_surf_elements (tex, is, &ec, &el);
+		uint32_t bg = surf->flags & SURF_DRAWBACKGROUND;
+		saw_background |= bg;
+		if (!bg) {
+			add_surf_elements (tex, is, &ec, &el);
+		}
 	}
 	if (tex) {
 		if (!sky_loaded) {
@@ -1272,12 +1304,22 @@ glsl_R_DrawSky (void)
 			qfeglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
 		}
 		for (ec = tex->elechain; ec; ec = ec->next)
-			draw_elechain (ec, sky_params.mvp_matrix->location,
-						   sky_params.vertex->location, -1, -1);
+			draw_elechain (ec, quake_sky.mvp_matrix.location,
+						   quake_sky.vertex.location, -1, -1);
 		tex->elechain = 0;
 		tex->elechain_tail = &tex->elechain;
+		if (saw_background && sky_loaded) {
+			qfeglBindVertexArray (empty_vao);
+			sky_set_control (true);
+			int matloc = quake_sky.mvp_matrix.location;
+			qfeglUniformMatrix4fv (matloc, 1, false,
+								   (vec_t*)&bsp_ivp[0]);//FIXME
+			qfeglDrawArrays (GL_TRIANGLES, 0, 3);
+			qfeglBindVertexArray (0);
+		}
 	}
 	sky_end ();
+	qfeglPopDebugGroup ();
 
 	sky_chain = 0;
 	sky_chain_tail = &sky_chain;
@@ -1291,6 +1333,8 @@ glsl_R_InitBsp (void)
 	int         frag;
 
 	r_notexture_mip->render = &glsl_notexture;
+
+	qfeglCreateVertexArrays (1, &empty_vao);
 
 	vert_shader = GLSL_BuildShader (bsp_vert_effects);
 	frag_shader = GLSL_BuildShader (bsp_lit_effects);
@@ -1324,29 +1368,21 @@ glsl_R_InitBsp (void)
 	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.fog);
 	GLSL_FreeShader (frag_shader);
 
-	frag_shader = GLSL_BuildShader (bsp_sky_id_effects);
-	frag = GLSL_CompileShader ("quakeski.frag", frag_shader,
+	frag_shader = GLSL_BuildShader (bsp_sky_effects);
+	frag = GLSL_CompileShader ("quakesky.frag", frag_shader,
 							   GL_FRAGMENT_SHADER);
-	quake_skyid.program = GLSL_LinkProgram ("quakeskyid", vert, frag);
-	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.mvp_matrix);
-	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.sky_matrix);
-	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.vertex);
-	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.palette);
-	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.solid);
-	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.trans);
-	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.time);
-	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.fog);
-	GLSL_FreeShader (frag_shader);
-
-	frag_shader = GLSL_BuildShader (bsp_sky_cube_effects);
-	frag = GLSL_CompileShader ("quakeskb.frag", frag_shader,
-							   GL_FRAGMENT_SHADER);
-	quake_skybox.program = GLSL_LinkProgram ("quakeskybox", vert, frag);
-	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.mvp_matrix);
-	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.sky_matrix);
-	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.vertex);
-	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.sky);
-	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.fog);
+	quake_sky.program = GLSL_LinkProgram ("quakesky", vert, frag);
+	GLSL_ResolveShaderParam (quake_sky.program, &quake_sky.mvp_matrix);
+	GLSL_ResolveShaderParam (quake_sky.program, &quake_sky.sky_matrix);
+	GLSL_ResolveShaderParam (quake_sky.program, &quake_sky.vertex);
+	GLSL_ResolveShaderParam (quake_sky.program, &quake_sky.sky_box);
+	GLSL_ResolveShaderParam (quake_sky.program, &quake_sky.sky_map);
+	GLSL_ResolveShaderParam (quake_sky.program, &quake_sky.palette);
+	GLSL_ResolveShaderParam (quake_sky.program, &quake_sky.solid);
+	GLSL_ResolveShaderParam (quake_sky.program, &quake_sky.trans);
+	GLSL_ResolveShaderParam (quake_sky.program, &quake_sky.time);
+	GLSL_ResolveShaderParam (quake_sky.program, &quake_sky.control);
+	GLSL_ResolveShaderParam (quake_sky.program, &quake_sky.fog);
 	GLSL_FreeShader (frag_shader);
 }
 

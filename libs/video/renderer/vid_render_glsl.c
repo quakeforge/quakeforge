@@ -86,6 +86,7 @@ static vid_model_funcs_t model_funcs = {
 	.Mod_SpriteLoadFrames           = glsl_Mod_SpriteLoadFrames,
 
 	.skin_set                = Skin_Set,
+	.texture_set             = Skin_Texture,
 	.skin_setupskin          = glsl_Skin_SetupSkin,
 	.skin_destroy            = glsl_Skin_Destroy,
 };
@@ -404,6 +405,7 @@ glsl_set_fov (float x, float y)
 {
 	float       neard, fard;
 	mat4f_t     proj;
+	mat4f_t     inv_proj;
 
 	neard = r_nearclip;
 	fard = r_farclip;
@@ -414,6 +416,11 @@ glsl_set_fov (float x, float y)
 	proj[2] = (vec4f_t) { 0, 0, (fard) / (fard - neard), 1 };
 	proj[3] = (vec4f_t) { 0, 0, (fard * neard) / (neard - fard), 0 };
 
+	inv_proj[0] = (vec4f_t) { x, 0, 0, 0 };
+	inv_proj[1] = (vec4f_t) { 0, y, 0, 0 };
+	inv_proj[2] = (vec4f_t) { 0, 0, 0, (neard - fard) / (fard * neard) };
+	inv_proj[3] = (vec4f_t) { 0, 0, 1, 1 / neard };
+
 	// convert 0..1 depth buffer range to -1..1
 	static mat4f_t depth_range = {
 		{ 1, 0, 0, 0},
@@ -421,7 +428,14 @@ glsl_set_fov (float x, float y)
 		{ 0, 0, 2, 0},
 		{ 0, 0,-1, 1},
 	};
+	static mat4f_t inv_depth_range = {
+		{ 1, 0,   0, 0},
+		{ 0, 1,   0, 0},
+		{ 0, 0, 0.5, 0},
+		{ 0, 0, 0.5, 1},
+	};
 	mmulf (glsl_ctx->projection, depth_range, proj);
+	mmulf (glsl_ctx->inv_projection, inv_proj, inv_depth_range);
 }
 
 static void

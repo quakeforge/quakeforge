@@ -203,30 +203,46 @@ warp_st (vec2 st, float time)
 	return st + (sin ((angle + phase) * FACTOR) + BIAS) / SCALE;
 }
 
--- env.sky.cube
+-- env.sky
 
-uniform samplerCube sky;
-
-vec4
-sky_color (vec3 dir)
-{
-	// NOTE: quake's world and GL's world are rotated relative to each other
-	// quake has x right, y in, z up. gl has x right, y up, z out
-	// The textures are loaded with GL's z (quake's y) already negated, so
-	// all that's needed here is to swizzle y and z.
-	return textureCube(sky, dir.xzy);
-}
-
--- env.sky.id
-
-uniform sampler2D solid;
-uniform sampler2D trans;
-uniform float time;
+uniform samplerCube sky_box_tex;
+uniform sampler2D sky_map_tex;
+uniform sampler2D solid_tex;
+uniform sampler2D trans_tex;
 
 const float SCALE = 189.0 / 64.0;
 
 vec4
-sky_color (vec3 dir)
+sky_map (vec3 dir, float time)
+{
+	const float pi = 3.14159265358979;
+	// equirectangular images go from left to right, top to bottom, but
+	// the computed angles go right to left, bottom to top, so both need
+	// to be flipped for the maps to be the right way round.
+	const vec2 conv = vec2(-1.0/(2.0*pi), -1.0/pi);
+
+	vec3 rid = -dir;
+	float x1 = atan (dir.y, dir.x);
+	float x2 = atan (rid.y, rid.x);
+	float y = atan (dir.z, length(dir.xy));
+	vec2 uv1 = vec2 (x1, y) * conv + vec2(0.5, 0.5);
+	vec2 uv2 = vec2 (x2, y) * conv + vec2(0.0, 0.5);
+	vec2 uv = fwidth(uv1.x) > 0.5 ? uv2 : uv1;
+	return texture2D (sky_map_tex, uv);
+}
+
+vec4
+sky_box (vec3 dir, float time)
+{
+	// NOTE: quake's world and GL's world are rotated relative to each
+	// other quake has x right, y in, z up. gl has x right, y up, z out
+	// The textures are loaded with GL's z (quake's y) already negated, so
+	// all that's needed here is to swizzle y and z.
+	return textureCube(sky_box_tex, dir.xzy);
+}
+
+vec4
+sky_sheet (vec3 dir, float time)
 {
 	float       len;
 	float       pix;
@@ -239,12 +255,34 @@ sky_color (vec3 dir)
 
 	base = dir.yx * vec2(1.0, -1.0) * len;
 	st = base + flow * time / 8.0;
-	pix = texture2D (trans, st).r;
+	pix = texture2D (trans_tex, st).r;
 	if (pix == 0.0) {
 		st = base + flow * time / 16.0;
-		pix = texture2D (solid, st).r;
+		pix = texture2D (solid_tex, st).r;
 	}
 	return palettedColor (pix);
+}
+
+vec4
+sky_color (vec3 dir, float time, int control)
+{
+	if ((control & 1) == 0) {
+		if ((control & 4) != 0) {
+			return sky_map (dir, time);
+		} else {
+			return sky_box (dir, time);
+		}
+	} else if ((control & 6) == 0) {
+		return sky_sheet (dir, time);
+	} else {
+		// can see through the sheet (may look funny when looking down)
+		// maybe have 4 sheet layers instead of 2?
+		vec4        c1 = sky_sheet (dir, time);
+		vec4        c2 = (control & 4) != 0 ? sky_map (dir, time)
+											: sky_box (dir, time);
+		return vec4 (mix (c2.rgb, c1.rgb, c1.a), max (c1.a, c2.a));
+		//return vec4 (1, 0, 1, 1);
+	}
 }
 
 -- Vertex.mdl
@@ -308,6 +346,7 @@ main (void)
 
 uniform mat4 mvp_mat;
 uniform mat4 sky_mat;
+uniform int control;
 
 attribute vec4 vertex;
 attribute vec4 tlst;
@@ -321,8 +360,18 @@ varying vec3 direction;
 void
 main (void)
 {
-	gl_Position = mvp_mat * vertex;
-	direction = (sky_mat * vertex).xyz;
+	if ((control & 8) != 0) {
+		vec4        v = vec4 (gl_VertexID & 2, gl_VertexID & 1, 1, 1);
+		v = vec4 (2, 4, 1, 1) * v - vec4 (1, 1, 0, 0);
+		gl_Position = v;
+		// mvp_mat is actually the inverse of vp
+		vec4 dir = mvp_mat * v;
+		dir /= dir.w;
+		direction = dir.xyz;//(sky_mat * vec4(dir.xyz, 0)).xyz;
+	} else {
+		gl_Position = mvp_mat * vertex;
+		direction = (sky_mat * vertex).xyz;
+	}
 	tst = tlst.st;
 	lst = tlst.pq;
 	color = vcolor;
@@ -377,11 +426,13 @@ main (void)
 -- Fragment.bsp.sky
 
 varying vec3 direction;
+uniform int control;
+uniform float time;
 
 void
 main (void)
 {
-	vec4        c = sky_color (direction);
+	vec4        c = sky_color (direction, time, control);
 	gl_FragColor = fogBlend (c);
 }
 
