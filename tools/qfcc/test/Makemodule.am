@@ -63,7 +63,10 @@ test_progs_dat=\
 	tools/qfcc/test/link_order.dat \
 	tools/qfcc/test/lost-use.dat \
 	tools/qfcc/test/methodparams.dat \
+	tools/qfcc/test/mirror.dat \
 	tools/qfcc/test/modulo.dat \
+	tools/qfcc/test/motor-point.dat \
+	tools/qfcc/test/motor-xform.dat \
 	tools/qfcc/test/move_def.dat \
 	tools/qfcc/test/normjoin.dat \
 	tools/qfcc/test/nilparamret.dat \
@@ -80,15 +83,13 @@ test_progs_dat=\
 	tools/qfcc/test/ptrincinout2.dat \
 	tools/qfcc/test/ptrstructcast.dat \
 	tools/qfcc/test/ptrstructinit.dat \
-	tools/qfcc/test/mirror.dat \
-	tools/qfcc/test/motor-point.dat \
-	tools/qfcc/test/motor-xform.dat \
 	tools/qfcc/test/quaternion.dat \
 	tools/qfcc/test/reproto.dat \
 	tools/qfcc/test/return-ivar.dat \
 	tools/qfcc/test/return-postop.dat \
 	tools/qfcc/test/sendv.dat \
 	tools/qfcc/test/sizeof.dat \
+	tools/qfcc/test/split-kill.dat \
 	tools/qfcc/test/state.dat \
 	tools/qfcc/test/static-init.dat \
 	tools/qfcc/test/struct-init-param.dat \
@@ -1058,6 +1059,16 @@ tools/qfcc/test/sizeof.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(sizeof_dep) # am--include-marker
 r_depfiles_remade += $(sizeof_dep)
+
+tools_qfcc_test_split_kill_dat_SOURCES=tools/qfcc/test/split-kill.r
+split_kill_obj=$(tools_qfcc_test_split_kill_dat_SOURCES:.r=.o)
+split_kill_dep=$(call qcautodep,$(tools_qfcc_test_split_kill_dat_SOURCES))
+tools/qfcc/test/split-kill.dat$(EXEEXT): $(split_kill_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(split_kill_obj)
+tools/qfcc/test/split-kill.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(split_kill_dep) # am--include-marker
+r_depfiles_remade += $(split_kill_dep)
 
 tools_qfcc_test_state_dat_SOURCES=tools/qfcc/test/state.r
 state_obj=$(tools_qfcc_test_state_dat_SOURCES:.r=.o)
