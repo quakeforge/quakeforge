@@ -829,29 +829,54 @@ flow_build_vars (function_t *func)
 	set_delete (stdef);
 }
 
+typedef struct split_kill_s {
+	set_t      *kill;
+	function_t *func;
+} split_kill_t;
+
+static void
+split_kill (split_kill_t *sk, flowvar_t *var)
+{
+	auto def = set_new ();
+	for (auto d = set_first (var->define); d; d = set_next (d)) {
+		if (!set_is_member (sk->func->real_statements, d->element)) {
+			// dummy statements in a var's define set are always fully killed
+			// by an assignment to that var since they represent single
+			// addresses (FIXME double check, but this seems to be true)
+			set_add (sk->kill, d->element);
+			continue;
+		}
+		auto st = sk->func->statements[d->element];
+		flow_analyze_statement (st, nullptr, def, nullptr, nullptr);
+		set_remove (def, var->number);
+		if (set_is_empty (def)) {
+			set_add (sk->kill, d->element);
+		}
+	}
+	set_delete (def);
+}
+
 /**	Add the tempop's spanned addresses to the kill set
  */
 static int
-flow_tempop_kill_aliases (tempop_t *tempop, void *_kill)
+flow_tempop_kill_aliases (tempop_t *tempop, void *_sk)
 {
-	set_t      *kill = (set_t *) _kill;
-	flowvar_t  *var;
-	var = tempop->flowvar;
-	if (var)
-		set_union (kill, var->define);
+	split_kill_t *sk = _sk;
+	if (tempop->flowvar) {
+		split_kill (sk, tempop->flowvar);
+	}
 	return 0;
 }
 
 /**	Add the def's spanned addresses to the kill set
  */
 static int
-flow_def_kill_aliases (def_t *def, void *_kill)
+flow_def_kill_aliases (def_t *def, void *_sk)
 {
-	set_t      *kill = (set_t *) _kill;
-	flowvar_t  *var;
-	var = def->flowvar;
-	if (var)
-		set_union (kill, var->define);
+	split_kill_t *sk = _sk;
+	if (def->flowvar) {
+		split_kill (sk, def->flowvar);
+	}
 	return 0;
 }
 
@@ -863,29 +888,33 @@ flow_def_kill_aliases (def_t *def, void *_kill)
  *	However, other aliases cannot kill anything in the uninitialized set.
  */
 static void
-flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
+flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit,
+				   function_t *func)
 {
 	operand_t  *op;
-	set_t      *tmp;
+	split_kill_t sk = {
+		.kill = kill,
+		.func = func,
+	};
 
-	set_union (kill, var->define);
+	split_kill (&sk, var);
 	op = var->op;
-	tmp = set_new ();
+	sk.kill = set_new ();
 	// collect the kill sets from any aliases
 	if (op->op_type == op_temp) {
 		tempop_visit_all (&op->tempop, dol_partial,
-						  flow_tempop_kill_aliases, tmp);
+						  flow_tempop_kill_aliases, &sk);
 	} else if (op->op_type == op_def) {
 		def_visit_all (op->def, dol_only_alias | dol_partial,
-					   flow_def_kill_aliases, tmp);
+					   flow_def_kill_aliases, &sk);
 	}
 	// don't allow aliases to kill definitions in the entry dummy block
 	if (uninit) {
-		set_difference (tmp, uninit);
+		set_difference (sk.kill, uninit);
 	}
 	// merge the alias kills with the current def's kills
-	set_union (kill, tmp);
-	set_delete (tmp);
+	set_union (kill, sk.kill);
+	set_delete (sk.kill);
 }
 
 static int
@@ -1361,7 +1390,7 @@ flow_statement_reaching (statement_t *st, reaching_t *r)
 
 	for (auto var_i = set_first (r->stdef); var_i; var_i = set_next (var_i)) {
 		flowvar_t  *var = r->vars[var_i->element];
-		flow_kill_aliases (r->stkill, var, r->uninit);
+		flow_kill_aliases (r->stkill, var, r->uninit, r->func);
 		set_remove (r->stkill, st->number);
 		set_add (r->stgen, st->number);
 	}
@@ -1374,7 +1403,8 @@ flow_statement_reaching (statement_t *st, reaching_t *r)
 				set_difference (r->tmp, r->func->real_statements);
 			}
 			var.define = r->tmp;
-			flow_kill_aliases (r->stkill, &var, r->func->real_statements);
+			flow_kill_aliases (r->stkill, &var, r->func->real_statements,
+							   r->func);
 			set_remove (r->stkill, st->number);
 			set_add (r->stgen, st->number);
 		}
@@ -1558,52 +1588,6 @@ flow_record_end (statement_t *st, reaching_t *r)
 	r->num_use[st->number] = r->num_ud_chains - r->first_use[st->number];
 }
 
-typedef struct {
-	set_t      *set;
-	int         size;
-	flowvar_t  *found;
-} phantom_t;
-
-static int
-tempop_find_phantom (tempop_t *tempop, void *data)
-{
-	phantom_t *phantom = data;
-	// not a phantom use if the alias is the same size because it's a full
-	// write
-	if (!tempop->alias && type_size (tempop->type) != phantom->size) {
-		set_union (phantom->set, tempop->flowvar->define);
-		phantom->found = tempop->flowvar;
-	}
-	return 0;
-}
-
-static int
-def_find_phantom (def_t *def, void *data)
-{
-	phantom_t *phantom = data;
-	// not a phantom use if the alias is the same size because it's a full
-	// write
-	if (!def->alias && type_size (def->type) != phantom->size) {
-		set_union (phantom->set, def->flowvar->define);
-		phantom->found = def->flowvar;
-	}
-	return 0;
-}
-
-static flowvar_t *
-find_phantom (set_t *defs, flowvar_t *var)
-{
-	auto op = var->op;
-	phantom_t ph = { .set = defs, .size = type_size (op->type) };
-	set_empty (defs);
-	if (op->op_type == op_temp && op->tempop.alias) {
-		tempop_visit_all (&op->tempop, dol_none, tempop_find_phantom, &ph);
-	} else if (op->op_type == op_def && op->def->alias) {
-		def_visit_all (op->def, dol_none, def_find_phantom, &ph);
-	}
-	return ph.found;
-}
-
 static void
 flow_chain_core (flowgraph_t *graph, reaching_t *reach,
 				 void (*start) (statement_t *st, reaching_t *r),
@@ -1632,30 +1616,6 @@ flow_chain_core (flowgraph_t *graph, reaching_t *reach,
 
 				if (record) {
 					record (st, vi->element, reach);
-				}
-			}
-			// look for phantom uses: partial writes to a variable (eg
-			// `vec.y = 1` "use" vec to set `vec.x` (and any other members)
-			// to their current values, thus keeping previous definitions
-			// alive while actually setting only `vec.y`.
-			// FIXME(?) While this works for what I wanted, I'm not sure that
-			// the use of the full define not getting past the write is
-			// correct. alias_vec_live.r has `len` defined on 3 and used on 6,
-			// which is as intended, but its use on 7 is "lost" (blocked by
-			// the partial define on 6). However, all tests pass and nothing
-			// appears to be broken. Hopefully this will help future me catch
-			// up quickly if this becomes a problem in the future.
-			for (set_iter_t *vi = set_first (reach->stdef); vi;
-				 vi = set_next (vi)) {
-				auto var = reach->vars[vi->element];
-				auto phantom = find_phantom (reach->tmp, var);
-				if (phantom) {
-					set_intersection (reach->tmp, reach->gen);
-					set_intersection (reach->tmp, reach->func->real_statements);
-
-					if (record) {
-						record (st, phantom->number, reach);
-					}
 				}
 			}
 
@@ -2257,7 +2217,8 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				if (kill) {
 					for (i = 1; i < num_flow_params; i++) {
 						flowvar_t  *var = flow_get_var (&flow_params[i].op);
-						flow_kill_aliases (kill, var, 0);
+						flow_kill_aliases (kill, var, nullptr,
+										   current_func);	//FIXME global
 					}
 				}
 			}
