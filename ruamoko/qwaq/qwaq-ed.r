@@ -135,6 +135,7 @@ enum {
 	qent_body,
 	qent_transform,
 	qent_collider,
+	qent_grav,
 
 	qent_comp_count
 };
@@ -155,6 +156,10 @@ static component_t qwaq_components[] = {
 	[qent_collider] = {
 		.size = sizeof (collider_t),
 		.name = "collider",
+	},
+	[qent_grav] = {
+		.size = sizeof (bool),
+		.name = "grav",
 	},
 };
 
@@ -1170,18 +1175,22 @@ update_block_state(state_t state, body_t body, transform_t xform)
 		state.B += h * ds.B;
 		state.M = normalize (state.M);
 	}
-	auto M = state.M * body.R;
-	set_transform (M, xform);
-	//draw_principle_axes (state.M, body.I);
-	{
-		auto mat = Transform_GetWorldMatrix (xform);
-		vec4 x = mat[0];
-		vec4 y = mat[1];
-		vec4 z = mat[2];
-		vec4 p = mat[3];
-		Gizmo_AddCapsule (p, p + x, 0.025, vec4(1, 0, 0, 0.2));
-		Gizmo_AddCapsule (p, p + y, 0.025, vec4(0, 1, 0, 0.2));
-		Gizmo_AddCapsule (p, p + z, 0.025, vec4(0, 0, 1, 0.2));
+	return state;
+}
+
+state_t
+update_grav_state(state_t state, body_t body, transform_t xform)
+{
+	@algebra(PGA) {
+		float h = frametime / 100;
+		for (int i = 0; i < 100; i++) {
+			bivector_t grav = ⋆((~state.M * (-0.0981f * e03) * state.M));
+
+			auto ds = dState (state, grav, &body);
+			state.M += h * ds.M;
+			state.B += h * ds.B;
+			state.M = normalize (state.M);
+		}
 	}
 	return state;
 }
@@ -1197,8 +1206,26 @@ update_physics (uint ent)
 	get_component (ent, qent_body, &body);
 	get_component (ent, qent_transform, &xform);
 
-	state = update_block_state (state, body, xform);
+	if (has_component (ent, qent_grav)) {
+		state = update_grav_state (state, body, xform);
+	} else {
+		state = update_block_state (state, body, xform);
+	}
 	set_component (ent, qent_state, &state);
+
+	auto M = state.M * body.R;
+	set_transform (M, xform);
+	//draw_principle_axes (state.M, body.I);
+	{
+		auto mat = Transform_GetWorldMatrix (xform);
+		vec4 x = mat[0];
+		vec4 y = mat[1];
+		vec4 z = mat[2];
+		vec4 p = mat[3];
+		Gizmo_AddCapsule (p, p + x, 0.025, vec4(1, 0, 0, 0.2));
+		Gizmo_AddCapsule (p, p + y, 0.025, vec4(0, 1, 0, 0.2));
+		Gizmo_AddCapsule (p, p + z, 0.025, vec4(0, 0, 1, 0.2));
+	}
 
 	if (has_component (ent, qent_collider)) {
 		mat4 mat = Transform_GetWorldMatrix(xform);
@@ -1431,6 +1458,7 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 	string model;
 	string mesh;
 	bool mesh_flag;
+	bool grav_flag;
 	uint submesh_mask;
 	vec4 mesh_param;
 	vec4 position;
@@ -1545,6 +1573,9 @@ load_scene (plitem_t *scene_item, scene_t scene)
 				set_component (e, qent_body, &body);
 				set_update (e, update_physics);
 			}
+		}
+		if (ent_init.grav_flag) {
+			set_component (e, qent_grav, &ent_init.grav_flag);
 		}
 		if (mesh) {
 			model = Model_LoadMesh (ent_init.name, mesh);

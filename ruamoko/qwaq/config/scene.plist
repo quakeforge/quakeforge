@@ -60,6 +60,7 @@
 		name = "Sphere";
 		mesh = create_quadsphere;
 		mesh_flag = true;
+		grav_flag = true;
 		position = (-4, -4, 1.5, 1);
 		avel = (0.5, 0.5, 0.5);
 		target = true;
