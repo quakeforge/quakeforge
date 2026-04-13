@@ -74,8 +74,9 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	} else {
 		imageSize = surfCaps.currentExtent;
 	}
-	Sys_MaskPrintf (SYS_vulkan, "swapchain: %d [%d, %d]\n", numImages,
-					imageSize.width, imageSize.height);
+	Sys_MaskPrintf (SYS_vulkan, "swapchain: %d [%d, %d] [%d, %d]\n", numImages,
+					imageSize.width, imageSize.height,
+					surfCaps.minImageCount, surfCaps.maxImageCount);
 
 	VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
