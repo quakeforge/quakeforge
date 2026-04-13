@@ -519,6 +519,20 @@ bi(Gizmo_AddBrush)
 	}
 }
 
+bi(Gizmo_AddPlane)
+{
+	qfZoneScoped (true);
+	if (r_funcs->gizmo.AddPlane) {
+		auto p = P_var (pr, 0, vec4);
+		auto s = P_var (pr, 1, vec4);
+		auto t = P_var (pr, 2, vec4);
+		auto gcol = P_QUAT (pr, 3);
+		auto scol = P_QUAT (pr, 4);
+		auto tcol = P_QUAT (pr, 5);
+		r_funcs->gizmo.AddPlane (p, s, t, gcol, scol, tcol);
+	}
+}
+
 bi(Painter_AddLine)
 {
 	qfZoneScoped (true);
@@ -714,6 +728,8 @@ static builtin_t builtins[] = {
 	bi(Gizmo_AddSphere,   3, p(vec3), p(float), p(vec4)),
 	bi(Gizmo_AddCapsule,  4, p(vec3), p(vec3), p(float), p(vec4)),
 	bi(Gizmo_AddBrush,    6, p(vec3), p(vec3), p(vec3), p(int), p(ptr),
+								p(vec4)),
+	bi(Gizmo_AddPlane,    6, p(vec4), p(vec4), p(vec4), p(vec4), p(vec4),
 								p(vec4)),
 
 	bi(Painter_AddLine,   4, p(vec2), p(vec2), p(float), p(vec4)),

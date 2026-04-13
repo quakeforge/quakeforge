@@ -130,6 +130,8 @@ typedef struct vid_gizmo_s {
 	void (*AddCapsule) (vec4f_t p1, vec4f_t p2, float r, const quat_t color);
 	void (*AddBrush) (vec4f_t orig, const vec4f_t bounds[2],
 					  int num_nodes, const gizmo_node_t *nodes, quat_t color);
+	void (*AddPlane) (vec4f_t p, vec4f_t s, vec4f_t t,
+					  quat_t gcol, quat_t scol, quat_t tcol);
 } vid_gizmo_t;
 
 typedef struct vid_painter_s {

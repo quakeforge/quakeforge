@@ -41,6 +41,9 @@ void Vulkan_Gizmo_AddCapsule (vec4f_t p1, vec4f_t p2, float r,
 void Vulkan_Gizmo_AddBrush (vec4f_t orig, const vec4f_t bounds[2],
 							int num_nodes, const gizmo_node_t *nodes,
 							quat_t color, vulkan_ctx_t *ctx);
+void Vulkan_Gizmo_AddPlane (vec4f_t s, vec4f_t t, vec4f_t p,
+							quat_t gcol, quat_t scol, quat_t tcol,
+							vulkan_ctx_t *ctx);
 
 
 #endif//__QF_Vulkan_qf_gizmo_h

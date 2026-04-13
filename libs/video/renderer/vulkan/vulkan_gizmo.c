@@ -97,6 +97,14 @@ typedef struct giz_brush_s {
 	// variable length: num_nodes * gizmo_node_t (packed)
 } giz_brush_t;
 
+typedef struct giz_plane_s {
+	uint32_t    cmd;
+	byte        gcol[4];
+	byte        scol[4];
+	byte        tcol[4];
+	float       p[3][4];
+} giz_plane_t;
+
 typedef struct gizmoframe_s {
 	VkBuffer    counts;
 	VkBuffer    queue;
@@ -104,6 +112,7 @@ typedef struct gizmoframe_s {
 	VkBuffer    objects;
 	VkBuffer    obj_ids;
 	uint32_t    num_obj_ids;
+	uint32_t    num_fs_obj_ids;
 
 	VkImage     queue_heads_image;
 	VkDescriptorSet set;
@@ -121,10 +130,12 @@ typedef struct gizmoctx_s {
 	gizmoframeset_t frames;
 	uint32_t    cmd_width;
 	uint32_t    cmd_height;
+	giz_data_t  fs_obj_ids;
 	giz_data_t  obj_ids;
 	giz_data_t  objects;
 
 	vec2f_t    *frag_size;
+	uint32_t   *full_screen;
 } gizmoctx_t;
 
 static void
@@ -338,10 +349,12 @@ gizmo_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	*gctx = (gizmoctx_t) {
 		.cmd_width = 240,//FIXME
 		.cmd_height = 135,//FIXME
+		.fs_obj_ids = DARRAY_STATIC_INIT (1024),
 		.obj_ids = DARRAY_STATIC_INIT (1024),
 		.objects = DARRAY_STATIC_INIT (1024),
 
 		.frag_size = QFV_GetBlackboardVar (ctx, "frag_size"),
+		.full_screen = QFV_GetBlackboardVar (ctx, "full_screen"),
 	};
 }
 
@@ -357,7 +370,8 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	size_t size = sizeof (giz_count_t)
 				+ sizeof (uint32_t[gctx->objects.size])
-				+ sizeof (uint32_t[gctx->obj_ids.size]);
+				+ sizeof (uint32_t[gctx->obj_ids.size])
+				+ sizeof (uint32_t[gctx->fs_obj_ids.size]);
 	byte *packet_start = QFV_PacketExtend (packet, size);
 	byte *packet_data = packet_start;
 
@@ -400,6 +414,22 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		memcpy (obj_ids, gctx->obj_ids.a,
 				sizeof (uint32_t[gctx->obj_ids.size]));
 		QFV_PacketScatterBuffer (packet, frame->obj_ids, 1, &obj_ids_scatter,
+				&bufferBarriers[qfv_BB_UniformRead_to_TransferWrite],
+				&bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
+	}
+	frame->num_fs_obj_ids = gctx->fs_obj_ids.size;
+	if (gctx->fs_obj_ids.size) {
+		qfv_scatter_t fs_obj_ids_scatter = {
+			.srcOffset = packet_data - packet_start,
+			.dstOffset = sizeof (uint32_t[gctx->obj_ids.size]),
+			.length = sizeof (uint32_t[gctx->fs_obj_ids.size]),
+		};
+		auto fs_obj_ids = (uint32_t *) packet_data;
+		packet_data += sizeof (uint32_t[gctx->fs_obj_ids.size]);
+		memcpy (fs_obj_ids, gctx->fs_obj_ids.a,
+				sizeof (uint32_t[gctx->fs_obj_ids.size]));
+		// append fs_obj_ids to obj_ids
+		QFV_PacketScatterBuffer (packet, frame->obj_ids, 1, &fs_obj_ids_scatter,
 				&bufferBarriers[qfv_BB_UniformRead_to_TransferWrite],
 				&bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
 	}
@@ -453,6 +483,7 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	gctx->objects.size = 0;
 	gctx->obj_ids.size = 0;
+	gctx->fs_obj_ids.size = 0;
 }
 
 static void
@@ -479,11 +510,20 @@ gizmo_draw_cmd (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		1.0 / gctx->cmd_width,
 		1.0 / gctx->cmd_height,
 	};
-	QFV_PushBlackboard (ctx, cmd, pipeline);
+	*gctx->full_screen = 0;
 
 	VkDeviceSize offsets[] = {0};
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &frame->obj_ids, offsets);
-	dfunc->vkCmdDraw(cmd, 72, frame->num_obj_ids, 0, 0);
+	if (frame->num_obj_ids) {
+		*gctx->full_screen = 0;
+		QFV_PushBlackboard (ctx, cmd, pipeline);
+		dfunc->vkCmdDraw(cmd, 72, frame->num_obj_ids, 0, 0);
+	}
+	if (frame->num_fs_obj_ids) {
+		*gctx->full_screen = 1;
+		QFV_PushBlackboard (ctx, cmd, pipeline);
+		dfunc->vkCmdDraw(cmd, 3, frame->num_fs_obj_ids, 0, frame->num_obj_ids);
+	}
 }
 
 static void
@@ -633,7 +673,8 @@ Vulkan_Gizmo_Init (vulkan_ctx_t *ctx)
 }
 
 static uint32_t *
-gizmo_add_object (void *obj, uint32_t size, uint32_t extra, vulkan_ctx_t *ctx)
+gizmo_add_object (void *obj, uint32_t size, uint32_t extra, bool fs,
+				  vulkan_ctx_t *ctx)
 {
 	auto gctx = ctx->gizmo_context;
 
@@ -644,7 +685,11 @@ gizmo_add_object (void *obj, uint32_t size, uint32_t extra, vulkan_ctx_t *ctx)
 	}
 	auto data = DARRAY_OPEN_AT (&gctx->objects, obj_id, count);
 	memcpy (data, obj, size);
-	DARRAY_APPEND (&gctx->obj_ids, obj_id);
+	if (fs) {
+		DARRAY_APPEND (&gctx->fs_obj_ids, obj_id);
+	} else {
+		DARRAY_APPEND (&gctx->obj_ids, obj_id);
+	}
 	return data + size / sizeof (uint32_t);
 }
 
@@ -658,7 +703,7 @@ Vulkan_Gizmo_AddSphere (vec4f_t c, float r, const quat_t color,
 		.r = r,
 	};
 	QuatScale (color, 255, sphere.col);
-	gizmo_add_object (&sphere, sizeof (sphere), 0, ctx);
+	gizmo_add_object (&sphere, sizeof (sphere), 0, false, ctx);
 }
 
 void
@@ -672,7 +717,7 @@ Vulkan_Gizmo_AddCapsule (vec4f_t p1, vec4f_t p2, float r, const quat_t color,
 		.r = r,
 	};
 	QuatScale (color, 255, capsule.col);
-	gizmo_add_object (&capsule, sizeof (capsule), 0, ctx);
+	gizmo_add_object (&capsule, sizeof (capsule), 0, false, ctx);
 }
 
 void
@@ -687,7 +732,8 @@ Vulkan_Gizmo_AddBrush (vec4f_t orig, const vec4f_t bounds[2],
 		.maxs = { VectorExpand (bounds[1]) },
 	};
 	QuatScale (color, 255, brush.col);
-	auto p = gizmo_add_object (&brush, sizeof (brush), 5 * num_nodes, ctx);
+	auto p = gizmo_add_object (&brush, sizeof (brush), 5 * num_nodes,
+							   false, ctx);
 	if (!p) {
 		return;
 	}
@@ -700,4 +746,34 @@ Vulkan_Gizmo_AddBrush (vec4f_t orig, const vec4f_t bounds[2],
 		uint32_t children = front | (back << 8);
 		*p++ = children;
 	}
+}
+
+void
+Vulkan_Gizmo_AddPlane (vec4f_t p, vec4f_t s, vec4f_t t,
+					   quat_t gcol, quat_t scol, quat_t tcol,
+					   vulkan_ctx_t *ctx)
+{
+	vec4f_t n = crossf (s, t);
+	vec4f_t d = p - loadxyzf (r_refdef.camera[3]);
+	vec4f_t S = dotf (t, t) * s - dotf (s, t) * t;
+	vec4f_t T = dotf (s, s) * t - dotf (s, t) * s;
+	vec4f_t dn = dotf (d, n);
+	vec4f_t Sd = dotf (S, d);
+	vec4f_t Td = dotf (T, d);
+	vec4f_t SS = dn * S - Sd * n;
+	vec4f_t TT = dn * T - Td * n;
+	vec4f_t nn = dotf (n, n) * n;
+
+	giz_plane_t plane = {
+		.cmd = 3,
+		.p = {
+			{SS[0], TT[0], nn[0], dn[0]},
+			{SS[1], TT[1], nn[1], 0},
+			{SS[2], TT[2], nn[2], 0},
+		},
+	};
+	QuatScale (gcol, 255, plane.gcol);
+	QuatScale (scol, 255, plane.scol);
+	QuatScale (tcol, 255, plane.tcol);
+	gizmo_add_object (&plane, sizeof (plane), 0, true, ctx);
 }

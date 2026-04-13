@@ -1038,7 +1038,7 @@ render_graph = {
 			layout = {
 				descriptorSets = (matrix_set, gizmo_set);
 				pushConstants = {
-					vertex = { frag_size = vec2; };
+					vertex = { frag_size = vec2; full_screen = uint; };
 				};
 			};
 		};

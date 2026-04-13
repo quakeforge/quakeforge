@@ -3,6 +3,7 @@
 
 #include "GLSL/image.h"
 #include "GLSL/general.h"
+#include "GLSL/fragment.h"
 
 [uniform, set(0), binding(0)] @block
 #include "matrices.h"
@@ -270,6 +271,47 @@ draw_brush (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	}
 }
 
+#include "infplane.finc"
+
+const float N = 128.0; // grid ratio
+vec3 gridTextureGradBox(const vec2 p, const vec2 ddx, const vec2 ddy)
+{
+	// filter kernel
+	vec2 w = max(abs(ddx), abs(ddy)) + 0.01;
+
+	// analytic (box) filtering
+	vec2 a = p + 0.5*w + vec2(0.5/N);
+	vec2 b = p - 0.5*w + vec2(0.5/N);
+	vec2 i = (floor(a)+min(fract(a)*N,1.0)-
+			  floor(b)-min(fract(b)*N,1.0))/(N*w);
+	//pattern
+	return vec3(1 - (1.0-i.x)*(1.0-i.y), i.x, i.y);
+}
+
+void
+draw_plane (uint ind, mat3 cam, vec3 vec, @inout vec4 color)
+{
+	auto gcol = asrgba (objects[ind + 0]);
+	auto scol = asrgba (objects[ind + 1]);
+	auto tcol = asrgba (objects[ind + 2]);
+	auto p = mat3x4(load_vec4 (ind + 3 + 0),
+					load_vec4 (ind + 3 + 4),
+					load_vec4 (ind + 3 + 8));
+
+	vec4 pst = plane_st (mat3(p), cam, vec);
+	vec2 st = pst.xy;
+	vec2 ddx_st = dFdx (st);
+	vec2 ddy_st = dFdy (st);
+	bool d = pst.w * p[0][3] > 0;
+	if (d) {
+		vec3 g = gridTextureGradBox(st, ddx_st, ddy_st);
+		float c1 = abs(st.y) < 0.5 ? g[2] : 0;
+		float c2 = abs(st.x) < 0.5 ? g[1] : 0;
+		float c0 = g[0] * (1 - c1) * (1 - c2);
+		color += gcol * c0 + scol * c1 + tcol * c2;
+	}
+}
+
 [shader("Fragment")]
 [capability("MultiView")]
 void main()
@@ -299,6 +341,7 @@ void main()
 		case 0: draw_sphere (obj_id + 1, v, eye, color); break;
 		case 1: draw_capsule (obj_id + 1, v, eye, color); break;
 		case 2: draw_brush (obj_id + 1, v, eye, color); break;
+		case 3: draw_plane (obj_id + 1, cam, vec3 (UV, 1), color); break;
 		}
 		queue_ind = next;
 	}

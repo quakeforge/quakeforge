@@ -10,6 +10,7 @@
 
 [push_constant] @block PushConstants {
 	vec2 frag_size;
+	uint full_screen;
 };
 
 [in(0)] uint vert_id;
@@ -100,17 +101,25 @@ transform (uint obj_id, uint vert, @inout vec3 vert_pos, @inout vec3 vert_norm)
 void
 main ()
 {
-	int ind = gl_VertexIndex / 6;
-	int nib = gl_VertexIndex % 6;
-	uint vert = (verts[ind] >> (4 * nib)) & 0xf;
-	auto vert_pos = vec3 (vert & 1, (vert & 2) >> 1, (vert & 4) >> 2) * 2 - 1;
-	auto vert_norm = vert_pos;
-	transform (vert_id, vert, vert_pos, vert_norm);
-	vec4 pos = Projection3d * (View[gl_ViewIndex] * vec4 (vert_pos, 1));
-	vec2 dir = (Projection3d * (View[gl_ViewIndex] * vec4 (vert_norm, 0))).xy;
-	vec2 ofs = mix (mix(vec2(0,0), vec2(1,1), dir > vec2(0,0)),
-					vec2(-1,-1), dir < vec2(0,0)) * pos.w;
-	pos = vec4 (pos.xy + ofs * frag_size, pos.zw);
-	gl_Position = pos;
+	if (full_screen) {
+		float       x = (gl_VertexIndex & 2);
+		float       y = (gl_VertexIndex & 1);
+		gl_Position = vec4 (2, 4, 0, 1) * vec4 (x, y, 0, 1) - vec4 (1, 1, 0, 0);
+	} else {
+		int ind = gl_VertexIndex / 6;
+		int nib = gl_VertexIndex % 6;
+		uint vert = (verts[ind] >> (4 * nib)) & 0xf;
+		auto vert_pos = vec3 (vert & 1,
+							  (vert & 2) >> 1,
+							  (vert & 4) >> 2) * 2 - 1;
+		auto vert_norm = vert_pos;
+		transform (vert_id, vert, vert_pos, vert_norm);
+		vec4 pos = Projection3d * (View[gl_ViewIndex] * vec4 (vert_pos, 1));
+		vec2 dir = (Projection3d * (View[gl_ViewIndex] * vec4 (vert_norm, 0))).xy;
+		vec2 ofs = mix (mix(vec2(0,0), vec2(1,1), dir > vec2(0,0)),
+						vec2(-1,-1), dir < vec2(0,0)) * pos.w;
+		pos = vec4 (pos.xy + ofs * frag_size, pos.zw);
+		gl_Position = pos;
+	}
 	obj_id = vert_id;
 }
