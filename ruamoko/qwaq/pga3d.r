@@ -194,6 +194,47 @@ dState (state_t s, bivector_t f, body_t *body)
 }
 
 void
+impact (state_t *s1, state_t *s2, body_t *b1, body_t *b2, point_t Q, plane_t n,
+		float rho)
+{
+	auto N = n • Q;
+	auto i1 = b1.Ii @hadamard ⋆N;
+	auto i2 = b2.Ii @hadamard ⋆N;
+	float J = (Q ∨ Q × (s2.B - s1.B) • ~N) / (Q ∨ Q × (i2 + i1) • ~N);
+	float j = (1 + rho) * J;
+	s2.B += j * i2;
+	s1.B -= j * i1;
+}
+
+void
+impact2(state_t *s1, state_t *s2, body_t *b1, body_t *b2, point_t Q, plane_t n,
+		float rho)
+{
+	auto N = n • Q;
+	auto M1 = s1.M * b1.R;
+	auto M2 = s2.M * b1.R;
+	auto N1 = ~M1 * N * M1;
+	auto N2 = ~M2 * N * M2;
+	auto Q1 = ~M1 * Q * M1;
+	auto Q2 = ~M2 * Q * M2;
+	auto i1 = b1.Ii @hadamard ⋆N1;
+	auto i2 = b2.Ii @hadamard ⋆N2;
+	auto n1 = (Q1 ∨ (Q1 × s1.B)) • ~N1;
+	auto n2 = (Q2 ∨ (Q2 × s2.B)) • ~N2;
+	auto d1 = (Q1 ∨ (Q1 × i1)) • ~N1;
+	auto d2 = (Q2 ∨ (Q2 × i2)) • ~N2;
+	float J = (1 + rho) * (n2 - n1) / (d1 + d2);
+	s2.B -= J * i2;
+	s1.B += J * i1;
+}
+
+bivector_t
+reject (bivector_t a, bivector_t b)
+{
+	return a - a • b * ~b * (1 / (b • ~b));
+}
+
+void
 draw_3dline (transform_t camera, vec4 p1, vec4 p2, int color)
 {
 	auto camp = Transform_GetWorldPosition (camera);

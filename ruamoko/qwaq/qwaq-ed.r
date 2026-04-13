@@ -1196,6 +1196,211 @@ update_grav_state(state_t state, body_t body, transform_t xform)
 }
 
 void
+draw_axes (transform_t xform)
+{
+	//draw_principle_axes (state.M, body.I);
+	auto mat = Transform_GetWorldMatrix (xform);
+	vec4 x = mat[0];
+	vec4 y = mat[1];
+	vec4 z = mat[2];
+	vec4 p = mat[3];
+	Gizmo_AddCapsule (p, p + x, 0.025, vec4(1, 0, 0, 0.2));
+	Gizmo_AddCapsule (p, p + y, 0.025, vec4(0, 1, 0, 0.2));
+	Gizmo_AddCapsule (p, p + z, 0.025, vec4(0, 0, 1, 0.2));
+}
+
+void
+draw_collider (collider_t col, transform_t xform)
+{
+	mat4 mat = Transform_GetWorldMatrix(xform);
+	switch (col.type) {
+	case col_plane:
+	{
+		@algebra (PGA) {
+			auto plane = col.plane;
+			// Gizmo_AddPlane expects a point and two spanning vectors
+			// so it knows where the plane's origin is (for the grid)
+			auto P = (plane • e123) * plane;
+			auto p = mat * (vec4)(P / ⋆(e0 * P));
+			auto s = mat[0];//FIXME assumes plane is in x-y
+			auto t = mat[1];
+			auto c1= vec4(0.8, 1, 0.8, 0.5);
+			auto c2= vec4(0.8, 0, 0, 0.5);
+			auto c3= vec4(0, 0.8, 0, 0.5);
+			Gizmo_AddPlane (p, s, t, c1, c2, c3);
+		}
+		break;
+	}
+	case col_ball:
+		Gizmo_AddSphere (mat * vec4(col.ball.offset, 1), col.ball.radius,
+						 vec4(0.8, 0.4, 0.2, 0.9));
+		break;
+	case col_capsule:
+	{
+		vec4 p1 = vec4 (col.capsule.offset + col.capsule.axis, 1);
+		vec4 p2 = vec4 (col.capsule.offset - col.capsule.axis, 1);
+		Gizmo_AddCapsule (mat * p1, mat * p2, col.capsule.radius,
+						 vec4(0.2, 0.8, 0.9, 0.9));
+		break;
+	}
+	}
+}
+
+uint max_collider_ents = 0;
+uint num_collider_ents = 0;
+uint *collider_ents;
+
+typedef struct contact_s {
+	point_t world_a, world_b;
+	point_t local_a, local_b;
+	plane_t normal;
+	float separation;
+	float time;
+	uint a, b;
+} contact_t;
+
+typedef bool (*get_contact_t) (uint a, collider_t acol,
+							   uint b, collider_t bcol,
+							   contact_t *contact);
+
+bool get_contact_plane_ball (uint a, collider_t acol,
+							 uint b, collider_t bcol,
+							 contact_t *contact)
+{
+	state_t aS, bS;
+	body_t aB, bB;
+	get_component (a, qent_state, &aS);
+	get_component (b, qent_state, &bS);
+	get_component (a, qent_body, &aB);
+	get_component (b, qent_body, &bB);
+	auto aM = aS.M * aB.R;
+	auto bM = bS.M * bB.R;
+
+	auto p = aM * acol.plane * ~aM;
+	//FIXME bug in qfcc
+	//auto P = bM * (point_t) vec4(bcol.ball.offset, 1) * ~bM;
+	auto P = (point_t) vec4(bcol.ball.offset, 1);
+	P = bM * P * ~bM;
+	float r = bcol.ball.radius;
+	float d = p ∨ P;
+	if (d <= r) {
+		@algebra (PGA) {
+			auto n = p * e0123;
+			auto world_a = (P • p) * p;
+			auto world_b = P - r * n;
+			*contact = {
+				.world_a = world_a,
+				.world_b = world_b,
+				.local_a = ~aM * world_a * aM,
+				.local_b = ~bM * world_b * bM,
+				.normal = @undual (n),
+				.separation = d - r,
+				.a = a,
+				.b = b,
+			};
+			return true;
+		}
+	}
+	return false;
+}
+
+bool get_contact_plane_capsule (uint a, collider_t acol,
+								uint b, collider_t bcol,
+								contact_t *contact)
+{
+	return false;
+}
+
+bool get_contact_ball_ball (uint a, collider_t acol,
+							uint b, collider_t bcol,
+							contact_t *contact)
+{
+	return false;
+}
+
+bool get_contact_ball_capsule (uint a, collider_t acol,
+							   uint b, collider_t bcol,
+							   contact_t *contact)
+{
+	return false;
+}
+
+bool get_contact_capsule_capsule (uint a, collider_t acol,
+								  uint b, collider_t bcol,
+								  contact_t *contact)
+{
+	return false;
+}
+
+bool get_contact_ball_plane (uint a, collider_t acol,
+							 uint b, collider_t bcol,
+							 contact_t *contact)
+{
+	return get_contact_plane_ball (b, bcol, a, acol, contact);
+}
+
+bool get_contact_capsule_plane (uint a, collider_t acol,
+								uint b, collider_t bcol,
+								contact_t *contact)
+{
+	return get_contact_plane_capsule (b, bcol, a, acol, contact);
+}
+
+bool get_contact_capsule_ball (uint a, collider_t acol,
+							   uint b, collider_t bcol,
+							   contact_t *contact)
+{
+	return get_contact_ball_capsule (b, bcol, a, acol, contact);
+}
+
+get_contact_t get_contact[3][3] = {
+	//col_plane
+	{
+		nil,	// two infinite planes almost always collide, so ignore
+		get_contact_plane_ball,
+		get_contact_plane_capsule,
+	},
+	{
+		get_contact_ball_plane,
+		get_contact_ball_ball,
+		get_contact_ball_capsule,
+	},
+	{
+		get_contact_capsule_plane,
+		get_contact_capsule_ball,
+		get_contact_capsule_capsule,
+	},
+};
+
+void
+resolve_contact (contact_t *contact)
+{
+	state_t aS, bS;
+	body_t aB, bB;
+	get_component (contact.a, qent_state, &aS);
+	get_component (contact.a, qent_body, &aB);
+	get_component (contact.b, qent_state, &bS);
+	get_component (contact.b, qent_body, &bB);
+	float aM = aB.Ii.bvect[0];
+	float bM = bB.Ii.bvect[0];
+	float ad = contact.separation * aM / (aM + bM);
+	float bd = contact.separation * bM / (aM + bM);
+	@algebra (PGA) {
+		// separation is negative
+		auto aD = 1 - e0 * ad * contact.normal * 0.5;
+		auto bD = 1 + e0 * bd * contact.normal * 0.5;
+		aS.M = aD * aS.M;
+		bS.M = bD * bS.M;
+
+		auto Q = aD * contact.world_a * ~aD;
+		printf ("%q\n", Q);
+		impact2(&aS, &bS, &aB, &bB, Q, contact.normal, 1);
+	};
+	set_component (contact.a, qent_state, &aS);
+	set_component (contact.b, qent_state, &bS);
+}
+
+void
 update_physics (uint ent)
 {
 	state_t state;
@@ -1215,53 +1420,35 @@ update_physics (uint ent)
 
 	auto M = state.M * body.R;
 	set_transform (M, xform);
-	//draw_principle_axes (state.M, body.I);
-	{
-		auto mat = Transform_GetWorldMatrix (xform);
-		vec4 x = mat[0];
-		vec4 y = mat[1];
-		vec4 z = mat[2];
-		vec4 p = mat[3];
-		Gizmo_AddCapsule (p, p + x, 0.025, vec4(1, 0, 0, 0.2));
-		Gizmo_AddCapsule (p, p + y, 0.025, vec4(0, 1, 0, 0.2));
-		Gizmo_AddCapsule (p, p + z, 0.025, vec4(0, 0, 1, 0.2));
-	}
+	draw_axes (xform);
 
 	if (has_component (ent, qent_collider)) {
-		mat4 mat = Transform_GetWorldMatrix(xform);
+		//FIXME O(N^2)
 		collider_t col;
 		get_component (ent, qent_collider, &col);
-		switch (col.type) {
-		case col_plane:
-		{
-			@algebra (PGA) {
-				auto plane = col.plane;
-				// Gizmo_AddPlane expects a point and two spanning vectors
-				// so it knows where the plane's origin is (for the grid)
-				auto P = (plane • e123) * plane;
-				auto p = mat * (vec4)(P / ⋆(e0 * P));
-				auto s = mat[0];//FIXME assumes plane is in x-y
-				auto t = mat[1];
-				auto c1= vec4(0.8, 1, 0.8, 0.5);
-				auto c2= vec4(0.8, 0, 0, 0.5);
-				auto c3= vec4(0, 0.8, 0, 0.5);
-				Gizmo_AddPlane (p, s, t, c1, c2, c3);
+		draw_collider (col, xform);
+		for (uint i = 0; i < num_collider_ents; i++) {
+			uint        oent = collider_ents[i];
+			collider_t  ocol;
+			get_component (oent, qent_collider, &ocol);
+
+			auto gc = get_contact[col.type][ocol.type];
+			if (!gc) {
+				continue;
 			}
-			break;
+			contact_t contact;
+			if (!gc (ent, col, oent, ocol, &contact)) {
+				continue;
+			}
+			state_t ostate;
+			body_t obody;
+			//printf ("%x %x %q %q %q %q %q %f\n", contact.a, contact.b,
+			//		contact.world_a, contact.world_b,
+			//		contact.local_a, contact.local_b,
+			//		contact.normal, contact.separation);
+			resolve_contact (&contact);
 		}
-		case col_ball:
-			Gizmo_AddSphere (mat * vec4(col.ball.offset, 1), col.ball.radius,
-							 vec4(0.8, 0.4, 0.2, 0.9));
-			break;
-		case col_capsule:
-		{
-			vec4 p1 = vec4 (col.capsule.offset + col.capsule.axis, 1);
-			vec4 p2 = vec4 (col.capsule.offset - col.capsule.axis, 1);
-			Gizmo_AddCapsule (mat * p1, mat * p2, col.capsule.radius,
-							 vec4(0.2, 0.8, 0.9, 0.9));
-			break;
-		}
-		}
+		collider_ents[num_collider_ents++] = ent;
 	}
 }
 
@@ -1559,6 +1746,7 @@ load_scene (plitem_t *scene_item, scene_t scene)
 			set_component (e, qent_transform, &xform);
 		}
 		if (have_collider) {
+			max_collider_ents++;
 			set_component (e, qent_collider, &collider);
 			if (!mesh) {
 				body_t body = {};//infinite mass
@@ -1605,6 +1793,8 @@ load_scene (plitem_t *scene_item, scene_t scene)
 		arp_end ();
 		arp_start ();
 	}
+
+	collider_ents = obj_malloc (sizeof (uint) * max_collider_ents);
 }
 
 int
@@ -1735,6 +1925,7 @@ main (int argc, string *argv)
 	}
 	//create_cube ();
 	while (true) {
+		num_collider_ents = 0;
 		arp_end ();
 		arp_start ();
 

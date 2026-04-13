@@ -42,11 +42,11 @@ typedef struct collider_s {
 	union {
 		plane_t plane;
 		struct {
-			vec3 offset;	// point_t with implied 0 e123
+			vec3 offset;	// point_t with implied 1 e123
 			float radius;
 		} ball;
 		struct {
-			vec3 offset;	// point_t with implied 0 e123
+			vec3 offset;	// point_t with implied 1 e123
 			float radius;
 			vec3 axis;		// point_t with implied 0 e123
 		} capsule;
@@ -58,6 +58,8 @@ typedef struct collider_s {
 @overload state_t dState (state_t s, bivector_t f);
 @overload state_t dState (state_t s, body_t *body);
 @overload state_t dState (state_t s, bivector_t f, body_t *body);
+void impact2(state_t *s1, state_t *s2, body_t *b1, body_t *b2,
+			 point_t Q, plane_t n, float rho);
 
 void draw_3dline (transform_t camera, vec4 p1, vec4 p2, int color);
 void create_cube ();
