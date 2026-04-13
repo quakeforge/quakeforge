@@ -115,6 +115,8 @@ void Gizmo_AddSphere (vec4 c, float r, vec4 color) = #0;
 void Gizmo_AddCapsule (vec4 p1, vec4 p2, float r, vec4 color) = #0;
 void Gizmo_AddBrush (vec4 orig, vec4 mins, vec4 maxs,
 					 int num_nodes, gizmo_node_t *nodes, vec4 color) = #0;
+void Gizmo_AddPlane (vec4 p, vec4 s, vec4 t,
+					 vec4 gcol, vec4 scol, vec4 tcol) = #0;
 
 void Painter_AddLine (vec2 p1, vec2 p2, float r, vec4 color) = #0;
 void Painter_AddCircle (vec2 c, float r, vec4 color) = #0;
@@ -1205,18 +1207,19 @@ update_physics (uint ent)
 		switch (col.type) {
 		case col_plane:
 		{
-			auto plane = (vec4)col.plane;
-			auto n = mat * vec4(plane.xyz, 0);
-			n /= sqrt (n • n);
-			auto p1 = vec4(n.xyz, plane.w);
-			auto p2 = vec4(-n.xyz, plane.w - 0.01);
-			gizmo_node_t plane_brush[] = {
-				{ .plane = p1, .children = { -1,  1 } },
-				{ .plane = p2, .children = { -1, -2 } },
-			};
-			Gizmo_AddBrush (mat[3], {-100,-100,-1}, {100,100,1},
-							countof (plane_brush), plane_brush,
-							vec4(0.1, 0.3, 0.05, 0.5));
+			@algebra (PGA) {
+				auto plane = col.plane;
+				// Gizmo_AddPlane expects a point and two spanning vectors
+				// so it knows where the plane's origin is (for the grid)
+				auto P = (plane • e123) * plane;
+				auto p = mat * (vec4)(P / ⋆(e0 * P));
+				auto s = mat[0];//FIXME assumes plane is in x-y
+				auto t = mat[1];
+				auto c1= vec4(0.8, 1, 0.8, 0.5);
+				auto c2= vec4(0.8, 0, 0, 0.5);
+				auto c3= vec4(0, 0.8, 0, 0.5);
+				Gizmo_AddPlane (p, s, t, c1, c2, c3);
+			}
 			break;
 		}
 		case col_ball:
