@@ -392,7 +392,7 @@ build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
 		}
 
 		auto e = arguments[i];
-		if (is_algebra (arg_types[i])) {
+		if (is_algebra (arg_types[i]) && !(param_qual & pq_out)) {
 			auto algebra = algebra_get (arg_types[i]);
 			e = mvec_expr (e, algebra);
 		}
