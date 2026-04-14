@@ -666,11 +666,16 @@ static gizmo_node_t covered_step[] = {
 }
 @end
 
-PGA.group_mask(0xc)
-sqrt (PGA.group_mask(0xc) x)
+@generic (genObj = [PGA.group_mask(0xc), PGA.group_mask(0xe)]) {
+
+genObj
+sqrt (genObj x)
 {
-	return (x + x.scalar) / 2;
+	auto a = x + 1;
+	return a / sqrt (a • ~a);
 }
+
+};
 
 //void
 motor_t
@@ -1222,8 +1227,16 @@ draw_collider (collider_t col, transform_t xform)
 			// so it knows where the plane's origin is (for the grid)
 			auto P = (plane • e123) * plane;
 			auto p = mat * (vec4)(P / ⋆(e0 * P));
-			auto s = mat[0];//FIXME assumes plane is in x-y
-			auto t = mat[1];
+			quaternion q;
+			if (plane[3] < 0) {
+				auto r = sqrt (plane * (plane_t)'0 0 -1 0');
+				q = [r.scalar, r.bvect];
+			} else {
+				auto r = sqrt (plane * (plane_t)'0 0 1 0');
+				q = [r.scalar, r.bvect];
+			}
+			auto s = vec4(q * mat[0].xyz, 0);
+			auto t = vec4(q * mat[1].xyz, 0);
 			auto c1= vec4(0.8, 1, 0.8, 0.5);
 			auto c2= vec4(0.8, 0, 0, 0.5);
 			auto c3= vec4(0, 0.8, 0, 0.5);
@@ -1393,8 +1406,7 @@ resolve_contact (contact_t *contact)
 		bS.M = bD * bS.M;
 
 		auto Q = aD * contact.world_a * ~aD;
-		printf ("%q\n", Q);
-		impact2(&aS, &bS, &aB, &bB, Q, contact.normal, 1);
+		impact2(&aS, &bS, &aB, &bB, Q, contact.normal, 0.5, 0.8);
 	};
 	set_component (contact.a, qent_state, &aS);
 	set_component (contact.b, qent_state, &bS);

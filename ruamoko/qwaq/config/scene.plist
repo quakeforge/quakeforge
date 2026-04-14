@@ -40,6 +40,20 @@
 		};
 	},
 	{
+		name = "Plane2";
+		collider = {
+			type = col_plane;
+			plane = (0, 1, 0, 12.5);
+		};
+	},
+	{
+		name = "Plane3";
+		collider = {
+			type = col_plane;
+			plane = (-1, 0, 0, 5);
+		};
+	},
+	{
 		name = "Icosahedron";
 		mesh = create_ico;
 		position = (-2, 2, 0.5, 1);

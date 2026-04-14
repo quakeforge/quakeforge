@@ -206,32 +206,56 @@ impact (state_t *s1, state_t *s2, body_t *b1, body_t *b2, point_t Q, plane_t n,
 	s1.B -= j * i1;
 }
 
-void
-impact2(state_t *s1, state_t *s2, body_t *b1, body_t *b2, point_t Q, plane_t n,
-		float rho)
-{
-	auto N = n • Q;
-	auto M1 = s1.M * b1.R;
-	auto M2 = s2.M * b2.R;
-	auto N1 = ~M1 * N * M1;
-	auto N2 = ~M2 * N * M2;
-	auto Q1 = ~M1 * Q * M1;
-	auto Q2 = ~M2 * Q * M2;
-	auto i1 = b1.Ii @hadamard ⋆N1;
-	auto i2 = b2.Ii @hadamard ⋆N2;
-	auto n1 = (Q1 ∨ (Q1 × s1.B)) • ~N1;
-	auto n2 = (Q2 ∨ (Q2 × s2.B)) • ~N2;
-	auto d1 = (Q1 ∨ (Q1 × i1)) • ~N1;
-	auto d2 = (Q2 ∨ (Q2 × i2)) • ~N2;
-	float J = (1 + rho) * (n2 - n1) / (d1 + d2);
-	s2.B -= J * i2;
-	s1.B += J * i1;
-}
-
 bivector_t
 reject (bivector_t a, bivector_t b)
 {
 	return a - a • b * ~b * (1 / (b • ~b));
+}
+
+void
+impact2(state_t *s1, state_t *s2, body_t *b1, body_t *b2, point_t Q, plane_t n,
+		float rho, float mu)
+{
+	auto N = n • Q;
+	auto M1 = s1.M * b1.R;
+	auto M2 = s2.M * b2.R;
+	auto Q1 = ~M1 * Q * M1;
+	auto Q2 = ~M2 * Q * M2;
+
+	// normal impact
+	{
+		auto N1 = ~M1 * N * M1;
+		auto N2 = ~M2 * N * M2;
+		auto i1 = b1.Ii @hadamard ⋆N1;
+		auto i2 = b2.Ii @hadamard ⋆N2;
+		auto n1 = (Q1 ∨ (Q1 × s1.B)) • ~N1;
+		auto n2 = (Q2 ∨ (Q2 × s2.B)) • ~N2;
+		auto d1 = (Q1 ∨ (Q1 × i1)) • ~N1;
+		auto d2 = (Q2 ∨ (Q2 × i2)) • ~N2;
+		float J = (1 + rho) * (n2 - n1) / (d1 + d2);
+		s2.B -= J * i2;
+		s1.B += J * i1;
+	}
+	// tangential impact (friction)
+	{
+		auto B = M1 * s1.B * ~M1 + M2 * s2.B * ~M2;
+		auto v = (Q ∨ (Q × B));
+		auto T = reject (v, N);
+		if (T.bvect || T.bvecp) {
+			mu = mu / (1 + mu);
+			auto T1 = ~M1 * T * M1;
+			auto T2 = ~M2 * T * M2;
+			auto i1 = b1.Ii @hadamard ⋆T1;
+			auto i2 = b2.Ii @hadamard ⋆T2;
+			auto n1 = (Q1 ∨ (Q1 × s1.B)) • ~T1;
+			auto n2 = (Q2 ∨ (Q2 × s2.B)) • ~T2;
+			auto d1 = (Q1 ∨ (Q1 × i1)) • ~T1;
+			auto d2 = (Q2 ∨ (Q2 × i2)) • ~T2;
+			float J = mu * (1 + rho) * (n2 - n1) / (d1 + d2);
+			s2.B -= J * i2;
+			s1.B += J * i1;
+		}
+	}
 }
 
 void
