@@ -91,6 +91,12 @@ dstring_delete (dstring_t *dstr)
 	dstr->mem->free (dstr->mem->data, dstr);
 }
 
+VISIBLE void
+dstring_cleanup (dstring_t **dstr)
+{
+	dstring_delete (*dstr);
+}
+
 VISIBLE inline void
 dstring_adjust (dstring_t *dstr)
 {

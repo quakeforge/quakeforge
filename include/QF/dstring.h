@@ -62,6 +62,10 @@ dstring_t *dstring_new (void);
 /** Delete a dstring. Both the string buffer and dstring object are freed.
 */
 void dstring_delete (dstring_t *dstr);
+/** Clean up a dstring. Use with __attribute__((cleanup)) to automaticall
+	delete a dstring.
+*/
+void dstring_cleanup (dstring_t **dstr);
 /** Resize the string buffer if necessary. The buffer is guaranteed to be
 	large enough to hold size bytes (rounded up to the next 1kB boundary)
 */
