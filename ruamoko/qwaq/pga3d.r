@@ -212,7 +212,7 @@ impact2(state_t *s1, state_t *s2, body_t *b1, body_t *b2, point_t Q, plane_t n,
 {
 	auto N = n • Q;
 	auto M1 = s1.M * b1.R;
-	auto M2 = s2.M * b1.R;
+	auto M2 = s2.M * b2.R;
 	auto N1 = ~M1 * N * M1;
 	auto N2 = ~M2 * N * M2;
 	auto Q1 = ~M1 * Q * M1;
