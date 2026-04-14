@@ -736,6 +736,25 @@ select_type (gentype_t *gentype, callparm_t param)
 	return nullptr;
 }
 
+static const expr_t *
+func_match_error (const expr_t *fexpr, calltype_t *calltype)
+{
+	auto fsym = fexpr->symbol;
+	int num_params = calltype->num_params;
+	auto call_params = calltype->params;
+	__attribute__((cleanup(dstring_cleanup)))
+	auto pstr = dstring_newstr ();
+	for (int i = 0; i < num_params; i++) {
+		print_type_str (pstr, call_params[i].type);
+		if (i < num_params - 1) {
+			dstring_appendstr (pstr, ", ");
+		}
+	}
+	int space = pstr->str[0] == ' ';
+	return error (fexpr, "unable to find generic function matching %s(%s)",
+				  fsym->name, pstr->str + space);
+}
+
 static genfunc_t *
 find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
 					   calltype_t *calltype, bool promote, rua_ctx_t *ctx)
@@ -788,17 +807,6 @@ find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
 		}
 	}
 	if (best_ind < 0) {
-		auto pstr = dstring_newstr ();
-		for (int i = 0; i < num_params; i++) {
-			print_type_str (pstr, call_params[i].type);
-			if (i < num_params - 1) {
-				dstring_appendstr (pstr, ", ");
-			}
-		}
-		int space = pstr->str[0] == ' ';
-		error (fexpr, "unable to find generic function matching %s(%s)",
-			   fsym->name, pstr->str + space);
-		dstring_delete (pstr);
 		return nullptr;
 	}
 	for (int i = 0; i < num_funcs; i++) {
@@ -1187,21 +1195,20 @@ find_function (const expr_t *fexpr, const expr_t *params, rua_ctx_t *ctx)
 	if (genfuncs) {
 		auto gen = find_generic_function (genfuncs, fexpr, &calltype, true,
 										  ctx);
-		if (!gen) {
-			return new_error_expr ();
+		if (gen) {
+			const type_t *ref_types[gen->num_types] = {};
+			calltype.types = ref_types;
+			auto sym = create_generic_sym (gen, fexpr, &calltype, ctx);
+			if (gen->can_inline) {
+				// the call will be inlined, so a new scope is needed every
+				// time
+				sym->metafunc->func = new_function (sym->name, gen->name);
+				sym->metafunc->func->type = sym->type;
+				sym->metafunc->func->sym = sym;
+				build_generic_scope (sym, current_symtab, gen, ref_types);
+			}
+			return new_symbol_expr (sym);
 		}
-		const type_t *ref_types[gen->num_types] = {};
-		calltype.types = ref_types;
-		auto sym = create_generic_sym (gen, fexpr, &calltype, ctx);
-		if (gen->can_inline) {
-			// the call will be inlined, so a new scope is needed every
-			// time
-			sym->metafunc->func = new_function (sym->name, gen->name);
-			sym->metafunc->func->type = sym->type;
-			sym->metafunc->func->sym = sym;
-			build_generic_scope (sym, current_symtab, gen, ref_types);
-		}
-		return new_symbol_expr (sym);
 	}
 
 	auto funcs = (metafunc_t **) Hash_FindList (function_map, fname);
@@ -1219,7 +1226,15 @@ find_function (const expr_t *fexpr, const expr_t *params, rua_ctx_t *ctx)
 
 	unsigned costs[num_funcs + 1] = {};
 	for (int i = 0; i < num_funcs; i++) {
-		auto f = (metafunc_t *) funcs[i];
+		auto f = funcs[i];
+		if (!f->type) {
+			if (!f->genfunc) {
+				internal_error (fexpr, "non-generic function with no type");
+			}
+			// generic function already checked
+			costs[i] = ~0u;
+			continue;
+		}
 		int num_params = f->type->func.num_params;
 		if ((num_params >= 0 && num_params != calltype.num_params)
 			|| (num_params < 0 && ~num_params > calltype.num_params)) {
@@ -1253,18 +1268,7 @@ find_function (const expr_t *fexpr, const expr_t *params, rua_ctx_t *ctx)
 	}
 	if (best_ind < 0) {
 		free (funcs);
-		auto pstr = dstring_newstr ();
-		for (int i = 0; i < num_params; i++) {
-			print_type_str (pstr, call_params[i].type);
-			if (i < num_params - 1) {
-				dstring_appendstr (pstr, ", ");
-			}
-		}
-		int space = pstr->str[0] == ' ';
-		auto err = error (fexpr, "unable to find function matching %s(%s)",
-						  fname, pstr->str + space);
-		dstring_delete (pstr);
-		return err;
+		return func_match_error (fexpr, &calltype);
 	}
 	for (int i = 0; i < num_funcs; i++) {
 		if (i != best_ind && costs[i] == best_cost) {
