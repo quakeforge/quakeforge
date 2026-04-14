@@ -1191,6 +1191,22 @@ expr_assign (sblock_t *sblock, const expr_t *e, operand_t **op)
 			sblock = statement_subexpr (sblock, dst_expr, &dst);
 		}
 	} else {
+		if (!is_indirect (dst_expr) && is_mvec_expr (src_expr)) {
+			scoped_src_loc (e);
+			auto algebra = algebra_get (dst_type);
+			auto layout = &algebra->layout;
+			const expr_t *d[layout->count] = {};
+			const expr_t *s[layout->count] = {};
+			mvec_scatter (d, mvec_expr (dst_expr, algebra), algebra);
+			mvec_scatter (s, mvec_expr (src_expr, algebra), algebra);
+			for (int i = 0; i < layout->count; i++) {
+				if (d[i] && s[i]) {
+					auto a = assign_expr (d[i], s[i]);
+					sblock = statement_single (sblock, a);
+				}
+			}
+			return sblock;
+		}
 		if (type_move_assign (dst_type)) {
 			return expr_assign_copy (sblock, e, op, src);
 		}

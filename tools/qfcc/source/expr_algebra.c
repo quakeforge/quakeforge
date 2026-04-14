@@ -423,6 +423,36 @@ new_mvec_expr (algebra_t *algebra, pr_uint_t group_mask)
 	return mvec;
 }
 
+bool
+is_mvec_expr (const expr_t *expr)
+{
+	auto mvtype = get_type (expr);
+	if (is_reference (mvtype)) {
+		mvtype = dereference_type (mvtype);
+		expr = pointer_deref (expr);
+	}
+
+	if (!is_algebra (mvtype)) {
+		return false;
+	}
+
+	if (expr->type == ex_multivec) {
+		return true;
+	}
+
+	auto algebra = algebra_get (mvtype);
+	auto layout = &algebra->layout;
+
+	pr_uint_t group_mask = (1u << layout->count) - 1;
+	if (mvtype->type != ev_invalid) {
+		group_mask = mvtype->multivec->group_mask;
+	}
+	if (!(group_mask & (group_mask - 1))) {
+		return false;
+	}
+	return true;
+}
+
 const expr_t *
 mvec_expr (const expr_t *expr, algebra_t *algebra)
 {
