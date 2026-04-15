@@ -85,4 +85,19 @@
 			radius = 1;
 		};
 	},
+	{
+		name = "Sphere2";
+		mesh = create_quadsphere;
+		mesh_flag = true;
+		grav_flag = true;
+		position = (-6, -2, 1.5, 1);
+		avel = (0.5, 0.5, 0.5);
+		target = true;
+		invDensity = 1;
+		submesh_mask = 0xffffffdf;
+		collider = {
+			type = col_ball;
+			radius = 1;
+		};
+	},
 )

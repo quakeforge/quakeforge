@@ -1328,6 +1328,42 @@ bool get_contact_ball_ball (uint a, collider_t acol,
 							uint b, collider_t bcol,
 							contact_t *contact)
 {
+	state_t aS, bS;
+	body_t aB, bB;
+	get_component (a, qent_state, &aS);
+	get_component (b, qent_state, &bS);
+	get_component (a, qent_body, &aB);
+	get_component (b, qent_body, &bB);
+	auto aM = aS.M * aB.R;
+	auto bM = bS.M * bB.R;
+
+	auto p = aM * acol.plane * ~aM;
+	//FIXME bug in qfcc
+	//auto P = bM * (point_t) vec4(acol.ball.offset, 1) * ~bM;
+	auto P = (point_t) vec4(acol.ball.offset, 1);
+	P = aM * P * ~aM;
+	auto Q = (point_t) vec4(bcol.ball.offset, 1);
+	Q = bM * Q * ~bM;
+	float r = acol.ball.radius + bcol.ball.radius;
+	auto d = P ∨ Q;
+	if (d • ~d <= r * r) {
+		@algebra (PGA) {
+			auto n = -(e0 * d) / sqrt (d • ~d);
+			auto world_a = P + n * acol.ball.radius;
+			auto world_b = Q - n * bcol.ball.radius;
+			*contact = {
+				.world_a = world_a,
+				.world_b = world_b,
+				.local_a = ~aM * world_a * aM,
+				.local_b = ~bM * world_b * bM,
+				.normal = @undual (n),
+				.separation = sqrt (d • ~d) - r,
+				.a = a,
+				.b = b,
+			};
+			return true;
+		}
+	}
 	return false;
 }
 
