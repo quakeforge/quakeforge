@@ -171,6 +171,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token				AT_FUNCTION AT_FIELD AT_POINTER AT_ARRAY
 %token				AT_BASE AT_WIDTH AT_VECTOR AT_ROWS AT_COLS AT_MATRIX
 %token				AT_INT AT_UINT AT_BOOL AT_FLOAT
+%token				HORIZ
 
 %type	<spec>		storage_class save_storage
 %type	<spec>		typespec typespec_reserved typespec_nonreserved
@@ -255,7 +256,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<category>	category_name new_category_name
 %type	<protocol>	protocol_name
 %type	<methodlist> methodprotolist methodprotolist2
-%type	<op>		ci not
+%type	<op>		ci not hop
 
 %{
 
@@ -2436,6 +2437,10 @@ unary_expr
 	| '&' cast_expr %prec UNARY	{ $$ = new_unary_expr ('&', $2); }
 	| '*' cast_expr %prec UNARY	{ $$ = new_unary_expr ('.', $2); }
 	| '=' cast_expr %prec UNARY { $$ = new_unary_expr ('=', $2); }
+	| HORIZ '(' hop expr ')'
+		{
+			$$ = new_horizontal_expr ($hop, $expr, nullptr);
+		}
 	| SIZEOF unary_expr	%prec UNARY	{ $$ = new_unary_expr ('S', $2); }
 	| SIZEOF '(' typename ')'	%prec HYPERUNARY
 		{
@@ -2453,6 +2458,16 @@ unary_expr
 	| type_op '(' type_param_list ')'	{ $$ = type_function ($1, $3); }
 	| vector_expr				{ $$ = new_vector_list_expr ($1); }
 	| obj_expr					{ $$ = $1; }
+	;
+
+hop
+	: '&'						{ $$ = '&'; }
+	| '|'						{ $$ = '|'; }
+	| '^'						{ $$ = '^'; }
+	| '+'						{ $$ = '+'; }
+	| '~' '&'					{ $$ = QC_NAND; }
+	| '~' '|'					{ $$ = QC_NOR; }
+	| '~' '^'					{ $$ = QC_XNOR; }
 	;
 
 index_expr
@@ -3294,6 +3309,8 @@ static keyword_t qf_keywords[] = {
 	{"@algebra",	QC_ALGEBRA,		},
 	{"@dual",		QC_DUAL,		},
 	{"@undual",		QC_UNDUAL,		},
+
+	{"@horiz",		QC_HORIZ,		},
 
 	{"@image",		QC_IMAGE,		},
 	{"@sampler",	QC_SAMPLER,		},

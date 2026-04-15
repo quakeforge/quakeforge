@@ -663,6 +663,23 @@ proc_swizzle (const expr_t *expr, rua_ctx_t *ctx)
 }
 
 static const expr_t *
+proc_horizontal (const expr_t *expr, rua_ctx_t *ctx)
+{
+	scoped_src_loc (expr);
+	int op = expr->hop.op;
+	auto vec = expr_process (expr->hop.vec, ctx);
+	if (is_error (vec)) {
+		return vec;
+	}
+	auto vec_type = get_type (vec);
+	if (!is_nonscalar (vec_type)) {
+		return error (vec, "horizontal operand not a vector type");
+	}
+	auto type = base_type (vec_type);
+	return new_horizontal_expr (op, vec, type);
+}
+
+static const expr_t *
 proc_list (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
@@ -1096,6 +1113,7 @@ expr_process (const expr_t *expr, rua_ctx_t *ctx)
 		[ex_branch] = proc_branch,
 		[ex_return] = proc_return,
 		[ex_swizzle] = proc_swizzle,
+		[ex_horizontal] = proc_horizontal,
 		[ex_list] = proc_list,
 		[ex_type] = proc_type,
 		[ex_incop] = proc_incop,

@@ -636,13 +636,15 @@ new_horizontal_expr (int op, const expr_t *vec, const type_t *type)
 	if (vec->type == ex_error) {
 		return vec;
 	}
-	auto vec_type = get_type (vec);
-	if (!(is_math (vec_type) || is_boolean (vec_type))
-		|| is_scalar (vec_type)) {
-		internal_error (vec, "horizontal operand not a vector type");
-	}
-	if (!is_scalar (type)) {
-		internal_error (vec, "horizontal result not a scalar type");
+	if (type) {
+		auto vec_type = get_type (vec);
+		if (!(is_math (vec_type) || is_boolean (vec_type))
+			|| is_scalar (vec_type)) {
+			internal_error (vec, "horizontal operand not a vector type");
+		}
+		if (!is_scalar (type)) {
+			internal_error (vec, "horizontal result not a scalar type");
+		}
 	}
 
 	expr_t     *e = new_expr ();
