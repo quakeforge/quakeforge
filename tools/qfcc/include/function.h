@@ -154,6 +154,8 @@ typedef struct function_s {
 	int                 num_ud_chains;
 	struct udchain_s   *ud_chains;
 	struct udchain_s   *du_chains;
+	struct set_s       *dead_ud_chains;
+	struct set_s       *dead_du_chains;
 	int                 pseudo_addr;///< pseudo address space for flow analysis
 	struct pseudoop_s  *pseudo_ops;///< pseudo operands used by this function
 	struct pseudoop_s  *memory_op;///< memory pseudo operand for this function

@@ -241,9 +241,15 @@ print_flow_vars (dstring_t *dstr, flowgraph_t *graph, int level)
 			   indent + 4, "");
 	for (i = 0; i < graph->func->num_ud_chains; i++) {
 		udchain_t   ud = graph->func->ud_chains[i];
-		dasprintf (dstr, "%*s<tr><td>%d</td><td>%d</td>"
+		bool        dead = false;
+		if (graph->func->dead_ud_chains
+			&& set_is_member (graph->func->dead_ud_chains, i)) {
+			dead = true;
+		}
+		dasprintf (dstr, "%*s<tr><td>%s%d%s</td><td>%d</td>"
 				   "<td>%d</td><td>%d</td></tr>",
-				   indent + 4, "", i, ud.var, ud.usest, ud.defst);
+				   indent + 4, "", dead ? "[" : "", i, dead ? "]" : "",
+				   ud.var, ud.usest, ud.defst);
 	}
 	dasprintf (dstr, "%*s</table>>];\n", indent + 2, "");
 
@@ -257,9 +263,15 @@ print_flow_vars (dstring_t *dstr, flowgraph_t *graph, int level)
 			   indent + 4, "");
 	for (i = 0; i < graph->func->num_ud_chains; i++) {
 		udchain_t   du = graph->func->du_chains[i];
-		dasprintf (dstr, "%*s<tr><td>%d</td><td>%d</td>"
+		bool        dead = false;
+		if (graph->func->dead_du_chains
+			&& set_is_member (graph->func->dead_du_chains, i)) {
+			dead = true;
+		}
+		dasprintf (dstr, "%*s<tr><td>%s%d%s</td><td>%d</td>"
 				   "<td>%d</td><td>%d</td></tr>",
-				   indent + 4, "", i, du.var, du.defst, du.usest);
+				   indent + 4, "", dead ? "[" : "", i, dead ? "]" : "",
+				   du.var, du.defst, du.usest);
 	}
 	dasprintf (dstr, "%*s</table>>];\n", indent + 2, "");
 }

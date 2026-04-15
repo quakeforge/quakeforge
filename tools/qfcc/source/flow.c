@@ -1778,39 +1778,101 @@ flow_live_vars (flowgraph_t *graph)
 	flownode_t *node;
 	set_t      *use;
 	set_t      *def;
-	set_t      *stuse = set_new ();
-	set_t      *stdef = set_new ();
-	set_t      *tmp = set_new ();
+	SET_DEFER (stuse);
+	SET_DEFER (stdef);
+	SET_DEFER (tmp);
 	set_iter_t *succ;
 	statement_t *st;
-	int         changed = 1;
+	function_t *func = graph->func;
 
-	// first, calculate use and def for each block, and initialize the in and
+	SET_DEFER (def_statements);
+	for (int i = 0; i < func->num_vars; i++) {
+		auto var = func->vars[i];
+		set_union (def_statements, var->define);
+	}
+	SET_DEFER (du_statements);
+	for (int i = 0; i < func->num_ud_chains; i++) {
+		auto du = func->du_chains[i];
+		set_add (du_statements , du.defst);
+	}
+	set_intersection (def_statements, func->real_statements);
+	set_intersection (du_statements, func->real_statements);
+	SET_DEFER (dead_statements);
+	set_assign (dead_statements, def_statements);
+	set_difference (dead_statements, du_statements);
+	func->dead_ud_chains = set_new ();
+	func->dead_du_chains = set_new ();
+	while (!set_is_empty (dead_statements)) {
+		for (auto si = set_first (dead_statements); si; si = set_next (si)) {
+			set_remove (dead_statements, si->element);
+			auto st = func->statements[si->element];
+			operand_t   *operands[FLOW_OPERANDS];
+			flow_analyze_statement (st, nullptr, nullptr, nullptr, operands);
+			if (!operands[0]) {
+				// can't check. assume it's live
+				continue;
+			}
+			int op_size = operands[0]->size;
+			for (int i = 0; i < st->num_use; i++) {
+				int ud_ind = st->first_use + i;
+				auto ud = func->ud_chains[ud_ind];
+				if (!set_is_member (func->real_statements, ud.defst)
+					|| func->vars[ud.var]->op->size > op_size) {
+					continue;
+				}
+				set_add (func->dead_ud_chains, ud_ind);
+
+				set_empty (tmp);
+				auto def_st = func->statements[ud.defst];
+				for (int j = 0; j < def_st->num_def; j++) {
+					int du_ind = def_st->first_def + j;
+					auto du = func->du_chains[du_ind];
+					if (func->vars[du.var]->op->size > op_size) {
+						continue;
+					}
+					set_add (tmp, du_ind);
+					if (du.usest == (int) si->element) {
+						set_add (func->dead_du_chains, du_ind);
+					}
+				}
+				set_difference (tmp, func->dead_du_chains);
+				if (set_is_empty (tmp)) {
+					set_add (dead_statements, def_st->number);
+				}
+			}
+		}
+	}
+
+	// calculate use and def for each block, and initialize the in and
 	// out sets.
-	set_t      *node_statements = set_new ();
+	SET_DEFER (node_statements);
 	for (i = 0; i < graph->num_nodes; i++) {
 		node = graph->nodes[i];
 		use = set_new ();
 		def = set_new ();
 		set_empty (node_statements);
-		for (st = node->sblock->statements; st; st = st->next) {
-			set_add (node_statements, st->number);
-		}
+		set_add_range (node_statements, node->first_statement,
+					   node->num_statements);
 		for (st = node->sblock->statements; st; st = st->next) {
 			set_empty (stuse);
 			set_empty (stdef);
 			for (int i = 0; i < st->num_use; i++) {
-				udchain_t   ud = graph->func->ud_chains[st->first_use + i];
+				int ud_ind = st->first_use + i;
+				if (set_is_member (func->dead_ud_chains, ud_ind)) {
+					continue;
+				}
+				udchain_t   ud = func->ud_chains[ud_ind];
 				if (!set_is_member (node_statements, ud.defst)) {
 					set_add (stuse, ud.var);
 				}
 			}
 			for (int i = 0; i < st->num_def; i++) {
-				if (st->first_def + i >= graph->func->num_ud_chains) {
+				int du_ind = st->first_def + i;
+				if (du_ind >= func->num_ud_chains) {
 					internal_error (st->expr, "invalid st def: %d %d %d\n",
-									st->first_def, i, graph->func->num_ud_chains);
+									st->first_def, i, func->num_ud_chains);
 				}
-				udchain_t   du = graph->func->du_chains[st->first_def + i];
+				udchain_t   du = func->du_chains[du_ind];
 				if (!set_is_member (node_statements, du.usest)) {
 					set_add (stdef, du.var);
 				}
@@ -1823,40 +1885,38 @@ flow_live_vars (flowgraph_t *graph)
 		node->live_vars.in = set_new ();
 		node->live_vars.out = set_new ();
 	}
-	set_delete (node_statements);
 	// create in for the exit dummy block using the global vars used by the
 	// function
 	use = set_new ();
-	set_assign (use, graph->func->global_vars);
-	set_add (use, graph->func->memory_op->flowvar->number);
+	set_assign (use, func->global_vars);
+	set_add (use, func->memory_op->flowvar->number);
 	node = graph->nodes[graph->num_nodes + 1];
 	node->live_vars.in = use;
 	node->live_vars.out = set_new ();
 	node->live_vars.use = set_new ();
 	node->live_vars.def = set_new ();
 
+	bool changed = true;
 	while (changed) {
-		changed = 0;
+		changed = false;
 		// flow UP the graph because live variable analysis uses information
 		// from a node's successors rather than its predecessors.
 		for (j = graph->num_nodes - 1; j >= 0; j--) {
 			node = graph->nodes[graph->depth_first[j]];
 			set_empty (tmp);
 			for (succ = set_first (node->successors); succ;
-				 succ = set_next (succ))
+				 succ = set_next (succ)) {
 				set_union (tmp, graph->nodes[succ->element]->live_vars.in);
+			}
 			if (!set_is_equivalent (node->live_vars.out, tmp)) {
-				changed = 1;
+				changed = true;
 				set_assign (node->live_vars.out, tmp);
 			}
-			set_assign (node->live_vars.in, node->live_vars.out);
+			set_assign     (node->live_vars.in, node->live_vars.out);
 			set_difference (node->live_vars.in, node->live_vars.def);
-			set_union (node->live_vars.in, node->live_vars.use);
+			set_union      (node->live_vars.in, node->live_vars.use);
 		}
 	}
-	set_delete (stuse);
-	set_delete (stdef);
-	set_delete (tmp);
 }
 
 static void
