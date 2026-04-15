@@ -100,4 +100,18 @@
 			radius = 1;
 		};
 	},
+	{
+		name = "Capsule2";
+		model = progs/Capsule.mdl;
+		position = (0, -9, 2, 1);
+		target = true;
+		grav_flag = true;
+		from_shape = true;
+		invDensity = 1;
+		collider = {
+			type = col_capsule;
+			radius = 0.5;
+			axis = (0, 0, 0.5);
+		};
+	},
 )

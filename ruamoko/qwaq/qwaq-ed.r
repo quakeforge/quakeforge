@@ -1321,6 +1321,45 @@ bool get_contact_plane_capsule (uint a, collider_t acol,
 								uint b, collider_t bcol,
 								contact_t *contact)
 {
+	state_t aS, bS;
+	body_t aB, bB;
+	get_component (a, qent_state, &aS);
+	get_component (b, qent_state, &bS);
+	get_component (a, qent_body, &aB);
+	get_component (b, qent_body, &bB);
+	auto aM = aS.M * aB.R;
+	auto bM = bS.M * bB.R;
+
+	auto p = aM * acol.plane * ~aM;
+	auto P = bM * (point_t) [bcol.capsule.offset, 1] * ~bM;
+	auto A = bM * (point_t) [bcol.capsule.axis, 0] * ~bM;
+	float r = bcol.capsule.radius;
+	float end = A ∨ p;
+	if (end < 0) {
+		P = P - A;
+	} else if (end > 0) {
+		P = P + A;
+	}
+	// If end == 0 (unlikely, but...) then P is the center
+	float d = p ∨ P;
+	if (d <= r) {
+		@algebra (PGA) {
+			auto n = p * e0123;
+			auto world_a = (P • p) * p;
+			auto world_b = P - r * n;
+			*contact = {
+				.world_a = world_a,
+				.world_b = world_b,
+				.local_a = ~aM * world_a * aM,
+				.local_b = ~bM * world_b * bM,
+				.normal = @undual (n),
+				.separation = d - r,
+				.a = a,
+				.b = b,
+			};
+			return true;
+		}
+	}
 	return false;
 }
 
@@ -1367,10 +1406,53 @@ bool get_contact_ball_ball (uint a, collider_t acol,
 	return false;
 }
 
-bool get_contact_ball_capsule (uint a, collider_t acol,
-							   uint b, collider_t bcol,
+bool get_contact_ball_capsule (uint aent, collider_t acol,
+							   uint bent, collider_t bcol,
 							   contact_t *contact)
 {
+	state_t aS, bS;
+	body_t aB, bB;
+	get_component (aent, qent_state, &aS);
+	get_component (bent, qent_state, &bS);
+	get_component (aent, qent_body, &aB);
+	get_component (bent, qent_body, &bB);
+	auto aM = aS.M * aB.R;
+	auto bM = bS.M * bB.R;
+
+	auto p = aM * (point_t) [acol.ball.offset,    1] * ~aM;
+	auto X = bM * (point_t) [bcol.capsule.offset, 1] * ~bM;
+	auto A = bM * (point_t) [bcol.capsule.axis,   0] * ~bM;
+
+	auto a = X - A;
+	auto b = X + A;
+
+	auto ap = (a∨p);
+	auto ab = (a∨b);
+	float h = (ap•ab)/(ab•ab);
+	h = h < 0 ? 0 : h > 1 ? 1 : h;
+	auto d = ap - h * ab;
+	float r = acol.ball.radius + bcol.capsule.radius;
+
+	if (d • ~d < r * r) {
+		@algebra (PGA) {
+			auto n = (e0 * d) / sqrt (d • ~d);
+			auto x = a + h * (b - a);
+			auto world_a = p + n * acol.ball.radius;
+			auto world_b = x - n * bcol.capsule.radius;
+			*contact = {
+				.world_a = world_a,
+				.world_b = world_b,
+				.local_a = ~aM * world_a * aM,
+				.local_b = ~bM * world_b * bM,
+				.normal = @undual (n),
+				.separation = sqrt (d • ~d) - r,
+				.a = aent,
+				.b = bent,
+			};
+			return true;
+		}
+	}
+
 	return false;
 }
 
@@ -1701,6 +1783,7 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 	vec4 scale;
 	bool target;
 	float invDensity;
+	bool from_shape;
 	vec3 vel;
 	vec3 avel;
 
@@ -1722,6 +1805,124 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 	scale = '1 1 1 1';
 }
 @end
+
+body_t
+calc_inertia_plane (collider_t collider, float invDensity)
+{
+	body_t body = {};//infinite mass
+	body.R = 1;
+	return body;
+}
+
+body_t
+calc_inertia_ball (collider_t collider, float invDensity)
+{
+	body_t body = {};//infinite mass
+	body.R = 1;
+	float r = collider.ball.radius;
+	if (!invDensity || !r) {
+		return body;
+	}
+	float vol = (4 * (float)M_PI * r * r * r / 3);
+	float I = 2 * r * r / 5;
+	invDensity /= vol;
+	body.Ii.bvect = '1 1 1';
+	body.Ii.bvecp = '1 1 1';
+	body.I.bvect = body.Ii.bvect / invDensity;
+	body.I.bvecp = body.Ii.bvecp * I / invDensity;
+	body.Ii.bvect *= invDensity;
+	body.Ii.bvecp *= invDensity / I;
+	return body;
+}
+
+vec3 abs(vec3 x)
+{
+	uvec3 m = x < '0 0 0';
+	return (vec3) ((uvec3) x & ~m) - (vec3) ((uvec3) x & m);
+}
+
+vec3 max(vec3 a, vec3 b)
+{
+	uvec3 m = a < b;
+	return (vec3) ((uvec3) a & ~m) + (vec3) ((uvec3) b & m);
+}
+
+vec3 best_axis(vec3 dir, @out int ind)
+{
+	static const int indices[] = { 0, 0, 1, 0, 2, 2, 2, 2 };
+	static const vec3 axes[] = {
+		'1 0 0',
+		'0 1 0',
+		'0 0 1',
+	};
+	vec3 adir = abs (dir);
+	vec3 mdir = max (adir.yxz, adir.zxy);
+	uvec3 m = adir >= mdir;
+	ind = indices[@horiz(| '1 2 4' & m)];
+	vec3 a = axes[ind];
+	return a • dir < 0 ? -a : a;
+}
+
+body_t
+calc_inertia_capsule (collider_t collider, float invDensity)
+{
+	body_t body = {};//infinite mass
+	body.R = 1;
+	vec3 offset = collider.capsule.offset;
+	float r = collider.capsule.radius;
+	vec3 a = collider.capsule.axis;
+	if (!a) {
+		return calc_inertia_ball (collider, invDensity);
+	}
+	if (!invDensity || !r) {
+		return body;
+	}
+	// the centers of bases of the two end caps are at +/- a
+	float l = sqrt (a • a);
+	// hemisphere volume
+	float h_vol = (2 * (float)M_PI * r * r * r / 3);
+	// half cylinder volume
+	float c_vol = ((float)M_PI * r * r * l);
+	// half total volume
+	float vol = h_vol + c_vol;
+
+	// The moment of inertia of a solid hemisphere is the same about either
+	// the axis of symmetry or an axis through the diameter of its base (and
+	// also the same as that of a solid sphere of half the density).
+	float Iah = r * r * h_vol * 2 / 5;
+	// The moment of inertia of the cylinder about its axis of rotational
+	// symmetry.
+	float Iac = r * r * c_vol;
+	// The moment of inertia of the cylinder about its axis cross the diameter
+	// of its base (same as for one through the center but half the density).
+	float Itc = (r * r * 3 + l * l * 2) * c_vol / 6;
+	// The center of mass of the hemisphere is at 3/8*r, but applying
+	// the parallel axis theorem cancels things out.
+	float Ith = Iah + l * (l + 3 * r / 4) * h_vol;
+	float Ia = 2 * (Iah + Iac);
+	float It = 2 * (Ith + Itc);
+	int ind;
+	vec3 axis = best_axis (a, ind);
+	vec3 Ivec;
+	Ivec[ind] = Ia / invDensity;
+	Ivec[(ind + 1) % 3] = It / invDensity;
+	Ivec[(ind + 2) % 3] = It / invDensity;
+	body.I.bvect = (PGA.bvect)'2 2 2' * vol / invDensity;
+	body.Ii.bvect = (PGA.bvect)'0.5 0.5 0.5' * invDensity / vol;
+	body.I.bvecp = (PGA.bvecp)Ivec;
+	body.Ii.bvecp = (PGA.bvecp)(1/Ivec);
+
+	auto R = sqrt ((plane_t)[a, 0] * (plane_t)[axis, 0]);
+	auto T = 1 + (PGA.bvecp)offset / 2;
+
+	body.R = R * T;
+
+	printf ("%v %v\n", body.I.bvect, body.I.bvecp);
+	printf ("%v %v\n", body.Ii.bvect, body.Ii.bvecp);
+	printf ("%g %v %v %g\n", body.R.scalar, body.R.bvect, body.R.bvecp, body.R.qvec);
+
+	return body;
+}
 
 void
 load_scene (plitem_t *scene_item, scene_t scene)
@@ -1796,27 +1997,27 @@ load_scene (plitem_t *scene_item, scene_t scene)
 		if (have_collider) {
 			max_collider_ents++;
 			set_component (e, qent_collider, &collider);
-			if (!mesh) {
-				body_t body = {};//infinite mass
-				body.R = 1;
-				state_t state = {
-					.M = make_motor (ent_init.position, ent_init.rotation),
-					.B = (PGA.bvect) ent_init.avel + (PGA.bvecp) ent_init.vel,
-				};
-				state.M = state.M * ~body.R;
-				state.B = body.R * state.B * ~body.R;
-				set_component (e, qent_state, &state);
-				set_component (e, qent_body, &body);
-				set_update (e, update_physics);
+			body_t body = {};//infinite mass
+			body.R = 1;
+			if (ent_init.from_shape) {
+				switch (collider.type) {
+				case col_plane:
+					body = calc_inertia_plane (collider, ent_init.invDensity);
+					break;
+				case col_ball:
+					body = calc_inertia_ball (collider, ent_init.invDensity);
+					break;
+				case col_capsule:
+					body = calc_inertia_capsule (collider, ent_init.invDensity);
+					break;
+				}
+			} else if (mesh) {
+				// create body data from mesh
+				body = calc_inertia_tensor (mesh, ent_init.invDensity);
+			} else {
+				//FIXME build from model?
 			}
-		}
-		if (ent_init.grav_flag) {
-			set_component (e, qent_grav, &ent_init.grav_flag);
-		}
-		if (mesh) {
-			model = Model_LoadMesh (ent_init.name, mesh);
-			//FIXME build from model?
-			auto body = calc_inertia_tensor (mesh, ent_init.invDensity);
+			set_component (e, qent_body, &body);
 			state_t state = {
 				.M = make_motor (ent_init.position, ent_init.rotation),
 				.B = (PGA.bvect) ent_init.avel + (PGA.bvecp) ent_init.vel,
@@ -1824,11 +2025,14 @@ load_scene (plitem_t *scene_item, scene_t scene)
 			state.M = state.M * ~body.R;
 			state.B = body.R * state.B * ~body.R;
 			set_component (e, qent_state, &state);
-			set_component (e, qent_body, &body);
 			set_update (e, update_physics);
-			// create body data from mesh
+		}
+		if (ent_init.grav_flag) {
+			set_component (e, qent_grav, &ent_init.grav_flag);
+		}
+		if (mesh) {
+			model = Model_LoadMesh (ent_init.name, mesh);
 			MsgBuf_Delete (mesh);
-
 		}
 		if (model) {
 			Entity_SetModel (ent, model);
