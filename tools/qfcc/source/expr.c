@@ -1532,7 +1532,7 @@ new_alias_expr (const type_t *type, const expr_t *expr)
 }
 
 const expr_t *
-new_offset_alias_expr (const type_t *type, const expr_t *expr, int offset)
+_new_offset_alias_expr (const type_t *type, const expr_t *expr, int offset)
 {
 	if (expr->type == ex_alias) {
 		if (expr->alias.offset) {
@@ -1554,8 +1554,14 @@ new_offset_alias_expr (const type_t *type, const expr_t *expr, int offset)
 	alias->alias.type = type;
 	alias->alias.expr = edag_add_expr (expr);
 	alias->alias.offset = edag_add_expr (new_int_expr (offset, false));
-	alias->loc = expr->loc;
 	return edag_add_expr (evaluate_constexpr (alias));
+}
+
+const expr_t *
+new_offset_alias_expr (const type_t *type, const expr_t *expr, int offset)
+{
+	scoped_src_loc (expr);
+	return _new_offset_alias_expr (type, expr, offset);
 }
 
 expr_t *

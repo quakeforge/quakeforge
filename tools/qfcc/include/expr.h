@@ -1070,6 +1070,8 @@ expr_t *new_this_expr (void);
 const expr_t *new_ret_expr (type_t *type);
 
 const expr_t *new_alias_expr (const type_t *type, const expr_t *expr);
+const expr_t *_new_offset_alias_expr (const type_t *type, const expr_t *expr,
+								      int offset);
 const expr_t *new_offset_alias_expr (const type_t *type, const expr_t *expr,
 								     int offset);
 

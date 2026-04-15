@@ -364,7 +364,7 @@ assign_elements (expr_t *local_expr, const expr_t *init,
 		scoped_src_loc (element->expr);
 		int         offset = element->offset;
 		auto type = element->type;
-		const expr_t *alias = new_offset_alias_expr (type, init, offset);
+		const expr_t *alias = _new_offset_alias_expr (type, init, offset);
 
 		const expr_t *c;
 
