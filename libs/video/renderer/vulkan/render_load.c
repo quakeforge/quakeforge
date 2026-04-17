@@ -991,36 +991,26 @@ init_atCreate (qfv_attachmentinfo_t *ati, objstate_t *s)
 			auto ext = rctx->external_attachments.a[i];
 			if (!strcmp (ati->external, ext->name)) {
 				found = true;
-				*atc = (VkAttachmentDescription) {
-					.flags = ext->flags,
-					.format = ext->format,
-					.samples = ext->samples,
-					.loadOp = ext->loadOp,
-					.storeOp = ext->storeOp,
-					.stencilLoadOp = ext->stencilLoadOp,
-					.stencilStoreOp = ext->stencilStoreOp,
-					.initialLayout = ext->initialLayout,
-					.finalLayout = ext->finalLayout,
-				};
+				*ati = *ext;
+				break;
 			}
 		}
 		if (!found) {
 			Sys_Error ("%d:%s: invalid external attachment: %s",
 					   ati->line, ati->name, ati->external);
 		}
-	} else {
-		*atc = (VkAttachmentDescription) {
-			.flags = ati->flags,
-			.format = ati->format,
-			.samples = ati->samples,
-			.loadOp = ati->loadOp,
-			.storeOp = ati->storeOp,
-			.stencilLoadOp = ati->stencilLoadOp,
-			.stencilStoreOp = ati->stencilStoreOp,
-			.initialLayout = ati->initialLayout,
-			.finalLayout = ati->finalLayout,
-		};
 	}
+	*atc = (VkAttachmentDescription) {
+		.flags = ati->flags,
+		.format = ati->format,
+		.samples = ati->samples,
+		.loadOp = ati->loadOp,
+		.storeOp = ati->storeOp,
+		.stencilLoadOp = ati->stencilLoadOp,
+		.stencilStoreOp = ati->stencilStoreOp,
+		.initialLayout = ati->initialLayout,
+		.finalLayout = ati->finalLayout,
+	};
 	*cvc = ati->clearValue;
 }
 
@@ -1097,6 +1087,8 @@ init_rpCreate (uint32_t index, const qfv_renderinfo_t *rinfo, objstate_t *s)
 			}
 		}
 		init_atCreate (&attach, s);
+		attachment->loadOp = attach.loadOp;
+		attachment->stencilLoadOp = attach.stencilLoadOp;
 		s->inds.num_attachments++;
 	}
 
@@ -1243,6 +1235,26 @@ init_subpass (qfv_subpass_t *sp, qfv_subpassinfo_t *isp,
 	s->subpass = nullptr;
 }
 
+static uint32_t __attribute__((pure))
+clear_value_count (qfv_renderpassinfo_t *rpinfo)
+{
+	bool have_clear = false;
+	printf ("%s\n", rpinfo->name);
+	for (uint32_t i = 0; i < rpinfo->framebuffer.num_attachments; i++) {
+		auto ai = &rpinfo->framebuffer.attachments[i];
+		printf ("%d %s: %d %d\n", i, ai->name, ai->loadOp, ai->stencilLoadOp);
+		if (ai->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR
+			|| ai->stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+			have_clear = true;
+			break;
+		}
+	}
+	if (!have_clear) {
+		return 0;
+	}
+	return rpinfo->framebuffer.num_attachments;
+}
+
 static void
 init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
 				 jobptr_t *jp, objstate_t *s)
@@ -1254,7 +1266,7 @@ init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
 		.beginInfo = (VkRenderPassBeginInfo) {
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			.renderPass = s->ptr.rp[s->inds.num_renderpasses],
-			.clearValueCount = rpinfo->framebuffer.num_attachments,
+			.clearValueCount = clear_value_count (rpinfo),
 			.pClearValues = &jp->clearvalues[s->inds.num_attachments],
 		},
 		.subpassContents = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS,
