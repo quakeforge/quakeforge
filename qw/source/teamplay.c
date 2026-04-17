@@ -462,13 +462,13 @@ Locs_Init (void)
 }
 
 static const char *
-Team_F_Version (char *args)
+Team_F_Version (const char *args)
 {
 	return va ("say %s", PACKAGE_STRING);
 }
 
 static const char *
-Team_F_Skins (char *args)
+Team_F_Skins (const char *args)
 {
 	int		totalfb, l;
 	float		allfb = 0.0;
@@ -509,7 +509,7 @@ static freply_t f_replies[] = {
 void
 Team_ParseChat (const char *string)
 {
-	char	*s;
+	const char *s;
 	unsigned int i;
 
 	if (!cl_freply)

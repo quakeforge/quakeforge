@@ -549,7 +549,6 @@ void
 X11_CreateWindow (int width, int height)
 {
 	qfZoneScoped (true);
-	char		   *resname;
 	unsigned long	mask;
 	XSetWindowAttributes	attr;
 	XClassHint	   *ClassHint;
@@ -589,7 +588,7 @@ X11_CreateWindow (int width, int height)
 	// Set window class
 	ClassHint = XAllocClassHint ();
 	if (ClassHint) {
-		resname = strrchr (com_argv[0], '/');
+		const char *resname = strrchr (com_argv[0], '/');
 
 		ClassHint->res_name = (char *)(resname ? resname + 1 : com_argv[0]);
 		ClassHint->res_class = (char *)PACKAGE;

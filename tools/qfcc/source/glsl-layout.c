@@ -1285,6 +1285,7 @@ static glsl_qual_t general_qualifiers[] = {
 };
 #define num_general_quals countof (general_qualifiers)
 #define general_qual_sz num_general_quals, sizeof (glsl_qual_t)
+#define szbsearch(key, base, sz, cmp) bsearch (key, base, sz, cmp)
 
 #undef A
 #undef E
@@ -1411,7 +1412,7 @@ layout_apply_qualifier (const expr_t *qualifier, specifier_t spec)
 				: nullptr;
 
 	const glsl_qual_t *qual;
-	qual = bsearch (&key, layout_qualifiers, layout_qual_sz, qualifier_cmp);
+	qual = szbsearch (&key, layout_qualifiers, layout_qual_sz, qualifier_cmp);
 	if (!qual) {
 		error (0, "invalid layout qualifier: %s", key.name);
 		return;
@@ -1474,7 +1475,7 @@ glsl_qualifier (const char *name, specifier_t spec)
 	};
 
 	const glsl_qual_t *qual;
-	qual = bsearch (&key, general_qualifiers, general_qual_sz, qualifier_cmp);
+	qual = szbsearch (&key, general_qualifiers, general_qual_sz, qualifier_cmp);
 	if (!qual) {
 		error (0, "invalid general qualifier: %s", key.name);
 		return;

@@ -277,7 +277,7 @@ bi_str_str (progs_t *pr, void *data)
 	qfZoneScoped (true);
 	const char *haystack = P_GSTRING (pr, 0);
 	const char *needle = P_GSTRING (pr, 1);
-	char       *res = strstr (haystack, needle);
+	const char *res = strstr (haystack, needle);
 
 	R_INT (pr) = -1;
 	if (res) {
@@ -291,7 +291,7 @@ bi_strchr (progs_t *pr, void *data)
 	qfZoneScoped (true);
 	const char *s = P_GSTRING (pr, 0);
 	int         c = P_INT (pr, 1);
-	char       *res = strchr (s, c);
+	const char *res = strchr (s, c);
 
 	R_INT (pr) = -1;
 	if (res) {
@@ -305,7 +305,7 @@ bi_strrchr (progs_t *pr, void *data)
 	qfZoneScoped (true);
 	const char *s = P_GSTRING (pr, 0);
 	int         c = P_INT (pr, 1);
-	char       *res = strrchr (s, c);
+	const char *res = strrchr (s, c);
 
 	R_INT (pr) = -1;
 	if (res) {

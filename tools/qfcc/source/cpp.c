@@ -559,11 +559,11 @@ intermediate_file (dstring_t *ifile, const char *filename, const char *ext,
 		}
 		free (basename);
 	} else if (local) {
-		char       *temp2 = strrchr (this_program, PATH_SEPARATOR);
+		const char *temp2 = strrchr (this_program, PATH_SEPARATOR);
 		dsprintf (ifile, "%sXXXXXX", temp2 ? temp2 + 1 : this_program);
 	} else {
 		const char *temp1 = getenv ("TMPDIR");
-		char       *temp2 = strrchr (this_program, PATH_SEPARATOR);
+		const char *temp2 = strrchr (this_program, PATH_SEPARATOR);
 
 		if ((!temp1) || (!temp1[0])) {
 			temp1 = getenv ("TEMP");

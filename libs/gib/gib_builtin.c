@@ -844,16 +844,17 @@ GIB_File_Find_f (void)
 				   "%s: access to %s denied", GIB_Argv (0), GIB_Argv (1));
 		return;
 	}
-	path = GIB_Argv (1);
-	s = strrchr (path, '/');
+	char *p = GIB_Argv (1);
+	s = strrchr (p, '/');
 	if (!s) {							// No slash in path
-		glob = path;					// The glob is the entire argument
+		glob = p;						// The glob is the entire argument
 		path = ".";						// The path is the current directory
-	} else if (s == path)				// Unix filesystem root (carne only)
+	} else if (s == p) {				// Unix filesystem root (carne only)
 		path = "/";
-	else {
+	} else {
 		*s = 0;							// Split the string at the final slash
 		glob = s + 1;
+		path = p;
 	}
 	directory = opendir (path);
 	if (!directory)

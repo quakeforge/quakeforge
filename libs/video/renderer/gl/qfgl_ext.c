@@ -96,7 +96,7 @@ static __attribute__((pure)) bool
 QFGL_ParseExtensionList (const GLubyte *list, const char *name)
 {
 	const char *start;
-	char       *where, *terminator;
+	const char *where, *terminator;
 
 	if (!list)
 		return 0;

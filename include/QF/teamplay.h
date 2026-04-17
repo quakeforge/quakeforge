@@ -32,7 +32,7 @@ extern int cl_parsesay;
 extern int cl_nofake;
 extern float cl_freply;
 
-typedef const char *(*ffunc_t) (char *args);
+typedef const char *(*ffunc_t) (const char *args);
 typedef struct freply_s {
 	const char *name;
 	ffunc_t func;

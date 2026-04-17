@@ -98,7 +98,7 @@ bi_bsearch (progs_t *pr, void *data)
 	size_t      nmemb = P_INT (pr, 2);
 	size_t      size = P_INT (pr, 3) * sizeof (pr_int_t);
 	pr_func_t   cmp = P_FUNCTION (pr, 4);
-	void       *p = 0;
+	const void *p = 0;
 
 	if (!cmp) {
 		p = bsearch (key, array, nmemb, size, int_compare);

@@ -178,7 +178,7 @@ QW_AddHeartbeat (server_t **servers_p, int slen,
 	int freeslot = -1;
 	int i;
 	int sequence, players;
-	char *c;
+	const char *c;
 
 	sequence = atoi (buf + 2);
 	c = strchr (buf + 2, '\n');

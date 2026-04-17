@@ -1707,10 +1707,11 @@ VISIBLE void
 QFS_FilelistAdd (filelist_t *filelist, const char *fname, const char *ext)
 {
 	char      **new_list;
-	char      *s, *str;
+	char       *s, *str;
+	const char *f;
 
-	while ((s = strchr(fname, '/')))
-		fname = s + 1;
+	while ((f = strchr(fname, '/')))
+		fname = f + 1;
 	if (filelist->count == filelist->size) {
 		filelist->size += 32;
 		new_list = realloc (filelist->list, filelist->size * sizeof (char *));
