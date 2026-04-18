@@ -93,18 +93,29 @@ static const struct zxdg_toplevel_decoration_v1_listener toplevel_decoration_lis
     .configure = zxdg_toplevel_decoration_configure
 };
 
+// FIXME(Peter): This shouldn't be global state
+static bool initial_configure = true;
+
 static void
 toplevel_configure (void *data, struct xdg_toplevel *toplvl,
                     int32_t width, int32_t height, struct wl_array *states)
 {
-    if (width == 0 || height == 0) {
-        return;
-    }
+	if (initial_configure) {
+		width = viddef.width;
+		height = viddef.height;
+		initial_configure = false;
+	}
 
-    Sys_MaskPrintf (SYS_wayland, "toplevel_configure: width = %d, height = %d\n",
-            width, height);
+	if (width == 0 || height == 0) {
+		Sys_Error ("Wayland backend doesn't handle width or height of 0."
+					"This should be fixed.");
+		return;
+	}
 
-    VID_SetWindow (0, 0, width, height);
+	Sys_MaskPrintf (SYS_wayland, "toplevel_configure: width = %d, height = %d\n",
+					width, height);
+
+	VID_SetWindow (0, 0, width, height);
 }
 
 static void
