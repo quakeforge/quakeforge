@@ -153,6 +153,16 @@ in_wl_adjust_mouse_button_idx (int32_t button)
 }
 
 static void
+send_focus_event (bool focus)
+{
+	IE_event_t  event = {
+		.type = focus ? ie_app_gain_focus : ie_app_lose_focus,
+		.when = Sys_LongTime (),
+	};
+	IE_Send_Event (&event);
+}
+
+static void
 wl_pointer_enter (void *data,
 		      struct wl_pointer *wl_pointer,
 		      uint32_t serial,
@@ -412,6 +422,7 @@ in_wl_keyboard_enter (void *data,
 		  struct wl_surface *surface,
 		  struct wl_array *keys)
 {
+	send_focus_event (true);
 }
 
 static void
@@ -420,6 +431,7 @@ in_wl_keyboard_leave (void *data,
 		  uint32_t serial,
 		  struct wl_surface *surface)
 {
+	send_focus_event (false);
 }
 
 static void
