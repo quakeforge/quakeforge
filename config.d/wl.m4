@@ -2,7 +2,7 @@ AC_ARG_ENABLE(wayland,
 	AS_HELP_STRING([--disable-wayland], [disable Wayland support]))
 if test "x$enable_wayland" != "xno"; then
   if test "x$PKG_CONFIG" != "x"; then
-    PKG_CHECK_MODULES([WAYLAND], [wayland-client >= 1.6.0 xkbcommon], HAVE_WAYLAND=yes, HAVE_WAYLAND=no)
+    PKG_CHECK_MODULES([WAYLAND], [wayland-client >= 1.6.0 wayland-egl xkbcommon], HAVE_WAYLAND=yes, HAVE_WAYLAND=no)
 	if test "x$HAVE_WAYLAND" = "xyes"; then
 		PKG_CHECK_VAR([WAYLAND_PROTOCOLS], [wayland-protocols], [pkgdatadir], [], [HAVE_WAYLAND=no])
 	fi
