@@ -63,6 +63,101 @@
 #define MAX_QUEUE_BUFFER (8*1024*1024)
 #define MAX_OBJECT_DATA (8*1024*1024)
 
+static void
+gizmo_delete_buffers (vulkan_ctx_t *ctx)
+{
+	auto gctx = ctx->gizmo_context;
+
+	auto resources = &gctx->resources.array[gctx->resources.active];
+	if (resources->memory) {
+		QFV_QueueResourceDelete (ctx, resources);
+		if (++gctx->resources.active >= gctx->resources.count) {
+			gctx->resources.active = 0;
+		}
+	}
+}
+
+static void
+gizmo_create_buffers (vulkan_ctx_t *ctx)
+{
+	auto device = ctx->device;
+	auto gctx = ctx->gizmo_context;
+	size_t frames = gctx->frames.size;
+
+	auto resources = &gctx->resources.array[gctx->resources.active];
+
+	for (uint32_t i = 0; i < resources->num_objects; i++) {
+		auto obj = &resources->objects[i];
+		if (obj->type == qfv_res_image) {
+			auto img = &obj->image;
+			img->extent.width = gctx->extent.width;
+			img->extent.height = gctx->extent.height;
+		}
+	}
+	QFV_CreateResource (device, resources);
+
+	for (size_t i = 0; i < frames; i++) {
+		gctx->frames.a[i].need_update = true;
+	}
+}
+
+static void
+gizmo_update_descriptors (vulkan_ctx_t *ctx, int i)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto gctx = ctx->gizmo_context;
+
+	auto resources = &gctx->resources.array[gctx->resources.active];
+	auto obj = resources->objects;
+
+	auto frame = &gctx->frames.a[i];
+	auto counts = obj[frame->counts].buffer.buffer;
+	auto queue = obj[frame->queue].buffer.buffer;
+	auto queue_heads_view = obj[frame->queue_heads_view].image_view.view;
+	auto objects = obj[frame->objects].buffer.buffer;
+
+	VkDescriptorImageInfo imageInfo[] = {
+		{ .imageView = queue_heads_view,
+		  .imageLayout = VK_IMAGE_LAYOUT_GENERAL, },
+	};
+	VkDescriptorBufferInfo bufferInfo[] = {
+		{ .buffer = counts, .offset = 0, .range = VK_WHOLE_SIZE },
+		{ .buffer = queue, .offset = 0, .range = VK_WHOLE_SIZE },
+		{ .buffer = objects, .offset = 0, .range = VK_WHOLE_SIZE },
+	};
+	VkWriteDescriptorSet write[] = {
+		{   .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = frame->set,
+			.dstBinding = 0,
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+			.pBufferInfo = &bufferInfo[0], },
+		{   .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = frame->set,
+			.dstBinding = 1,
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+			.pBufferInfo = &bufferInfo[1], },
+		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = frame->set,
+			.dstBinding = 2,
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+			.pImageInfo = &imageInfo[0], },
+		{   .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = frame->set,
+			.dstBinding = 3,
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+			.pBufferInfo = &bufferInfo[2], },
+	};
+	dfunc->vkUpdateDescriptorSets (device->dev,
+								   countof (write), write,
+								   0, nullptr);
+
+	frame->need_update = false;
+}
 
 static void
 gizmo_shutdown (exprctx_t *ectx)
@@ -73,69 +168,49 @@ gizmo_shutdown (exprctx_t *ectx)
 	qfvPushDebug (ctx, "gizmo shutdown");
 
 	auto device = ctx->device;
-	QFV_DestroyResource (device, gctx->resource);
+	if (gctx->resources.array) {
+		for (uint32_t j = 0; j < gctx->resources.count; j++) {
+			auto resources = &gctx->resources.array[j];
+			QFV_DestroyResource (device, resources);
+			for (uint32_t i = 0; i < resources->num_objects; i++) {
+				auto obj = &resources->objects[i];
+				free ((char *) obj->name);
+			}
+		}
+
+	}
+	free (gctx->resources.array);
 
 	qfvPopDebug (ctx);
 }
 
 static void
-gizmo_startup (exprctx_t *ectx)
+gizmo_setup_buffers (vulkan_ctx_t *ctx, qfv_resource_t *resources,
+					 uint32_t set,
+					 qfv_resobj_t *counts,
+					 qfv_resobj_t *queue,
+					 qfv_resobj_t *queue_heads_image,
+					 qfv_resobj_t *queue_heads_view,
+					 qfv_resobj_t *objects,
+					 qfv_resobj_t *obj_ids)
 {
-	qfZoneScoped (true);
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto gctx = ctx->gizmo_context;
-	qfvPushDebug (ctx, "gizmo startup");
+	auto  gctx = ctx->gizmo_context;
+	size_t frames = gctx->frames.size;
 
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-
-	auto rctx = ctx->render_context;
-	size_t      frames = rctx->frames.size;
-	DARRAY_INIT (&gctx->frames, frames);
-	DARRAY_RESIZE (&gctx->frames, frames);
-	gctx->frames.grow = 0;
-	memset (gctx->frames.a, 0, gctx->frames.size * sizeof (gizmoframe_t));
-
-	gctx->dsmanager = QFV_Render_DSManager (ctx, "gizmo_set");
-
-	gctx->resource = malloc (sizeof (qfv_resource_t)
-							 // queue counts buffer
-							 + frames * sizeof (qfv_resobj_t)
-							 // queue buffer
-							 + sizeof (qfv_resobj_t)
-							 // queue_heads image
-							 + sizeof (qfv_resobj_t)
-							 // queue_heads view
-							 + sizeof (qfv_resobj_t)
-							 // object buffer
-							 + frames * sizeof (qfv_resobj_t)
-							 // obj_id buffer
-							 + frames * sizeof (qfv_resobj_t));
-	auto counts = (qfv_resobj_t *) &gctx->resource[1];
-	auto queue = &counts[frames];
-	auto queue_heads_image = &queue[1];
-	auto queue_heads_view = &queue_heads_image[1];
-	auto objects = &queue_heads_view[1];
-	auto obj_ids = &objects[frames];
-	*gctx->resource = (qfv_resource_t) {
-		.name = "gizmo",
+	resources[0] = (qfv_resource_t) {
+		.name = nva ("gizmo[%d]", set),
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		.num_objects = frames + 1 + 1 + 1 + frames + frames,
 		.objects = counts,
 	};
 	queue_heads_image[0] = (qfv_resobj_t) {
-		.name = "queue_heads_image",
+		.name = nva ("queue_heads_image[%d]", set),
 		.type = qfv_res_image,
 		.image = {
 			.type = VK_IMAGE_TYPE_2D,
 			.format = VK_FORMAT_R32_UINT,
-			.extent = {
-				.width = gctx->cmd_width,
-				.height = gctx->cmd_height,
-				.depth = 1,
-			},
+			.extent = { 0, 0, 1 },
 			.num_mipmaps = 1,
 			.num_layers = 6,
 			.samples = VK_SAMPLE_COUNT_1_BIT,
@@ -144,10 +219,10 @@ gizmo_startup (exprctx_t *ectx)
 		},
 	};
 	queue_heads_view[0] = (qfv_resobj_t) {
-		.name = "queue_heads_view",
+		.name = nva ("queue_heads_view[%d]", set),
 		.type = qfv_res_image_view,
 		.image_view = {
-			.image = queue_heads_image - gctx->resource[0].objects,
+			.image = queue_heads_image - resources[0].objects,
 			.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 			.format = queue_heads_image[0].image.format,
 			.subresourceRange = {
@@ -164,7 +239,7 @@ gizmo_startup (exprctx_t *ectx)
 		},
 	};
 	queue[0] = (qfv_resobj_t) {
-		.name = "queue",
+		.name = nva ("queue[%d]", set),
 		.type = qfv_res_buffer,
 		.buffer = {
 			.size = sizeof (giz_queue_t[MAX_QUEUE_BUFFER]),
@@ -172,9 +247,10 @@ gizmo_startup (exprctx_t *ectx)
 					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		},
 	};
-	for (uint32_t i = 0; i < frames; i++) {
+
+	for (size_t i = 0; i < frames; i++) {
 		counts[i] = (qfv_resobj_t) {
-			.name = vac (ctx->va_ctx, "counts[%d]", i),
+			.name = nva ("counts[%zd]", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (giz_count_t),
@@ -183,7 +259,7 @@ gizmo_startup (exprctx_t *ectx)
 			},
 		};
 		objects[i] = (qfv_resobj_t) {
-			.name = vac (ctx->va_ctx, "objects[%d]", i),
+			.name = nva ("objects[%zd]", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (uint32_t[MAX_OBJECT_DATA]),
@@ -192,7 +268,7 @@ gizmo_startup (exprctx_t *ectx)
 			},
 		};
 		obj_ids[i] = (qfv_resobj_t) {
-			.name = vac (ctx->va_ctx, "obj_ids[%d]", i),
+			.name = nva ("obj_ids[%zd]", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (uint32_t[MAX_OBJECT_DATA]),
@@ -201,60 +277,83 @@ gizmo_startup (exprctx_t *ectx)
 			},
 		};
 	}
-	QFV_CreateResource (device, gctx->resource);
-	for (uint32_t i = 0; i < frames; i++) {
-		auto frame = &gctx->frames.a[i];
-		*frame = (gizmoframe_t) {
-			.counts = counts[i].buffer.buffer,
-			.queue_heads_image = queue_heads_image[0].image.image,
-			.queue_heads_view = queue_heads_view[0].image_view.view,
-			.queue = queue[0].buffer.buffer,
-			.objects = objects[i].buffer.buffer,
-			.obj_ids = obj_ids[i].buffer.buffer,
-			.set = QFV_DSManager_AllocSet (gctx->dsmanager),
-		};
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
-							 frame->set, vac (ctx->va_ctx, "gizmo[%d]", i));
+}
 
-		VkDescriptorImageInfo imageInfo[] = {
-			{ .imageView = frame->queue_heads_view,
-			  .imageLayout = VK_IMAGE_LAYOUT_GENERAL, },
-		};
-		VkDescriptorBufferInfo bufferInfo[] = {
-			{ .buffer = frame->counts, .offset = 0, .range = VK_WHOLE_SIZE },
-			{ .buffer = frame->queue, .offset = 0, .range = VK_WHOLE_SIZE },
-			{ .buffer = frame->objects, .offset = 0, .range = VK_WHOLE_SIZE },
-		};
-		VkWriteDescriptorSet write[] = {
-			{   .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-				.dstSet = frame->set,
-				.dstBinding = 0,
-				.descriptorCount = 1,
-				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-				.pBufferInfo = &bufferInfo[0], },
-			{   .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-				.dstSet = frame->set,
-				.dstBinding = 1,
-				.descriptorCount = 1,
-				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-				.pBufferInfo = &bufferInfo[1], },
-			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-				.dstSet = frame->set,
-				.dstBinding = 2,
-				.descriptorCount = 1,
-				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-				.pImageInfo = &imageInfo[0], },
-			{   .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-				.dstSet = frame->set,
-				.dstBinding = 3,
-				.descriptorCount = 1,
-				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-				.pBufferInfo = &bufferInfo[2], },
-		};
-		dfunc->vkUpdateDescriptorSets (device->dev,
-									   countof (write), write,
-									   0, nullptr);
+static void
+gizmo_create_resources (vulkan_ctx_t *ctx)
+{
+	auto gctx = ctx->gizmo_context;
+	auto device = ctx->device;
+	size_t frames = gctx->frames.size;
+
+	size_t size = sizeof (qfv_resource_t)
+				// queue counts buffer
+				+ sizeof (qfv_resobj_t[frames])
+				// queue buffer
+				+ sizeof (qfv_resobj_t)
+				// queue_heads image
+				+ sizeof (qfv_resobj_t)
+				// queue_heads view
+				+ sizeof (qfv_resobj_t)
+				// object buffer
+				+ sizeof (qfv_resobj_t[frames])
+				// obj_id buffer
+				+ sizeof (qfv_resobj_t[frames]);
+	gctx->resources.array = malloc (size * frames);
+	gctx->resources.active = 0;
+	gctx->resources.count = frames;
+	void *res = &gctx->resources.array[frames]; // walks through block
+	for (uint32_t j = 0; j < frames; j++) {
+		auto counts = (qfv_resobj_t *) res;
+		auto queue = &counts[frames];
+		auto queue_heads_image = &queue[1];
+		auto queue_heads_view = &queue_heads_image[1];
+		auto objects = &queue_heads_view[1];
+		auto obj_ids = &objects[frames];
+		res = &obj_ids[frames];
+
+		gizmo_setup_buffers (ctx, &gctx->resources.array[j], j,
+							 counts, queue,
+							 queue_heads_image, queue_heads_view,
+							 objects, obj_ids);
+
+		for (size_t i = 0; i < frames; i++) {
+			auto obj = gctx->resources.array[j].objects;
+			auto frame = &gctx->frames.a[i];
+			*frame = (gizmoframe_t) {
+				.counts = &counts[i] - obj,
+				.queue_heads_image = &queue_heads_image[0] - obj,
+				.queue_heads_view = &queue_heads_view[0] - obj,
+				.queue = &queue[0] - obj,
+				.objects = &objects[i] - obj,
+				.obj_ids = &obj_ids[i] - obj,
+				.set = QFV_DSManager_AllocSet (gctx->dsmanager),
+			};
+			QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
+								 frame->set,
+								 vac (ctx->va_ctx, "gizmo[%zd]", i));
+		}
 	}
+}
+
+static void
+gizmo_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto gctx = ctx->gizmo_context;
+	qfvPushDebug (ctx, "gizmo startup");
+
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
+	DARRAY_INIT (&gctx->frames, frames);
+	DARRAY_RESIZE (&gctx->frames, frames);
+	gctx->frames.grow = 0;
+	memset (gctx->frames.a, 0, gctx->frames.size * sizeof (gizmoframe_t));
+
+	gctx->dsmanager = QFV_Render_DSManager (ctx, "gizmo_set");
+	gizmo_create_resources (ctx);
 
 	qfvPopDebug (ctx);
 }
@@ -273,8 +372,6 @@ gizmo_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	ctx->gizmo_context = gctx;
 
 	*gctx = (gizmoctx_t) {
-		.cmd_width = 240,//FIXME
-		.cmd_height = 135,//FIXME
 		.fs_obj_ids = DARRAY_STATIC_INIT (1024),
 		.obj_ids = DARRAY_STATIC_INIT (1024),
 		.objects = DARRAY_STATIC_INIT (1024),
@@ -294,6 +391,19 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto packet = QFV_PacketAcquire (ctx->staging, "gizmo.flush");
 	auto frame = &gctx->frames.a[ctx->curFrame];
 
+	if (frame->need_update) {
+		gizmo_update_descriptors (ctx, ctx->curFrame);
+	}
+
+	auto resources = &gctx->resources.array[gctx->resources.active];
+	auto obj = resources->objects;
+
+	auto counts_buffer = obj[frame->counts].buffer.buffer;
+	auto queue_buffer = obj[frame->queue].buffer.buffer;
+	auto queue_heads_image = obj[frame->queue_heads_image].image.image;
+	auto objects_buffer = obj[frame->objects].buffer.buffer;
+	auto obj_ids_buffer = obj[frame->obj_ids].buffer.buffer;
+
 	size_t size = sizeof (giz_count_t)
 				+ sizeof (uint32_t[gctx->objects.size])
 				+ sizeof (uint32_t[gctx->obj_ids.size])
@@ -309,7 +419,7 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto counts = (giz_count_t *) packet_data;
 	packet_data += sizeof (giz_count_t);
 	*counts = (giz_count_t) { .maxObjects = MAX_QUEUE_BUFFER };
-	QFV_PacketScatterBuffer (packet, frame->counts, 1, &counts_scatter,
+	QFV_PacketScatterBuffer (packet, counts_buffer, 1, &counts_scatter,
 			&bufferBarriers[qfv_BB_UniformRead_to_TransferWrite],
 			&bufferBarriers[qfv_BB_TransferWrite_to_ShaderRW]);
 
@@ -323,7 +433,7 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		packet_data += sizeof (uint32_t[gctx->objects.size]);
 		memcpy (objects, gctx->objects.a,
 				sizeof (uint32_t[gctx->objects.size]));
-		QFV_PacketScatterBuffer (packet, frame->objects, 1, &objects_scatter,
+		QFV_PacketScatterBuffer (packet, objects_buffer, 1, &objects_scatter,
 				&bufferBarriers[qfv_BB_UniformRead_to_TransferWrite],
 				&bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
 	}
@@ -339,7 +449,7 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		packet_data += sizeof (uint32_t[gctx->obj_ids.size]);
 		memcpy (obj_ids, gctx->obj_ids.a,
 				sizeof (uint32_t[gctx->obj_ids.size]));
-		QFV_PacketScatterBuffer (packet, frame->obj_ids, 1, &obj_ids_scatter,
+		QFV_PacketScatterBuffer (packet, obj_ids_buffer, 1, &obj_ids_scatter,
 				&bufferBarriers[qfv_BB_UniformRead_to_TransferWrite],
 				&bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
 	}
@@ -355,7 +465,7 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		memcpy (fs_obj_ids, gctx->fs_obj_ids.a,
 				sizeof (uint32_t[gctx->fs_obj_ids.size]));
 		// append fs_obj_ids to obj_ids
-		QFV_PacketScatterBuffer (packet, frame->obj_ids, 1, &fs_obj_ids_scatter,
+		QFV_PacketScatterBuffer (packet, obj_ids_buffer, 1, &fs_obj_ids_scatter,
 				&bufferBarriers[qfv_BB_UniformRead_to_TransferWrite],
 				&bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
 	}
@@ -383,9 +493,9 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.pImageMemoryBarriers = &ib,
 	};
 
-	bb.buffer = frame->queue;
+	bb.buffer = queue_buffer;
 	bb.size = VK_WHOLE_SIZE;
-	auto image = frame->queue_heads_image;
+	auto image = queue_heads_image;
 	ib.image = image;
 	ib.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
@@ -433,13 +543,17 @@ gizmo_draw_cmd (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 									layout, 0, countof(sets), sets, 0, nullptr);
 
 	*gctx->frag_size = (vec2f_t) {
-		1.0 / gctx->cmd_width,
-		1.0 / gctx->cmd_height,
+		1.0 / gctx->extent.width,
+		1.0 / gctx->extent.height,
 	};
 	*gctx->full_screen = 0;
 
+	auto resources = &gctx->resources.array[gctx->resources.active];
+	auto obj = resources->objects;
+	auto obj_ids_buffer = obj[frame->obj_ids].buffer.buffer;
+
 	VkDeviceSize offsets[] = {0};
-	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &frame->obj_ids, offsets);
+	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &obj_ids_buffer, offsets);
 	if (frame->num_obj_ids) {
 		*gctx->full_screen = 0;
 		QFV_PushBlackboard (ctx, cmd, pipeline);
@@ -462,6 +576,11 @@ gizmo_sync (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto gctx = ctx->gizmo_context;
 	auto frame = &gctx->frames.a[ctx->curFrame];
 
+	auto resources = &gctx->resources.array[gctx->resources.active];
+	auto obj = resources->objects;
+	auto queue_buffer = obj[frame->queue].buffer.buffer;
+	auto queue_heads_image = obj[frame->queue_heads_image].image.image;
+
 	auto cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
 						 vac (ctx->va_ctx, "gizmo.sync"));
@@ -483,10 +602,10 @@ gizmo_sync (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	};
 	bb.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	bb.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	bb.buffer = frame->queue;
+	bb.buffer = queue_buffer;
 	bb.size = VK_WHOLE_SIZE;
 
-	ib.image = frame->queue_heads_image;
+	ib.image = queue_heads_image;
 
 	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 
@@ -529,6 +648,7 @@ gizmo_update_framebuffer (const exprval_t **params, exprval_t *result,
 	auto main_render = main_step->render;
 	auto gizmo_render = gizmo_step->render;
 	auto rp = gizmo_render->active;
+	auto gctx = ctx->gizmo_context;
 
 	auto size = main_render->output.extent;
 	qfv_output_t output = (qfv_output_t) {
@@ -540,8 +660,13 @@ gizmo_update_framebuffer (const exprval_t **params, exprval_t *result,
 	if ((output.extent.width != gizmo_render->output.extent.width
 		|| output.extent.height != gizmo_render->output.extent.height)) {
 		QFV_DestroyFramebuffer (ctx, rp);
-		QFV_UpdateViewportScissor (gizmo_render, &output);
+		gizmo_delete_buffers (ctx);
+
 		gizmo_render->output.extent = output.extent;
+		gctx->extent = output.extent;
+
+		gizmo_create_buffers (ctx);
+		QFV_UpdateViewportScissor (gizmo_render, &output);
 	}
 
 	if (!rp->beginInfo.framebuffer) {
