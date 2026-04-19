@@ -396,7 +396,7 @@ trans_create_resources (vulkan_ctx_t *ctx)
 	tctx->resources.array = malloc (frames * size);
 	tctx->resources.active = 0;
 	tctx->resources.count = frames;
-	void *res = &tctx->resources.array[frames];
+	void *res = &tctx->resources.array[frames];	// walks through block
 	for (uint32_t j = 0; j < frames; j++) {
 		auto heads_objs = (qfv_resobj_t *) res;
 		auto cube_heads_objs = &heads_objs[frames];
