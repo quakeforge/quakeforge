@@ -1006,28 +1006,28 @@ qc_nocode_func
 	;
 
 qc_code_func
-	: identifier '=' optional_state_expr
-	  save_storage
+	: identifier '=' optional_state_expr[state]
+	  save_storage[storage]
 		{
-			specifier_t spec = qc_set_symbol ($<spec>0, $1, ctx);
-			auto fs = (funcstate_t) {
-				.function = current_func,
-			};
+			auto spec = qc_set_symbol ($<spec>0, $1, ctx);
 			spec.is_overload |= ctx->language->always_overload;
 			spec.sym = function_symbol (spec, ctx);
+			$<funcstate>$ = (funcstate_t) {
+				.function = current_func,
+				.spec = spec,
+			};
 			current_func = begin_function (spec, nullptr, current_symtab, ctx);
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
-			fs.spec = spec;
-			$<funcstate>$ = fs;
 		}
-	  compound_statement_ns
+	  compound_statement_ns[body]
 		{
 			auto fs = $<funcstate>5;
-			build_code_function (fs.spec, $3, $6, ctx);
+			auto state = $state;
+			build_code_function (fs.spec, state, $body, ctx);
 			current_symtab = pop_scope (current_func->parameters);
 			current_func = fs.function;
-			restore_storage ($4);
+			restore_storage ($storage);
 		}
 	;
 
@@ -1338,12 +1338,11 @@ function_body
 		}
 	  compound_statement_ns[body]
 		{
-			auto funcstate = $<funcstate>2;
-			auto spec = funcstate.spec;;
-			auto state = spec.sym->metafunc->state_expr;
-			build_code_function (spec, state, $body, ctx);
+			auto fs = $<funcstate>2;
+			auto state = fs.spec.sym->metafunc->state_expr;
+			build_code_function (fs.spec, state, $body, ctx);
 			current_symtab = pop_scope (current_func->parameters);
-			current_func = funcstate.function;
+			current_func = fs.function;
 			restore_storage ($storage);
 		}
 	| '=' '#' expr ';'
