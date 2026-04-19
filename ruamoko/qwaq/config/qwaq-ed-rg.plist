@@ -1694,13 +1694,6 @@ render_graph = {
 					depth = {
 						storeOp = store;
 					};
-					color = { };
-					emission = { };
-					normal = { };
-					light = { };
-					compo = { };
-					entid = { };
-					output = { };
 				};
 			};
 			subpasses = {
