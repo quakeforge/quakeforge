@@ -2594,20 +2594,20 @@ render_graph = {
 							inputAssembly = $slice.inputAssembly;
 							layout = $slice.layout;
 						};
-						painter = {
-							@inherit = $compose_base;
+						//painter = {
+						//	@inherit = $compose_base;
 
-							color = $color.painter;
-							tasks = (
-								{ func = painter_draw; },
-							);
+						//	color = $color.painter;
+						//	tasks = (
+						//		{ func = painter_draw; },
+						//	);
 
-							stages = (
-								$fstriangle.shader.vertex,
-								$painter.shader.fragment,
-							);
-							layout = $painter.layout;
-						};
+						//	stages = (
+						//		$fstriangle.shader.vertex,
+						//		$painter.shader.fragment,
+						//	);
+						//	layout = $painter.layout;
+						//};
 						lines = {
 							@inherit = $compose_base;
 
@@ -2914,7 +2914,7 @@ render_graph = {
 					{ func = output_select_pipeline;
 					  params = ("\"output\""); },
 					{ func = flush_draw; },
-					{ func = painter_flush; },
+					//{ func = painter_flush; },
 				);
 			};
 		};
@@ -2955,7 +2955,7 @@ render_graph = {
 		{ func = output_init; },
 		{ func = compose_init; },
 		{ func = draw_init; },
-		{ func = painter_init; },
+		//{ func = painter_init; },
 		{ func = gizmo_init; },
 		{ func = particle_init; },
 		{ func = planes_init; },
