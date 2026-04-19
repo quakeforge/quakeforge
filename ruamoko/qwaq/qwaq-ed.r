@@ -666,7 +666,9 @@ static gizmo_node_t covered_step[] = {
 }
 @end
 
-@generic (genObj = [PGA.group_mask(0xc), PGA.group_mask(0xe)]) {
+//FIXME having PGA.group_mask(0xc) here and then providing a defintion causes
+//a segfault in qfcc
+@generic (genObj = [PGA.group_mask(0xe)]) {
 
 genObj
 sqrt (genObj x)
@@ -676,6 +678,13 @@ sqrt (genObj x)
 }
 
 };
+
+@overload
+PGA.group_mask(0xc)
+sqrt (PGA.group_mask(0xc) x)
+{
+	return (x + x.scalar) / 2;
+}
 
 //void
 motor_t
