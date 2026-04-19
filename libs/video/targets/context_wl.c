@@ -93,18 +93,36 @@ static const struct zxdg_toplevel_decoration_v1_listener toplevel_decoration_lis
     .configure = zxdg_toplevel_decoration_configure
 };
 
+// FIXME(Peter): This shouldn't be global state
+static bool initial_configure = true;
+
+// Values ripped from X11 impl
+static const int32_t MIN_WIDTH = 32;
+static const int32_t MIN_HEIGHT = 20;
+
 static void
 toplevel_configure (void *data, struct xdg_toplevel *toplvl,
                     int32_t width, int32_t height, struct wl_array *states)
 {
-    if (width == 0 || height == 0) {
-        return;
-    }
+	if (initial_configure) {
+		width = viddef.width;
+		height = viddef.height;
+		initial_configure = false;
+	}
 
-    Sys_MaskPrintf (SYS_wayland, "toplevel_configure: width = %d, height = %d\n",
-            width, height);
+	if (width == 0 || height == 0) {
+		Sys_Error ("Wayland backend doesn't handle width or height of 0."
+					"This should be fixed.");
+		return;
+	}
 
-    VID_SetWindow (0, 0, width, height);
+	width = max (width, MIN_WIDTH);
+	height = max (height, MIN_HEIGHT);
+
+	Sys_MaskPrintf (SYS_wayland, "toplevel_configure: width = %d, height = %d\n",
+					width, height);
+
+	VID_SetWindow (0, 0, width, height);
 }
 
 static void
@@ -302,6 +320,7 @@ WL_CreateWindow (int width, int height)
 	xdg_toplevel = xdg_surface_get_toplevel (xdg_surface);
 	xdg_toplevel_add_listener (xdg_toplevel, &toplevel_listener, nullptr);
 	xdg_toplevel_set_title (xdg_toplevel, "Hello");
+	xdg_toplevel_set_min_size (xdg_toplevel, MIN_WIDTH, MIN_HEIGHT);
 
 	if (zxdg_decoration_manager_v1) {
 		Sys_MaskPrintf (SYS_wayland, "Initializing decorations\n");

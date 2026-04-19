@@ -100,7 +100,7 @@ typedef struct wl_idevice_s {
 // Mouse wheel isn't an axis?
 static constexpr size_t WL_MAX_MOUSE_AXES = 2;
 static in_axisinfo_t wl_mouse_axes[WL_MAX_MOUSE_AXES];
-//static const char *wl_mouse_axis_names[] = {"M_X", "M_Y"};
+static const char *wl_mouse_axis_names[] = {"M_X", "M_Y"};
 
 // linux/input-event-codes.h defines 8 named buttons (+2 for mouse wheel, blame X11)
 static constexpr size_t WL_MAX_MOUSE_BUTTONS = 8 + 2;
@@ -150,6 +150,16 @@ static int32_t
 in_wl_adjust_mouse_button_idx (int32_t button)
 {
 	return button <= 2 ? button : button + 2;
+}
+
+static void
+send_focus_event (bool focus)
+{
+	IE_event_t  event = {
+		.type = focus ? ie_app_gain_focus : ie_app_lose_focus,
+		.when = Sys_LongTime (),
+	};
+	IE_Send_Event (&event);
 }
 
 static void
@@ -412,6 +422,7 @@ in_wl_keyboard_enter (void *data,
 		  struct wl_surface *surface,
 		  struct wl_array *keys)
 {
+	send_focus_event (true);
 }
 
 static void
@@ -420,6 +431,7 @@ in_wl_keyboard_leave (void *data,
 		  uint32_t serial,
 		  struct wl_surface *surface)
 {
+	send_focus_event (false);
 }
 
 static void
@@ -1082,6 +1094,22 @@ in_wl_axis_info (void *data, void *device, in_axisinfo_t *axes, int *numaxes)
 }
 
 static const char *
+in_wl_get_axis_name (void *data, void *device, int axis_num)
+{
+	wl_idevice_t *dev = device;
+	const char *name = 0;
+
+	if (dev == &wl_keyboard_device) {
+		// keyboards don't have axes...
+	} else if (dev == &wl_mouse_device) {
+		if ((unsigned) axis_num < countof (wl_mouse_axis_names)) {
+			name = wl_mouse_axis_names[axis_num];
+		}
+	}
+	return name;
+}
+
+static const char *
 in_wl_get_button_name (void *data, void *device, int button_num)
 {
 	wl_idevice_t *dev = device;
@@ -1100,6 +1128,18 @@ in_wl_get_button_name (void *data, void *device, int button_num)
 	}
 
 	return name;
+}
+
+static int
+in_wl_get_axis_info (void *data, void *device, int axis_num,
+					  in_axisinfo_t *info)
+{
+	wl_idevice_t *dev = device;
+	if (axis_num < 0 || axis_num >= dev->num_axes) {
+		return 0;
+	}
+	*info = dev->axes[axis_num];
+	return 1;
 }
 
 static int
@@ -1181,8 +1221,10 @@ static in_driver_t in_wl_driver = {
 	.button_info = in_wl_button_info,
 	.axis_info = in_wl_axis_info,
 
+	.get_axis_name = in_wl_get_axis_name,
 	.get_button_name = in_wl_get_button_name,
 
+	.get_axis_info = in_wl_get_axis_info,
 	.get_button_info = in_wl_get_button_info,
 };
 
