@@ -187,11 +187,15 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 	}
 	VkMemoryPropertyFlags properties = resource->memory_properties;
 	for (uint32_t type = 0; type < memprops->memoryTypeCount; type++) {
+		auto memType = &memprops->memoryTypes[type];
+		auto memHeap = &memprops->memoryHeaps[memType->heapIndex];
 		if ((req.memoryTypeBits & (1 << type))
-			&& ((memprops->memoryTypes[type].propertyFlags & properties)
-				                == properties)) {
-			Sys_MaskPrintf (SYS_vulkan, "QFV_CreateResource: %s:mti: %d\n",
-							resource->name, type);
+			&& ((memType->propertyFlags & properties) == properties)) {
+			Sys_MaskPrintf (SYS_vulkan, "QFV_CreateResource: %s:mti:"
+							" %d %x"
+							" %d %zd %x\n",
+							resource->name, type, memType->propertyFlags,
+							memType->heapIndex, memHeap->size, memHeap->flags);
 			VkMemoryAllocateFlagsInfo flags_info = {
 				.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
 				.flags = alloc_flags,
