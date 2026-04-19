@@ -78,16 +78,18 @@ typedef struct giz_plane_s {
 } giz_plane_t;
 
 typedef struct gizmoframe_s {
-	VkBuffer    counts;
-	VkBuffer    queue;
-	VkImageView queue_heads_view;
-	VkBuffer    objects;
-	VkBuffer    obj_ids;
+	uint32_t    counts;
+	uint32_t    queue;
+	uint32_t    queue_heads_image;
+	uint32_t    queue_heads_view;
+	uint32_t    objects;
+	uint32_t    obj_ids;
+
 	uint32_t    num_obj_ids;
 	uint32_t    num_fs_obj_ids;
 
-	VkImage     queue_heads_image;
 	VkDescriptorSet set;
+	bool need_update;
 } gizmoframe_t;
 
 typedef struct gizmoframeset_s
@@ -98,10 +100,10 @@ typedef struct giz_data_s
 
 typedef struct gizmoctx_s {
 	qfv_dsmanager_t *dsmanager;
-	qfv_resource_t *resource;
+	qfv_resourcearray_t resources;
 	gizmoframeset_t frames;
-	uint32_t    cmd_width;
-	uint32_t    cmd_height;
+	VkExtent2D  extent;
+
 	giz_data_t  fs_obj_ids;
 	giz_data_t  obj_ids;
 	giz_data_t  objects;
