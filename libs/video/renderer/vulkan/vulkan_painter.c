@@ -258,6 +258,7 @@ painter_create_resources (vulkan_ctx_t *ctx)
 				// cmd_queue buffer
 				+ frames * sizeof (qfv_resobj_t);
 	pctx->resources = (qfv_resourcearray_t) {
+		//FIXME I'm not sure why 2x the frame count is needed
 		.array = malloc (size * frames * 2),
 		.count = frames * 2,
 	};
