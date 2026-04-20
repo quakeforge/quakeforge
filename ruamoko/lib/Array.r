@@ -16,22 +16,22 @@
 
 @implementation Array
 
-+ (id) array
++ (Array *) array
 {
 	return [self arrayWithCapacity: STANDARD_CAPACITY];
 }
 
-+ (id) arrayWithCapacity: (unsigned)cap
++ (Array *) arrayWithCapacity: (unsigned)cap
 {
 	return [[[self alloc] initWithCapacity: cap] autorelease];
 }
 
-+ (id) arrayWithArray: (Array *)array
++ (Array *) arrayWithArray: (Array *)array
 {
 	return [[array copy] autorelease];
 }
 
-+ (id) arrayWithObject: (id)anObject
++ (Array *) arrayWithObject: (id)anObject
 {
 	Array *newArray = (Array *)[self arrayWithCapacity: STANDARD_CAPACITY];
 
@@ -39,7 +39,7 @@
 	return newArray;
 }
 
-+ (id) arrayWithObjects: (id)firstObj, ...
++ (Array *) arrayWithObjects: (id)firstObj, ...
 {
 	local int i;
 	id	newArray = [self arrayWithObject: firstObj];
@@ -50,7 +50,7 @@
 	return [newArray autorelease];
 }
 
-+ (id) arrayWithObjects: (id *) objs count: (unsigned)cnt
++ (Array *) arrayWithObjects: (id *) objs count: (unsigned)cnt
 {
 	id	newArray = [self array];
 

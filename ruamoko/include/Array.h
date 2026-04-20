@@ -31,24 +31,24 @@
 /**
 	Create and return an empty array with the default initial capacity.
 */
-+ (id) array;
++ (Array *) array;
 
 /**
 	Creates and returns an empty array with initial capacity \a cap.
 
 	\param	cap	The initial capacity of the array.
 */
-+ (id) arrayWithCapacity: (unsigned)cap;
++ (Array *) arrayWithCapacity: (unsigned)cap;
 
 /**
 	Returns a copy of \a array, retaining its contents.
 */
-+ (id) arrayWithArray: (Array *)array;
++ (Array *) arrayWithArray: (Array *)array;
 
 /**
 	Create an array containing only \a anObject .
 */
-+ (id) arrayWithObject: (id)anObject;
++ (Array *) arrayWithObject: (id)anObject;
 
 /**
 	Create an array from a list of objects.
@@ -56,7 +56,7 @@
 	\warning Due to the nature of the Ruamoko/QuakeC language, do not supply
 	more than 6 objects to this method.
 */
-+ (id) arrayWithObjects: (id)firstObj, ...;
++ (Array *) arrayWithObjects: (id)firstObj, ...;
 
 /**
 	Create and return an array containing the first \a count objects from
@@ -65,7 +65,7 @@
 	\warning Do not supply a primitive array containing fewer than \a count
 	objects.
 */
-+ (id) arrayWithObjects: (id *)objs
++ (Array *) arrayWithObjects: (id *)objs
                   count: (unsigned)cnt;
 //\}
 
