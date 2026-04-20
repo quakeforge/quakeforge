@@ -108,9 +108,9 @@ static void *
 run_producer (void *_t)
 {
 	thread_t   *t = _t;
-	unsigned    rnd = t->id;
+	//unsigned    rnd = t->id;
 	for (int j = 0; j < num_events; j++) {
-		unsigned    ind = rand_r (&rnd) % num_queues;
+		unsigned    ind = 0;//rand_r (&rnd) % num_queues;
 		if (testqueue_push (t->queues[ind])) {
 			notifier_notify (t->notifier, 1);
 			continue;
@@ -127,9 +127,9 @@ run_consumer (void *_t)
 {
 	thread_t   *t = _t;
 	waiter_t   *w = t->waiter;
-	unsigned    rnd = t->id;
+	//unsigned    rnd = t->id;
 	for (int j = 0; j < num_events; j++) {
-		unsigned    ind = rand_r (&rnd) % num_queues;
+		unsigned    ind = 0;//rand_r (&rnd) % num_queues;
 		if (testqueue_pop (t->queues[ind])) {
 			continue;
 		}
