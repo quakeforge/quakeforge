@@ -218,7 +218,8 @@ create_progs (qwaq_thread_t *thread)
 	pr->no_exec_limit = 1;
 	pr->hashctx = &thread->hashctx;
 
-	pr_debug = 2;
+	pr_debug = 0; // TODO: Fix the original error that's caused
+	              // by having to set this to 0 instead of 2!
 	pr_boundscheck = 0;
 	PR_Init (pr);
 	PR_Resources_Register (pr, "qwaq_thread", thread, qwaq_thread_clear,

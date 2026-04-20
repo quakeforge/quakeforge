@@ -162,7 +162,7 @@ if test "x$HAVE_SVGA" = xyes; then
 		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
 	fi
 fi
-if test "x$mingw" = xyes; then
+if test "x$mingw" = xyes -o "x$cygwin" = xyes; then
 	if test "x$ENABLE_clients_win" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-win\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-win\$(EXEEXT)"

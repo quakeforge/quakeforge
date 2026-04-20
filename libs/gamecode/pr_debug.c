@@ -407,11 +407,12 @@ pr_debug_clear (progs_t *pr, void *data)
 
 	if (res->debug)
 		pr->free_progs_mem (pr, res->debug);
+	res->debug = 0;
+
 	Hash_FlushTable (res->file_hash);
 	Hash_FlushTable (res->debug_syms);
 	Hash_FlushTable (res->compunits);
 	PR_RESRESET (res->compmap);
-	res->debug = 0;
 	res->auxfunctions = 0;
 	if (res->auxfunction_map)
 		pr->free_progs_mem (pr, res->auxfunction_map);

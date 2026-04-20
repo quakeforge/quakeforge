@@ -19,6 +19,8 @@ case "$host_os" in
 		;;
 	cygwin*)
 		cygwin=yes
+		FNM_FLAGS="-I\$(top_srcdir)/include/win32"
+		SYSTYPE=WIN32
 		AC_DEFINE(NEED_GNUPRINTF)
 		if test "x$host" != "x$build"; then
 			CC="$host_cpu-$host_os-gcc"

@@ -28,7 +28,9 @@
 # include "config.h"
 #endif
 
-#define _GNU_SOURCE		//FIXME should be elsewhere for portability
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE		//FIXME should be elsewhere for portability
+#endif
 
 #include <fcntl.h>
 #include <unistd.h>
