@@ -70,9 +70,7 @@ painter_delete_buffers (vulkan_ctx_t *ctx)
 	auto resources = &pctx->resources.array[pctx->resources.active];
 	if (resources->memory) {
 		QFV_QueueResourceDelete (ctx, resources);
-		if (++pctx->resources.active >= pctx->resources.count) {
-			pctx->resources.active = 0;
-		}
+		qfv_resourcearray_next (&pctx->resources);
 	}
 	free (pctx->cmd_heads);
 	pctx->cmd_heads = nullptr;

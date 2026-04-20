@@ -71,9 +71,7 @@ gizmo_delete_buffers (vulkan_ctx_t *ctx)
 	auto resources = &gctx->resources.array[gctx->resources.active];
 	if (resources->memory) {
 		QFV_QueueResourceDelete (ctx, resources);
-		if (++gctx->resources.active >= gctx->resources.count) {
-			gctx->resources.active = 0;
-		}
+		qfv_resourcearray_next (&gctx->resources);
 	}
 }
 

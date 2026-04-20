@@ -38,6 +38,8 @@
 # include <strings.h>
 #endif
 
+#define IMPLEMENT_QFV_REND_Funcs
+
 #include "QF/cmem.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
@@ -436,12 +438,6 @@ run_deletion_queue (vulkan_ctx_t *ctx)
 	}
 }
 
-static inline void
-qfv_resourcearray_next (qfv_resourcearray_t *array)
-{
-	array->active = (array->active + 1 >= array->count) ? 0 : array->active + 1;
-}
-
 void
 QFV_RunRenderJob (vulkan_ctx_t *ctx)
 {
@@ -685,12 +681,7 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 				auto fbr = &job->framebuffer_resources[i];
 				auto res = &fbr->array[fbr->active];
 				if (res->memory) {
-					uint32_t frames = rctx->frames.size;
-					qfv_delete_t del = {
-						.resources = res,
-						.deletion_frame = ctx->frameNumber + frames,
-					};
-					PQUEUE_INSERT (&rctx->deletion_queue, del);
+					QFV_QueueResourceDelete (ctx, res);
 					qfv_resourcearray_next (fbr);
 				}
 			}

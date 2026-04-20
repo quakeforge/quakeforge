@@ -561,6 +561,8 @@ typedef struct qfv_taskctx_s {
 	void       *data;
 } qfv_taskctx_t;
 
+#define QFV_REND_INLINE GNU89INLINE inline
+
 VkCommandBuffer QFV_GetCmdBuffer (vulkan_ctx_t *ctx, bool secondary);
 void QFV_AppendCmdBuffer (vulkan_ctx_t *ctx, VkCommandBuffer cmd);
 
@@ -598,6 +600,8 @@ void QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 
 void QFV_QueueResourceDelete (vulkan_ctx_t *ctx, qfv_resource_t *res);
 void QFV_QueueImageViewDelete (vulkan_ctx_t *ctx, VkImageView view);
+
+QFV_REND_INLINE void qfv_resourcearray_next (qfv_resourcearray_t *array);
 
 qfv_dsmanager_t *QFV_Render_DSManager (vulkan_ctx_t *ctx, const char *setName)
 	__attribute__((pure));
@@ -638,6 +642,18 @@ void QFV_Render_UI (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx);
 imui_ctx_t *QFV_Render_UI_Context (vulkan_ctx_t *ctx) __attribute__((pure));
 void QFV_Render_Menu (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx);
 void QFV_Render_UI_Shutdown (vulkan_ctx_t *ctx);
+
+#undef QFV_REND_INLINE
+#ifndef IMPLEMENT_QFV_REND_Funcs
+#define QFV_REND_INLINE GNU89INLINE inline
+#else
+#define QFV_REND_INLINE VISIBLE
+#endif
+QFV_REND_INLINE void
+qfv_resourcearray_next (qfv_resourcearray_t *array)
+{
+	array->active = (array->active + 1 >= array->count) ? 0 : array->active + 1;
+}
 
 #endif//__QFCC__
 
