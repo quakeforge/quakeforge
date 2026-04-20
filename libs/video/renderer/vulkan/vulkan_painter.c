@@ -47,6 +47,7 @@
 
 #include "compat.h"
 #include "QF/Vulkan/barrier.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
@@ -59,7 +60,93 @@
 #include "vid_vulkan.h"
 
 #define MAX_QUEUE_BUFFER (8*1024*1024)
+#define MAX_OBJECT_DATA (8*1024*1024)
 
+static void
+painter_delete_buffers (vulkan_ctx_t *ctx)
+{
+	auto pctx = ctx->painter_context;
+
+	auto resources = &pctx->resources.array[pctx->resources.active];
+	if (resources->memory) {
+		QFV_QueueResourceDelete (ctx, resources);
+		if (++pctx->resources.active >= pctx->resources.count) {
+			pctx->resources.active = 0;
+		}
+	}
+	free (pctx->cmd_heads);
+	pctx->cmd_heads = nullptr;
+}
+
+static void
+painter_create_buffers (vulkan_ctx_t *ctx)
+{
+	auto device = ctx->device;
+	auto pctx = ctx->painter_context;
+	size_t frames = pctx->frames.size;
+
+	auto resources = &pctx->resources.array[pctx->resources.active];
+
+	if (resources->memory) {
+		Sys_Error ("resources already allocated!");
+	}
+
+	for (uint32_t i = 0; i < resources->num_objects; i++) {
+		auto obj = &resources->objects[i];
+		if (obj->type == qfv_res_image) {
+			auto img = &obj->image;
+			img->extent.width = pctx->cmd_extent.width;
+			img->extent.height = pctx->cmd_extent.height;
+		}
+	}
+	QFV_CreateResource (device, resources);
+
+	for (size_t i = 0; i < frames; i++) {
+		pctx->frames.a[i].need_update = true;
+	}
+
+	pctx->max_queues = pctx->cmd_extent.width * pctx->cmd_extent.height;
+	pctx->cmd_heads = malloc (sizeof(uint32_t[pctx->max_queues]));
+	memset (pctx->cmd_heads, 0xff, sizeof(uint32_t[pctx->max_queues]));
+}
+
+static void
+painter_update_descriptors (vulkan_ctx_t *ctx, int i)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto pctx = ctx->painter_context;
+
+	auto resources = &pctx->resources.array[pctx->resources.active];
+	auto obj = resources->objects;
+
+	auto frame = &pctx->frames.a[i];
+	auto cmd_heads_view = obj[frame->cmd_heads_view].image_view.view;
+	auto cmd_queue = obj[frame->cmd_queue].buffer.buffer;
+
+	VkDescriptorImageInfo imageInfo[] = {
+		{ .imageView = cmd_heads_view,
+		  .imageLayout = VK_IMAGE_LAYOUT_GENERAL, },
+	};
+	VkDescriptorBufferInfo bufferInfo[] = {
+		{ .buffer = cmd_queue, .offset = 0, .range = VK_WHOLE_SIZE },
+	};
+	VkWriteDescriptorSet write[] = {
+		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = frame->set,
+			.dstBinding = 0,
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+			.pImageInfo = &imageInfo[0], },
+		{   .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = frame->set,
+			.dstBinding = 1,
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+			.pBufferInfo = &bufferInfo[0], },
+	};
+	dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
+}
 
 static void
 painter_shutdown (exprctx_t *ectx)
@@ -70,44 +157,33 @@ painter_shutdown (exprctx_t *ectx)
 	qfvPushDebug (ctx, "painter shutdown");
 
 	auto device = ctx->device;
-	QFV_DestroyResource (device, pctx->resource);
+	if (pctx->resources.array) {
+		for (uint32_t j = 0; j < pctx->resources.count; j++) {
+			auto resources = &pctx->resources.array[j];
+			QFV_DestroyResource (device, resources);
+			for (uint32_t i = 0; i < resources->num_objects; i++) {
+				auto obj = &resources->objects[i];
+				free ((char *) obj->name);
+			}
+		}
+	}
+	free (pctx->resources.array);
 
 	qfvPopDebug (ctx);
 }
 
 static void
-painter_startup (exprctx_t *ectx)
+painter_setup_buffers (vulkan_ctx_t *ctx, qfv_resource_t *resources,
+					   uint32_t set,
+					   qfv_resobj_t *cmd_heads_image,
+					   qfv_resobj_t *cmd_heads_view,
+					   qfv_resobj_t *cmd_queue)
 {
-	qfZoneScoped (true);
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto pctx = ctx->painter_context;
-	qfvPushDebug (ctx, "painter startup");
+	auto  pctx = ctx->painter_context;
+	size_t frames = pctx->frames.size;
 
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-
-	auto rctx = ctx->render_context;
-	size_t      frames = rctx->frames.size;
-	DARRAY_INIT (&pctx->frames, frames);
-	DARRAY_RESIZE (&pctx->frames, frames);
-	pctx->frames.grow = 0;
-	memset (pctx->frames.a, 0, pctx->frames.size * sizeof (painterframe_t));
-
-	pctx->dsmanager = QFV_Render_DSManager (ctx, "painter_set");
-
-	pctx->resource = malloc (sizeof (qfv_resource_t)
-							 // cmd_heads image
-							 + frames * sizeof (qfv_resobj_t)
-							 // cmd_heads view
-							 + frames * sizeof (qfv_resobj_t)
-							 // cmd_queue buffer
-							 + frames * sizeof (qfv_resobj_t));
-	auto cmd_heads_image = (qfv_resobj_t *) &pctx->resource[1];
-	auto cmd_heads_view = &cmd_heads_image[frames];
-	auto cmd_queue = &cmd_heads_view[frames];
-	*pctx->resource = (qfv_resource_t) {
-		.name = "painter",
+	resources[0] = (qfv_resource_t) {
+		.name = nva ("painter[%d]", set),
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		.num_objects = frames + frames + frames,
@@ -115,7 +191,7 @@ painter_startup (exprctx_t *ectx)
 	};
 	for (uint32_t i = 0; i < frames; i++) {
 		cmd_heads_image[i] = (qfv_resobj_t) {
-			.name = vac (ctx->va_ctx, "cmd_heads_image[%d]", i),
+			.name = nva ("cmd_heads_image[%d]", i),
 			.type = qfv_res_image,
 			.image = {
 				.type = VK_IMAGE_TYPE_2D,
@@ -133,7 +209,7 @@ painter_startup (exprctx_t *ectx)
 			},
 		};
 		cmd_heads_view[i] = (qfv_resobj_t) {
-			.name = vac (ctx->va_ctx, "cmd_heads_view[%d]", i),
+			.name = nva ("cmd_heads_view[%d]", i),
 			.type = qfv_res_image_view,
 			.image_view = {
 				.image = i,
@@ -153,7 +229,7 @@ painter_startup (exprctx_t *ectx)
 			},
 		};
 		cmd_queue[i] = (qfv_resobj_t) {
-			.name = vac (ctx->va_ctx, "cmd_queue[%d]", i),
+			.name = nva ("cmd_queue[%d]", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (uint32_t) * MAX_QUEUE_BUFFER,
@@ -162,39 +238,73 @@ painter_startup (exprctx_t *ectx)
 			},
 		};
 	}
-	QFV_CreateResource (device, pctx->resource);
-	for (uint32_t i = 0; i < frames; i++) {
-		auto frame = &pctx->frames.a[i];
-		*frame = (painterframe_t) {
-			.cmd_heads_image = cmd_heads_image[i].image.image,
-			.cmd_heads_view = cmd_heads_view[i].image_view.view,
-			.cmd_queue = cmd_queue[i].buffer.buffer,
-			.set = QFV_DSManager_AllocSet (pctx->dsmanager),
-		};
+}
 
-		VkDescriptorImageInfo imageInfo[] = {
-			{ .imageView = frame->cmd_heads_view,
-			  .imageLayout = VK_IMAGE_LAYOUT_GENERAL, },
-		};
-		VkDescriptorBufferInfo bufferInfo[] = {
-			{ .buffer = frame->cmd_queue, .offset = 0, .range = VK_WHOLE_SIZE },
-		};
-		VkWriteDescriptorSet write[] = {
-			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-				.dstSet = frame->set,
-				.dstBinding = 0,
-				.descriptorCount = 1,
-				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-				.pImageInfo = &imageInfo[0], },
-			{   .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-				.dstSet = frame->set,
-				.dstBinding = 1,
-				.descriptorCount = 1, 
-				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-				.pBufferInfo = &bufferInfo[0], },
-		};
-		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
+static void
+painter_create_resources (vulkan_ctx_t *ctx)
+{
+	auto pctx = ctx->painter_context;
+	auto device = ctx->device;
+	size_t frames = pctx->frames.size;
+
+	size_t size = sizeof (qfv_resource_t)
+				// cmd_heads image
+				+ frames * sizeof (qfv_resobj_t)
+				// cmd_heads view
+				+ frames * sizeof (qfv_resobj_t)
+				// cmd_queue buffer
+				+ frames * sizeof (qfv_resobj_t);
+	pctx->resources = (qfv_resourcearray_t) {
+		.array = malloc (size * frames * 2),
+		.count = frames * 2,
+	};
+	// all qfv_resource_t elements are at the beginning of the block, followed
+	// by all the qfv_resobj_t elements
+	// walks through block
+	void *res = &pctx->resources.array[pctx->resources.count];
+	for (uint32_t j = 0; j < pctx->resources.count; j++) {
+		auto cmd_heads_image = (qfv_resobj_t *) res;
+		auto cmd_heads_view = &cmd_heads_image[frames];
+		auto cmd_queue = &cmd_heads_view[frames];
+		res = &cmd_queue[frames];
+
+		painter_setup_buffers (ctx, &pctx->resources.array[j], j,
+							   cmd_heads_image, cmd_heads_view, cmd_queue);
+
+		for (uint32_t i = 0; i < frames; i++) {
+			auto obj = pctx->resources.array[j].objects;
+			auto frame = &pctx->frames.a[i];
+			*frame = (painterframe_t) {
+				.cmd_heads_image = &cmd_heads_image[i] - obj,
+				.cmd_heads_view = &cmd_heads_view[i] - obj,
+				.cmd_queue = &cmd_queue[i] - obj,
+				.set = QFV_DSManager_AllocSet (pctx->dsmanager),
+			};
+			QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
+								 frame->set,
+								 vac (ctx->va_ctx, "painter[%d]", i));
+		}
 	}
+}
+
+static void
+painter_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto pctx = ctx->painter_context;
+	qfvPushDebug (ctx, "painter startup");
+
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
+	DARRAY_INIT (&pctx->frames, frames);
+	DARRAY_RESIZE (&pctx->frames, frames);
+	pctx->frames.grow = 0;
+	memset (pctx->frames.a, 0, pctx->frames.size * sizeof (painterframe_t));
+
+	pctx->dsmanager = QFV_Render_DSManager (ctx, "painter_set");
+	painter_create_resources (ctx);
 
 	qfvPopDebug (ctx);
 }
@@ -214,18 +324,11 @@ painter_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	*pctx = (painterctx_t) {
 		.cmd_extent = {
-			.width = 240,//FIXME
-			.height = 135,//FIXME
 			.depth = 1,
-			.layers = 1,
+			.layers =1,
 		},
-		.max_queues = 32400,//FIXME
 		.cmd_queue = DARRAY_STATIC_INIT (1024),
 	};
-
-	pctx->cmd_heads = malloc (pctx->max_queues * 2 * sizeof (uint32_t));
-	pctx->cmd_tails = &pctx->cmd_heads[pctx->max_queues];
-	memset (pctx->cmd_heads, 0xff, pctx->max_queues * 2 * sizeof (uint32_t));
 }
 
 static void
@@ -238,11 +341,20 @@ painter_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto packet = QFV_PacketAcquire (ctx->staging, "painter.flush1");
 	auto frame = &pctx->frames.a[ctx->curFrame];
 
-	uint32_t size = (pctx->cmd_extent.width * pctx->cmd_extent.height
-					 * sizeof (uint32_t));
-	auto data = QFV_PacketExtend (packet, size);
-	memcpy (data, pctx->cmd_heads, size);
-	QFV_PacketCopyImage (packet, frame->cmd_heads_image,
+	if (frame->need_update) {
+		painter_update_descriptors (ctx, ctx->curFrame);
+	}
+
+	auto resources = &pctx->resources.array[pctx->resources.active];
+	auto obj = resources->objects;
+
+	auto cmd_heads_image = obj[frame->cmd_heads_image].image.image;
+	auto cmd_queue = obj[frame->cmd_queue].buffer.buffer;
+
+	size_t heads_size = sizeof(uint32_t[pctx->max_queues]);
+	auto data = QFV_PacketExtend (packet, heads_size);
+	memcpy (data, pctx->cmd_heads, heads_size);
+	QFV_PacketCopyImage (packet, cmd_heads_image,
 						 (qfv_offset_t){}, pctx->cmd_extent, 0,
 						 &imageBarriers[qfv_LT_Undefined_to_TransferDst],
 						 &imageBarriers[qfv_LT_TransferDst_to_StorageReadOnly]);
@@ -250,15 +362,15 @@ painter_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	if (pctx->cmd_queue.size) {
 		packet = QFV_PacketAcquire (ctx->staging, "painter.flush2");
-		size = pctx->cmd_queue.size * sizeof (uint32_t);
+		size_t size = pctx->cmd_queue.size * sizeof (uint32_t);
 		data = QFV_PacketExtend (packet, size);
 		memcpy (data, pctx->cmd_queue.a, size);
 		auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
 		auto db = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
-		QFV_PacketCopyBuffer (packet, frame->cmd_queue, 0, &sb, &db);
+		QFV_PacketCopyBuffer (packet, cmd_queue, 0, &sb, &db);
 		QFV_PacketSubmit (packet);
 	}
-	memset (pctx->cmd_heads, 0xff, pctx->max_queues * 2 * sizeof (uint32_t));
+	memset (pctx->cmd_heads, 0xff, heads_size);
 	pctx->cmd_queue.size = 0;
 }
 
@@ -283,6 +395,37 @@ painter_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
+static void
+painter_update_framebuffer (const exprval_t **params, exprval_t *result,
+							exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto job = ctx->render_context->job;
+	auto output_step = QFV_GetStep (params[0], job);
+	auto output_render = output_step->render;
+	auto pctx = ctx->painter_context;
+
+	auto size = output_render->output.extent;
+	qfv_output_t output = (qfv_output_t) {
+		.extent = {
+			.width = (size.width + 7) / 8,
+			.height = (size.height + 7) / 8,
+		},
+	};
+	if ((output.extent.width != pctx->cmd_extent.width
+		|| output.extent.height != pctx->cmd_extent.height)) {
+		painter_delete_buffers (ctx);
+
+		pctx->cmd_extent.width = output.extent.width;
+		pctx->cmd_extent.height = output.extent.height;
+
+		painter_create_buffers (ctx);
+	}
+}
+
+
 static exprfunc_t painter_flush_func[] = {
 	{ .func = painter_flush },
 	{}
@@ -296,10 +439,22 @@ static exprfunc_t painter_init_func[] = {
 	{}
 };
 
+static exprtype_t *painter_update_framebuffer_params[] = {
+	&cexpr_string,
+};
+
+static exprfunc_t painter_update_framebuffer_func[] = {
+	{ .func = painter_update_framebuffer, .num_params = 1,
+		painter_update_framebuffer_params },
+	{}
+};
+
 static exprsym_t painter_task_syms[] = {
 	{ "painter_flush", &cexpr_function, painter_flush_func },
 	{ "painter_draw", &cexpr_function, painter_draw_func },
 	{ "painter_init", &cexpr_function, painter_init_func },
+	{ "painter_update_framebuffer", &cexpr_function,
+		painter_update_framebuffer_func },
 	{}
 };
 

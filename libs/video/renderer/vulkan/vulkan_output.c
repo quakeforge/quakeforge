@@ -137,6 +137,7 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 								 vac (ctx->va_ctx, "output done:%d", i));
 		}
 		rp->beginInfo.renderArea.extent = sc->extent;
+		render->output.extent = sc->extent;
 		for (uint32_t i = 0; i < rp->subpass_count; i++) {
 			auto sp = &rp->subpasses[i];
 			for (uint32_t j = 0; j < sp->pipeline_count; j++) {

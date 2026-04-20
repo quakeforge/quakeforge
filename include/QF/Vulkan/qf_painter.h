@@ -29,6 +29,7 @@
 #define __QF_Vulkan_qf_painter_h
 
 #include "QF/simd/types.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/staging.h"
 
 typedef struct vulkan_ctx_s vulkan_ctx_t;
@@ -62,10 +63,11 @@ typedef struct uip_box_s {
 } uip_box_t;
 
 typedef struct painterframe_s {
-	VkImage     cmd_heads_image;
-	VkImageView cmd_heads_view;
-	VkBuffer    cmd_queue;
+	uint32_t    cmd_heads_image;
+	uint32_t    cmd_heads_view;
+	uint32_t    cmd_queue;
 	VkDescriptorSet set;
+	bool        need_update;
 } painterframe_t;
 
 typedef struct painterframeset_s
@@ -76,7 +78,7 @@ typedef struct uip_queue_s
 
 typedef struct painterctx_s {
 	qfv_dsmanager_t *dsmanager;
-	qfv_resource_t *resource;
+	qfv_resourcearray_t resources;
 	painterframeset_t frames;
 	qfv_extent_t cmd_extent;
 	uint32_t    max_queues;
