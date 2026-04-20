@@ -863,8 +863,8 @@ static exprsym_t render_task_syms[] = {
 static int
 qfv_deletion_compare (const qfv_delete_t *a, const qfv_delete_t *b, void *data)
 {
-	uint64_t diff = a->deletion_frame - b->deletion_frame;
-	return (diff >> 32) | !!diff;
+	uint64_t diff = (int64_t) a->deletion_frame - (int64_t) b->deletion_frame;
+	return -((diff >> 32) | !!diff);
 }
 
 void
