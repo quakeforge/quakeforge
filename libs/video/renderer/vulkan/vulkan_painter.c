@@ -76,6 +76,7 @@ painter_delete_buffers (vulkan_ctx_t *ctx)
 	}
 	free (pctx->cmd_heads);
 	pctx->cmd_heads = nullptr;
+	pctx->cmd_tails = nullptr;
 }
 
 static void
@@ -106,8 +107,10 @@ painter_create_buffers (vulkan_ctx_t *ctx)
 	}
 
 	pctx->max_queues = pctx->cmd_extent.width * pctx->cmd_extent.height;
-	pctx->cmd_heads = malloc (sizeof(uint32_t[pctx->max_queues]));
-	memset (pctx->cmd_heads, 0xff, sizeof(uint32_t[pctx->max_queues]));
+	pctx->cmd_heads = malloc (sizeof(uint32_t[pctx->max_queues * 2]));
+	pctx->cmd_tails = &pctx->cmd_heads[pctx->max_queues];
+	// clear both heads and tails
+	memset (pctx->cmd_heads, 0xff, sizeof(uint32_t[pctx->max_queues * 2]));
 }
 
 static void
@@ -370,7 +373,8 @@ painter_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		QFV_PacketCopyBuffer (packet, cmd_queue, 0, &sb, &db);
 		QFV_PacketSubmit (packet);
 	}
-	memset (pctx->cmd_heads, 0xff, heads_size);
+	// clear both heads and tails
+	memset (pctx->cmd_heads, 0xff, heads_size * 2);
 	pctx->cmd_queue.size = 0;
 }
 
