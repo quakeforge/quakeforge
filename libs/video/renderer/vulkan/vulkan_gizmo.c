@@ -302,6 +302,8 @@ gizmo_create_resources (vulkan_ctx_t *ctx)
 	gctx->resources.array = malloc (size * frames);
 	gctx->resources.active = 0;
 	gctx->resources.count = frames;
+	// all qfv_resource_t elements are at the beginning of the block, followed
+	// by all the qfv_resobj_t elements
 	void *res = &gctx->resources.array[frames]; // walks through block
 	for (uint32_t j = 0; j < frames; j++) {
 		auto counts = (qfv_resobj_t *) res;
@@ -696,8 +698,8 @@ static exprfunc_t gizmo_init_func[] = {
 };
 
 static exprtype_t *gizmo_update_framebuffer_params[] = {
-	    &cexpr_string,
-	    &cexpr_string,
+	&cexpr_string,
+	&cexpr_string,
 };
 static exprfunc_t gizmo_update_framebuffer_func[] = {
 	{ .func = gizmo_update_framebuffer, .num_params = 2,
