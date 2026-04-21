@@ -111,7 +111,7 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 			return 0;
 		}
 	}
-	sym = malloc (size + 1);
+	sym = pr->allocate_progs_mem (pr, size + 1);
 	sym[size] = 0;
 	Qread (file, sym, size);
 	Qclose (file);
