@@ -391,6 +391,7 @@ typedef struct qfv_subpass_s {
 	qfv_label_t label;
 	VkCommandBufferInheritanceInfo inherit;
 	VkCommandBufferBeginInfo beginInfo;
+	uint32_t    call_count;
 	uint32_t    pipeline_count;
 	qfv_pipeline_t *pipelines;
 	uint32_t    frame_index;	// valid only if num_inputs > 0

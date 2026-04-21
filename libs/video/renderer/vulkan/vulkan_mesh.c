@@ -514,6 +514,7 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 		}
 		*mctx->debug_bone = anim ? anim->debug_bone : ~0;
 	}
+	uint32_t call_count = 0;
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
 		if (renderer->submesh_mask & (1 << i)) {
@@ -533,8 +534,10 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 		uint32_t indices = meshes[i].indices;
 		int32_t voffset = meshes[i].vertices.offset;
 		dfunc->vkCmdDrawIndexed (cmd, 3 * num_tris, 1, indices, voffset, 0);
+		call_count++;
 	}
 	QFV_CmdEndLabel (device, cmd);
+	taskctx->subpass->call_count += call_count;
 }
 
 static void

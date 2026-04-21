@@ -87,6 +87,7 @@ emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
 									layout, 1, 1, sets, 0, 0);
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 	dfunc->vkCmdDraw (cmd, 4, 1, 0, 0);
+	taskctx->subpass->call_count++;
 
 	QFV_CmdEndLabel (device, cmd);
 }

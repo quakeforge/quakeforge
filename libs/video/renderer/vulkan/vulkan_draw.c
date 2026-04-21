@@ -1127,6 +1127,7 @@ draw_quads (qfv_taskctx_t *taskctx)
 
 			dfunc->vkCmdDrawIndexed (cmd, ind_count, inst_count, 0, 0,
 									 inst_start);
+			taskctx->subpass->call_count++;
 			inst_start += inst_count;
 		}
 		QFV_duCmdEndLabel (device, cmd);
@@ -1159,6 +1160,7 @@ draw_lines (qfv_taskctx_t *taskctx)
 									layout, 0, 1, set, 0, 0);
 	dfunc->vkCmdDraw (cmd, dframe->line_verts.count * VERTS_PER_LINE,
 					  1, 0, 0);
+	taskctx->subpass->call_count++;
 }
 
 static void

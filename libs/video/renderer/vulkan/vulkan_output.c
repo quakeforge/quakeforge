@@ -259,6 +259,7 @@ output_draw (qfv_taskctx_t *taskctx)
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
+	taskctx->subpass->call_count++;
 }
 
 static void

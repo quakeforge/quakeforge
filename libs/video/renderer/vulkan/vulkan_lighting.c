@@ -1167,11 +1167,13 @@ lighting_draw_splats (const exprval_t **params, exprval_t *result,
 	if (lframe->light_queue[ST_CUBE].count) {
 		auto q = lframe->light_queue[ST_CUBE];
 		dfunc->vkCmdDrawIndexed (cmd, num_ico_inds, q.count, 0, 0, q.start);
+		taskctx->subpass->call_count++;
 	}
 	if (lframe->light_queue[ST_PLANE].count) {
 		auto q = lframe->light_queue[ST_PLANE];
 		dfunc->vkCmdDrawIndexed (cmd, num_cone_inds, q.count,
 								 num_ico_inds, 12, q.start);
+		taskctx->subpass->call_count++;
 	}
 }
 
@@ -1504,6 +1506,7 @@ lighting_draw_hulls (const exprval_t **params, exprval_t *result,
 			draw_hull (num_ico_inds, 0, 0, hull, id,
 					   cmd, lframe->query, dfunc, taskctx->frame->qftVkCtx);
 		}
+		taskctx->subpass->call_count += q.count;
 	}
 	if (lframe->light_queue[ST_PLANE].count) {
 		auto q = lframe->light_queue[ST_PLANE];
@@ -1512,6 +1515,7 @@ lighting_draw_hulls (const exprval_t **params, exprval_t *result,
 			draw_hull (num_cone_inds, num_ico_inds, 12, hull, id,
 					   cmd, lframe->query, dfunc, taskctx->frame->qftVkCtx);
 		}
+		taskctx->subpass->call_count += q.count;
 	}
 }
 
@@ -1539,6 +1543,7 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
+	taskctx->subpass->call_count++;
 }
 
 static void

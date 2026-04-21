@@ -184,6 +184,7 @@ particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, buffers, offsets);
 	dfunc->vkCmdDrawIndirect (cmd, pframe->system, 0, 1,
 							  sizeof (qfv_particle_system_t));
+	taskctx->subpass->call_count++;
 }
 
 static void

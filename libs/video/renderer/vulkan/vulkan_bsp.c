@@ -1378,6 +1378,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 
 	pass->textures = textured ? &bctx->registered_textures : 0;
+	taskctx->subpass->call_count += pass->draw_queues[queue].size;
 	draw_queue (pass, queue, layout, device, cmd);
 }
 

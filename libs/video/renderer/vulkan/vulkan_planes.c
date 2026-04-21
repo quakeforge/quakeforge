@@ -133,6 +133,7 @@ debug_planes_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 2, sets, 0, 0);
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
+	taskctx->subpass->call_count++;
 }
 
 static void

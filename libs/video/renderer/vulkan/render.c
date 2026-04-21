@@ -244,12 +244,16 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 			.cmd = QFV_GetCmdBuffer (ctx, true),
 			.data = data,
 		};
+		sp->call_count = 0;
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, taskctx.cmd,
 							 vac (ctx->va_ctx, "renderpass:%s:%s:%" PRIu64,
 								  rp->label.name, sp->label.name,
 								  ctx->frameNumber));
 		run_subpass (sp, &taskctx);
 		dfunc->vkCmdExecuteCommands (cmd, 1, &taskctx.cmd);
+		//printf ("subpass calls:%s:%s:%d\n", rp->label.name, sp->label.name,
+		//		sp->call_count);
+
 		//FIXME comment is a bit off as exactly one buffer is always
 		//submitted
 		//
@@ -719,6 +723,7 @@ fullscreen_pass (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_BindDescriptors (ctx, cmd, pipeline);
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
+	subpass->call_count++;
 }
 
 //FIXME probably should be part of submit_render but with options, or maybe
