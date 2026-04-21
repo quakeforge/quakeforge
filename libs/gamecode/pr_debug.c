@@ -668,13 +668,9 @@ VISIBLE int
 PR_LoadDebug (progs_t *pr)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
-	char       *sym_path;
-	const char *path_end, *sym_file;
 	off_t       debug_size;
-	pr_uint_t   i;
 	pr_def_t   *def;
 	pr_type_t  *str = 0;
-	pr_debug_header_t *debug;
 
 	res->debug = 0;
 
@@ -687,18 +683,21 @@ PR_LoadDebug (progs_t *pr)
 
 	if (!str)
 		return 1;
+
 	res->debugfile = PR_GetString (pr, PR_PTR (string, str));
-	sym_file = QFS_SkipPath (res->debugfile);
-	path_end = QFS_SkipPath (pr->progs_name);
-	sym_path = malloc (strlen (sym_file) + (path_end - pr->progs_name) + 1);
-	strncpy (sym_path, pr->progs_name, path_end - pr->progs_name);
-	strcpy (sym_path + (path_end - pr->progs_name), sym_file);
-	debug = pr->load_file (pr, sym_path, &debug_size);
+	const char *sym_file = QFS_SkipPath (res->debugfile);
+	const char *path_end = QFS_SkipPath (pr->progs_name);
+	dstring_clearstr (res->dstr);
+	dstring_copysubstr (res->dstr, pr->progs_name, path_end - pr->progs_name);
+	dstring_appendstr (res->dstr, sym_file);
+	const char *sym_path = res->dstr->str;
+
+	pr_debug_header_t *debug = pr->load_file (pr, sym_path, &debug_size);
 	if (!debug) {
 		Sys_Printf ("can't load %s for debug info\n", sym_path);
-		free (sym_path);
 		return 1;
 	}
+
 	debug->version = LittleLong (debug->version);
 	if (debug->version != PROG_DEBUG_VERSION) {
 		Sys_Printf ("ignoring %s with unsupported version %x.%03x.%03x\n",
@@ -706,7 +705,6 @@ PR_LoadDebug (progs_t *pr)
 					(debug->version >> 24) & 0xff,
 					(debug->version >> 12) & 0xfff,
 					debug->version & 0xfff);
-		free (sym_path);
 		return 1;
 	}
 	debug->crc = LittleShort (debug->crc);
@@ -714,10 +712,8 @@ PR_LoadDebug (progs_t *pr)
 		Sys_Printf ("ignoring %s that doesn't match %s. (CRCs: "
 					"sym:%d dat:%d)\n",
 					sym_path, pr->progs_name, debug->crc, pr->crc);
-		free (sym_path);
 		return 1;
 	}
-	free (sym_path);
 	debug->you_tell_me_and_we_will_both_know = LittleShort
 		(debug->you_tell_me_and_we_will_both_know);
 	debug->auxfunctions = LittleLong (debug->auxfunctions);
@@ -733,7 +729,7 @@ PR_LoadDebug (progs_t *pr)
 
 	__auto_type auxfuncs = (pr_auxfunction_t*)((char*)debug
 											   + debug->auxfunctions);
-	for (i = 0; i < debug->num_auxfunctions; i++) {
+	for (pr_uint_t i = 0; i < debug->num_auxfunctions; i++) {
 		auxfuncs[i].function = LittleLong (auxfuncs[i].function);
 		auxfuncs[i].source_line = LittleLong (auxfuncs[i].source_line);
 		auxfuncs[i].line_info = LittleLong (auxfuncs[i].line_info);
@@ -742,17 +738,17 @@ PR_LoadDebug (progs_t *pr)
 	}
 
 	__auto_type linenos = (pr_lineno_t*)((char*)debug + debug->linenos);
-	for (i = 0; i < debug->num_linenos; i++) {
+	for (pr_uint_t i = 0; i < debug->num_linenos; i++) {
 		linenos[i].fa.func = LittleLong (linenos[i].fa.func);
 		linenos[i].line = LittleLong (linenos[i].line);
 	}
 
 	__auto_type local_defs = (pr_def_t*)((char*)debug + debug->locals);
-	for (i = 0; i < debug->num_locals; i++) {
+	for (pr_uint_t i = 0; i < debug->num_locals; i++) {
 		byteswap_def (&local_defs[i]);
 	}
-	__auto_type debug_defs = (pr_def_t*)((char*)debug + debug->locals);
-	for (i = 0; i < debug->num_debug_defs; i++) {
+	__auto_type debug_defs = (pr_def_t*)((char*)debug + debug->debug_defs);
+	for (pr_uint_t i = 0; i < debug->num_debug_defs; i++) {
 		byteswap_def (&debug_defs[i]);
 	}
 
