@@ -80,6 +80,20 @@ typedef struct wl_egl_window *EGLNativeWindowType;
 #define EGL_NO_CONTEXT 		(EGLContext) nullptr
 #define EGL_NO_SURFACE 		(EGLSurface) nullptr
 
+#define EGL_NOT_INITIALIZED		0x3001
+#define EGL_BAD_ACCESS			0x3002
+#define EGL_BAD_ALLOC			0x3003
+#define EGL_BAD_ATTRIBUTE		0x3004
+#define EGL_BAD_CONFIG			0x3005
+#define EGL_BAD_CONTEXT			0x3006
+#define EGL_BAD_CURRENT_SURFACE	0x3007
+#define EGL_BAD_DISPLAY			0x3008
+#define EGL_BAD_MATCH			0x3009
+#define EGL_BAD_NATIVE_PIXMAP	0x300A
+#define EGL_BAD_NATIVE_WINDOW	0x300B
+#define EGL_BAD_PARAMETER		0x300C
+#define EGL_BAD_SURFACE			0x300D
+
 #define EGL_SURFACE_TYPE		0x3033
 #define EGL_WINDOW_BIT			0x0004
 
@@ -152,6 +166,27 @@ QFGL_GetProcAddress (void *handle, const char *name)
 	return glfunc;
 }
 
+static const char *
+egl_error_message ()
+{
+	switch (eglGetError ()) {
+		case EGL_NOT_INITIALIZED:		return "EGL_NOT_INITIALIZED";
+		case EGL_BAD_ACCESS:			return "EGL_BAD_ACCESS";
+		case EGL_BAD_ALLOC:				return "EGL_BAD_ALLOC";
+		case EGL_BAD_ATTRIBUTE:			return "EGL_BAD_ATTRIBUTE";
+		case EGL_BAD_CONFIG: 			return "EGL_BAD_CONFIG";
+		case EGL_BAD_CONTEXT: 			return "EGL_BAD_CONTEXT";
+		case EGL_BAD_CURRENT_SURFACE: 	return "EGL_BAD_CURRENT_SURFACE";
+		case EGL_BAD_DISPLAY: 			return "EGL_BAD_DISPLAY";
+		case EGL_BAD_MATCH: 			return "EGL_BAD_MATCH";
+		case EGL_BAD_NATIVE_PIXMAP: 	return "EGL_BAD_NATIVE_PIXMAP";
+		case EGL_BAD_NATIVE_WINDOW: 	return "EGL_BAD_NATIVE_WINDOW";
+		case EGL_BAD_PARAMETER: 		return "EGL_BAD_PARAMETER";
+		case EGL_BAD_SURFACE: 			return "EGL_BAD_SURFACE";
+		default:						return "Unknown";
+	}
+}
+
 static EGLConfig
 egl_choose_config ()
 {
@@ -169,7 +204,8 @@ egl_choose_config ()
 
 	EGLint num_configs = 0;
 	if (!eglGetConfigs (egl_display, nullptr, 0, &num_configs)) {
-		Sys_Error ("Failed to get list of available EGL configs");
+		Sys_Error ("Failed to get list of available EGL configs: %s",
+					egl_error_message ());
 	}
 	Sys_MaskPrintf (SYS_vid, "Found %d EGL configs\n", num_configs);
 
@@ -177,7 +213,8 @@ egl_choose_config ()
 	EGLint num_valid_configs = 0;
 	if (!eglChooseConfig (egl_display, config_attribs,
 					 configs, num_configs, &num_valid_configs)) {
-		Sys_Error ("Failed to get list of EGL configs matching required attributes");
+		Sys_Error ("Failed to get list of EGL configs matching"
+					"required attributes: %s", egl_error_message ());
 	}
 
 	for (EGLint i = 0; i < num_valid_configs; ++i) {
@@ -201,12 +238,12 @@ egl_choose_visual (gl_ctx_t *ctx)
 	egl_display = eglGetPlatformDisplay (EGL_PLATFORM_WAYLAND_EXT, wl_display,
 										 nullptr);
 	if (egl_display == EGL_NO_DISPLAY) {
-		Sys_Error ("Failed to get EGL display: %x", eglGetError ());
+		Sys_Error ("Failed to get EGL display: %s", egl_error_message ());
 	}
 
 	EGLint egl_major, egl_minor;
 	if (eglInitialize (egl_display, &egl_major, &egl_minor) != EGL_TRUE) {
-		Sys_Error ("Failed to initialize EGL, error: %x", eglGetError ());
+		Sys_Error ("Failed to initialize EGL, error: %s", egl_error_message ());
 	}
 	if (egl_major != 1 || egl_minor < 5) {
 		Sys_Error ("Quakeforge requires EGL version 1.5 minimum but found %d.%d",
@@ -215,7 +252,7 @@ egl_choose_visual (gl_ctx_t *ctx)
 	Sys_Printf ("Initialized EGL %d.%d\n", egl_major, egl_minor);
 
 	if (egl_choose_config () == EGL_NO_CONFIG) {
-		Sys_Error ("Failed to find appropriate EGL config");
+		Sys_Error ("Failed to find appropriate EGL config: %s", egl_error_message ());
 	}
 }
 
@@ -236,7 +273,7 @@ egl_create_context (gl_ctx_t *ctx, int core)
 	egl_surface = eglCreatePlatformWindowSurface (egl_display, egl_config,
 												  egl_window, nullptr);
 	if (egl_surface == EGL_NO_SURFACE) {
-		Sys_Error ("Failed to create EGL window surface: %x", eglGetError ());
+		Sys_Error ("Failed to create EGL window surface: %s", egl_error_message ());
 	}
 	Sys_Printf ("Created EGL window surface\n");
 
@@ -252,14 +289,14 @@ egl_create_context (gl_ctx_t *ctx, int core)
 	egl_context = eglCreateContext (egl_display, egl_config, EGL_NO_CONTEXT,
 									context_attribs);
 	if (egl_context == EGL_NO_CONTEXT) {
-		Sys_Error ("Failed to create EGL context: %x", eglGetError ());
+		Sys_Error ("Failed to create EGL context: %s", egl_error_message ());
 	}
 	Sys_Printf ("Created EGL context successfully\n");
 
 	ctx->context = (GL_context) egl_context;
 
 	if (!eglMakeCurrent (egl_display, egl_surface, egl_surface, egl_context)) {
-		Sys_Error ("Failed to make context current");
+		Sys_Error ("Failed to make context current: %s", egl_error_message ());
 	}
 
 	VID_OnVidResize_AddListener (vidsize_listener, ctx);
@@ -298,7 +335,7 @@ egl_end_rendering (void)
 {
 	qfglFinish ();
 	if (!eglSwapBuffers (egl_display, egl_surface)) {
-		Sys_Error ("eglSwapBuffers failed");
+		Sys_Error ("eglSwapBuffers failed: %s", egl_error_message ());
 	}
 }
 
