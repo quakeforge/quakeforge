@@ -560,11 +560,11 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	// vulkan doesn't like 0-length buffers, but vertex_count and index_count
 	// will be 0 for the empty world model.
-	if (vertex_count < 1) {
-		vertex_count = 1;
+	if (vertex_count < 3) {
+		vertex_count = 3;
 	}
-	if (index_count < 1) {
-		index_count = 1;
+	if (index_count < 3) {
+		index_count = 3;
 	}
 
 	size_t atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
@@ -579,6 +579,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	if (vertex_buffer_size) {
 		packet = QFV_PacketAcquire (ctx->staging, "bsp.build");
 		vertices = QFV_PacketExtend (packet, vertex_buffer_size);
+		memset (vertices, 0, sizeof (bspvert_t[3]));
 	}
 	// holds all the polygon definitions: vertex indices + poly_count
 	// primitive restart markers. The primitive restart markers are included
@@ -647,6 +648,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		}
 		free (bctx->index_data);
 		bctx->index_data = malloc (index_buffer_size);
+		memset (bctx->index_data, 0, sizeof (*bctx->index_data) * 3);
 
 		if (!bctx->bsp_resource) {
 			size_t size = sizeof (qfv_resource_t)
