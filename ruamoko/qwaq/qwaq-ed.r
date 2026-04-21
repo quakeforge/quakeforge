@@ -827,7 +827,18 @@ trackball_vector (vec2 xy)
 	return p;
 }
 
-#define min(x,y) ((x) < (y) ? (x) : (y))
+@overload float
+min (float x, float y)
+{
+	return (x) < (y) ? (x) : (y);
+}
+
+@overload float
+max (float x, float y)
+{
+	return (x) > (y) ? (x) : (y);
+}
+
 static float trackball_sensitivity = 10.0f;
 #define sphere_scale 1.0f
 void
@@ -1465,10 +1476,109 @@ bool get_contact_ball_capsule (uint aent, collider_t acol,
 	return false;
 }
 
-bool get_contact_capsule_capsule (uint a, collider_t acol,
-								  uint b, collider_t bcol,
+float
+clamp (float x, float a, float b)
+{
+	return max (a, min(x, b));
+}
+
+bool get_contact_capsule_capsule (uint aent, collider_t acol,
+								  uint bent, collider_t bcol,
 								  contact_t *contact)
 {
+	state_t aS, bS;
+	body_t aB, bB;
+	get_component (aent, qent_state, &aS);
+	get_component (bent, qent_state, &bS);
+	get_component (aent, qent_body, &aB);
+	get_component (bent, qent_body, &bB);
+	auto aM = aS.M * aB.R;
+	auto bM = bS.M * bB.R;
+
+	auto C1 = aM * (point_t) [acol.capsule.offset, 1] * ~aM;
+	auto A1 = aM * (point_t) [acol.capsule.axis,   0] * ~aM;
+	auto C2 = bM * (point_t) [bcol.capsule.offset, 1] * ~bM;
+	auto A2 = bM * (point_t) [bcol.capsule.axis,   0] * ~bM;
+
+	auto p1 = C1 - A1;
+	auto q1 = C1 + A1;
+	auto p2 = C2 - A2;
+	auto q2 = C2 + A2;
+
+	auto d1 = p1 ∨ q1;
+	auto d2 = p2 ∨ q2;
+	auto r  = p2 ∨ p1;
+	float a = d1 • ~d1;
+	float e = d2 • ~d2;
+	float f = d2 • ~r;
+
+	float s, t;
+
+	if (a <= 1e-6 && e <= 1e-6) {
+		// both segments are degenerate
+		s = t = 0;
+		printf ("both degenerate: %g %g %g %g\n", a, e, s, t);
+	} else if (a <= 1e-6) {
+		// first segment is degenerate
+		s = 0;
+		t = clamp (f / e, 0, 1);
+		printf ("first degenerate: %g %g %g\n", a, s, t);
+	} else {
+		float c = d1 • ~r;
+		if (e < 1e-3) {
+			// second segment is degenerate
+			t = 0;
+			s = clamp (-c / a, 0, 1);
+			printf ("second degenerate: %g %g %g\n", e, s, t);
+		} else {
+			float b = d1 • ~d2;
+			float den = a * e - b * b;
+			if (den) {
+				s = clamp ((b * f - c * e) / den, 0, 1);
+			} else {
+				s = 0;
+			}
+			t = (b * s + f) / e;
+			if (t < 0) {
+				t = 0;
+				s = clamp (-c / a, 0, 1);
+			} else {
+				t = 1;
+				s = clamp ((b - c) / a, 0, 1);
+			}
+		}
+	}
+
+	@algebra (PGA) {
+		auto c1 = p1 - e0 * d1 * s;
+		auto c2 = p2 - e0 * d2 * t;
+		//printf ("p1:%q q1:%q\n", p1, q1);
+		//printf ("p2:%q q2:%q\n", p2, q2);
+		//printf ("c1:%q c2:%q\n", c1, c2);
+		//printf ("[%v %v] [%v %v] %g %g\n",
+		//		d1.bvect, d1.bvecp, d2.bvect, d2.bvecp, s, t);
+
+		auto d = c1 ∨ c2;
+		float R = acol.capsule.radius + bcol.capsule.radius;
+
+		if (d • ~d < R * R) {
+			auto n = -(e0 * d) / sqrt (d • ~d);
+			auto world_a = c1 + n * acol.capsule.radius;
+			auto world_b = c2 - n * bcol.capsule.radius;
+			*contact = {
+				.world_a = world_a,
+				.world_b = world_b,
+				.local_a = ~aM * world_a * aM,
+				.local_b = ~bM * world_b * bM,
+				.normal = @undual (n),
+				.separation = sqrt (d • ~d) - R,
+				.a = aent,
+				.b = bent,
+			};
+			return true;
+		}
+	}
+
 	return false;
 }
 
@@ -1850,6 +1960,7 @@ vec3 abs(vec3 x)
 	return (vec3) ((uvec3) x & ~m) - (vec3) ((uvec3) x & m);
 }
 
+@overload
 vec3 max(vec3 a, vec3 b)
 {
 	uvec3 m = a < b;
