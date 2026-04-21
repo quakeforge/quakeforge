@@ -9,7 +9,7 @@
 
 #define SPV(op) @intrinsic(op)
 void begin_interlock() = SPV(OpBeginInvocationInterlockEXT);
-void end_interlock() = SPV(OpBeginInvocationInterlockEXT);
+void end_interlock() = SPV(OpEndInvocationInterlockEXT);
 #undef SPV
 
 [shader("Fragment", "PixelInterlockUnorderedEXT")]
