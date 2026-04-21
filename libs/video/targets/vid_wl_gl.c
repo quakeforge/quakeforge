@@ -81,7 +81,6 @@ typedef struct wl_egl_window *EGLNativeWindowType;
 #define EGL_NO_SURFACE 		(EGLSurface) nullptr
 
 #define EGL_SURFACE_TYPE		0x3033
-#define EGL_TRANSPARENT_TYPE	0x3034
 #define EGL_WINDOW_BIT			0x0004
 
 #define EGL_EXTENSIONS		0x3055
@@ -153,21 +152,9 @@ QFGL_GetProcAddress (void *handle, const char *name)
 	return glfunc;
 }
 
-static void
-egl_choose_visual (gl_ctx_t *ctx)
+static EGLConfig
+egl_choose_config ()
 {
-	egl_display = eglGetPlatformDisplay (EGL_PLATFORM_WAYLAND_EXT, wl_display,
-										 nullptr);
-	if (egl_display == EGL_NO_DISPLAY) {
-		Sys_Error ("Failed to get EGL display: %x", eglGetError ());
-	}
-
-	EGLint egl_major, egl_minor;
-	if (eglInitialize (egl_display, &egl_major, &egl_minor) != EGL_TRUE) {
-		Sys_Error ("Failed to initialize EGL, error: %x", eglGetError ());
-	}
-	Sys_Printf ("Initialized EGL %d.%d\n", egl_major, egl_minor);
-
 	EGLint config_attribs[] = {
 		EGL_SURFACE_TYPE,		EGL_WINDOW_BIT,
 		EGL_RED_SIZE,			8,
@@ -181,12 +168,18 @@ egl_choose_visual (gl_ctx_t *ctx)
 	};
 
 	EGLint num_configs = 0;
-	eglGetConfigs (egl_display, nullptr, 0, &num_configs);
-	Sys_Printf ("Found %d EGL configs\n", num_configs);
+	if (!eglGetConfigs (egl_display, nullptr, 0, &num_configs)) {
+		Sys_Error ("Failed to get list of available EGL configs");
+	}
+	Sys_MaskPrintf (SYS_vid, "Found %d EGL configs\n", num_configs);
+
 	EGLConfig *configs = calloc (num_configs, sizeof (EGLConfig));
 	EGLint num_valid_configs = 0;
-	eglChooseConfig (egl_display, config_attribs,
-					 configs, num_configs, &num_valid_configs);
+	if (!eglChooseConfig (egl_display, config_attribs,
+					 configs, num_configs, &num_valid_configs)) {
+		Sys_Error ("Failed to get list of EGL configs matching required attributes");
+	}
+
 	for (EGLint i = 0; i < num_valid_configs; ++i) {
 		EGLint renderable_type = 0;
 		eglGetConfigAttrib (egl_display, configs[i],
@@ -194,13 +187,36 @@ egl_choose_visual (gl_ctx_t *ctx)
 
 		if (renderable_type & EGL_OPENGL_BIT) {
 			egl_config = configs[i];
+			Sys_MaskPrintf (SYS_vid, "Using config %d\n", i);
 			break;
 		}
 	}
-	if (egl_config == EGL_NO_CONFIG) {
-		Sys_Error ("Failed to find appropriate EGL config");
+
+	return egl_config;
+}
+
+static void
+egl_choose_visual (gl_ctx_t *ctx)
+{
+	egl_display = eglGetPlatformDisplay (EGL_PLATFORM_WAYLAND_EXT, wl_display,
+										 nullptr);
+	if (egl_display == EGL_NO_DISPLAY) {
+		Sys_Error ("Failed to get EGL display: %x", eglGetError ());
 	}
 
+	EGLint egl_major, egl_minor;
+	if (eglInitialize (egl_display, &egl_major, &egl_minor) != EGL_TRUE) {
+		Sys_Error ("Failed to initialize EGL, error: %x", eglGetError ());
+	}
+	if (egl_major != 1 || egl_minor < 5) {
+		Sys_Error ("Quakeforge requires EGL version 1.5 minimum but found %d.%d",
+					egl_major, egl_minor);
+	}
+	Sys_Printf ("Initialized EGL %d.%d\n", egl_major, egl_minor);
+
+	if (egl_choose_config () == EGL_NO_CONFIG) {
+		Sys_Error ("Failed to find appropriate EGL config");
+	}
 }
 
 static void
@@ -212,7 +228,9 @@ vidsize_listener (void *data, const viddef_t *vid)
 static void
 egl_create_context (gl_ctx_t *ctx, int core)
 {
-	eglBindAPI (EGL_OPENGL_API);
+	if (!eglBindAPI (EGL_OPENGL_API)) {
+		Sys_Error ("Failed to bind the OpenGL API for use");
+	}
 
 	egl_window = wl_egl_window_create (wl_surface, viddef.width, viddef.height);
 	egl_surface = eglCreatePlatformWindowSurface (egl_display, egl_config,
@@ -240,7 +258,9 @@ egl_create_context (gl_ctx_t *ctx, int core)
 
 	ctx->context = (GL_context) egl_context;
 
-	eglMakeCurrent (egl_display, egl_surface, egl_surface, egl_context);
+	if (!eglMakeCurrent (egl_display, egl_surface, egl_surface, egl_context)) {
+		Sys_Error ("Failed to make context current");
+	}
 
 	VID_OnVidResize_AddListener (vidsize_listener, ctx);
 
@@ -277,7 +297,9 @@ static void
 egl_end_rendering (void)
 {
 	qfglFinish ();
-	eglSwapBuffers (egl_display, egl_surface);
+	if (!eglSwapBuffers (egl_display, egl_surface)) {
+		Sys_Error ("eglSwapBuffers failed");
+	}
 }
 
 static void
