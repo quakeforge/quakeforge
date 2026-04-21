@@ -113,7 +113,7 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 			return 0;
 		}
 	}
-	sym = malloc (size + 1);
+	sym = pr->allocate_progs_mem (pr, size + 1);
 	sym[size] = 0;
 	Qread (file, sym, size);
 	*_size = size;
@@ -125,15 +125,22 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 static void *
 allocate_progs_mem (progs_t *pr, int size)
 {
-	intptr_t    mem = (intptr_t) malloc (size + ALIGN);
-	mem = (mem + ALIGN - 1) & ~(ALIGN - 1);
-	return (void *) mem;
+	size = (size + 63) & ~63;
+#ifdef _WIN32
+	return _aligned_malloc (size, 64);
+#else
+	return aligned_alloc (64, size);
+#endif
 }
 
 static void
 free_progs_mem (progs_t *pr, void *mem)
 {
+#ifdef _WIN32
+	_aligned_free (mem);
+#else
 	free (mem);
+#endif
 }
 
 static int
