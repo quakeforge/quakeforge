@@ -62,7 +62,7 @@ libs_audio_targets_snd_output_dx_la_CFLAGS=			$(WIN32SND_CFLAGS)
 libs_audio_targets_snd_output_dx_la_SOURCES=		libs/audio/targets/snd_dx.c
 
 libs_audio_targets_snd_output_ma_la_LDFLAGS=		$(plugin_ldflags)
-libs_audio_targets_snd_output_ma_la_LIBADD=			$(snd_deps) $(MINIAUDIO_LIBS) $(plugin_libadd)
+libs_audio_targets_snd_output_ma_la_LIBADD=			$(snd_deps) $(plugin_libadd)
 libs_audio_targets_snd_output_ma_la_DEPENDENCIES=	$(snd_deps)
 libs_audio_targets_snd_output_ma_la_CFLAGS=
 libs_audio_targets_snd_output_ma_la_SOURCES=		libs/audio/targets/snd_ma.c
