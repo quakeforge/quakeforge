@@ -38,7 +38,7 @@
 
 #define MINIAUDIO_IMPLEMENTATION
 #define MA_USE_QUAD_MICROSOFT_CHANNEL_MAP
-#include "miniaudio/miniaudio.h"
+#include MINIAUDIO_H
 
 typedef struct snd_ma_s {
 	ma_device_config config;
