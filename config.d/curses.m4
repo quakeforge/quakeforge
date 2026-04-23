@@ -2,7 +2,10 @@ AC_ARG_ENABLE(curses,
 	AS_HELP_STRING([--disable-curses], [disable curses support]))
 if test "x$enable_curses" != "xno"; then
   if test "x$PKG_CONFIG" != "x"; then
-    PKG_CHECK_MODULES([NCURSES], [ncursesw], HAVE_NCURSES=yes, HAVE_NCURSES=no)
+    PKG_CHECK_MODULES([NCURSES], [ncurses], HAVE_NCURSES=yes, HAVE_NCURSES=no)
+	if test "x$HAVE_NCURSES" = "xno"; then
+		PKG_CHECK_MODULES([NCURSES], [ncursesw], HAVE_NCURSES=yes, HAVE_NCURSES=no)
+	fi
   else
 	AC_CHECK_HEADER([curses.h], [],
 					[AC_CHECK_HEADER([ncurses/curses.h],

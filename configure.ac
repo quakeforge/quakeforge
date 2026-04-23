@@ -174,7 +174,7 @@ case "${host}" in
 			[libpng, HAVE_PNG],
 			[zlib, HAVE_ZLIB],
 			[curl, HAVE_LIBCURL],
-			[ncursesw, HAVE_NCURSES],
+			[ncurses/ncursesw, HAVE_NCURSES],
 			[vulkan-dev, HAVE_VULKAN, https://vulkan.lunarg.com/sdk/home],
 			[fontconfig, HAVE_FONTCONFIG],
 			[freetype, HAVE_FREETYPE],
