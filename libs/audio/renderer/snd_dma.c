@@ -37,8 +37,6 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include "winquake.h"
-
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"

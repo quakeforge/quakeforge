@@ -35,8 +35,6 @@
 # include <strings.h>
 #endif
 
-#include "winquake.h"
-
 #include "QF/cvar.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
