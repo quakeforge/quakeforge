@@ -98,8 +98,9 @@ SND_Memory_Init (void)
 		return 0;
 	}
 	if (!Sys_LockMemory (snd_zone, size)) {
-		Sys_Printf (RED"Sound: Unable to lock %uMB buffer"DFL"\n", snd_mem_size);
-        // FIXME Permission issue?
+		Sys_Printf (RED"Sound: Unable to lock %uMB buffer"DFL"\n",
+					snd_mem_size);
+		//FIXME Permission issue?
 		//Sys_Free (snd_zone, size);
 		//return 0;
 	}

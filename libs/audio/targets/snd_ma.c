@@ -41,9 +41,9 @@
 #include "miniaudio/miniaudio.h"
 
 typedef struct snd_ma_s {
-    ma_device_config config;
-    ma_device device;
-    void *output;
+	ma_device_config config;
+	ma_device device;
+	void *output;
 } snd_ma_t;
 
 static int sound_started = 0;
@@ -58,42 +58,42 @@ s_update(snd_t *snd)
 static void
 s_block_sound (snd_t *snd)
 {
-    if (!sound_started)
-        return;
-    if (++snd_blocked == 1) {
-    }
+	if (!sound_started)
+		return;
+	if (++snd_blocked == 1) {
+	}
 }
 
 static void
 s_unblock_sound (snd_t *snd)
 {
-    if (!sound_started)
-        return;
-    if (!snd_blocked)
-        return;
+	if (!sound_started)
+		return;
+	if (!snd_blocked)
+		return;
 
-    if (!--snd_blocked) {
-    }
+	if (!--snd_blocked) {
+	}
 }
 
 static void
 snd_ma_xfer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
-             float volume)
+			 float volume)
 {
-    snd_ma_t *ma = snd->xfer_data;
-    float *output = ma->output;
+	snd_ma_t *ma = snd->xfer_data;
+	float *output = ma->output;
 
-    if (snd_blocked) {
-        for (int i = 0; i < count; i++) {
-            output[i*2+0] = 0;
-            output[i*2+1] = 0;
-        }
-        return;
-    }
-    for (int i = 0; i < count; i++) {
-        output[i*2+0] = volume * paintbuffer[i].left;
-        output[i*2+1] = volume * paintbuffer[i].right;
-    }
+	if (snd_blocked) {
+		for (int i = 0; i < count; i++) {
+			output[i*2+0] = 0;
+			output[i*2+1] = 0;
+		}
+		return;
+	}
+	for (int i = 0; i < count; i++) {
+		output[i*2+0] = volume * paintbuffer[i].left;
+		output[i*2+1] = volume * paintbuffer[i].right;
+	}
 }
 
 /*
@@ -102,23 +102,23 @@ snd_ma_xfer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
 static void
 snd_ma_process (ma_device *device, void *output, const void *input, ma_uint32 frame_count)
 {
-    snd_t *snd = device->pUserData;
-    snd_ma_t *ma = snd->xfer_data;
-    ma->output = output;
-    snd->paint_channels(snd, snd->paintedtime + frame_count);
+	snd_t *snd = device->pUserData;
+	snd_ma_t *ma = snd->xfer_data;
+	ma->output = output;
+	snd->paint_channels(snd, snd->paintedtime + frame_count);
 }
 
 static void
 s_shutdown (snd_t *snd)
 {
-    snd_shutdown = 1;
-    snd->finish_channels ();
+	snd_shutdown = 1;
+	snd->finish_channels ();
 
-    snd_ma_t *ma = snd->xfer_data;
-    ma_device_stop(&ma->device);
-    ma_device_uninit(&ma->device);
-    free(ma);
-    snd->xfer_data = nullptr;
+	snd_ma_t *ma = snd->xfer_data;
+	ma_device_stop(&ma->device);
+	ma_device_uninit(&ma->device);
+	free(ma);
+	snd->xfer_data = nullptr;
 }
 
 /*
@@ -130,39 +130,39 @@ s_shutdown (snd_t *snd)
 static int
 s_init (snd_t *snd)
 {
-    snd_ma_t *ma = malloc(sizeof(snd_ma_t));
-    ma->config = ma_device_config_init(ma_device_type_playback);
-    ma->config.playback.format = ma_format_f32;
-    ma->config.playback.channels = 2;
-    ma->config.sampleRate = 48000;
-    ma->config.dataCallback = snd_ma_process;
-    ma->config.pUserData = snd;
+	snd_ma_t *ma = malloc(sizeof(snd_ma_t));
+	ma->config = ma_device_config_init(ma_device_type_playback);
+	ma->config.playback.format = ma_format_f32;
+	ma->config.playback.channels = 2;
+	ma->config.sampleRate = 48000;
+	ma->config.dataCallback = snd_ma_process;
+	ma->config.pUserData = snd;
 
-    if (ma_device_init(NULL, &ma->config, &ma->device) != MA_SUCCESS) {
-        Sys_MaskPrintf(SYS_snd_ma, "Miniaudio device failed to init");
-        free(ma);
-        return 0;
-    }
+	if (ma_device_init(NULL, &ma->config, &ma->device) != MA_SUCCESS) {
+		Sys_MaskPrintf(SYS_snd_ma, "Miniaudio device failed to init");
+		free(ma);
+		return 0;
+	}
 
-    snd->speed = ma->device.sampleRate;
-    snd->channels = ma->device.playback.channels;
-    snd->xfer_data = ma;
-    snd->xfer      = snd_ma_xfer;
-    ma_device_start(&ma->device);
-    sound_started = 1;
+	snd->speed = ma->device.sampleRate;
+	snd->channels = ma->device.playback.channels;
+	snd->xfer_data = ma;
+	snd->xfer      = snd_ma_xfer;
+	ma_device_start(&ma->device);
+	sound_started = 1;
 
-    Sys_MaskPrintf(SYS_snd_ma, "Miniaudio initialized\n");
+	Sys_MaskPrintf(SYS_snd_ma, "Miniaudio initialized\n");
 	return 1;
 }
 
 static snd_output_data_t plugin_info_snd_output_data = {
-    .model = som_pull,
+	.model = som_pull,
 };
 
 static snd_output_funcs_t plugin_info_snd_output_funcs = {
 	.init          = s_init,
 	.shutdown      = s_shutdown,
-    .on_update     = s_update,
+	.on_update     = s_update,
 	.block_sound   = s_block_sound,
 	.unblock_sound = s_unblock_sound,
 };
