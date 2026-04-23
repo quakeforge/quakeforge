@@ -267,8 +267,19 @@ QF_maGiC_VALUE
 
 	HAVE_MINIAUDIO=no
 	if test "x$enable_miniaudio" != "xno"; then
-		AC_CHECK_HEADER(miniaudio/miniaudio.h, HAVE_MINIAUDIO=yes, HAVE_MINIAUDIO=no)
+		AC_CHECK_HEADER(miniaudio.h,
+						MINIAUDIO_H="<miniaudio.h>"
+						HAVE_MINIAUDIO=yes,
+						HAVE_MINIAUDIO=no)
+		if test "x$HAVE_MINIAUDIO" = "xno"; then
+			AC_CHECK_HEADER(miniaudio/miniaudio.h,
+							MINIAUDIO_H="<miniaudio/miniaudio.h>"
+							HAVE_MINIAUDIO=yes,
+							HAVE_MINIAUDIO=no)
+		fi
 		if test "x$HAVE_MINIAUDIO" = "xyes"; then
+			AC_DEFINE_UNQUOTED(MINIAUDIO_H, $MINIAUDIO_H,
+					  [Define to miniaudio header include])
 			SOUND_TYPES="$SOUND_TYPES Miniaudio"
 			QF_NEED(snd_output, [ma])
 			QF_NEED(snd_render, [default])
