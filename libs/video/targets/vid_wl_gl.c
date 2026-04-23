@@ -54,11 +54,344 @@
 #include "vid_internal.h"
 #include "vid_gl.h"
 
+#include <wayland-egl.h>
+
+static void    *libgl_handle;
+
+// FIXME: CVar (check X11 / Windows impl)
+static const char *gl_driver = "libEGL.so.1";
+
+typedef unsigned int EGLBoolean;
+typedef unsigned int EGLenum;
+typedef int EGLint;
+typedef void *EGLDisplay;
+typedef void *EGLConfig;
+typedef void *EGLContext;
+typedef void *EGLSurface;
+
+typedef struct wl_egl_window *EGLNativeWindowType;
+
+#define EGL_NONE			0x3038
+#define EGL_FALSE			0
+#define EGL_TRUE			1
+
+#define EGL_NO_DISPLAY 		(EGLDisplay) nullptr
+#define EGL_NO_CONFIG 		(EGLConfig) nullptr
+#define EGL_NO_CONTEXT 		(EGLContext) nullptr
+#define EGL_NO_SURFACE 		(EGLSurface) nullptr
+
+#define EGL_NOT_INITIALIZED		0x3001
+#define EGL_BAD_ACCESS			0x3002
+#define EGL_BAD_ALLOC			0x3003
+#define EGL_BAD_ATTRIBUTE		0x3004
+#define EGL_BAD_CONFIG			0x3005
+#define EGL_BAD_CONTEXT			0x3006
+#define EGL_BAD_CURRENT_SURFACE	0x3007
+#define EGL_BAD_DISPLAY			0x3008
+#define EGL_BAD_MATCH			0x3009
+#define EGL_BAD_NATIVE_PIXMAP	0x300A
+#define EGL_BAD_NATIVE_WINDOW	0x300B
+#define EGL_BAD_PARAMETER		0x300C
+#define EGL_BAD_SURFACE			0x300D
+
+#define EGL_SURFACE_TYPE		0x3033
+#define EGL_WINDOW_BIT			0x0004
+
+#define EGL_EXTENSIONS		0x3055
+
+#define EGL_RED_SIZE		0x3024
+#define EGL_GREEN_SIZE		0x3023
+#define EGL_BLUE_SIZE		0x3022
+#define EGL_ALPHA_SIZE		0x3021
+#define EGL_DEPTH_SIZE		0x3025
+
+#define EGL_RENDERABLE_TYPE	0x3040
+#define EGL_OPENGL_BIT		0x0008
+#define EGL_OPENGL_API		0x30A2
+
+#define EGL_PLATFORM_WAYLAND_EXT		0x31D8
+
+#define EGL_CONTEXT_MAJOR_VERSION		0x3098
+#define EGL_CONTEXT_MINOR_VERSION		0x30FB
+#define EGL_CONTEXT_OPENGL_PROFILE_MASK	0x30FD
+
+#define EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT				0x00000001
+#define EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT	0x00000002
+
+static void *(*eglGetProcAddress) (const char *symbol);
+static EGLint (*eglGetError) (void);
+static EGLDisplay (*eglGetPlatformDisplay) (EGLenum platform,
+											void *native_display,
+											const EGLint *attrib_list);
+static const char *(*eglQueryString) (EGLDisplay, EGLint);
+static EGLBoolean (*eglInitialize) (EGLDisplay dpy,
+									EGLint *major, EGLint *minor);
+static EGLBoolean (*eglGetConfigs) (EGLDisplay dpy, EGLConfig *configs,
+									EGLint config_size, EGLint *num_config);
+static EGLBoolean (*eglChooseConfig) (EGLDisplay dpy, const EGLint *attrib_list,
+									  EGLConfig *configs, EGLint config_size,
+									  EGLint *num_config);
+static EGLBoolean (*eglGetConfigAttrib) (EGLDisplay dpy, EGLConfig config,
+										 EGLint attribute, EGLint *value);
+static EGLBoolean (*eglBindAPI) (EGLenum api);
+static EGLSurface (*eglCreatePlatformWindowSurface) (EGLDisplay dpy,
+													 EGLConfig config,
+													 void *win,
+													 const EGLint *attrib_list);
+static EGLContext (*eglCreateContext) (EGLDisplay dpy, EGLConfig config,
+									   EGLContext share_context,
+									   const EGLint *attrib_list);
+static EGLBoolean (*eglMakeCurrent) (EGLDisplay dpy, EGLSurface draw,
+									 EGLSurface read, EGLContext ctx);
+static EGLBoolean (*eglSwapBuffers) (EGLDisplay, EGLSurface);
+static bool use_egl_procaddress = false;
+
+static void (*qfglFinish) (void);
+
+static EGLDisplay egl_display;
+static EGLConfig egl_config;
+static EGLContext egl_context;
+static EGLSurface egl_surface;
+
+static struct wl_egl_window *egl_window;
+
+static void *
+QFGL_GetProcAddress (void *handle, const char *name)
+{
+	void       *glfunc = NULL;
+	if (use_egl_procaddress && eglGetProcAddress)
+		glfunc = eglGetProcAddress (name);
+	if (!glfunc)
+		glfunc = dlsym (handle, name);
+	return glfunc;
+}
+
+static const char *
+egl_error_message ()
+{
+	switch (eglGetError ()) {
+		case EGL_NOT_INITIALIZED:		return "EGL_NOT_INITIALIZED";
+		case EGL_BAD_ACCESS:			return "EGL_BAD_ACCESS";
+		case EGL_BAD_ALLOC:				return "EGL_BAD_ALLOC";
+		case EGL_BAD_ATTRIBUTE:			return "EGL_BAD_ATTRIBUTE";
+		case EGL_BAD_CONFIG: 			return "EGL_BAD_CONFIG";
+		case EGL_BAD_CONTEXT: 			return "EGL_BAD_CONTEXT";
+		case EGL_BAD_CURRENT_SURFACE: 	return "EGL_BAD_CURRENT_SURFACE";
+		case EGL_BAD_DISPLAY: 			return "EGL_BAD_DISPLAY";
+		case EGL_BAD_MATCH: 			return "EGL_BAD_MATCH";
+		case EGL_BAD_NATIVE_PIXMAP: 	return "EGL_BAD_NATIVE_PIXMAP";
+		case EGL_BAD_NATIVE_WINDOW: 	return "EGL_BAD_NATIVE_WINDOW";
+		case EGL_BAD_PARAMETER: 		return "EGL_BAD_PARAMETER";
+		case EGL_BAD_SURFACE: 			return "EGL_BAD_SURFACE";
+		default:						return "Unknown";
+	}
+}
+
+static EGLConfig
+egl_choose_config ()
+{
+	EGLint config_attribs[] = {
+		EGL_SURFACE_TYPE,		EGL_WINDOW_BIT,
+		EGL_RED_SIZE,			8,
+		EGL_GREEN_SIZE,			8,
+		EGL_BLUE_SIZE,			8,
+		//EGL_ALPHA_SIZE,		8, /* FIXME: Enabling this causes window to go transparent */
+		EGL_DEPTH_SIZE,			24,
+		EGL_RENDERABLE_TYPE,	EGL_OPENGL_BIT,
+
+		EGL_NONE
+	};
+
+	EGLint num_configs = 0;
+	if (!eglGetConfigs (egl_display, nullptr, 0, &num_configs)) {
+		Sys_Error ("Failed to get list of available EGL configs: %s",
+					egl_error_message ());
+	}
+	Sys_MaskPrintf (SYS_vid, "Found %d EGL configs\n", num_configs);
+
+	EGLConfig *configs = calloc (num_configs, sizeof (EGLConfig));
+	EGLint num_valid_configs = 0;
+	if (!eglChooseConfig (egl_display, config_attribs,
+					 configs, num_configs, &num_valid_configs)) {
+		Sys_Error ("Failed to get list of EGL configs matching"
+					"required attributes: %s", egl_error_message ());
+	}
+
+	for (EGLint i = 0; i < num_valid_configs; ++i) {
+		EGLint renderable_type = 0;
+		eglGetConfigAttrib (egl_display, configs[i],
+							EGL_RENDERABLE_TYPE, &renderable_type);
+
+		if (renderable_type & EGL_OPENGL_BIT) {
+			egl_config = configs[i];
+			Sys_MaskPrintf (SYS_vid, "Using config %d\n", i);
+			break;
+		}
+	}
+
+	return egl_config;
+}
+
+static void
+egl_choose_visual (gl_ctx_t *ctx)
+{
+	egl_display = eglGetPlatformDisplay (EGL_PLATFORM_WAYLAND_EXT, wl_display,
+										 nullptr);
+	if (egl_display == EGL_NO_DISPLAY) {
+		Sys_Error ("Failed to get EGL display: %s", egl_error_message ());
+	}
+
+	EGLint egl_major, egl_minor;
+	if (eglInitialize (egl_display, &egl_major, &egl_minor) != EGL_TRUE) {
+		Sys_Error ("Failed to initialize EGL, error: %s", egl_error_message ());
+	}
+	if (egl_major != 1 || egl_minor < 5) {
+		Sys_Error ("Quakeforge requires EGL version 1.5 minimum but found %d.%d",
+					egl_major, egl_minor);
+	}
+	Sys_Printf ("Initialized EGL %d.%d\n", egl_major, egl_minor);
+
+	if (egl_choose_config () == EGL_NO_CONFIG) {
+		Sys_Error ("Failed to find appropriate EGL config: %s", egl_error_message ());
+	}
+}
+
+static void
+vidsize_listener (void *data, const viddef_t *vid)
+{
+	wl_egl_window_resize (egl_window, vid->width, vid->height, 0, 0);
+}
+
+static void
+egl_create_context (gl_ctx_t *ctx, int core)
+{
+	if (!eglBindAPI (EGL_OPENGL_API)) {
+		Sys_Error ("Failed to bind the OpenGL API for use");
+	}
+
+	egl_window = wl_egl_window_create (wl_surface, viddef.width, viddef.height);
+	egl_surface = eglCreatePlatformWindowSurface (egl_display, egl_config,
+												  egl_window, nullptr);
+	if (egl_surface == EGL_NO_SURFACE) {
+		Sys_Error ("Failed to create EGL window surface: %s", egl_error_message ());
+	}
+	Sys_Printf ("Created EGL window surface\n");
+
+	EGLint context_attribs[] = {
+		EGL_CONTEXT_MAJOR_VERSION, 3,
+		EGL_CONTEXT_MINOR_VERSION, 0,
+		EGL_CONTEXT_OPENGL_PROFILE_MASK,
+			core ? EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT
+				 : EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT,
+
+		EGL_NONE
+	};
+	egl_context = eglCreateContext (egl_display, egl_config, EGL_NO_CONTEXT,
+									context_attribs);
+	if (egl_context == EGL_NO_CONTEXT) {
+		Sys_Error ("Failed to create EGL context: %s", egl_error_message ());
+	}
+	Sys_Printf ("Created EGL context successfully\n");
+
+	ctx->context = (GL_context) egl_context;
+
+	if (!eglMakeCurrent (egl_display, egl_surface, egl_surface, egl_context)) {
+		Sys_Error ("Failed to make context current: %s", egl_error_message ());
+	}
+
+	VID_OnVidResize_AddListener (vidsize_listener, ctx);
+
+	ctx->init_gl ();
+}
+
+static void *
+egl_get_procaddress (const char *name, bool crit)
+{
+	void    *glfunc = NULL;
+
+	Sys_MaskPrintf (SYS_vid, "DEBUG: Finding symbol %s ... ", name);
+
+	glfunc = QFGL_GetProcAddress (libgl_handle, name);
+	if (glfunc) {
+		Sys_MaskPrintf (SYS_vid, "found [%p]\n", glfunc);
+		return glfunc;
+	}
+	Sys_MaskPrintf (SYS_vid, "not found\n");
+
+	if (crit) {
+		if (strncmp ("fxMesa", name, 6) == 0) {
+			Sys_Printf ("This target requires a special version of Mesa with "
+						"support for Glide and SVGAlib.\n");
+			Sys_Printf ("If you are in X, try using a GLX or SGL target.\n");
+		}
+		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...",
+				   name);
+	}
+	return NULL;
+}
+
+static void
+egl_end_rendering (void)
+{
+	qfglFinish ();
+	if (!eglSwapBuffers (egl_display, egl_surface)) {
+		Sys_Error ("eglSwapBuffers failed: %s", egl_error_message ());
+	}
+}
+
+static void
+egl_load_gl (gl_ctx_t *ctx)
+{
+	libgl_handle = dlopen (gl_driver, RTLD_NOW);
+	if (!libgl_handle) {
+		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver,
+				   dlerror ());
+	}
+
+	eglGetProcAddress = QFGL_GetProcAddress (libgl_handle, "eglGetProcAddress");
+	eglGetError = QFGL_GetProcAddress (libgl_handle, "eglGetError");
+	eglQueryString = QFGL_GetProcAddress (libgl_handle, "eglQueryString");
+	eglGetPlatformDisplay = QFGL_GetProcAddress (libgl_handle, "eglGetPlatformDisplay");
+	eglInitialize = QFGL_GetProcAddress (libgl_handle, "eglInitialize");
+	eglGetConfigs = QFGL_GetProcAddress (libgl_handle, "eglGetConfigs");
+	eglChooseConfig = QFGL_GetProcAddress (libgl_handle, "eglChooseConfig");
+	eglGetConfigAttrib = QFGL_GetProcAddress (libgl_handle, "eglGetConfigAttrib");
+	eglBindAPI = QFGL_GetProcAddress (libgl_handle, "eglBindAPI");
+	eglCreatePlatformWindowSurface = QFGL_GetProcAddress (libgl_handle, "eglCreateWindowSurface");
+	eglCreateContext = QFGL_GetProcAddress (libgl_handle, "eglCreateContext");
+	eglMakeCurrent = QFGL_GetProcAddress (libgl_handle, "eglMakeCurrent");
+	eglSwapBuffers = QFGL_GetProcAddress (libgl_handle, "eglSwapBuffers");
+
+	use_egl_procaddress = true;
+
+	qfglFinish = egl_get_procaddress ("glFinish", true);
+}
+
+static void
+egl_unload_gl (void *_ctx)
+{
+	gl_ctx_t   *ctx = _ctx;
+	if (libgl_handle) {
+		dlclose (libgl_handle);
+		libgl_handle = 0;
+	}
+	free (ctx);
+}
+
 gl_ctx_t *WL_GL_Context (vid_internal_t *vi) __attribute__((const));
 gl_ctx_t *
 WL_GL_Context (vid_internal_t *vi)
 {
-	return nullptr;
+	gl_ctx_t *ctx = calloc (1, sizeof (gl_ctx_t));
+	ctx->load_gl = egl_load_gl;
+	ctx->choose_visual = egl_choose_visual;
+	ctx->create_context = egl_create_context;
+	ctx->get_proc_address = egl_get_procaddress;
+	ctx->end_rendering = egl_end_rendering;
+
+	vi->unload = egl_unload_gl;
+	vi->ctx = ctx;
+	return ctx;
 }
 
 void
