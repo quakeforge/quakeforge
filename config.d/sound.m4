@@ -256,6 +256,26 @@ QF_maGiC_VALUE
 			fi
 		fi
 	fi
-	AC_SUBST(WINSND_LIBS)
+    AC_SUBST(WINSND_LIBS)
+
+    AC_ARG_ENABLE(miniaudio,
+        AS_HELP_STRING(
+            [--disable-miniaudio],
+            [disable miniaudio support]
+        )
+    )
+
+    HAVE_MINIAUDIO=no
+    MINIAUDIO_LIBS=""
+    if test "x$enable_miniaudio" != "xno"; then
+        AC_CHECK_HEADER(miniaudio/miniaudio.h, HAVE_MINIAUDIO=yes, HAVE_MINIAUDIO=no)
+        if test "x$HAVE_MINIAUDIO" = "xyes"; then
+            SOUND_TYPES="$SOUND_TYPES Miniaudio"
+            QF_NEED(snd_output, [ma])
+    		QF_NEED(snd_render, [default])
+            MINIAUDIO_LIBS=-lminiaudio
+        fi
+    fi
+    AC_SUBST(MINIAUDIO_LIBS)
 
 fi
