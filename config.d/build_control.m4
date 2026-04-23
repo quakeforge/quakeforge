@@ -449,7 +449,7 @@ if test "x$static_plugins" = xyes; then
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [server], [libs/console], [server])
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [client], [libs/console], [client])
 
-	QF_PROCESS_NEED_STATIC_PLUGINS(snd_output, [sdl mme sgi sun win dx ma oss jack alsa], [libs/audio/targets])
+	QF_PROCESS_NEED_STATIC_PLUGINS(snd_output, [sdl mme sgi sun win dx oss jack alsa ma], [libs/audio/targets])
 	QF_PROCESS_NEED_STATIC_PLUGINS(snd_render, [default], [libs/audio/renderer])
 	QF_PROCESS_NEED_STATIC_PLUGINS(cd, [xmms sdl sgi win linux file], [libs/audio])
 	AC_DEFINE(STATIC_PLUGINS, 1, [Define this if you are building static plugins])
@@ -463,7 +463,7 @@ else
 	QF_PROCESS_NEED_PLUGINS(vid_render, [sw glsl gl vulkan], [libs/video/renderer])
 	QF_PROCESS_NEED_PLUGINS(console, [server], [libs/console], [server])
 	QF_PROCESS_NEED_PLUGINS(console, [client], [libs/console], [client])
-	QF_PROCESS_NEED_PLUGINS(snd_output, [sdl mme sgi sun win dx ma oss jack alsa], [libs/audio/targets])
+	QF_PROCESS_NEED_PLUGINS(snd_output, [sdl mme sgi sun win dx oss jack alsa ma], [libs/audio/targets])
 	QF_PROCESS_NEED_PLUGINS(snd_render, [default], [libs/audio/renderer])
 	QF_PROCESS_NEED_PLUGINS(cd, [xmms sdl sgi win linux file], [libs/audio])
 fi
