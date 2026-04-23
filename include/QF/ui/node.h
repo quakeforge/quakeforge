@@ -46,4 +46,17 @@ typedef struct node_link_s {
 
 extern const component_t node_components[node_comp_count];
 
+typedef struct node_system_s {
+	ecs_registry_t *reg;
+	uint32_t    base;
+} node_system_t;
+
+uint32_t Node_AddLink (node_system_t node_sys, node_link_t link);
+uint32_t Node_AddOutput (node_system_t node_sys, uint32_t ent);
+uint32_t Node_AddInput (node_system_t node_sys, uint32_t ent);
+void Node_GetOutputLinks (node_system_t node_sys, uint32_t ent,
+						  uint32_t *num_links, node_link_t *links);
+void Node_GetInputLinks (node_system_t node_sys, uint32_t ent,
+						 uint32_t *num_links, node_link_t *links);
+
 #endif//__QF_ui_node_h
