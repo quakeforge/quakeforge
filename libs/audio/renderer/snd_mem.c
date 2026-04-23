@@ -54,7 +54,7 @@ static cvar_t snd_mem_size_cvar = {
 	.description =
 		"Amount of LOCKED memory to allocate to the sound system in MB. "
 		"Defaults to 32MB.",
-	.default_value = "32",
+	.default_value = "64",
 	.flags = CVAR_ROM,
 	.value = { .type = &cexpr_uint, .value = &snd_mem_size },
 };
@@ -98,9 +98,10 @@ SND_Memory_Init (void)
 		return 0;
 	}
 	if (!Sys_LockMemory (snd_zone, size)) {
-		Sys_Printf ("Sound: Unable to lock %uMB buffer\n", snd_mem_size);
-		Sys_Free (snd_zone, size);
-		return 0;
+		Sys_Printf (RED"Sound: Unable to lock %uMB buffer"DFL"\n", snd_mem_size);
+        // FIXME Permission issue?
+		//Sys_Free (snd_zone, size);
+		//return 0;
 	}
 	Z_ClearZone (snd_zone, size, 0, 1);
 	Z_SetError (snd_zone, snd_zone_error, 0);
