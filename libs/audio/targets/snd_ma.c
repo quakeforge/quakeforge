@@ -42,8 +42,9 @@
 
 typedef struct snd_ma_s {
 	ma_device_config config;
-	ma_device device;
-	void *output;
+	ma_device   device;
+	void       *output;
+	int         send_count;
 } snd_ma_t;
 
 static int sound_started = 0;
@@ -83,16 +84,18 @@ snd_ma_xfer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
 	snd_ma_t *ma = snd->xfer_data;
 	float *output = ma->output;
 
+	int base = ma->send_count;
+	ma->send_count += count;
 	if (snd_blocked) {
 		for (int i = 0; i < count; i++) {
-			output[i*2+0] = 0;
-			output[i*2+1] = 0;
+			output[(base + i) * 2 + 0] = 0;
+			output[(base + i) * 2 + 1] = 0;
 		}
 		return;
 	}
 	for (int i = 0; i < count; i++) {
-		output[i*2+0] = volume * paintbuffer[i].left;
-		output[i*2+1] = volume * paintbuffer[i].right;
+		output[(base + i) * 2 + 0] = volume * paintbuffer[i].left;
+		output[(base + i) * 2 + 1] = volume * paintbuffer[i].right;
 	}
 }
 
@@ -105,6 +108,7 @@ snd_ma_process (ma_device *device, void *output, const void *input, ma_uint32 fr
 	snd_t *snd = device->pUserData;
 	snd_ma_t *ma = snd->xfer_data;
 	ma->output = output;
+	ma->send_count = 0;
 	snd->paint_channels(snd, snd->paintedtime + frame_count);
 }
 
