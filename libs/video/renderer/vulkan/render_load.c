@@ -1239,10 +1239,8 @@ static uint32_t __attribute__((pure))
 clear_value_count (qfv_renderpassinfo_t *rpinfo)
 {
 	bool have_clear = false;
-	printf ("%s\n", rpinfo->name);
 	for (uint32_t i = 0; i < rpinfo->framebuffer.num_attachments; i++) {
 		auto ai = &rpinfo->framebuffer.attachments[i];
-		printf ("%d %s: %d %d\n", i, ai->name, ai->loadOp, ai->stencilLoadOp);
 		if (ai->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR
 			|| ai->stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
 			have_clear = true;
