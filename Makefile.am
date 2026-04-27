@@ -27,7 +27,7 @@ NOCONV_DIST= \
 BUILT_SOURCES = $(top_srcdir)/.version
 AM_CFLAGS= $(TRACY_CFLAGS) -fexceptions -include qftracy.h
 AM_CXXFLAGS= $(TRACY_CFLAGS) -include qftracy.h
-AM_CPPFLAGS= --embed-dir=$(top_srcdir) --embed-dir=$(top_builddir) -I$(top_srcdir)/include $(UNWIND_CFLAGS) $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS) $(FREETYPE_CFLAGS) $(HARFBUZZ_CFLAGS) $(VULKAN_CPPFLAGS) $(LIBCURL_CFLAGS)
+AM_CPPFLAGS= --embed-dir=$(top_srcdir) --embed-dir=$(top_builddir) -I$(top_srcdir)/include $(UNWIND_CFLAGS) $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS) $(FREETYPE_CFLAGS) $(HARFBUZZ_CFLAGS) $(VULKAN_CPPFLAGS) $(LIBCURL_CFLAGS) $(IBUS_CFLAGS)
 
 common_ldflags= -export-dynamic @STATIC@ @PTHREAD_LDFLAGS@
 

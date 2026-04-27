@@ -84,6 +84,7 @@ m4_include(config.d/compression.m4)
 m4_include(config.d/vulkan.m4)
 m4_include(config.d/x11.m4)
 m4_include(config.d/wl.m4)
+m4_include(config.d/ibus.m4)
 
 m4_include(config.d/curses.m4)
 m4_include(config.d/freetype.m4)

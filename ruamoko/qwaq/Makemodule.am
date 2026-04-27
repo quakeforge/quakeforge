@@ -193,7 +193,7 @@ ruamoko_qwaq_qwaq_x11_SOURCES= \
 ruamoko_qwaq_qwaq_x11_LDADD= $(qwaq_x11_libs) $(QWAQ_LIBS) \
 		$(VIDMODE_LIBS) $(DGA_LIBS) ${XFIXES_LIBS} $(XI2_LIBS) $(XSS_LIBS)\
 		$(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) $(PTHREAD_LDFLAGS) \
-		$(DL_LIBS)
+		$(DL_LIBS) $(IBUS_LIBS)
 ruamoko_qwaq_qwaq_x11_LDFLAGS= $(common_ldflags)
 ruamoko_qwaq_qwaq_x11_DEPENDENCIES= $(qwaq_x11_libs) $(QWAQ_DEPS)
 

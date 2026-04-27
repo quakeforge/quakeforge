@@ -43,7 +43,6 @@
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
-#include <locale.h>
 
 #include <X11/Xlib.h>
 #ifdef HAVE_VIDMODE
@@ -311,8 +310,6 @@ X11_OpenDisplay (void)
 {
 	qfZoneScoped (true);
 	if (!x_disp) {
-		setlocale(LC_CTYPE, "");
-		XSetLocaleModifiers("");
 		x_disp = XOpenDisplay (nullptr);
 		if (!x_disp) {
 			Sys_Error ("X11_OpenDisplay: Could not open display [%s]",

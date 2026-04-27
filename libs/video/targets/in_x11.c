@@ -41,6 +41,7 @@
 # include <unistd.h>
 #endif
 
+#include <locale.h>
 #define _BSD
 #include <ctype.h>
 #include <errno.h>
@@ -53,6 +54,9 @@
 #include <X11/Sunkeysym.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
+#ifdef HAVE_IBUS
+#include <ibus.h>
+#endif
 
 #ifdef HAVE_DGA
 # ifdef DGA_OLD_HEADERS
@@ -119,7 +123,12 @@ static const char *x11_mouse_button_names[] = {
 	"M_BUTTON29",   "M_BUTTON30", "M_BUTTON31", "M_BUTTON32",
 };
 static XIM x11_xim;
-static XIC x11_ic;
+static XIC x11_xim_ic;
+#ifdef HAVE_IBUS
+static IBusBus *x11_ibus;
+static IBusInputContext *x11_ibus_ic;
+static bool x11_ibus_send;
+#endif
 static dstring_t *x11_utf8;
 
 static x11_device_t x11_keyboard_device = {
@@ -287,11 +296,27 @@ XLateKey (XKeyEvent *ev, int *k, int *u)
 	KeySym      keysym, shifted_keysym;
 	XComposeStatus compose;
 
-	if (x_filter_events && x11_ic) {
+	if (x_filter_events && x11_ibus_ic) {
+#ifdef HAVE_IBUS
+		keysym = XLookupKeysym(ev, 0);
+		guint keycode = ev->keycode - 8;
+		guint state = ev->state;
+
+		if (ibus_input_context_process_key_event(x11_ibus_ic,
+												 keysym, keycode, state)) {
+			keysym = 0;
+		} else {
+			XLookupString (ev, buffer, sizeof(buffer), &shifted_keysym,
+						   &compose);
+			unicode = (byte) buffer[0];
+			x11_key.utf8 = nullptr;
+		}
+#endif
+	} else if (x_filter_events && x11_xim_ic) {
 		int c;
 		Status status;
 		keysym = 0;
-		while ((c = Xutf8LookupString (x11_ic, ev,
+		while ((c = Xutf8LookupString (x11_xim_ic, ev,
 									   x11_utf8->str, x11_utf8->truesize - 1,
 									   &keysym, &status))
 			   && status == XBufferOverflow) {
@@ -1252,11 +1277,20 @@ static void
 in_x11_set_focus (void *data, bool focus)
 {
 	x_filter_events = focus;
-	if (x11_ic) {
+#ifdef HAVE_IBUS
+	if (x11_ibus_ic) {
 		if (x_filter_events) {
-			XSetICFocus (x11_ic);
+			ibus_input_context_focus_in (x11_ibus_ic);
 		} else {
-			XUnsetICFocus (x11_ic);
+			ibus_input_context_focus_out (x11_ibus_ic);
+		}
+	}
+#endif
+	if (x11_xim_ic) {
+		if (x_filter_events) {
+			XSetICFocus (x11_xim_ic);
+		} else {
+			XUnsetICFocus (x11_xim_ic);
 		}
 	}
 }
@@ -1284,6 +1318,14 @@ static void
 in_x11_process_events (void *data)
 {
 	X11_ProcessEvents ();	// Get events from X server.
+#if HAVE_IBUS
+	while (g_main_context_iteration (nullptr, false)) {
+		if (x11_ibus_send) {
+			x11_ibus_send = false;
+			in_x11_send_key_event ();
+		}
+	}
+#endif
 }
 #endif
 static void
@@ -1431,12 +1473,18 @@ static void
 in_x11_shutdown (void *data)
 {
 	Sys_MaskPrintf (SYS_vid, "in_x11_shutdown\n");
-	if (x11_ic) {
-		dstring_delete (x11_utf8);
-		XDestroyIC (x11_ic);
-		// if x11_ic is not null, then x11_xim also is not null
+	dstring_delete (x11_utf8);
+	if (x11_xim_ic) {
+		XDestroyIC (x11_xim_ic);
+		// if x11_xim_ic is not null, then x11_xim also is not null
 		XCloseIM (x11_xim);
 	}
+#ifdef HAVE_IBUS
+	if (x11_ibus_ic) {
+		g_object_unref(x11_ibus_ic);
+		g_object_unref(x11_ibus);
+	}
+#endif
 	if (x_disp) {
 //		XAutoRepeatOn (x_disp);
 		dga_off ();
@@ -1600,6 +1648,18 @@ x11_event_handler (const IE_event_t *ie_event, void *unused)
 	return 1;
 }
 
+#ifdef HAVE_IBUS
+static void
+x11_ibus_commit_text (IBusInputContext *ic, IBusText *text, gpointer user_data)
+{
+	auto utf8_str = ibus_text_get_text (text);
+	dstring_copystr (x11_utf8, utf8_str);
+	x11_key.code = QFK_STRING;
+	x11_key.utf8 = x11_utf8;
+	x11_ibus_send = true;
+}
+#endif
+
 long
 IN_X11_Preinit (void)
 {
@@ -1654,17 +1714,36 @@ IN_X11_Postinit (long event_mask)
 						dga_avail);
 	}
 
-	x11_xim = XOpenIM (x_disp, nullptr, nullptr, nullptr);
-	if (x11_xim) {
-		x11_utf8 = dstring_newstr ();
-		x11_ic = XCreateIC (x11_xim,
-							XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
-							XNClientWindow, x_win,
-							nullptr);
-		if (x11_ic) {
-			unsigned long mask;
-			if (!XGetICValues (x11_ic, XNFilterEvents, &mask, nullptr)) {
-				XSelectInput (x_disp, x_win, event_mask | mask);
+#if HAVE_IBUS
+	ibus_init ();
+	x11_ibus = ibus_bus_new ();
+	if (x11_ibus) {
+		x11_ibus_ic = ibus_bus_create_input_context (x11_ibus, PACKAGE_NAME);
+		if (x11_ibus_ic) {
+			x11_utf8 = dstring_newstr ();
+			g_signal_connect(x11_ibus_ic, "commit-text",
+							 G_CALLBACK(x11_ibus_commit_text), nullptr);
+			ibus_input_context_set_capabilities(x11_ibus_ic, IBUS_CAP_FOCUS);
+		}
+	}
+#endif
+	// if x11_utf8 is not null, then ibus init succeeded
+	if (!x11_utf8) {
+		setlocale(LC_CTYPE, "");
+		XSetLocaleModifiers("");
+		x11_xim = XOpenIM (x_disp, nullptr, nullptr, nullptr);
+		if (x11_xim) {
+			x11_utf8 = dstring_newstr ();
+			x11_xim_ic = XCreateIC (x11_xim, XNInputStyle,
+									XIMPreeditNothing | XIMStatusNothing,
+									XNClientWindow, x_win,
+									nullptr);
+			if (x11_xim_ic) {
+				const char *icval = XNFilterEvents;
+				unsigned long mask;
+				if (!XGetICValues (x11_xim_ic, icval, &mask, nullptr)) {
+					XSelectInput (x_disp, x_win, event_mask | mask);
+				}
 			}
 		}
 	}
