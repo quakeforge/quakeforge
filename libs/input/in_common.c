@@ -481,6 +481,17 @@ IN_UpdateFocus (bool focus)
 	}
 }
 
+void
+IN_UpdateCursor (int x, int y, int w, int h)
+{
+	for (size_t i = 0; i < in_drivers.size; i++) {
+		in_regdriver_t *rd = &in_drivers.a[i];
+		if (rd->driver.update_cursor) {
+			rd->driver.update_cursor (rd->data, x, y, w, h);
+		}
+	}
+}
+
 static void
 in_grab_f (void *data, const cvar_t *cvar)
 {

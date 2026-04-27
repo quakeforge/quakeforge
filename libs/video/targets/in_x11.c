@@ -1307,6 +1307,16 @@ in_x11_set_focus (void *data, bool focus)
 	}
 }
 
+static void
+in_x11_update_cursor (void *data, int x, int y, int w, int h)
+{
+#ifdef HAVE_IBUS
+	if (x11_ibus_ic) {
+		ibus_input_context_set_cursor_location (x11_ibus_ic, x, y, w, h);
+	}
+#endif
+}
+
 #ifdef X11_USE_SELECT
 static void
 in_x11_add_select (qf_fd_set *fdset, int *maxfd, void *data)
@@ -1840,6 +1850,7 @@ static in_driver_t in_x11_driver = {
 	.clear_states = in_x11_clear_states,
 	.grab_input = in_x11_grab_input,
 	.set_focus = in_x11_set_focus,
+	.update_cursor = in_x11_update_cursor,
 
 	.axis_info = in_x11_axis_info,
 	.button_info = in_x11_button_info,
