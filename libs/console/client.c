@@ -38,10 +38,6 @@
 #include <stdarg.h>
 #include <errno.h>
 
-#ifdef __QNXNTO__
-# include <locale.h>
-#endif
-
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -1081,9 +1077,6 @@ C_Init (void)
 	client_base = con_data.component_base;
 	canvas_base = con_data.canvas_sys->base;
 	view_base = con_data.canvas_sys->view_base;
-#ifdef __QNXNTO__
-	setlocale (LC_ALL, "C-TRADITIONAL");
-#endif
 
 	con_event_id = IE_Add_Handler (con_event_handler, 0);
 

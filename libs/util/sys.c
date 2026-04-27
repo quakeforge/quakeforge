@@ -521,8 +521,6 @@ Sys_MakeCodeWriteable (uintptr_t startaddr, size_t length)
 	unsigned long endaddr = startaddr + length;
 	startaddr &= ~(psize - 1);
 	endaddr = (endaddr + psize - 1) & ~(psize - 1);
-	// systems with mprotect but not getpagesize (or similar) probably don't
-	// need to page align the arguments to mprotect (eg, QNX)
 	r = mprotect ((char *) startaddr, endaddr - startaddr,
 				  PROT_EXEC | PROT_READ | PROT_WRITE);
 
