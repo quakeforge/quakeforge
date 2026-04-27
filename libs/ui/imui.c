@@ -40,6 +40,7 @@
 #include "QF/heapsort.h"
 #include "QF/keys.h"
 #include "QF/mathlib.h"
+#include "QF/msg.h"
 #include "QF/progs.h"
 #include "QF/quakeio.h"
 #include "QF/sys.h"
@@ -128,6 +129,10 @@ struct imui_ctx_s {
 	uint32_t    shift;
 	imui_key_t  key;
 	dstring_t  *key_utf8;
+	dstring_t  *key_preedit;
+	struct DARRAY_TYPE(IE_attr_t) key_attr;
+	imui_window_t preedit_window;
+	uint32_t    preedit_cursor;
 
 	uint32_t    drag_id;
 
@@ -305,6 +310,15 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.focused = nullent,
 		.mouse_position = {-1, -1},
 		.key_utf8 = dstring_newstr (),
+		.key_preedit = dstring_newstr (),
+		.key_attr = DARRAY_STATIC_INIT (8),
+		.preedit_window = {
+			.name = "###imui-preedit",
+			.xpos = 20,
+			.ypos = 20,
+			.is_open = true,
+			.auto_fit = true,
+		},
 		.drag_id = nullent,
 		.style_stack = DARRAY_STATIC_INIT (8),
 		.style = {
@@ -391,7 +405,10 @@ IMUI_DestroyContext (imui_ctx_t *ctx)
 	DARRAY_CLEAR (&ctx->links);
 	DARRAY_CLEAR (&ctx->scrollers);
 	DARRAY_CLEAR (&ctx->style_stack);
+	DARRAY_CLEAR (&ctx->key_attr);
 	dstring_delete (ctx->dstr);
+	dstring_delete (ctx->key_utf8);
+	dstring_delete (ctx->key_preedit);
 
 	Hash_DelTable (ctx->tab);
 	Hash_DelContext (ctx->hashctx);
@@ -536,14 +553,36 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 	} else if (ie_event->type == ie_key) {
 		auto k = &ie_event->key;
 		//printf ("imui: %d %d %x\n", k->code, k->unicode, k->shift);
-		ctx->shift = k->shift;
-		ctx->key = (imui_key_t) {
-			.code = k->code,
-			.unicode = k->unicode,
-			.shift = k->shift,
-		};
+
+		// QFK_PREEDIT is sent to update or clear the pre-edit string, it is
+		// not an event for higher level UI code to process
+		if (k->code != QFK_PREEDIT) {
+			ctx->shift = k->shift;
+			ctx->key = (imui_key_t) {
+				.code = k->code,
+				.unicode = k->unicode,
+				.shift = k->shift,
+			};
+		}
+
 		if (k->code == QFK_STRING) {
 			dstring_copy (ctx->key_utf8, k->utf8->str, k->utf8->size);
+			ctx->key_preedit->size = 0;
+			DARRAY_RESIZE (&ctx->key_attr, 0);
+		} else if (k->code == QFK_PREEDIT) {
+			if (k->utf8) {
+				dstring_copy (ctx->key_preedit, k->utf8->str, k->utf8->size);
+				int num_attr = 0;
+				for (auto attr = k->attr; attr->type != ie_attr_end; attr++) {
+					num_attr++;
+				}
+				DARRAY_RESIZE (&ctx->key_attr, num_attr);
+				memcpy (ctx->key_attr.a, k->attr, sizeof(IE_attr_t[num_attr]));
+				ctx->preedit_cursor = k->cursor;
+			} else {
+				ctx->key_preedit->size = 0;
+				DARRAY_RESIZE (&ctx->key_attr, 0);
+			}
 		} else {
 			ctx->key_utf8->size = 0;
 		}
@@ -1181,10 +1220,51 @@ sort_windows (imui_ctx_t *ctx)
 	}
 }
 
+static void
+imui_draw_preinput (imui_ctx_t *ctx)
+{
+	sizebuf_t utf8_sz = {
+		.data = (byte *) ctx->key_preedit->str,
+		.cursize = ctx->key_preedit->size,
+	};
+	qmsg_t utf8_msg = {
+		.message = &utf8_sz,
+	};
+	size_t uni_len = 0;
+	while (MSG_ReadUTF8 (&utf8_msg)) {
+		uni_len++;
+	}
+	MSG_BeginReading (&utf8_msg);
+	uint32_t unic[uni_len + 1];
+	uint32_t attr[uni_len + 1];
+	unic[uni_len] = 0;
+	attr[uni_len] = 0;
+	for (size_t i = 0; i < uni_len; i++) {
+		unic[i] = MSG_ReadUTF8 (&utf8_msg);
+		attr[i] = 61;//FIXME
+	}
+	for (size_t i = 0; i < ctx->key_attr.size; i++) {
+		auto a = ctx->key_attr.a[i];
+		if (a.type == ie_attr_foreground) {
+			for (unsigned j = a.start; j < a.end; j++) {
+				attr[j] |= 0100;
+			}
+		}
+	}
+	IMUI_StartPanel (ctx, &ctx->preedit_window);
+	IMUI_SetFill (ctx, ctx->style.background.normal);
+	IMUI_Label32Attr (ctx, unic, attr, uni_len);
+	IMUI_EndPanel (ctx);
+	//FIXME draw cursor
+}
+
 void
 IMUI_Draw (imui_ctx_t *ctx)
 {
 	ctx->frame_draw = Sys_LongTime ();
+	if (ctx->key_preedit->size) {
+		imui_draw_preinput (ctx);
+	}
 	ctx->mouse_pressed = 0;
 	ctx->mouse_released = 0;
 	sort_windows (ctx);

@@ -71,13 +71,31 @@ typedef struct {
 	int         click;
 } IE_mouse_event_t;
 
+typedef enum {
+	ie_attr_end,		// end of attribute list
+	ie_attr_underline,
+	ie_attr_foreground,
+	ie_attr_background,
+	ie_attr_hint,
+} IE_attr_type;
+
+typedef struct {
+	unsigned    start;
+	unsigned    end;
+	IE_attr_type type;
+	unsigned    value;
+} IE_attr_t;
+
 typedef struct {
 	int         code;
 	int         unicode;
 	unsigned    shift;	///< ored bit pattern of IE_shift
+	int         cursor;	///< in pre-edit string
 #ifdef __QFCC__
+	long        attr;
 	long        utf8;
 #else
+	IE_attr_t  *attr;	///< pre-edit string attributes
 	dstring_t  *utf8;	///< composed input string from IME
 #endif
 } IE_key_event_t;

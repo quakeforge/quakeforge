@@ -127,9 +127,9 @@ static XIC x11_xim_ic;
 #ifdef HAVE_IBUS
 static IBusBus *x11_ibus;
 static IBusInputContext *x11_ibus_ic;
-static bool x11_ibus_send;
 #endif
 static dstring_t *x11_utf8;
+static struct DARRAY_TYPE(IE_attr_t) x11_preedit_attrs = DARRAY_STATIC_INIT(16);
 
 static x11_device_t x11_keyboard_device = {
 	"core:keyboard",
@@ -1187,6 +1187,15 @@ in_x11_setup_barriers (int xpos, int ypos, int xlen, int ylen)
 #endif
 
 static void
+x11_clear_preedit ()
+{
+	x11_key.code = QFK_PREEDIT;
+	x11_key.attr = nullptr;
+	x11_key.utf8 = nullptr;
+	in_x11_send_key_event ();
+}
+
+static void
 event_focusout (XEvent *event)
 {
 	if (x_have_focus) {
@@ -1195,6 +1204,8 @@ event_focusout (XEvent *event)
 		in_x11_remove_barriers ();
 #endif
 		in_x11_send_focus_event (0);
+		x11_clear_preedit ();
+
 		if (in_snd_block) {
 			S_BlockSound ();
 			CDAudio_Pause ();
@@ -1320,12 +1331,7 @@ in_x11_process_events (void *data)
 {
 	X11_ProcessEvents ();	// Get events from X server.
 #if HAVE_IBUS
-	while (g_main_context_iteration (nullptr, false)) {
-		if (x11_ibus_send) {
-			x11_ibus_send = false;
-			in_x11_send_key_event ();
-		}
-	}
+	while (g_main_context_iteration (nullptr, false)) continue;
 #endif
 }
 #endif
@@ -1657,7 +1663,54 @@ x11_ibus_commit_text (IBusInputContext *ic, IBusText *text, gpointer user_data)
 	dstring_copystr (x11_utf8, utf8_str);
 	x11_key.code = QFK_STRING;
 	x11_key.utf8 = x11_utf8;
-	x11_ibus_send = true;
+	in_x11_send_key_event ();
+}
+
+static void
+x11_ibus_preedit_update(IBusInputContext *ic, IBusText *text,
+						gint cursor_pos, gboolean visible, gpointer data)
+{
+	if (!visible || text == nullptr) {
+		x11_clear_preedit ();
+		return;
+	}
+
+	const gchar *utf8_str = ibus_text_get_text(text);
+	dstring_copystr (x11_utf8, utf8_str);
+	DARRAY_RESIZE (&x11_preedit_attrs, 0);
+	IBusAttrList *attr_list = ibus_text_get_attributes(text);
+	guint i = 0;
+	IBusAttribute *attr;
+	while ((attr = ibus_attr_list_get(attr_list, i++))) {
+		guint start = ibus_attribute_get_start_index(attr);
+		guint end = ibus_attribute_get_end_index(attr);
+		guint type = ibus_attribute_get_attr_type(attr);
+		guint value = ibus_attribute_get_value(attr);
+		DARRAY_APPEND (&x11_preedit_attrs, ((IE_attr_t) {
+				.start = start,
+				.end = end,
+				.type = type, // matches IBusAttrType
+				.value = value,
+			}));
+	}
+	// terminate the attribute list
+	DARRAY_APPEND (&x11_preedit_attrs, (IE_attr_t) { .type = ie_attr_end });
+	x11_key.code = QFK_PREEDIT;
+	x11_key.cursor = cursor_pos;
+	x11_key.attr = x11_preedit_attrs.a;
+	x11_key.utf8 = x11_utf8;
+	in_x11_send_key_event ();
+}
+
+static void
+x11_ibus_preedit_show (IBusInputContext *ic, gpointer data)
+{
+}
+
+static void
+x11_ibus_preedit_hide (IBusInputContext *ic, gpointer data)
+{
+	x11_clear_preedit ();
 }
 #endif
 
@@ -1722,9 +1775,17 @@ IN_X11_Postinit (long event_mask)
 		x11_ibus_ic = ibus_bus_create_input_context (x11_ibus, PACKAGE_NAME);
 		if (x11_ibus_ic) {
 			x11_utf8 = dstring_newstr ();
-			g_signal_connect(x11_ibus_ic, "commit-text",
-							 G_CALLBACK(x11_ibus_commit_text), nullptr);
-			ibus_input_context_set_capabilities(x11_ibus_ic, IBUS_CAP_FOCUS);
+			g_signal_connect (x11_ibus_ic, "commit-text",
+							  G_CALLBACK(x11_ibus_commit_text), nullptr);
+			g_signal_connect (x11_ibus_ic, "update-preedit-text",
+							  G_CALLBACK(x11_ibus_preedit_update), nullptr);
+
+			g_signal_connect (x11_ibus_ic, "show-preedit-text",
+							  G_CALLBACK(x11_ibus_preedit_show), nullptr);
+			g_signal_connect (x11_ibus_ic, "hide-preedit-text",
+							  G_CALLBACK(x11_ibus_preedit_hide), nullptr);
+			auto caps = IBUS_CAP_PREEDIT_TEXT | IBUS_CAP_FOCUS;
+			ibus_input_context_set_capabilities(x11_ibus_ic, caps);
 		}
 	}
 #endif

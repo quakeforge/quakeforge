@@ -375,6 +375,7 @@ typedef enum {
 	QFK_FORWARD,
 
 	QFK_STRING,
+	QFK_PREEDIT,
 
 	QFK_LAST
 } knum_t;
