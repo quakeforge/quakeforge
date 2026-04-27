@@ -255,6 +255,8 @@ in_wl_send_button_event (wl_idevice_t *dev, int32_t btn)
 		}
 	};
 	IE_Send_Event (&event);
+
+	memset (&wl_key_event, 0, sizeof (wl_key_event));
 }
 
 static void
