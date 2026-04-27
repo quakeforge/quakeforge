@@ -16,4 +16,6 @@ else
 fi
 AC_SUBST(IBUS_LIBS)
 AC_SUBST(IBUS_CFLAGS)
-AC_DEFINE(HAVE_IBUS, 1, [Define if you have ibus])
+if test "x$HAVE_IBUS" = "xyes"; then
+	AC_DEFINE(HAVE_IBUS, 1, [Define if you have ibus])
+fi
