@@ -31,8 +31,6 @@ main (int argc, const char **argv)
 	int         res = 0;
 	auto enc = dstring_new ();
 
-	setlocale (LC_ALL, "");
-
 	for (size_t i = 0; i < num_encode_tests; i++) {
 		dstring_clear (enc);
 		base64_encode (enc, encode_tests[i].input,
