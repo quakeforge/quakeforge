@@ -296,8 +296,8 @@ XLateKey (XKeyEvent *ev, int *k, int *u)
 	KeySym      keysym, shifted_keysym;
 	XComposeStatus compose;
 
-	if (x_filter_events && x11_ibus_ic) {
 #ifdef HAVE_IBUS
+	if (x_filter_events && x11_ibus_ic) {
 		keysym = XLookupKeysym(ev, 0);
 		guint keycode = ev->keycode - 8;
 		guint state = ev->state;
@@ -311,8 +311,9 @@ XLateKey (XKeyEvent *ev, int *k, int *u)
 			unicode = (byte) buffer[0];
 			x11_key.utf8 = nullptr;
 		}
+	} else
 #endif
-	} else if (x_filter_events && x11_xim_ic) {
+	if (x_filter_events && x11_xim_ic) {
 		int c;
 		Status status;
 		keysym = 0;
