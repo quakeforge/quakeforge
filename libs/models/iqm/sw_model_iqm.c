@@ -303,6 +303,7 @@ sw_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 			.count = 4,
 		};
 		meshes[i].vertex_stride = sizeof (iqm_vert_t);
+		meshes[i].vertices.offset = iqm_ctx->meshes[i].first_vertex,
 
 		walk_tris +=  meshes[i].triangle_count;
 	}
