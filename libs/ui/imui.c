@@ -352,14 +352,14 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 	ctx->tab = Hash_NewTable (511, imui_state_getkey, 0, ctx, &ctx->hashctx);
 	ctx->current_parent = ctx->root_view;
 
-	auto fpath = Font_SystemFont (font);
-	if (fpath) {
-		QFile *file = Qopen (fpath, "rb");
+	auto fspec = Font_SystemFont (font);
+	if (fspec.path) {
+		QFile *file = Qopen (fspec.path, "rb");
 		if (file) {
-			ctx->font = Font_Load (file, fontsize);
+			ctx->font = Font_Load (file, fspec.index, fontsize);
 			//Qclose (file); FIXME closed by QFS_LoadFile
 		}
-		free (fpath);
+		free (fspec.path);
 	}
 	return ctx;
 }

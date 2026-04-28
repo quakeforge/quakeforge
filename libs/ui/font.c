@@ -94,7 +94,7 @@ Font_Free (font_t *font)
 }
 
 VISIBLE font_t *
-Font_Load (QFile *font_file, int size)
+Font_Load (QFile *font_file, int index, int size)
 {
 	byte       *font_data = QFS_LoadFile (font_file, 0);
 	if (!font_data) {
@@ -103,7 +103,7 @@ Font_Load (QFile *font_file, int size)
 	size_t      font_size = qfs_filesize;
 	font_t     *font = calloc (1, sizeof (font_t));
 	font->font_resource = font_data;
-	if (FT_New_Memory_Face (ft, font_data, font_size, 0, &font->face)) {
+	if (FT_New_Memory_Face (ft, font_data, font_size, index, &font->face)) {
 		Font_Free (font);
 		return 0;
 	}
@@ -148,7 +148,7 @@ Font_Load (QFile *font_file, int size)
 	return font;
 }
 
-char *
+fontspec_t
 Font_SystemFont (const char *font_pattern)
 {
 	auto config = FcInitLoadConfigAndFonts ();
@@ -158,14 +158,15 @@ Font_SystemFont (const char *font_pattern)
 
 	FcResult result;
 	auto font = FcFontMatch (config, pattern, &result);
-	char *filename = 0;
+	fontspec_t fontspec = {};
 	if (font) {
 		FcChar8 *str;
 		if (FcPatternGetString (font, FC_FILE, 0, &str) == FcResultMatch) {
-			filename = strdup ((char *) str);
+			fontspec.path = strdup ((char *) str);
 		}
+		FcPatternGetInteger (font, FC_INDEX, 0, &fontspec.index);
 		FcPatternDestroy (font);
 	}
 	FcPatternDestroy (pattern);
-	return filename;
+	return fontspec;
 }

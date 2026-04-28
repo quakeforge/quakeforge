@@ -252,12 +252,13 @@ bi (Font_Load)
 	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	const char *font_path = P_GSTRING (pr, 0);
-	int         font_size = P_INT (pr, 1);
+	int         face_index = P_INT (pr, 1);
+	int         font_size = P_INT (pr, 2);
 
 	R_INT (pr) = 0;
 
 	QFile      *font_file = QFS_FOpenFile (font_path);
-	font_t     *font = Font_Load (font_file, font_size);
+	font_t     *font = Font_Load (font_file, face_index, font_size);
 	if (font) {
 		R_INT (pr) = alloc_font (res, font);
 	}
@@ -491,7 +492,7 @@ bi (View_UpdateHierarchy)
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	bi(Font_Load,           2, p(string), p(int)),
+	bi(Font_Load,           3, p(string), p(int), p(int)),
 	bi(Font_Free,           2, p(int)),
 	bi(Passage_New,         0),
 	bi(Passage_ParseText,   2, p(ptr), p(string)),
