@@ -310,7 +310,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.focused = nullent,
 		.mouse_position = {-1, -1},
 		.key_utf8 = dstring_newstr (),
-		.key_preedit = dstring_newstr (),
+		.key_preedit = dstring_new (),	// so size starts at 0
 		.key_attr = DARRAY_STATIC_INIT (8),
 		.preedit_window = {
 			.name = "###imui-preedit",
