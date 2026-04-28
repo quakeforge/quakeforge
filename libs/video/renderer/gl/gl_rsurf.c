@@ -470,6 +470,8 @@ chain_surface (glbspctx_t *bctx, msurface_t *surf)
 		sc = CHAIN_SURF_B2F (surf, waterchain);
 	} else if (surf->flags & SURF_DRAWSKY) {
 		sc = CHAIN_SURF_F2B (surf, sky_chain);
+	} else if (surf->flags & SURF_DRAWBACKGROUND) {
+		return;
 	} else {
 		texture_t  *tx;
 		gltex_t    *tex;
