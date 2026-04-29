@@ -32,10 +32,17 @@
 
 #include "QF/GL/types.h"
 
+typedef struct gl_mesh_s {
+	uint32_t    numverts;
+	uint32_t    blend_palette;
+	uint32_t    palette_size;
+} gl_mesh_t;
+
 typedef struct mesh_vrt_s {
 	float       st[2];
 	float       normal[3];
 	float       vertex[3];
+	uint32_t    matind;
 } mesh_vrt_t;
 
 struct entity_s;

@@ -118,14 +118,16 @@ gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 	auto index_type = mesh_index_type (iqm->num_vertexes);
 	uint32_t index_size = mesh_type_size (index_type);
 
-	size_t size = sizeof (qfm_attrdesc_t[3 * model->meshes.count])
+	size_t size = sizeof (gl_mesh_t)
+				+ sizeof (qfm_blend_t[palette_size])
+				+ sizeof (qfm_attrdesc_t[4 * model->meshes.count])
 				+ sizeof (clipdesc_t[model->meshes.count])
 				+ sizeof (keyframe_t[model->meshes.count])
 				+ index_size * index_count
-				+ sizeof (mesh_vrt_t[iqm->num_vertexes])
-				+ sizeof (qfm_blend_t[palette_size]);
-	qfm_attrdesc_t *attribs = Hunk_AllocName (0, size, iqm_ctx->mod->name);
-	auto skinclips = (clipdesc_t *) &attribs[3 * model->meshes.count];
+				+ sizeof (mesh_vrt_t[iqm->num_vertexes]);
+	gl_mesh_t *rmesh = Hunk_AllocName (0, size, iqm_ctx->mod->name);
+	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
+	auto skinclips = (clipdesc_t *) &attribs[4 * model->meshes.count];
 	auto skinframes = (keyframe_t *) &skinclips[model->meshes.count];
 	auto indices = (void *) &skinframes[model->meshes.count];
 	auto verts = (mesh_vrt_t *) ((byte *) indices + index_size * index_count);
@@ -158,20 +160,27 @@ gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 		.type = qfm_f32,
 		.components = 2,
 	};
+	attribs[3] = (qfm_attrdesc_t) {
+		.offset = offsetof (mesh_vrt_t, matind),
+		.stride = sizeof (mesh_vrt_t),
+		.attr = qfm_joints,
+		.type = qfm_u32,
+		.components = 1,
+	};
 	for (uint32_t i = 1; i < model->meshes.count; i++) {
-		memcpy (&attribs[3 * i], attribs, sizeof (qfm_attrdesc_t[3]));
+		memcpy (&attribs[4 * i], attribs, sizeof (qfm_attrdesc_t[4]));
 	}
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
 		auto m = &iqm_ctx->meshes[i];
 		meshes[i].index_type = index_type;
 		meshes[i].indices = (byte *) indices - (byte *) &meshes[i];
 		indices = (void *)((byte *) indices + index_size * m->num_triangles*3);
-		for (int j = 0; j < 3; j++) {
-			attribs[i * 3 + j].offset += (byte *) verts - (byte *) &meshes[i];
+		for (int j = 0; j < 4; j++) {
+			attribs[i * 4 + j].offset += (byte *) verts - (byte *) &meshes[i];
 		}
 		meshes[i].attributes = (qfm_loc_t) {
-			.offset = (byte *) &attribs[i * 3] - (byte *) &meshes[i],
-			.count = 3,
+			.offset = (byte *) &attribs[i * 4] - (byte *) &meshes[i],
+			.count = 4,
 		};
 		meshes[i].skin = (anim_t) {
 			.numclips = 1,
@@ -187,6 +196,7 @@ gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 	float *iqm_position = nullptr;
 	float *iqm_normal = nullptr;
 	float *iqm_texcoord = nullptr;
+	uint32_t *iqm_joints = nullptr;
 
 	for (uint32_t i = 0; i < iqm->num_vertexarrays; i++) {
 		auto va = &iqm_ctx->vtxarr[i];
@@ -202,6 +212,10 @@ gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 			&& va->size == 3) {
 			iqm_normal = (float *) ((byte *) iqm + va->offset);
 		}
+		if (va->type == IQM_BLENDINDEXES && va->format == IQM_UBYTE
+			&& va->size == 4) {
+			iqm_joints = (uint32_t *) ((byte *) iqm + va->offset);
+		}
 	}
 	if (!iqm_position || !iqm_texcoord || !iqm_normal) {
 		Sys_Error ("unsupported IQM format");
@@ -212,11 +226,22 @@ gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 			.st = { iqm_texcoord[0], iqm_texcoord[1] },
 			.normal = { VectorExpand (iqm_normal) },
 			.vertex = { VectorExpand (iqm_position) },
+			.matind = iqm_joints ? *iqm_joints : 0,
 		};
 		iqm_texcoord += 2;
 		iqm_normal += 3;
 		iqm_position += 3;
+		if (iqm_joints) {
+			iqm_joints++;
+		}
 	}
+
+	*rmesh = (gl_mesh_t) {
+		.numverts = iqm->num_vertexes,
+		.blend_palette = (byte *) blend - (byte *) model,
+		.palette_size = palette_size,
+	};
+	model->render_data = (byte *) rmesh - (byte *) model;
 
 	gl_iqm_load_textures (model, iqm_ctx);
 }
