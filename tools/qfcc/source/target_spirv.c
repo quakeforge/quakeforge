@@ -927,7 +927,7 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 	if (storage == SpvStorageClassFunction) {
 		space = ctx->decl_space;
 	} else {
-		DARRAY_APPEND (&ctx->module->entry_points->interface_syms, sym);
+		DARRAY_APPEND (&ctx->module->current_entrypoint->interface_syms, sym);
 	}
 	int count = 4;
 	uint32_t init = 0;
@@ -1054,6 +1054,7 @@ spirv_EntryPoint (entrypoint_t *entrypoint, spirvctx_t *ctx)
 		error (0, "entry point %s never defined", entrypoint->name);
 		return;
 	}
+	ctx->module->current_entrypoint = entrypoint;
 
 	unsigned func_id = spirv_function (entrypoint->func, ctx);
 	while (ctx->func_queue.size) {
@@ -1134,9 +1135,26 @@ spirv_EntryPoint (entrypoint_t *entrypoint, spirvctx_t *ctx)
 		INSN (insn, 2) = SpvExecutionModeEarlyFragmentTests;
 	}
 	for (auto m = entrypoint->modes; m; m = m->next) {
-		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes, ctx);
+		int count = 0;
+		auto mode = m->params;
+		pr_type_t vals[4];
+		if (is_assign (m->params)) {
+			auto dst = m->params->assign.dst;
+			auto src = m->params->assign.src;
+			auto src_type = get_type (src);
+			mode = dst;
+			count = type_width (src_type);
+			if (count > 4 || type_size (src_type) > 4) {
+				internal_error (src, "too many components/too big");
+			}
+			value_store (vals, src_type, src);
+		}
+		insn = spirv_new_insn (SpvOpExecutionMode, 3 + count, exec_modes, ctx);
 		INSN (insn, 1) = func_id;
-		INSN (insn, 2) = expr_integral (m->params);
+		INSN (insn, 2) = expr_integral (mode);
+		for (int i = 0; i < count; i++) {
+			INSN (insn, 3 + i) = vals[i].uint_value;
+		}
 	}
 }
 
@@ -2790,6 +2808,7 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 					break;
 				}
 			}
+			pr->module->current_entrypoint = pr->module->entry_points;
 			if (!no_auto) {
 				sym->id = spirv_variable (sym, &ctx);
 			}
@@ -3548,22 +3567,51 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func, rua_ctx_t *ctx)
 				error (0, "shader entry point must not take any parameters");
 			}
 			const char *model_name = "Vertex";
-			if (count >= 1 && is_string_val (params[0])) {
+			if (count >= 1 && is_symbol (params[0])) {
+				model_name = params[0]->symbol->name;
+			} else if (count >= 1 && is_string_val (params[0])) {
 				model_name = expr_string (params[0]);
 			} else {
-				error (0, "shader attribute requires a string");
+				error (params[0], "shader attribute requires a string");
 			}
 			attribute_t *mode = nullptr;
 			for (int i = 1; i < count; i++) {
 				const char *mode_name = nullptr;
-				if (count >= 1 && is_string_val (params[i])) {
+				if (is_symbol (params[i])) {
+					mode_name = params[i]->symbol->name;
+					unsigned mid = spirv_enum_val ("ExecutionMode", mode_name);
+					auto m = new_attrfunc ("mode", new_int_expr (mid, false));
+					m->next = mode;
+					mode = m;
+				} else if (is_assign (params[i])) {
+					auto dst = params[i]->assign.dst;
+					auto src = params[i]->assign.src;
+					if (is_symbol (dst)) {
+						scoped_src_loc (src);
+						src = expr_process (src, ctx);
+						if (!is_constant (src)) {
+							error (params[1],
+								   "shader key=value requires a constant");
+						}
+						mode_name = dst->symbol->name;
+						unsigned mid = spirv_enum_val ("ExecutionMode",
+													   mode_name);
+						auto me = new_int_expr (mid, false);
+						auto e = new_assign_expr (me, src);
+						auto m = new_attrfunc ("mode", e);
+						m->next = mode;
+						mode = m;
+					} else {
+						error (params[1], "shader key=value requires a symbol");
+					}
+				} else if (is_string_val (params[i])) {
 					mode_name = expr_string (params[i]);
 					unsigned mid = spirv_enum_val ("ExecutionMode", mode_name);
 					auto m = new_attrfunc ("mode", new_int_expr (mid, false));
 					m->next = mode;
 					mode = m;
 				} else {
-					error (0, "shader attribute requires a string");
+					error (params[1], "shader attribute requires a string");
 				}
 			}
 			spirv_create_entry_point (func->name, model_name, mode);
