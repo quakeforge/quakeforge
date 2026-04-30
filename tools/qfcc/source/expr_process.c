@@ -38,6 +38,7 @@
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/iface_block.h"
 #include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
@@ -934,10 +935,13 @@ proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 	expr_t *block = nullptr;
 	auto decl_spec = expr->decl.spec;
 	if (decl_spec.type && decl_spec.type_expr) {
-		internal_error (0, "both type and type_expr set");
+		internal_error (expr, "both type and type_expr set");
 	}
 	int count = list_count (&expr->decl.list);
 	if (!count) {
+		if (decl_spec.block) {
+			internal_error (expr, "where'd the var go?");
+		}
 		return block;
 	}
 	if (decl_spec.storage == sc_local) {
@@ -946,6 +950,21 @@ proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 	}
 	const expr_t *decls[count];
 	list_scatter (&expr->decl.list, decls);
+	if (decl_spec.block) {
+		if (decl_spec.type || decl_spec.type_expr) {
+			internal_error (expr, "block with type or type_expr");
+		}
+		if (count > 1) {
+			error (expr, "@block can declare only one instance variable");
+		}
+		auto e = decls[0];
+		if (e->type != ex_symbol) {
+			internal_error (decls[0], "block non-symbol");
+		}
+		auto block = decl_spec.block;
+		declare_block_instance (decl_spec, block, e->symbol, ctx);
+		return nullptr;
+	}
 	for (int i = 0; i < count; i++) {
 		auto decl = decls[i];
 		scoped_src_loc (decl);
