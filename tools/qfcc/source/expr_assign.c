@@ -262,6 +262,8 @@ assign_expr (const expr_t *dst, const expr_t *src)
 		return err;
 	}
 
+	edag_remove_expr (dst);
+
 	if (is_reference (get_type (dst))) {
 		dst = pointer_deref (dst);
 	}

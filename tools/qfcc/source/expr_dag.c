@@ -68,23 +68,24 @@ edag_flush (void)
 	expr_dag.size = 0;
 }
 
-const expr_t *
-edag_add_expr (const expr_t *expr)
+static size_t
+edag_find_expr (const expr_t *expr)
 {
-	if (!expr || expr->nodag) {
-		return expr;
-	}
 	for (size_t i = 0; i < expr_dag.size; i++) {
 		auto e = expr_dag.a[i];
+		if (!e) {
+			// the expression was removed
+			continue;
+		}
 		if (e->type != expr->type || e->paren != expr->paren) {
 			continue;
 		}
 		switch (expr->type) {
 			case ex_count:
 				internal_error (expr, "invalid expression type");
+			case ex_error:
 			case ex_label:
 			case ex_labelref:
-			case ex_error:
 			case ex_state:
 			case ex_bool:
 			case ex_compound:
@@ -107,7 +108,7 @@ edag_add_expr (const expr_t *expr)
 			case ex_caselabel:
 			case ex_process:
 				// these are never put in the dag
-				return expr;
+				return -2;
 			case ex_intrinsic:
 				if (expr->intrinsic.is_pure) {
 					int a, b;
@@ -116,7 +117,7 @@ edag_add_expr (const expr_t *expr)
 						|| (a = list_count (&e->intrinsic.operands))
 							!= (b = list_count (&expr->intrinsic.operands))
 						|| e->intrinsic.extra != expr->intrinsic.extra) {
-						return expr;
+						break;
 					}
 					if (!a) {
 						break;
@@ -125,25 +126,25 @@ edag_add_expr (const expr_t *expr)
 					const expr_t *lb[b];
 					list_scatter (&e->intrinsic.operands, la);
 					list_scatter (&expr->intrinsic.operands, lb);
-					int i;
-					for (i = 0; i < a; i++) {
-						if (la[i] != lb[i]) {
+					int j;
+					for (j = 0; j < a; j++) {
+						if (la[j] != lb[j]) {
 							break;
 						}
 					}
-					if (i < a) {
+					if (j < a) {
 						continue;
 					}
-					return e;
+					return i;
 				}
-				return expr;
+				break;
 			case ex_list:
 			case ex_block:
 				if (has_function_call (expr)) {
 					// FIXME const functions can be dagged (and pure if known to be safe)
-					return expr;
+					return -2;
 				}
-				return expr;	//FIXME
+				return -2;	//FIXME
 			case ex_expr:
 				if (e->expr.type == expr->expr.type
 					&& e->expr.op == expr->expr.op
@@ -153,72 +154,72 @@ edag_add_expr (const expr_t *expr)
 						|| (e->expr.commutative
 							&& e->expr.e1 == expr->expr.e2
 							&& e->expr.e2 == expr->expr.e1))) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_uexpr:
 				if (e->expr.type == expr->expr.type
 					&& e->expr.op == expr->expr.op
 					&& e->expr.e1 == expr->expr.e1) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_def:
 				if (e->def == expr->def) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_symbol:
 				if (e->symbol == expr->symbol) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_temp:
-				return expr; //FIXME
+				return -2; //FIXME
 			case ex_vector:
-				return expr; //FIXME
+				return -2; //FIXME
 			case ex_selector:
 				if (e->selector.sel_ref == expr->selector.sel_ref
 					&& e->selector.sel == expr->selector.sel) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_nil:
 				if (e->nil == expr->nil) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_value:
 				if (e->value == expr->value && e->implicit == expr->implicit) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_alias:
 				if (e->alias.type == expr->alias.type
 					&& e->alias.expr == expr->alias.expr
 					&& e->alias.offset == expr->alias.offset) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_address:
 				if (e->address.type == expr->address.type
 					&& e->address.lvalue == expr->address.lvalue
 					&& e->address.offset == expr->address.offset) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_offset:
 				if (e->offset.member == expr->offset.member) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_assign:
-				return expr;	// FIXME?
+				return -2;	// FIXME?
 			case ex_horizontal:
 				if (e->hop.type == expr->hop.type
 					&& e->hop.vec == expr->hop.vec
 					&& e->hop.op == expr->hop.op) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_swizzle:
@@ -230,7 +231,7 @@ edag_add_expr (const expr_t *expr)
 					&& e->swizzle.source[3] == expr->swizzle.source[3]
 					&& e->swizzle.neg == expr->swizzle.neg
 					&& e->swizzle.zero == expr->swizzle.zero) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_extend:
@@ -238,37 +239,40 @@ edag_add_expr (const expr_t *expr)
 					&& e->extend.src == expr->extend.src
 					&& e->extend.extend == expr->extend.extend
 					&& e->extend.reverse == expr->extend.reverse) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_multivec:
-				return expr;	//FIXME ?
+				return -2;	//FIXME ?
 			case ex_cond:
 				if (e->cond.test == expr->cond.test
 					&& e->cond.true_expr == expr->cond.true_expr
 					&& e->cond.false_expr == expr->cond.false_expr) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_field:
 				if (e->field.type == expr->field.type
 					&& e->field.object == expr->field.object
 					&& e->field.member == expr->field.member) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_array:
 				if (e->array.type == expr->array.type
 					&& e->array.base == expr->array.base
 					&& e->array.index == expr->array.index) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_xvalue:
 				if (e->xvalue.expr == expr->xvalue.expr
 					&& e->xvalue.assign == expr->xvalue.assign
 					&& e->xvalue.lvalue == expr->xvalue.lvalue) {
-					return e;
+					// never dag an lvalue
+					if (!e->xvalue.lvalue) {
+						return i;
+					}
 				}
 				break;
 			case ex_bitfield:
@@ -276,18 +280,53 @@ edag_add_expr (const expr_t *expr)
 					&& e->bitfield.start == expr->bitfield.start
 					&& e->bitfield.length == expr->bitfield.length
 					&& e->bitfield.insert == expr->bitfield.insert) {
-					return e;
+					return i;
 				}
 				break;
 			case ex_ptroffset:
 				if (e->ptroffset.ptr == expr->ptroffset.ptr
 					&& e->ptroffset.offset == expr->ptroffset.offset
 					&& e->ptroffset.type == expr->ptroffset.type) {
-					return e;
+					return i;
 				}
 				break;
 		}
 	}
+	return -1;
+}
+
+const expr_t *
+edag_add_expr (const expr_t *expr)
+{
+	if (!expr || expr->nodag) {
+		return expr;
+	}
+
+	ssize_t ind = edag_find_expr (expr);
+	if (ind == -2) {
+		return expr;
+	}
+	if (ind != -1) {
+		return expr_dag.a[ind];
+	}
+
 	DARRAY_APPEND (&expr_dag, expr);
 	return expr;
+}
+
+void
+edag_remove_expr (const expr_t *expr)
+{
+	const expr_t *e;
+	do {
+		e = nullptr;
+		ssize_t ind = edag_find_expr (expr);
+		if (ind != -1 && ind != -2) {
+			e = expr_dag.a[ind];
+			expr_dag.a[ind] = nullptr;
+		}
+		if (e && e->type == ex_alias) {
+			expr = e->alias.expr;
+		}
+	} while (e && e->type == ex_alias);
 }
