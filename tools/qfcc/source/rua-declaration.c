@@ -111,6 +111,6 @@ void
 rua_var_attributes (specifier_t *spec, attribute_t **attributes, rua_ctx_t *ctx)
 {
 	if (current_target.var_attributes) {
-		current_target.var_attributes (spec, attributes);
+		current_target.var_attributes (spec, attributes, ctx);
 	}
 }

@@ -44,9 +44,10 @@ typedef struct {
 	void      (*build_scope) (symbol_t *fsym);
 	void      (*build_code) (function_t *func, const expr_t *statements);
 	void      (*field_attributes) (attribute_t **attributes, symbol_t *sym);
-	void      (*var_attributes) (specifier_t *spec, attribute_t **attributes);
+	void      (*var_attributes) (specifier_t *spec, attribute_t **attributes,
+								 rua_ctx_t *ctx);
 	void      (*declare_sym) (specifier_t spec, const expr_t *init,
-							  symtab_t *symtab, expr_t *block);
+							  symtab_t *symtab, expr_t *block, rua_ctx_t *ctx);
 	void      (*vararg_int) (const expr_t *e);
 
 	bool      (*create_entry_point) (const char *name, const char *model_name,
@@ -72,7 +73,8 @@ typedef struct {
 
 	bool      (*setup_intrinsic_symtab) (symtab_t *symtab);
 
-	bool      (*function_attr) (const attribute_t *attr, metafunc_t *func);
+	bool      (*function_attr) (const attribute_t *attr, metafunc_t *func,
+								rua_ctx_t *ctx);
 
 	bool        short_circuit;
 	bool        zero_memory;

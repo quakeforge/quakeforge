@@ -391,7 +391,7 @@ declare_block_instance (specifier_t spec, iface_block_t *block,
 	spec.storage = sc_from_iftype (block->interface);
 	spec.sym->type = inst_type;
 	auto symtab = current_symtab;// FIXME
-	current_target.declare_sym (spec, nullptr, symtab, nullptr);
+	current_target.declare_sym (spec, nullptr, symtab, nullptr, ctx);
 
 	auto namespace = interface_sym->namespace;
 	auto block_sym = symtab_lookup (namespace, block->name->name);

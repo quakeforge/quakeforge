@@ -2031,6 +2031,18 @@ is_logic (int op)
 }
 
 bool
+is_symbol (const expr_t *e)
+{
+	return e->type == ex_symbol;
+}
+
+bool
+is_assign (const expr_t *e)
+{
+	return e->type == ex_assign;
+}
+
+bool
 is_deref (const expr_t *e)
 {
 	return e->type == ex_uexpr && e->expr.op == '.';

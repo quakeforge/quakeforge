@@ -273,7 +273,7 @@ void initialize_def (struct symbol_s *sym,
 					 expr_t *block);
 
 void declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab,
-				  expr_t *block);
+				  expr_t *block, rua_ctx_t *ctx);
 
 /** Convenience function for obtaining a def's actual offset.
 

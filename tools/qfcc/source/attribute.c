@@ -58,17 +58,28 @@ new_attribute(const char *name, const expr_t *params, rua_ctx_t *ctx)
 	if (params && params->type == ex_list) {
 		for (auto p = params->list.head; p; p = p->next) {
 			auto e = p->expr;
-			if (e->type == ex_expr && e->expr.op == '=') {
-				if (e->expr.op == '=' && is_string_val (e->expr.e1)) {
-					p->expr = new_binary_expr ('=', e->expr.e1,
-											   expr_process(e->expr.e2, ctx));
-					e = p->expr;
+			if (is_assign (e)) {
+				if (is_symbol (e->assign.dst)) {
+					scoped_src_loc (e->assign.src);
+					auto s = expr_process (e->assign.src, ctx);
+					if (!is_constant (s)) {
+						error (e, "not a key=constant");
+						err = true;
+					}
+					p->expr = new_assign_expr (e->assign.dst, s);
 				}
-				if (e->expr.op != '='
-					|| !is_string_val (e->expr.e1)
-					|| !is_constant (e->expr.e2)) {
-					error (e, "not a key=constant");
-					err = true;
+			} else if (e->type == ex_expr && e->expr.op == '=') {
+				// FIXME I hate GLSL
+				// this should use assign expressions and symbols for dst
+				// but the above causes internal errors for glsl builtin
+				if (is_string_val (e->expr.e1)) {
+					scoped_src_loc (e->expr.e2);
+					auto s = expr_process (e->expr.e2, ctx);
+					if (!is_constant (s)) {
+						error (e, "not a key=constant");
+						err = true;
+					}
+					p->expr = new_binary_expr ('=', e->expr.e1, s);
 				}
 			} else {
 				p->expr = expr_process(e, ctx);
@@ -92,7 +103,7 @@ expr_attr (const expr_t *attr, rua_ctx_t *ctx)
 	if (attr->type == ex_symbol) {
 		// simple name attribute
 		auto sym = attr->symbol;
-		return new_attribute (sym->name, nullptr, ctx);
+		return new_attrfunc (sym->name, nullptr);
 	} else if (attr->type == ex_branch && attr->branch.type == pr_branch_call
 			   && attr->branch.target
 			   && attr->branch.target->type == ex_symbol) {
@@ -101,7 +112,7 @@ expr_attr (const expr_t *attr, rua_ctx_t *ctx)
 			return nullptr;
 		}
 		auto sym = attr->branch.target->symbol;
-		return new_attribute (sym->name, attr->branch.args, ctx);
+		return new_attrfunc (sym->name, attr->branch.args);
 	} else {
 		error (attr, "not a simple name");
 		return nullptr;

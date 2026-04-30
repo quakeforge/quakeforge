@@ -2961,8 +2961,11 @@ spirv_add_str_attr (attribute_t **attrs, const char *name, const expr_t *val)
 }
 
 static void
-spirv_add_int_attr (attribute_t **attrs, const char *name, const expr_t *val)
+spirv_add_int_attr (attribute_t **attrs, const char *name, const expr_t *val,
+					rua_ctx_t *ctx)
 {
+	scoped_src_loc (val);
+	val = expr_process (val, ctx);
 	if (!is_integral_val (val)) {
 		error (val, "not a constant integer");
 		return;
@@ -3030,7 +3033,8 @@ spirv_qualifier (const char *name, const char **qual)
 }
 
 static void
-spirv_var_attributes (specifier_t *spec, attribute_t **attributes)
+spirv_var_attributes (specifier_t *spec, attribute_t **attributes,
+					  rua_ctx_t *ctx)
 {
 	symbol_t   *sym = spec->sym;
 	for (auto a = attributes; *a; ) {
@@ -3055,7 +3059,7 @@ spirv_var_attributes (specifier_t *spec, attribute_t **attributes)
 										params[0]);
 				} else {
 					spirv_add_int_attr (&sym->attributes, "Location",
-										params[0]);
+										params[0], ctx);
 				}
 			}
 		} else if (strcmp (attr->name, "out") == 0) {
@@ -3066,7 +3070,7 @@ spirv_var_attributes (specifier_t *spec, attribute_t **attributes)
 										params[0]);
 				} else {
 					spirv_add_int_attr (&sym->attributes, "Location",
-										params[0]);
+										params[0], ctx);
 				}
 			}
 		} else if (strcmp (attr->name, "builtin") == 0) {
@@ -3080,16 +3084,17 @@ spirv_var_attributes (specifier_t *spec, attribute_t **attributes)
 		} else if (strcmp (attr->name, "push_constant") == 0) {
 			spec->storage = sc_from_iftype (iface_push_constant);
 		} else if (strcmp (attr->name, "set") == 0) {
-			spirv_add_int_attr (&sym->attributes, "DescriptorSet", params[0]);
+			spirv_add_int_attr (&sym->attributes, "DescriptorSet", params[0],
+								ctx);
 		} else if (strcmp (attr->name, "binding") == 0) {
-			spirv_add_int_attr (&sym->attributes, "Binding", params[0]);
+			spirv_add_int_attr (&sym->attributes, "Binding", params[0], ctx);
 		} else if (spirv_qualifier (attr->name, &qual)) {
 			if (qual) {
 				spirv_add_attr (&sym->attributes, qual, nullptr);
 			}
 		} else if (strcmp (attr->name, "input_attachment_index") == 0) {
 			spirv_add_int_attr (&sym->attributes, "InputAttachmentIndex",
-								params[0]);
+								params[0], ctx);
 		} else {
 			a = &attr->next;
 			continue;
@@ -3120,7 +3125,7 @@ spirv_convert_const (symbol_t *sym, void *data)
 
 static void
 spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
-				   expr_t *block)
+				   expr_t *block, rua_ctx_t *ctx)
 {
 	symbol_t   *sym = spec.sym;
 	if (sym->name[0]) {
@@ -3129,7 +3134,7 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 			error (0, "%s redefined", sym->name);
 		}
 	}
-	spirv_var_attributes (&spec, &spec.attributes);
+	spirv_var_attributes (&spec, &spec.attributes, ctx);
 	auto storage = spirv_storage_class (spec.storage, sym->type);
 	auto type = auto_type (sym->type, init);
 	if (is_void (type)) {
@@ -3519,7 +3524,7 @@ spirv_init (void)
 }
 
 static bool
-spirv_function_attr (const attribute_t *attr, metafunc_t *func)
+spirv_function_attr (const attribute_t *attr, metafunc_t *func, rua_ctx_t *ctx)
 {
 	int count = 0;
 	if (attr->params && attr->params->type == ex_list) {

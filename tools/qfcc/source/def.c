@@ -730,7 +730,7 @@ set_def_attributes (def_t *def, attribute_t *attr_list)
 
 void
 declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab,
-			 expr_t *block)
+			 expr_t *block, rua_ctx_t *ctx)
 {
 	symbol_t   *sym = spec.sym;
 	defspace_t *space = symtab->space;

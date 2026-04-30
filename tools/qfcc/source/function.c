@@ -622,7 +622,8 @@ new_metafunc (void)
 }
 
 static const type_t *
-set_func_type_attrs (const type_t *func_type, attribute_t **attr_list)
+set_func_type_attrs (const type_t *func_type, attribute_t **attr_list,
+					 rua_ctx_t *ctx)
 {
 	if (!is_func (func_type)) {
 		internal_error (0, "not a function");
@@ -644,7 +645,7 @@ set_func_type_attrs (const type_t *func_type, attribute_t **attr_list)
 			new.func.void_return = true;
 		} else {
 			if (!current_target.function_attr
-				|| !current_target.function_attr (attr, nullptr)) {
+				|| !current_target.function_attr (attr, nullptr, ctx)) {
 				warning (0, "skipping unknown function attribute '%s'",
 						 attr->name);
 			} else {
@@ -910,7 +911,8 @@ get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 		error (0, "not a function");
 		spec.sym->type = parse_params (spec.type, nullptr);
 	} else {
-		spec.sym->type = set_func_type_attrs (spec.sym->type, &spec.attributes);
+		auto type = set_func_type_attrs (spec.sym->type, &spec.attributes, ctx);
+		spec.sym->type = type;
 	}
 
 	auto type = unalias_type (spec.sym->type);
@@ -1000,7 +1002,7 @@ apply_attributes:
 	func->state_expr = spec.state_expr;
 	if (current_target.function_attr) {
 		for (auto attr = spec.attributes; attr; attr = attr->next) {
-			if (!current_target.function_attr (attr, func)) {
+			if (!current_target.function_attr (attr, func, ctx)) {
 				break;
 			}
 		}

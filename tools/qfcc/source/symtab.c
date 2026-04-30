@@ -373,7 +373,7 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab,
 						}
 					}
 				}
-				current_target.declare_sym (spec, init, symtab, block);
+				current_target.declare_sym (spec, init, symtab, block, ctx);
 			}
 		}
 	}
