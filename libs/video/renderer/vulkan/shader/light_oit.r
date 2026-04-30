@@ -11,8 +11,8 @@
 
 [early_fragment_tests, in];
 
-[shader("Fragment")]
-[capability("MultiView")]
+[shader(Fragment)]
+[capability(MultiView)]
 void
 main (void)
 {

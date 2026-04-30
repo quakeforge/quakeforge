@@ -13,8 +13,8 @@ INPUT_ATTACH(0) subpassInput color;
 
 [out(0)] vec4 frag_color;
 
-[shader("Fragment")]
-[capability("MultiView")]
+[shader(Fragment)]
+[capability(MultiView)]
 void
 main (void)
 {

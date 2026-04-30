@@ -96,8 +96,8 @@ transform (uint obj_id, uint vert, @inout vec3 vert_pos, @inout vec3 vert_norm)
 	}
 }
 
-[shader("Vertex")]
-[capability("MultiView")]
+[shader(Vertex)]
+[capability(MultiView)]
 void
 main ()
 {

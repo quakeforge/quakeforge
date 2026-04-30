@@ -58,7 +58,7 @@ draw_box (uint ind, vec2 p, @inout vec4 color)
 
 [out(0)] vec4 frag_color;
 
-[shader("Fragment")]
+[shader(Fragment)]
 void
 main (void)
 {

@@ -44,8 +44,8 @@ typedef enum {
 
 [in(qfm_attr_count + qfm_position)] vec3 morph_position;
 
-[shader("Vertex")]
-[capability("MultiView")]
+[shader(Vertex)]
+[capability(MultiView)]
 void
 main (void)
 {

@@ -312,8 +312,8 @@ draw_plane (uint ind, mat3 cam, vec3 vec, @inout vec4 color)
 	}
 }
 
-[shader("Fragment")]
-[capability("MultiView")]
+[shader(Fragment)]
+[capability(MultiView)]
 void main()
 {
 	// asumes non-shearing camera

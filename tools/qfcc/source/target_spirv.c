@@ -3569,10 +3569,8 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func, rua_ctx_t *ctx)
 			const char *model_name = "Vertex";
 			if (count >= 1 && is_symbol (params[0])) {
 				model_name = params[0]->symbol->name;
-			} else if (count >= 1 && is_string_val (params[0])) {
-				model_name = expr_string (params[0]);
 			} else {
-				error (params[0], "shader attribute requires a string");
+				error (params[0], "shader attribute requires a symbol");
 			}
 			attribute_t *mode = nullptr;
 			for (int i = 1; i < count; i++) {
@@ -3604,14 +3602,8 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func, rua_ctx_t *ctx)
 					} else {
 						error (params[1], "shader key=value requires a symbol");
 					}
-				} else if (is_string_val (params[i])) {
-					mode_name = expr_string (params[i]);
-					unsigned mid = spirv_enum_val ("ExecutionMode", mode_name);
-					auto m = new_attrfunc ("mode", new_int_expr (mid, false));
-					m->next = mode;
-					mode = m;
 				} else {
-					error (params[1], "shader attribute requires a string");
+					error (params[1], "shader key=value requires a symbol");
 				}
 			}
 			spirv_create_entry_point (func->name, model_name, mode);
@@ -3619,23 +3611,22 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func, rua_ctx_t *ctx)
 		return true;
 	} else if (strcmp (attr->name, "capability") == 0) {
 		//FIXME this should apply only to entry points
-		const char *capability_name = nullptr;
-		if (count >= 1 && is_string_val (params[0])) {
-			capability_name = expr_string (params[0]);
+		if (count >= 1 && is_symbol (params[0])) {
+			auto cap_name = params[0]->symbol->name;
+			uint32_t capability = spirv_enum_val ("Capability", cap_name);
+			spirv_add_capability (pr.module, capability);
 		} else {
-			error (0, "capability attribute requires a string");
+			error (params[0], "capability attribute requires a symbol");
 		}
-		uint32_t capability = spirv_enum_val ("Capability", capability_name);
-		spirv_add_capability (pr.module, capability);
 		return true;
 	} else if (strcmp (attr->name, "extension") == 0) {
 		const char *extension_name = nullptr;
-		if (count >= 1 && is_string_val (params[0])) {
-			extension_name = expr_string (params[0]);
+		if (count >= 1 && is_symbol (params[0])) {
+			extension_name = params[0]->symbol->name;
+			spirv_add_extension (pr.module, extension_name);
 		} else {
-			error (0, "extension attribute requires a string");
+			error (params[0], "extension attribute requires a symbol");
 		}
-		spirv_add_extension (pr.module, extension_name);
 		return true;
 	}
 	return false;

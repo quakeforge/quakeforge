@@ -30,8 +30,8 @@ diffuse (vec3 incoming, vec3 normal)
 
 #include "fog.finc"
 
-[shader("Fragment")]
-[capability("MultiView")]
+[shader(Fragment)]
+[capability(MultiView)]
 void
 main (void)
 {

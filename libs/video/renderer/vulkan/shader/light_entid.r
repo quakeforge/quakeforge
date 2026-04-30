@@ -24,8 +24,8 @@ from_to_rotation (vector a, vector b)
 [in("ViewIndex")] int gl_ViewIndex;
 [in("InstanceIndex")] int gl_InstanceIndex;
 
-[shader("Vertex")]
-[capability("MultiView")]
+[shader(Vertex)]
+[capability(MultiView)]
 void
 main (void)
 {

@@ -150,8 +150,8 @@ atmosphere_color (vec4 originalCol, uint body)
 	return originalCol;
 }
 
-[shader("Fragment")]
-[capability("MultiView")]
+[shader(Fragment)]
+[capability(MultiView)]
 void
 main ()
 {

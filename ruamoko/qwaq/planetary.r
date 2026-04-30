@@ -48,8 +48,8 @@ surf_map (vec3 dir, int layer)
 //[out(1)] vec4 frag_emission;
 //[out(2)] vec4 frag_normal;
 
-[shader("Fragment")]
-[capability("MultiView")]
+[shader(Fragment)]
+[capability(MultiView)]
 void
 main ()
 {

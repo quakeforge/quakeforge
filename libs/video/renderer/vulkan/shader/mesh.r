@@ -53,8 +53,8 @@ typedef enum {
 [out(2)] vec3 out_normal;
 [out(3)] vec4 out_color;
 
-[shader("Vertex")]
-[capability("MultiView")]
+[shader(Vertex)]
+[capability(MultiView)]
 void
 main (void)
 {

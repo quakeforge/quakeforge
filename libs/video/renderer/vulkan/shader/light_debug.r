@@ -2,8 +2,8 @@
 [out(0)] vec4 frag_color;
 [in("FrontFacing")] bool gl_FrontFacing;
 
-[shader("Fragment")]
-[capability("MultiView")]
+[shader(Fragment)]
+[capability(MultiView)]
 void
 main (void)
 {
