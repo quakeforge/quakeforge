@@ -56,11 +56,8 @@ static const byte alignas(uint32_t) particle_geom[] = {
 static const byte alignas(uint32_t) particle_frag[] = {
 #embed "libs/video/renderer/vulkan/shader/particle.frag.spv"
 };
-static const byte alignas(uint32_t) partphysics_comp[] = {
-#embed "libs/video/renderer/vulkan/shader/partphysics.comp.spv"
-};
-static const byte alignas(uint32_t) partupdate_comp[] = {
-#embed "libs/video/renderer/vulkan/shader/partupdate.comp.spv"
+static const byte alignas(uint32_t) particles_r[] = {
+#embed "libs/video/renderer/vulkan/shader/particles.r.spv"
 };
 static const byte alignas(uint32_t) sprite_frag[] = {
 #embed "libs/video/renderer/vulkan/shader/sprite.frag.spv"
@@ -208,8 +205,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "particle.vert", particle_vert, sizeof (particle_vert) },
 	{ "particle.geom", particle_geom, sizeof (particle_geom) },
 	{ "particle.frag", particle_frag, sizeof (particle_frag) },
-	{ "partphysics.comp", partphysics_comp, sizeof (partphysics_comp) },
-	{ "partupdate.comp", partupdate_comp, sizeof (partupdate_comp) },
+	{ "particles.r", particles_r, sizeof (particles_r) },
 	{ "sprite.frag", sprite_frag, sizeof (sprite_frag) },
 	{ "sprite_gbuf.vert", sprite_gbuf_vert, sizeof (sprite_gbuf_vert) },
 	{ "sprite_gbuf.frag", sprite_gbuf_frag, sizeof (sprite_gbuf_frag) },

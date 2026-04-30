@@ -1416,8 +1416,8 @@ steps = {
 						{ func = update_particles; }
 					);
 					stage = {
-						name = main;
-						module = $builtin/partupdate.comp;
+						name = main_update;
+						module = $builtin/particles.r;
 					};
 					layout = $particle.layout.update;
 				};
@@ -1427,8 +1427,8 @@ steps = {
 						{ func = particle_physics; }
 					);
 					stage = {
-						name = main;
-						module = $builtin/partphysics.comp;
+						name = main_physics;
+						module = $builtin/particles.r;
 					};
 					layout = $particle.layout.physics;
 				};

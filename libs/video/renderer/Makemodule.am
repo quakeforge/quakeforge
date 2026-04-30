@@ -292,10 +292,8 @@ linev_src = $(vkshaderpath)/line.vert
 linev_c = $(vkshaderpath)/line.vert.spv
 linef_src = $(vkshaderpath)/line.frag
 linef_c = $(vkshaderpath)/line.frag.spv
-partphysicsc_src = $(vkshaderpath)/partphysics.comp
-partphysicsc_c = $(vkshaderpath)/partphysics.comp.spv
-partupdatec_src = $(vkshaderpath)/partupdate.comp
-partupdatec_c = $(vkshaderpath)/partupdate.comp.spv
+particles_src = $(vkshaderpath)/particles.r
+particles_c = $(vkshaderpath)/particles.r.spv
 particlev_src = $(vkshaderpath)/particle.vert
 particlev_c = $(vkshaderpath)/particle.vert.spv
 particleg_src = $(vkshaderpath)/particle.geom
@@ -410,8 +408,7 @@ $(slice_c): $(slice_src) $(matrices_h)
 $(linev_c): $(linev_src) $(matrices_h)
 $(linef_c): $(linef_src)
 
-$(partphysicsc_c): $(partphysicsc_src)
-$(partupdatec_c): $(partupdatec_src)
+$(particles_c): $(particles_src)
 $(particlev_c): $(particlev_src) $(matrices_h)
 $(particleg_c): $(particleg_src) $(matrices_h)
 $(particlef_c): $(particlef_src) $(oit_store) $(oit_h) $(fog_h)
@@ -565,8 +562,7 @@ vkshader_src_frag = \
 	$(waterwarp_src)
 
 vkshader_src_comp = \
-	$(partphysicsc_src) \
-	$(partupdatec_src)
+	$(particles_src)
 
 vkshader_c_vert=$(call spvautoc,$(vkshader_src_vert))
 vkshader_c_geom=$(call spvautoc,$(vkshader_src_geom))

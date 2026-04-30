@@ -1,10 +1,6 @@
-#version 450
+const uint MaxParticles = 2048;
 
-layout (constant_id = 0) const uint MaxParticles = 2048;
-
-layout (local_size_x = 1, local_size_y = 1)  in;
-
-struct Particle {
+typedef struct Particle {
 	vec4        pos;
 	vec4        vel;
 	vec4        color;
@@ -12,63 +8,85 @@ struct Particle {
 	float       ramp;
 	float       scale;
 	float       live;
-};
+} Particle;
 
-struct Parameters {
+typedef struct Parameters {
 	vec4        drag;	// [dx, dy, dz, grav scale]
 	vec4        ramp;	// [rate, max, alpha rate, scale rate]
-};
+} Parameters;
 
-layout(std140, set = 0, binding = 0) buffer OutStates {
+[buffer, set(0), binding(0)] @block OutStates {
 	Particle particles[];
 } outStates;
 
-layout(std140, set = 0, binding = 1) buffer OutParameters {
+[buffer, set(0), binding(1)] @block OutParameters {
 	Parameters parameters[];
 } outParameters;
 
 //doubles as VkDrawIndirectCommand
-layout(std140, set = 0, binding = 2) buffer OutSystem {
+[buffer, set(0), binding(2)] @block OutSystem {
 	uint        vertexCount;
 	uint        particleCount;	//instanceCount
 	uint        firstVertex;
 	uint        firstInstance;
 } outSystem;
 
-layout(std140, set = 1, binding = 0) buffer InStates {
+[buffer, set(1), binding(0)] @block InStates {
 	Particle particles[];
 } inStates;
 
-layout(std140, set = 1, binding = 1) buffer InParameters {
+[buffer, set(1), binding(1)] @block InParameters {
 	Parameters parameters[];
 } inParameters;
 
 //doubles as VkDrawIndirectCommand
-layout(std140, set = 1, binding = 2) buffer InSystem {
+[buffer, set(1), binding(2)] @block InSystem {
 	uint        vertexCount;
 	uint        particleCount;	//instanceCount
 	uint        firstVertex;
 	uint        firstInstance;
 } inSystem;
 
-layout(std140, set = 2, binding = 0) buffer NewStates {
+[buffer, set(2), binding(0)] @block NewStates {
 	Particle particles[];
 } newStates;
 
-layout(std140, set = 2, binding = 1) buffer NewParameters {
+[buffer, set(2), binding(1)] @block NewParameters {
 	Parameters parameters[];
 } newParameters;
 
 //doubles as VkDrawIndirectCommand
-layout(std140, set = 2, binding = 2) buffer NewSystem {
+[buffer, set(2), binding(2)] @block NewSystem {
 	uint        vertexCount;
 	uint        particleCount;	//instanceCount
 	uint        firstVertex;
 	uint        firstInstance;
 } newSystem;
 
+[buffer, set(0), binding(0)] @block ParticleStates {
+	Particle particles[];
+} particleStates;
+
+[buffer, set(0), binding(1)] @block ParticleParameters {
+	Parameters parameters[];
+} particleParameters;
+
+//doubles as VkDrawIndirectCommand
+[buffer, set(0), binding(2)] @block ParticleSystem {
+	uint        vertexCount;
+	uint        particleCount;	//instanceCount
+	uint        firstVertex;
+	uint        firstInstance;
+} particleSystem;
+
+[push_constant] @block PushConstants {
+	vec4        gravity;
+	float       dT;
+};
+
+
 bool
-is_dead (in Particle part, in Parameters parm)
+is_dead (const Particle part, const Parameters parm)
 {
 	if (part.live <= 0) {
 		return true;
@@ -79,8 +97,9 @@ is_dead (in Particle part, in Parameters parm)
 	return false;
 }
 
+[shader(GLCompute, LocalSize=[1,1,1])]
 void
-main ()
+main_update ()
 {
 	uint        j = 0;
 	// compact existing partles removing dead particles
@@ -105,4 +124,28 @@ main ()
 	outSystem.particleCount = j;
 	outSystem.firstVertex = newSystem.firstVertex;
 	outSystem.firstInstance = newSystem.firstInstance;
+}
+
+[in("GlobalInvocationId")] uvec3 gl_GlobalInvocationID;
+
+[shader(GLCompute, LocalSize=[1,1,1])]
+void
+main_physics ()
+{
+	uint        ind = gl_GlobalInvocationID.x;
+	if (ind >= particleSystem.particleCount) {
+		return;
+	}
+	Particle    part = particleStates.particles[ind];
+	Parameters  parm = particleParameters.parameters[ind];
+
+	part.pos += dT * part.vel;
+	part.vel += dT * (part.vel * parm.drag + gravity * parm.drag.w);
+
+	part.ramp += dT * parm.ramp.x;
+	part.scale += dT * parm.ramp.z;
+	part.color.a -= dT * parm.ramp.a;
+	part.live -= dT;
+
+	particleStates.particles[ind] = part;
 }
