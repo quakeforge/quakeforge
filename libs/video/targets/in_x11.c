@@ -127,9 +127,9 @@ static XIC x11_xim_ic;
 #ifdef HAVE_IBUS
 static IBusBus *x11_ibus;
 static IBusInputContext *x11_ibus_ic;
+static struct DARRAY_TYPE(IE_attr_t) x11_preedit_attrs = DARRAY_STATIC_INIT(16);
 #endif
 static dstring_t *x11_utf8;
-static struct DARRAY_TYPE(IE_attr_t) x11_preedit_attrs = DARRAY_STATIC_INIT(16);
 
 static x11_device_t x11_keyboard_device = {
 	"core:keyboard",
