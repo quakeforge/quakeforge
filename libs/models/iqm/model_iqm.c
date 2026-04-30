@@ -521,14 +521,49 @@ blend_compare (const void *e1, const void *e2, void *unused)
 
 #define MAX_BLENDS 1024
 
+typedef struct {
+	qfm_blend_t blend;
+	uint32_t    index;
+} blenditem_t;
+
+typedef struct blendlist_s {
+	struct blendlist_s *next;
+	blenditem_t *list;
+	uint32_t     count;
+} blendlist_t;
+
+#define new_blend_item() \
+	({ \
+		if (bl_cur->count >= MAX_BLENDS) { \
+			bl_cur->next = alloca (sizeof (blendlist_t)); \
+			*bl_cur->next = (blendlist_t) { \
+				.list = malloc (sizeof (blenditem_t[MAX_BLENDS])), \
+			}; \
+			bl_cur = bl_cur->next; \
+		} \
+		&bl_cur->list[bl_cur->count++]; \
+	})
+
+#define add_blend(b) \
+	({ \
+		auto _blend = b; \
+		blenditem_t *item; \
+		if (!(item = Hash_FindElement (blend_hash, &_blend))) { \
+			item = new_blend_item(); \
+			*item = (blenditem_t) { \
+				.blend = _blend, \
+				.index = num_blends++, \
+			}; \
+			Hash_AddElement (blend_hash, item); \
+		} \
+		item->index; \
+	})
+
 qfm_blend_t *
 Mod_IQMBuildBlendPalette (mod_iqm_ctx_t *iqm, uint32_t *size)
 {
 	iqmvertexarray *bindices = 0;
 	iqmvertexarray *bweights = 0;
-	qfm_blend_t *blend_list;
-	int         num_blends;
-	hashtab_t  *blend_hash;
 
 	for (uint32_t i = 0; i < iqm->hdr->num_vertexarrays; i++) {
 		if (iqm->vtxarr[i].type == IQM_BLENDINDEXES)
@@ -544,29 +579,36 @@ Mod_IQMBuildBlendPalette (mod_iqm_ctx_t *iqm, uint32_t *size)
 		return 0;
 	}
 
-	blend_hash = Hash_NewTable (1023, 0, 0, 0, 0);
+	hashtab_t  *blend_hash = Hash_NewTable (1023, 0, 0, 0, 0);
 	Hash_SetHashCompare (blend_hash, blend_get_hash, blend_compare);
 
-	blend_list = calloc (MAX_BLENDS, sizeof (qfm_blend_t));
-	for (uint32_t i = 0; i < iqm->hdr->num_joints; i++) {
-		blend_list[i].indices[0] = i;
-		blend_list[i].weights[0] = 255;
-		Hash_AddElement (blend_hash, &blend_list[i]);
-	}
-	num_blends = iqm->hdr->num_joints;
+	blendlist_t *bl_cur = alloca (sizeof (blendlist_t));
+	*bl_cur = (blendlist_t) {
+		.list = malloc (sizeof (blenditem_t[MAX_BLENDS])),
+	};
+	const blendlist_t *const bl_head = bl_cur;
 
-	blend_list[iqm->hdr->num_joints] = (qfm_blend_t) { };
-	if (!Hash_FindElement (blend_hash, &blend_list[num_blends])) {
-		Hash_AddElement (blend_hash, &blend_list[num_blends]);
-		num_blends++;
+	for (uint32_t i = 0; i < iqm->hdr->num_joints; i++) {
+		auto item = new_blend_item();
+		*item = (blenditem_t) {
+			.blend.indices[0] = i,
+			.blend.weights[0] = 255,
+			.index = i,
+		};
+
+		Hash_AddElement (blend_hash, item);
 	}
+	int         num_blends = iqm->hdr->num_joints;
+
+	// Ensure there's an identity blend. The need for this may have been a bug
+	// elsewhere, but it doesn't hurt to have one (a single matrix pair out
+	// of possibly hundreds or even thousands (2063 for my girl model)
+	add_blend ((qfm_blend_t)  {});
 
 	for (uint32_t i = 0; i < iqm->hdr->num_vertexes; i++) {
 		byte       *base = (byte *) iqm->hdr;
 		byte       *bi = base + bindices->offset + i * 4;
 		byte       *bw = base + bweights->offset + i * 4;
-		qfm_blend_t blend;
-		qfm_blend_t *bl;
 
 		// First, canonicalize vextex bone data:
 		//   bone indices are in increasing order
@@ -603,21 +645,26 @@ Mod_IQMBuildBlendPalette (mod_iqm_ctx_t *iqm, uint32_t *size)
 			*(uint32_t *) bi = bi[0];
 			continue;
 		}
-		QuatCopy (bi, blend.indices);
-		QuatCopy (bw, blend.weights);
-		if ((bl = Hash_FindElement (blend_hash, &blend))) {
-			*(uint32_t *) bi = (bl - blend_list);
-			continue;
-		}
-		if (num_blends >= MAX_BLENDS)
-			Sys_Error ("Too many blends. Tell taniwha to stop being lazy.");
-		blend_list[num_blends] = blend;
-		Hash_AddElement (blend_hash, &blend_list[num_blends]);
-		*(uint32_t *) bi = num_blends;
-		num_blends++;
+
+		qfm_blend_t blend = {
+			.indices = { QuatExpand (bi) },
+			.weights = { QuatExpand (bw) },
+		};
+		*(uint32_t *) bi = add_blend (blend);
 	}
 
-	Hash_DelTable (blend_hash);
+	Sys_MaskPrintf (SYS_model,
+					"Created %u blended matrices for %u joints and %u verts\n",
+					num_blends, iqm->hdr->num_joints, iqm->hdr->num_vertexes);
 	*size = num_blends;
-	return realloc (blend_list, num_blends * sizeof (qfm_blend_t));
+	qfm_blend_t *list = malloc (sizeof (qfm_blend_t[num_blends]));
+	num_blends = 0;
+	for (auto bl = bl_head; bl; bl = bl->next) {
+		for (uint32_t i = 0; i < bl->count; i++) {
+			list[num_blends + i] = bl->list[i].blend;
+		}
+		num_blends += bl->count;
+		free (bl->list);
+	}
+	return list;
 }
