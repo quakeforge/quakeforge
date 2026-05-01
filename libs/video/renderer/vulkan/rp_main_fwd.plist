@@ -411,62 +411,6 @@ properties = {
 			};
 		};
 	};
-	iqm = {
-		shader = {
-			specialization = {
-				mapEntries = (
-					// IQMDepthOnly
-					{ size = 4; offset = 0; constantID = 0; },
-				);
-			};
-			vertex = {
-				stage = vertex;
-				name = main;
-				module = $builtin/iqm.vert;
-				specializationInfo = {
-					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly
-					data = "array(0)";
-				};
-			};
-		};
-		vertexInput = {
-			bindings = (
-				{ binding = 0; stride = 20; inputRate = vertex; },
-				{ binding = 1; stride = 40; inputRate = vertex; },
-			);
-			attributes = (
-				{ location = 0; binding = 0; format = r32g32b32_sfloat;    offset = 0;  },	// position
-				{ location = 1; binding = 0; format = r8g8b8a8_uint;       offset = 12; },	// bonindices
-				{ location = 2; binding = 0; format = r8g8b8a8_unorm;      offset = 16; },	// boneweights
-
-				{ location = 3; binding = 1; format = r32g32_sfloat;       offset = 0;  },	// texcoord
-				{ location = 4; binding = 1; format = r32g32b32_sfloat;    offset = 8;  },	// normal
-				{ location = 5; binding = 1; format = r32g32b32a32_sfloat; offset = 20; },	// tangent
-				{ location = 6; binding = 1; format = r8g8b8a8_unorm;      offset = 36; },	// color
-
-			);
-		};
-		inputAssembly = {
-			topology = triangle_list;
-			primitiveRestartEnable = false;
-		};
-		layout = {
-			//                            palette      skin
-			descriptorSets = (matrix_set, texture_set, texture_set, bone_set);
-			pushConstants = {
-				vertex   = { Model = mat4; blend = float; };
-				fragment = {
-					colors = uint;
-					ambient = float;
-					shadelight = float;
-					lightvec = vec4;
-					base_color = vec4;
-					fog = vec4;
-				};
-			};
-		};
-	};
 	sprite = {
 		shader = {
 			depth_fragment = {
