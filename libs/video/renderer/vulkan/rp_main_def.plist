@@ -532,8 +532,8 @@ properties = {
 			};
 			fragment = {
 				stage = fragment;
-				name = main;
-				module = $builtin/particle.frag;
+				name = main_frag;
+				module = $builtin/particles.r;
 			};
 		};
 		vertexInput = {

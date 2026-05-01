@@ -79,10 +79,10 @@ typedef struct Parameters {
 	uint        firstInstance;
 } particleSystem;
 
-[push_constant] @block PushConstants {
+[push_constant] @block PhysPushConstants {
 	vec4        gravity;
 	float       dT;
-};
+} phys;
 
 
 bool
@@ -139,13 +139,48 @@ main_physics ()
 	Particle    part = particleStates.particles[ind];
 	Parameters  parm = particleParameters.parameters[ind];
 
-	part.pos += dT * part.vel;
-	part.vel += dT * (part.vel * parm.drag + gravity * parm.drag.w);
+	part.pos += phys.dT * part.vel;
+	part.vel += phys.dT * (part.vel * parm.drag + phys.gravity * parm.drag.w);
 
-	part.ramp += dT * parm.ramp.x;
-	part.scale += dT * parm.ramp.z;
-	part.color.a -= dT * parm.ramp.a;
-	part.live -= dT;
+	part.ramp += phys.dT * parm.ramp.x;
+	part.scale += phys.dT * parm.ramp.z;
+	part.color.a -= phys.dT * parm.ramp.a;
+	part.live -= phys.dT;
 
 	particleStates.particles[ind] = part;
+}
+
+#include <GLSL/general.h>
+#include <GLSL/fragment.h>
+#include <GLSL/atomic.h>
+#include <GLSL/image.h>
+[in("ViewIndex"), flat] int gl_ViewIndex;
+[in("FragCoord")] vec4 gl_FragCoord;
+#include "fog.finc"
+
+#include "oit_store.finc"
+
+[push_constant] @block FragPushConstants {
+	[offset(64)]
+	vec4        fog;
+} frag;
+
+[in(0)] vec4 uv_tr;
+[in(1)] vec4 color;
+
+[shader(Fragment, EarlyFragmentTests)]
+[capability(MultiView)]
+void
+main_frag (void)
+{
+	vec4        c = color;
+	vec2        x = uv_tr.xy;
+
+	float       a = 1 - x • x;
+	if (a <= 0) {
+		__discard();
+	}
+	//c = c * a;
+	c = FogBlend (c * a, frag.fog);
+	StoreFrag (c, gl_FragCoord.z);
 }

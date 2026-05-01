@@ -53,9 +53,6 @@ static const byte alignas(uint32_t) particle_vert[] = {
 static const byte alignas(uint32_t) particle_geom[] = {
 #embed "libs/video/renderer/vulkan/shader/particle.geom.spv"
 };
-static const byte alignas(uint32_t) particle_frag[] = {
-#embed "libs/video/renderer/vulkan/shader/particle.frag.spv"
-};
 static const byte alignas(uint32_t) particles_r[] = {
 #embed "libs/video/renderer/vulkan/shader/particles.r.spv"
 };
@@ -204,7 +201,6 @@ static shaderdata_t builtin_shaders[] = {
 	{ "line.frag", line_frag, sizeof (line_frag) },
 	{ "particle.vert", particle_vert, sizeof (particle_vert) },
 	{ "particle.geom", particle_geom, sizeof (particle_geom) },
-	{ "particle.frag", particle_frag, sizeof (particle_frag) },
 	{ "particles.r", particles_r, sizeof (particles_r) },
 	{ "sprite.frag", sprite_frag, sizeof (sprite_frag) },
 	{ "sprite_gbuf.vert", sprite_gbuf_vert, sizeof (sprite_gbuf_vert) },
