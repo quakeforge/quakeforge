@@ -2973,7 +2973,7 @@ static void
 spirv_add_str_attr (attribute_t **attrs, const char *name, const expr_t *val)
 {
 	if (!is_string_val (val)) {
-		error (val, "not a constant integer");
+		error (val, "not a constant string");
 		return;
 	}
 	spirv_add_attr (attrs, name, val);
