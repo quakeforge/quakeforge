@@ -146,8 +146,10 @@ main (int argc, char **argv)
 						unsigned int samples;
 
 						samples = (*ck)->len / fmt->channels;
-						samples /= fmt->bits_per_sample;
-						samples *= 8;
+						if (fmt->format_tag == 1) {
+							samples /= fmt->bits_per_sample;
+							samples *= 8;
+						}
 
 						printf ("data: %d %u\n", *(int *)data->data, samples);
 					}
