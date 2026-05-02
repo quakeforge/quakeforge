@@ -2072,6 +2072,12 @@ namespace_symbol_expr (const expr_t *namespace, const expr_t *member)
 		return error (member, "%s not in %s namespace",
 					  member->symbol->name, namespace->symbol->name);
 	}
+	if (sym->sy_type == sy_convert) {
+		if (!sym->convert.conv) {
+			internal_error (member, "cannot convert symbol");
+		}
+		return sym->convert.conv (sym, sym->convert.data);
+	}
 	return new_symbol_expr (sym);
 }
 
