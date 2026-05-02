@@ -77,17 +77,20 @@ void
 SND_SFX_Block (sfx_t *sfx, char *realname, wavinfo_t info,
 			   sfxbuffer_t *(*load) (sfxblock_t *block))
 {
-	sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
+	sfxblock_t *block = malloc (sizeof (sfxblock_t));
+	*block = (sfxblock_t) {
+		.sfx = sfx,
+		.file = realname,
+		.wavinfo = info,
+	};
 
 	sfx->block = block;
 	sfx->wavinfo = SND_BlockWavinfo;
 	sfx->loopstart = SND_ResamplerFrames (sfx, info.loopstart);
 	sfx->length = SND_ResamplerFrames (sfx, info.frames);
 
-	block->sfx = sfx;
-	block->file = realname;
-	block->wavinfo = info;
 	block->buffer = load (block);
+
 	SND_Memory_Retain (block->buffer);
 	block->buffer->close = snd_block_close;
 }

@@ -118,7 +118,7 @@ SND_Memory_AllocBuffer (unsigned samples)
 {
 	size_t      size = offsetof (sfxbuffer_t, data[samples]);
 	// Z_Malloc (currently) clears memory, don't need that for the whole
-	// buffer (just the header), but Z_TagMalloc // does not
+	// buffer (just the header), but Z_TagMalloc does not
 	// +4 for sentinel
 	sfxbuffer_t *buffer = Z_TagMalloc (snd_zone, size + 4, 1);
 	if (buffer) {
