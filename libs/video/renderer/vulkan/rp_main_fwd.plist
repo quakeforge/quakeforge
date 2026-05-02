@@ -459,8 +459,8 @@ properties = {
 			};
 			geometry = {
 				stage = geometry;
-				name = main;
-				module = $builtin/particle.geom;
+				name = geom.main;
+				module = $builtin/particles.r;
 			};
 			fragment = {
 				stage = fragment;

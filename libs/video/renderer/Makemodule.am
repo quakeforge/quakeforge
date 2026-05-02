@@ -296,8 +296,6 @@ particles_src = $(vkshaderpath)/particles.r
 particles_c = $(vkshaderpath)/particles.r.spv
 particlev_src = $(vkshaderpath)/particle.vert
 particlev_c = $(vkshaderpath)/particle.vert.spv
-particleg_src = $(vkshaderpath)/particle.geom
-particleg_c = $(vkshaderpath)/particle.geom.spv
 spritef_src = $(vkshaderpath)/sprite.frag
 spritef_c = $(vkshaderpath)/sprite.frag.spv
 sprite_gbufv_src = $(vkshaderpath)/sprite_gbuf.vert
@@ -408,7 +406,6 @@ $(linef_c): $(linef_src)
 
 $(particles_c): $(particles_src) $(oit_store) $(oit_h) $(fog_h)
 $(particlev_c): $(particlev_src) $(matrices_h)
-$(particleg_c): $(particleg_src) $(matrices_h)
 
 $(spritef_c): $(spritef_src) $(fog_h)
 
@@ -521,8 +518,7 @@ vkshader_src_vert = \
 	$(fstriangle_src) \
 	$(fstrianglest_src)
 
-vkshader_src_geom = \
-	$(particleg_src)
+vkshader_src_geom =
 
 vkshader_src_frag = \
 	$(expand_src) \

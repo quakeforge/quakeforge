@@ -195,3 +195,86 @@ main (void)
 }
 
 }
+
+@namespace geom {
+
+#include <GLSL/geometry.h>
+
+[uniform, set(0), binding(0)] @block
+#include "matrices.h"
+;
+
+[in] @block gl_PerVertex {
+	[builtin("Position")] vec4 gl_Position;
+	[builtin("PointSize")] float gl_PointSize;
+	[builtin("ClipDistance")] float gl_ClipDistance[1];
+	[builtin("CullDistance")] float gl_CullDistance[1];
+} gl_in[];
+[in("PrimitiveId")] int gl_PrimitiveIDIn;
+[in("InvocationId")] int gl_InvocationID;
+[in("ViewIndex")] int gl_ViewIndex;
+[out] @block gl_PerVertex {
+	[builtin("Position")] vec4 gl_Position;
+	[builtin("PointSize")] float gl_PointSize;
+	[builtin("ClipDistance")] float gl_ClipDistance[1];
+	[builtin("CullDistance")] float gl_CullDistance[1];
+};
+[out("PrimitiveId")] int gl_PrimitiveID;
+[out("Layer")] int gl_Layer;
+[out("ViewportIndex")] int gl_ViewportIndex;
+
+[in(0)] vec4 velocity[];
+[in(1)] vec4 color[];
+[in(2)] vec4 ramp[];
+
+[out(0)] vec4 uv_tr;
+[out(1)] vec4 o_color;
+
+[shader(Geometry,
+		InputPoints,
+		OutputTriangleStrip,
+		OutputVertices=4,
+		Invocations=1)]
+[capability(MultiView)]
+[capability(Geometry)]
+void
+main (void)
+{
+	vec4        pos = gl_in[0].gl_Position;
+	vec4        tr = vec4 (0, 0, ramp[0].xy);
+	float       s = ramp[0].z;
+	vec4        d, p;
+	vec4        c = color[0];
+
+	d = vec4 (-1, 1, 0, 0);
+	p = pos + s * d;
+	gl_Position = Projection3d * p;
+	uv_tr = d + tr;
+	o_color = c;
+	EmitVertex ();
+
+	d = vec4 (-1, -1, 0, 0);
+	p = pos + s * d;
+	gl_Position = Projection3d * p;
+	uv_tr = d + tr;
+	o_color = c;
+	EmitVertex ();
+
+	d = vec4 (1, 1, 0, 0);
+	p = pos + s * d;
+	gl_Position = Projection3d * p;
+	uv_tr = d + tr;
+	o_color = c;
+	EmitVertex ();
+
+	d = vec4 (1, -1, 0, 0);
+	p = pos + s * d;
+	gl_Position = Projection3d * p;
+	uv_tr = d + tr;
+	o_color = c;
+	EmitVertex ();
+
+	EndPrimitive ();
+}
+
+}
