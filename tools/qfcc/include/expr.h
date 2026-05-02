@@ -1220,6 +1220,7 @@ const expr_t *edag_add_expr (const expr_t *e);
 void edag_remove_expr (const expr_t *expr);
 
 bool is_symbol (const expr_t *expr) __attribute__((pure));
+bool is_namespace (const expr_t *expr) __attribute__((pure));
 bool is_assign (const expr_t *expr) __attribute__((pure));
 bool is_swizzle (const expr_t *expr) __attribute__((pure));
 bool is_scale (const expr_t *expr) __attribute__((pure));

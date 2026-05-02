@@ -1779,7 +1779,7 @@ field_expr (const expr_t *e1, const expr_t *e2)
 
 	if (e1->type == ex_error)
 		return e1;
-	if (e1->type == ex_symbol && e1->symbol->sy_type == sy_namespace) {
+	if (is_namespace (e1)) {
 		if (e2->type != ex_symbol) {
 			return error (e2, "symbol required for namespace access");
 		}
@@ -2034,6 +2034,12 @@ bool
 is_symbol (const expr_t *e)
 {
 	return e->type == ex_symbol;
+}
+
+bool
+is_namespace (const expr_t *e)
+{
+	return e->type == ex_symbol && e->symbol->sy_type == sy_namespace;
 }
 
 bool

@@ -155,7 +155,7 @@ proc_field (const expr_t *expr, rua_ctx_t *ctx)
 	if (is_error (object)) {
 		return object;
 	}
-	if (object->type == ex_symbol && object->symbol->sy_type == sy_namespace) {
+	if (is_namespace (object)) {
 		if (member->type != ex_symbol) {
 			return error (member, "symbol required for namespace access");
 		}
