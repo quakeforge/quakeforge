@@ -105,7 +105,7 @@ new_symtab (symtab_t *parent, stab_type_e type)
 
 	symtab->parent = parent;
 	symtab->type = type;
-	if (symtab->type == stab_global)
+	if (symtab->type == stab_global || symtab->type == stab_namespace)
 		tabsize = 1023;
 	symtab->tab = Hash_NewTable (tabsize, sym_getkey, 0, 0, 0);
 	symtab->symtail = &symtab->symbols;

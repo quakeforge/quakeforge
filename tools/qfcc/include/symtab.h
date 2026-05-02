@@ -97,6 +97,7 @@ typedef struct symbol_s {
 
 typedef enum {
 	stab_global,				///< global (many symbols)
+	stab_namespace,				///< global (many symbols)
 	stab_param,					///< local (few symbols: func)
 	stab_local,					///< local (few symbols: func)
 	stab_ivars,

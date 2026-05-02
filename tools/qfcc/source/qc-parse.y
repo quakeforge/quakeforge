@@ -160,6 +160,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token				RETURN AT_RETURN
 %token				NIL GOTO SWITCH CASE DEFAULT ENUM ALGEBRA IMAGE SAMPLER
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
+%token				NAMESPACE
 %token	<op>		STRUCT BLOCK
 %token				HANDLE INTRINSIC
 %token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL
@@ -808,6 +809,23 @@ external_def_list
 external_def
 	: fndef
 	| datadef
+	| NAMESPACE identifier '{'
+		{
+			auto ns_sym = $identifier;
+			auto sym = symtab_lookup (current_symtab, ns_sym->name);
+			if (sym && sym->table == current_symtab) {
+				error (0, "%s redeclared", ns_sym->name);
+				ns_sym = new_symbol (loc_name (pr.loc));
+			}
+			auto ns_tab = new_symtab (current_symtab, stab_namespace);
+			ns_tab->space = current_symtab->space;
+			create_namespace (ns_sym->name, ns_tab, current_symtab);
+			current_symtab = ns_tab;
+		}
+	  external_def_list '}'
+		{
+			current_symtab = pop_scope (current_symtab);
+		}
 	| storage_class '{' save_storage
 		{
 			current_storage = $1.storage;
@@ -3348,6 +3366,7 @@ static keyword_t keywords[] = {
 	{"if",			QC_IF,						},
 	{"else",		QC_ELSE,					},
 	{"@system",		QC_SYSTEM,					},
+	{"@namespace",	QC_NAMESPACE,				},
 	{"@overload",	QC_OVERLOAD,				},
 	{"@attribute",  QC_ATTRIBUTE,				},
 	{"@handle",     QC_HANDLE,					},
