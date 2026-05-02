@@ -945,7 +945,11 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 	if (init) {
 		INSN (insn, 4) = init;
 	}
-	spirv_Name (id, sym->name, ctx);
+	const char *full_name = sym->name;
+	if (sym->table) {
+		full_name = sym_full_name (sym);
+	}
+	spirv_Name (id, full_name, ctx);
 	spirv_decorate_id (id, sym->attributes, ctx);
 	return id;
 }
