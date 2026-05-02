@@ -522,8 +522,8 @@ properties = {
 		shader = {
 			vertex = {
 				stage = vertex;
-				name = main;
-				module = $builtin/particle.vert;
+				name = vert.main;
+				module = $builtin/particles.r;
 			};
 			geometry = {
 				stage = geometry;

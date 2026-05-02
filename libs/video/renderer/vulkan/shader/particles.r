@@ -161,13 +161,14 @@ main ()
 #include <GLSL/fragment.h>
 #include <GLSL/atomic.h>
 #include <GLSL/image.h>
-[in("ViewIndex"), flat] int gl_ViewIndex;
-[in("FragCoord")] vec4 gl_FragCoord;
-#include "fog.finc"
-
-#include "oit_store.finc"
 
 @namespace frag {
+
+[in("ViewIndex"), flat] int gl_ViewIndex;
+[in("FragCoord")] vec4 gl_FragCoord;
+
+#include "fog.finc"
+#include "oit_store.finc"
 
 [push_constant] @block PushConstants {
 	[offset(64)]
@@ -275,6 +276,49 @@ main (void)
 	EmitVertex ();
 
 	EndPrimitive ();
+}
+
+}
+
+@namespace vert {
+
+#include <GLSL/texture.h>
+
+[uniform, set(0), binding(0)] @block
+#include "matrices.h"
+;
+
+[push_constant] @block PushConstants {
+	mat4 Model;
+};
+
+[uniform, set(1), binding(0)] @sampler(@image(float,2D)) Palette;
+
+[in(0)] vec4 position;
+[in(1)] vec4 velocity;
+[in(2)] vec4 color;
+[in(3)] vec4 ramp;
+
+[out(0)] vec4 o_velocity;
+[out(1)] vec4 o_color;
+[out(2)] vec4 o_ramp;
+
+[in("ViewIndex")] int gl_ViewIndex;
+[out("Position")] vec4 gl_Position;
+
+[shader(Vertex)]
+[capability(MultiView)]
+void
+main (void)
+{
+	// geometry shader will take care of Projection
+	gl_Position = View[gl_ViewIndex] * (Model * position);
+	o_velocity = View[gl_ViewIndex] * (Model * velocity);
+	uint        c = floatBitsToInt (color.x);
+	uint        x = c & 0x0f;
+	uint        y = (c >> 4) & 0x0f;
+	o_color = texture (Palette, vec2 (x, y) / 15.0);
+	o_ramp = ramp;
 }
 
 }

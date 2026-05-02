@@ -294,8 +294,6 @@ linef_src = $(vkshaderpath)/line.frag
 linef_c = $(vkshaderpath)/line.frag.spv
 particles_src = $(vkshaderpath)/particles.r
 particles_c = $(vkshaderpath)/particles.r.spv
-particlev_src = $(vkshaderpath)/particle.vert
-particlev_c = $(vkshaderpath)/particle.vert.spv
 spritef_src = $(vkshaderpath)/sprite.frag
 spritef_c = $(vkshaderpath)/sprite.frag.spv
 sprite_gbufv_src = $(vkshaderpath)/sprite_gbuf.vert
@@ -405,7 +403,6 @@ $(linev_c): $(linev_src) $(matrices_h)
 $(linef_c): $(linef_src)
 
 $(particles_c): $(particles_src) $(oit_store) $(oit_h) $(fog_h)
-$(particlev_c): $(particlev_src) $(matrices_h)
 
 $(spritef_c): $(spritef_src) $(fog_h)
 
@@ -502,7 +499,6 @@ $(waterwarp_c): $(waterwarp_src) $(matrices_h)
 vkshader_src_vert = \
 	$(slice_src) \
 	$(linev_src) \
-	$(particlev_src) \
 	$(sprite_gbufv_src) \
 	$(sprite_depthv_src) \
 	$(twodv_src) \
