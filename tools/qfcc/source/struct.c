@@ -66,17 +66,6 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-static const char *
-get_file_name (void)
-{
-	const char *path = GETSTR (pr.loc.file);
-	const char *file = strrchr (path, '/');
-	if (!file++) {
-		file = path;
-	}
-	return file;
-}
-
 static symbol_t *
 find_tag (const type_t *tag_type, symbol_t *tag, type_t *type)
 {
@@ -86,7 +75,7 @@ find_tag (const type_t *tag_type, symbol_t *tag, type_t *type)
 	if (tag) {
 		tag_name = va ("tag %s", tag->name);
 	} else {
-		tag_name = va ("tag .%s.%d", get_file_name (), pr.loc.line);
+		tag_name = va ("tag %s", loc_name (pr.loc));
 	}
 	sym = symtab_lookup (current_symtab, tag_name);
 	if (sym) {
@@ -677,7 +666,7 @@ emit_structure (const char *name, int su, struct_def_t *defs,
 
 	name = save_string (name);
 	if (!type) {
-		const char *tag = va ("%s:.%s.%d", name, get_file_name (), pr.loc.line);
+		const char *tag = va ("%s:%s", name, loc_name (pr.loc));
 		type = make_structure (tag, su, defs, 0)->type;
 	}
 	if ((su == 's' && !is_struct (type)) || (su == 'u' && !is_union (type)))

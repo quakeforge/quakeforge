@@ -44,9 +44,12 @@
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/msg.h"
+#include "QF/va.h"
 
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/strpool.h"
 
 #define STR_GROW 16384
@@ -539,4 +542,21 @@ quote_string (const char *str)
 		}
 	}
 	return q->str;
+}
+
+static const char *
+get_file_name (void)
+{
+	const char *path = GETSTR (pr.loc.file);
+	const char *file = strrchr (path, '/');
+	if (!file++) {
+		file = path;
+	}
+	return file;
+}
+
+const char *
+loc_name (rua_loc_t loc)
+{
+	return save_string (va (".%s.%d", get_file_name (), loc.line));
 }

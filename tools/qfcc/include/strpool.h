@@ -74,4 +74,7 @@ const char *make_string (const char *token, char **end);
 const char *html_string (const char *str);
 const char *quote_string (const char *str);
 
+typedef struct rua_loc_s rua_loc_t;
+const char *loc_name (rua_loc_t loc);
+
 #endif//__strpool_h
