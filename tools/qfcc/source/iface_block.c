@@ -113,8 +113,9 @@ create_block (symbol_t *block_sym)
 {
 	iface_block_t *block;
 	ALLOC (64, iface_block_t, iface_blocks, block);
+	const char *full_name = symtab_full_name (current_symtab, block_sym->name);
 	*block = (iface_block_t) {
-		.name = new_symbol (block_sym->name),
+		.name = new_symbol (full_name),
 		.members = new_symtab (current_symtab, stab_block),
 		.space = defspace_new (ds_backed),
 	};
