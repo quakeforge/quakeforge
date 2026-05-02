@@ -1219,8 +1219,14 @@ void edag_flush (void);
 const expr_t *edag_add_expr (const expr_t *e);
 void edag_remove_expr (const expr_t *expr);
 
-bool is_symbol (const expr_t *expr) __attribute__((pure));
 bool is_namespace (const expr_t *expr) __attribute__((pure));
+symbol_t *namespace_symbol (const expr_t *namespace, const expr_t *member);
+const expr_t *namespace_symbol_expr (const expr_t *namespace,
+									 const expr_t *member);
+symbol_t *create_namespace (const char *name, symtab_t *ns_tab,
+							symtab_t *parent) __attribute__((nonnull(2)));
+
+bool is_symbol (const expr_t *expr) __attribute__((pure));
 bool is_assign (const expr_t *expr) __attribute__((pure));
 bool is_swizzle (const expr_t *expr) __attribute__((pure));
 bool is_scale (const expr_t *expr) __attribute__((pure));

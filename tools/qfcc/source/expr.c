@@ -1780,16 +1780,7 @@ field_expr (const expr_t *e1, const expr_t *e2)
 	if (e1->type == ex_error)
 		return e1;
 	if (is_namespace (e1)) {
-		if (e2->type != ex_symbol) {
-			return error (e2, "symbol required for namespace access");
-		}
-		auto namespace = e1->symbol->namespace;
-		auto sym = symtab_lookup (namespace, e2->symbol->name);
-		if (!sym) {
-			return error (e2, "%s not in %s namespace",
-						  e2->symbol->name, e1->symbol->name);
-		}
-		return new_symbol_expr (sym);
+		return namespace_symbol_expr (e1, e2);
 	}
 	t1 = get_type (e1);
 	if (!t1) {
@@ -2040,6 +2031,48 @@ bool
 is_namespace (const expr_t *e)
 {
 	return e->type == ex_symbol && e->symbol->sy_type == sy_namespace;
+}
+
+symbol_t *
+create_namespace (const char *name, symtab_t *ns_tab, symtab_t *parent)
+{
+	name = save_string (name);
+
+	auto ns_sym = new_symbol (name);
+	ns_sym->sy_type = sy_namespace;
+	ns_sym->namespace = ns_tab;
+	ns_tab->name = name;
+	if (parent) {
+		symtab_addsymbol (parent, ns_sym);
+	}
+	return ns_sym;
+}
+
+symbol_t *
+namespace_symbol (const expr_t *namespace, const expr_t *member)
+{
+	if (!is_namespace (namespace)) {
+		internal_error (namespace, "not a namespace");
+	}
+	if (member->type != ex_symbol) {
+		internal_error (member, "symbol required for namespace access");
+	}
+	auto symtab = namespace->symbol->namespace;
+	return symtab_lookup (symtab, member->symbol->name);
+}
+
+const expr_t *
+namespace_symbol_expr (const expr_t *namespace, const expr_t *member)
+{
+	if (member->type != ex_symbol) {
+		return error (member, "symbol required for namespace access");
+	}
+	auto sym = namespace_symbol (namespace, member);
+	if (!sym) {
+		return error (member, "%s not in %s namespace",
+					  member->symbol->name, namespace->symbol->name);
+	}
+	return new_symbol_expr (sym);
 }
 
 bool

@@ -156,16 +156,7 @@ proc_field (const expr_t *expr, rua_ctx_t *ctx)
 		return object;
 	}
 	if (is_namespace (object)) {
-		if (member->type != ex_symbol) {
-			return error (member, "symbol required for namespace access");
-		}
-		auto namespace = object->symbol->namespace;
-		auto sym = symtab_lookup (namespace, member->symbol->name);
-		if (!sym) {
-			return error (member, "%s not in %s namespace",
-						  member->symbol->name, object->symbol->name);
-		}
-		return new_symbol_expr (sym);
+		return namespace_symbol_expr (object, member);
 	}
 
 	auto obj_type = get_type (object);

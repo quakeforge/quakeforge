@@ -896,12 +896,11 @@ spirv_kind_symbol (const char *name, symtab_t *symtab)
 	}
 	if (kind && is_enumerant (kind, grammar)) {
 		if (!kind->sym) {
-			sym = new_symbol (name);
-			sym->sy_type = sy_namespace;
-			sym->namespace = new_symtab (nullptr, stab_enum);
-			sym->namespace->procsymbol = spirv_enumerant_symbol;
-			sym->namespace->procsymbol_data = kind;
-			kind->sym = sym;
+			auto kind_tab = new_symtab (nullptr, stab_enum);
+			kind_tab->procsymbol = spirv_enumerant_symbol;
+			kind_tab->procsymbol_data = kind;
+
+			kind->sym = create_namespace (name, kind_tab, nullptr);
 		}
 		sym = kind->sym;
 	}

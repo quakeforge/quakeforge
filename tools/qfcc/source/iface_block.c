@@ -83,10 +83,8 @@ block_clear (void)
 		if (symtab_lookup (current_symtab, name)) {
 			internal_error (0, "%s already declared", name);
 		}
-		auto sym = new_symbol (name);
-		sym->sy_type = sy_namespace;
-		sym->namespace = new_symtab (nullptr, stab_block);
-		symtab_addsymbol (current_symtab, sym);
+		auto ns_tab = new_symtab (nullptr, stab_block);
+		create_namespace (name, ns_tab, current_symtab);
 	}
 }
 

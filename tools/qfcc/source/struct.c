@@ -558,11 +558,7 @@ finish_enum (symbol_t *sym)
 	enum_tab = enum_type->symtab;
 
 	if (namespace) {
-		const char *name = save_string (sym->name + 4);
-		enum_sym = new_symbol (name);
-		enum_sym->sy_type = sy_namespace;
-		enum_sym->namespace = enum_tab;
-		symtab_addsymbol (enum_tab->parent, enum_sym);
+		create_namespace (sym->name + 4, enum_tab, enum_tab->parent);
 	} else {
 		for (name = enum_tab->symbols; name; name = name->next) {
 			name->type = sym->type;
