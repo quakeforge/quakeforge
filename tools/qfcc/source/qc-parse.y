@@ -678,6 +678,15 @@ is_null_spec (specifier_t spec)
 	return memcmp (&spec, &null_spec, sizeof (spec)) == 0;
 }
 
+static bool
+is_global_symtab (symtab_t *tab)
+{
+	if (tab->type == stab_global || tab->type == stab_namespace) {
+		return true;
+	}
+	return false;
+}
+
 static int
 use_type_name (specifier_t spec, rua_ctx_t *ctx)
 {
@@ -1719,7 +1728,7 @@ struct_list
 	: '{'
 		{
 			int         op = $<op>-1;
-			if (op == 'b' && current_symtab != pr.symtab) {
+			if (op == 'b' && !is_global_symtab (current_symtab)) {
 				error (0, "blocks must be declared globally");
 				op = 's';
 			} else if (current_symtab->type == stab_block) {
