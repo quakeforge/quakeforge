@@ -84,7 +84,6 @@ typedef struct Parameters {
 	float       dT;
 } phys;
 
-
 bool
 is_dead (const Particle part, const Parameters parm)
 {
@@ -97,9 +96,11 @@ is_dead (const Particle part, const Parameters parm)
 	return false;
 }
 
+@namespace update {
+
 [shader(GLCompute, LocalSize=[1,1,1])]
 void
-main_update ()
+main ()
 {
 	uint        j = 0;
 	// compact existing partles removing dead particles
@@ -126,11 +127,15 @@ main_update ()
 	outSystem.firstInstance = newSystem.firstInstance;
 }
 
+}
+
 [in("GlobalInvocationId")] uvec3 gl_GlobalInvocationID;
+
+@namespace physics {
 
 [shader(GLCompute, LocalSize=[1,1,1])]
 void
-main_physics ()
+main ()
 {
 	uint        ind = gl_GlobalInvocationID.x;
 	if (ind >= particleSystem.particleCount) {
@@ -150,6 +155,8 @@ main_physics ()
 	particleStates.particles[ind] = part;
 }
 
+}
+
 #include <GLSL/general.h>
 #include <GLSL/fragment.h>
 #include <GLSL/atomic.h>
@@ -160,10 +167,12 @@ main_physics ()
 
 #include "oit_store.finc"
 
-[push_constant] @block FragPushConstants {
+@namespace frag {
+
+[push_constant] @block PushConstants {
 	[offset(64)]
 	vec4        fog;
-} frag;
+};
 
 [in(0)] vec4 uv_tr;
 [in(1)] vec4 color;
@@ -171,7 +180,7 @@ main_physics ()
 [shader(Fragment, EarlyFragmentTests)]
 [capability(MultiView)]
 void
-main_frag (void)
+main (void)
 {
 	vec4        c = color;
 	vec2        x = uv_tr.xy;
@@ -183,4 +192,6 @@ main_frag (void)
 	//c = c * a;
 	c = FogBlend (c * a, frag.fog);
 	StoreFrag (c, gl_FragCoord.z);
+}
+
 }

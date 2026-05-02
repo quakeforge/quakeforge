@@ -532,7 +532,7 @@ properties = {
 			};
 			fragment = {
 				stage = fragment;
-				name = main_frag;
+				name = frag.main;
 				module = $builtin/particles.r;
 			};
 		};
@@ -2232,7 +2232,7 @@ steps = {
 						{ func = update_particles; }
 					);
 					stage = {
-						name = main_update;
+						name = update.main;
 						module = $builtin/particles.r;
 					};
 					layout = $particle.layout.update;
@@ -2243,7 +2243,7 @@ steps = {
 						{ func = particle_physics; }
 					);
 					stage = {
-						name = main_physics;
+						name = physics.main;
 						module = $builtin/particles.r;
 					};
 					layout = $particle.layout.physics;
