@@ -36,6 +36,7 @@
 
 #include "QF/alloc.h"
 #include "QF/hash.h"
+#include "QF/va.h"
 
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/def.h"
@@ -416,4 +417,32 @@ create_local_scope (symtab_t *parent, void *data)
 	auto scope =  new_symtab (parent, stab_local);
 	scope->space = parent->space;
 	return scope;
+}
+
+static void
+build_namespace_path (dstring_t *path, symtab_t *tab, size_t len)
+{
+	len += strlen (tab->name);
+	if (tab->parent && tab->parent->type == stab_namespace) {
+		build_namespace_path (path, tab->parent, len + 1); // space for .
+		dstring_appendstr (path, ".");
+	} else {
+		path->size = len + 1;
+		dstring_adjust (path);
+		path->size = 1;
+		path->str[0] = 0;
+	}
+	dstring_appendstr (path, tab->name);
+}
+
+const char *
+sym_full_name (symbol_t *sym)
+{
+	if (sym->table->type != stab_namespace) {
+		return sym->name;
+	}
+	__attribute__((cleanup(dstring_cleanup)))
+	auto ns_path = dstring_new ();
+	build_namespace_path (ns_path, sym->table, 0);
+	return save_string (va ("%s.%s", ns_path->str, sym->name));
 }

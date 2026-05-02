@@ -1348,9 +1348,10 @@ make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
 		internal_error (0, "%s is not a function", sym->name);
 	if (storage == sc_extern && sym->metafunc->func)
 		return sym->metafunc->func;
+	auto full_name = sym_full_name (sym);
 	function_t *func = sym->metafunc->func;
 	if (!func) {
-		func = new_function (sym->name, nice_name);
+		func = new_function (full_name, nice_name);
 		func->sym = sym;
 		func->type = unalias_type (sym->type);
 		sym->metafunc->func = func;
@@ -1362,7 +1363,7 @@ make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
 		func->def = 0;
 	}
 	if (!func->def) {
-		func->def = new_def (sym->name, sym->type, space, storage);
+		func->def = new_def (full_name, sym->type, space, storage);
 		reloc_attach_relocs (relocs, &func->def->relocs);
 	}
 	return func;

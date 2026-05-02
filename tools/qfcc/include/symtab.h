@@ -289,6 +289,7 @@ symbol_t *declare_field (struct specifier_s spec, symtab_t *symtab,
 						 rua_ctx_t *ctx);
 symtab_t *create_local_scope (symtab_t *parent, void *data);
 
+const char *sym_full_name (symbol_t *sym);
 
 ///@}
 

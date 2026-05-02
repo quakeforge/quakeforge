@@ -617,7 +617,8 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 			error (0, "variable '%s' declared void", sym->name);
 			sym->type = type_default;
 		}
-		sym->def = new_def (sym->name, sym->type, space, storage);
+		auto full_name = sym_full_name (sym);
+		sym->def = new_def (full_name, sym->type, space, storage);
 		reloc_attach_relocs (relocs, &sym->def->relocs);
 	}
 	sym->lvalue = !sym->def->readonly;
