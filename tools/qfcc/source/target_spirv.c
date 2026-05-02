@@ -34,6 +34,7 @@
 
 #include "QF/hash.h"
 #include "QF/quakeio.h"
+#include "QF/set.h"
 #include "QF/va.h"
 
 #include "tools/qfcc/include/algebra.h"
@@ -695,6 +696,17 @@ spirv_Type (const type_t *type, spirvctx_t *ctx)
 	type = unalias_type (type);
 	if (spirv_type_id (type, ctx)) {
 		return spirv_type_id (type, ctx);
+	}
+	auto module = ctx->module;
+	if (set_is_member (module->in_length_types, type->id)) {
+		auto entrypoint = module->current_entrypoint;
+		if (entrypoint->gl_in_length) {
+			int count = expr_integral (entrypoint->gl_in_length);
+			type = array_type (type->array.type, count);
+			return (spirv_Type (type, ctx));
+		} else {
+			error (0, "input array length not specified");
+		}
 	}
 	unsigned id = 0;
 	if (is_void (type)) {
@@ -3167,13 +3179,9 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 	if (is_reference (type)) {
 		type = dereference_type (type);
 	}
-	auto entry_point = pr.module->entry_points;
 	if (is_array (type) && !type->array.count) {
 		if (storage == SpvStorageClassInput) {
-			if (entry_point->gl_in_length) {
-				int count = expr_integral (entry_point->gl_in_length);
-				type = array_type (type->array.type, count);
-			}
+			set_add (pr.module->in_length_types, type->id);
 		} else {
 			if (init && init->type == ex_compound) {
 				auto ele_type = dereference_type (type);
@@ -3531,6 +3539,7 @@ spirv_init (void)
 	static module_t module = {		//FIXME probably not what I want
 		.global_syms = DARRAY_STATIC_INIT (16),
 	};
+	module.in_length_types = set_new ();
 	module.forward_structs = Hash_NewTable (61, spirv_type_getkey, 0, 0, 0);
 	pr.module = &module;
 
@@ -3559,6 +3568,8 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func, rua_ctx_t *ctx)
 		list_scatter_rev (&attr->params->list, params);
 	}
 	if (strcmp (attr->name, "shader") == 0) {
+		int in_length = 0;
+		const expr_t *in_length_param = nullptr;
 		if (func) {
 			auto type = func->type;
 			if (!is_func (type)) {
@@ -3585,6 +3596,33 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func, rua_ctx_t *ctx)
 					auto m = new_attrfunc ("mode", new_int_expr (mid, false));
 					m->next = mode;
 					mode = m;
+					//FIXME this is ugly
+					int len = 0;
+					switch (mid) {
+						case SpvExecutionModeInputPoints:
+							len = 1;
+							break;
+						case SpvExecutionModeInputLines:
+							len = 2;
+							break;
+						case SpvExecutionModeInputLinesAdjacency:
+							len = 4;
+							break;
+						case SpvExecutionModeTriangles:
+							len = 3;
+							break;
+						case SpvExecutionModeInputTrianglesAdjacency:
+							len = 6;
+							break;
+					}
+					if (len) {
+						if (in_length) {
+							error (in_length_param,
+								   "geometry mode already specified");
+						}
+						in_length = len;
+						in_length_param = params[i];
+					}
 				} else if (is_assign (params[i])) {
 					auto dst = params[i]->assign.dst;
 					auto src = params[i]->assign.src;
@@ -3611,6 +3649,16 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func, rua_ctx_t *ctx)
 				}
 			}
 			spirv_create_entry_point (func->name, model_name, mode);
+			if (in_length) {
+				if (strcmp (model_name, "Geometry") == 0) {
+					auto entrypoint = pr.module->entry_points;
+					auto val = new_int_expr (in_length, false);
+					entrypoint->gl_in_length = val;
+				} else {
+					auto p = in_length_param;
+					error (p, "%s requires Geometry shader", p->symbol->name);
+				}
+			}
 		}
 		return true;
 	} else if (strcmp (attr->name, "capability") == 0) {

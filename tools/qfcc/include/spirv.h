@@ -39,6 +39,7 @@ typedef struct symbol_s symbol_t;
 typedef struct expr_s expr_t;
 typedef struct pr_info_s pr_info_t;
 typedef struct hashtab_s hashtab_t;
+typedef struct set_s set_t;
 
 typedef struct entrypoint_s {
 	struct entrypoint_s *next;
@@ -71,6 +72,7 @@ typedef struct module_s {
 	entrypoint_t *entry_points;
 	entrypoint_t *current_entrypoint;
 	struct DARRAY_TYPE (symbol_t *) global_syms;
+	set_t      *in_length_types;
 	defspace_t *entry_point_space;
 	defspace_t *exec_modes;
 	// debug

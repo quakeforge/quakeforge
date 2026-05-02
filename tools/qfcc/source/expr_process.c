@@ -808,25 +808,9 @@ decl_field (const type_t *type, const expr_t *t, const symbol_t *sym,
 	return resolve_type (type_expr, ctx);
 }
 
-specifier_t
-spec_process (specifier_t spec, rua_ctx_t *ctx)
+static specifier_t
+spec_process_list (specifier_t spec, rua_ctx_t *ctx)
 {
-	if (spec.type && spec.type_expr) {
-		internal_error (0, "both type and type_expr set");
-	}
-	if (spec.storage == sc_local || spec.storage == sc_param) {
-		spec.is_function = false;
-	}
-	if (!spec.type_expr) {
-		spec = default_type (spec, spec.sym);
-	}
-	if (!spec.type_list) {
-		if (spec.type_expr) {
-			spec.type = resolve_type (spec.type_expr, ctx);
-			spec.type_list = nullptr;
-		}
-		return spec;
-	}
 	if (spec.type_list->type != ex_list) {
 		internal_error (spec.type_list, "not a list");
 	}
@@ -874,6 +858,28 @@ spec_process (specifier_t spec, rua_ctx_t *ctx)
 	spec.type_list = nullptr;
 	spec.type = type;
 	return spec;
+}
+
+specifier_t
+spec_process (specifier_t spec, rua_ctx_t *ctx)
+{
+	if (spec.type && spec.type_expr) {
+		internal_error (0, "both type and type_expr set");
+	}
+	if (spec.storage == sc_local || spec.storage == sc_param) {
+		spec.is_function = false;
+	}
+	if (!spec.type_expr) {
+		spec = default_type (spec, spec.sym);
+	}
+	if (!spec.type_list) {
+		if (spec.type_expr) {
+			spec.type = resolve_type (spec.type_expr, ctx);
+			spec.type_list = nullptr;
+		}
+		return spec;
+	}
+	return spec_process_list (spec, ctx);
 }
 
 void
@@ -951,6 +957,14 @@ proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 		auto e = decls[0];
 		if (e->type != ex_symbol) {
 			internal_error (decls[0], "block non-symbol");
+		}
+		if (decl_spec.type_list) {
+			auto array_spec = spec_process_list (decl_spec, ctx);
+			if (is_array (array_spec.type)) {
+				e->symbol->type = array_spec.type;
+			} else {
+				error (expr, "invalid type for @block");
+			}
 		}
 		auto block = decl_spec.block;
 		declare_block_instance (decl_spec, block, e->symbol, ctx);
