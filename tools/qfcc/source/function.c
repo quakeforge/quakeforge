@@ -1016,6 +1016,7 @@ function_symbol (specifier_t spec, rua_ctx_t *ctx)
 	symbol_t   *sym = spec.sym;
 	sym->params = spec.params;
 	const char *name = sym->name;
+	const char *ns_name = symtab_full_name (current_symtab, name);
 	metafunc_t *func = Hash_Find (function_map, name);
 
 	auto check = symtab_lookup (current_symtab, name);
@@ -1029,14 +1030,14 @@ function_symbol (specifier_t spec, rua_ctx_t *ctx)
 		return err;
 	}
 
-	auto genfunc = parse_generic_function (name, spec, ctx);
+	auto genfunc = parse_generic_function (ns_name, spec, ctx);
 	if (genfunc) {
 		_add_generic_function (genfunc);
 
 		func = new_metafunc ();
 		*func = (metafunc_t) {
 			.name = save_string (name),
-			.full_name = name,
+			.full_name = ns_name,
 			.loc = pr.loc,
 			.meta_type = mf_generic,
 			.genfunc = genfunc,
@@ -1044,7 +1045,7 @@ function_symbol (specifier_t spec, rua_ctx_t *ctx)
 		Hash_Add (metafuncs, func);
 		Hash_Add (function_map, func);
 	} else {
-		func = get_function (name, spec, ctx);
+		func = get_function (ns_name, spec, ctx);
 	}
 
 	if (func && func->meta_type == mf_overload)

@@ -436,13 +436,19 @@ build_namespace_path (dstring_t *path, symtab_t *tab, size_t len)
 }
 
 const char *
-sym_full_name (symbol_t *sym)
+symtab_full_name (symtab_t *tab, const char *name)
 {
-	if (sym->table->type != stab_namespace) {
-		return sym->name;
+	if (tab->type != stab_namespace) {
+		return name;
 	}
 	__attribute__((cleanup(dstring_cleanup)))
 	auto ns_path = dstring_new ();
-	build_namespace_path (ns_path, sym->table, 0);
-	return save_string (va ("%s.%s", ns_path->str, sym->name));
+	build_namespace_path (ns_path, tab, 0);
+	return save_string (va ("%s.%s", ns_path->str, name));
+}
+
+const char *
+sym_full_name (symbol_t *sym)
+{
+	return symtab_full_name (sym->table, sym->name);
 }
