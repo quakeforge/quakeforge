@@ -156,11 +156,6 @@ V_SED_ = $(V_SED_@AM_DEFAULT_V@)
 V_SED_0 = @echo "  SED     " $@;
 V_SED_1 =
 
-SUFFICES += .plist .plc
-.plist.plc:
-	$(V_SED)sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
-	$(am__mv) $@.t $@
-
 %.spv: %
 	@$(mkdir_p) $(builddir)/`dirname $@`
 	$(V_GLSLANG)(((($(GLSLANGVALIDATOR) -V $< -o $@; echo $$? >&3) | sed -e '1d' 1>&2) 3>&1) | (read xs; exit $$xs))

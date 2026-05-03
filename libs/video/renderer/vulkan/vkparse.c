@@ -1301,19 +1301,23 @@ Vulkan_Init_Cvars (void)
 	Cvar_Register (&msaaSamples_cvar, 0, 0);
 }
 
+const char rp_main_def_plist[] = {
+#embed "libs/video/renderer/vulkan/rp_main_def.plist" suffix(,)
+	0
+};
+const char rp_main_fwd_plist[] = {
+#embed "libs/video/renderer/vulkan/rp_main_fwd.plist" suffix(,)
+	0
+};
+const char smp_quake_plist[] = {
+#embed "libs/video/renderer/vulkan/smp_quake.plist" suffix(,)
+	0
+};
+
 static exprsym_t builtin_plist_syms[] = {
-	{ .name = "main_def",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/rp_main_def.plc"
-		},
-	{ .name = "main_fwd",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/rp_main_fwd.plc"
-		},
-	{ .name = "smp_quake",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/smp_quake.plc"
-		},
+	{ .name = "main_def", .value = (void *) rp_main_def_plist },
+	{ .name = "main_fwd", .value = (void *) rp_main_fwd_plist },
+	{ .name = "smp_quake", .value = (void *) smp_quake_plist },
 	{}
 };
 static plitem_t **builtin_plists;

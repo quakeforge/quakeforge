@@ -423,7 +423,8 @@ CL_AdjustAngles (float frametime, movestate_t *ms, viewstate_t *vs)
 }
 
 static const char default_input_config[] = {
-#include "libs/client/default_input.plc"
+#embed "libs/client/default_input.plist" suffix(,)
+	0
 };
 
 static void
