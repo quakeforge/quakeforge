@@ -84,7 +84,7 @@ D_DrawParticle (particle_t *pparticle)
 		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
-				pdest[0] = pparticle->icolor;
+				pdest[0] = pparticle->color;
 			}
 		}
 		break;
@@ -94,12 +94,12 @@ D_DrawParticle (particle_t *pparticle)
 		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
-				pdest[0] = pparticle->icolor;
+				pdest[0] = pparticle->color;
 			}
 
 			if (pz[1] <= izi) {
 				pz[1] = izi;
-				pdest[1] = pparticle->icolor;
+				pdest[1] = pparticle->color;
 			}
 		}
 		break;
@@ -109,17 +109,17 @@ D_DrawParticle (particle_t *pparticle)
 		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
-				pdest[0] = pparticle->icolor;
+				pdest[0] = pparticle->color;
 			}
 
 			if (pz[1] <= izi) {
 				pz[1] = izi;
-				pdest[1] = pparticle->icolor;
+				pdest[1] = pparticle->color;
 			}
 
 			if (pz[2] <= izi) {
 				pz[2] = izi;
-				pdest[2] = pparticle->icolor;
+				pdest[2] = pparticle->color;
 			}
 		}
 		break;
@@ -129,22 +129,22 @@ D_DrawParticle (particle_t *pparticle)
 		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
-				pdest[0] = pparticle->icolor;
+				pdest[0] = pparticle->color;
 			}
 
 			if (pz[1] <= izi) {
 				pz[1] = izi;
-				pdest[1] = pparticle->icolor;
+				pdest[1] = pparticle->color;
 			}
 
 			if (pz[2] <= izi) {
 				pz[2] = izi;
-				pdest[2] = pparticle->icolor;
+				pdest[2] = pparticle->color;
 			}
 
 			if (pz[3] <= izi) {
 				pz[3] = izi;
-				pdest[3] = pparticle->icolor;
+				pdest[3] = pparticle->color;
 			}
 		}
 		break;
@@ -155,7 +155,7 @@ D_DrawParticle (particle_t *pparticle)
 			for (i = 0; i < pix; i++) {
 				if (pz[i] <= izi) {
 					pz[i] = izi;
-					pdest[i] = pparticle->icolor;
+					pdest[i] = pparticle->color;
 				}
 			}
 		}

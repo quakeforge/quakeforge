@@ -289,7 +289,7 @@ draw_qf_particles (psystem_t *psystem)
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
 		if (!(DotProduct (p->pos, r_refdef.frame.forward) < minparticledist)) {
-			at = (byte *) &d_8to24table[(byte) p->icolor];
+			at = (byte *) &d_8to24table[(byte) p->color];
 			VA[0].color[0] = at[0];
 			VA[0].color[1] = at[1];
 			VA[0].color[2] = at[2];
@@ -409,7 +409,7 @@ draw_id_particles (psystem_t *psystem)
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
 		if (!(DotProduct (p->pos, r_refdef.frame.forward) < minparticledist)) {
-			VA[0].color[0] = (byte) p->icolor;
+			VA[0].color[0] = (byte) p->color;
 			VectorCopy (p->pos, VA[0].vertex);
 			VA++;
 			vacount++;

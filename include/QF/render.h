@@ -46,19 +46,15 @@ typedef struct particle_s {
 	vec4f_t     pos;
 	vec4f_t     vel;
 
-	union {
-		struct {
-			int			icolor;
-			int         pad[2];
-			float		alpha;
-		};
-		vec4f_t     color;
-	};
+	uint32_t    color;
+	int         ramp_base; // < 0 -> don't apply ramp to color
+	int         pad;
+	float       alpha;
 
-	ptextype_t	tex;
-	float		ramp;
-	float		scale;
-	float		live;
+	ptextype_t  tex;
+	float       ramp;
+	float       scale;
+	float       live;
 } particle_t;
 
 static_assert (sizeof (particle_t) == 4 * sizeof(vec4f_t),
@@ -95,7 +91,8 @@ typedef struct psystem_s {
 	uint32_t    numparticles;
 	particle_t *particles;
 	partparm_t *partparams;
-	const int **partramps;
+	const int  *partramps;
+	int         partramps_count;// number of ints total
 
 	int         points_only;
 } psystem_t;

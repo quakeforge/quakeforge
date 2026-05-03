@@ -83,21 +83,20 @@ R_MaxParticlesCheck (void)
 		return;
 	}
 
-	size_t      size = sizeof (particle_t) + sizeof (partparm_t)
-						+ sizeof (int *);
+	size_t      size = sizeof (particle_t) + sizeof (partparm_t);
 
 	if (ps->particles) {
 		Sys_Free (ps->particles, ps->maxparticles * size);
-		ps->particles = 0;
-		ps->partparams = 0;
-		ps->partramps = 0;
+		ps->particles = nullptr;
+		ps->partparams = nullptr;
+		ps->partramps = nullptr;
 	}
 	ps->maxparticles = maxparticles;
 
 	if (ps->maxparticles) {
 		ps->particles = Sys_Alloc (ps->maxparticles * size);
 		ps->partparams = (partparm_t *) &ps->particles[ps->maxparticles];
-		ps->partramps = (const int **) &ps->partparams[ps->maxparticles];
+		ps->partramps = nullptr;
 	}
 	R_ClearParticles ();
 }
@@ -116,6 +115,7 @@ R_RunParticles (float dT)
 	vec4f_t     gravity = ps->gravity;
 
 	unsigned    j = 0;
+	const int  *ramp = ps->partramps;
 	for (unsigned i = 0; i < ps->numparticles; i++) {
 		particle_t *p = &ps->particles[i];
 		partparm_t *parm = &ps->partparams[i];
@@ -123,11 +123,9 @@ R_RunParticles (float dT)
 		if (p->live <= 0 || p->ramp >= parm->ramp_max) {
 			continue;
 		}
-		const int  *ramp = ps->partramps[i];
 		if (i > j) {
 			ps->particles[j] = *p;
 			ps->partparams[j] = *parm;
-			ps->partramps[j] = ramp;
 		}
 		j += 1;
 
@@ -136,8 +134,8 @@ R_RunParticles (float dT)
 		p->ramp += dT * parm->ramp;
 		p->scale += dT * parm->scale_rate;
 		p->live -= dT;
-		if (ramp) {
-			p->icolor = ramp[(int)p->ramp];
+		if (p->ramp_base >= 0) {
+			p->color = ramp[p->ramp_base + (int)p->ramp];
 		}
 	}
 	ps->numparticles = j;

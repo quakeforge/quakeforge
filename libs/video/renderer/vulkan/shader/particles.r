@@ -3,7 +3,10 @@ const uint MaxParticles = 2048;
 typedef struct Particle {
 	vec4        pos;
 	vec4        vel;
-	vec4        color;
+	uint        color;
+	uint        ramp_base;
+	int         pad;
+	float       alpha;
 	float       tex;
 	float       ramp;
 	float       scale;
@@ -90,7 +93,7 @@ is_dead (const Particle part, const Parameters parm)
 	if (part.live <= 0) {
 		return true;
 	}
-	if (part.ramp >= parm.ramp.y || part.color.a <= 0 || part.scale <= 0) {
+	if (part.ramp >= parm.ramp.y || part.alpha <= 0 || part.scale <= 0) {
 		return true;
 	}
 	return false;
@@ -149,7 +152,7 @@ main ()
 
 	part.ramp += phys.dT * parm.ramp.x;
 	part.scale += phys.dT * parm.ramp.z;
-	part.color.a -= phys.dT * parm.ramp.a;
+	part.alpha -= phys.dT * parm.ramp.a;
 	part.live -= phys.dT;
 
 	particleStates.particles[ind] = part;

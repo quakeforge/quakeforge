@@ -78,37 +78,40 @@ static cvar_t particles_style_cvar = {
 	.value = { .type = &cexpr_int, .value = &particles_style },
 };
 
-static int  ramp[] = {
+static int  cl_partramps[] = {
 	/*ramp1*/ 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61,
 	/*ramp2*/ 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66,
 	/*ramp3*/ 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
 };
 
 static partparm_t part_params[] = {
-	[pt_static]         = {{0, 0, 0, 0},      0, 1,  0,     0},
-	[pt_grav]           = {{0, 0, 0, 0.05},   0, 1,  0,     0},
-	[pt_slowgrav]       = {{0, 0, 0, 0.05},   0, 1,  0,     0},
-	[pt_fire]           = {{0, 0, 0, 0.05},   5, 6,  0,  5./6},
-	[pt_explode]        = {{4, 4, 4, 0.05},  10, 8,  0,     0},
-	[pt_explode2]       = {{1, 1, 1, 0.05},  15, 8,  0,     0},
-	[pt_blob]           = {{4, 4, 4, 0.05},   0, 1,  0,     0},
-	[pt_blob2]          = {{4, 4, 0, 0.05},   0, 1,  0,     0},
-	[pt_smoke]          = {{0, 0, 0, 0},      0, 1,  4,   0.4},
-	[pt_smokecloud]     = {{0, 0, 0, 0.0375}, 0, 1, 50,  0.55},
-	[pt_bloodcloud]     = {{0, 0, 0, 0.05},   0, 1,  4,  0.25},
-	[pt_fadespark]      = {{0, 0, 0, 0},      0, 1,  0,     0},
-	[pt_fadespark2]     = {{0, 0, 0, 0},      0, 1,  0,     0},
-	[pt_fallfade]       = {{0, 0, 0, 1},      0, 1,  0,     1},
-	[pt_fallfadespark]  = {{0, 0, 0, 1},     15, 8,  0,     1},
-	[pt_flame]          = {{0, 0, 0, 0},      0, 1, -2, 0.125},
+	//                               grav   ramp  ramp  scale  alpha
+	//                     drag      scale  rate   max   rate   rate
+	[pt_static]         = {{0, 0, 0, 0},       0,    1,     0,     0},
+	[pt_grav]           = {{0, 0, 0, 0.05},    0,    1,     0,     0},
+	[pt_slowgrav]       = {{0, 0, 0, 0.05},    0,    1,     0,     0},
+	[pt_fire]           = {{0, 0, 0, 0.05},    5,    6,     0,  5./6},
+	[pt_explode]        = {{4, 4, 4, 0.05},   10,    8,     0,     0},
+	[pt_explode2]       = {{1, 1, 1, 0.05},   15,    8,     0,     0},
+	[pt_blob]           = {{4, 4, 4, 0.05},    0,    1,     0,     0},
+	[pt_blob2]          = {{4, 4, 0, 0.05},    0,    1,     0,     0},
+	[pt_smoke]          = {{0, 0, 0, 0},       0,    1,     4,   0.4},
+	[pt_smokecloud]     = {{0, 0, 0, 0.0375},  0,    1,    50,  0.55},
+	[pt_bloodcloud]     = {{0, 0, 0, 0.05},    0,    1,     4,  0.25},
+	[pt_fadespark]      = {{0, 0, 0, 0},       0,    1,     0,     0},
+	[pt_fadespark2]     = {{0, 0, 0, 0},       0,    1,     0,     0},
+	[pt_fallfade]       = {{0, 0, 0, 1},       0,    1,     0,     1},
+	[pt_fallfadespark]  = {{0, 0, 0, 1},      15,    8,     0,     1},
+	[pt_flame]          = {{0, 0, 0, 0},       0,    1,    -2, 0.125},
 };
 
-static const int *part_ramps[] = {
-	[pt_fire]           = ramp + 2 * 8, // ramp3
-	[pt_explode]        = ramp + 0 * 8, // ramp1
-	[pt_explode2]       = ramp + 1 * 8, // ramp2
-	[pt_fallfadespark]  = ramp + 0 * 8, // ramp1
-	[pt_flame]          = 0,
+// the base of 1 is so uninitialized values can be converted to -1 with a
+// simple subtraction (see particle_ramp_base)
+static const int cl_part_ramp_bases[pt_flame + 1] = {
+	[pt_fire]           = 1 + 2 * 8, // ramp3
+	[pt_explode]        = 1 + 0 * 8, // ramp1
+	[pt_explode2]       = 1 + 1 * 8, // ramp2
+	[pt_fallfadespark]  = 1 + 0 * 8, // ramp1
 };
 
 static partparm_t __attribute__((pure))
@@ -120,13 +123,13 @@ particle_params (ptype_t type)
 	return part_params[type];
 }
 
-static const int * __attribute__((pure))
-particle_ramp (ptype_t type)
+static int __attribute__((pure))
+particle_ramp_base (ptype_t type)
 {
 	if (type > pt_flame) {
-		Sys_Error ("particle_ramp: invalid particle type");
+		Sys_Error ("particle_ramp_base: invalid particle type");
 	}
-	return part_ramps[type];
+	return cl_part_ramp_bases[type] - 1;
 }
 
 inline static int
@@ -140,22 +143,24 @@ particle_new (ptype_t type, int texnum, vec4f_t pos, float scale,
 	__auto_type ps = cl_psystem;
 	particle_t *p = &ps->particles[ps->numparticles];
 	partparm_t *parm = &ps->partparams[ps->numparticles];
-	const int **rampptr = &ps->partramps[ps->numparticles];
+	const int  *rampptr = ps->partramps;
 	ps->numparticles += 1;
 
-	p->pos = pos;
-	p->vel = vel;
-	p->icolor = color;
-	p->alpha = alpha;
-	p->tex = texnum;
-	p->ramp = ramp;
-	p->scale = scale;
-	p->live = live;
+	*p = (particle_t) {
+		.pos = pos,
+		.vel = vel,
+		.color = color,
+		.ramp_base = particle_ramp_base (type),
+		.alpha = alpha,
+		.tex = texnum,
+		.ramp = ramp,
+		.scale = scale,
+		.live = live,
+	};
 
 	*parm = particle_params (type);
-	*rampptr = particle_ramp (type);
-	if (*rampptr) {
-		p->icolor = (*rampptr) [(int) p->ramp];
+	if (p->ramp_base >= 0 && (int) p->ramp < parm->ramp_max) {
+		p->color = rampptr [p->ramp_base + (int) p->ramp];
 	}
 	return 1;
 }
@@ -1289,6 +1294,8 @@ CL_Particles_Init (void)
 	qfZoneScoped (true);
 	mtwist_seed (&mt, 0xdeadbeef);
 	cl_psystem = r_funcs->ParticleSystem ();
+	cl_psystem->partramps = cl_partramps;
+	cl_psystem->partramps_count = countof (cl_partramps);
 	Cvar_Register (&easter_eggs_cvar, easter_eggs_f, 0);
 	Cvar_Register (&particles_style_cvar, particles_style_f, 0);
 	set_particle_funcs ();
