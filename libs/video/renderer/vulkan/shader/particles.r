@@ -197,13 +197,13 @@ main (void)
 
 }
 
-@namespace geom {
-
-#include <GLSL/geometry.h>
-
 [uniform, set(0), binding(0)] @block
 #include "matrices.h"
 ;
+
+@namespace geom {
+
+#include <GLSL/geometry.h>
 
 [in("ViewIndex")] int gl_ViewIndex;
 
@@ -259,10 +259,6 @@ main (void)
 @namespace vert {
 
 #include <GLSL/texture.h>
-
-[uniform, set(0), binding(0)] @block
-#include "matrices.h"
-;
 
 [push_constant] @block PushConstants {
 	mat4 Model;
