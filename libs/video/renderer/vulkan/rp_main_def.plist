@@ -2390,6 +2390,7 @@ newscene_tasks = (
 	{ func = bsp_register_textures; },
 	{ func = bsp_build_display_lists; },
 	{ func = lighting_load_lights; },
+	{ func = particles_newscene; },
 );
 init_tasks = (
 	{ func = texture_init; },

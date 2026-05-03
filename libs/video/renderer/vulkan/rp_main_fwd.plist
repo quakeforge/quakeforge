@@ -1453,6 +1453,7 @@ newscene_tasks = (
 	{ func = bsp_register_textures; },
 	{ func = bsp_build_lightmaps; },
 	{ func = bsp_build_display_lists; },
+	{ func = particles_newscene; },
 );
 init_tasks = (
 	{ func = texture_init; },

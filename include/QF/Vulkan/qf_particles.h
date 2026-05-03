@@ -28,7 +28,10 @@ typedef struct qfv_particle_system_s {
 	uint32_t    particleCount;
 	uint32_t    firstVertex;	// always 0
 	uint32_t    firstInstance;	// always 0
+	uint32_t    part_ramps[];
 } qfv_particle_system_t;
+
+static_assert (sizeof (qfv_particle_system_t) == 4 * sizeof (uint32_t));
 
 typedef struct particleframe_s {
 	VkEvent     physicsEvent;

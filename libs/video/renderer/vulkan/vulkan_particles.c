@@ -42,6 +42,7 @@
 #include "QF/render.h"
 #include "QF/va.h"
 
+#include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
@@ -87,6 +88,10 @@ create_buffers (vulkan_ctx_t *ctx)
 		.num_objects = 3 * frames,
 		.objects = state_objs,
 	};
+
+	auto ps = pctx->psystem;
+	size_t system_size = offsetof (qfv_particle_system_t,
+								   part_ramps[ps->partramps_count]);
 	for (size_t i = 0; i < frames; i++) {
 		state_objs[i] = (qfv_resobj_t) {
 			.name = vac (ctx->va_ctx, "states:%zd", i),
@@ -109,8 +114,9 @@ create_buffers (vulkan_ctx_t *ctx)
 			.name = vac (ctx->va_ctx, "system:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = sizeof (qfv_particle_system_t),
+				.size = system_size,
 				.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_TRANSFER_DST_BIT
 						| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
 			},
 		};
@@ -470,6 +476,37 @@ particle_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	};
 }
 
+static void
+particles_newscene (const exprval_t **params, exprval_t *result,
+					exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto pctx = ctx->particle_context;
+
+	QFV_DestroyResource (device, pctx->resources);
+	create_buffers (ctx);
+
+	auto packet = QFV_PacketAcquire (ctx->staging, "particles.newscene");
+	auto ps = pctx->psystem;
+	size_t system_size = offsetof (qfv_particle_system_t,
+								   part_ramps[ps->partramps_count]);
+	qfv_particle_system_t *system = QFV_PacketExtend (packet, system_size);
+	memset (system, 0, sizeof (qfv_particle_system_t));
+	memcpy (system->part_ramps, ps->partramps,
+			sizeof (uint32_t[ps->partramps_count]));
+	size_t      count = pctx->frames.size;
+	for (size_t i = 0; i < count; i++) {
+		auto frame = &pctx->frames.a[i];
+		QFV_PacketCopyBuffer (packet, frame->system, 0,
+			  &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+			  &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRW]);
+	}
+	QFV_PacketSubmit (packet);
+}
+
 static exprfunc_t particles_draw_func[] = {
 	{ .func = particles_draw },
 	{}
@@ -492,12 +529,18 @@ static exprfunc_t particle_init_func[] = {
 	{}
 };
 
+static exprfunc_t particles_newscene_func[] = {
+	{ .func = particles_newscene },
+	{}
+};
+
 static exprsym_t particles_task_syms[] = {
-	{ "particles_draw", &cexpr_function, particles_draw_func },
-	{ "update_particles", &cexpr_function, update_particles_func },
-	{ "particle_physics", &cexpr_function, particle_physics_func },
+	{ "particles_draw",        &cexpr_function, particles_draw_func },
+	{ "update_particles",      &cexpr_function, update_particles_func },
+	{ "particle_physics",      &cexpr_function, particle_physics_func },
 	{ "particle_wait_physics", &cexpr_function, particle_wait_physics_func },
-	{ "particle_init", &cexpr_function, particle_init_func },
+	{ "particle_init",         &cexpr_function, particle_init_func },
+	{ "particles_newscene",    &cexpr_function, particles_newscene_func },
 	{}
 };
 

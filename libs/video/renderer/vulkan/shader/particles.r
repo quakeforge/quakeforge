@@ -80,6 +80,7 @@ typedef struct Parameters {
 	uint        particleCount;	//instanceCount
 	uint        firstVertex;
 	uint        firstInstance;
+	uint        part_ramps[];
 } particleSystem;
 
 [push_constant] @block PhysPushConstants {
@@ -155,6 +156,11 @@ main ()
 	part.alpha -= phys.dT * parm.ramp.a;
 	part.live -= phys.dT;
 
+	if (part.ramp_base != ~0) {
+		uint ind = part.ramp_base + (int) part.ramp;
+		part.color = particleSystem.part_ramps[ind];
+	}
+
 	particleStates.particles[ind] = part;
 }
 
@@ -211,14 +217,14 @@ main (void)
 [in("ViewIndex")] int gl_ViewIndex;
 
 @namespace in {
-	[in("Position")] vec4 gl_Position[];// does this work for other primitives?
+	[in("Position")] vec4 position[];// does this work for other primitives?
 	[in(0)] vec4 velocity[];
 	[in(1)] vec4 color[];
 	[in(2)] vec4 ramp[];
 }
 
 @namespace out {
-	[out("Position")] vec4 gl_Position;
+	[out("Position")] vec4 position;
 	[out(0)] vec4 uv_tr;
 	[out(1)] vec4 color;
 }
@@ -228,7 +234,7 @@ emit_point (const vec4 pos, const float s,
 			const vec4 d, const vec4 tr, const vec4 c)
 {
 	vec4 p = pos + s * d;
-	out.gl_Position = Projection3d * p;
+	out.position = Projection3d * p;
 	out.uv_tr = d + tr;
 	out.color = c;
 	EmitVertex ();
@@ -244,7 +250,7 @@ emit_point (const vec4 pos, const float s,
 void
 main (void)
 {
-	vec4        pos = in.gl_Position[0];
+	vec4        pos = in.position[0];
 	vec4        tr = vec4 (0, 0, in.ramp[0].xy);
 	float       s = in.ramp[0].z;
 	vec4        c = in.color[0];
@@ -282,7 +288,7 @@ main (void)
 	[out(1)] vec4 color;
 	[out(2)] vec4 ramp;
 
-	[out("Position")] vec4 gl_Position;
+	[out("Position")] vec4 position;
 }
 
 [shader(Vertex)]
@@ -290,12 +296,12 @@ main (void)
 void
 main (void)
 {
-	// geometry shader will take care of Projection
-	out.gl_Position = View[in.gl_ViewIndex] * (Model * in.position);
-	out.velocity = View[in.gl_ViewIndex] * (Model * in.velocity);
 	uint        c = floatBitsToInt (in.color.x);
 	uint        x = c & 0x0f;
 	uint        y = (c >> 4) & 0x0f;
+	// geometry shader will take care of Projection
+	out.position = View[in.gl_ViewIndex] * (Model * in.position);
+	out.velocity = View[in.gl_ViewIndex] * (Model * in.velocity);
 	out.color = texture (Palette, vec2 (x, y) / 15.0);
 	out.ramp = in.ramp;
 }
