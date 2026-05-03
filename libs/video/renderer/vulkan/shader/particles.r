@@ -258,7 +258,7 @@ main (void)
 	emit_point (pos, s, vec4 (-1,  1, 0, 0), tr, c);
 	emit_point (pos, s, vec4 (-1, -1, 0, 0), tr, c);
 	emit_point (pos, s, vec4 ( 1,  1, 0, 0), tr, c);
-	emit_point (pos, s, vec4 ( 1, 11, 0, 0), tr, c);
+	emit_point (pos, s, vec4 ( 1, -1, 0, 0), tr, c);
 
 	EndPrimitive ();
 }
