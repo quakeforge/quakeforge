@@ -205,31 +205,31 @@ main (void)
 #include "matrices.h"
 ;
 
-[in] @block gl_PerVertex {
-	[builtin("Position")] vec4 gl_Position;
-	[builtin("PointSize")] float gl_PointSize;
-	[builtin("ClipDistance")] float gl_ClipDistance[1];
-	[builtin("CullDistance")] float gl_CullDistance[1];
-} gl_in[];
-[in("PrimitiveId")] int gl_PrimitiveIDIn;
-[in("InvocationId")] int gl_InvocationID;
 [in("ViewIndex")] int gl_ViewIndex;
-[out] @block gl_PerVertex {
-	[builtin("Position")] vec4 gl_Position;
-	[builtin("PointSize")] float gl_PointSize;
-	[builtin("ClipDistance")] float gl_ClipDistance[1];
-	[builtin("CullDistance")] float gl_CullDistance[1];
-};
-[out("PrimitiveId")] int gl_PrimitiveID;
-[out("Layer")] int gl_Layer;
-[out("ViewportIndex")] int gl_ViewportIndex;
 
-[in(0)] vec4 velocity[];
-[in(1)] vec4 color[];
-[in(2)] vec4 ramp[];
+@namespace in {
+	[in("Position")] vec4 gl_Position[];// does this work for other primitives?
+	[in(0)] vec4 velocity[];
+	[in(1)] vec4 color[];
+	[in(2)] vec4 ramp[];
+}
 
-[out(0)] vec4 uv_tr;
-[out(1)] vec4 o_color;
+@namespace out {
+	[out("Position")] vec4 gl_Position;
+	[out(0)] vec4 uv_tr;
+	[out(1)] vec4 color;
+}
+
+void
+emit_point (const vec4 pos, const float s,
+			const vec4 d, const vec4 tr, const vec4 c)
+{
+	vec4 p = pos + s * d;
+	out.gl_Position = Projection3d * p;
+	out.uv_tr = d + tr;
+	out.color = c;
+	EmitVertex ();
+}
 
 [shader(Geometry,
 		InputPoints,
@@ -241,39 +241,15 @@ main (void)
 void
 main (void)
 {
-	vec4        pos = gl_in[0].gl_Position;
-	vec4        tr = vec4 (0, 0, ramp[0].xy);
-	float       s = ramp[0].z;
-	vec4        d, p;
-	vec4        c = color[0];
+	vec4        pos = in.gl_Position[0];
+	vec4        tr = vec4 (0, 0, in.ramp[0].xy);
+	float       s = in.ramp[0].z;
+	vec4        c = in.color[0];
 
-	d = vec4 (-1, 1, 0, 0);
-	p = pos + s * d;
-	gl_Position = Projection3d * p;
-	uv_tr = d + tr;
-	o_color = c;
-	EmitVertex ();
-
-	d = vec4 (-1, -1, 0, 0);
-	p = pos + s * d;
-	gl_Position = Projection3d * p;
-	uv_tr = d + tr;
-	o_color = c;
-	EmitVertex ();
-
-	d = vec4 (1, 1, 0, 0);
-	p = pos + s * d;
-	gl_Position = Projection3d * p;
-	uv_tr = d + tr;
-	o_color = c;
-	EmitVertex ();
-
-	d = vec4 (1, -1, 0, 0);
-	p = pos + s * d;
-	gl_Position = Projection3d * p;
-	uv_tr = d + tr;
-	o_color = c;
-	EmitVertex ();
+	emit_point (pos, s, vec4 (-1,  1, 0, 0), tr, c);
+	emit_point (pos, s, vec4 (-1, -1, 0, 0), tr, c);
+	emit_point (pos, s, vec4 ( 1,  1, 0, 0), tr, c);
+	emit_point (pos, s, vec4 ( 1, 11, 0, 0), tr, c);
 
 	EndPrimitive ();
 }
@@ -294,17 +270,21 @@ main (void)
 
 [uniform, set(1), binding(0)] @sampler(@image(float,2D)) Palette;
 
-[in(0)] vec4 position;
-[in(1)] vec4 velocity;
-[in(2)] vec4 color;
-[in(3)] vec4 ramp;
+@namespace in {
+	[in(0)] vec4 position;
+	[in(1)] vec4 velocity;
+	[in(2)] vec4 color;
+	[in(3)] vec4 ramp;
+	[in("ViewIndex")] int gl_ViewIndex;
+}
 
-[out(0)] vec4 o_velocity;
-[out(1)] vec4 o_color;
-[out(2)] vec4 o_ramp;
+@namespace out {
+	[out(0)] vec4 velocity;
+	[out(1)] vec4 color;
+	[out(2)] vec4 ramp;
 
-[in("ViewIndex")] int gl_ViewIndex;
-[out("Position")] vec4 gl_Position;
+	[out("Position")] vec4 gl_Position;
+}
 
 [shader(Vertex)]
 [capability(MultiView)]
@@ -312,13 +292,13 @@ void
 main (void)
 {
 	// geometry shader will take care of Projection
-	gl_Position = View[gl_ViewIndex] * (Model * position);
-	o_velocity = View[gl_ViewIndex] * (Model * velocity);
-	uint        c = floatBitsToInt (color.x);
+	out.gl_Position = View[in.gl_ViewIndex] * (Model * in.position);
+	out.velocity = View[in.gl_ViewIndex] * (Model * in.velocity);
+	uint        c = floatBitsToInt (in.color.x);
 	uint        x = c & 0x0f;
 	uint        y = (c >> 4) & 0x0f;
-	o_color = texture (Palette, vec2 (x, y) / 15.0);
-	o_ramp = ramp;
+	out.color = texture (Palette, vec2 (x, y) / 15.0);
+	out.ramp = in.ramp;
 }
 
 }
