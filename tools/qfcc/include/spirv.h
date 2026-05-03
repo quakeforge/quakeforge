@@ -47,7 +47,7 @@ typedef struct entrypoint_s {
 	const char *name;
 	attribute_t *modes;
 	ex_list_t   interface;			///< list of symbols forming interface
-	struct DARRAY_TYPE (symbol_t *) interface_syms;
+	set_t      *interface_syms;
 	struct function_s *func;
 
 	const expr_t *invocations;
@@ -72,6 +72,7 @@ typedef struct module_s {
 	entrypoint_t *entry_points;
 	entrypoint_t *current_entrypoint;
 	struct DARRAY_TYPE (symbol_t *) global_syms;
+	set_t      *interface_syms;
 	set_t      *in_length_types;
 	defspace_t *entry_point_space;
 	defspace_t *exec_modes;

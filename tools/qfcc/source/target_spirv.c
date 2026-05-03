@@ -938,8 +938,6 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 	auto storage = spirv_storage_class (sym->var.storage, sym->type);
 	if (storage == SpvStorageClassFunction) {
 		space = ctx->decl_space;
-	} else {
-		DARRAY_APPEND (&ctx->module->current_entrypoint->interface_syms, sym);
 	}
 	int count = 4;
 	uint32_t init = 0;
@@ -963,6 +961,11 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 	}
 	spirv_Name (id, full_name, ctx);
 	spirv_decorate_id (id, sym->attributes, ctx);
+	if (storage != SpvStorageClassFunction) {
+		//DARRAY_APPEND (&ctx->module->current_entrypoint->interface_syms, sym);
+		set_add (ctx->module->current_entrypoint->interface_syms, id);
+		set_add (ctx->module->interface_syms, id);
+	}
 	return id;
 }
 
@@ -1081,15 +1084,17 @@ spirv_EntryPoint (entrypoint_t *entrypoint, spirvctx_t *ctx)
 	int len = strlen (entrypoint->name) + 1;
 	int iface_start = 3 + RUP(len, 4) / 4;
 	auto linkage = ctx->module->entry_point_space;
-	auto interface_syms = &entrypoint->interface_syms;
-	int count = interface_syms->size;
+	auto interface_syms = entrypoint->interface_syms;
+	int count = set_count (interface_syms);
 	auto insn = spirv_new_insn (SpvOpEntryPoint, iface_start + count,
 								linkage, ctx);
 	INSN (insn, 1) = entrypoint->model;
 	INSN (insn, 2) = func_id;
 	memcpy (&INSN (insn, 3), entrypoint->name, len);
-	for (int i = 0; i < count; i++) {
-		INSN (insn, iface_start + i) = interface_syms->a[i]->id;
+	int ind = 0;
+	for (auto if_sym = set_first (interface_syms); if_sym;
+		 if_sym = set_next(if_sym), ind++) {
+		INSN (insn, iface_start + ind) = if_sym->element;
 	}
 
 	auto exec_modes = ctx->module->exec_modes;
@@ -1698,6 +1703,9 @@ spirv_symbol (const expr_t *e, spirvctx_t *ctx)
 {
 	auto sym = e->symbol;
 	if (sym->id) {
+		if (set_is_member (ctx->module->interface_syms, sym->id)) {
+			set_add (ctx->module->current_entrypoint->interface_syms, sym->id);
+		}
 		return sym->id;
 	}
 	if (sym->sy_type == sy_expr) {
@@ -3256,7 +3264,7 @@ spirv_create_entry_point (const char *name, const char *model_name,
 		.model = model,
 		.name = save_string (name),
 		.modes = mode,
-		.interface_syms = DARRAY_STATIC_INIT (16),
+		.interface_syms = set_new(),
 	};
 	pr.module->entry_points = ep;
 	return true;
@@ -3539,6 +3547,7 @@ spirv_init (void)
 	static module_t module = {		//FIXME probably not what I want
 		.global_syms = DARRAY_STATIC_INIT (16),
 	};
+	module.interface_syms = set_new ();
 	module.in_length_types = set_new ();
 	module.forward_structs = Hash_NewTable (61, spirv_type_getkey, 0, 0, 0);
 	pr.module = &module;
