@@ -53,6 +53,7 @@
 #define pt_pos				0
 #define pt_vel				16
 #define pt_color			32
+#define pt_ramp_base		36
 #define pt_alpha			44
 #define pt_tex				48
 #define pt_ramp				52
