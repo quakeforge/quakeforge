@@ -196,12 +196,13 @@ main (void)
 	vec2        x = uv_tr.xy;
 
 	float       a = 1 - x • x;
+	float       z = gl_FragCoord.z;
 	if (a <= 0) {
 		__discard();
 	}
 	//c = c * a;
 	c = FogBlend (c * a, frag.fog);
-	StoreFrag (c, gl_FragCoord.z);
+	StoreFrag (c, z / (1 - 0.99 * z * sqrt(a)));
 }
 
 }
