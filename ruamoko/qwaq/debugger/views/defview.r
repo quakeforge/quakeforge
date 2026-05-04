@@ -57,8 +57,7 @@ static string meta_views[] = {
 	if (type.meta == ty_alias) {
 		type = type.alias.aux_type;
 	}
-	if (type.meta >= 0
-		&& type.meta < sizeof(meta_views) / sizeof (meta_views[0])) {
+	if (type.meta >= 0 && type.meta < countof(meta_views)) {
 		metaname = meta_views[type.meta];
 	}
 	id class = obj_lookup_class (metaname);

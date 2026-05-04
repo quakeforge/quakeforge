@@ -34,8 +34,7 @@ static string type_views[] = {
 	if (type.meta == ty_alias) {
 		type = type.alias.aux_type;
 	}
-	if (type.type >= 0
-		&& type.type < sizeof(type_views) / sizeof (type_views[0])) {
+	if (type.type >= 0 && type.type < countof(type_views)) {
 		typename = type_views[type.type];
 	}
 	//printf ("AlgebraView: %s\n", typename);
@@ -52,8 +51,7 @@ static string type_views[] = {
 	if (type.type == ty_alias) {
 		type = type.alias.aux_type;
 	}
-	if (type.type >= 0
-		&& type.type < sizeof(type_views) / sizeof (type_views[0])) {
+	if (type.type >= 0 && type.type < countof(type_views)) {
 		typename = type_views[type.type];
 	}
 	printf ("AlgebraView: %s\n", typename);
