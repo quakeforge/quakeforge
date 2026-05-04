@@ -165,16 +165,20 @@ static void type_free (void *t, void *unused)
 				}
 				var.type = t;
 			}
+			type.strct.tag = str_hold (type.strct.tag);
+			for (int i = 0; i < type.strct.num_fields; i++) {
+				qfot_var_t *var = &type.strct.fields[i];
+				var.name = str_hold (var.name);
+			}
 			goto hash_type;
 		case ty_class:
 			if (!(type.class = qdb_get_string (target, type.class))) {
 				goto error;
 			}
+			type.class = str_hold (type.class);
 			goto hash_type;
 		case ty_alias:
-			if (!(type.alias.name = qdb_get_string (target, type.alias.name))) {
-				goto error;
-			}
+			type.alias.name = qdb_get_string (target, type.alias.name);
 			t = [TypeEncodings getType:(unsigned)type.alias.aux_type
 							fromTarget:target];
 			if (!t) {
@@ -186,12 +190,14 @@ static void type_free (void *t, void *unused)
 			if (!t) {
 				goto error;
 			}
+			type.alias.name = str_hold (type.alias.name);
 			type.alias.full_type = t;
 			goto hash_type;
 		case ty_handle:
 			if (!(type.handle.tag = qdb_get_string (target, type.handle.tag))) {
 				goto error;
 			}
+			type.handle.tag = str_hold (type.handle.tag);
 			goto hash_type;
 		case ty_algebra:
 			if (type.type == ev_invalid) {
@@ -203,6 +209,7 @@ static void type_free (void *t, void *unused)
 	}
 	goto error;
 hash_type:
+	type.encoding = str_hold (type.encoding);
 	//printf ("fetched type %s\n", type.encoding);
 	Hash_Add (dynamic_encodings, type);
 	return type;
