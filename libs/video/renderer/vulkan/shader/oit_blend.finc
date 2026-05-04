@@ -4,35 +4,84 @@
 #include "GLSL/image.h"
 #endif
 
+void printf (string fmt, ...)
+    = @intrinsic(OpExtInst, "NonSemantic.DebugPrintf", DebugPrintf);
+
+bool
+cmp (const FragData fd1, const FragData fd2)
+{
+	// reverse depth buffer
+	return fd1.depth < fd2.depth;
+}
+
+#define MAX_FRAGMENTS 7
+
+#define sink(ele, nele) \
+{ \
+	uint n_ind = 0; \
+	uint s_ind = nele - 1; \
+	while (s_ind != n_ind) { \
+		s_ind = n_ind; \
+		uint l_ind = 2 * n_ind + 1; \
+		uint r_ind = 2 * n_ind + 2; \
+		if (l_ind < nele && cmp (ele[l_ind], ele[n_ind])) { \
+			s_ind = l_ind; \
+		} \
+		if (r_ind < nele && cmp (ele[r_ind], ele[s_ind])) { \
+			s_ind = r_ind; \
+		} \
+		if (s_ind != n_ind) { \
+			auto t = ele[n_ind]; \
+			ele[n_ind] = ele[s_ind]; \
+			ele[s_ind] = t; \
+			n_ind = s_ind; \
+			s_ind = nele - 1; \
+		} \
+	} \
+}
+
+#define swim(ele, nele) \
+{ \
+	uint n_ind = nele - 1; \
+	while (n_ind > 0) { \
+		uint p_ind = (n_ind - 1) / 2; \
+		if (!cmp (ele[n_ind], ele[p_ind])) { \
+			break; \
+		} \
+		auto t = ele[n_ind]; \
+		ele[n_ind] = ele[p_ind]; \
+		ele[p_ind] = t; \
+		n_ind = p_ind; \
+	} \
+} \
+
 vec4
 BlendFrags (vec4 color)
 {
-	#define MAX_FRAGMENTS 8
 	FragData    frags[MAX_FRAGMENTS];
-	int         numFrags = 0;
+	uint        numFrags = 0;
+	int         maxIter = 64;	//FIXME why does this fix things locking up
+								// at startup? the loop doesn't get entered.
+								// qfcc bug?
 	ivec3       coord = ivec3(gl_FragCoord.xy, gl_ViewIndex);
 	int         index = imageLoad (heads, coord).r;
 
-	//FIXME use a heap and prioritize closer fragments
-	while (index != -1 && numFrags < MAX_FRAGMENTS) {
-		frags[numFrags] = fragments[index];
-		numFrags++;
+	while (index != -1 && maxIter-- > 0) {
+		if (numFrags < MAX_FRAGMENTS) {
+			frags[numFrags++] = fragments[index];
+			swim (frags, numFrags);
+		} else if (!cmp (fragments[index], frags[0])) {
+			frags[0] = fragments[index];
+			sink (frags, numFrags);
+		}
 		index = fragments[index].next;
 	}
-	//insertion sort
-	for (int i = 1; i < numFrags; i++) {
-		FragData    toInsert = frags[i];
-		int         j = i;
-		while (j > 0 && toInsert.depth < frags[j - 1].depth) {
-			frags[j] = frags[j - 1];
-			j--;
-		}
-		frags[j] = toInsert;
-	}
 
-	for (int i = 0; i < numFrags; i++) {
-		color = mix (color, frags[i].color,
-					 clamp (frags[i].color.a, 0.0f, 1.0f));
+	for (uint i = numFrags; i-- > 0; ) {
+		auto f = frags[0];
+		frags[0] = frags[i];
+		sink (frags, i);
+		color = mix (color, f.color, clamp (f.color.a, 0.0f, 1.0f));
 	}
 	return color;
 }
