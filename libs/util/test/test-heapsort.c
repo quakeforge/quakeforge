@@ -32,8 +32,7 @@
 #include <string.h>
 
 #include "QF/heapsort.h"
-
-#define SIZEOF(x) (sizeof(x) / sizeof(x[0]))
+#include "QF/qtypes.h"
 
 static int sink_data[] = {
 	4, 7, 8, 3, 2, 6, 5,
@@ -122,15 +121,15 @@ typedef struct {
 } test_t;
 
 static test_t tests[] = {
-	{ sink_data,  sink_expect,   SIZEOF (sink_data),  test_sink  },
-	{ swim_data,  swim_expect,   SIZEOF (swim_data),  test_swim  },
-	{ swim_data2, swim_expect2,  SIZEOF (swim_data2), test_swim  },
-	{ build_data, build_expect1, SIZEOF (build_data), test_build },
-	{ build_data, build_expect2, SIZEOF (build_data), test_build, 1 },
-	{ build_data, build_expect3, SIZEOF (build_data), test_build, 2 },
-	{ sort_data,  sort_expect,   SIZEOF (sort_data),  test_sort  },
+	{ sink_data,  sink_expect,   countof (sink_data),     test_sink  },
+	{ swim_data,  swim_expect,   countof (swim_data),     test_swim  },
+	{ swim_data2, swim_expect2,  countof (swim_data2),    test_swim  },
+	{ build_data, build_expect1, countof (build_data),    test_build },
+	{ build_data, build_expect2, countof (build_data),    test_build, 1 },
+	{ build_data, build_expect3, countof (build_data),    test_build, 2 },
+	{ sort_data,  sort_expect,   countof (sort_data),     test_sort  },
 };
-#define num_tests ((int) SIZEOF (tests))
+#define num_tests ((int) countof (tests))
 
 static void
 dump_array (const int *arr, size_t n)
