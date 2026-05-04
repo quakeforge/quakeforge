@@ -75,10 +75,23 @@ static int sort_expect[] = {
 	1, 3, 4, 5, 7, 8,
 };
 
+static int repl_data[] = {
+	17, 18, 22, 19, 21, 32, 29, 24, 0,
+};
+static int repl_expect[] = {
+	18, 19, 22, 24, 21, 32, 29, 26, 0,
+};
+
 static int
 compare (const void *a, const void *b)
 {
 	return *(const int *)a - *(const int *)b;
+}
+
+static int
+revcomp (const void *a, const void *b)
+{
+	return *(const int *)b - *(const int *)a;
 }
 #if 0
 static int
@@ -112,6 +125,13 @@ test_sort (int *data, size_t nele)
 	heapsort (data, nele, sizeof (int), compare);
 }
 
+static void
+test_repl (int *data, size_t nele)
+{
+	data[0] = 26;
+	heap_sink (data, 0, nele, sizeof (int), revcomp);
+}
+
 typedef struct {
 	const int  *data;
 	const int  *expect;
@@ -128,6 +148,7 @@ static test_t tests[] = {
 	{ build_data, build_expect2, countof (build_data),    test_build, 1 },
 	{ build_data, build_expect3, countof (build_data),    test_build, 2 },
 	{ sort_data,  sort_expect,   countof (sort_data),     test_sort  },
+	{ repl_data,  repl_expect,   countof (repl_data) - 1, test_repl  },
 };
 #define num_tests ((int) countof (tests))
 
