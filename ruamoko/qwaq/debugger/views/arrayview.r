@@ -28,7 +28,7 @@
 		};
 		element_views[i] = [[DefView withDef:def
 										type:element_type
-										  in:data
+										  in:self.data
 									  target:target] retain];
 		element_rows[i + 1] = [element_views[i] rows];
 	}
