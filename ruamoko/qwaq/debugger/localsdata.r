@@ -16,7 +16,8 @@
 	self.target = target;
 
 	qdb_def_t   encodings_def = qdb_find_global (target, ".type_encodings");
-	qdb_get_data (target, encodings_def.offset, sizeof(target_encodings),
+	qdb_get_data (target, encodings_def.offset,
+				  sizeof(target_encodings) / sizeof (int),
 				  &target_encodings);
 
 	self.has_stack = qdb_has_data_stack (target);
