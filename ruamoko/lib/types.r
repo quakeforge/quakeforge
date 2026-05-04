@@ -21,7 +21,7 @@ string ty_meta_name[10] = {
 #define uint unsigned
 #define ulong unsigned long
 #define ushort unsigned short
-#define EV_TYPE(type) sizeof(type),
+#define EV_TYPE(type) sizeof(type)/sizeof(int),
 int pr_type_size[ev_type_count] = {
 #include <QF/progs/pr_type_names.h>
 };
