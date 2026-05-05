@@ -2210,6 +2210,27 @@ expr_expr (sblock_t *sblock, const expr_t *e, operand_t **op)
 		}
 		return sblock;
 	}
+	if (is_matrix (get_type (e->expr.e1))
+		&& is_matrix (get_type (e->expr.e2))
+		&& strcmp (opcode, "mul") == 0) {
+		scoped_src_loc (e);
+		auto mat1 = e->expr.e1;
+		auto mat2 = e->expr.e2;
+		auto mat_type = e->expr.type;
+		auto col_type = column_type (mat_type);
+		int width = type_width (col_type);
+		if (!*op) {
+			*op = temp_operand (mat_type, e);
+		}
+		for (int i = 0; i < type_cols (mat_type); i++) {
+			auto col = new_array_expr (mat2, new_int_expr (i, true));
+			col->array.type = col_type;
+			auto vec = new_binary_expr ('*', mat1, col);
+			auto t = offset_alias_operand (get_type (col), i * width, *op, e);
+			sblock = statement_subexpr (sblock, vec, &t);
+		}
+		return sblock;
+	}
 	s = new_statement (st_expr, opcode, e);
 	sblock = statement_subexpr (sblock, e->expr.e1, &s->opa);
 	sblock = statement_subexpr (sblock, e->expr.e2, &s->opb);
