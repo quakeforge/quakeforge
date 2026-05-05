@@ -2079,7 +2079,8 @@ expr_deref (sblock_t *sblock, const expr_t *deref, operand_t **op)
 			internal_error (deref, "unexpected addressing mode: %d", mode);
 	}
 
-	if (low_level_type (load_type) == ev_void) {
+	if (low_level_type (load_type) == ev_void
+		|| is_matrix (load_type)) {
 		s = lea_statement (*op, nullptr, ptr_expr);
 		sblock_add_statement (sblock, s);
 		auto op_addr = s->opc;
