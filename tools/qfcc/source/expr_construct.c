@@ -288,8 +288,11 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 		bool by_vector = true;
 		for (int i = 0; i < type_cols (type); i++) {
 			auto ptype = get_type (param_exprs[i]);
-			if (!is_nonscalar (ptype)
-				|| type_width (ptype) != type_rows (type)) {
+			if (is_matrix (ptype)) {
+				return error (param_exprs[i],
+							  "non scalar in matrix must be a vector");
+			}
+			if (type_width (ptype) != type_rows (type)) {
 				by_vector = false;
 				break;
 			}
