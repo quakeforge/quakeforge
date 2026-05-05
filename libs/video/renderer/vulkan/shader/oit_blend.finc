@@ -16,27 +16,35 @@ cmp (const FragData fd1, const FragData fd2)
 
 #define MAX_FRAGMENTS 7
 
+#define get_sind(ind, ele, nele) \
+{ \
+	s_ind = n_ind; \
+	uint l_ind = 2 * n_ind + 1; \
+	uint r_ind = 2 * n_ind + 2; \
+	if (l_ind < nele && cmp (ele[l_ind], ele[n_ind])) { \
+		s_ind = l_ind; \
+	} \
+	if (r_ind < nele && cmp (ele[r_ind], ele[s_ind])) { \
+		s_ind = r_ind; \
+	} \
+}
+
+#define swap(ele, i1, i2) \
+{ \
+	auto t = ele[i1]; \
+	ele[i1] = ele[i2]; \
+	ele[i2] = t; \
+}
+
 #define sink(ele, nele) \
 { \
 	uint n_ind = 0; \
-	uint s_ind = nele - 1; \
+	uint s_ind; \
+	get_sind (n_ind, ele, nele); \
 	while (s_ind != n_ind) { \
-		s_ind = n_ind; \
-		uint l_ind = 2 * n_ind + 1; \
-		uint r_ind = 2 * n_ind + 2; \
-		if (l_ind < nele && cmp (ele[l_ind], ele[n_ind])) { \
-			s_ind = l_ind; \
-		} \
-		if (r_ind < nele && cmp (ele[r_ind], ele[s_ind])) { \
-			s_ind = r_ind; \
-		} \
-		if (s_ind != n_ind) { \
-			auto t = ele[n_ind]; \
-			ele[n_ind] = ele[s_ind]; \
-			ele[s_ind] = t; \
-			n_ind = s_ind; \
-			s_ind = nele - 1; \
-		} \
+		swap (ele, n_ind, s_ind) \
+		n_ind = s_ind; \
+		get_sind (n_ind, ele, nele); \
 	} \
 }
 
@@ -48,9 +56,7 @@ cmp (const FragData fd1, const FragData fd2)
 		if (!cmp (ele[n_ind], ele[p_ind])) { \
 			break; \
 		} \
-		auto t = ele[n_ind]; \
-		ele[n_ind] = ele[p_ind]; \
-		ele[p_ind] = t; \
+		swap (ele, n_ind, p_ind) \
 		n_ind = p_ind; \
 	} \
 } \
@@ -62,7 +68,7 @@ BlendFrags (vec4 color)
 	uint        numFrags = 0;
 	int         maxIter = 64;	//FIXME why does this fix things locking up
 								// at startup? the loop doesn't get entered.
-								// qfcc bug?
+								// qfcc bug? However, only nq/qw. qwaq is ok
 	ivec3       coord = ivec3(gl_FragCoord.xy, gl_ViewIndex);
 	int         index = imageLoad (heads, coord).r;
 
