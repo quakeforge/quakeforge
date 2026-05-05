@@ -811,11 +811,12 @@ flow_build_vars (function_t *func)
 	func->param_vars = set_new ();
 	// mark all global and param vars
 	for (i = 0; i < func->num_vars; i++) {
-		if (flowvar_is_global (func->vars[i])) {
+		auto var = func->vars[i];
+		if (flowvar_is_global (var)) {
 			set_add (func->global_vars, i);
 		}
-		if (flowvar_is_param (func->vars[i])) {
-			add_var_addrs (func->param_vars, func->vars[i]);
+		if (flowvar_is_param (var)) {
+			add_var_addrs (func->param_vars, var);
 		}
 	}
 	// Put the varibals in their place (set var->defined to the addresses
@@ -2716,8 +2717,11 @@ check_constant (int stnum, set_t *loop_statements, flowgraph_t *graph)
 	auto func = graph->func;
 	auto st = func->statements[stnum];
 	SET_DEFER (def_statements);
+	SET_DEFER (stuse);
+	flow_analyze_statement (st, stuse, 0, 0, 0);
 	for (int i = 0; i < st->num_use; i++) {
 		auto ud = func->ud_chains[st->first_use + i];
+		set_remove (stuse, ud.var);// avoid checking twice
 
 		if (ud.defst == stnum) {
 			//iterator
@@ -2741,6 +2745,13 @@ check_constant (int stnum, set_t *loop_statements, flowgraph_t *graph)
 		if (!check_constant (ud.defst, loop_statements, graph)) {
 			return false;
 		}
+	}
+	if (!set_is_empty (stuse)) {
+		// global variabl(?)
+		// FIXME 1) should check for constants 2) I have my doubts that this
+		// is the correct fix. 3) may not be a global (but then that's more
+		// bugs elsewhere)
+		return false;
 	}
 	return true;
 }
