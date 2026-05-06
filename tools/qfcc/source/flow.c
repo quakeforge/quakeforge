@@ -767,7 +767,7 @@ flow_build_vars (function_t *func)
 	func->pseudo_addr += func->locals->space->size;
 	func->pseudo_addr += func->parameters->space->size;
 	if (func->arguments) {
-		func->pseudo_addr += func->arguments->size;
+		func->pseudo_addr += func->arguments->max_size;
 	}
 
 	func->num_vars = 0;	// incremented by add_operand
