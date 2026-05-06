@@ -36,7 +36,9 @@
 */
 ///@{
 
+#ifndef __QFCC__
 #include "QF/qtypes.h"
+#endif
 
 #define BITOP_RUP1__(x)  (            (x) | (            (x) >>  1))
 #define BITOP_RUP2__(x)  (BITOP_RUP1__(x) | (BITOP_RUP1__(x) >>  2))
@@ -54,11 +56,11 @@
 */
 #define BITOP_RUP(x) (BITOP_RUP16__((uint32_t)(x) - 1) + 1)
 
-#define BITOP_LOG2__(x) (((((x) & 0xffff0000) != 0) << 4) \
-						|((((x) & 0xff00ff00) != 0) << 3) \
-						|((((x) & 0xf0f0f0f0) != 0) << 2) \
-						|((((x) & 0xcccccccc) != 0) << 1) \
-						|((((x) & 0xaaaaaaaa) != 0) << 0))
+#define BITOP_LOG2__(x) ((((((x) & 0xffff0000) != 0) & 1) << 4) \
+						|(((((x) & 0xff00ff00) != 0) & 1) << 3) \
+						|(((((x) & 0xf0f0f0f0) != 0) & 1) << 2) \
+						|(((((x) & 0xcccccccc) != 0) & 1) << 1) \
+						|(((((x) & 0xaaaaaaaa) != 0) & 1) << 0))
 /** Log base 2 rounded up.
 
 	Finds the base 2 logarithm of x rounded up (ceil(log2(x))).
