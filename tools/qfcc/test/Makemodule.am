@@ -101,6 +101,7 @@ test_progs_dat=\
 	tools/qfcc/test/structstruct.dat \
 	tools/qfcc/test/swap.dat \
 	tools/qfcc/test/tangledargs.dat \
+	tools/qfcc/test/tangledargs2.dat \
 	tools/qfcc/test/temp-component.dat \
 	tools/qfcc/test/triangle.dat \
 	tools/qfcc/test/twice-called.dat \
@@ -1180,6 +1181,16 @@ tools/qfcc/test/tangledargs.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(tangledargs_dep) # am--include-marker
 r_depfiles_remade += $(tangledargs_dep)
+
+tools_qfcc_test_tangledargs2_dat_SOURCES=tools/qfcc/test/tangledargs2.r
+tangledargs2_obj=$(tools_qfcc_test_tangledargs2_dat_SOURCES:.r=.o)
+tangledargs2_dep=$(call qcautodep,$(tools_qfcc_test_tangledargs2_dat_SOURCES))
+tools/qfcc/test/tangledargs2.dat$(EXEEXT): $(tangledargs2_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(tangledargs2_obj)
+tools/qfcc/test/tangledargs2.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(tangledargs2_dep) # am--include-marker
+r_depfiles_remade += $(tangledargs2_dep)
 
 tools_qfcc_test_temp_component_dat_SOURCES=tools/qfcc/test/temp-component.r
 temp_component_obj=$(tools_qfcc_test_temp_component_dat_SOURCES:.r=.o)
