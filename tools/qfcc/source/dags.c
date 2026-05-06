@@ -222,6 +222,7 @@ operand_label (dag_t *dag, operand_t *op)
 		if (def->daglabel)
 			return def->daglabel;
 		label = new_label (dag);
+		label->not_src = strncmp (def->name, ".arg", 4) == 0;
 		label->op = op;
 		def->daglabel = label;
 	} else if (op->op_type == op_value) {
@@ -1654,7 +1655,7 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 		for ( ; var_iter; var_iter = set_next (var_iter)) {
 			var = dag->labels[var_iter->element];
 			operands[2] = fix_op_type (var->op, type);
-			if (!dst)
+			if (!dst && !var->not_src)
 				dst = operands[2];
 
 			st = build_statement ("move", operands, var->expr);
@@ -1665,14 +1666,14 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 		for ( ; var_iter; var_iter = set_next (var_iter)) {
 			var = dag->labels[var_iter->element];
 			operands[0] = fix_op_type (var->op, type);
-			if (!dst)
+			if (!dst && !var->not_src)
 				dst = operands[0];
 
 			st = build_statement ("assign", operands, var->expr);
 			sblock_add_statement (block, st);
 		}
 	}
-	return dst;
+	return dst ? dst : src;
 }
 
 static operand_t *
