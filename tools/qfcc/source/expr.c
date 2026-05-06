@@ -3046,7 +3046,7 @@ sizeof_expr (const expr_t *expr, const type_t *type)
 		type = get_type (expr);
 	if (type) {
 		int size = type_aligned_size (type) * sizeof (pr_type_t);
-		expr = new_int_expr (size, false);
+		expr = new_int_expr (size, true);
 	}
 	return expr;
 }
@@ -3062,7 +3062,7 @@ countof_expr (const expr_t *expr, const type_t *type)
 		if (is_reference (type)) {
 			type = dereference_type (type);
 		}
-		expr = new_int_expr (type_count (type), false);
+		expr = new_int_expr (type_count (type), true);
 	}
 	return expr;
 }
