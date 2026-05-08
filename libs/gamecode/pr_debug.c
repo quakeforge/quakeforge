@@ -269,8 +269,12 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 	switch (type->meta) {
 		case ty_bool:
 		case ty_basic:
-			return pr_type_size[type->type] * type->basic.width
-					* type->basic.columns;
+			if (type->type == ev_ptr || type->type == ev_field) {
+				return pr_type_size[type->type];
+			} else {
+				return pr_type_size[type->type] * type->basic.width
+						* type->basic.columns;
+			}
 		case ty_handle:
 			return pr_type_size[type->type];
 		case ty_struct:
