@@ -381,10 +381,93 @@ init_elements_nil (def_t *def, expr_t *block)
 }
 
 static void
-init_elements (struct def_s *def, const expr_t *eles, expr_t *block)
+init_def (def_t *def, const expr_t *init, symbol_t *sym)
+{
+	if (!is_constant (init)) {
+		if (!options.code.const_initializers && is_constexpr (init)) {
+			notice (init, "ctor");
+			init = assign_expr (new_symbol_expr (sym), init);
+			add_ctor_expr (init);
+		} else {
+			error (init, "non-constant initializier");
+		}
+		return;
+	}
+
+	auto init_type = get_type (init);
+	while (init->type == ex_alias) {
+		init = init->alias.expr;
+	}
+
+	if (is_ptr (def->type) && is_array (init_type)) {
+		auto type = pointer_type (dereference_type (init_type));
+		init = cast_expr (type, init);
+	}
+
+	if (init->type == ex_value
+		&& init->type != ex_labelref
+		&& (init->value->lltype == ev_ptr
+			|| init->value->lltype == ev_field)) {
+		D_INT (def) = init->value->pointer.val;
+		if (init->value->pointer.def) {
+			reloc_def_field (init->value->pointer.def, def);
+		}
+	} else if (init->type == ex_ptroffset) {
+		auto ptr = init->ptroffset.ptr;
+		auto offset = init->ptroffset.offset;
+		if (!ptr->value->pointer.def) {
+			internal_error (ptr, "pointer initializer with no def");
+		}
+		D_INT (def) = ptr->value->pointer.val;
+		//FIXME 64-bit pointers would be nice
+		D_INT (def) += offset->value->int_val;
+		reloc_def_field_ofs (ptr->value->pointer.def, def);
+	} else if (init->type == ex_labelref) {
+		reloc_def_op (init->labelref.label, def);
+	} else if (init->type == ex_symbol
+			   && init->symbol->sy_type == sy_func
+			   && init->symbol->metafunc
+			   && init->symbol->metafunc->func) {
+		auto func = init->symbol->metafunc->func;
+		reloc_def_func (func, def);
+	} else if (init->type == ex_value
+			   || (init->type == ex_symbol
+				   && init->symbol->sy_type == sy_const)) {
+		ex_value_t *v = init->value;
+		if (init->type == ex_symbol
+			&& init->symbol->sy_type == sy_const) {
+			v = init->symbol->value;
+		}
+		if (!init->implicit
+			&& is_double (init_type)
+			&& (is_integral (def->type) || is_float (def->type))) {
+			warning (init, "assigning double to %s in initializer "
+					 "(use a cast)", def->type->name);
+		}
+		if (!type_same (def->type, init_type)) {
+			v = convert_value (v, def->type);
+		}
+		if (v->lltype == ev_string) {
+			EMIT_STRING (def->space, D_STRING (def), v->string_val);
+		} else {
+			memcpy (D_POINTER (pr_type_t, def), &v->raw_value,
+					type_size (def->type) * sizeof (pr_type_t));
+		}
+	} else {
+		internal_error (0, "bogus initializier");
+	}
+
+	def->initialized = 1;
+	if (options.code.const_initializers) {
+		def->constant = 1;
+		def->nosave = 1;
+	}
+}
+
+static void
+init_elements (def_t *def, const expr_t *eles, expr_t *block)
 {
 	const expr_t *c;
-	pr_type_t  *g;
 	element_chain_t element_chain;
 	element_t  *element;
 
@@ -412,52 +495,17 @@ init_elements (struct def_s *def, const expr_t *eles, expr_t *block)
 			if (c->type == ex_nil) {
 				c = convert_nil (c, element->type);
 			}
+
+			dummy.type = element->type;
 			dummy.offset = def->offset + element->offset;
-			g = D_POINTER (pr_type_t, &dummy);
-			if (c->type == ex_labelref) {
-				// reloc_def_* use only the def's offset and space, so dummy
-				// is ok
-				reloc_def_op (c->labelref.label, &dummy);
-				continue;
-			} else if (c->type == ex_symbol
-					   && c->symbol->sy_type == sy_func
-					   && c->symbol->metafunc
-					   && c->symbol->metafunc->func) {
-				auto func = c->symbol->metafunc->func;
-				reloc_def_func (func, &dummy);
-				continue;
-			} else if (c->type == ex_value) {
-				auto ctype = get_type (c);
-				if (ctype != element->type
-					&& (type_promotes (element->type, ctype)
-						|| type_demotes (element->type, ctype))) {
-					if (!c->implicit
-						&& !type_promotes (element->type, ctype)) {
-						warning (c, "initialization of %s with %s"
-								 " (use a cast)\n)",
-								 get_type_string (element->type),
-								 get_type_string (ctype));
-					}
-					c = cast_expr (element->type, c);
-				}
-				if (get_type (c) != element->type) {
-					error (c, "type mismatch in initializer");
-					continue;
-				}
+			// reloc_def_* use only the def's offset and space, so dummy is ok
+			if (is_constant (c)) {
+				init_def (&dummy, c, nullptr);
 			} else {
 				if (!def->local || !block) {
-					error (c, "non-constant initializer");
+					//error (c, "non-constant initializer");
 					continue;
 				}
-			}
-			if (c->type != ex_value) {
-				internal_error (c, "bogus expression type in init_elements()");
-			}
-			if (c->value->lltype == ev_string) {
-				EMIT_STRING (def->space, *(pr_string_t *) g,
-							 c->value->string_val);
-			} else {
-				memcpy (g, &c->value->raw_value, type_size (get_type (c)) * 4);
 			}
 		}
 	}
@@ -658,60 +706,8 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 			init = assign_expr (new_symbol_expr (sym), init);
 			// fold_constants takes care of int/float conversions
 			append_expr (block, fold_constants (init));
-		} else if (!is_constant (init)) {
-			if (!options.code.const_initializers && is_constexpr (init)) {
-				notice (init, "ctor");
-				init = assign_expr (new_symbol_expr (sym), init);
-				add_ctor_expr (init);
-			} else {
-				error (init, "non-constant initializier");
-				return;
-			}
 		} else {
-			while (init->type == ex_alias) {
-				init = init->alias.expr;
-			}
-			if (init->type != ex_value
-				&& !is_nil (init)
-				&& !(init->type == ex_symbol
-					 && init->symbol->sy_type == sy_const)) {
-				internal_error (0, "initializier not a value");
-				return;
-			}
-			if (init->type == ex_value
-				&& (init->value->lltype == ev_ptr
-					|| init->value->lltype == ev_field)) {
-				// FIXME offset pointers
-				D_INT (sym->def) = init->value->pointer.val;
-				if (init->value->pointer.def)
-					reloc_def_field (init->value->pointer.def, sym->def);
-			} else {
-				ex_value_t *v = init->value;
-				if (init->type == ex_symbol
-					&& init->symbol->sy_type == sy_const) {
-					v = init->symbol->value;
-				}
-				if (!init->implicit
-					&& is_double (init_type)
-					&& (is_integral (sym->type) || is_float (sym->type))) {
-					warning (init, "assigning double to %s in initializer "
-							 "(use a cast)", sym->type->name);
-				}
-				if (!type_same (sym->type, init_type))
-					v = convert_value (v, sym->type);
-				if (v->lltype == ev_string) {
-					EMIT_STRING (sym->def->space, D_STRING (sym->def),
-								 v->string_val);
-				} else {
-					memcpy (D_POINTER (pr_type_t, sym->def), &v->raw_value,
-							type_size (sym->type) * sizeof (pr_type_t));
-				}
-			}
-			sym->def->initialized = 1;
-			if (options.code.const_initializers) {
-				sym->def->constant = 1;
-				sym->def->nosave = 1;
-			}
+			init_def (sym->def, init, sym);
 		}
 	}
 	sym->def->initializer = init;
