@@ -78,6 +78,7 @@ typedef struct symbol_s {
 	bool        no_auto_init:1;	///< skip for non-designated initializers
 	bool        lvalue:1;
 	bool        is_constexpr:1;
+	bool        is_proxy:1;		///< proxy for deferred declarations
 	struct attribute_s *attributes;
 	union {
 		var_t       var;			///< sy_var
