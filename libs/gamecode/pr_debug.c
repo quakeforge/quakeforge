@@ -1501,17 +1501,24 @@ pr_debug_ptr_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	dstring_t  *dstr = data->dstr;
 	pr_ptr_t    offset = PR_PTR (int, value);
 	pr_ptr_t    offs = offset;
-	pr_def_t   *def = 0;
 
-	def = pr_debug_find_def (pr, &offs);
-	if (def && def->name) {
-		if (offs) {
-			dasprintf (dstr, "&%s + %u", PR_GetString (pr, def->name), offs);
-		} else {
-			dasprintf (dstr, "&%s", PR_GetString (pr, def->name));
-		}
+	qfot_fldptr_t *ptr = &type->fldptr;
+	qfot_type_t *val_type = &G_STRUCT (pr, qfot_type_t, ptr->aux_type);
+
+	if (val_type->meta == ty_basic && val_type->type == ev_func) {
+		pr_debug_func_view (val_type, value, data);
 	} else {
-		dasprintf (dstr, "[$%x]", offset);
+		auto def = pr_debug_find_def (pr, &offs);
+		if (def && def->name) {
+			auto def_name = PR_GetString (pr, def->name);
+			if (offs) {
+				dasprintf (dstr, "&%s + %u", def_name, offs);
+			} else {
+				dasprintf (dstr, "&%s", def_name);
+			}
+		} else {
+			dasprintf (dstr, "[$%x]", offset);
+		}
 	}
 }
 
