@@ -1007,6 +1007,7 @@ is_constant (const expr_t *e)
 	}
 	if (e->type == ex_nil || e->type == ex_value || e->type == ex_labelref
 		|| (e->type == ex_symbol && e->symbol->sy_type == sy_const)
+		|| (e->type == ex_symbol && e->symbol->sy_type == sy_func)
 		|| (e->type == ex_symbol && e->symbol->sy_type == sy_def
 			&& e->symbol->def->constant))
 		return true;
