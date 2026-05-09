@@ -503,7 +503,7 @@ init_elements (def_t *def, const expr_t *eles, expr_t *block)
 				init_def (&dummy, c, nullptr);
 			} else {
 				if (!def->local || !block) {
-					//error (c, "non-constant initializer");
+					error (c, "non-constant initializer");
 					continue;
 				}
 			}
