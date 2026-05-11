@@ -645,7 +645,7 @@ offset_alias_value (ex_value_t *value, const type_t *type, int offset)
 }
 
 ex_value_t *
-alias_value (ex_value_t *value, type_t *type)
+alias_value (ex_value_t *value, const type_t *type)
 {
 	ex_value_t  new;
 
