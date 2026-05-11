@@ -36,48 +36,42 @@
 */
 ///@{
 
-struct def_s;
-struct ex_value_s;
-struct tempop_s;
-struct type_s;
-struct pr_type_s;
-struct operand_s;
+typedef struct def_s def_t;
+typedef struct expr_s expr_t;
+typedef struct ex_value_s ex_value_t;
+typedef struct type_s type_t;
+typedef struct pr_type_s pr_type_t;
+typedef struct operand_s operand_t;
+typedef struct defspace_s defspace_t;
 
-struct ex_value_s *new_value (void);
-struct ex_value_s *new_string_val (const char *string_val);
-struct ex_value_s *new_buffer_val (const char *buffer, size_t size);
-struct ex_value_s *new_double_val (double double_val);
-struct ex_value_s *new_float_val (float float_val);
-struct ex_value_s *new_vector_val (const float *vector_val);
-struct ex_value_s *new_entity_val (int entity_val);
-struct ex_value_s *new_field_val (int field_val, const struct type_s *type,
-								  struct def_s *def);
-struct ex_value_s *new_func_val (int func_val, const struct type_s *type);
-struct ex_value_s *new_pointer_val (int val, const struct type_s *type,
-									struct def_s *def,
-									struct operand_s *tempop);
-struct ex_value_s *new_quaternion_val (const float *quaternion_val);
-struct ex_value_s *new_int_val (int int_val);
-struct ex_value_s *new_uint_val (int uint_val);
-struct ex_value_s *new_long_val (pr_long_t long_val);
-struct ex_value_s *new_ulong_val (pr_ulong_t ulong_val);
-struct ex_value_s *new_short_val (short short_val);
-struct ex_value_s *new_ushort_val (unsigned short ushort_val);
-struct ex_value_s *new_nil_val (const struct type_s *type);
-struct ex_value_s *new_type_value (const struct type_s *type,
-								   const struct pr_type_s *data);
-void value_store (pr_type_t *dst, const struct type_s *dstType,
-				  const struct expr_s *src);
-const char *get_value_string (const struct ex_value_s *value);
+ex_value_t *new_value (void);
+ex_value_t *new_string_val (const char *string_val);
+ex_value_t *new_buffer_val (const char *buffer, size_t size);
+ex_value_t *new_double_val (double double_val);
+ex_value_t *new_float_val (float float_val);
+ex_value_t *new_vector_val (const float *vector_val);
+ex_value_t *new_entity_val (int entity_val);
+ex_value_t *new_field_val (int field_val, const type_t *type, def_t *def);
+ex_value_t *new_func_val (int func_val, const type_t *type);
+ex_value_t *new_pointer_val (int val, const type_t *type, def_t *def,
+							 operand_t *tempop);
+ex_value_t *new_quaternion_val (const float *quaternion_val);
+ex_value_t *new_int_val (int int_val);
+ex_value_t *new_uint_val (int uint_val);
+ex_value_t *new_long_val (pr_long_t long_val);
+ex_value_t *new_ulong_val (pr_ulong_t ulong_val);
+ex_value_t *new_short_val (short short_val);
+ex_value_t *new_ushort_val (unsigned short ushort_val);
+ex_value_t *new_nil_val (const type_t *type);
+ex_value_t *new_type_value (const type_t *type, const pr_type_t *data);
+void value_store (pr_type_t *dst, const type_t *dstType, const expr_t *src);
+const char *get_value_string (const ex_value_t *value);
 
-struct ex_value_s *offset_alias_value (struct ex_value_s *value,
-									   const struct type_s *type, int offset);
-struct ex_value_s *alias_value (struct ex_value_s *value,
-								const struct type_s *type);
-struct def_s *emit_value (struct ex_value_s *value, struct def_s *def);
-struct defspace_s;
-struct def_s *emit_value_core (struct ex_value_s *value, struct def_s *def,
-							   struct defspace_s *defspace);
+ex_value_t *offset_alias_value (ex_value_t *value, const type_t *type,
+								int offset);
+ex_value_t *alias_value (ex_value_t *value, const type_t *type);
+def_t *emit_value (ex_value_t *value, def_t *def);
+def_t *emit_value_core (ex_value_t *value, def_t *def, defspace_t *defspace);
 
 int	ReuseString (const char *str);
 
