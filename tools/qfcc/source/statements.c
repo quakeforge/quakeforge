@@ -2697,20 +2697,21 @@ expr_bitfield (sblock_t *sblock, const expr_t *e, operand_t **op)
 	auto lshift = binary_expr ('-', rshift, bitfield.start);
 	if (bitfield.insert) {
 		auto bits = cast_expr (backing_type, new_long_expr (-1, true));
+		auto insert = cast_expr (backing_type, bitfield.insert);
 		auto lmask = binary_expr (QC_SHL, bits, bitfield.start);
 		auto rmask = binary_expr (QC_SHR, bits, lshift);
 		auto ins_mask = binary_expr ('&', lmask, rmask);
 		auto inv_mask = unary_expr ('~', ins_mask);
 		auto masked_src = binary_expr ('&', inv_mask, bitfield.src);
-		auto shift_ins = binary_expr (QC_SHL, bitfield.insert, bitfield.start);
+		auto shift_ins = binary_expr (QC_SHL, insert, bitfield.start);
 		auto masked_ins = binary_expr ('&', ins_mask, shift_ins);
-		auto insert = binary_expr ('|', masked_src, masked_ins);
-		return statement_subexpr (sblock, insert, op);
+		auto insert_expr = binary_expr ('|', masked_src, masked_ins);
+		return statement_subexpr (sblock, insert_expr, op);
 	} else {
 		auto shift = binary_expr (QC_SHL, bitfield.src, lshift);
 		auto cast = cast_expr (bitfield.type, shift);
-		auto extract = binary_expr (QC_SHR, cast, rshift);
-		return statement_subexpr (sblock, extract, op);
+		auto extract_expr = binary_expr (QC_SHR, cast, rshift);
+		return statement_subexpr (sblock, extract_expr, op);
 	}
 }
 
