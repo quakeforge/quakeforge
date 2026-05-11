@@ -352,14 +352,10 @@ const expr_t *
 ruamoko_proc_address (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
-	auto e = expr_process (expr->expr.e1, ctx);
-	if (is_error (e)) {
-		return e;
+	if (expr->type == ex_field || expr->type == ex_array) {
+		expr = ruamoko_field_array (expr);
 	}
-	if (e->type == ex_field || e->type == ex_array) {
-		e = ruamoko_field_array (e);
-	}
-	return address_expr (e, nullptr);
+	return address_expr (expr, nullptr);
 }
 
 static const expr_t *

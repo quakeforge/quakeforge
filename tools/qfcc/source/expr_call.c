@@ -206,11 +206,11 @@ check_arg_types (const expr_t **arguments, const type_t **arg_types,
 }
 
 static const expr_t *
-reference_param (const type_t *ptype, const expr_t *arg)
+reference_param (const type_t *ptype, const expr_t *arg, rua_ctx_t *ctx)
 {
 	auto arg_type = get_type (arg);
 	if (is_reference (ptype) && !is_reference (arg_type)) {
-		arg = reference_expr (arg, nullptr);
+		arg = reference_expr (arg, nullptr, ctx);
 	} else if (!is_reference (ptype) && is_reference (arg_type)) {
 		arg = pointer_deref (arg);
 	} else if (!is_reference (ptype) && !is_reference (arg_type)) {
@@ -222,7 +222,7 @@ reference_param (const type_t *ptype, const expr_t *arg)
 }
 
 static void
-build_call_scope (symbol_t *fsym, const expr_t **arguments)
+build_call_scope (symbol_t *fsym, const expr_t **arguments, rua_ctx_t *ctx)
 {
 	auto metafunc = fsym->metafunc;
 	auto func = metafunc->func;
@@ -252,7 +252,7 @@ build_call_scope (symbol_t *fsym, const expr_t **arguments)
 		}
 		auto psym = new_symbol (p->name);
 		psym->sy_type = sy_expr;
-		psym->expr = reference_param (p->type, arguments[i]);
+		psym->expr = reference_param (p->type, arguments[i], ctx);
 		symtab_addsymbol (params, psym);
 	}
 }
@@ -275,7 +275,7 @@ build_intrinsic_call (const expr_t *expr, symbol_t *fsym, const type_t *ftype,
 			internal_error (expr->intrinsic.extra, "not a list");
 		}
 
-		build_call_scope (fsym, arguments);
+		build_call_scope (fsym, arguments, ctx);
 		if (current_target.setup_intrinsic_symtab) {
 			auto metafunc = fsym->metafunc;
 			auto func = metafunc->func;
@@ -299,7 +299,7 @@ build_intrinsic_call (const expr_t *expr, symbol_t *fsym, const type_t *ftype,
 	} else {
 		auto p = fsym->params;
 		for (int i = 0; i < arg_count && i < num_params; i++, p = p->next) {
-			arguments[i] = reference_param (p->type, arguments[i]);
+			arguments[i] = reference_param (p->type, arguments[i], ctx);
 		}
 		for (int i = num_params; i < arg_count; i++) {
 			// assume references should always be passed by value
@@ -334,12 +334,12 @@ inline_return_expr (function_t *func, const expr_t *val, rua_ctx_t *ctx)
 
 static expr_t *
 build_inline_call (symbol_t *fsym, const type_t *ftype,
-				   const expr_t **arguments, int arg_count)
+				   const expr_t **arguments, int arg_count, rua_ctx_t *ctx)
 {
 	auto metafunc = fsym->metafunc;
 	auto func = metafunc->func;
 
-	build_call_scope (fsym, arguments);
+	build_call_scope (fsym, arguments, ctx);
 
 	auto locals = func->locals;
 	auto call = new_block_expr (nullptr);
@@ -379,7 +379,8 @@ build_inline_call (symbol_t *fsym, const type_t *ftype,
 static const expr_t *
 build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
 			const expr_t **arguments, const type_t **arg_types,
-			int arg_count, int param_count, const type_t *ftype)
+			int arg_count, int param_count, const type_t *ftype,
+			rua_ctx_t *ctx)
 {
 	bool emit_args = ftype->func.num_params < 0 && !ftype->func.no_va_list;
 	expr_t     *args = new_list_expr (0);
@@ -441,7 +442,7 @@ build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
 					if (is_reference (get_type (e))) {
 						// just copy the param, so no op
 					} else {
-						e = reference_expr (e, nullptr);
+						e = reference_expr (e, nullptr, ctx);
 					}
 				} else {
 					if (is_reference (get_type (e))) {
@@ -502,7 +503,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 										 arguments, arg_count, ctx);
 		}
 		if (metafunc->can_inline) {
-			return build_inline_call (fsym, ftype, arguments, arg_count);
+			return build_inline_call (fsym, ftype, arguments, arg_count, ctx);
 		}
 		internal_error (fexpr, "calls to inline functions that cannot be "
 						"inlined not implemented");
@@ -514,7 +515,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 		int         num_args = 0;
 		const expr_t *arg_exprs[arg_count + 1][2];
 		auto arg_list = build_args (arg_exprs, &num_args, arguments, arg_types,
-									arg_count, param_count, ftype);
+									arg_count, param_count, ftype, ctx);
 		if (is_error (arg_list)) {
 			return arg_list;
 		}

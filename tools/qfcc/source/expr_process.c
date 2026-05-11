@@ -111,6 +111,10 @@ proc_uexpr (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	if (expr->expr.op == '&') {
+		expr = expr_process (expr->expr.e1, ctx);
+		if (is_error (expr)) {
+			return expr;
+		}
 		return current_target.proc_address (expr, ctx);
 	}
 	auto e1 = expr->expr.e1;
@@ -593,12 +597,13 @@ proc_branch (const expr_t *expr, rua_ctx_t *ctx)
 				return target;
 			}
 		}
-		auto args = (expr_t *) expr->branch.args;//FIXME const-cast
+		auto args = expr->branch.args;//FIXME const-cast
 		if (expr->branch.args) {
-			args = new_list_expr (nullptr);
-			if (!proc_do_list (&args->list, &expr->branch.args->list, ctx)) {
+			auto new = new_list_expr (nullptr);
+			if (!proc_do_list (&new->list, &expr->branch.args->list, ctx)) {
 				return new_error_expr ();
 			}
+			args = new;
 		}
 		return function_expr (target, args, ctx);
 	} else {
