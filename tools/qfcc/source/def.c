@@ -700,6 +700,10 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 			init = convert_buffer (init, sym->type);
 		}
 		auto init_type = get_type (init);
+		if (is_reference (init_type) && !is_reference (sym->type)) {
+			init_type = dereference_type (init_type);
+			init = pointer_deref (init);
+		}
 		if (!type_assignable (sym->type, init_type)) {
 			error (init, "type mismatch in initializer: %s = %s",
 				   get_type_string (sym->type), get_type_string (init_type));
