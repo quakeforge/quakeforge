@@ -849,13 +849,14 @@ external_def
 			auto ns_sym = $identifier;
 			auto sym = symtab_lookup (current_symtab, ns_sym->name);
 			if (sym && sym->table == current_symtab) {
-				error (0, "%s redeclared", ns_sym->name);
-				ns_sym = new_symbol (loc_name (pr.loc));
+				// switch to existing namespace
+				current_symtab = sym->namespace;;
+			} else {
+				auto ns_tab = new_symtab (current_symtab, stab_namespace);
+				ns_tab->space = current_symtab->space;
+				create_namespace (ns_sym->name, ns_tab, current_symtab);
+				current_symtab = ns_tab;
 			}
-			auto ns_tab = new_symtab (current_symtab, stab_namespace);
-			ns_tab->space = current_symtab->space;
-			create_namespace (ns_sym->name, ns_tab, current_symtab);
-			current_symtab = ns_tab;
 		}
 	  external_def_list '}'
 		{
