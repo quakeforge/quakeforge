@@ -380,10 +380,17 @@ init_elements_nil (def_t *def, expr_t *block)
 	// it's a global, so already initialized to 0
 }
 
+static bool
+is_array_sym (const expr_t *e)
+{
+	return (e->type == ex_symbol && e->symbol->sy_type == sy_def
+			&& is_array(e->symbol->def->type));
+}
+
 static void
 init_def (def_t *def, const expr_t *init, symbol_t *sym)
 {
-	if (!is_constant (init)) {
+	if (!(is_constant (init) || is_array_sym (init))) {
 		if (!options.code.const_initializers && is_constexpr (init)) {
 			notice (init, "ctor");
 			init = assign_expr (new_symbol_expr (sym), init);
@@ -499,7 +506,7 @@ init_elements (def_t *def, const expr_t *eles, expr_t *block)
 			dummy.type = element->type;
 			dummy.offset = def->offset + element->offset;
 			// reloc_def_* use only the def's offset and space, so dummy is ok
-			if (is_constant (c)) {
+			if (is_constant (c) || is_array_sym (c)) {
 				init_def (&dummy, c, nullptr);
 			} else {
 				error (c, "non-constant initializer");
