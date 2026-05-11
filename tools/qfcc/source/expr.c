@@ -2779,13 +2779,16 @@ reference_expr (const expr_t *e, const type_t *t)
 	if (is_error (ref)) {
 		return ref;
 	}
-	if (ref->type != ex_address) {
-		internal_error (ref, "expected address expression");
-	}
 	auto type = get_type (ref);
 	type = dereference_type (type);
 	type = reference_type (type);
-	ref->address.type = type;
+	if (ref->type == ex_value) {
+		ref->value = alias_value (ref->value, type);
+	} else if (ref->type == ex_address) {
+		ref->address.type = type;
+	} else {
+		internal_error (ref, "expected address or value expression");
+	}
 	return ref;
 }
 

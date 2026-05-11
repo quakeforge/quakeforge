@@ -1485,7 +1485,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 				src = a->inout.in;
 			}
 			if (src) {
-				const expr_t *assign = assign_expr (def_expr, src);
+				const expr_t *assign = new_assign_expr (def_expr, src);
 				sblock = statement_single (sblock, assign);
 			}
 		}

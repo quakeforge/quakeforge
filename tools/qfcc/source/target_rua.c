@@ -297,8 +297,12 @@ ruamoko_field_array (const expr_t *e)
 				internal_error (obj->field.member, "not a symbol");
 			}
 			auto sym = obj->field.member->symbol;
-			if (is_pointer (base_type)) {
+			if (is_pointer (base_type) || is_reference (base_type)) {
 				auto offset = new_short_expr (sym->offset);
+				if (is_reference (base_type)) {
+					auto ref_type = dereference_type (base_type);
+					e = new_alias_expr (pointer_type (ref_type), e);
+				}
 				e = offset_pointer_expr (e, offset);
 				e = cast_expr (pointer_type (obj->field.type), e);
 				e = unary_expr ('.', e);
