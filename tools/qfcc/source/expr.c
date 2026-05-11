@@ -2775,7 +2775,12 @@ reference_expr (const expr_t *e, const type_t *t, rua_ctx_t *ctx)
 	if (is_error (e)) {
 		return e;
 	}
-	auto ref = current_target.proc_address (e, ctx);
+	const expr_t *ref;
+	if (current_target.proc_address) {
+		ref = current_target.proc_address (e, ctx);
+	} else {
+		ref = core_address_expr (e, t);
+	}
 	if (is_error (ref)) {
 		return ref;
 	}
