@@ -192,11 +192,12 @@ compare2_formats = {
     "opname": "{op_cmp[ccc]}",
     "widths": "{ss+1}, {ss+1}, {ss+1}",
     "columns": "1, 1, 1",
-    "types": "{cmp_types[t]}, {cmp_types[t]}, ev_int",
+    "types": "{cmp_types[t]}, {cmp_types[t]}, {res_types[t << 1]}",
     "args": {
         "op_cmp": compare_ccc,
         "cmp_type": ['u', 'U'],
         "cmp_types": unsigned_t,
+        "res_types": etype_tt,
     },
 }
 constant_formats = {
