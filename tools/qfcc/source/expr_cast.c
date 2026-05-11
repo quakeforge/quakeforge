@@ -58,8 +58,8 @@ static void
 do_conversion (pr_type_t *dst_value, const type_t *dstType,
 			   pr_type_t *src_value, const type_t *srcType, const expr_t *expr)
 {
-	int         from = type_cast_map[base_type (srcType)->type];
-	int         to = type_cast_map[base_type (dstType)->type];
+	int         from = type_cast_map (base_type (srcType));
+	int         to = type_cast_map (base_type (dstType));
 	int         width = type_width (srcType) - 1;
 	int         conversion = TYPE_CAST_CODE (from, to, width);
 #define OPA(type) (*((pr_##type##_t *) (src_value)))

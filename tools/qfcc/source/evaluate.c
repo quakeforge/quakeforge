@@ -167,8 +167,8 @@ convert_value (ex_value_t *value, const type_t *type)
 		error (0, "unable to convert between values of different widths");
 		return value;
 	}
-	int         from = type_cast_map[base_type (value->type)->type];
-	int         to = type_cast_map[base_type (type)->type];
+	int         from = type_cast_map (base_type (value->type));
+	int         to = type_cast_map (base_type (type));
 	int         width = type_width (value->type) - 1;
 	int         conv = TYPE_CAST_CODE (from, to, width);
 	int         addr = value_functions[vf_convert].first_statement;

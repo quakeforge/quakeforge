@@ -257,7 +257,7 @@ const type_t *ev_types[ev_type_count] = {
 	&type_invalid,
 };
 
-int type_cast_map[ev_type_count] = {
+int type_cast_map_data[ev_type_count] = {
 	[ev_int] = 0,
 	[ev_float] = 1,
 	[ev_long] = 2,
@@ -293,6 +293,18 @@ low_level_type (const type_t *type)
 	if (is_structural (type))
 		return ev_void;
 	internal_error (0, "invalid complex type");
+}
+
+int
+type_cast_map (const type_t *type)
+{
+	type = unalias_type (type);
+	int cast = type_cast_map_data[type->type];
+	if (is_boolean (type)) {
+		// unsigned | float/double -> boolean
+		cast |= 5;
+	}
+	return cast;
 }
 
 const char *

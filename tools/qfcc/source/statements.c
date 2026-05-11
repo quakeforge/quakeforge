@@ -2258,8 +2258,8 @@ expr_cast (sblock_t *sblock, const expr_t *e, operand_t **op)
 		s = new_statement (st_expr, "conv", e);
 		s->opa = src;
 		if (options.code.progsversion == PROG_VERSION) {
-			int         from = type_cast_map[src_type->type];
-			int         to = type_cast_map[type->type];
+			int         from = type_cast_map (src_type);
+			int         to = type_cast_map (type);
 			int         width = type_width (src_type) - 1;
 			int         conv = TYPE_CAST_CODE (from, to, width);
 			s->opb = short_operand (conv, e);
