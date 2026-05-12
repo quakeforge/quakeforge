@@ -2775,19 +2775,26 @@ reference_expr (const expr_t *e, const type_t *t, rua_ctx_t *ctx)
 	if (is_error (e)) {
 		return e;
 	}
-	const expr_t *ref;
+	const expr_t *addr;
 	if (current_target.proc_address) {
-		ref = current_target.proc_address (e, ctx);
+		addr = current_target.proc_address (e, ctx);
 	} else {
-		ref = core_address_expr (e, t);
+		addr = core_address_expr (e, t);
 	}
-	if (is_error (ref)) {
-		return ref;
+	if (is_error (addr)) {
+		return addr;
 	}
-	auto type = get_type (ref);
+	auto type = get_type (addr);
 	type = dereference_type (type);
 	type = reference_type (type);
-	ref = new_alias_expr (type, ref);
+	auto ref = new_expr_copy (addr);
+	if (ref->type == ex_value) {
+		ref->value = alias_value (ref->value, type);
+	} else if (ref->type == ex_address) {
+		ref->address.type = type;
+	} else {
+		internal_error (ref, "expected address or value expression");
+	}
 	return ref;
 }
 
