@@ -597,7 +597,7 @@ proc_branch (const expr_t *expr, rua_ctx_t *ctx)
 				return target;
 			}
 		}
-		auto args = expr->branch.args;//FIXME const-cast
+		auto args = expr->branch.args;
 		if (expr->branch.args) {
 			auto new = new_list_expr (nullptr);
 			if (!proc_do_list (&new->list, &expr->branch.args->list, ctx)) {
