@@ -2794,7 +2794,7 @@ reference_expr (const expr_t *e, const type_t *t, rua_ctx_t *ctx)
 	} else if (ref->type == ex_address) {
 		ref->address.type = type;
 	} else {
-		internal_error (ref, "expected address or value expression");
+		return new_alias_expr (type, ref);
 	}
 	return ref;
 }
