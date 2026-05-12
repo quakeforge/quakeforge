@@ -647,8 +647,8 @@ parse_VkShaderModule (const plitem_t *item, void **data,
 	if (*handle) {
 		return 1;
 	}
-	qfvPushDebug (ctx, vac (ctx->va_ctx, "parse_VkShaderModule: %d",
-							PL_Line (item)));
+	qfvPushDebug (ctx, vac (ctx->va_ctx, "parse_VkShaderModule: %d: %s",
+							PL_Line (item), name));
 	*handle = QFV_CreateShaderModule (device, name);
 	qfvPopDebug (ctx);
 	if (!*handle) {
