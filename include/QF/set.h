@@ -66,6 +66,10 @@ typedef uint32_t set_bits_t;
 	(((byte *)(s)->map)[(x) / 8] &= ~(SET_ONE << ((x) % 8)))
 #define SET_LARGE_SET(x) (SET_SIZE (x) > SET_DEFMAP_BITS)
 #define SET_SAFE_SIZE(x) (SET_LARGE_SET (x) ? SET_SIZE (x) : SET_DEFMAP_BITS)
+#define SET_STATIC_DEFAULT(set) (set_t) { \
+	.size = sizeof (set.defmap) * 8, \
+	.map = set.defmap, \
+}
 #define SET_STATIC_INIT(x, alloc) (set_t) { \
 	.size = SET_SAFE_SIZE (x), \
 	.map = alloc (SET_SAFE_SIZE (x) / 8), \
