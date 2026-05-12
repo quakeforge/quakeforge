@@ -3568,18 +3568,23 @@ spirv_types_logically_match (const type_t *dst, const type_t *src)
 static const expr_t *
 spirv_test_expr (const expr_t *expr)
 {
-	// ruamoko and spirv are mostly compatible for bools other than lbool
-	// but that's handled by spirv_mirror_bool, and can't cast to bool
-	auto test = ruamoko_test_expr (expr);
-	if (test->type == ex_alias && is_bool (test->alias.type)) {
-		scoped_src_loc (expr);
-		if (test->alias.offset) {
-			internal_error (test, "unexpected offset alias expression");
-		}
-		expr = test->alias.expr;
-		test = typed_binary_expr (&type_bool, QC_NE, expr,
-								  new_zero_expr (get_type (expr)));
+	scoped_src_loc (expr);
+	auto type = get_type (expr);
+	if (is_ptr (type)) {
+		// pointers need to be cast to an integer type
+		type = &type_uvec2;
+		expr = cast_expr (type, expr);
 	}
+	if (!is_boolean (type)) {
+		// spir-v requires booleans for conditionals
+		auto zero = new_zero_expr (type);
+		auto test = typed_binary_expr (bool_type (type), QC_NE, expr, zero);
+		expr = test;
+	}
+	// ruamoko_test_expr will convert boolean vectors to a scalar boolean and
+	// lbool to bool FIXME should probably just do it since lbool isn't really
+	// a type in spir-v
+	auto test = ruamoko_test_expr (expr);
 	return test;
 }
 
