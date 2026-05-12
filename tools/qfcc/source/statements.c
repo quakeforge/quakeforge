@@ -2797,61 +2797,21 @@ statement_state (sblock_t *sblock, const expr_t *e)
 	return sblock;
 }
 
-static void
-build_bool_block (expr_t *block, const expr_t *e)
-{
-	switch (e->type) {
-		case ex_bool:
-			build_bool_block (block, e->boolean.e);
-			return;
-		case ex_label:
-			append_expr (block, e);
-			return;
-		case ex_assign:
-			append_expr (block, e);
-			return;
-		case ex_branch:
-			append_expr (block, e);
-			return;
-		case ex_expr:
-			if (e->expr.op == QC_OR || e->expr.op == QC_AND) {
-				build_bool_block (block, e->expr.e1);
-				build_bool_block (block, e->expr.e2);
-			} else {
-				append_expr (block, e);
-			}
-			return;
-		case ex_uexpr:
-			break;
-		case ex_block:
-			if (!e->block.result) {
-				for (auto t = e->block.list.head; t; t = t->next) {
-					build_bool_block (block, t->expr);
-				}
-				return;
-			}
-			break;
-		default:
-			;
-	}
-	internal_error (e, "bad boolean");
-}
-
-static int
+bool
 is_goto_expr (const expr_t *e)
 {
 	return e && e->type == ex_branch && e->branch.type == pr_branch_jump
 			&& !e->branch.index;
 }
 
-static int
+bool
 is_if_expr (const expr_t *e)
 {
 	return e && e->type == ex_branch && e->branch.type != pr_branch_jump
 			 && e->branch.type != pr_branch_call;
 }
 
-static int
+bool
 is_label_expr (const expr_t *e)
 {
 	return e && e->type == ex_label;

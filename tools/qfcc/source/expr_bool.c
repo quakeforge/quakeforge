@@ -258,3 +258,43 @@ convert_bool (const expr_t *e, bool block)
 	}
 	return edag_add_expr (e);
 }
+
+void
+build_bool_block (expr_t *block, const expr_t *e)
+{
+	switch (e->type) {
+		case ex_bool:
+			build_bool_block (block, e->boolean.e);
+			return;
+		case ex_label:
+			append_expr (block, e);
+			return;
+		case ex_assign:
+			append_expr (block, e);
+			return;
+		case ex_branch:
+			append_expr (block, e);
+			return;
+		case ex_expr:
+			if (e->expr.op == QC_OR || e->expr.op == QC_AND) {
+				build_bool_block (block, e->expr.e1);
+				build_bool_block (block, e->expr.e2);
+			} else {
+				append_expr (block, e);
+			}
+			return;
+		case ex_uexpr:
+			break;
+		case ex_block:
+			if (!e->block.result) {
+				for (auto t = e->block.list.head; t; t = t->next) {
+					build_bool_block (block, t->expr);
+				}
+				return;
+			}
+			break;
+		default:
+			;
+	}
+	internal_error (e, "bad boolean");
+}

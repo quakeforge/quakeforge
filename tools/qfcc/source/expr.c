@@ -2272,6 +2272,7 @@ branch_expr (int op, const expr_t *test, const expr_t *label)
 	branch->branch.type = branch_type[op - QC_EQ];
 	branch->branch.target = label;
 	branch->branch.test = test;
+	branch->branch.merge = nullptr;
 	return branch;
 }
 

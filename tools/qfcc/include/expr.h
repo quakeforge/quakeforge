@@ -187,6 +187,7 @@ typedef struct {
 typedef struct {
 	ex_boollist_t *true_list;
 	ex_boollist_t *false_list;
+	const expr_t *merge;		// merge label (for spir-v)
 	const expr_t *e;
 } ex_bool_t;
 
@@ -296,8 +297,10 @@ typedef struct {
 typedef struct {
 	pr_branch_e type;			///< type of branch
 	const expr_t *target;		///< destination of branch
+	const expr_t *false_target;	///< for spir-v
 	const expr_t *index;		///< index for indirect branches
 	const expr_t *test;			///< test expression (null for jump/call)
+	const expr_t *merge;		///< merge label (for spir-v)
 	const expr_t *args;			///< only for call
 	const type_t *ret_type;		///< void for non-call
 } ex_branch_t;
@@ -1147,6 +1150,7 @@ const expr_t *convert_bool (const expr_t *e, bool block) __attribute__((warn_unu
 const expr_t *convert_from_bool (const expr_t *e, const type_t *type) __attribute__((warn_unused_result));
 const expr_t *bool_expr (int op, const expr_t *label, const expr_t *e1,
 					     const expr_t *e2);
+void build_bool_block (expr_t *block, const expr_t *e);
 const expr_t *binary_expr (int op, const expr_t *e1, const expr_t *e2);
 const expr_t *field_expr (const expr_t *e1, const expr_t *e2);
 const expr_t *asx_expr (int op, const expr_t *e1, const expr_t *e2);
@@ -1284,6 +1288,10 @@ void struct_process (symtab_t *symtab, const expr_t *declaration_list,
 					 rua_ctx_t *ctx);
 bool can_inline (const expr_t *expr, symbol_t *fsym);
 bool proc_do_list (ex_list_t *out, const ex_list_t *in, rua_ctx_t *ctx);
+
+bool is_goto_expr (const expr_t *e) __attribute__((pure));
+bool is_if_expr (const expr_t *e) __attribute__((pure));
+bool is_label_expr (const expr_t *e) __attribute__((pure));
 
 ///@}
 

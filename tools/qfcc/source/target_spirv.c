@@ -1616,7 +1616,36 @@ spirv_uexpr (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_bool (const expr_t *e, spirvctx_t *ctx)
 {
-	internal_error (e, "oops");
+	scoped_src_loc (e);
+	auto merge = e->boolean.merge;
+	auto block = new_block_expr (nullptr);
+	build_bool_block (block, e);
+
+	int         num_expr = list_count (&block->block.list);
+	expr_t     *exprs[num_expr + 1];
+	list_scatter (&block->block.list, (const expr_t **) exprs);
+	exprs[num_expr] = 0;	// mark end of list
+	expr_t    **d = exprs;
+	expr_t    **s = exprs;
+
+	while (s[0]) {
+		if (is_if_expr (s[0])) {
+			s[0]->branch.merge = merge;
+			merge = nullptr;
+		}
+		if (is_if_expr (s[0]) && is_goto_expr (s[1])) {
+			auto l = s[1]->branch.target;
+			s[0]->branch.false_target = l;
+			*d++ = *s++;	// copy if
+			s++;			// skip over goto
+		} else {
+			*d++ = *s++;
+		}
+	}
+	block->block.list = (ex_list_t) {};
+	list_gather (&block->block.list, (const expr_t **) exprs, d - exprs);
+
+	return spirv_emit_expr (block, ctx);
 }
 
 static unsigned
@@ -2272,14 +2301,51 @@ spirv_jump (const expr_t *e, spirvctx_t *ctx)
 	return 0;
 }
 
+static const expr_t *
+spirv_new_label (const char *name)
+{
+	unsigned id = current_target.label_id++;
+	auto label = new_expr ();
+	label->type = ex_label;
+	label->label.id = id;
+	label->label.name = save_string (va ("$$spv:%s:%d", name, id));
+	return label;
+}
+
 static unsigned
 spirv_branch (const expr_t *e, spirvctx_t *ctx)
 {
-	if (e->branch.type == pr_branch_call) {
-		return spirv_call (e, ctx);
-	}
-	if (e->branch.type == pr_branch_jump) {
-		return spirv_jump (e, ctx);
+	switch (e->branch.type) {
+		case pr_branch_call:
+			return spirv_call (e, ctx);
+		case pr_branch_jump:
+			return spirv_jump (e, ctx);
+		case pr_branch_ne:
+		case pr_branch_eq:
+			bool not = e->branch.type == pr_branch_eq;
+			auto tl = e->branch.target;
+			auto fl = e->branch.false_target;
+			if (!fl) {
+				fl = spirv_new_label ("else");
+			}
+			unsigned merge = 0;
+			if (e->branch.merge) {
+				merge = spirv_label_id (&e->branch.merge->label, ctx);
+			}
+
+			unsigned tid = spirv_label_id (&tl->label, ctx);
+			unsigned fid = spirv_label_id (&fl->label, ctx);
+			unsigned test = spirv_emit_expr (e->branch.test, ctx);
+			if (merge) {
+				spirv_SelectionMerge (merge, ctx);
+			}
+			spirv_BranchConditional (not, test, tid, fid, ctx);
+			return 0;
+		case pr_branch_lt:
+		case pr_branch_gt:
+		case pr_branch_le:
+		case pr_branch_ge:
+			break;
 	}
 	internal_error (e, "unexpected branch");
 }
@@ -2479,17 +2545,35 @@ spirv_field_array (const expr_t *e, spirvctx_t *ctx)
 	return id;
 }
 
+static const expr_t *
+spirv_backpatch (bool not, const expr_t *test, const expr_t *merge,
+				 const expr_t *true_label, const expr_t *false_label)
+{
+	test = convert_bool (test, true);
+	((expr_t *) test)->boolean.merge = merge;
+	if (not) {
+		backpatch (test->boolean.true_list, false_label);
+		backpatch (test->boolean.false_list, true_label);
+	} else {
+		backpatch (test->boolean.true_list, true_label);
+		backpatch (test->boolean.false_list, false_label);
+	}
+	return test;
+}
+
 static unsigned
 spirv_loop (const expr_t *e, spirvctx_t *ctx)
 {
-	auto break_label = &e->loop.break_label->label;
-	auto continue_label = &e->loop.continue_label->label;
-	unsigned merge = spirv_label_id (break_label, ctx);
-	unsigned cont = spirv_label_id (continue_label, ctx);
+	scoped_src_loc (e);
+	auto break_label = e->loop.break_label;
+	auto continue_label = e->loop.continue_label;
+	unsigned merge = spirv_label_id (&break_label->label, ctx);
+	unsigned cont = spirv_label_id (&continue_label->label, ctx);
 	if (e->loop.do_while) {
 		unsigned loop = spirv_SplitBlock (ctx);
 		spirv_LoopMerge (merge, cont, ctx);
 		spirv_SplitBlock (ctx);
+
 		spirv_emit_expr (e->loop.body, ctx);
 		spirv_SplitBlockId (cont, ctx);
 		if (e->loop.continue_body) {
@@ -2502,9 +2586,12 @@ spirv_loop (const expr_t *e, spirvctx_t *ctx)
 		unsigned loop = spirv_SplitBlock (ctx);
 		spirv_LoopMerge (merge, cont, ctx);
 		spirv_SplitBlock (ctx);
-		unsigned body = spirv_id (ctx);
-		unsigned test = spirv_emit_expr (e->loop.test, ctx);
-		spirv_BranchConditional (e->loop.not, test, body, merge, ctx);
+
+		auto body_label = spirv_new_label ("body");
+		unsigned body = spirv_label_id (&body_label->label, ctx);
+		auto test = spirv_backpatch (e->loop.not, e->loop.test, nullptr,
+									 body_label, break_label);
+		spirv_emit_expr (test, ctx);
 		spirv_LabelId (body, ctx);
 		spirv_emit_expr (e->loop.body, ctx);
 		spirv_SplitBlockId (cont, ctx);
@@ -2520,16 +2607,21 @@ spirv_loop (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_select (const expr_t *e, spirvctx_t *ctx)
 {
-	unsigned merge = spirv_id (ctx);
-	unsigned true_label = spirv_id (ctx);
-	unsigned false_label = merge;
+	scoped_src_loc (e);
+	auto merge_label = spirv_new_label ("merge");
+	auto true_label = spirv_new_label ("true");
+	auto false_label = merge_label;
+	unsigned merge = spirv_label_id (&merge_label->label, ctx);
+	unsigned true_id = spirv_label_id (&true_label->label, ctx);
+	unsigned false_id = merge;
 	if (e->select.false_body) {
-		false_label = spirv_id (ctx);
+		false_label = spirv_new_label ("false");
+		false_id = spirv_label_id (&false_label->label, ctx);
 	}
-	unsigned test = spirv_emit_expr (e->select.test, ctx);
-	spirv_SelectionMerge (merge, ctx);
-	spirv_BranchConditional (e->select.not, test, true_label, false_label, ctx);
-	spirv_LabelId (true_label, ctx);
+	auto test = spirv_backpatch (e->select.not, e->select.test, merge_label,
+								 true_label, false_label);
+	spirv_emit_expr (test, ctx);
+	spirv_LabelId (true_id, ctx);
 	if (e->select.true_body) {
 		spirv_emit_expr (e->select.true_body, ctx);
 	}
@@ -2537,7 +2629,7 @@ spirv_select (const expr_t *e, spirvctx_t *ctx)
 		spirv_Branch (merge, ctx);
 	}
 	if (e->select.false_body) {
-		spirv_LabelId (false_label, ctx);
+		spirv_LabelId (false_id, ctx);
 		spirv_emit_expr (e->select.false_body, ctx);
 		if (!is_block_terminated (ctx->code_space)) {
 			spirv_Branch (merge, ctx);
@@ -3769,7 +3861,7 @@ target_t spirv_target = {
 	.setup_intrinsic_symtab = spirv_setup_intrinsic_symtab,
 	.function_attr = spirv_function_attr,
 
-	.short_circuit = false,
+	.short_circuit = true,
 	.pointer_type = spirv_pointer_type,
 	.pointer_scale = 4,
 	.pointer_size = 2,	// internal sizes are in ints rather than bytes
