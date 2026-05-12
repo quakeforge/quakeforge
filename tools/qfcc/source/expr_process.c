@@ -285,6 +285,14 @@ proc_array (const expr_t *expr, rua_ctx_t *ctx)
 	if (!is_integral (index_type)) {
 		return error (index, "invalid array index type");
 	}
+	if (is_array (array_type) && array_type->array.count
+		&& is_integral_val (index)) {
+		pr_long_t ind = expr_integral (index);
+		if (ind < array_type->array.base
+			|| ind >= array_type->array.base + array_type->array.count) {
+			return error (index, "index out of range");
+		}
+	}
 	scoped_src_loc (expr);
 	auto e = new_array_expr (array, index);
 	const type_t *type;
