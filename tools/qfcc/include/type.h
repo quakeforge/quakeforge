@@ -294,7 +294,7 @@ extern defset_t type_encodings; ///< qfo encodoing
 extern typeset_t type_registry;
 
 extern const type_t *ev_types[];
-int type_cast_map (const type_t *type);
+int type_cast_map (const type_t *type) __attribute__((pure));
 #define TYPE_CAST_CODE(from, to, width) (((width) << 6) | ((from) << 3) | (to))
 
 #endif//__type_h
