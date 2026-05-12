@@ -580,6 +580,9 @@ camera_window (void)
 			UI_Horizontal {
 				UI_Checkbox (&r_lock_viewleaf, "Lock VIS##camera");
 				UI_FlexibleSpace ();
+				if (UI_Button ("Screenshot")) {
+					Cbuf_AddText (con_data.cbuf, "screenshot\n");
+				}
 			}
 		}
 		if (r_override_camera) {
