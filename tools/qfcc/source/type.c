@@ -220,11 +220,13 @@ type_t      type_zero = {
 type_t      type_type_encodings = {
 	.type = ev_invalid,
 	.name = "@type_encodings",
+	.alignment = 1,
 	.meta = ty_struct,
 };
 type_t      type_xdef = {
 	.type = ev_invalid,
 	.name = "@xdef",
+	.alignment = 1,
 	.meta = ty_struct,
 };
 type_t      type_xdef_pointer = {
@@ -238,6 +240,7 @@ type_t      type_xdef_pointer = {
 type_t      type_xdefs = {
 	.type = ev_invalid,
 	.name = "@xdefs",
+	.alignment = 1,
 	.meta = ty_struct,
 };
 
