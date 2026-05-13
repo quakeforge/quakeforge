@@ -3754,7 +3754,7 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func, rua_ctx_t *ctx)
 					error (params[1], "shader key=value requires a symbol");
 				}
 			}
-			spirv_create_entry_point (func->name, model_name, mode);
+			spirv_create_entry_point (func->ns_name, model_name, mode);
 			if (in_length) {
 				if (strcmp (model_name, "Geometry") == 0) {
 					auto entrypoint = pr.module->entry_points;

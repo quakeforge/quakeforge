@@ -86,17 +86,17 @@ gen_func_get_key (const void *_f, void *unused)
 }
 
 static const char *
-metafunc_get_full_name (const void *_f, void *unused)
+metafunc_get_uniq_name (const void *_f, void *unused)
 {
 	metafunc_t *f = (metafunc_t *) _f;
-	return f->full_name;
+	return f->uniq_name;
 }
 
 static const char *
-metafunc_get_name (const void *_f, void *unused)
+metafunc_get_ns_name (const void *_f, void *unused)
 {
 	metafunc_t *f = (metafunc_t *) _f;
-	return f->name;
+	return f->ns_name;
 }
 
 static void
@@ -903,7 +903,8 @@ create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype,
 }
 
 static metafunc_t *
-get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
+get_function (const char *name, const char *ns_name, specifier_t spec,
+			  rua_ctx_t *ctx)
 {
 	spec = spec_process (spec, ctx);
 	spec.sym->type = spec.type;
@@ -960,13 +961,14 @@ get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 		}
 	}
 
-	const char *full_name;
-	full_name = save_string (va ("%s|%s", name, encode_params (type)));
+	const char *enc_name;
+	enc_name = save_string (va ("%s|%s", name, encode_params (type)));
+	const char *uniq_name = symtab_full_name (current_symtab, enc_name);
 
 	if (!func || func->meta_type != mf_generic) {
 		// check if the exact function signature already exists, in which case
 		// simply return it.
-		func = Hash_Find (metafuncs, full_name);
+		func = Hash_Find (metafuncs, uniq_name);
 		if (func) {
 			if (func->type != type) {
 				error (0, "can't overload on return types");
@@ -979,9 +981,9 @@ get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 		if (func) {
 			if (!overload && func->meta_type != mf_overload) {
 				warning (0, "creating overloaded function %s without @overload",
-						 full_name);
+						 uniq_name);
 				warning (&(expr_t) { .loc = func->loc },
-						 "(previous function is %s)", func->full_name);
+						 "(previous function is %s)", func->uniq_name);
 			}
 			overload = true;
 		}
@@ -989,8 +991,9 @@ get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 		func = new_metafunc ();
 	}
 	*func = (metafunc_t) {
-		.name = save_string (name),
-		.full_name = full_name,
+		.ns_name = ns_name,
+		.enc_name = enc_name,
+		.uniq_name = uniq_name,
 		.type = type,
 		.loc = pr.loc,
 		.meta_type = overload ? mf_overload : mf_simple,
@@ -1036,8 +1039,8 @@ function_symbol (specifier_t spec, rua_ctx_t *ctx)
 
 		func = new_metafunc ();
 		*func = (metafunc_t) {
-			.name = save_string (name),
-			.full_name = ns_name,
+			.ns_name = save_string (name),
+			.uniq_name = ns_name,
 			.loc = pr.loc,
 			.meta_type = mf_generic,
 			.genfunc = genfunc,
@@ -1045,11 +1048,11 @@ function_symbol (specifier_t spec, rua_ctx_t *ctx)
 		Hash_Add (metafuncs, func);
 		Hash_Add (function_map, func);
 	} else {
-		func = get_function (ns_name, spec, ctx);
+		func = get_function (name, ns_name, spec, ctx);
 	}
 
 	if (func && func->meta_type == mf_overload)
-		name = func->full_name;
+		name = func->enc_name;
 	symbol_t   *s = symtab_lookup (current_symtab, name);
 	if (!s || s->table != current_symtab) {
 		s = new_symbol (name);
@@ -1063,7 +1066,7 @@ function_symbol (specifier_t spec, rua_ctx_t *ctx)
 		sym->sy_type = sy_func;
 		sym->metafunc = new_metafunc ();
 		*sym->metafunc = (metafunc_t) {
-			.name = save_string (name),
+			.ns_name = ns_name,
 			.meta_type = mf_overload,
 		};
 		symtab_addsymbol (current_symtab, sym);
@@ -1082,10 +1085,10 @@ set_func_symbol (const expr_t *fexpr, metafunc_t *f)
 	}
 	auto sym = fexpr->symbol;
 	if (f->meta_type == mf_overload) {
-		sym = symtab_lookup (current_symtab, f->full_name);
+		sym = symtab_lookup (current_symtab, f->enc_name);
 		if (!sym) {
 			internal_error (fexpr, "overloaded function %s not found",
-							f->full_name);
+							f->enc_name);
 		}
 	}
 	auto nf = new_expr_copy (fexpr);
@@ -1155,7 +1158,7 @@ setup_func_expr (const expr_t *fexpr, metafunc_t *func)
 		// the call will be inlined, so a new scope is needed every
 		// time
 		auto sym = fexpr->symbol;
-		func->func = new_function (func->full_name, func->name);
+		func->func = new_function (func->uniq_name, func->ns_name);
 		func->func->type = sym->type;
 		func->func->sym = sym;
 		build_core_scope (sym, current_symtab, false);
@@ -1166,7 +1169,7 @@ setup_func_expr (const expr_t *fexpr, metafunc_t *func)
 const expr_t *
 find_function (const expr_t *fexpr, const expr_t *params, rua_ctx_t *ctx)
 {
-	if (fexpr->type != ex_symbol) {
+	if (fexpr->type != ex_symbol || fexpr->symbol->sy_type != sy_func) {
 		return fexpr;
 	}
 
@@ -1193,7 +1196,7 @@ find_function (const expr_t *fexpr, const expr_t *params, rua_ctx_t *ctx)
 	};
 
 	auto fsym = fexpr->symbol;
-	const char *fname = fsym->name;
+	const char *fname = fsym->metafunc->ns_name;
 	auto genfuncs = (genfunc_t **) Hash_FindList (generic_functions, fname);
 	if (genfuncs) {
 		auto gen = find_generic_function (genfuncs, fexpr, &calltype, true,
@@ -1583,8 +1586,8 @@ clear_functions (void)
 	} else {
 		setup_type_progs ();
 		generic_functions = Hash_NewTable (1021, gen_func_get_key, 0, 0, 0);
-		metafuncs = Hash_NewTable (1021, metafunc_get_full_name, 0, 0, 0);
-		function_map = Hash_NewTable (1021, metafunc_get_name, 0, 0, 0);
+		metafuncs = Hash_NewTable (1021, metafunc_get_uniq_name, 0, 0, 0);
+		function_map = Hash_NewTable (1021, metafunc_get_ns_name, 0, 0, 0);
 	}
 }
 

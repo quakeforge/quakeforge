@@ -173,9 +173,9 @@ typedef struct function_s {
 */
 typedef struct metafunc_s {
 	struct metafunc_s *next;
-	const char *name;				///< source level name of function
-	const char *full_name;			///< progs name of function, with type
-									///< encoding
+	const char *ns_name;
+	const char *enc_name;
+	const char *uniq_name;
 	const type_t *type;				///< type of this function
 	rua_loc_t   loc;				///< source location of the function
 	mf_type_e   meta_type;			///< is this function overloaded
