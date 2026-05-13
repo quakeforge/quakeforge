@@ -2286,6 +2286,10 @@ expr_negate (sblock_t *sblock, const expr_t *e, operand_t **op)
 static sblock_t *
 expr_uexpr_core (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
+	if (e->expr.op == '=') {
+		warning (e, "unary = has no meaning in this context");
+		return statement_subexpr (sblock, e->expr.e1, op);
+	}
 	auto opcode = convert_op (e->expr.op);
 	if (!opcode) {
 		internal_error (e, "ice ice baby");
