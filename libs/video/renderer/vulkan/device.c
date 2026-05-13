@@ -117,14 +117,12 @@ qfv_device_t *
 QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 {
 	qfZoneScoped (true);
-	uint32_t nlay = 1;	// ensure alloca doesn't see 0 and terminated
-	uint32_t next = count_strings (extensions) + 1; // ensure terminated
-	const char **lay = alloca (nlay * sizeof (const char *));
+	// ensure alloca doesn't see 0 and terminated
+	uint32_t next = count_strings (extensions) + 1;
 	const char **ext = alloca (next * sizeof (const char *));
 	// ensure there are null pointers so merge_strings can act as append
 	// since it does not add a null, but also make sure the counts reflect
 	// actual numbers
-	memset (lay, 0, nlay-- * sizeof (const char *));
 	memset (ext, 0, next-- * sizeof (const char *));
 	merge_strings (ext, extensions, 0);
 
@@ -205,11 +203,12 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 			},
 		};
 		VkDeviceCreateInfo dCreateInfo = {
-			VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, &features, 0,
-			1, &qCreateInfo,
-			nlay, lay,
-			next, ext,
-			0
+			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+			.pNext = &features,
+			.queueCreateInfoCount = 1,
+			.pQueueCreateInfos = &qCreateInfo,
+			.enabledExtensionCount = next,
+			.ppEnabledExtensionNames = ext,
 		};
 		qfv_device_t *device = calloc (1, sizeof (qfv_device_t)
 										  + sizeof (qfv_devfuncs_t));
