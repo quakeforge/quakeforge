@@ -177,7 +177,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		storage_class save_storage
 %type	<spec>		typespec typespec_reserved typespec_nonreserved
 %type	<spec>		enum enum_tag enum_type handle
-%type	<mut_expr>	attr_list attr enum_attr
+%type	<mut_expr>	attr_list attr enum_attr id_chain
 %type	<expr>		binding opt_binding
 %type	<spec>		fnbinding
 %type	<spec>		attr_declspecs_ts attr_declspecs_nots attr_declspecs
@@ -809,6 +809,28 @@ number_as_symbol (const rua_tok_t *tok, rua_ctx_t *ctx)
 	return new_name_expr (tok->text);
 }
 
+static void
+create_namespace_chain (const expr_t *id_chain)
+{
+	int count = list_count (&id_chain->list);
+	const expr_t *ids[count];
+	list_scatter (&id_chain->list, ids);
+
+	for (int i = 0; i < count; i++) {
+		auto ns_sym = ids[i]->symbol;
+		auto sym = symtab_lookup (current_symtab, ns_sym->name);
+		if (sym && sym->table == current_symtab) {
+			// switch to existing namespace
+			current_symtab = sym->namespace;;
+		} else {
+			auto ns_tab = new_symtab (current_symtab, stab_namespace);
+			ns_tab->space = current_symtab->space;
+			create_namespace (ns_sym->name, ns_tab, current_symtab);
+			current_symtab = ns_tab;
+		}
+	}
+}
+
 %}
 
 %expect 0
@@ -844,23 +866,16 @@ external_def_list
 external_def
 	: fndef
 	| datadef
-	| NAMESPACE identifier '{'
+	| NAMESPACE id_chain '{'
 		{
-			auto ns_sym = $identifier;
-			auto sym = symtab_lookup (current_symtab, ns_sym->name);
-			if (sym && sym->table == current_symtab) {
-				// switch to existing namespace
-				current_symtab = sym->namespace;;
-			} else {
-				auto ns_tab = new_symtab (current_symtab, stab_namespace);
-				ns_tab->space = current_symtab->space;
-				create_namespace (ns_sym->name, ns_tab, current_symtab);
-				current_symtab = ns_tab;
-			}
-		}
+			auto root = current_symtab;
+			create_namespace_chain ($id_chain);
+			$<symtab>$ = root;
+		}[root]
 	  external_def_list '}'
 		{
-			current_symtab = pop_scope (current_symtab);
+			auto root = $<symtab>root;
+			current_symtab = root;
 		}
 	| storage_class '{' save_storage
 		{
@@ -870,6 +885,21 @@ external_def
 	  external_def_list '}' ';'
 		{
 			restore_storage ($3);
+		}
+	;
+
+id_chain
+	: identifier
+		{
+			auto sym_expr = new_symbol_expr ($identifier);
+			auto list = new_list_expr (sym_expr);
+			$$ = list;
+		}
+	| id_chain[list] '.' identifier
+		{
+			auto sym_expr = new_symbol_expr ($identifier);
+			auto list = $list;
+			$$ = expr_append_expr (list, sym_expr);
 		}
 	;
 
