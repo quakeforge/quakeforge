@@ -755,15 +755,17 @@ clear_proxies (symtab_t *symtab)
 			count++;
 		}
 	}
-	symbol_t *proxies[count];
-	count = 0;
-	for (auto s = symtab->symbols; s; s = s->next) {
-		if (s->is_proxy) {
-			proxies[count++] = s;
+	if (count) {
+		symbol_t *proxies[count];
+		count = 0;
+		for (auto s = symtab->symbols; s; s = s->next) {
+			if (s->is_proxy) {
+				proxies[count++] = s;
+			}
 		}
-	}
-	for (int i = 0; i < count; i++) {
-		symtab_removesymbol (symtab, proxies[i]);
+		for (int i = 0; i < count; i++) {
+			symtab_removesymbol (symtab, proxies[i]);
+		}
 	}
 }
 
