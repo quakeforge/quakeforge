@@ -269,6 +269,9 @@ typedef struct ex_value_s {
 		uint16_t    ushort_val;			///< unsigned short constant
 #define VEC_TYPE(type_name, base_type) pr_##type_name##_t type_name##_val;
 #include "tools/qfcc/include/vec_types.h"
+#define MAT_TYPE(type_name, base_type, cols, alignas) \
+		pr_##alignas##_t type_name##_val[cols];
+#include "tools/qfcc/include/mat_types.h"
 	};
 } ex_value_t;
 #define value_size (sizeof(ex_value_t) - offsetof(ex_value_t, raw_value))

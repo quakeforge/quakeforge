@@ -69,6 +69,9 @@ typedef struct {
 #include "QF/progs/pr_type_names.h"
 #define VEC_TYPE(type_name, base_type) pr_##type_name##_t type_name##_val;
 #include "tools/qfcc/include/vec_types.h"
+#define MAT_TYPE(type_name, base_type, cols, alignas) \
+		pr_##alignas##_t type_name##_val[cols];
+#include "tools/qfcc/include/mat_types.h"
 		ex_pointer_t pointer;
 	};
 } immediate_t;
