@@ -45,11 +45,13 @@ typedef struct neighbors_s {
 	uint        twin;
 } neighbors_t;
 
-#define D 7
+#define D 8
 #define max_bisector_count (1 << D)
-#define WORKGROUP_SIZE 64
+//#define WORKGROUP_SIZE 64
+#define WORKGROUP_SIZE 1
 
 @namespace draw {
+DispatchIndirect dispatch[3];
 DrawIndirect indirect[2];
 uint bisector_indices[max_bisector_count];
 uint visible_indices[max_bisector_count];
@@ -66,27 +68,44 @@ vec4 frustum_planes[4];
 
 float triangle_size;
 
-DispatchIndirect dispatch[3];
 MemoryBuffer memory;
 @namespace split {
-queue_t queue;
+uint entries[max_bisector_count];
+queue_t queue = {.entries = entries};
 }
 @namespace simplify {
-queue_t queue;
+uint entries[max_bisector_count];
+queue_t queue = {.entries = entries};
 }
 @namespace allocate {
-queue_t queue;
+uint entries[max_bisector_count];
+queue_t queue = {.entries = entries};
 }
 @namespace propagate {
-queue_t queue[2];
+uint entries0[max_bisector_count];
+uint entries1[max_bisector_count];
+queue_t queue[2] = {{.entries = entries0},{.entries = entries1}};
 }
 @namespace simplification {
-queue_t queue;
+uint entries[max_bisector_count];
+queue_t queue = {.entries = entries};
 }
 
 //[in("GlobalInvocationId")]
 uvec3 GlobalInvocationId;
 #define threadID GlobalInvocationId.x
+
+@namespace dispatch {
+DispatchIndirect indirect[3];
+queue_t **queues;
+
+//[shader(GLCompute, LocalSize=[1,1,1])]
+void
+prepare ()
+{
+	indirect[threadID].x = queues[threadID].count;
+}
+}
 
 uint base_depth;
 uint max_depth;
@@ -118,7 +137,10 @@ vec3 vertices[] = {
 
 uint bisector_map[max_bisector_count];
 bisector_t bisector_data[max_bisector_count];
-neighbors_t bisector_neighbors[max_bisector_count];
+neighbors_t *bisector_neighbors;
+neighbors_t *bisector_output_neighbors;
+neighbors_t db_bisector_neighbors[2][max_bisector_count];
+uint neighbors_index = 0;
 ulong bisector_ids[max_bisector_count];
 
 uint atomicOr(@reference(uint) mem, const uint data)
@@ -447,16 +469,12 @@ main ()
 	if (threadID >= indirect[0].vertexCount / 3) {
 		return;
 	}
-	//traceon ();
 	uint selfID = cbt.decode_bit (threadID);
 	ulong heapID = bisector_ids[selfID];
-	printf ("%d %d %ld %d\n", threadID, selfID, heapID,
-			indirect[0].vertexCount);
 	auto v = BisectorVertices (heapID);
 	vertex_buffer[3 * selfID + 0] = v[0];
 	vertex_buffer[3 * selfID + 1] = v[1];
 	vertex_buffer[3 * selfID + 2] = v[2];
-	//traceoff ();
 }
 }
 
@@ -514,7 +532,7 @@ classify_element (uint selfID, uint depth)
 	vec3 n = normalize((points[1] - points[0]) × (points[2] - points[0]));
 	vec3 c = (points[0] + points[1] + points[2]) / 3;
 	vec3 vd = normalize (draw.camera_pos - c);
-	float fv = vd • draw.camera_fwd;
+	float fv = -vd • draw.camera_fwd;
 	float vn = vd • n;
 
 	if (fv < 0 || vn < -1e-3) {
@@ -535,7 +553,7 @@ classify_element (uint selfID, uint depth)
 	p2 /= p2.w;
 	vec2 pa = p1.xy - p0.xy;
 	vec2 pb = p2.xy - p0.xy;
-	float area = (pa.x * pb.y - pa.y * pb.x) * 0.5;
+	float area = (pa.x * pb.y - pa.y * pb.x) * -0.5;
 
 	if (area > triangle_size && depth < max_depth) {
 		return bisect_element;
@@ -544,7 +562,7 @@ classify_element (uint selfID, uint depth)
 		vec4 p3 = draw.ProjView * [points[3], 1];
 		p3 /= p3.w;
 		vec2 pc = p3.xy - p0.xy;
-		float parent_area = (pa.x * pc.y - pa.y * pc.x) * 0.5;
+		float parent_area = (pa.x * pc.y - pa.y * pc.x) * -0.5;
 		if (area < triangle_size || depth > max_depth) {
 			return too_small;
 		}
@@ -563,6 +581,7 @@ main ()
 	uint depth = heap_depth (bisector_ids[selfID]);
 	int valid = classify_element (selfID, depth);
 	auto self = bisector_data[selfID];
+	self.subdiv = 0;
 	self.modified = 0;
 	self.visible = 0;
 	if (valid > unchanged_element) {
@@ -581,14 +600,6 @@ main ()
 		}
 	}
 	bisector_data[selfID] = self;
-}
-
-//[shader(GLCompute, LocalSize=[1,1,1])]
-void
-prepare ()
-{
-	dispatch[0].x = split.queue.count;
-	dispatch[1].x = simplify.queue.count;
 }
 }
 
@@ -670,13 +681,6 @@ main ()
 		}
 	}
 	reserve_memory (used_memory - max_memory);
-}
-
-//[shader(GLCompute, LocalSize=[1,1,1])]
-void
-prepare ()
-{
-	dispatch[0].x = allocate.queue.count;
 }
 }
 
@@ -765,8 +769,8 @@ main ()
 
 		bisector_ids[selfID] = 2 * heapID;
 		bisector_ids[sib0ID] = 2 * heapID + 1;
-		bisector_neighbors[selfID] = {sib0ID, resX, n.prev};
-		bisector_neighbors[sib0ID] = {resY, selfID, n.next};
+		bisector_output_neighbors[selfID] = {sib0ID, resX, n.prev};
+		bisector_output_neighbors[sib0ID] = {resY, selfID, n.next};
 
 		auto b = bisector;
 		b.propagationID = selfID;
@@ -790,9 +794,9 @@ main ()
 		bisector_ids[selfID] = 4 * heapID;
 		bisector_ids[sib0ID] = 2 * heapID + 1;
 		bisector_ids[sib1ID] = 4 * heapID + 1;
-		bisector_neighbors[selfID] = {sib1ID, res0X, sib0ID};
-		bisector_neighbors[sib0ID] = {res1Y, selfID, n.next};
-		bisector_neighbors[sib1ID] = {res0Y, selfID, res1X};
+		bisector_output_neighbors[selfID] = {sib1ID, res0X, sib0ID};
+		bisector_output_neighbors[sib0ID] = {res1Y, selfID, n.next};
+		bisector_output_neighbors[sib1ID] = {res0Y, selfID, res1X};
 
 		auto b = bisector;
 		b.propagationID = selfID;
@@ -819,9 +823,9 @@ main ()
 		bisector_ids[selfID] = 2 * heapID;
 		bisector_ids[sib0ID] = 4 * heapID + 2;
 		bisector_ids[sib1ID] = 4 * heapID + 3;
-		bisector_neighbors[selfID] = {sib1ID, res1X, n.prev};
-		bisector_neighbors[sib0ID] = {sib1ID, res0X, res1Y};
-		bisector_neighbors[sib1ID] = {res0Y, sib0ID, selfID};
+		bisector_output_neighbors[selfID] = {sib1ID, res1X, n.prev};
+		bisector_output_neighbors[sib0ID] = {sib1ID, res0X, res1Y};
+		bisector_output_neighbors[sib1ID] = {res0Y, sib0ID, selfID};
 
 		auto b = bisector;
 		b.propagationID = selfID;
@@ -845,10 +849,10 @@ main ()
 		bisector_ids[sib0ID] = 4 * heapID + 2;
 		bisector_ids[sib1ID] = 4 * heapID + 1;
 		bisector_ids[sib2ID] = 4 * heapID + 3;
-		bisector_neighbors[selfID] = {sib1ID, res0X, sib2ID};
-		bisector_neighbors[sib0ID] = {sib2ID, res1X, res2Y};
-		bisector_neighbors[sib1ID] = {res0Y, selfID, res2X};
-		bisector_neighbors[sib2ID] = {res1Y, sib0ID, selfID};
+		bisector_output_neighbors[selfID] = {sib1ID, res0X, sib2ID};
+		bisector_output_neighbors[sib0ID] = {sib2ID, res1X, res2Y};
+		bisector_output_neighbors[sib1ID] = {res0Y, selfID, res2X};
+		bisector_output_neighbors[sib2ID] = {res1Y, sib0ID, selfID};
 
 		auto b = bisector;
 		b.propagationID = selfID;
@@ -992,13 +996,13 @@ main ()
 		auto twin_hi = bisector_data[twin_hiID];
 		auto hn = bisector_neighbors[twin_hiID];
 
-		bisector_neighbors[selfID] = { ln.twin, hn.twin, selfID };
+		bisector_neighbors[twin_loID] = { ln.twin, hn.twin, selfID };
 
 		twin_lo.propagationID = twin_hiID;
 		twin_lo.problem_neighbor = hn.twin;
 		twin_lo.state = merged_element;
 		twin_lo.modified = true;
-		bisector_data[selfID] = twin_lo;
+		bisector_data[twin_loID] = twin_lo;
 
 		if (twin_lo.problem_neighbor != ~0u) {
 			queue_id (propagate.queue[1], twin_loID);
@@ -1056,10 +1060,11 @@ main ()
 void
 main ()
 {
-	uint selfID = threadID;
-	if (!bisector_ids[selfID]) {
+	uint selfID = cbt.decode_bit (threadID);
+	if (selfID == ~0u) {
 		return;
 	}
+	bisector_map[threadID] = selfID;
 
 	uint slot;
 	slot = atomicAdd (draw.indirect[0].vertexCount, 3);
@@ -1088,9 +1093,9 @@ void
 prepare ()
 {
 	uint vertexCount = draw.indirect[0].vertexCount;
-	dispatch[0] = {RUP (vertexCount / 3, WORKGROUP_SIZE), 1, 1};
-	dispatch[1] = {RUP (vertexCount * 4 / 3, WORKGROUP_SIZE), 1, 1};
-	dispatch[2] = {RUP (draw.modified_bisector_count, WORKGROUP_SIZE), 1, 1};
+	draw.dispatch[0] = {RUP (vertexCount / 3, WORKGROUP_SIZE), 1, 1};
+	draw.dispatch[1] = {RUP (vertexCount * 4 / 3, WORKGROUP_SIZE), 1, 1};
+	draw.dispatch[2] = {RUP (draw.modified_bisector_count, WORKGROUP_SIZE), 1, 1};
 	draw.bisector_count = vertexCount / 3;
 }
 }
@@ -1099,14 +1104,15 @@ prepare ()
 @overload void
 dispatch (void (*shader)(), uvec3 counts)
 {
-	for (uint z = 0; z < counts.z; z++) {
-		for (uint y = 0; y < counts.y; y++) {
+	//for (uint z = 0; z < counts.z; z++) {
+	//	for (uint y = 0; y < counts.y; y++) {
 			for (uint x = 0; x < counts.x; x++) {
-				GlobalInvocationId = {x, y, z};
+				//GlobalInvocationId = {x, y, z};
+				GlobalInvocationId = {x, 0, 0};
 				shader ();
 			}
-		}
-	}
+	//	}
+	//}
 }
 
 @overload void
@@ -1147,13 +1153,16 @@ void
 dump ()
 {
 	uint count = cbt.count ();
-	printf ("%d\n", count);
+	auto neighbors = &db_bisector_neighbors[neighbors_index][0];//FIXME
 	for (uint i = 0; i < count; i++) {
 		uint selfID = cbt.decode_bit (i);
 		ulong heapID = bisector_ids[selfID];
-		auto n = bisector_neighbors[selfID];
-		printf ("i:%-3d s:%-3d h:%-4ld p:%-3d n:%-3d t:%-3d %v %v %v\n",
-				i, selfID, heapID, n.prev, n.next, n.twin,
+		auto n = neighbors[selfID];
+		uint depth = heap_depth(heapID) - base_depth;
+		uint vis = bisector_data[selfID].visible;
+		heapID -= 1 << (depth + base_depth);
+		printf ("i:%d:%-3d s:%-3d h:%d,%-4ld p:%-3d n:%-3d t:%-3d %v %v %v\n",
+				vis, i, selfID, depth, heapID, n.prev, n.next, n.twin,
 				draw.vertex_buffer[3 * selfID + 0],
 				draw.vertex_buffer[3 * selfID + 1],
 				draw.vertex_buffer[3 * selfID + 2]);
@@ -1162,12 +1171,274 @@ dump ()
 
 }
 
+void
+update ()
+{
+	uint next = (neighbors_index + 1) & 1;
+	auto curr_neighbors = &db_bisector_neighbors[neighbors_index][0];//FIXME
+	auto next_neighbors = &db_bisector_neighbors[next][0];//FIXME
+	// RESET
+	// bind mesh cbt            CBT_BUFFER0_BINDING_SLOT + x
+	// bind memory              MEMORY_BUFFER_BINDING_SLOT
+	// bind mesh classify       CLASSIFICATION_BUFFER_BINDING_SLOT
+	// bind mesh allocate       ALLOCATE_BUFFER_BINDING_SLOT
+	// bind mesh indirect draw  INDIRECT_DRAW_BUFFER_BINDING_SLOT
+	// bind mesh simplification SIMPLIFICATION_BUFFER_BINDING_SLOT
+	// bind mesh propagate      PROPAGATE_BUFFER_BINDING_SLOT
+	test.dispatch (reset.main, uvec3(1,1,1));
+	// barrier memory
+
+	// CLASSIFY
+	// bind global constants      GLOBAL_CB_BINDING_SLOT
+	// bind geometry constants    GEOMETRY_CB_BINDING_SLOT
+	// bind update constants      UPDATE_CB_BINDING_SLOT
+	// ====
+	// bind mesh vertices         CURRENT_VERTEX_BUFFER_SLOT
+	// bind mesh indexed bisector INDEXED_BISECTOR_BUFFER_BINDING_SLOT
+	// ====
+	// bind mesh indirect draw    INDIRECT_DRAW_BUFFER_BINDING_SLOT
+	// bind mesh head id          HEAP_ID_BUFFER_BINDING_SLOT
+	// bind mesh update           BISECTOR_DATA_BUFFER_BINDING_SLOT
+	// bind mesh classification   CLASSIFICATION_BUFFER_BINDING_SLOT
+	test.dispatch (classify.main, &draw.dispatch[0]);
+	// barrier mesh update
+
+	// PREPARE INDIRECT SPLIT
+	// bind mesh classification   ALLOCATE_BUFFER_BINDING_SLOT
+	// bind indirect              INDIRECT_DISPATCH_BUFFER_BINDING_SLOT
+	queue_t *classify_queues[] = {&split.queue, &simplify.queue};
+	dispatch.queues = classify_queues;
+	test.dispatch (dispatch.prepare, uvec3(2, 1, 1));
+	// barrier indirect
+
+	// SPLIT
+	// bind global constants      GLOBAL_CB_BINDING_SLOT
+	// bind geometry constants    GEOMETRY_CB_BINDING_SLOT
+	// bind update constants      UPDATE_CB_BINDING_SLOT
+	// ====
+	// bind mesh classification   CLASSIFICATION_BUFFER_BINDING_SLOT
+	// bind mesh heap id          HEAP_ID_BUFFER_BINDING_SLOT
+	// bind mesh update           BISECTOR_DATA_BUFFER_BINDING_SLOT
+	// bind mesh cur neighbor     NEIGHBORS_BUFFER_BINDING_SLOT
+	// bind memory                MEMORY_BUFFER_BINDING_SLOT
+	// bind mesh allocate         ALLOCATE_BUFFER_BINDING_SLOT
+	bisector_neighbors = curr_neighbors;
+	bisector_output_neighbors = (neighbors_t*)-1;
+	test.dispatch (split.main, &dispatch.indirect[0]);
+	// barrier mesh update
+
+	// PREPARE INDIRECT ALLOCATE
+	// bind mesh allocate         ALLOCATE_BUFFER_BINDING_SLOT
+	// bind indirect              INDIRECT_DISPATCH_BUFFER_BINDING_SLOT
+	queue_t *allocate_queues[] = {&allocate.queue};
+	dispatch.queues = allocate_queues;
+	test.dispatch (dispatch.prepare, uvec3(1, 1, 1));
+	// barrier indirect
+
+	// ALLOCATE
+	// bind global constants      GLOBAL_CB_BINDING_SLOT
+	// bind geometry constants    GEOMETRY_CB_BINDING_SLOT
+	// bind update constants      UPDATE_CB_BINDING_SLOT
+	// ====
+	// bind mesh cbt buffers      CBT_BUFFER0_BINDING_SLOT + i
+	// bind mesh allocate         ALLOCATE_BUFFER_BINDING_SLOT
+	// bind mesh update           BISECTOR_DATA_BUFFER_BINDING_SLOT
+	// bind memory                MEMORY_BUFFER_BINDING_SLOT
+	test.dispatch (allocate.main, &dispatch.indirect[0]);
+	// barrier update
+
+	// copy mesh cur neighbor to mesh next neighbor
+	for (uint i = 0; i < countof (db_bisector_neighbors[0]); i++) {
+		next_neighbors[i] = curr_neighbors[i];
+	}
+
+	// BISECT
+	// bind global constants      GLOBAL_CB_BINDING_SLOT
+	// bind geometry constants    GEOMETRY_CB_BINDING_SLOT
+	// bind update constants      UPDATE_CB_BINDING_SLOT
+	// ====
+	// bind mesh cbt              CBT_BUFFER0_BINDING_SLOT + i
+	// bind mesh allocate         ALLOCATE_BUFFER_BINDING_SLOT
+	// bind mesh heap id          HEAP_ID_BUFFER_BINDING_SLOT
+	// bind mesh cur neighbor     NEIGHBORS_BUFFER_BINDING_SLOT
+	// bind mesh next neighbor    NEIGHBORS_OUTPUT_BUFFER_BINDING_SLOT
+	// bind mesh propagate        PROPAGATE_BUFFER_BINDING_SLOT
+	bisector_neighbors = curr_neighbors;
+	bisector_output_neighbors = next_neighbors;
+	test.dispatch (bisect.main, &dispatch.indirect[0]);
+	// barrier mesh next neighbor
+
+	// PREPARE INDIRECT PROPAGATE BISECT
+	// bind mesh propagate        ALLOCATE_BUFFER_BINDING_SLOT
+	// bind indirect              INDIRECT_DISPATCH_BUFFER_BINDING_SLOT
+	queue_t *propagate_bisect_queues[] = {&propagate.queue[0]};
+	dispatch.queues = propagate_bisect_queues;
+	test.dispatch (dispatch.prepare, uvec3(1, 1, 1));
+	// barrier indirect
+
+	// PROPAGATE SPLIT/BISECT
+	// bind global constants      GLOBAL_CB_BINDING_SLOT
+	// bind geometry constants    GEOMETRY_CB_BINDING_SLOT
+	// bind update constants      UPDATE_CB_BINDING_SLOT
+	// ====
+	// bind mesh propagate        PROPAGATE_BUFFER_BINDING_SLOT
+	// bind mesh update           BISECTOR_DATA_BUFFER_BINDING_SLOT
+	// bind mesh next neighbor    NEIGHBORS_BUFFER_BINDING_SLOT
+	bisector_neighbors = next_neighbors;
+	bisector_output_neighbors = (neighbors_t*)-1;
+	test.dispatch (propagate.bisect.main, &dispatch.indirect[0]);
+	// barrier mesh update
+
+	// PREPARE SIMPLIFY
+	// bind global constants      GLOBAL_CB_BINDING_SLOT
+	// bind geometry constants    GEOMETRY_CB_BINDING_SLOT
+	// bind update constants      UPDATE_CB_BINDING_SLOT
+	// ====
+	// bind mesh classification   CLASSIFICATION_BUFFER_BINDING_SLOT
+	// bind mesh heap id          HEAP_ID_BUFFER_BINDING_SLOT
+	// bind mesh update           BISECTOR_DATA_BUFFER_BINDING_SLOT
+	// bind mesh next neighbor    NEIGHBORS_BUFFER_BINDING_SLOT
+	// bind mesh simplification   SIMPLIFICATION_BUFFER_BINDING_SLOT
+	bisector_neighbors = next_neighbors;
+	bisector_output_neighbors = (neighbors_t*)-1;
+	test.dispatch (simplify.main, &dispatch.indirect[1]);
+	// barrier mesh simplification
+
+	// PREPARE INDIRECT SIMPLIFY
+	// bind mesh simplification   ALLOCATE_BUFFER_BINDING_SLOT
+	// bind indirect              INDIRECT_DISPATCH_BUFFER_BINDING_SLOT
+	queue_t *simplification_queues[] = {&simplification.queue};
+	dispatch.queues = simplification_queues;
+	test.dispatch (dispatch.prepare, uvec3(1, 1, 1));
+	// barrier indirect
+
+	// SIMPLIFY
+	// bind global constants      GLOBAL_CB_BINDING_SLOT
+	// bind geometry constants    GEOMETRY_CB_BINDING_SLOT
+	// bind update constants      UPDATE_CB_BINDING_SLOT
+	// ====
+	// bind mesh simplification   SIMPLIFICATION_BUFFER_BINDING_SLOT
+	// bind mesh update           BISECTOR_DATA_BUFFER_BINDING_SLOT
+	// bind mesh next neighbor    NEIGHBORS_BUFFER_BINDING_SLOT
+	// bind mesh heap id          HEAP_ID_BUFFER_BINDING_SLOT
+	// bind mesh cbt              CBT_BUFFER0_BINDING_SLOT + i
+	// bind mesh propagate        PROPAGATE_BUFFER_BINDING_SLOT
+	bisector_neighbors = next_neighbors;
+	bisector_output_neighbors = (neighbors_t*)-1;
+	test.dispatch (simplification.main, &dispatch.indirect[0]);
+	// barrier mesh next neighbor
+
+	// PREPARE INDIRECT PROPAGATE SIMPLIFY
+	// bind mesh propagate        ALLOCATE_BUFFER_BINDING_SLOT
+	// bind indirect              INDIRECT_DISPATCH_BUFFER_BINDING_SLOT
+	queue_t *propagate_simplify_queues[] = {&propagate.queue[0], &propagate.queue[1]};
+	dispatch.queues = propagate_simplify_queues;
+	test.dispatch (dispatch.prepare, uvec3(2, 1, 1));
+	// barrier indirect
+
+	// PROPAGATE SIMPLIFY
+	// bind global constants      GLOBAL_CB_BINDING_SLOT
+	// bind geometry constants    GEOMETRY_CB_BINDING_SLOT
+	// bind update constants      UPDATE_CB_BINDING_SLOT
+	// ====
+	// bind mesh propagate        PROPAGATE_BUFFER_BINDING_SLOT
+	// bind mesh heap id          HEAP_ID_BUFFER_BINDING_SLOT
+	// bind mesh update           BISECTOR_DATA_BUFFER_BINDING_SLOT
+	// bind mesh next neighbor    NEIGHBORS_BUFFER_BINDING_SLOT
+	bisector_neighbors = next_neighbors;
+	bisector_output_neighbors = (neighbors_t*)-1;
+	test.dispatch (propagate.simplify.main, &dispatch.indirect[1]);
+	// barrier mesh next neighbor
+
+	// UPDATE TREE
+	// bind mesh cbt double buffer CBT_BUFFER0_BINDING_SLOT + b
+	// dispatch reduce prepass {last_level_size / (4*WGS), 1, 1}
+	// barrier mesh cbt 0
+	// dispatch reduce first pass {8, 1, 1}
+	// barrier mesh cbt 0
+	// dispatch reduce second pass {1, 1, 1}
+	// barrier mesh cbt 0
+	test.dispatch (cbt.first_pass, uvec3(bits_size, 1, 1));
+	for (uint i = cbt_levels; i-- > 0; ) {
+		cbt.reduce_level = i;
+		test.dispatch (cbt.second_pass, uvec3(1 << i, 1, 1));
+	}
+
+	// mesh cur neighbor = mesh next neighbor (rotate)
+	neighbors_index = next;
+
+	// PREPARE INDIRECT DRAW & DISPATCH
+	// bind geometry constants    GEOMETRY_CB_BINDING_SLOT
+	// ====
+	// bind mesh heap id          HEAP_ID_BUFFER_BINDING_SLOT
+	// bind mesh indirect draw    INDIRECT_DRAW_BUFFER_BINDING_SLOT
+	// bind mesh indexed          BISECTOR_INDICES_BINDING_SLOT
+	// bind mesh update           BISECTOR_DATA_BUFFER_BINDING_SLOT
+	// bind mesh cur neighbor     NEIGHBORS_BUFFER_BINDING_SLOT
+	// bind mesh visible indexed  VISIBLE_BISECTOR_INDICES_BINDING_SLOT
+	// bind mesh modified indexed MODIFIED_BISECTOR_INDICES_BINDING_SLOT
+	// numGroups = (mesh.totalNumElements + WGS - 1) / WGS;
+	uint numGroups = RUP (max_bisector_count, WORKGROUP_SIZE);
+	bisector_neighbors = &db_bisector_neighbors[neighbors_index][0];//FIXME
+	bisector_output_neighbors = (neighbors_t*)-1;
+	test.dispatch (indexation.main, uvec3 (numGroups, 1, 1));
+	// barrier mesh indirect draw
+
+	// PREPARE BISECTOR INDIRECT
+	// bind mesh indirect draw     INDIRECT_DRAW_BUFFER_BINDING_SLOT
+	// bind mesh indirect dispatch INDIRECT_DISPATCH_BUFFER_BINDING_SLOT
+	test.dispatch (indexation.prepare, uvec3(1, 1, 1));
+
+	test.dispatch (draw.update.main, uvec3(draw.bisector_count, 1, 1));
+}
+
 int
 main()
 {
+	static mat4 view = {
+		{     1,    0,    0, 0 },
+		{     0,   -1,    0, 0 },
+		{     0,    0,   -1, 0 },
+		{-4.125, 4.25, 0.25, 1 },
+	};
+	static mat4 proj = {
+		{ 1, 0,      0, 0 },
+		{ 0, 1,      0, 0 },
+		{ 0, 0,      0, 1 },
+		{ 0, 0, 0.0625, 0 },
+	};
+	draw.ProjView = proj * view;
+	draw.camera_fwd = {0, 0, -1};
+	draw.camera_pos = {4.125, 4.25, 0.25};
+	draw.frustum_planes[0] = {-1, 0, -1, 4.375 };
+	draw.frustum_planes[1] = { 1, 0, -1,-3.875 };
+	draw.frustum_planes[2] = { 0,-1, -1, 4.5 };
+	draw.frustum_planes[3] = { 0, 1, -1,-4.0 };
+	triangle_size = 0.25*0.25;
+	bisector_neighbors = &db_bisector_neighbors[neighbors_index][0];//FIXME
 	test.initialize_bisectors ();
 	printf ("base_depth: %ld\n", base_depth);
 	cbt.dump ();
 	test.dump ();
+
+	max_depth = base_depth + 6;
+	update();
+	uint old_mem;
+	do {
+		old_mem = cbt.count();
+		update();
+	} while (old_mem != cbt.count());
+	cbt.dump ();
+	test.dump ();
+
+	max_depth = base_depth + 0;
+	do {
+		old_mem = cbt.count();
+		printf ("%d\n", old_mem);
+		update();
+	} while (old_mem != cbt.count());
+	cbt.dump ();
+	test.dump ();
+
 	return 0;
 }
