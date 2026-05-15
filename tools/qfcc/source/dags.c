@@ -837,7 +837,7 @@ dag_collect_alias_nodes (daglabel_t *l, set_t *node_set)
 		}
 	} else if (op->op_type == op_def) {
 		if (op->def->alias || op->def->alias_defs) {
-			def_visit_all (op->def, dol_only_alias | dol_sub,
+			def_visit_all (op->def, dol_partial,
 						   dag_def_collect_aliases_visit, node_set);
 		}
 	} else {
@@ -917,6 +917,7 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 			for (auto li = set_first (n->identifiers); li; li = set_next (li)) {
 				auto label = dag->labels[li->element];
 				if (op_is_arg (label->op)) {
+					set_del_iter (li);
 					return false;
 				}
 			}
@@ -943,6 +944,11 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 		dagnode_t  *node = dag->nodes[iter->element];
 		if (!node->killed) {
 			set_difference (node->identifiers, label_set);
+		} else {
+			if (n->number < node->killed->number) {
+				set_del_iter (iter);
+				return false;
+			}
 		}
 	}
 	int kill_barrier = -1;
