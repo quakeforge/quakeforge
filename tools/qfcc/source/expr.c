@@ -2756,6 +2756,8 @@ core_address_expr (const expr_t *e1, const type_t *t)
 				t = e1->alias.type;
 			}
 			return new_address_expr (t, e1, 0);
+		case ex_array:
+			return new_address_expr (t, e1, 0);
 		default:
 			return (expr_t *) error (e1, "invalid type for unary &");
 	}
