@@ -688,7 +688,8 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 		return;
 	if (init->type == ex_error)
 		return;
-	if ((is_structural (sym->type) || is_nonscalar (sym->type))
+	if ((is_structural (sym->type) || is_nonscalar (sym->type)
+		|| is_matrix (sym->type))
 		&& (init->type == ex_compound || init->type == ex_nil)) {
 		init_elements (sym->def, init, block);
 		sym->def->initialized = 1;
