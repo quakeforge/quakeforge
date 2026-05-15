@@ -653,9 +653,13 @@ make_def (int s, const char *name, const type_t *type, unsigned flags,
 		def->type = REF (ref)->offset;
 	def->offset = alloc_data (s, type_size (type));
 	def->flags = flags;
-	if (val)
+	if (val) {
 		memcpy (&def_space->data[def->offset], val,
 				type_size (type) * sizeof (pr_type_t));
+	} else if (def_space->data) {
+		memset (&def_space->data[def->offset], 0,
+				type_size (type) * sizeof (pr_type_t));
+	}
 	space->data = def_space->data;
 	space->data_size = def_space->size;
 
