@@ -1059,6 +1059,10 @@ function_symbol (specifier_t spec, rua_ctx_t *ctx)
 		s->sy_type = sy_func;
 		s->type = unalias_type (sym->type);
 		symtab_addsymbol (current_symtab, s);
+		if (func->sym) {
+			internal_error (0, "function already has a symbol");
+		}
+		func->sym = s;
 	}
 	if (!sym->table && strcmp (s->name, sym->name) != 0) {
 		// record unmangled function symbol to avoid false undefined symbol
@@ -1085,10 +1089,10 @@ set_func_symbol (const expr_t *fexpr, metafunc_t *f)
 	}
 	auto sym = fexpr->symbol;
 	if (f->meta_type == mf_overload) {
-		sym = symtab_lookup (current_symtab, f->enc_name);
+		sym = f->sym;
 		if (!sym) {
-			internal_error (fexpr, "overloaded function %s not found",
-							f->enc_name);
+			internal_error (fexpr, "meta func symbol not set for %s",
+							f->uniq_name);
 		}
 	}
 	auto nf = new_expr_copy (fexpr);

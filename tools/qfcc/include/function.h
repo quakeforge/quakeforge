@@ -176,6 +176,7 @@ typedef struct metafunc_s {
 	const char *ns_name;
 	const char *enc_name;
 	const char *uniq_name;
+	symbol_t   *sym;
 	const type_t *type;				///< type of this function
 	rua_loc_t   loc;				///< source location of the function
 	mf_type_e   meta_type;			///< is this function overloaded
