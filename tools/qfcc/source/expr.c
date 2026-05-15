@@ -2046,6 +2046,7 @@ create_namespace (const char *name, symtab_t *ns_tab, symtab_t *parent)
 	auto ns_sym = new_symbol (name);
 	ns_sym->sy_type = sy_namespace;
 	ns_sym->namespace = ns_tab;
+	ns_sym->type = &type_void;
 	ns_tab->name = name;
 	if (parent) {
 		symtab_addsymbol (parent, ns_sym);
