@@ -243,7 +243,7 @@ _set_remove_range (set_t *set, unsigned start, unsigned count)
 	if (start >= set->size) {
 		return;
 	}
-	if (start + count > set->size) {
+	if (count > set->size - start) {
 		count = set->size - start;
 	}
 	unsigned    end = start + count - 1;
@@ -683,33 +683,36 @@ set_is_member (const set_t *set, unsigned x)
 	return _set_is_member (set, x);
 }
 
+static inline unsigned
+set_count_bits (set_bits_t x)
+{
+	x = (x & UINT64_C (0x5555555555555555))
+	  + ((x >> 1) & UINT64_C (0x5555555555555555));
+	x = (x & UINT64_C (0x3333333333333333))
+	  + ((x >> 2) & UINT64_C (0x3333333333333333));
+	x = (x & UINT64_C (0x0f0f0f0f0f0f0f0f))
+	  + ((x >> 4) & UINT64_C (0x0f0f0f0f0f0f0f0f));
+	x = (x & UINT64_C (0x00ff00ff00ff00ff))
+	  + ((x >> 8) & UINT64_C (0x00ff00ff00ff00ff));
+	x = (x & UINT64_C (0x0000ffff0000ffff))
+	  + ((x >> 16) & UINT64_C (0x0000ffff0000ffff));
+//FIXME other archs
+#if defined(__x86_64__) || defined(__aarch64__)
+	x = (x & UINT64_C (0x00000000ffffffff))
+	  + ((x >> 32) & UINT64_C (0x00000000ffffffff));
+#endif
+	return x;
+}
+
 unsigned
 set_count (const set_t *set)
 {
-	static byte bit_counts[] = {
-		0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
-		1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-		1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-		1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-		3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-		1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-		3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-		3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-		3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-		4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8,
-	};
 	unsigned    count = 0;
-	byte       *b = (byte *) set->map;
-	unsigned    i = SET_WORDS (set) * sizeof (set_bits_t);
+	set_bits_t *b = set->map;
+	unsigned    i = SET_WORDS (set);
 
 	while (i-- > 0) {
-		count += bit_counts[*b++];
+		count += set_count_bits (*b++);
 	}
 	return count;
 }
@@ -718,16 +721,25 @@ set_iter_t *
 set_start_r (set_pool_t *set_pool, const set_t *set, unsigned x)
 {
 	set_iter_t *set_iter;
+	set_bits_t  mask = ~SET_ZERO;
 
-	for (; x < set->size; x++) {
-		if (_set_is_member (set, x)) {
+	if (x) {
+		mask <<= x % SET_BITS;
+	}
+	for (unsigned i = x / SET_BITS; i < SET_WORDS (set); i++) {
+		if (set->map[i] & mask) {
+			set_bits_t  c = set->map[i] & mask;
+			// extract lsb
+			c = c & ~(c - 1);
+			c = set_count_bits (c - 1);
 			set_iter = new_setiter (set_pool);
 			set_iter->set = set;
-			set_iter->element = x;
+			set_iter->element = i * SET_BITS + c;
 			return set_iter;
 		}
+		mask = ~SET_ZERO;
 	}
-	return 0;
+	return nullptr;
 }
 
 set_iter_t *
