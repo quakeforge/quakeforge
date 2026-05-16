@@ -921,6 +921,9 @@ main ()
 	ulong heapID = bisector_ids[selfID];	// ALWAYS EVEN (only even queued)
 	uint depth = heap_depth (heapID);
 	uint pairID = bisector_neighbors[selfID].prev;
+	// If the pair isn't at the same depth, then it was split, so can't merge
+	// if the pair wasn't set to be simplified then it needs to be kept, so
+	// still can't merge
 	if (heap_depth (bisector_ids[pairID]) != depth
 		|| bisector_data[pairID].state != simplify_element) {
 		return;
@@ -1421,7 +1424,7 @@ main()
 	cbt.dump ();
 	test.dump ();
 
-	max_depth = base_depth + 6;
+	max_depth = base_depth + 8;
 	update();
 	uint old_mem;
 	do {
