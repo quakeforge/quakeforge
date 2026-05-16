@@ -39,32 +39,38 @@
 
 #include "statements.h"
 
-struct dstring_s;
-struct flownode_s;
+typedef struct dstring_s dstring_t;
+typedef struct set_s set_t;
+typedef struct flownode_s flownode_t;
+typedef struct operand_s operand_t;
+typedef struct dag_s dag_t;
+typedef struct daglabel_s daglabel_t;
+typedef struct dagnode_s dagnode_t;
+typedef struct type_s type_t;
 
 typedef struct daglabel_s {
-	struct daglabel_s *next;
-	struct daglabel_s *daglabel_chain;	///< all labels created for a dag
+	daglabel_t *next;
+	daglabel_t *daglabel_chain;	///< all labels created for a dag
 	int         number;			///< index into array of labels in dag_t
 	bool        live:1;			///< accessed via an alias FIXME redundant?
 	bool        not_src:1;		///< don't use attached identifier as source
 	const char *opcode;			///< not if op
-	struct operand_s *op;		///< not if opcode;
-	struct dagnode_s *dagnode;	///< node with which this label is associated
+	operand_t  *op;				///< not if opcode;
+	dagnode_t  *dagnode;		///< node with which this label is associated
 	const struct expr_s *expr;	///< expression associated with this label
 } daglabel_t;
 
 typedef struct dagnode_s {
-	struct dagnode_s *next;
+	dagnode_t  *next;
 	int         number;			///< index into array of nodes in dag_t
 	int         topo;			///< topological sort order
-	struct set_s *parents;		///< empty if root node
+	set_t      *parents;		///< empty if root node
 	int         cost;			///< cost of this node in temp vars
-	struct dagnode_s *killed;	///< node is unavailable for cse (by node)
+	dagnode_t  *killed;			///< node is unavailable for cse (by node)
 	st_type_t   type;			///< type of node (st_none = leaf)
 	daglabel_t *label;			///< ident/const if leaf node, or operator
-	const struct type_s *vtype;	///< operand type
-	struct operand_s *value;	///< operand holding the value of this node
+	const type_t *vtype;		///< operand type
+	operand_t  *value;	///< operand holding the value of this node
 	/// \name child nodes
 	/// if \a children[0] is null, the rest must be null as well. Similar for
 	///	\a children[1].
@@ -75,19 +81,19 @@ typedef struct dagnode_s {
 	/// children in the DAG. That is, \a edges is for producing a correct
 	/// topological sort of the DAG.
 	//@{
-	struct dagnode_s *children[3];
-	const struct type_s *types[3];///< desired type of each operand (to alias)
-	struct set_s *edges;		///< includes nodes pointed to by \a children
+	dagnode_t  *children[3];
+	const type_t *types[3];		///< desired type of each operand (to alias)
+	set_t      *edges;			///< includes nodes pointed to by \a children
 	int         offset;			///< for alias nodes
 	//@}
-	struct set_s *identifiers;	///< set of identifiers attached to this node
-	struct set_s *reachable;	///< set of nodes reachable via edges (not
+	set_t      *identifiers;	///< set of identifiers attached to this node
+	set_t      *reachable;		///< set of nodes reachable via edges (not
 								///< parents) for ensuring cycles are not
 								///< created
 } dagnode_t;
 
 typedef struct dag_s {
-	struct dag_s *next;
+	dag_t      *next;
 	dagnode_t **nodes;			///< array of all dagnodes in this dag
 	int         num_nodes;
 	int         killer_node;	///< last mass-killer node
@@ -98,13 +104,13 @@ typedef struct dag_s {
 								///< sequencing)
 	int         num_labels;
 	daglabel_t **labels;		///< array of all daglabels in this dag
-	struct set_s *roots;		///< set of root nodes
-	struct set_s *memory;		///< vars killed by memory write
-	struct flownode_s *flownode;///< flow node this dag represents
+	set_t      *roots;			///< set of root nodes
+	set_t      *memory;			///< vars killed by memory write
+	flownode_t *flownode;		///< flow node this dag represents
 } dag_t;
 
 const char *daglabel_string (daglabel_t *label);
-void print_dag (struct dstring_s *dstr, dag_t *dag, const char *label);
+void print_dag (dstring_t *dstr, dag_t *dag, const char *label);
 void dot_dump_dag (void *_dag, const char *filename);
 
 /** Make a dag for a single basic block.
@@ -114,7 +120,7 @@ void dot_dump_dag (void *_dag, const char *filename);
 					variable information already computed.
 	\return			The dag representing the basic block.
 */
-dag_t *dag_create (struct flownode_s *flownode);
+dag_t *dag_create (flownode_t *flownode);
 
 void dag_remove_dead_nodes (dag_t *dag);
 void dag_generate (dag_t *dag, sblock_t *block);
