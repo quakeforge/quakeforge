@@ -64,10 +64,10 @@ typedef struct dagnode_s {
 	dagnode_t  *next;
 	int         number;			///< index into array of nodes in dag_t
 	int         topo;			///< topological sort order
-	set_t      *parents;		///< empty if root node
 	int         cost;			///< cost of this node in temp vars
-	dagnode_t  *killed;			///< node is unavailable for cse (by node)
 	st_type_t   type;			///< type of node (st_none = leaf)
+	set_t      *parents;		///< empty if root node
+	dagnode_t  *killed;			///< node is unavailable for cse (by node)
 	daglabel_t *label;			///< ident/const if leaf node, or operator
 	const type_t *vtype;		///< operand type
 	operand_t  *value;	///< operand holding the value of this node
