@@ -107,6 +107,7 @@ new_label (dag_t *dag)
 	label->daglabel_chain = daglabel_chain;
 	daglabel_chain = label;
 	label->number = dag->num_labels;
+	label->statement = -1;
 	dag->labels[dag->num_labels++] = label;
 	return label;
 }
@@ -895,7 +896,7 @@ dag_collect_reachable (dag_t *dag, dagnode_t *node, set_t *reachable,
 }
 
 static bool
-dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
+dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l, statement_t *s)
 {
 	if (!l->op) {
 		internal_error (0, "attempt to attach operator label to dagnode "
@@ -938,6 +939,23 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 		}
 		if (op_is_alias (label->op)) {
 			dag_collect_alias_nodes (label, node_set);
+		}
+	}
+
+	if (l->statement >= 0) {
+		auto func = dag->flownode->graph->func;
+		auto st = func->statements[l->statement];
+		for (int i = 0; i < st->num_def; i++) {
+			auto ud = func->du_chains[st->first_def + i];
+			if (ud.defst == s->number) continue;
+			auto var = func->vars[ud.var];
+			if (var->op == l->op) {
+				// pre-kill the node to prevent the label getting
+				// removed from it since it's used
+				// FIXME wrong edge
+				set_add (n->edges, l->dagnode->number);
+				l->dagnode->killed = n;
+			}
 		}
 	}
 	for (auto iter = set_first (node_set); iter; iter = set_next (iter)) {
@@ -998,6 +1016,7 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 	for (auto iter = set_first (label_set); iter; iter = set_next (iter)) {
 		auto label = dag->labels[iter->element];
 		dag_kill_aliases (label);
+		label->statement = s->number;
 	}
 	if (n->label->op) {
 		dag_live_aliases (n->label->op);
@@ -1352,18 +1371,18 @@ dag_create (flownode_t *flownode)
 		lx = operand_label (dag, operands[0]);
 		if (lx && lx->dagnode != n) {
 			lx->expr = s->expr;
-			if (!dagnode_attach_label (dag, n, lx)) {
+			if (!dagnode_attach_label (dag, n, lx, s)) {
 				// attempting to attach the label to the node would create
 				// a dependency cycle in the dag, so a new node needs to be
 				// created for the source operand
 				if (s->type == st_assign) {
 					n = leaf_node (dag, operands[1], s->expr);
-					dagnode_attach_label (dag, n, lx);
+					dagnode_attach_label (dag, n, lx, s);
 				} else if (n->type == st_none) {
 					// a leafnode so just create a new node
 					auto op = n->label->op;
 					n = leaf_node (dag, op, op->expr);
-					dagnode_attach_label (dag, n, lx);
+					dagnode_attach_label (dag, n, lx, s);
 				} else if (n->type == st_expr) {
 					auto vi = set_first (n->identifiers);
 					if (!vi) {
@@ -1373,7 +1392,7 @@ dag_create (flownode_t *flownode)
 					set_del_iter (vi);
 					auto var_node = leaf_node (dag, var->op, s->expr);
 					set_add (var_node->edges, n->number);
-					dagnode_attach_label (dag, var_node, lx);
+					dagnode_attach_label (dag, var_node, lx, s);
 				} else {
 					dot_dump_dag (dag, nullptr);
 					internal_error (s->expr, "unexpected failure to attach"

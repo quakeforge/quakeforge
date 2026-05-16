@@ -52,6 +52,7 @@ typedef struct daglabel_s {
 	daglabel_t *next;
 	daglabel_t *daglabel_chain;	///< all labels created for a dag
 	int         number;			///< index into array of labels in dag_t
+	int         statement;		///< statement definding this label (if op)
 	bool        live:1;			///< accessed via an alias FIXME redundant?
 	bool        not_src:1;		///< don't use attached identifier as source
 	const char *opcode;			///< not if op
