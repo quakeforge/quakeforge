@@ -63,6 +63,7 @@ test_progs_dat=\
 	tools/qfcc/test/ivar-struct-return.dat \
 	tools/qfcc/test/link_order.dat \
 	tools/qfcc/test/lost-use.dat \
+	tools/qfcc/test/member-update.dat \
 	tools/qfcc/test/methodparams.dat \
 	tools/qfcc/test/mirror.dat \
 	tools/qfcc/test/modulo.dat \
@@ -801,6 +802,16 @@ tools/qfcc/test/lost-use.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(lost_use_dep) # am--include-marker
 r_depfiles_remade += $(lost_use_dep)
+
+tools_qfcc_test_member_update_dat_SOURCES=tools/qfcc/test/member-update.r
+member_update_obj=$(tools_qfcc_test_member_update_dat_SOURCES:.r=.o)
+member_update_dep=$(call qcautodep,$(tools_qfcc_test_member_update_dat_SOURCES))
+tools/qfcc/test/member-update.dat$(EXEEXT): $(member_update_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(member_update_obj)
+tools/qfcc/test/member-update.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(member_update_dep) # am--include-marker
+r_depfiles_remade += $(member_update_dep)
 
 tools_qfcc_test_methodparams_dat_SOURCES=tools/qfcc/test/methodparams.r
 methodparams_obj=$(tools_qfcc_test_methodparams_dat_SOURCES:.r=.o)
