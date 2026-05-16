@@ -2275,13 +2275,6 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				if (def) {
 					flow_add_op_var (def, &flow_params[0].op, dol_sub);
 				}
-				if (kill) {
-					for (i = 1; i < num_flow_params; i++) {
-						flowvar_t  *var = flow_get_var (&flow_params[i].op);
-						flow_kill_aliases (kill, var, nullptr,
-										   current_func);	//FIXME global
-					}
-				}
 			}
 			if (operands) {
 				operands[1] = s->opa;
