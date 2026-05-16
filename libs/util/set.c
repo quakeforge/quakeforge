@@ -717,10 +717,9 @@ set_count (const set_t *set)
 	return count;
 }
 
-set_iter_t *
-set_start_r (set_pool_t *set_pool, const set_t *set, unsigned x)
+static inline bool
+set_first_bit (const set_t *set, unsigned x, unsigned *ind)
 {
-	set_iter_t *set_iter;
 	set_bits_t  mask = ~SET_ZERO;
 
 	if (x) {
@@ -731,13 +730,26 @@ set_start_r (set_pool_t *set_pool, const set_t *set, unsigned x)
 			set_bits_t  c = set->map[i] & mask;
 			// extract lsb
 			c = c & ~(c - 1);
-			c = set_count_bits (c - 1);
-			set_iter = new_setiter (set_pool);
-			set_iter->set = set;
-			set_iter->element = i * SET_BITS + c;
-			return set_iter;
+			*ind = i * SET_BITS + set_count_bits (c - 1);
+			return true;
 		}
 		mask = ~SET_ZERO;
+	}
+	*ind = ~0;
+	return false;
+}
+
+set_iter_t *
+set_start_r (set_pool_t *set_pool, const set_t *set, unsigned x)
+{
+	set_iter_t *set_iter;
+
+	unsigned ind;
+	if (set_first_bit (set, x, &ind)) {
+		set_iter = new_setiter (set_pool);
+		set_iter->set = set;
+		set_iter->element = ind;
+		return set_iter;
 	}
 	return nullptr;
 }
@@ -765,11 +777,9 @@ set_next_r (set_pool_t *set_pool, set_iter_t *set_iter)
 {
 	unsigned    x;
 
-	for (x = set_iter->element + 1; x < set_iter->set->size; x++) {
-		if (_set_is_member (set_iter->set, x)) {
-			set_iter->element = x;
-			return set_iter;
-		}
+	if (set_first_bit (set_iter->set, set_iter->element + 1, &x)) {
+		set_iter->element = x;
+		return set_iter;
 	}
 	delete_setiter (set_pool, set_iter);
 	return 0;
