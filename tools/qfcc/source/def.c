@@ -753,7 +753,7 @@ static unsigned
 def_overlap (def_t *d, int offset, int size)
 {
 	// offset is relative to the main def, so if d is the main def, then
-	// don't use its offset otherwise, the calculations get thrown off
+	// don't use its offset so the calculations don't get thrown off
 	int         d_offset = d->alias ? d->offset : 0;
 	int         d_size = type_size (d->type);
 
