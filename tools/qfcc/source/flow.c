@@ -1614,6 +1614,16 @@ flow_chain_core (flowgraph_t *graph, reaching_t *reach,
 				set_assign (reach->tmp, var->define);
 				set_union (reach->tmp, var->amb_define);
 				set_intersection (reach->tmp, reach->gen);
+				// if this node defines the var, then use only the last
+				// definition of that var
+				for (int i = st->number; i-- > node->first_statement; ) {
+					if (set_is_member (reach->tmp, i)) {
+						set_remove_range (reach->tmp, 0, i);
+						set_remove_range (reach->tmp, i + 1,
+										  reach->func->num_statements);
+						break;
+					}
+				}
 
 				if (record) {
 					record (st, vi->element, reach);
