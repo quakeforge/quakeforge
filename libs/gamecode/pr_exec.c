@@ -321,14 +321,14 @@ PR_LeaveFunction (progs_t *pr, int to_engine)
 	PR_PopFrame (pr);
 
 	if (pr->pr_trace && !pr->debug_handler) {
-		Sys_Printf (CYN"Leaving function %s"DFL"\n",
+		Sys_Printf (GRN"Leaving function %s"DFL"\n",
 					PR_GetString (pr, f->descriptor->name));
 		if (to_engine) {
 			Sys_Printf (RED"Returning to engine"DFL"\n");
 		} else {
 			bfunction_t *rf = pr->pr_xfunction;
 			if (rf) {
-				Sys_Printf (GRN"Returning to function %s"DFL"\n",
+				Sys_Printf (CYN"Returning to function %s"DFL"\n",
 							PR_GetString (pr, rf->descriptor->name));
 			}
 		}
