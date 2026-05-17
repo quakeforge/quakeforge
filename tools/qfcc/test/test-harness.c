@@ -297,7 +297,7 @@ main (int argc, char **argv)
 	PR_SetupParams (&test_pr, 2, 0);
 	P_INT (&test_pr, 0) = pr_argc;
 	P_POINTER (&test_pr, 1) = PR_SetPointer (&test_pr, pr_argv);
-
+	test_pr.watch = test_pr.pr_globals;
 	PR_ExecuteProgram (&test_pr, main_func);
 	PR_PopFrame (&test_pr);
 	if (options.flote)
