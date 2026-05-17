@@ -803,6 +803,9 @@ auto_type (const type_t *type, const expr_t *init)
 			if (type->source) {
 				type = type->source;
 			}
+			if (is_array (type)) {
+				type = pointer_type (dereference_type (type));
+			}
 		} else {
 			error (0, "'auto' requires an initialized data declaration");
 			type = type_default;
