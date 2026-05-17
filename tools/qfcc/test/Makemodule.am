@@ -81,6 +81,7 @@ test_progs_dat=\
 	tools/qfcc/test/preproc-1.dat \
 	tools/qfcc/test/ptraliasenc.dat \
 	tools/qfcc/test/ptrfunc.dat \
+	tools/qfcc/test/ptrincassign.dat \
 	tools/qfcc/test/ptrincinout.dat \
 	tools/qfcc/test/ptrincinout2.dat \
 	tools/qfcc/test/ptrstructcast.dat \
@@ -952,6 +953,16 @@ tools/qfcc/test/ptrfunc.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(ptrfunc_dep) # am--include-marker
 r_depfiles_remade += $(ptrfunc_dep)
+
+tools_qfcc_test_ptrincassign_dat_SOURCES=tools/qfcc/test/ptrincassign.r
+ptrincassign_obj=$(tools_qfcc_test_ptrincassign_dat_SOURCES:.r=.o)
+ptrincassign_dep=$(call qcautodep,$(tools_qfcc_test_ptrincassign_dat_SOURCES))
+tools/qfcc/test/ptrincassign.dat$(EXEEXT): $(ptrincassign_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(ptrincassign_obj)
+tools/qfcc/test/ptrincassign.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(ptrincassign_dep) # am--include-marker
+r_depfiles_remade += $(ptrincassign_dep)
 
 tools_qfcc_test_ptrincinout_dat_SOURCES=tools/qfcc/test/ptrincinout.r
 ptrincinout_obj=$(tools_qfcc_test_ptrincinout_dat_SOURCES:.r=.o)
