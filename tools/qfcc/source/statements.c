@@ -950,14 +950,26 @@ expr_address (sblock_t *sblock, const expr_t *e, operand_t **op)
 		}
 	}
 
-	s = new_statement (st_address, "lea", e);
-	sblock = statement_subexpr (sblock, lvalue, &s->opa);
-	if (offset) {
-		sblock = statement_subexpr (sblock, offset, &s->opb);
+	if (lvalue->type == ex_field || lvalue->type == ex_array) {
+		lvalue = ruamoko_field_array (lvalue);
+		if (!is_deref (lvalue)) {
+			internal_error (e, "didn't get a deref");
+		}
+		auto ptr = address_expr (lvalue, nullptr);
+		if (offset) {
+			ptr = offset_pointer_expr (ptr, offset);
+		}
+		sblock = statement_subexpr (sblock, ptr, op);
+	} else {
+		s = new_statement (st_address, "lea", e);
+		sblock = statement_subexpr (sblock, lvalue, &s->opa);
+		if (offset) {
+			sblock = statement_subexpr (sblock, offset, &s->opb);
+		}
+		s->opc = temp_operand (e->address.type, e);
+		sblock_add_statement (sblock, s);
+		*(op) = s->opc;
 	}
-	s->opc = temp_operand (e->address.type, e);
-	sblock_add_statement (sblock, s);
-	*(op) = s->opc;
 	return sblock;
 }
 
