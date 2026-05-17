@@ -1446,11 +1446,15 @@ rua___obj_forward (progs_t *pr, void *data)
 		RUA_CALL_END (pr, get_imp (probj, class, err_sel))
 		return;
 	}
-
-	dsprintf (probj->msg, "(%s) %s does not recognize %s\n",
-			  PR_CLS_ISMETA (class) ? "class" : "instance",
-			  PR_GetString (pr, class->name),
-			  PR_GetString (pr, probj->selector_names[sel->sel_id]));
+	if (sel->sel_id >= probj->selector_index_max) {
+		dsprintf (probj->msg, "invalid selector: {$%x, %d} @ $%x\n",
+				  sel->sel_id, sel->sel_types, P_POINTER (pr, 1));
+	} else {
+		dsprintf (probj->msg, "(%s) %s does not recognize %s\n",
+				  PR_CLS_ISMETA (class) ? "class" : "instance",
+				  PR_GetString (pr, class->name),
+				  PR_GetString (pr, probj->selector_names[sel->sel_id]));
+	}
 
 	err_sel = sel_register_typed_name (probj, "error:", "", 0);
 	if (obj_reponds_to (probj, obj, err_sel)) {
