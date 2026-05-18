@@ -87,6 +87,8 @@ typedef struct dagnode_s {
 	set_t      *edges;			///< includes nodes pointed to by \a children
 	int         offset;			///< for alias nodes
 	//@}
+	set_t      *required;		///< identifiers that must be written by this
+								///< node (never removed)
 	set_t      *identifiers;	///< set of identifiers attached to this node
 	set_t      *reachable;		///< set of nodes reachable via edges (not
 								///< parents) for ensuring cycles are not

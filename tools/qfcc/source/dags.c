@@ -119,6 +119,7 @@ new_node (dag_t *dag)
 	ALLOC (256, dagnode_t, nodes, node);
 	node->parents = set_new ();
 	node->edges = set_new ();
+	node->required = set_new ();
 	node->identifiers = set_new ();
 	node->reachable = set_new ();
 	node->number = dag->num_nodes;
@@ -1713,6 +1714,10 @@ generate_call (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	operand_t   *dst = nullptr;
 	const type_t *type = dagnode->vtype;
 
+	SET_DEFER (required);
+	set_assign (required, dagnode->required);
+	set_difference (required, dagnode->identifiers);
+
 	operands[0] = make_operand (dag, block, dagnode, 0);
 	if (dagnode->children[1]) {
 		operands[1] = make_operand (dag, block, dagnode, 1);
@@ -1727,6 +1732,9 @@ generate_call (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 		st = build_statement ("call", operands, var->expr);
 		sblock_add_statement (block, st);
 		generate_assignments (dag, block, operands[2], var_iter, type);
+	}
+	if (dst && (var_iter = set_first (required))) {
+		generate_assignments (dag, block, dst, var_iter, type);
 	}
 	if (!var) {
 		if (dagnode->children[2]) {
@@ -1752,6 +1760,10 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	int         i;
 	const type_t *type;
 
+	SET_DEFER (required);
+	set_assign (required, dagnode->required);
+	set_difference (required, dagnode->identifiers);
+
 	switch (dagnode->type) {
 		case st_none:
 			if (!dagnode->label->op)
@@ -1761,6 +1773,9 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			if ((var_iter = set_first (dagnode->identifiers))) {
 				type = dst->type;
 				dst = generate_assignments (dag, block, dst, var_iter, type);
+			}
+			if (dst && (var_iter = set_first (required))) {
+				generate_assignments (dag, block, dst, var_iter, type);
 			}
 			break;
 		case st_alias:
@@ -1782,6 +1797,9 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 				type = dst->type;
 				dst = generate_assignments (dag, block, dst, var_iter, type);
 			}
+			if (dst && (var_iter = set_first (required))) {
+				generate_assignments (dag, block, dst, var_iter, type);
+			}
 			break;
 		case st_address:
 		case st_expr:
@@ -1802,6 +1820,9 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 								  dagnode->label->expr);
 			sblock_add_statement (block, st);
 			generate_assignments (dag, block, operands[2], var_iter, type);
+			if (dst && (var_iter = set_first (required))) {
+				generate_assignments (dag, block, dst, var_iter, type);
+			}
 			break;
 		case st_assign:
 			internal_error (dagnode->label->expr, "unexpected assignment node");
@@ -1874,6 +1895,8 @@ dag_remove_dead_nodes (dag_t *dag)
 				&& node->type != st_move)
 				continue;
 			if (!set_is_empty (node->identifiers))
+				continue;
+			if (!set_is_empty (node->required))
 				continue;
 			// MOVEP with a variable destination pointer is never dead
 			if (node->type == st_move && node->children[2])

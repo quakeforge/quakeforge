@@ -69,10 +69,23 @@ print_node_def (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 			   node->type != st_none ? "" : "shape=box,", label,
 			   node->killed ? " k" : "",
 			   node->number, node->topo);
+	SET_DEFER (required);
+	set_assign (required, node->required);
 	for (id_iter = set_first (node->identifiers); id_iter;
 		 id_iter = set_next (id_iter)) {
 		id = dag->labels[id_iter->element];
-		dasprintf (dstr, "\\n%s %c", daglabel_string(id), id->live ? 'l' : ' ');
+		const char *tag = "";
+		bool is_required = set_is_member (node->required, id->number);
+		if (id->live || is_required) {
+			tag = va (" %s%s\n", id->live ? "l" : "", is_required ? "@" : "");
+		}
+		dasprintf (dstr, "\\n%s%s", daglabel_string(id), tag);
+	}
+	set_difference (required, node->identifiers);
+	for (id_iter = set_first (required); id_iter;
+		 id_iter = set_next (id_iter)) {
+		id = dag->labels[id_iter->element];
+		dasprintf (dstr, "\\n%s @@", daglabel_string(id));
 	}
 	if (strcmp (daglabel_string (node->label), "lea") == 0
 		&& strcmp (daglabel_string (node->children[0]->label),
