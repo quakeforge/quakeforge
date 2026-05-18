@@ -750,7 +750,7 @@ declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab,
 }
 
 static unsigned
-def_overlap (def_t *d, int offset, int size)
+def_calc_overlap (def_t *d, int offset, int size)
 {
 	// offset is relative to the main def, so if d is the main def, then
 	// don't use its offset so the calculations don't get thrown off
@@ -796,6 +796,22 @@ static const unsigned dol_mask[] = {
 	0b11110,	// dol_exact
 };
 
+def_overlap_t
+def_overlap (def_t *d1, def_t *d2)
+{
+	unsigned ol = def_calc_overlap (d1, d2->offset, type_size (d2->type));
+	if (!ol) {
+		return dol_none;
+	}
+	// don't check dol_all or dol_none
+	for (int i = countof (dol_mask); i-- > 2; ) {
+		if (!(ol & dol_mask[i])) {
+			return i;
+		}
+	}
+	return dol_none;
+}
+
 int
 def_visit_overlaps (def_t *def, int offset, int size, def_overlap_t overlap,
 					def_t *skip, int (*visit) (def_t *, void *), void *data)
@@ -806,7 +822,7 @@ def_visit_overlaps (def_t *def, int offset, int size, def_overlap_t overlap,
 	for (def = def->alias_defs; def; def = def->next) {
 		if (def == skip)
 			continue;
-		if (overlap && (def_overlap (def, offset, size) & mask))
+		if (overlap && (def_calc_overlap (def, offset, size) & mask))
 			continue;
 		if ((ret = visit (def, data)))
 			return ret;
@@ -836,7 +852,7 @@ def_visit_all (def_t *def, def_overlap_t overlap,
 		def = def->alias;
 		if (!only_alias
 			&& (overlap == dol_none
-				|| !(def_overlap (def, offset, size) & mask))
+				|| !(def_calc_overlap (def, offset, size) & mask))
 			&& (ret = visit (def, data))) {
 			return ret;
 		}

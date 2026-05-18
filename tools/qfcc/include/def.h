@@ -341,7 +341,7 @@ int def_visit_all (def_t *def, def_overlap_t overlap,
 int def_visit_overlaps (def_t *def, int offset, int size, def_overlap_t overlap,
 						def_t *skip,
 						int (*visit) (def_t *, void *), void *data);
-
+def_overlap_t def_overlap (def_t *d1, def_t *d2) __attribute__((pure));
 ///@}
 
 #endif//__def_h
