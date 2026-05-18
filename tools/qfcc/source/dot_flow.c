@@ -429,6 +429,49 @@ print_flowgraph (flow_dot_t *method, flowgraph_t *graph, const char *filename)
 	dstring_delete (dstr);
 }
 
+static void
+print_chains (flowgraph_t *graph, const char *filename, bool do_du)
+{
+	auto func = graph->func;
+	int num_chains = func->num_ud_chains;
+	auto chains = do_du ? func->du_chains : func->ud_chains;
+
+	dstring_t  *dstr = dstring_newstr();
+
+	dasprintf (dstr, "digraph chains_%s_%p {\n", do_du ? "du" : "ud", graph);
+	dasprintf (dstr, "  graph [label=\"%s\"];\n",
+			   filename ? quote_string (filename) : "");
+	dasprintf (dstr, "  layout=dot;\n");
+	dasprintf (dstr, "  clusterrank=local;\n");
+	dasprintf (dstr, "  rankdir=TB;\n");
+	dasprintf (dstr, "  compound=true;\n");
+	SET_DEFER (statements);
+	for (int i = 0; i < num_chains; i++) {
+		auto ud = chains[i];
+		int src = do_du ? ud.defst : ud.usest;
+		int dst = do_du ? ud.usest : ud.defst;
+		dasprintf (dstr, "  %d -> %d [label=\"%d\"];\n", src, dst, ud.var);
+		set_add (statements, src);
+		set_add (statements, dst);
+	}
+	for (auto si = set_start (statements, func->num_statements);
+		 si; si = set_next (si)) {
+		dasprintf (dstr, "  %d [shape=box];\n", si->element);
+	}
+	dasprintf (dstr, "}\n");
+
+	if (filename) {
+		QFile      *file;
+
+		file = Qopen (filename, "wt");
+		Qwrite (file, dstr->str, dstr->size - 1);
+		Qclose (file);
+	} else {
+		fputs (dstr->str, stdout);
+	}
+	dstring_delete (dstr);
+}
+
 void
 dump_dot_flow (const void *g, const char *filename)
 {
@@ -457,4 +500,16 @@ void
 dump_dot_flow_statements (const void *g, const char *filename)
 {
 	print_flowgraph (&flow_dot_methods[4], (flowgraph_t *) g, filename);
+}
+
+void
+dump_dot_flow_ud (const void *g, const char *filename)
+{
+	print_chains ((flowgraph_t *) g, filename, false);
+}
+
+void
+dump_dot_flow_du (const void *g, const char *filename)
+{
+	print_chains ((flowgraph_t *) g, filename, true);
 }

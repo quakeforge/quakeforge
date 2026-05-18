@@ -2997,8 +2997,11 @@ flow_data_flow (function_t *func)
 	}
 
 	flow_live_vars (graph);
-	if (options.block_dot.live)
+	if (options.block_dot.live) {
 		dump_dot ("live", graph, dump_dot_flow_live);
+		dump_dot ("ud-chains", graph, dump_dot_flow_ud);
+		dump_dot ("du-chains", graph, dump_dot_flow_du);
+	}
 	flow_uninitialized (graph);
 	flow_build_dags (graph);
 	flow_cleanup_dags (graph);

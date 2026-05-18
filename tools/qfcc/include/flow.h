@@ -128,6 +128,8 @@ void dump_dot_flow_dags (const void *g, const char *filename);
 void dump_dot_flow_live (const void *g, const char *filename);
 void dump_dot_flow_reaching (const void *g, const char *filename);
 void dump_dot_flow_statements (const void *g, const char *filename);
+void dump_dot_flow_ud (const void *g, const char *filename);
+void dump_dot_flow_du (const void *g, const char *filename);
 
 ///@}
 
