@@ -623,7 +623,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 			continue;
 		}
 		daglabel_t *label = operand_label (dag, use);
-		label->live = 1;
+		label->live = true;
 		dag_live_aliases (use);
 		if (label->dagnode) {
 			set_add (n->edges, label->dagnode->number);
@@ -786,18 +786,18 @@ dag_def_collect_alias_labels_visit (def_t *def, void *_s)
 }
 
 static void
-dag_collect_alias_labels (daglabel_t *l, set_t *label_set)
+dag_collect_alias_labels (daglabel_t *l, set_t *label_set, def_overlap_t ol)
 {
 	operand_t  *op = l->op;
 
 	if (op->op_type == op_temp) {
 		if (op->tempop.alias || op->tempop.alias_ops) {
-			tempop_visit_all (&op->tempop, dol_exact,
+			tempop_visit_all (&op->tempop, ol,
 							  dag_tempop_collect_alias_labels_visit, label_set);
 		}
 	} else if (op->op_type == op_def) {
 		if (op->def->alias || op->def->alias_defs) {
-			def_visit_all (op->def, dol_exact,
+			def_visit_all (op->def, ol,
 						   dag_def_collect_alias_labels_visit, label_set);
 		}
 	} else {
@@ -896,6 +896,125 @@ dag_collect_reachable (dag_t *dag, dagnode_t *node, set_t *reachable,
 	}
 }
 
+static flowvar_t *
+daglabel_flowvar (daglabel_t *label)
+{
+	if (!label->op) {
+		internal_error (0, "null op on label %s\n", daglabel_string (label));
+	}
+	return flow_get_var (label->op);
+}
+
+static bool
+st_in_range (int st, flownode_t *fn)
+{
+	int start = fn->first_statement;
+	int end = fn->first_statement + fn->num_statements;
+	return st >= start && st < end;
+}
+
+static bool
+exact_overlap (operand_t *op1, operand_t *op2)
+{
+	if (op1 == op2) {
+		// shouldn't happen
+		// the same object overlaps itself exactly
+		return true;
+	}
+	if (type_size (op1->type) != type_size (op1->type)) {
+		// shouldn't happen
+		// differt size so can't be exact overlap
+		return false;
+	}
+	if (op_is_constant (op1) || op_is_constant (op2)) {
+		// shouldn't happen
+		// constants never overlap with anything
+		return false;
+	}
+	if (op_is_temp (op1) != op_is_temp (op2)) {
+		// shouldn't happen
+		// defs and temps never overlap
+		return false;
+	}
+	// either both are temp or both are def
+	if (op_is_temp (op1)) {
+		auto t1 = &op1->tempop;
+		auto t2 = &op2->tempop;
+		return tempop_overlap (t1, t2) == dol_exact;
+	} else {
+		auto d1 = op1->def;
+		auto d2 = op2->def;
+		return def_overlap (d1, d2) == dol_exact;
+	}
+}
+
+static void
+dag_detect_hazards (dag_t *dag, daglabel_t *l, statement_t *s, dagnode_t *n)
+{
+	auto fn = dag->flownode;
+	auto func = fn->graph->func;
+	SET_DEFER (alias_labels);
+	dag_collect_alias_labels (l, alias_labels, dol_partial);
+	if (set_is_empty (alias_labels)) {
+		return;
+	}
+	SET_DEFER (edges);
+	SET_DEFER (alias_vars);
+	// Check for WAW and WAR hazards
+	for (auto li = set_first (alias_labels); li; li = set_next (li)) {
+		auto label = dag->labels[li->element];
+		auto var = daglabel_flowvar (label);
+		set_add (alias_vars, var->number);
+		for (auto ui = set_first (var->udchains); ui; ui = set_next (ui)) {
+			auto ud = func->ud_chains[ui->element];
+			// Not sure about use, but if def is outside of the flow node
+			// then it can't be a WAW hazard. Need more test data for WAR
+			// for use.
+			if (!st_in_range (ud.usest, fn) || !st_in_range (ud.defst, fn)) {
+				continue;
+			}
+			// def is later in the node, ignore (it will handle its own check)
+			if (ud.defst >= s->number) {
+				continue;
+			}
+			auto st = func->statements[ud.defst];
+			auto node = dag->nodes[st->dag_node];
+			// record the WAW hazard
+			set_add (edges, node->number);
+			if (ud.usest < s->number) {
+				st = func->statements[ud.usest];
+				node = dag->nodes[st->dag_node];
+				// record the WAR hazard
+				set_add (edges, node->number);
+			}
+		}
+	}
+	// Check for aliased uses of this var
+	auto label_var = daglabel_flowvar (l);
+	bool must_write = false;
+	for (int i = 0; i < s->num_def; i++) {
+		auto du = func->du_chains[s->first_def + i];
+		if (!st_in_range (du.usest, fn)) {
+			continue;
+		}
+		auto st = func->statements[du.usest];
+		for (int j = 0; j < st->num_use; j++) {
+			auto ud = func->ud_chains[s->first_use + j];
+			if (ud.var != label_var->number
+				&& set_is_member (alias_vars, ud.var)) {
+				if (!exact_overlap (label_var->op, func->vars[ud.var]->op)) {
+					must_write = true;
+				}
+			}
+		}
+	}
+	if (must_write) {
+		set_add (n->required, l->number);
+	}
+
+	set_union (n->edges, edges);
+}
+
 static bool
 dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l, statement_t *s)
 {
@@ -907,6 +1026,8 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l, statement_t *s)
 		internal_error (l->op->expr, "attempt to attach non-identifer label "
 						"to dagnode identifiers");
 	}
+
+	dag_detect_hazards (dag, l, s, n);
 
 	if (op_is_arg (l->op)) {
 		// assigning to a function call argument: the assignment must happen
@@ -929,7 +1050,7 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l, statement_t *s)
 	auto label_set = set_new ();
 
 	set_add (label_set, l->number);
-	dag_collect_alias_labels (l, label_set);
+	dag_collect_alias_labels (l, label_set, dol_exact);
 
 	auto node_set = set_new ();
 	for (auto iter = set_first (label_set); iter; iter = set_next (iter)) {
@@ -1068,7 +1189,7 @@ dag_clean_vars (dag_t *dag)
 		for (auto vi = set_first (node->identifiers); vi; vi = set_next (vi)) {
 			auto label = dag->labels[vi->element];
 			set_empty (alias_labels);
-			dag_collect_alias_labels (label, alias_labels);
+			dag_collect_alias_labels (label, alias_labels, dol_exact);
 			set_remove (alias_labels, label->number);
 			set_difference (node->identifiers, alias_labels);
 		}
@@ -1752,8 +1873,8 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 				internal_error (dagnode->label->expr,
 								"non-leaf label in leaf node");
 			dst = dagnode->label->op;
+			type = dst->type;
 			if ((var_iter = set_first (dagnode->identifiers))) {
-				type = dst->type;
 				dst = generate_assignments (dag, block, dst, var_iter, type);
 			}
 			if (dst && (var_iter = set_first (required))) {
@@ -1775,8 +1896,8 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			dst = offset_alias_operand (dagnode->types[0],
 										dagnode->offset + offset,
 										value, dagnode->label->expr);
+			type = dst->type;
 			if ((var_iter = set_first (dagnode->identifiers))) {
-				type = dst->type;
 				dst = generate_assignments (dag, block, dst, var_iter, type);
 			}
 			if (dst && (var_iter = set_first (required))) {
