@@ -1027,8 +1027,6 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l, statement_t *s)
 						"to dagnode identifiers");
 	}
 
-	dag_detect_hazards (dag, l, s, n);
-
 	if (op_is_arg (l->op)) {
 		// assigning to a function call argument: the assignment must happen
 		// after the previous call
@@ -1097,6 +1095,8 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l, statement_t *s)
 			return false;
 		}
 	}
+
+	dag_detect_hazards (dag, l, s, n);
 
 	for (auto iter = set_first (node_set); iter; iter = set_next (iter)) {
 		dagnode_t  *node = dag->nodes[iter->element];
