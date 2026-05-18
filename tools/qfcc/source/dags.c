@@ -943,24 +943,6 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l, statement_t *s)
 		}
 	}
 
-	if (l->statement >= 0) {
-		auto func = dag->flownode->graph->func;
-		auto st = func->statements[l->statement];
-		for (int i = 0; i < st->num_def; i++) {
-			auto ud = func->du_chains[st->first_def + i];
-			if (ud.defst == s->number) continue;
-			auto var = func->vars[ud.var];
-			if (var->op == l->op) {
-				// pre-kill the node to prevent the label getting
-				// removed from it since it's used
-				auto usest = func->statements[ud.usest];
-				if (usest->dag_node >= 0) {
-					set_add (n->edges, usest->dag_node);
-					l->dagnode->killed = n;
-				}
-			}
-		}
-	}
 	for (auto iter = set_first (node_set); iter; iter = set_next (iter)) {
 		dagnode_t  *node = dag->nodes[iter->element];
 		if (!node->killed) {
