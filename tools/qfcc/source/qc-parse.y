@@ -3429,7 +3429,7 @@ qc_process_keyword (QC_YYSTYPE *lval, keyword_t *keyword, const char *token,
 		// the global id symbol is always just a name so attempts to redefine
 		// it globally can be caught and treated as an error, but it needs to
 		// be redefinable when in an enclosing scope.
-		if (sym->sy_type == sy_name) {
+		if (sym->sy_type == sy_name && sym->table == pr.symtab) {
 			// this is the global id (object)
 			lval->spec = (specifier_t) {
 				.type = sym->type,
