@@ -211,7 +211,7 @@ get_rep_long (const expr_t *e)
 {
 	auto type = get_type (e);
 	if (is_scalar (type)) {
-		return expr_long (e);
+		return expr_integral (e);
 	}
 	pr_type_t c[type_size (type)];
 	value_store (c, type, e);
@@ -230,7 +230,7 @@ get_rep_ulong (const expr_t *e)
 {
 	auto type = get_type (e);
 	if (is_scalar (type)) {
-		return expr_ulong (e);
+		return expr_integral (e);
 	}
 	pr_type_t c[type_size (type)];
 	value_store (c, type, e);
