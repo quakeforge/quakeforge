@@ -2679,6 +2679,24 @@ offset_pointer_expr (const expr_t *pointer, const expr_t *offset)
 	return ptroffset;
 }
 
+static const expr_t *
+def_addresss_expr (def_t *def, const type_t *t, const expr_t *e)
+{
+	auto type = def->type;
+
+	//FIXME this test should be in statements.c
+	if (options.code.progsversion == PROG_VERSION
+		&& (def->local || def->param)) {
+		return new_address_expr (t, e, 0);
+	}
+	if (is_array (type)) {
+		auto ptrval = new_pointer_val (0, t, def, 0);
+		return new_value_expr (ptrval, false);
+	} else {
+		return new_pointer_expr (0, t, def);
+	}
+}
+
 static expr_t *
 core_address_expr (const expr_t *e1, const type_t *t)
 {
@@ -2689,42 +2707,10 @@ core_address_expr (const expr_t *e1, const type_t *t)
 
 	switch (e1->type) {
 		case ex_def:
-			{
-				auto def = e1->def;
-				auto type = def->type;
-
-				//FIXME this test should be in statements.c
-				if (options.code.progsversion == PROG_VERSION
-					&& (def->local || def->param)) {
-					e = new_address_expr (t, e1, 0);
-					return e;
-				}
-				if (is_array (type)) {
-					auto ptrval =  new_pointer_val (0, t, def, 0);
-					return (expr_t *) new_value_expr (ptrval, false);
-				} else {
-					return (expr_t *) new_pointer_expr (0, t, def);
-				}
-			}
-			break;
+			return (expr_t *) def_addresss_expr (e1->def, t, e1);
 		case ex_symbol:
 			if (e1->symbol->sy_type == sy_def) {
-				auto def = e1->symbol->def;
-				auto type = def->type;
-
-				//FIXME this test should be in statements.c
-				if (options.code.progsversion == PROG_VERSION
-					&& (def->local || def->param)) {
-					return new_address_expr (t, e1, 0);
-				}
-
-				if (is_array (type)) {
-					auto ptrval =  new_pointer_val (0, t, def, 0);
-					return (expr_t *) new_value_expr (ptrval, false);
-				} else {
-					return (expr_t *) new_pointer_expr (0, t, def);
-				}
-				break;
+				return (expr_t *) def_addresss_expr (e1->symbol->def, t, e1);
 			}
 			return (expr_t *) error (e1, "invalid type for unary &");
 		case ex_field:
