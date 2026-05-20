@@ -474,17 +474,14 @@ init_def (def_t *def, const expr_t *init, symbol_t *sym)
 static void
 init_elements (def_t *def, const expr_t *eles, expr_t *block)
 {
-	const expr_t *c;
-	element_chain_t element_chain;
-	element_t  *element;
-
 	if (eles->type == ex_nil) {
 		init_elements_nil (def, block);
 		return;
 	}
 
-	element_chain.head = 0;
-	element_chain.tail = &element_chain.head;
+	element_chain_t element_chain = {
+		.tail = &element_chain.head,
+	};
 	build_element_chain (&element_chain, def->type, eles, 0);
 
 	if (def->local && block) {
@@ -492,7 +489,9 @@ init_elements (def_t *def, const expr_t *eles, expr_t *block)
 		assign_elements (block, dst, &element_chain);
 	} else {
 		def_t       dummy = *def;
-		for (element = element_chain.head; element; element = element->next) {
+		const expr_t *c;
+		for (auto element = element_chain.head; element;
+			 element = element->next) {
 			if (!element->expr
 				|| ((c = constant_expr (element->expr))->type == ex_nil)) {
 				// nil is type agnostic 0 and defspaces are initialized to

@@ -113,6 +113,7 @@ typedef struct element_chain_s {
 	const type_t *type;			///< inferred if null
 	const expr_t *type_expr;
 	bool initialized_temp;
+	bool nested;				///< need nested elements
 } element_chain_t;
 
 typedef struct ex_listitem_s {

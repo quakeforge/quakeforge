@@ -51,6 +51,7 @@
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
 ALLOC_STATE (element_t, elements);
@@ -95,8 +96,9 @@ new_compound_init (void)
 {
 	expr_t     *c = new_expr ();
 	c->type = ex_compound;
-	c->compound.head = 0;
-	c->compound.tail = &c->compound.head;
+	c->compound = (element_chain_t) {
+		.tail = &c->compound.head,
+	};
 	return c;
 }
 
@@ -240,6 +242,18 @@ next_field (initstate_t state)
 	return state;
 }
 
+static void
+add_element (element_chain_t *element_chain, int base_offset,
+			 initstate_t state, const expr_t *expr)
+{
+	element_t  *element = new_element (0, 0);
+	element->type = state.type;
+	element->offset = base_offset + state.offset;
+	element->id = state.id;
+	element->expr = expr;	// null -> nil
+	append_init_element (element_chain, element);
+}
+
 bool
 build_element_chain (element_chain_t *element_chain, const type_t *type,
 					 const expr_t *eles, int base_offset)
@@ -292,7 +306,7 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 			break;
 		}
 
-		if (state.offset >= type_size (type)) {
+		if (state.offset >= type_size (type) * current_target.pointer_scale) {
 			if (options.warnings.initializer) {
 				warning (eles, "excessive elements in initializer");
 			}
@@ -300,8 +314,19 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 		}
 
 		if (ele->expr && ele->expr->type == ex_compound) {
-			build_element_chain (element_chain, state.type, ele->expr,
+			auto ec = element_chain;
+			expr_t *nested = nullptr;
+			if (ec->nested) {
+				nested = new_compound_init ();
+				nested->compound.nested = true;
+				nested->compound.type = state.type;
+				ec = &nested->compound;
+			}
+			build_element_chain (ec, state.type, ele->expr,
 								 base_offset + state.offset);
+			if (nested) {
+				add_element (element_chain, base_offset, state, nested);
+			}
 			state = next_field (state);
 		} else {
 			if (state.field && state.field->sy_type == sy_convert) {
@@ -309,12 +334,7 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 				state = init_element (element_chain, state, base_offset,
 									  ele->expr);
 			} else {
-				element_t  *element = new_element (0, 0);
-				element->type = state.type;
-				element->offset = base_offset + state.offset;
-				element->id = state.id;
-				element->expr = ele->expr;	// null -> nil
-				append_init_element (element_chain, element);
+				add_element (element_chain, base_offset, state, ele->expr);
 				state = next_field (state);
 			}
 		}

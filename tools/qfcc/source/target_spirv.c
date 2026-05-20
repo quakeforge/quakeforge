@@ -3436,6 +3436,7 @@ spirv_initialized_temp (const type_t *type, const expr_t *src)
 
 	scoped_src_loc (src);
 	auto new = new_compound_init ();
+	new->compound.nested = true;
 	if (!build_element_chain (&new->compound, type, src, 0)) {
 		return new_error_expr ();
 	}
