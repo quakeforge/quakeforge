@@ -3382,7 +3382,7 @@ spirv_convert_element_chain (element_chain_t *element_chain)
 	int num_elements = type_count (type);
 	element_t *elements[num_elements + 1] = {};
 	for (auto ele = element_chain->head; ele; ele = ele->next) {
-		if (ele->id < 0 || ele->id > num_elements) {
+		if (ele->id < 0 || ele->id >= num_elements) {
 			internal_error (0, "invalid element chain offset");
 		}
 		elements[ele->id] = ele;
