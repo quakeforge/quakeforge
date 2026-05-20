@@ -671,7 +671,7 @@ spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 		if (is_void (p->type)) {
 			break;
 		}
-		if (p->qual != pq_const) {
+		if (p->qual != pq_const && !is_reference (ptype)) {
 			ptype = tagged_reference_type (SpvStorageClassFunction, ptype);
 		}
 		param_types[num_params++] = spirv_Type (ptype, ctx);
@@ -1020,7 +1020,7 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 		if (is_void (ptype)) {
 			break;
 		}
-		if (p->qual != pq_const) {
+		if (p->qual != pq_const && !is_reference (ptype)) {
 			ptype = tagged_reference_type (SpvStorageClassFunction, ptype);
 		}
 		unsigned pid = spirv_FunctionParameter (p->name, ptype, ctx);
@@ -2248,8 +2248,13 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 			arg_ids[i] = spirv_emit_expr (a, ctx);
 		} else {
 			auto psym = new_symbol ("param");
-			psym->type = tagged_reference_type (SpvStorageClassFunction,
-												get_type (a));
+			auto arg_type = get_type (a);
+			if (is_reference (arg_type)) {
+				psym->type = arg_type;
+			} else {
+				psym->type = tagged_reference_type (SpvStorageClassFunction,
+													arg_type);
+			}
 			psym->sy_type = sy_var;
 			psym->var.storage = (storage_class_t) SpvStorageClassFunction;
 			psym->id = spirv_variable (psym, ctx);
@@ -3027,7 +3032,7 @@ spirv_create_param (symtab_t *parameters, symbol_t *param, param_qual_t qual)
 		symtab_addsymbol (parameters, param);
 	}
 	auto type = param->type;
-	if (qual != pq_const) {
+	if (qual != pq_const && !is_reference (type)) {
 		param->lvalue = true;
 		type = tagged_reference_type (SpvStorageClassFunction, type);
 	}
