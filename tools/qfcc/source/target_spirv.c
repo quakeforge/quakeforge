@@ -2827,6 +2827,9 @@ spirv_ptroffset (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 {
+	if (e->type == ex_error) {
+		return 0;
+	}
 	if (spirv_expr_id (e, ctx)) {
 		return spirv_expr_id (e, ctx);
 	}
