@@ -2130,32 +2130,33 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 			auto index = binary_expr ('*', obj->array.index, scale);
 			offset = binary_expr ('*', base, scale);
 			offset = binary_expr ('-', index, offset);
-			if (is_array (base_type)
-				|| is_nonscalar (base_type) || is_matrix (base_type)) {
-			} else {
-			}
 		} else {
 			internal_error (obj, "what the what?!?");
 		}
 		// "wedge" the spirv-id for the pointer into the expression
 		// being generated. spirv_emit_expr will use the id instead
-		// of evaluating the expression.
-		ptr = new_expr_copy (e);
-		spirv_add_expr_id (ptr, ptr_id, ctx);
+		// of evaluating the expression. If ptr_id is still 0, then
+		// the expression will still be evaluated.
+		if (!ptr) {
+			ptr = new_expr_copy (e);
+			spirv_add_expr_id (ptr, ptr_id, ctx);
+		}
 		unsigned storage = base_type->fldptr.tag;
 		*acc_type = tagged_pointer_type (storage, type);
 		if (!is_zero (offset)) {
+			scoped_src_loc (e);
 			ptr = offset_pointer_expr (ptr, offset);
 		}
 		ptr = cast_expr (*acc_type, ptr);
-		ptr_id = spirv_emit_expr (ptr, ctx);
 		if (is_pointer (type)) {
+			ptr_id = spirv_emit_expr (ptr, ctx);
 			id = ptr_id;
 			align = type_align (type) * sizeof (pr_type_t);
 			base_type = type;
 		}
 		e = obj;
 	}
+	ptr_id = spirv_emit_expr (ptr, ctx);
 	return ptr_id;
 }
 
