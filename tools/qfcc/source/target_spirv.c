@@ -1739,6 +1739,7 @@ spirv_expr (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_symbol (const expr_t *e, spirvctx_t *ctx)
 {
+	scoped_src_loc (e);
 	auto sym = e->symbol;
 	if (sym->id) {
 		if (set_is_member (ctx->module->interface_syms, sym->id)) {
@@ -1858,6 +1859,7 @@ spirv_value (const expr_t *e, spirvctx_t *ctx)
 {
 	auto value = e->value;
 	if (!value->id) {
+		scoped_src_loc (e);
 		if (is_string (value->type)) {
 			return spirv_string_value (value, ctx);
 		}
@@ -1928,6 +1930,7 @@ spirv_compound (const expr_t *e, spirvctx_t *ctx)
 				warning (expr, "initialization of %s with %s (use a cast)\n)",
 						 get_type_string (ele->type), get_type_string (type));
 			}
+			scoped_src_loc (expr);
 			expr = cast_expr (ele->type, expr);
 		}
 		ele_ids[ind++] = spirv_emit_expr (expr, ctx);
@@ -2101,6 +2104,7 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 	unsigned align = 0;
 	const expr_t *ptr = nullptr;
 	for (int i = num_ind; i < num_obj; i++) {
+		scoped_src_loc (e);
 		if (id) {
 			ptr_id = spirv_ptr_load (base_type, id, align, ctx);
 			id = 0;
@@ -2144,7 +2148,6 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 		unsigned storage = base_type->fldptr.tag;
 		*acc_type = tagged_pointer_type (storage, type);
 		if (!is_zero (offset)) {
-			scoped_src_loc (e);
 			ptr = offset_pointer_expr (ptr, offset);
 		}
 		ptr = cast_expr (*acc_type, ptr);
@@ -2257,6 +2260,7 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 		if (func_type->func.param_quals[i] == pq_const) {
 			arg_ids[i] = spirv_emit_expr (a, ctx);
 		} else {
+			scoped_src_loc (a);
 			auto psym = new_symbol ("param");
 			auto arg_type = get_type (a);
 			if (is_reference (arg_type)) {
