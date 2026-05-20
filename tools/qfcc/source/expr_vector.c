@@ -106,6 +106,9 @@ new_vector_list (const expr_t *expr_list)
 		if (!t) {
 			return e;
 		}
+		if (is_reference (t)) {
+			t = dereference_type (t);
+		}
 		if (!is_math (t)) {
 			return error (e, "invalid type for vector element");
 		}
@@ -129,6 +132,11 @@ new_vector_list (const expr_t *expr_list)
 	int         all_implicit = 1;
 	for (int i = 0; i < count; i++) {
 		auto e = elements[i];
+		auto t = get_type (e);
+		if (is_reference (t)) {
+			t = dereference_type (t);
+			e = pointer_deref (e);
+		}
 		int         cast_width = type_width (get_type (e));
 		const type_t *cast_type = vector_type (ele_type, cast_width);
 		all_implicit = all_implicit && e->implicit;
