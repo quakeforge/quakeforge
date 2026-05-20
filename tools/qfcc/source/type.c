@@ -871,10 +871,14 @@ tagged_reference_type (unsigned tag, const type_t *aux)
 	type_t      _new;
 	type_t     *new = &_new;
 
-	if (aux)
+	if (aux) {
+		if (is_reference (aux)) {
+			internal_error (0, "reference of a reference");
+		}
 		memset (&_new, 0, sizeof (_new));
-	else
+	} else {
 		new = new_type ();
+	}
 	new->type = ev_ptr;
 	new->alignment = 1;
 	new->width = 1;
