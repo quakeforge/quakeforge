@@ -766,6 +766,9 @@ spirv_Type (const type_t *type, spirvctx_t *ctx)
 		id = spirv_TypeStruct (type, ctx);
 	} else if (is_boolean (type)) {
 		id = spirv_TypeBool (type, ctx);
+	} else if (is_enum (type)) {
+		// type->type will be one of the integer types
+		id = spirv_Type (ev_types[type->type], ctx);
 	} else if (is_image (type) || is_sampled_image (type)) {
 		auto image = &imageset.a[type->handle.extra];
 		id = spirv_TypeImage (image, ctx);
@@ -1679,16 +1682,22 @@ spirv_expr (const expr_t *e, spirvctx_t *ctx)
 	}
 	auto t1 = get_type (e->expr.e1);
 	auto t2 = get_type (e->expr.e2);
+	if (is_enum (t1)) {
+		t1 = int_type (t1);
+	}
+	if (is_enum (t2)) {
+		t2 = int_type (t2);
+	}
 	auto spv_op = spirv_find_op (op_name, t1, t2);
 	if (!spv_op) {
 		internal_error (e, "unexpected binary op_name: %s %s %s\n", op_name,
-						get_type_string(t1),
-						get_type_string(t2));
+						get_type_string(get_type (e->expr.e1)),
+						get_type_string(get_type (e->expr.e2)));
 	}
 	if (!spv_op->op && !spv_op->generate) {
 		internal_error (e, "unimplemented op: %s %s %s\n", op_name,
-						get_type_string(t1),
-						get_type_string(t2));
+						get_type_string(get_type (e->expr.e1)),
+						get_type_string(get_type (e->expr.e2)));
 	}
 	if (spv_op->generate) {
 		return spv_op->generate (e, ctx);
