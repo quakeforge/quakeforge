@@ -2103,6 +2103,8 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 	unsigned ptr_id = 0;
 	unsigned align = 0;
 	const expr_t *ptr = nullptr;
+	base_type = get_type (e);
+	unsigned storage = base_type->fldptr.tag;
 	for (int i = num_ind; i < num_obj; i++) {
 		scoped_src_loc (e);
 		if (id) {
@@ -2110,7 +2112,6 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 			id = 0;
 		}
 		auto obj = ind_expr[i];
-		base_type = get_type (e);
 		const expr_t *offset;
 		const type_t *type;
 		if (obj->type == ex_field) {
@@ -2145,7 +2146,6 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 			ptr = new_expr_copy (e);
 			spirv_add_expr_id (ptr, ptr_id, ctx);
 		}
-		unsigned storage = base_type->fldptr.tag;
 		*acc_type = tagged_pointer_type (storage, type);
 		if (!is_zero (offset)) {
 			ptr = offset_pointer_expr (ptr, offset);
@@ -2156,6 +2156,7 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 			id = ptr_id;
 			align = type_align (type) * sizeof (pr_type_t);
 			base_type = type;
+			storage = base_type->fldptr.tag;
 		}
 		e = obj;
 	}
@@ -2204,8 +2205,8 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 		return src;
 	}
 	if (e->assign.dst->type == ex_field || e->assign.dst->type == ex_array) {
-		const type_t *res_type;
-		const type_t *acc_type;
+		const type_t *res_type = nullptr;
+		const type_t *acc_type = nullptr;
 		dst = spirv_access_chain (e->assign.dst, ctx, &res_type, &acc_type);
 		if (res_type == acc_type) {
 			internal_error (e, "assignment to temp?");
