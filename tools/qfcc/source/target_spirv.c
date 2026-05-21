@@ -3520,6 +3520,15 @@ spirv_proc_switch (const expr_t *expr, rua_ctx_t *ctx)
 }
 
 static const expr_t *
+spirv_proc_address (const expr_t *expr, rua_ctx_t *ctx)
+{
+	if (!is_lvalue (expr)) {
+		return error (expr, "cannot take the addresss of a non-lvalue");
+	}
+	return new_address_expr (get_type (expr), expr, nullptr);
+}
+
+static const expr_t *
 spirv_vector_compare (int op, const expr_t *e1, const expr_t *e2)
 {
 	// both e1 and e2 should have the same types here
@@ -3880,6 +3889,7 @@ target_t spirv_target = {
 	.assign_vector = spirv_assign_vector,
 	.proc_switch = spirv_proc_switch,
 	.proc_caselabel = ruamoko_proc_caselabel,
+	.proc_address = spirv_proc_address,
 	.vector_compare = spirv_vector_compare,
 	.shift_op = spirv_shift_op,
 	.test_expr = spirv_test_expr,
