@@ -40,6 +40,7 @@ typedef struct expr_s expr_t;
 typedef struct pr_info_s pr_info_t;
 typedef struct hashtab_s hashtab_t;
 typedef struct set_s set_t;
+typedef struct function_s function_t;
 
 typedef struct entrypoint_s {
 	struct entrypoint_s *next;
@@ -48,7 +49,7 @@ typedef struct entrypoint_s {
 	attribute_t *modes;
 	ex_list_t   interface;			///< list of symbols forming interface
 	set_t      *interface_syms;
-	struct function_s *func;
+	function_t *func;
 
 	const expr_t *invocations;
 	const expr_t *local_size[3];

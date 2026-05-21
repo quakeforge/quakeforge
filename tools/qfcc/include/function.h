@@ -95,8 +95,9 @@ typedef struct function_s {
 	const char         *o_name;
 	int                 builtin;	///< if non 0, call an internal function
 	int                 code;		///< first statement
-	int                 id;
 	int                 function_num;
+	int                 id;
+	struct set_s       *interface_syms;
 	int                 line_info;
 	int                 params_start;///< relative to locals space. 0 for v6p
 	pr_string_t         s_file;		///< source file with definition

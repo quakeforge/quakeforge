@@ -74,6 +74,7 @@ typedef struct spirvctx_s {
 	defspace_t *code_space;
 
 	const spirv_grammar_t *core;
+	function_t *cur_func;
 
 	struct DARRAY_TYPE (unsigned) type_ids;
 	struct DARRAY_TYPE (unsigned) expr_ids;		///< Flushed per function
@@ -965,8 +966,7 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 	spirv_Name (id, full_name, ctx);
 	spirv_decorate_id (id, sym->attributes, ctx);
 	if (storage != SpvStorageClassFunction) {
-		//DARRAY_APPEND (&ctx->module->current_entrypoint->interface_syms, sym);
-		set_add (ctx->module->current_entrypoint->interface_syms, id);
+		set_add (ctx->cur_func->interface_syms, id);
 		set_add (ctx->module->interface_syms, id);
 	}
 	return id;
@@ -997,6 +997,9 @@ spirv_function_ref (function_t *func, spirvctx_t *ctx)
 static unsigned
 spirv_function (function_t *func, spirvctx_t *ctx)
 {
+	if (!func->interface_syms) {
+		func->interface_syms = set_new ();
+	}
 	if (options.block_dot.expr && func->exprs) {
 		auto cf = current_func;
 		current_func = func;
@@ -1078,16 +1081,24 @@ spirv_EntryPoint (entrypoint_t *entrypoint, spirvctx_t *ctx)
 	}
 	ctx->module->current_entrypoint = entrypoint;
 
+	auto interface_syms = set_new ();
+
+	ctx->cur_func = entrypoint->func;
 	unsigned func_id = spirv_function (entrypoint->func, ctx);
+	set_union (interface_syms, ctx->cur_func->interface_syms);
 	while (ctx->func_queue.size) {
 		auto func = DARRAY_REMOVE (&ctx->func_queue);
+		ctx->cur_func = func;
 		spirv_function (func, ctx);
+		set_union (interface_syms, ctx->cur_func->interface_syms);
 	}
+	ctx->cur_func = nullptr;
+
+	entrypoint->interface_syms = interface_syms;
 
 	int len = strlen (entrypoint->name) + 1;
 	int iface_start = 3 + RUP(len, 4) / 4;
 	auto linkage = ctx->module->entry_point_space;
-	auto interface_syms = entrypoint->interface_syms;
 	int count = set_count (interface_syms);
 	auto insn = spirv_new_insn (SpvOpEntryPoint, iface_start + count,
 								linkage, ctx);
@@ -1757,9 +1768,15 @@ spirv_symbol (const expr_t *e, spirvctx_t *ctx)
 {
 	scoped_src_loc (e);
 	auto sym = e->symbol;
+	if (sym->sy_type == sy_func) {
+		auto func = sym->metafunc->func;
+		if (func && func->interface_syms) {
+			set_union (ctx->cur_func->interface_syms, func->interface_syms);
+		}
+	}
 	if (sym->id) {
 		if (set_is_member (ctx->module->interface_syms, sym->id)) {
-			set_add (ctx->module->current_entrypoint->interface_syms, sym->id);
+			set_add (ctx->cur_func->interface_syms, sym->id);
 		}
 		return sym->id;
 	}
@@ -2950,6 +2967,8 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	INSN (header, 4) = 0;	// Reserved
 
 	if (pr->module->entry_points && !pr->module->entry_points->next) {
+		ctx.cur_func = pr->module->entry_points->func;
+		ctx.cur_func->interface_syms = set_new ();
 		// only one entry point
 		// FIXME this should be optional
 		for (size_t i = 0; i < pr->module->global_syms.size; i++) {
@@ -3395,7 +3414,6 @@ spirv_create_entry_point (const char *name, const char *model_name,
 		.model = model,
 		.name = save_string (name),
 		.modes = mode,
-		.interface_syms = set_new(),
 	};
 	pr.module->entry_points = ep;
 	return true;
