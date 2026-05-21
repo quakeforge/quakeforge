@@ -232,6 +232,10 @@ iface_block_type (const type_t *type, const char *pre_tag)
 		auto name = type->name + 4;	// skip over "tag "
 		auto tag = name;
 		if (pre_tag) {
+			size_t len = strlen (pre_tag);
+			if (strncmp (name, pre_tag, len) == 0 && name[len] == '.') {
+				return type;
+			}
 			tag = save_string (va ("%s.%s", pre_tag, name));
 		}
 		type_t new = {
@@ -253,7 +257,12 @@ iface_block_type (const type_t *type, const char *pre_tag)
 			if (s->sy_type != sy_offset && s->sy_type != sy_convert) {
 				continue;
 			}
-			auto ftype = iface_block_type (s->type, tag);
+			auto ftype = s->type;
+			if (pre_tag && strcmp (pre_tag, "@bda") == 0) {
+				ftype = iface_block_type (s->type, pre_tag);
+			} else {
+				ftype = iface_block_type (s->type, tag);
+			}
 			auto sym = new_symbol_type (s->name, ftype);
 			sym->sy_type = s->sy_type;
 			if (s->sy_type == sy_convert) {
