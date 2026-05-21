@@ -904,6 +904,8 @@ datadef
 			if (spec.block) {
 				auto block = spec.block;
 				declare_block_instance (spec, block, nullptr, ctx);
+			} else if (spec.is_typedef) {
+				warning (0, "empty typedef");
 			}
 		}
 	| attr_list ';'
