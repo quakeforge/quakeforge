@@ -243,9 +243,10 @@ bitfield_assign (const expr_t *dst, const expr_t *src)
 
 	auto lvalue = dst->bitfield.src;
 	auto rvalue = new_expr ();
+	auto backing_type = get_type (dst->bitfield.src);
 	rvalue->type = ex_bitfield;
 	rvalue->bitfield = dst->bitfield;
-	rvalue->bitfield.insert = src;
+	rvalue->bitfield.insert = cast_expr (backing_type, src);
 
 	return assign_expr (lvalue, rvalue);
 }
