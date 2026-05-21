@@ -144,7 +144,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %left           DOT
 %left			WEDGE REGRESSIVE
 %left			CROSS
-%right	<op>	SIZEOF COUNTOF UNARY INCOP REVERSE STAR DUAL UNDUAL
+%right	<op>	SIZEOF COUNTOF UNARY INCOP REVERSE STAR DUAL UNDUAL BITCAST
 %left			HYPERUNARY
 %left			'.' '(' '['
 
@@ -2500,6 +2500,12 @@ unary_expr
 		{
 			$$ = new_horizontal_expr ($hop, $expr, nullptr);
 		}
+	| BITCAST '(' typename ',' expr ')'
+		{
+			auto spec = $typename;
+			auto decl = new_decl_expr (spec);
+			$$ = new_binary_expr (QC_BITCAST, decl, $expr);
+		}
 	| SIZEOF unary_expr	%prec UNARY	{ $$ = new_unary_expr ('S', $2); }
 	| SIZEOF '(' typename ')'	%prec HYPERUNARY
 		{
@@ -3370,6 +3376,8 @@ static keyword_t qf_keywords[] = {
 	{"@undual",		QC_UNDUAL,		},
 
 	{"@horiz",		QC_HORIZ,		},
+
+	{"@bitcast",	QC_BITCAST,		},
 
 	{"@image",		QC_IMAGE,		},
 	{"@sampler",	QC_SAMPLER,		},

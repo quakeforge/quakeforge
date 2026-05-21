@@ -74,6 +74,17 @@ proc_expr (const expr_t *expr, rua_ctx_t *ctx)
 		auto e = expr_process (expr->expr.e2, ctx);
 		return cast_expr (type, e);
 	}
+	if (expr->expr.op == QC_BITCAST) {
+		auto type = proc_decl_type (expr->expr.e1, ctx);
+		auto e = expr_process (expr->expr.e2, ctx);
+		if (is_reference (get_type (e))) {
+			e = pointer_deref (e);
+		}
+		if (type_size (type) != type_size (get_type (e))) {
+			return error (expr, "bitcast between types of different size");
+		}
+		return new_alias_expr (type, e);
+	}
 	bool short_circuit = false;
 	if (options.code.short_circuit
 		&& current_target.short_circuit

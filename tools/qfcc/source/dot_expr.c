@@ -108,6 +108,7 @@ get_op_string (int op)
 		case QC_REVERSE:	return "@reverse";
 		case QC_DUAL:		return "@dual";
 		case QC_UNDUAL:		return "@undual";
+		case QC_BITCAST:	return "<bitcast>";
 		case QC_ATTRIBUTE:  return ".property";
 		case QC_AT_FUNCTION:return "@function";
 		case QC_AT_FIELD:	return "@field";
