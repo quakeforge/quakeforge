@@ -48,7 +48,7 @@
 #include "tools/qfcc/include/type.h"
 
 static void
-v6p_build_scope (symbol_t *fsym)
+v6p_build_scope (symbol_t *fsym, rua_ctx_t *ctx)
 {
 	int         i;
 	param_t    *p;

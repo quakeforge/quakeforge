@@ -73,7 +73,7 @@ array_count (const type_t *array_type, rua_ctx_t *ctx)
 {
 	auto sym = new_symbol (".array_count");
 	auto param = new_param (nullptr, array_type, "arr");
-	auto type = find_type (parse_params (&type_uint, param));
+	auto type = find_type (parse_params (&type_uint, param, ctx));
 	specifier_t spec = {
 		.type = type,
 		.params = param,

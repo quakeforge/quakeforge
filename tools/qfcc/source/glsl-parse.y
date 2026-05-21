@@ -338,7 +338,7 @@ function_definition
 			auto spec = $1;
 			spec.sym->params = spec.params;
 			spec.is_overload = strcmp (spec.sym->name, "main") != 0;
-			spec.type = find_type (parse_params (spec.type, spec.params));
+			spec.type = find_type (parse_params (spec.type, spec.params, ctx));
 			spec.sym = function_symbol (spec, ctx);
 			current_func = begin_function (spec, nullptr, current_symtab, ctx);
 			current_symtab = current_func->locals;
@@ -713,7 +713,7 @@ function_prototype
 	: function_declarator ')'
 		{
 			auto spec = $1;
-			spec.sym->type = parse_params (0, spec.params);
+			spec.sym->type = parse_params (0, spec.params, ctx);
 			$$ = spec;
 		}
 	;

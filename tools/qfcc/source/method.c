@@ -83,7 +83,8 @@ method_free (void *_meth, void *unused)
 }
 
 method_t *
-new_method (const type_t *ret_type, param_t *selector, param_t *opt_params)
+new_method (const type_t *ret_type, param_t *selector, param_t *opt_params,
+			rua_ctx_t *ctx)
 {
 	method_t   *meth = malloc (sizeof (method_t));
 	param_t    *cmd = new_param (0, &type_SEL, "_cmd");
@@ -105,7 +106,7 @@ new_method (const type_t *ret_type, param_t *selector, param_t *opt_params)
 	meth->instance = 0;
 	meth->selector = selector;
 	meth->params = self;
-	meth->type = parse_params (ret_type, meth->params);
+	meth->type = parse_params (ret_type, meth->params, ctx);
 	meth->type = find_type (meth->type);
 
 	selector_name (name, (keywordarg_t *)selector);

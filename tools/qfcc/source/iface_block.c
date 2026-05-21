@@ -152,7 +152,7 @@ iface_block_array_count (const type_t *block_type, rua_ctx_t *ctx)
 	auto block = new_param (nullptr, block_type, "block");
 	block->next = offset;
 	auto param = block;
-	auto type = find_type (parse_params (&type_uint, param));
+	auto type = find_type (parse_params (&type_uint, param, ctx));
 	specifier_t spec = { .type = type, .sym = sym, .params = param };
 	auto symtab = current_symtab;
 	current_symtab = pr.symtab;//FIXME clean up current_symtab

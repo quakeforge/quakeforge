@@ -3058,7 +3058,7 @@ spirv_create_param (symtab_t *parameters, symbol_t *param, param_qual_t qual)
 }
 
 static void
-spirv_build_scope (symbol_t *fsym)
+spirv_build_scope (symbol_t *fsym, rua_ctx_t *ctx)
 {
 	function_t *func = fsym->metafunc->func;
 

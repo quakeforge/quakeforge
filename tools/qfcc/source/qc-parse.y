@@ -474,11 +474,11 @@ state_expr_spec (specifier_t spec, const expr_t *state_expr, rua_ctx_t *ctx)
 }
 
 static specifier_t
-function_spec (specifier_t spec, param_t *parameters)
+function_spec (specifier_t spec, param_t *parameters, rua_ctx_t *ctx)
 {
 	// return type will be filled in when building the final type
 	auto type_expr = new_type_function (QC_AT_FUNCTION, nullptr);
-	type_expr->typ.type = parse_params (0, parameters);
+	type_expr->typ.type = parse_params (0, parameters, ctx);
 	if (spec.type_list) {
 		expr_append_expr (spec.type_list, type_expr);
 	} else {
@@ -534,7 +534,7 @@ field_spec (specifier_t spec)
 }
 
 static specifier_t
-qc_function_spec (specifier_t spec, param_t *params)
+qc_function_spec (specifier_t spec, param_t *params, rua_ctx_t *ctx)
 {
 #if 0
 	//FIXME this is borked
@@ -557,7 +557,7 @@ qc_function_spec (specifier_t spec, param_t *params)
 	spec.type = ret_type;
 #endif
 
-	spec = function_spec (spec, params);
+	spec = function_spec (spec, params, ctx);
 	return spec;
 }
 
@@ -645,7 +645,7 @@ static param_t *
 make_qc_func_param (specifier_t spec, param_t *params, symbol_t *sym,
 					rua_ctx_t *ctx)
 {
-	spec = qc_function_spec (spec, params);
+	spec = qc_function_spec (spec, params, ctx);
 	spec = spec_process (spec, ctx);
 	param_t   *param = new_param (0, spec.type, sym->name);
 	return param;
@@ -895,7 +895,7 @@ datadef
 	| attr_declspecs_ts initdecls ';'			{ decl_process ($2, ctx); }
 	| attr_declspecs_ts qc_func_params
 		{
-			$<spec>$ = qc_function_spec ($1, $2);
+			$<spec>$ = qc_function_spec ($1, $2, ctx);
 		}
 	  qc_func_decls
 	| attr_declspecs ';'
@@ -1042,7 +1042,7 @@ qc_nocode_func
 
 			spec.is_overload |= ctx->language->always_overload;
 			spec.sym = function_symbol (spec, ctx);
-			build_builtin_function (spec, nullptr, bi_val);
+			build_builtin_function (spec, nullptr, bi_val, ctx);
 		}
 	| identifier '=' intrinsic
 		{
@@ -1099,7 +1099,7 @@ after_type_declarator
 	: '(' copy_spec after_type_declarator ')' { $$ = $3; }
 	| after_type_declarator function_params
 		{
-			$$ = function_spec ($1, $2);
+			$$ = function_spec ($1, $2, ctx);
 		}
 	| after_type_declarator array_decl
 		{
@@ -1139,7 +1139,7 @@ notype_declarator
 	: '(' copy_spec notype_declarator ')' { $$ = $3; }
 	| notype_declarator function_params
 		{
-			$$ = function_spec ($1, $2);
+			$$ = function_spec ($1, $2, ctx);
 		}
 	| notype_declarator array_decl
 		{
@@ -1410,7 +1410,7 @@ function_body
 
 			spec.is_overload |= ctx->language->always_overload;
 			spec.sym = function_symbol (spec, ctx);
-			build_builtin_function (spec, nullptr, bi_val);
+			build_builtin_function (spec, nullptr, bi_val, ctx);
 		}
 	| '=' intrinsic
 		{
@@ -2023,7 +2023,7 @@ direct_absdecl
 	: '(' copy_spec absdecl1 ')' { $$ = $3; }
 	| direct_absdecl function_params
 		{
-			$$ = function_spec ($1, $2);
+			$$ = function_spec ($1, $2, ctx);
 		}
 	| direct_absdecl array_decl
 		{
@@ -2031,7 +2031,7 @@ direct_absdecl
 		}
 	| function_params
 		{
-			$$ = function_spec ($<spec>0, $1);
+			$$ = function_spec ($<spec>0, $1, ctx);
 		}
 	| array_decl
 		{
@@ -2046,7 +2046,7 @@ param_declarator
 
 param_declarator_starttypename
 	: param_declarator_starttypename function_params
-		{ $$ = function_spec ($1, $2); }
+		{ $$ = function_spec ($1, $2, ctx); }
 	| param_declarator_starttypename array_decl
 		{
 			//$$ = array_spec ($1, $2);
@@ -2062,7 +2062,7 @@ param_declarator_starttypename
 
 param_declarator_nostarttypename
 	: param_declarator_nostarttypename function_params
-		{ $$ = function_spec ($1, $2); }
+		{ $$ = function_spec ($1, $2, ctx); }
 	| param_declarator_nostarttypename array_decl
 		{ $$ = array_spec ($1, $2); }
 	| '*' ptr_spec param_declarator_starttypename
@@ -2092,7 +2092,7 @@ decl
 		}
 	| declspecs_ts local_expr qc_func_params
 		{
-			$<spec>$ = qc_function_spec ($1, $3);
+			$<spec>$ = qc_function_spec ($1, $3, ctx);
 		}
 	  qc_func_decls
 		{
@@ -3011,7 +3011,7 @@ methoddef
 				.storage = sc_static,
 				.is_far = true,
 			};
-			build_builtin_function (spec, nullptr, bi_val);
+			build_builtin_function (spec, nullptr, bi_val, ctx);
 			method->func = spec.sym->metafunc->func;
 			method->def = method->func->def;
 		}
@@ -3047,24 +3047,24 @@ methodproto
 			$$ = $2;
 		}
 	| ci error ';'
-		{ $$ = new_method (&type_id, make_selector ("", 0, 0), 0); }
+		{ $$ = new_method (&type_id, make_selector ("", 0, 0), 0, ctx); }
 	;
 
 methoddecl
 	: '(' typename ')' unaryselector
 		{
 			auto spec = resolve_type_spec ($2, ctx);
-			$$ = new_method (spec.type, $4, 0);
+			$$ = new_method (spec.type, $4, 0, ctx);
 		}
 	| unaryselector
-		{ $$ = new_method (&type_id, $1, 0); }
+		{ $$ = new_method (&type_id, $1, 0, ctx); }
 	| '(' typename ')' keywordselector optional_param_list
 		{
 			auto spec = resolve_type_spec ($2, ctx);
-			$$ = new_method (spec.type, $4, $5);
+			$$ = new_method (spec.type, $4, $5, ctx);
 		}
 	| keywordselector optional_param_list
-		{ $$ = new_method (&type_id, $1, $2); }
+		{ $$ = new_method (&type_id, $1, $2, ctx); }
 	;
 
 optional_param_list

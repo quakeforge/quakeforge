@@ -77,7 +77,7 @@ struct dstring_s;
 typedef struct rua_ctx_s rua_ctx_t;
 
 method_t *new_method (const struct type_s *ret_type, param_t *selector,
-					  param_t *opt_parms);
+					  param_t *opt_parms, rua_ctx_t *ctx);
 const char *method_name (method_t *method);
 method_t *copy_method (method_t *method);
 void add_method (methodlist_t *methodlist, method_t *method);

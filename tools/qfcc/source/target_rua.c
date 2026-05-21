@@ -82,7 +82,7 @@ create_param (symtab_t *parameters, symbol_t *param)
 }
 
 static void
-ruamoko_build_scope (symbol_t *fsym)
+ruamoko_build_scope (symbol_t *fsym, rua_ctx_t *ctx)
 {
 	function_t *func = fsym->metafunc->func;
 

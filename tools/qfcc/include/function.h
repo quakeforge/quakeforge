@@ -216,7 +216,8 @@ param_t *param_append_identifiers (param_t *params, struct symbol_s *idents,
 param_t *reverse_params (param_t *params);
 param_t *append_params (param_t *params, param_t *more_params);
 param_t *copy_params (param_t *params);
-const type_t *parse_params (const type_t *return_type, param_t *params);
+const type_t *parse_params (const type_t *return_type, param_t *params,
+							rua_ctx_t *ctx);
 
 param_t *check_params (param_t *params);
 
@@ -234,7 +235,7 @@ function_t *begin_function (specifier_t spec, const char *nicename,
 void build_code_function (specifier_t spec, const expr_t *state_expr,
 						  expr_t *statements, rua_ctx_t *ctx);
 void build_builtin_function (specifier_t spec, const char *ext_name,
-							 const expr_t *bi_val);
+							 const expr_t *bi_val, rua_ctx_t *ctx);
 symbol_t *build_intrinsic_function (specifier_t spec, const expr_t *intrinsic,
 									rua_ctx_t *ctx);
 void emit_function (function_t *f, expr_t *e);

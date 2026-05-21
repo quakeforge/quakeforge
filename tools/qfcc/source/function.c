@@ -540,7 +540,7 @@ copy_params (param_t *params)
 }
 
 const type_t *
-parse_params (const type_t *return_type, param_t *parms)
+parse_params (const type_t *return_type, param_t *parms, rua_ctx_t *ctx)
 {
 	param_t    *p;
 	type_t     *new;
@@ -910,7 +910,7 @@ get_function (const char *name, const char *ns_name, specifier_t spec,
 	spec.sym->type = spec.type;
 	if (!is_func (spec.type)) {
 		error (0, "not a function");
-		spec.sym->type = parse_params (spec.type, nullptr);
+		spec.sym->type = parse_params (spec.type, nullptr, ctx);
 	} else {
 		auto type = set_func_type_attrs (spec.sym->type, &spec.attributes, ctx);
 		spec.sym->type = type;
@@ -1341,10 +1341,10 @@ check_function (symbol_t *fsym)
 }
 
 static void
-build_scope (symbol_t *fsym, symtab_t *parent)
+build_scope (symbol_t *fsym, symtab_t *parent, rua_ctx_t *ctx)
 {
 	build_core_scope (fsym, parent, true);
-	current_target.build_scope (fsym);
+	current_target.build_scope (fsym, ctx);
 }
 
 function_t *
@@ -1439,12 +1439,12 @@ begin_function (specifier_t spec, const char *nicename, symtab_t *parent,
 
 	check_function (sym);
 
-	build_scope (sym, parent);
+	build_scope (sym, parent, ctx);
 	return func;
 }
 
 static void
-build_function (symbol_t *fsym)
+build_function (symbol_t *fsym, rua_ctx_t *ctx)
 {
 	const type_t *func_type = fsym->metafunc->func->type;
 	if (options.code.max_params >= 0
@@ -1476,7 +1476,7 @@ build_code_function (specifier_t spec, const expr_t *state_expr,
 	if (fsym->sy_type != sy_func) {	// probably in error recovery
 		return;
 	}
-	build_function (fsym);
+	build_function (fsym, ctx);
 	if (state_expr) {
 		prepend_expr (statements, state_expr);
 	}
@@ -1487,7 +1487,7 @@ build_code_function (specifier_t spec, const expr_t *state_expr,
 
 void
 build_builtin_function (specifier_t spec, const char *ext_name,
-						const expr_t *bi_val)
+						const expr_t *bi_val, rua_ctx_t *ctx)
 {
 	auto sym = spec.sym;
 	int         bi;
@@ -1540,12 +1540,12 @@ build_builtin_function (specifier_t spec, const char *ext_name,
 	}
 	func->builtin = bi;
 	reloc_def_func (func, func->def);
-	build_function (sym);
+	build_function (sym, ctx);
 
 	check_function (sym);
 
 	// for debug info
-	build_scope (sym, current_symtab);
+	build_scope (sym, current_symtab, ctx);
 	func->parameters->space->size = 0;
 	func->locals->space = func->parameters->space;
 }

@@ -41,7 +41,7 @@ typedef struct metafunc_s metafunc_t;
 typedef struct {
 	void      (*init) (void);
 	bool      (*value_too_large) (const type_t *val_type);
-	void      (*build_scope) (symbol_t *fsym);
+	void      (*build_scope) (symbol_t *fsym, rua_ctx_t *ctx);
 	void      (*build_code) (function_t *func, const expr_t *statements);
 	void      (*field_attributes) (attribute_t **attributes, symbol_t *sym);
 	void      (*var_attributes) (specifier_t *spec, attribute_t **attributes,
