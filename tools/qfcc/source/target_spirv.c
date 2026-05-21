@@ -3387,7 +3387,7 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 	if (symtab->type == stab_param || symtab->type == stab_local) {
 		if (init) {
 			if (!block && is_constexpr (init)) {
-				notice (init, "!block %s\n", sym->name);
+				sym->var.init = init;
 			} else if (block) {
 				auto r = new_symbol_expr (sym);
 				auto e = assign_expr (r, init);
