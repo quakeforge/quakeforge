@@ -347,8 +347,11 @@ print_type_expr (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
 	int         indent = level * 2 + 2;
 	const char *str = "(null)";
 	if (e->typ.op) {
-		_print_expr (dstr, e->typ.params, level + 1, printed, nullptr);
-		dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->typ.params);
+		if (e->typ.params) {
+			_print_expr (dstr, e->typ.params, level + 1, printed, nullptr);
+			dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e,
+					   e->typ.params);
+		}
 		str = get_op_string (e->typ.op);
 	} else if (e->typ.type) {
 		str = e->typ.type->encoding;
