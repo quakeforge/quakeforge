@@ -1516,7 +1516,8 @@ spirv_find_op (const char *op_name, const type_t *type1, const type_t *type2)
 static unsigned
 spirv_cast (const expr_t *e, spirvctx_t *ctx)
 {
-	auto src_type = get_type (e->expr.e1);
+	auto src = e->expr.e1;
+	auto src_type = get_type (src);
 	auto dst_type = e->expr.type;
 	SpvOp op = 0;
 	if (is_real (src_type)) {
@@ -1532,16 +1533,31 @@ spirv_cast (const expr_t *e, spirvctx_t *ctx)
 			op = SpvOpConvertUToF;
 		} else if (is_signed (src_type)) {
 			op = SpvOpConvertSToF;
+		} else if (is_boolean (src_type)) {
+			auto one = cast_expr (dst_type, new_double_expr (1, true));
+			auto zero = new_zero_expr (dst_type);
+			auto sel = new_cond_expr (src, one, zero);
+			return spirv_emit_expr (sel, ctx);
 		}
 	} else if (is_unsigned (dst_type)) {
 		if (type_size (base_type (dst_type))
 			!= type_size (base_type (src_type))) {
 			op = SpvOpUConvert;
+		} else if (is_boolean (src_type)) {
+			auto one = cast_expr (dst_type, new_long_expr (-1, true));
+			auto zero = new_zero_expr (dst_type);
+			auto sel = new_cond_expr (src, one, zero);
+			return spirv_emit_expr (sel, ctx);
 		}
 	} else if (is_signed (dst_type)) {
 		if (type_size (base_type (dst_type))
 			!= type_size (base_type (src_type))) {
 			op = SpvOpSConvert;
+		} else if (is_boolean (src_type)) {
+			auto one = cast_expr (dst_type, new_long_expr (-1, true));
+			auto zero = new_zero_expr (dst_type);
+			auto sel = new_cond_expr (src, one, zero);
+			return spirv_emit_expr (sel, ctx);
 		}
 	} else if (is_structural (dst_type)) {
 		// assume set up by spirv_check_types_compatible
@@ -1551,7 +1567,7 @@ spirv_cast (const expr_t *e, spirvctx_t *ctx)
 		internal_error (e, "unexpected type combination");
 	}
 
-	unsigned cid = spirv_emit_expr (e->expr.e1, ctx);
+	unsigned cid = spirv_emit_expr (src, ctx);
 	unsigned tid = spirv_Type (dst_type, ctx);
 	unsigned id = spirv_id (ctx);
 	auto insn = spirv_new_insn (op, 4, ctx->code_space, ctx);
