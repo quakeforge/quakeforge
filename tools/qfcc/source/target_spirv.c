@@ -946,6 +946,36 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 	int count = 4;
 	uint32_t init = 0;
 	if (sym->var.init) {
+		if (sym->var.init->type == ex_compound) {
+			auto ini = sym->var.init;
+			scoped_src_loc (ini);
+
+			uint32_t tag = 0;
+			auto type = sym->type;
+			if (is_reference (type)) {
+				tag = pointer_tag (type);
+				type = dereference_type (type);
+			}
+			if (ini->compound.type) {
+				type = ini->compound.type;
+			}
+			if (is_array (type) && !type_size (type)) {
+				auto ele_type = dereference_type (type);
+				type = array_type (ele_type, num_elements (ini));
+			}
+
+			auto new = new_compound_init ();
+			new->compound.nested = true;
+			new->compound.type = type;
+			if (!build_element_chain (&new->compound, type, ini, 0)) {
+				return 0;
+			}
+			if (tag) {
+				type = tagged_reference_type (tag, type);
+			}
+			sym->type = type;
+			sym->var.init = new;
+		}
 		count = 5;
 		init = spirv_emit_expr (sym->var.init, ctx);
 	}
