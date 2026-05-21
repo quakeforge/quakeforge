@@ -1,64 +1,30 @@
 #include <QF/math/bitop.h>
 #include <QF/qfmodel.h>
 
-void printf(string fmt, ...)=#0;
-void traceon () = #0;
-void traceoff () = #0;
+#include <GLSL/atomic.h>
+#include <GLSL/general.h>
 
-typedef struct DrawIndirect {
-	uint        vertexCount;
-	uint        instanceCount;
-	uint        firstVertex;
-	uint        firstInstance;
-} DrawIndirect;
+#include "terrain.h"
 
-typedef struct DispatchIndirect {
-	uint        x;
-	uint        y;
-	uint        z;
-} DispatchIndirect;
+//void printf(string fmt, ...)=#0;
 
-typedef struct MemoryBuffer {
-	uint        allocated;
-	uint        available;
-} MemoryBuffer;
-
-typedef struct queue_s {
-	uint        count;
-	uint       *entries;
-} queue_t;
-
-typedef struct bisector_s {
-	uint        propagationID;
-	uint        problem_neighbor;
-	int         state:3;
-	uint        visible:1;
-	uint        modified:1;
-	uint        subdiv;
-
-	uint        indices[3];
-} bisector_t;
-
-typedef struct neighbors_s {
-	uint        prev;
-	uint        next;
-	uint        twin;
-} neighbors_t;
-
-#define D 8
+#define D 9
 #define max_bisector_count (1 << D)
-//#define WORKGROUP_SIZE 64
-#define WORKGROUP_SIZE 1
+#define WORKGROUP_SIZE 64
+//#define WORKGROUP_SIZE 1
 
 @namespace draw {
-DispatchIndirect dispatch[3];
-DrawIndirect indirect[2];
-uint bisector_indices[max_bisector_count];
-uint visible_indices[max_bisector_count];
-uint modified_indices[max_bisector_count];
-vec3 vertex_buffer[4 * max_bisector_count];
-uint modified_bisector_count;
-uint bisector_count;
+typedef struct DrawData {
+	DispatchIndirect dispatch[3];
+	DrawIndirect indirect[2];
+	uint modified_bisector_count;
+	uint bisector_count;
+} DrawData;
+DrawData *data;
+uint *bisector_indices;
+uint *visible_indices;
+uint *modified_indices;
+vec3 *vertex_buffer;
 
 mat4 ProjView;
 vec3 camera_fwd;
@@ -68,28 +34,31 @@ vec4 frustum_planes[4];
 
 float triangle_size;
 
-MemoryBuffer memory;
-@namespace split {
-uint entries[max_bisector_count];
-queue_t queue = {.entries = entries};
-}
-@namespace simplify {
-uint entries[max_bisector_count];
-queue_t queue = {.entries = entries};
-}
-@namespace allocate {
-uint entries[max_bisector_count];
-queue_t queue = {.entries = entries};
-}
-@namespace propagate {
-uint entries0[max_bisector_count];
-uint entries1[max_bisector_count];
-queue_t queue[2] = {{.entries = entries0},{.entries = entries1}};
-}
-@namespace simplification {
-uint entries[max_bisector_count];
-queue_t queue = {.entries = entries};
-}
+typedef struct QueueData {
+	queue_t     split;
+	queue_t     simplify;
+	queue_t     allocate;
+	queue_t     propagate[2];
+	queue_t     simplification;
+} QueueData;
+QueueData *queues;
+
+MemoryBuffer *memory;
+//@namespace split {
+//queue_t queue;
+//}
+//@namespace simplify {
+//queue_t queue;
+//}
+//@namespace allocate {
+//queue_t queue;
+//}
+//@namespace propagate {
+//queue_t queue[2];
+//}
+//@namespace simplification {
+//queue_t queue;
+//}
 
 //[in("GlobalInvocationId")]
 uvec3 GlobalInvocationId;
@@ -99,7 +68,8 @@ uvec3 GlobalInvocationId;
 DispatchIndirect indirect[3];
 queue_t **queues;
 
-//[shader(GLCompute, LocalSize=[1,1,1])]
+[shader(GLCompute, LocalSize=[1,1,1])]
+[capability(Int64)]
 void
 prepare ()
 {
@@ -135,14 +105,14 @@ vec3 vertices[] = {
 	{ 7, 5, 0 },
 };
 
-uint bisector_map[max_bisector_count];
-bisector_t bisector_data[max_bisector_count];
+uint *bisector_map;//[max_bisector_count];
+bisector_t *bisector_data;//[max_bisector_count];
 neighbors_t *bisector_neighbors;
 neighbors_t *bisector_output_neighbors;
 neighbors_t db_bisector_neighbors[2][max_bisector_count];
 uint neighbors_index = 0;
 ulong bisector_ids[max_bisector_count];
-
+#if 0
 uint atomicOr(@reference(uint) mem, const uint data)
 {
 	uint old = mem;
@@ -157,6 +127,20 @@ uint atomicAnd(@reference(uint) mem, const uint data)
 	return old;
 }
 
+@overload uint atomicAdd(@reference(uint) mem, const uint data)
+{
+	uint old = mem;
+	mem += data;
+	return old;
+}
+
+@overload uint atomicAdd(@reference(int) mem, const int data)
+{
+	uint old = mem;
+	mem += data;
+	return old;
+}
+#endif
 @namespace cbt {
 #define group_levels 5
 #define bits_size (1u << (D - group_levels))
@@ -164,7 +148,7 @@ uint atomicAnd(@reference(uint) mem, const uint data)
 #define cbt_size (group_base + group_levels * bits_size + bits_size)
 #define cbt_levels (D - group_levels)
 #define bits_base (group_base + group_levels * bits_size)
-uint heap[cbt_size] = { 1 << D };
+uint *heap;//[cbt_size];// = { 1 << D };
 uint size ()
 {
 	return heap[0];
@@ -282,7 +266,7 @@ void second_pass()
 	uint ind = threadID + (1 << reduce_level);
 	heap[ind] = heap[ind * 2] + heap[ind * 2 + 1];
 }
-
+#if 0
 void dump()
 {
 	for (uint i = 0; i < (1u << (D - group_levels + 1)); i++) {
@@ -296,18 +280,19 @@ void dump()
 		printf ("\n");
 	}
 }
-
+#endif
 }
 
-uint findMSB(ulong x)
-{
-	uint count = 0;
-	while (x > 1) {
-		x >>= 1;
-		count++;
-	}
-	return count;
-}
+@overload
+//uint findMSB(ulong x)
+//{
+//	auto ul = @bitcast (uvec2, x);
+//	if (ul[1]) {
+//		return findMSB (ul[1]);
+//	} else {
+//		return findMSB (ul[0]);
+//	}
+//}
 
 uint countbits (uint x)
 {
@@ -321,25 +306,17 @@ uint countbits (uint x)
 uint
 heap_depth (ulong x)
 {
-	return findMSB (x);
-}
-
-@overload uint atomicAdd(@reference(uint) mem, const uint data)
-{
-	uint old = mem;
-	mem += data;
-	return old;
-}
-
-@overload uint atomicAdd(@reference(int) mem, const int data)
-{
-	uint old = mem;
-	mem += data;
-	return old;
+	//return findMSB (x);
+	auto ul = @bitcast (uvec2, x);
+	if (ul[1]) {
+		return findMSB (ul[1]);
+	} else {
+		return findMSB (ul[0]);
+	}
 }
 
 void
-queue_id (@reference(queue_t) queue, uint id)
+queue_id (queue_t *queue, uint id)
 {
 	uint slot = atomicAdd (queue.count, 1);
 	queue.entries[slot] = id;
@@ -350,7 +327,7 @@ reserve_memory (int amount)
 {
 	int old = atomicAdd (memory.available, -amount);
 	if (old < amount) {
-		atomicAdd (memory.available, amount);
+		atomicAdd (memory.available, (uint) amount);
 		return false;
 	}
 	return true;
@@ -359,14 +336,13 @@ reserve_memory (int amount)
 uint
 allocate_memory (int amount)
 {
-	return atomicAdd (memory.allocated, amount);
+	return atomicAdd (memory.allocated, (uint) amount);
 }
 
 bool
 set_subdiv (uint bisector, uint subdiv)
 {
-	uint old = bisector_data[bisector].subdiv;
-	bisector_data[bisector].subdiv |= subdiv;//FIXME make atomic
+	uint old = atomicOr (bisector_data[bisector].subdiv, subdiv);
 	return old == 0;
 }
 
@@ -385,7 +361,7 @@ enum {
 	right_split = 2,
 	left_split = 4
 };
-
+/*
 @generic (genvec = @vector(float)) {
 genvec
 min(genvec a, genvec b)
@@ -419,9 +395,8 @@ vector normalize (vector x)
 {
 	return x / sqrt (x • x);
 }
-
+*/
 @namespace draw.update {
-//[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
 mat3
 RootBisectorVertices(uint halfedgeID)
 {
@@ -463,10 +438,12 @@ BisectorVertices (ulong heapID)
 	return RootBisectorVertices (h) * M;
 }
 
+[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[capability(Int64)]
 void
 main ()
 {
-	if (threadID >= indirect[0].vertexCount / 3) {
+	if (threadID >= data.indirect[0].vertexCount / 3) {
 		return;
 	}
 	uint selfID = cbt.decode_bit (threadID);
@@ -479,25 +456,26 @@ main ()
 }
 
 @namespace reset {
-//[shader(GLCompute, LocalSize=[1,1,1])]
+[shader(GLCompute, LocalSize=[1,1,1])]
+[capability(Int64)]
 void
 main ()
 {
-	memory = {
+	*memory = {
 		.allocated = 0,
 		.available = cbt.size() - cbt.count(),
 	};
-	split.queue.count = 0;
-	simplify.queue.count = 0;
-	allocate.queue.count = 0;
-	propagate.queue[0].count = 0;
-	propagate.queue[1].count = 0;
-	simplification.queue.count = 0;
-	draw.indirect = {
+	queues.split.count = 0;
+	queues.simplify.count = 0;
+	queues.allocate.count = 0;
+	queues.propagate[0].count = 0;
+	queues.propagate[1].count = 0;
+	queues.simplification.count = 0;
+	draw.data.indirect = {
 		{ 0, 1, 0, 0 },
 		{ 0, 1, 0, 0 },
 	};
-	draw.modified_bisector_count = 0;
+	draw.data.modified_bisector_count = 0;
 }
 }
 
@@ -570,11 +548,12 @@ classify_element (uint selfID, uint depth)
 	return unchanged_element;
 }
 
-//[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[capability(Int64)]
 void
 main ()
 {
-	if (threadID > draw.bisector_count) {
+	if (threadID > draw.data.bisector_count) {
 		return;
 	}
 	uint selfID = bisector_map[threadID];
@@ -586,7 +565,7 @@ main ()
 	self.visible = 0;
 	if (valid > unchanged_element) {
 		self.state = bisect_element;
-		queue_id (split.queue, selfID);
+		queue_id (&queues.split, selfID);
 	}
 	self.visible = valid >= too_small;
 	if (valid < unchanged_element && depth != base_depth) {
@@ -596,7 +575,7 @@ main ()
 		// Register only even heapIDs as odd ones will be taken care of by
 		// the even ones
 		if (!(heapID & 1)) {
-			queue_id (simplify.queue, selfID);
+			queue_id (&queues.simplify, selfID);
 		}
 	}
 	bisector_data[selfID] = self;
@@ -604,14 +583,15 @@ main ()
 }
 
 @namespace split {
-//[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[capability(Int64)]
 void
 main ()
 {
-	if (threadID > queue.count) {
+	if (threadID > queues.split.count) {
 		return;
 	}
-	uint selfID = queue.entries[threadID];
+	uint selfID = queues.split.entries[threadID];
 	auto n = bisector_neighbors[selfID];
 	if (n.prev != ~0u) {
 		// on path
@@ -645,7 +625,7 @@ main ()
 		return;
 	}
 
-	queue_id (allocate.queue, selfID);
+	queue_id (&queues.allocate, selfID);
 
 	uint twinID = n.twin;
 	uint used_memory = 1;
@@ -658,7 +638,7 @@ main ()
 		if (t_depth == depth) {
 			// both triangles are at the same detph
 			if (set_subdiv (twinID, center_split)) {
-				queue_id (allocate.queue, twinID);
+				queue_id (&queues.allocate, twinID);
 			}
 			done = true;
 		} else {
@@ -671,7 +651,7 @@ main ()
 				used_memory++;
 				done = true;
 			} else {
-				queue_id (allocate.queue, twinID);
+				queue_id (&queues.allocate, twinID);
 				// need two splits
 				used_memory += 2;
 				selfID = twinID;
@@ -685,14 +665,15 @@ main ()
 }
 
 @namespace allocate {
-//[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[capability(Int64)]
 void
 main ()
 {
-	if (threadID > queue.count) {
+	if (threadID > queues.allocate.count) {
 		return;
 	}
-	uint selfID = queue.entries[threadID];
+	uint selfID = queues.allocate.entries[threadID];
 	auto bisector = bisector_data[selfID];
 	if (bisector.subdiv) {
 		uint count = countbits (bisector.subdiv);
@@ -746,14 +727,15 @@ evaluate_neighbors (uint selfID, uint twinID, @out uint resX, @out uint resY)
 	}
 }
 
-//[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[capability(Int64)]
 void
 main ()
 {
-	if (threadID > allocate.queue.count) {
+	if (threadID > queues.allocate.count) {
 		return;
 	}
-	uint selfID = allocate.queue.entries[threadID];
+	uint selfID = queues.allocate.entries[threadID];
 	ulong heapID = bisector_ids[selfID];
 	auto bisector = bisector_data[selfID];
 	auto n = bisector_neighbors[selfID];
@@ -782,7 +764,7 @@ main ()
 		b.problem_neighbor = n.next;
 		bisector_data[sib0ID] = b;
 
-		queue_id (propagate.queue[0], sib0ID);
+		queue_id (&queues.propagate[0], sib0ID);
 	} else if (subdiv == (center_split|right_split)) {
 		uint res0X, res0Y;
 		uint res1X = ~0u, res1Y = ~0u;
@@ -811,7 +793,7 @@ main ()
 		b.problem_neighbor = ~0u;
 		bisector_data[sib1ID] = b;
 
-		queue_id (propagate.queue[0], sib0ID);
+		queue_id (&queues.propagate[0], sib0ID);
 	} else if (subdiv == (center_split|left_split)) {
 		uint res0X, res0Y;
 		uint res1X = ~0u, res1Y = ~0u;
@@ -872,14 +854,15 @@ main ()
 }
 
 @namespace propagate.bisect {
-//[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[capability(Int64)]
 void
 main ()
 {
-	if (threadID > queue[0].count) {
+	if (threadID > queues.propagate[0].count) {
 		return;
 	}
-	uint selfID = queue[0].entries[threadID];
+	uint selfID = queues.propagate[0].entries[threadID];
 	auto bisector = bisector_data[selfID];
 	uint parentID = bisector.propagationID;
 	uint target = bisector.problem_neighbor;
@@ -910,14 +893,15 @@ main ()
 }
 
 @namespace simplify {
-//[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[capability(Int64)]
 void
 main ()
 {
-	if (threadID > queue.count) {
+	if (threadID > queues.simplify.count) {
 		return;
 	}
-	uint selfID = queue.entries[threadID];
+	uint selfID = queues.simplify.entries[threadID];
 	ulong heapID = bisector_ids[selfID];	// ALWAYS EVEN (only even queued)
 	uint depth = heap_depth (heapID);
 	uint pairID = bisector_neighbors[selfID].prev;
@@ -944,19 +928,20 @@ main ()
 			return;
 		}
 	}
-	queue_id (simplification.queue, selfID);
+	queue_id (&queues.simplification, selfID);
 }
 }
 
 @namespace simplification {
-//[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[capability(Int64)]
 void
 main ()
 {
-	if (threadID > queue.count) {
+	if (threadID > queues.simplification.count) {
 		return;
 	}
-	uint selfID = queue.entries[threadID];
+	uint selfID = queues.simplification.entries[threadID];
 
 	auto self = bisector_data[selfID];
 	auto sn = bisector_neighbors[selfID];
@@ -980,7 +965,7 @@ main ()
 	bisector_data[selfID] = self;
 
 	if (self.problem_neighbor != ~0u) {
-		queue_id (propagate.queue[1], selfID);
+		queue_id (&queues.propagate[1], selfID);
 	}
 
 	pair.state = merged_element;
@@ -1008,7 +993,7 @@ main ()
 		bisector_data[twin_loID] = twin_lo;
 
 		if (twin_lo.problem_neighbor != ~0u) {
-			queue_id (propagate.queue[1], twin_loID);
+			queue_id (&queues.propagate[1], twin_loID);
 		}
 
 		twin_hi.state = merged_element;
@@ -1031,14 +1016,15 @@ update_neighbor (uint neighborID, uint deleted, uint selfID)
 	if (nn.twin == deleted) bisector_neighbors[neighborID].twin = selfID;
 }
 
-//[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[capability(Int64)]
 void
 main ()
 {
-	if (threadID > queue[1].count) {
+	if (threadID > queues.propagate[1].count) {
 		return;
 	}
-	uint selfID = queue[1].entries[threadID];
+	uint selfID = queues.propagate[1].entries[threadID];
 	auto self = bisector_data[selfID];
 	uint deleted = self.propagationID;
 	uint neighborID = self.problem_neighbor;
@@ -1059,7 +1045,8 @@ main ()
 }
 
 @namespace indexation {
-//[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
+[capability(Int64)]
 void
 main ()
 {
@@ -1070,7 +1057,7 @@ main ()
 	bisector_map[threadID] = selfID;
 
 	uint slot;
-	slot = atomicAdd (draw.indirect[0].vertexCount, 3);
+	slot = atomicAdd (draw.data.indirect[0].vertexCount, 3);
 	draw.bisector_indices[slot / 3] = selfID;
 
 	auto self = bisector_data[selfID];
@@ -1079,30 +1066,33 @@ main ()
 		return;
 	}
 
-	slot = atomicAdd (draw.indirect[1].vertexCount, 3);
+	slot = atomicAdd (draw.data.indirect[1].vertexCount, 3);
 	draw.visible_indices[slot / 3] = selfID;
 
 	if (!self.modified) {
 		return;
 	}
-	slot = atomicAdd (draw.modified_bisector_count, 4);
+	slot = atomicAdd (draw.data.modified_bisector_count, 4);
 	draw.modified_indices[slot / 4] = selfID;
 }
 
-#define RUP(x, m) (((x) + (m) - 1) / (m))
+#define RUP(x, m) (((x) + ((m) - 1)) & ~((m) - 1))
+#define WGS(x) (RUP (x, WORKGROUP_SIZE) / WORKGROUP_SIZE)
 
-//[shader(GLCompute, LocalSize=[1,1,1])]
+[shader(GLCompute, LocalSize=[1,1,1])]
+[capability(Int64)]
 void
 prepare ()
 {
-	uint vertexCount = draw.indirect[0].vertexCount;
-	draw.dispatch[0] = {RUP (vertexCount / 3, WORKGROUP_SIZE), 1, 1};
-	draw.dispatch[1] = {RUP (vertexCount * 4 / 3, WORKGROUP_SIZE), 1, 1};
-	draw.dispatch[2] = {RUP (draw.modified_bisector_count, WORKGROUP_SIZE), 1, 1};
-	draw.bisector_count = vertexCount / 3;
+	uint vertexCount = draw.data.indirect[0].vertexCount;
+	draw.data.dispatch[0] = {WGS (vertexCount / 3), 1, 1};
+	draw.data.dispatch[1] = {WGS (vertexCount * 4 / 3), 1, 1};
+	draw.data.dispatch[2] = {WGS (draw.data.modified_bisector_count), 1, 1};
+	draw.data.bisector_count = vertexCount / 3;
 }
 }
 
+#if 0
 @namespace test {
 @overload void
 dispatch (void (*shader)(), uvec3 counts)
@@ -1156,7 +1146,7 @@ void
 dump ()
 {
 	uint count = cbt.count ();
-	auto neighbors = &db_bisector_neighbors[neighbors_index][0];//FIXME
+	auto neighbors = db_bisector_neighbors[neighbors_index];
 	for (uint i = 0; i < count; i++) {
 		uint selfID = cbt.decode_bit (i);
 		ulong heapID = bisector_ids[selfID];
@@ -1178,8 +1168,8 @@ void
 update ()
 {
 	uint next = (neighbors_index + 1) & 1;
-	auto curr_neighbors = &db_bisector_neighbors[neighbors_index][0];//FIXME
-	auto next_neighbors = &db_bisector_neighbors[next][0];//FIXME
+	auto curr_neighbors = db_bisector_neighbors[neighbors_index];
+	auto next_neighbors = db_bisector_neighbors[next];
 	// RESET
 	// bind mesh cbt            CBT_BUFFER0_BINDING_SLOT + x
 	// bind memory              MEMORY_BUFFER_BINDING_SLOT
@@ -1381,8 +1371,8 @@ update ()
 	// bind mesh visible indexed  VISIBLE_BISECTOR_INDICES_BINDING_SLOT
 	// bind mesh modified indexed MODIFIED_BISECTOR_INDICES_BINDING_SLOT
 	// numGroups = (mesh.totalNumElements + WGS - 1) / WGS;
-	uint numGroups = RUP (max_bisector_count, WORKGROUP_SIZE);
-	bisector_neighbors = &db_bisector_neighbors[neighbors_index][0];//FIXME
+	uint numGroups = WGS (max_bisector_count);
+	bisector_neighbors = db_bisector_neighbors[neighbors_index];
 	bisector_output_neighbors = (neighbors_t*)-1;
 	test.dispatch (indexation.main, uvec3 (numGroups, 1, 1));
 	// barrier mesh indirect draw
@@ -1418,7 +1408,7 @@ main()
 	draw.frustum_planes[2] = { 0,-1, -1, 4.5 };
 	draw.frustum_planes[3] = { 0, 1, -1,-4.0 };
 	triangle_size = 0.25*0.25;
-	bisector_neighbors = &db_bisector_neighbors[neighbors_index][0];//FIXME
+	bisector_neighbors = db_bisector_neighbors[neighbors_index];
 	test.initialize_bisectors ();
 	printf ("base_depth: %ld\n", base_depth);
 	cbt.dump ();
@@ -1445,3 +1435,4 @@ main()
 
 	return 0;
 }
+#endif
