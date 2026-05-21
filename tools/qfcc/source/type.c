@@ -897,6 +897,16 @@ reference_type (const type_t *aux)
 	return tagged_reference_type (0, aux);
 }
 
+unsigned
+pointer_tag (const type_t *type)
+{
+	type = unalias_type (type);
+	if (!is_ptr (type)) {
+		internal_error (0, "not a pointer or reference");
+	}
+	return type->fldptr.tag;
+}
+
 const type_t *
 matrix_type (const type_t *ele_type, int cols, int rows)
 {

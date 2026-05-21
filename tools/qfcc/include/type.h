@@ -177,6 +177,7 @@ const type_t *pointer_type (const type_t *aux);
 const type_t *tagged_pointer_type (unsigned tag, const type_t *aux);
 const type_t *reference_type (const type_t *aux);
 const type_t *tagged_reference_type (unsigned tag, const type_t *aux);
+unsigned pointer_tag (const type_t *type);
 const type_t *vector_type (const type_t *ele_type, int width) __attribute__((pure));
 const type_t *matrix_type (const type_t *ele_type, int cols, int rows) __attribute__((pure));
 const type_t *column_type (const type_t *mat_type) __attribute__((pure));
