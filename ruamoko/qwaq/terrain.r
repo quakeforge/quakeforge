@@ -126,7 +126,7 @@ uint decode_bit_complement (uint index)
 	return bitID;
 }
 
-void set_bit_buffer (uint bitID, uint val)
+void set_bit_buffer (const uint bitID, const uint val)
 {
 	auto heap = mesh_data.cbt.heap;
 	uint ind = bits_base + (bitID >> group_levels);
@@ -188,7 +188,7 @@ uint countbits (uint x)
 }
 
 uint
-heap_depth (ulong x)
+heap_depth (const ulong x)
 {
 	//return findMSB (x);
 	auto ul = @bitcast (uvec2, x);
@@ -200,14 +200,14 @@ heap_depth (ulong x)
 }
 
 void
-queue_id (queue_t *queue, uint id)
+queue_id (queue_t *queue, const uint id)
 {
 	uint slot = atomicAdd (queue.count, 1);
 	queue.entries[slot] = id;
 }
 
 bool
-reserve_memory (int amount)
+reserve_memory (const int amount)
 {
 	int old = atomicAdd (mesh_data.memory.available, -amount);
 	if (old < amount) {
@@ -218,13 +218,13 @@ reserve_memory (int amount)
 }
 
 uint
-allocate_memory (int amount)
+allocate_memory (const int amount)
 {
 	return atomicAdd (mesh_data.memory.allocated, (uint) amount);
 }
 
 bool
-set_subdiv (uint bisector, uint subdiv)
+set_subdiv (const uint bisector, const uint subdiv)
 {
 	uint old = atomicOr (mesh_data.bisector_data[bisector].subdiv, subdiv);
 	return old == 0;
@@ -248,7 +248,7 @@ enum {
 
 @namespace draw.update {
 mat3
-RootBisectorVertices(uint halfedgeID)
+RootBisectorVertices(const uint halfedgeID)
 {
 	auto halfedges = mesh_data.base.halfedges;
 	auto vertices = mesh_data.base.vertices;
@@ -268,7 +268,7 @@ RootBisectorVertices(uint halfedgeID)
 }
 
 mat3
-BisectorVertices (ulong heapID)
+BisectorVertices (const ulong heapID)
 {
 	static const mat3 Mb[] = {
 		{ { 0.0, 0.0, 1.0 },
@@ -335,7 +335,7 @@ main ()
 @namespace classify {
 
 bool
-frustum_aabb_intersect (vec4 aabb_min, vec4 aabb_max)
+frustum_aabb_intersect (const vec4 aabb_min, const vec4 aabb_max)
 {
 	auto center = (aabb_max + aabb_min) * 0.5;
 	auto extents = (aabb_max - aabb_min) * 0.5;
@@ -351,7 +351,7 @@ frustum_aabb_intersect (vec4 aabb_min, vec4 aabb_max)
 
 
 int
-classify_element (uint selfID, uint depth)
+classify_element (const uint selfID, const uint depth)
 {
 	auto draw = &mesh_data.draw;
 	vec3 points[4] = {
@@ -545,7 +545,8 @@ main ()
 
 @namespace bisect {
 void
-evaluate_neighbors (uint selfID, uint twinID, @out uint resX, @out uint resY)
+evaluate_neighbors (const uint selfID, const uint twinID,
+				    @out uint resX, @out uint resY)
 {
 	auto twin = mesh_data.bisector_data[twinID];
 	auto neighbors = mesh_data.neighbors[neighbor_inds.cur];
@@ -870,7 +871,7 @@ main ()
 
 @namespace propagate.simplify {
 void
-update_neighbor (uint neighborID, uint deleted, uint selfID)
+update_neighbor (const uint neighborID, const uint deleted, const uint selfID)
 {
 	auto neighbors = mesh_data.neighbors[neighbor_inds.next];
 	auto nn = neighbors[neighborID];
