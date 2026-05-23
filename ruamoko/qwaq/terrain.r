@@ -1,4 +1,3 @@
-#include <QF/math/bitop.h>
 #include <QF/qfmodel.h>
 
 #include <GLSL/atomic.h>
@@ -8,159 +7,54 @@
 
 //void printf(string fmt, ...)=#0;
 
-#define D 9
-#define max_bisector_count (1 << D)
 #define WORKGROUP_SIZE 64
-//#define WORKGROUP_SIZE 1
 
-@namespace draw {
-typedef struct DrawData {
-	DispatchIndirect dispatch[3];
-	DrawIndirect indirect[2];
-	uint modified_bisector_count;
-	uint bisector_count;
-} DrawData;
-DrawData *data;
-uint *bisector_indices;
-uint *visible_indices;
-uint *modified_indices;
-vec3 *vertex_buffer;
-
-mat4 ProjView;
-vec3 camera_fwd;
-vec3 camera_pos;
-vec4 frustum_planes[4];
+[push_constant] @block PushConstants {
+	queue_t  **update_queues;
+	MeshData  *mesh_data;
+	CameraData *camera_data;
+	NeighborInds neighbor_inds;
+	float       triangle_size;
+	uint        reduce_level;
+	uint        max_depth;
 };
 
-float triangle_size;
-
-typedef struct QueueData {
-	queue_t     split;
-	queue_t     simplify;
-	queue_t     allocate;
-	queue_t     propagate[2];
-	queue_t     simplification;
-} QueueData;
-QueueData *queues;
-
-MemoryBuffer *memory;
-//@namespace split {
-//queue_t queue;
-//}
-//@namespace simplify {
-//queue_t queue;
-//}
-//@namespace allocate {
-//queue_t queue;
-//}
-//@namespace propagate {
-//queue_t queue[2];
-//}
-//@namespace simplification {
-//queue_t queue;
-//}
-
-//[in("GlobalInvocationId")]
+[in("GlobalInvocationId")]
 uvec3 GlobalInvocationId;
 #define threadID GlobalInvocationId.x
 
 @namespace dispatch {
-DispatchIndirect indirect[3];
-queue_t **queues;
 
 [shader(GLCompute, LocalSize=[1,1,1])]
 [capability(Int64)]
 void
 prepare ()
 {
-	indirect[threadID].x = queues[threadID].count;
+	mesh_data.indirect[threadID].x = update_queues[threadID].count;
 }
 }
 
-uint base_depth;
-uint max_depth;
-
-halfedge_t halfedges[] = {
-	{  6,  1,  3,  3,  3,  0 },
-	{  7,  2,  0,  2,  4,  0 },
-	{ -1,  3,  1,  1,  0,  0 },
-	{ -1,  0,  2,  0,  1,  0 },
-	{ -1,  5,  6,  3,  2,  1 },
-	{  8,  6,  4,  4,  5,  1 },
-	{  0,  4,  5,  2,  3,  1 },
-	{  1,  8, 11,  1,  4,  2 },
-	{  5,  9,  7,  2,  5,  2 },
-	{ -1, 10,  8,  4,  6,  2 },
-	{ -1, 11,  9,  5,  7,  2 },
-	{ -1,  7, 10,  6,  8,  2 },
-};
-
-vec3 vertices[] = {
-	{ 1, 4, 0 },
-	{ 4, 6, 0 },
-	{ 3, 3, 0 },
-	{ 0, 1, 0 },
-	{ 5, 0, 0 },
-	{ 8, 2, 0 },
-	{ 7, 5, 0 },
-};
-
-uint *bisector_map;//[max_bisector_count];
-bisector_t *bisector_data;//[max_bisector_count];
-neighbors_t *bisector_neighbors;
-neighbors_t *bisector_output_neighbors;
-neighbors_t db_bisector_neighbors[2][max_bisector_count];
-uint neighbors_index = 0;
-ulong bisector_ids[max_bisector_count];
-#if 0
-uint atomicOr(@reference(uint) mem, const uint data)
-{
-	uint old = mem;
-	mem |= data;
-	return old;
-}
-
-uint atomicAnd(@reference(uint) mem, const uint data)
-{
-	uint old = mem;
-	mem &= data;
-	return old;
-}
-
-@overload uint atomicAdd(@reference(uint) mem, const uint data)
-{
-	uint old = mem;
-	mem += data;
-	return old;
-}
-
-@overload uint atomicAdd(@reference(int) mem, const int data)
-{
-	uint old = mem;
-	mem += data;
-	return old;
-}
-#endif
 @namespace cbt {
 #define group_levels 5
-#define bits_size (1u << (D - group_levels))
+#define bits_size (1u << (mesh_data.cbt.depth - group_levels))
 #define group_base bits_size
 #define cbt_size (group_base + group_levels * bits_size + bits_size)
-#define cbt_levels (D - group_levels)
+#define cbt_levels (mesh_data.cbt.depth - group_levels)
 #define bits_base (group_base + group_levels * bits_size)
-uint *heap;//[cbt_size];// = { 1 << D };
+
 uint size ()
 {
-	return heap[0];
+	return mesh_data.cbt.heap[0];
 }
 
 uint count ()
 {
-	return heap[1];
+	return mesh_data.cbt.heap[1];
 }
 
 uint decode_bit (uint index)
 {
+	auto heap = mesh_data.cbt.heap;
 	if (index >= heap[1]) {
 		return -1;
 	}
@@ -196,11 +90,12 @@ uint decode_bit (uint index)
 
 uint decode_bit_complement (uint index)
 {
+	auto heap = mesh_data.cbt.heap;
 	if (index >= heap[0] - heap[1]) {
 		return -1;
 	}
 	uint bitID = 1;
-	uint c = 1 << (D - 1);
+	uint c = 1 << (mesh_data.cbt.depth - 1);
 	while (bitID < (1u << cbt_levels)) {
 		bitID <<= 1;
 		if (index >= c - heap[bitID]) {
@@ -233,6 +128,7 @@ uint decode_bit_complement (uint index)
 
 void set_bit_buffer (uint bitID, uint val)
 {
+	auto heap = mesh_data.cbt.heap;
 	uint ind = bits_base + (bitID >> group_levels);
 	uint mask = 1 << (bitID & ((1 << group_levels) - 1));
 
@@ -245,6 +141,7 @@ void set_bit_buffer (uint bitID, uint val)
 
 void first_pass()
 {
+	auto heap = mesh_data.cbt.heap;
 	uint ind = threadID + group_base;
 	uint bits = heap[ind + 5 * bits_size];
 	bits = (bits & 0x55555555) + ((bits >>  1) & 0x55555555);
@@ -263,27 +160,14 @@ uint reduce_level;
 
 void second_pass()
 {
+	auto heap = mesh_data.cbt.heap;
 	uint ind = threadID + (1 << reduce_level);
 	heap[ind] = heap[ind * 2] + heap[ind * 2 + 1];
 }
-#if 0
-void dump()
-{
-	for (uint i = 0; i < (1u << (D - group_levels + 1)); i++) {
-		printf ("%s%d", (i & (i - 1)) ? " " : "\n", heap[i]);
-	}
-	printf ("\n");
-	for (uint i = 0; i < group_levels; i++) {
-		for (uint j = 0; j < bits_size; j++) {
-			printf (" %08x", heap[(2 + i) * bits_size + j]);
-		}
-		printf ("\n");
-	}
-}
-#endif
+
 }
 
-@overload
+//@overload
 //uint findMSB(ulong x)
 //{
 //	auto ul = @bitcast (uvec2, x);
@@ -325,9 +209,9 @@ queue_id (queue_t *queue, uint id)
 bool
 reserve_memory (int amount)
 {
-	int old = atomicAdd (memory.available, -amount);
+	int old = atomicAdd (mesh_data.memory.available, -amount);
 	if (old < amount) {
-		atomicAdd (memory.available, (uint) amount);
+		atomicAdd (mesh_data.memory.available, (uint) amount);
 		return false;
 	}
 	return true;
@@ -336,13 +220,13 @@ reserve_memory (int amount)
 uint
 allocate_memory (int amount)
 {
-	return atomicAdd (memory.allocated, (uint) amount);
+	return atomicAdd (mesh_data.memory.allocated, (uint) amount);
 }
 
 bool
 set_subdiv (uint bisector, uint subdiv)
 {
-	uint old = atomicOr (bisector_data[bisector].subdiv, subdiv);
+	uint old = atomicOr (mesh_data.bisector_data[bisector].subdiv, subdiv);
 	return old == 0;
 }
 
@@ -361,45 +245,13 @@ enum {
 	right_split = 2,
 	left_split = 4
 };
-/*
-@generic (genvec = @vector(float)) {
-genvec
-min(genvec a, genvec b)
-{
-	@uint(genvec) m = a > b;
-	return (genvec) ((@uint(genvec)) a & ~m)
-		 + (genvec) ((@uint(genvec)) b &  m);
-}
 
-genvec
-max(genvec a, genvec b)
-{
-	@uint(genvec) m = a < b;
-	return (genvec) ((@uint(genvec)) a & ~m)
-		 + (genvec) ((@uint(genvec)) b &  m);
-}
-
-genvec
-sign(genvec x)
-{
-	@uint(genvec) m = x < @construct(genvec, 0);
-	auto p1 = @construct(genvec,  1);
-	auto m1 = @construct(genvec, -1);
-	return (genvec) ((@uint(genvec)) p1 & ~m)
-		 + (genvec) ((@uint(genvec)) m1 &  m);
-}
-};
-
-@overload float sqrt(float x) = #0;
-vector normalize (vector x)
-{
-	return x / sqrt (x • x);
-}
-*/
 @namespace draw.update {
 mat3
 RootBisectorVertices(uint halfedgeID)
 {
+	auto halfedges = mesh_data.base.halfedges;
+	auto vertices = mesh_data.base.vertices;
 	uint nextID = halfedges[halfedgeID].next;
 	vec3 v0 = vertices[halfedges[halfedgeID].vert];
 	vec3 v1 = vertices[halfedges[nextID].vert];
@@ -428,7 +280,7 @@ BisectorVertices (ulong heapID)
 	};
 	auto M = mat3(1);
 	ulong h = heapID;
-	ulong base = 1 << base_depth;
+	ulong base = 1 << mesh_data.base.depth;
 	while (h >= base << 1) {
 		uint b = (uint) h & 1;
 		M = Mb[b] * M;
@@ -443,15 +295,16 @@ BisectorVertices (ulong heapID)
 void
 main ()
 {
-	if (threadID >= data.indirect[0].vertexCount / 3) {
+	auto draw = &mesh_data.draw;
+	if (threadID >= draw.indirect[0].vertexCount / 3) {
 		return;
 	}
 	uint selfID = cbt.decode_bit (threadID);
-	ulong heapID = bisector_ids[selfID];
+	ulong heapID = mesh_data.bisector_ids[selfID];
 	auto v = BisectorVertices (heapID);
-	vertex_buffer[3 * selfID + 0] = v[0];
-	vertex_buffer[3 * selfID + 1] = v[1];
-	vertex_buffer[3 * selfID + 2] = v[2];
+	draw.vertices[3 * selfID + 0] = v[0];
+	draw.vertices[3 * selfID + 1] = v[1];
+	draw.vertices[3 * selfID + 2] = v[2];
 }
 }
 
@@ -461,21 +314,21 @@ main ()
 void
 main ()
 {
-	*memory = {
+	mesh_data.memory = {
 		.allocated = 0,
 		.available = cbt.size() - cbt.count(),
 	};
-	queues.split.count = 0;
-	queues.simplify.count = 0;
-	queues.allocate.count = 0;
-	queues.propagate[0].count = 0;
-	queues.propagate[1].count = 0;
-	queues.simplification.count = 0;
-	draw.data.indirect = {
+	mesh_data.queues.split.count = 0;
+	mesh_data.queues.simplify.count = 0;
+	mesh_data.queues.allocate.count = 0;
+	mesh_data.queues.propagate[0].count = 0;
+	mesh_data.queues.propagate[1].count = 0;
+	mesh_data.queues.simplification.count = 0;
+	mesh_data.draw.indirect = {
 		{ 0, 1, 0, 0 },
 		{ 0, 1, 0, 0 },
 	};
-	draw.data.modified_bisector_count = 0;
+	mesh_data.draw.modified_bisector_count = 0;
 }
 }
 
@@ -486,8 +339,8 @@ frustum_aabb_intersect (vec4 aabb_min, vec4 aabb_max)
 {
 	auto center = (aabb_max + aabb_min) * 0.5;
 	auto extents = (aabb_max - aabb_min) * 0.5;
-	for (int i = 0; i < countof (draw.frustum_planes); i++) {
-		auto plane = draw.frustum_planes[i];
+	for (int i = 0; i < countof (camera_data.frustum_planes); i++) {
+		auto plane = camera_data.frustum_planes[i];
 		auto tp = center + sign (plane) * extents;
 		if (tp • plane < 0) {
 			return false;
@@ -500,17 +353,18 @@ frustum_aabb_intersect (vec4 aabb_min, vec4 aabb_max)
 int
 classify_element (uint selfID, uint depth)
 {
+	auto draw = &mesh_data.draw;
 	vec3 points[4] = {
-		draw.vertex_buffer[3 * selfID + 0],
-		draw.vertex_buffer[3 * selfID + 1],
-		draw.vertex_buffer[3 * selfID + 2],
-		draw.vertex_buffer[3 * max_bisector_count + selfID],
+		draw.vertices[3 * selfID + 0],
+		draw.vertices[3 * selfID + 1],
+		draw.vertices[3 * selfID + 2],
+		draw.vertices[3 * mesh_data.cbt.max_count + selfID],
 	};
 
 	vec3 n = normalize((points[1] - points[0]) × (points[2] - points[0]));
 	vec3 c = (points[0] + points[1] + points[2]) / 3;
-	vec3 vd = normalize (draw.camera_pos - c);
-	float fv = -vd • draw.camera_fwd;
+	vec3 vd = normalize (camera_data.camera_pos - c);
+	float fv = -vd • camera_data.camera_fwd;
 	float vn = vd • n;
 
 	if (fv < 0 || vn < -1e-3) {
@@ -523,9 +377,9 @@ classify_element (uint selfID, uint depth)
 		return frustum_culled;
 	}
 
-	vec4 p0 = draw.ProjView * [points[0], 1];
-	vec4 p1 = draw.ProjView * [points[1], 1];
-	vec4 p2 = draw.ProjView * [points[2], 1];
+	vec4 p0 = camera_data.ProjView * [points[0], 1];
+	vec4 p1 = camera_data.ProjView * [points[1], 1];
+	vec4 p2 = camera_data.ProjView * [points[2], 1];
 	p0 /= p0.w;
 	p1 /= p1.w;
 	p2 /= p2.w;
@@ -537,7 +391,7 @@ classify_element (uint selfID, uint depth)
 		return bisect_element;
 	}
 	if (area < triangle_size * 0.5 || depth > max_depth) {
-		vec4 p3 = draw.ProjView * [points[3], 1];
+		vec4 p3 = camera_data.ProjView * [points[3], 1];
 		p3 /= p3.w;
 		vec2 pc = p3.xy - p0.xy;
 		float parent_area = (pa.x * pc.y - pa.y * pc.x) * -0.5;
@@ -553,32 +407,33 @@ classify_element (uint selfID, uint depth)
 void
 main ()
 {
-	if (threadID > draw.data.bisector_count) {
+	auto draw = &mesh_data.draw;
+	if (threadID > draw.bisector_count) {
 		return;
 	}
-	uint selfID = bisector_map[threadID];
-	uint depth = heap_depth (bisector_ids[selfID]);
+	uint selfID = mesh_data.bisector_map[threadID];
+	uint depth = heap_depth (mesh_data.bisector_ids[selfID]);
 	int valid = classify_element (selfID, depth);
-	auto self = bisector_data[selfID];
+	auto self = mesh_data.bisector_data[selfID];
 	self.subdiv = 0;
 	self.modified = 0;
 	self.visible = 0;
 	if (valid > unchanged_element) {
 		self.state = bisect_element;
-		queue_id (&queues.split, selfID);
+		queue_id (&mesh_data.queues.split, selfID);
 	}
 	self.visible = valid >= too_small;
-	if (valid < unchanged_element && depth != base_depth) {
+	if (valid < unchanged_element && depth != mesh_data.base.depth) {
 		self.state = simplify_element;
 
-		ulong heapID = bisector_ids[selfID];
+		ulong heapID = mesh_data.bisector_ids[selfID];
 		// Register only even heapIDs as odd ones will be taken care of by
 		// the even ones
 		if (!(heapID & 1)) {
-			queue_id (&queues.simplify, selfID);
+			queue_id (&mesh_data.queues.simplify, selfID);
 		}
 	}
-	bisector_data[selfID] = self;
+	mesh_data.bisector_data[selfID] = self;
 }
 }
 
@@ -588,32 +443,33 @@ main ()
 void
 main ()
 {
-	if (threadID > queues.split.count) {
+	if (threadID > mesh_data.queues.split.count) {
 		return;
 	}
-	uint selfID = queues.split.entries[threadID];
-	auto n = bisector_neighbors[selfID];
+	uint selfID = mesh_data.queues.split.entries[threadID];
+	auto neighbors = mesh_data.neighbors[neighbor_inds.cur];
+	auto n = neighbors[selfID];
 	if (n.prev != ~0u) {
 		// on path
-		if (bisector_neighbors[n.prev].twin == selfID
-			&& bisector_data[n.prev].state != unchanged_element) {
+		if (neighbors[n.prev].twin == selfID
+			&& mesh_data.bisector_data[n.prev].state != unchanged_element) {
 			return;
 		}
 	}
 	if (n.next != ~0u) {
 		// on path
-		if (bisector_neighbors[n.next].twin == selfID
-			&& bisector_data[n.next].state != unchanged_element) {
+		if (neighbors[n.next].twin == selfID
+			&& mesh_data.bisector_data[n.next].state != unchanged_element) {
 			return;
 		}
 	}
-	ulong heapID = bisector_ids[selfID];
+	ulong heapID = mesh_data.bisector_ids[selfID];
 	uint depth = heap_depth (heapID);
-	int max_memory = 2 * (depth - base_depth) - 1;
+	int max_memory = 2 * (depth - mesh_data.base.depth) - 1;
 	if (n.twin == ~0u) {
 		// on the edge of the mesh
 		max_memory = 1;
-	} else if (bisector_neighbors[n.twin].twin == selfID) {
+	} else if (neighbors[n.twin].twin == selfID) {
 		max_memory = 2;
 	}
 	if (!reserve_memory (max_memory)) {
@@ -625,7 +481,7 @@ main ()
 		return;
 	}
 
-	queue_id (&queues.allocate, selfID);
+	queue_id (&mesh_data.queues.allocate, selfID);
 
 	uint twinID = n.twin;
 	uint used_memory = 1;
@@ -634,29 +490,29 @@ main ()
 		if (twinID == ~0u) {
 			break;
 		}
-		uint t_depth = heap_depth (bisector_ids[twinID]);
+		uint t_depth = heap_depth (mesh_data.bisector_ids[twinID]);
 		if (t_depth == depth) {
 			// both triangles are at the same detph
 			if (set_subdiv (twinID, center_split)) {
-				queue_id (&queues.allocate, twinID);
+				queue_id (&mesh_data.queues.allocate, twinID);
 			}
 			done = true;
 		} else {
-			auto tn = bisector_neighbors[twinID];
+			auto tn = neighbors[twinID];
 			// either twin.prev or twin.next == selfID
-			uint subdiv = bisector_neighbors[twinID].prev == selfID
+			uint subdiv = neighbors[twinID].prev == selfID
 				? center_split | right_split
 				: center_split | left_split;
 			if (!set_subdiv (twinID, subdiv)) {
 				used_memory++;
 				done = true;
 			} else {
-				queue_id (&queues.allocate, twinID);
+				queue_id (&mesh_data.queues.allocate, twinID);
 				// need two splits
 				used_memory += 2;
 				selfID = twinID;
 				depth = t_depth;
-				twinID = bisector_neighbors[selfID].twin;
+				twinID = neighbors[selfID].twin;
 			}
 		}
 	}
@@ -670,11 +526,11 @@ main ()
 void
 main ()
 {
-	if (threadID > queues.allocate.count) {
+	if (threadID > mesh_data.queues.allocate.count) {
 		return;
 	}
-	uint selfID = queues.allocate.entries[threadID];
-	auto bisector = bisector_data[selfID];
+	uint selfID = mesh_data.queues.allocate.entries[threadID];
+	auto bisector = mesh_data.bisector_data[selfID];
 	if (bisector.subdiv) {
 		uint count = countbits (bisector.subdiv);
 		uint first = allocate_memory (count);
@@ -682,7 +538,7 @@ main ()
 			uint index = cbt.decode_bit_complement (first + i);
 			bisector.indices[i] = index;
 		}
-		bisector_data[selfID] = bisector;
+		mesh_data.bisector_data[selfID] = bisector;
 	}
 }
 }
@@ -691,8 +547,9 @@ main ()
 void
 evaluate_neighbors (uint selfID, uint twinID, @out uint resX, @out uint resY)
 {
-	auto twin = bisector_data[twinID];
-	auto n = bisector_neighbors[twinID];
+	auto twin = mesh_data.bisector_data[twinID];
+	auto neighbors = mesh_data.neighbors[neighbor_inds.cur];
+	auto n = neighbors[twinID];
 	uint subdiv = twin.subdiv;
 	if (subdiv == center_split) {
 		resX = twin.indices[0];
@@ -732,13 +589,15 @@ evaluate_neighbors (uint selfID, uint twinID, @out uint resX, @out uint resY)
 void
 main ()
 {
-	if (threadID > queues.allocate.count) {
+	if (threadID > mesh_data.queues.allocate.count) {
 		return;
 	}
-	uint selfID = queues.allocate.entries[threadID];
-	ulong heapID = bisector_ids[selfID];
-	auto bisector = bisector_data[selfID];
-	auto n = bisector_neighbors[selfID];
+	uint selfID = mesh_data.queues.allocate.entries[threadID];
+	ulong heapID = mesh_data.bisector_ids[selfID];
+	auto bisector = mesh_data.bisector_data[selfID];
+	auto in_neighbors = mesh_data.neighbors[neighbor_inds.cur];
+	auto out_neighbors = mesh_data.neighbors[neighbor_inds.next];
+	auto n = in_neighbors[selfID];
 	uint subdiv = bisector.subdiv;
 	uint sib0ID = bisector.indices[0];
 	uint sib1ID = bisector.indices[1];
@@ -749,22 +608,22 @@ main ()
 			evaluate_neighbors (selfID, n.twin, resX, resY);
 		}
 
-		bisector_ids[selfID] = 2 * heapID;
-		bisector_ids[sib0ID] = 2 * heapID + 1;
-		bisector_output_neighbors[selfID] = {sib0ID, resX, n.prev};
-		bisector_output_neighbors[sib0ID] = {resY, selfID, n.next};
+		mesh_data.bisector_ids[selfID] = 2 * heapID;
+		mesh_data.bisector_ids[sib0ID] = 2 * heapID + 1;
+		out_neighbors[selfID] = {sib0ID, resX, n.prev};
+		out_neighbors[sib0ID] = {resY, selfID, n.next};
 
 		auto b = bisector;
 		b.propagationID = selfID;
 		b.modified = true;
 
 		b.problem_neighbor = ~0u;
-		bisector_data[selfID] = b;
+		mesh_data.bisector_data[selfID] = b;
 
 		b.problem_neighbor = n.next;
-		bisector_data[sib0ID] = b;
+		mesh_data.bisector_data[sib0ID] = b;
 
-		queue_id (&queues.propagate[0], sib0ID);
+		queue_id (&mesh_data.queues.propagate[0], sib0ID);
 	} else if (subdiv == (center_split|right_split)) {
 		uint res0X, res0Y;
 		uint res1X = ~0u, res1Y = ~0u;
@@ -773,27 +632,27 @@ main ()
 			evaluate_neighbors (selfID, n.twin, res1X, res1Y);
 		}
 
-		bisector_ids[selfID] = 4 * heapID;
-		bisector_ids[sib0ID] = 2 * heapID + 1;
-		bisector_ids[sib1ID] = 4 * heapID + 1;
-		bisector_output_neighbors[selfID] = {sib1ID, res0X, sib0ID};
-		bisector_output_neighbors[sib0ID] = {res1Y, selfID, n.next};
-		bisector_output_neighbors[sib1ID] = {res0Y, selfID, res1X};
+		mesh_data.bisector_ids[selfID] = 4 * heapID;
+		mesh_data.bisector_ids[sib0ID] = 2 * heapID + 1;
+		mesh_data.bisector_ids[sib1ID] = 4 * heapID + 1;
+		out_neighbors[selfID] = {sib1ID, res0X, sib0ID};
+		out_neighbors[sib0ID] = {res1Y, selfID, n.next};
+		out_neighbors[sib1ID] = {res0Y, selfID, res1X};
 
 		auto b = bisector;
 		b.propagationID = selfID;
 		b.modified = true;
 
 		b.problem_neighbor = ~0u;
-		bisector_data[selfID] = b;
+		mesh_data.bisector_data[selfID] = b;
 
 		b.problem_neighbor = n.next;
-		bisector_data[sib0ID] = b;
+		mesh_data.bisector_data[sib0ID] = b;
 
 		b.problem_neighbor = ~0u;
-		bisector_data[sib1ID] = b;
+		mesh_data.bisector_data[sib1ID] = b;
 
-		queue_id (&queues.propagate[0], sib0ID);
+		queue_id (&mesh_data.queues.propagate[0], sib0ID);
 	} else if (subdiv == (center_split|left_split)) {
 		uint res0X, res0Y;
 		uint res1X = ~0u, res1Y = ~0u;
@@ -802,21 +661,21 @@ main ()
 			evaluate_neighbors (selfID, n.twin, res1X, res1Y);
 		}
 
-		bisector_ids[selfID] = 2 * heapID;
-		bisector_ids[sib0ID] = 4 * heapID + 2;
-		bisector_ids[sib1ID] = 4 * heapID + 3;
-		bisector_output_neighbors[selfID] = {sib1ID, res1X, n.prev};
-		bisector_output_neighbors[sib0ID] = {sib1ID, res0X, res1Y};
-		bisector_output_neighbors[sib1ID] = {res0Y, sib0ID, selfID};
+		mesh_data.bisector_ids[selfID] = 2 * heapID;
+		mesh_data.bisector_ids[sib0ID] = 4 * heapID + 2;
+		mesh_data.bisector_ids[sib1ID] = 4 * heapID + 3;
+		out_neighbors[selfID] = {sib1ID, res1X, n.prev};
+		out_neighbors[sib0ID] = {sib1ID, res0X, res1Y};
+		out_neighbors[sib1ID] = {res0Y, sib0ID, selfID};
 
 		auto b = bisector;
 		b.propagationID = selfID;
 		b.modified = true;
 		b.problem_neighbor = ~0u;
 
-		bisector_data[selfID] = b;
-		bisector_data[sib0ID] = b;
-		bisector_data[sib1ID] = b;
+		mesh_data.bisector_data[selfID] = b;
+		mesh_data.bisector_data[sib0ID] = b;
+		mesh_data.bisector_data[sib1ID] = b;
 	} else if (subdiv == (center_split|right_split|left_split)) {
 		uint res0X, res0Y;
 		uint res1X, res1Y;
@@ -827,24 +686,24 @@ main ()
 			evaluate_neighbors (selfID, n.twin, res2X, res2Y);
 		}
 
-		bisector_ids[selfID] = 4 * heapID;
-		bisector_ids[sib0ID] = 4 * heapID + 2;
-		bisector_ids[sib1ID] = 4 * heapID + 1;
-		bisector_ids[sib2ID] = 4 * heapID + 3;
-		bisector_output_neighbors[selfID] = {sib1ID, res0X, sib2ID};
-		bisector_output_neighbors[sib0ID] = {sib2ID, res1X, res2Y};
-		bisector_output_neighbors[sib1ID] = {res0Y, selfID, res2X};
-		bisector_output_neighbors[sib2ID] = {res1Y, sib0ID, selfID};
+		mesh_data.bisector_ids[selfID] = 4 * heapID;
+		mesh_data.bisector_ids[sib0ID] = 4 * heapID + 2;
+		mesh_data.bisector_ids[sib1ID] = 4 * heapID + 1;
+		mesh_data.bisector_ids[sib2ID] = 4 * heapID + 3;
+		out_neighbors[selfID] = {sib1ID, res0X, sib2ID};
+		out_neighbors[sib0ID] = {sib2ID, res1X, res2Y};
+		out_neighbors[sib1ID] = {res0Y, selfID, res2X};
+		out_neighbors[sib2ID] = {res1Y, sib0ID, selfID};
 
 		auto b = bisector;
 		b.propagationID = selfID;
 		b.modified = true;
 		b.problem_neighbor = ~0u;
 
-		bisector_data[selfID] = b;
-		bisector_data[sib0ID] = b;
-		bisector_data[sib1ID] = b;
-		bisector_data[sib2ID] = b;
+		mesh_data.bisector_data[selfID] = b;
+		mesh_data.bisector_data[sib0ID] = b;
+		mesh_data.bisector_data[sib1ID] = b;
+		mesh_data.bisector_data[sib2ID] = b;
 	}
 	uint count = countbits (subdiv);
 	for (uint i = 0; i < count; i++) {
@@ -859,36 +718,37 @@ main ()
 void
 main ()
 {
-	if (threadID > queues.propagate[0].count) {
+	if (threadID > mesh_data.queues.propagate[0].count) {
 		return;
 	}
-	uint selfID = queues.propagate[0].entries[threadID];
-	auto bisector = bisector_data[selfID];
+	uint selfID = mesh_data.queues.propagate[0].entries[threadID];
+	auto bisector = mesh_data.bisector_data[selfID];
 	uint parentID = bisector.propagationID;
 	uint target = bisector.problem_neighbor;
-	uint subdiv = bisector_data[target].subdiv;
-	uint sib1 = bisector_data[target].indices[1];
-	auto t_n = bisector_neighbors[target];
+	uint subdiv = mesh_data.bisector_data[target].subdiv;
+	uint sib1 = mesh_data.bisector_data[target].indices[1];
+	auto neighbors = mesh_data.neighbors[neighbor_inds.next];
+	auto t_n = neighbors[target];
 	if (subdiv == 0) {
-		if (t_n.prev == parentID) bisector_neighbors[target].prev = selfID;
-		if (t_n.next == parentID) bisector_neighbors[target].next = selfID;
-		if (t_n.twin == parentID) bisector_neighbors[target].twin = selfID;
+		if (t_n.prev == parentID) neighbors[target].prev = selfID;
+		if (t_n.next == parentID) neighbors[target].next = selfID;
+		if (t_n.twin == parentID) neighbors[target].twin = selfID;
 	}
 	if (subdiv == center_split) {
-		uint prop = bisector_data[target].propagationID;
-		auto p_n = bisector_neighbors[prop];
-		if (t_n.twin == parentID) bisector_neighbors[target].twin = selfID;
-		if (p_n.twin == parentID) bisector_neighbors[prop].twin = selfID;
+		uint prop = mesh_data.bisector_data[target].propagationID;
+		auto p_n = neighbors[prop];
+		if (t_n.twin == parentID) neighbors[target].twin = selfID;
+		if (p_n.twin == parentID) neighbors[prop].twin = selfID;
 	}
 	if (subdiv == (center_split|right_split)) {
-		bisector_neighbors[sib1].twin = selfID;
+		neighbors[sib1].twin = selfID;
 	}
 	if (subdiv == (center_split|left_split)) {
-		bisector_neighbors[target].twin = selfID;
+		neighbors[target].twin = selfID;
 	}
 	bisector.problem_neighbor = ~0u;
 	bisector.state = unchanged_element;
-	bisector_data[selfID] = bisector;
+	mesh_data.bisector_data[selfID] = bisector;
 }
 }
 
@@ -898,37 +758,38 @@ main ()
 void
 main ()
 {
-	if (threadID > queues.simplify.count) {
+	if (threadID > mesh_data.queues.simplify.count) {
 		return;
 	}
-	uint selfID = queues.simplify.entries[threadID];
-	ulong heapID = bisector_ids[selfID];	// ALWAYS EVEN (only even queued)
+	uint selfID = mesh_data.queues.simplify.entries[threadID];
+	ulong heapID = mesh_data.bisector_ids[selfID];	// ALWAYS EVEN (only even queued)
+	auto neighbors = mesh_data.neighbors[neighbor_inds.next];
 	uint depth = heap_depth (heapID);
-	uint pairID = bisector_neighbors[selfID].prev;
+	uint pairID = neighbors[selfID].prev;
 	// If the pair isn't at the same depth, then it was split, so can't merge
 	// if the pair wasn't set to be simplified then it needs to be kept, so
 	// still can't merge
-	if (heap_depth (bisector_ids[pairID]) != depth
-		|| bisector_data[pairID].state != simplify_element) {
+	if (heap_depth (mesh_data.bisector_ids[pairID]) != depth
+		|| mesh_data.bisector_data[pairID].state != simplify_element) {
 		return;
 	}
-	uint twin_lo = bisector_neighbors[pairID].prev;
-	uint twin_hi = bisector_neighbors[selfID].next;
+	uint twin_lo = neighbors[pairID].prev;
+	uint twin_hi = neighbors[selfID].next;
 	if (twin_lo != ~0u) {
-		ulong loID = bisector_ids[twin_lo];
+		ulong loID = mesh_data.bisector_ids[twin_lo];
 		if (heapID > loID) {
 			return;
 		}
-		ulong hiID = bisector_ids[twin_hi];
+		ulong hiID = mesh_data.bisector_ids[twin_hi];
 		if (heap_depth (loID) != depth || heap_depth (hiID) != depth) {
 			return;
 		}
-		if (bisector_data[twin_lo].state != simplify_element
-			|| bisector_data[twin_hi].state != simplify_element) {
+		if (mesh_data.bisector_data[twin_lo].state != simplify_element
+			|| mesh_data.bisector_data[twin_hi].state != simplify_element) {
 			return;
 		}
 	}
-	queue_id (&queues.simplification, selfID);
+	queue_id (&mesh_data.queues.simplification, selfID);
 }
 }
 
@@ -938,68 +799,69 @@ main ()
 void
 main ()
 {
-	if (threadID > queues.simplification.count) {
+	if (threadID > mesh_data.queues.simplification.count) {
 		return;
 	}
-	uint selfID = queues.simplification.entries[threadID];
+	uint selfID = mesh_data.queues.simplification.entries[threadID];
 
-	auto self = bisector_data[selfID];
-	auto sn = bisector_neighbors[selfID];
+	auto neighbors = mesh_data.neighbors[neighbor_inds.next];
+	auto self = mesh_data.bisector_data[selfID];
+	auto sn = neighbors[selfID];
 
 	uint pairID = sn.prev;
-	auto pair = bisector_data[pairID];
-	auto pn = bisector_neighbors[pairID];
+	auto pair = mesh_data.bisector_data[pairID];
+	auto pn = neighbors[pairID];
 
 	uint twin_loID = pn.prev;
 	uint twin_hiID = sn.next;
 
-	bisector_ids[selfID] /= 2;
-	bisector_ids[pairID] = 0;
+	mesh_data.bisector_ids[selfID] /= 2;
+	mesh_data.bisector_ids[pairID] = 0;
 
-	bisector_neighbors[selfID] = { sn.twin, pn.twin, twin_loID };
+	neighbors[selfID] = { sn.twin, pn.twin, twin_loID };
 
 	self.propagationID = pairID;
 	self.problem_neighbor = pn.twin;
 	self.state = merged_element;
 	self.modified = true;
-	bisector_data[selfID] = self;
+	mesh_data.bisector_data[selfID] = self;
 
 	if (self.problem_neighbor != ~0u) {
-		queue_id (&queues.propagate[1], selfID);
+		queue_id (&mesh_data.queues.propagate[1], selfID);
 	}
 
 	pair.state = merged_element;
 	pair.visible = 0;
 	pair.modified = 0;
-	bisector_data[pairID] = pair;
+	mesh_data.bisector_data[pairID] = pair;
 
 	cbt.set_bit_buffer (pairID, false);
 
 	if (twin_loID != ~0u) {
-		bisector_ids[twin_loID] /= 2;
-		bisector_ids[twin_hiID] = 0;
+		mesh_data.bisector_ids[twin_loID] /= 2;
+		mesh_data.bisector_ids[twin_hiID] = 0;
 
-		auto twin_lo = bisector_data[twin_loID];
-		auto ln = bisector_neighbors[twin_loID];
-		auto twin_hi = bisector_data[twin_hiID];
-		auto hn = bisector_neighbors[twin_hiID];
+		auto twin_lo = mesh_data.bisector_data[twin_loID];
+		auto ln = neighbors[twin_loID];
+		auto twin_hi = mesh_data.bisector_data[twin_hiID];
+		auto hn = neighbors[twin_hiID];
 
-		bisector_neighbors[twin_loID] = { ln.twin, hn.twin, selfID };
+		neighbors[twin_loID] = { ln.twin, hn.twin, selfID };
 
 		twin_lo.propagationID = twin_hiID;
 		twin_lo.problem_neighbor = hn.twin;
 		twin_lo.state = merged_element;
 		twin_lo.modified = true;
-		bisector_data[twin_loID] = twin_lo;
+		mesh_data.bisector_data[twin_loID] = twin_lo;
 
 		if (twin_lo.problem_neighbor != ~0u) {
-			queue_id (&queues.propagate[1], twin_loID);
+			queue_id (&mesh_data.queues.propagate[1], twin_loID);
 		}
 
 		twin_hi.state = merged_element;
 		twin_hi.visible = 0;
 		twin_hi.modified = 0;
-		bisector_data[twin_hiID] = twin_hi;
+		mesh_data.bisector_data[twin_hiID] = twin_hi;
 
 		cbt.set_bit_buffer (twin_hiID, false);
 	}
@@ -1010,10 +872,11 @@ main ()
 void
 update_neighbor (uint neighborID, uint deleted, uint selfID)
 {
-	auto nn = bisector_neighbors[neighborID];
-	if (nn.prev == deleted) bisector_neighbors[neighborID].prev = selfID;
-	if (nn.next == deleted) bisector_neighbors[neighborID].next = selfID;
-	if (nn.twin == deleted) bisector_neighbors[neighborID].twin = selfID;
+	auto neighbors = mesh_data.neighbors[neighbor_inds.next];
+	auto nn = neighbors[neighborID];
+	if (nn.prev == deleted) neighbors[neighborID].prev = selfID;
+	if (nn.next == deleted) neighbors[neighborID].next = selfID;
+	if (nn.twin == deleted) neighbors[neighborID].twin = selfID;
 }
 
 [shader(GLCompute, LocalSize=[WORKGROUP_SIZE,1,1])]
@@ -1021,26 +884,27 @@ update_neighbor (uint neighborID, uint deleted, uint selfID)
 void
 main ()
 {
-	if (threadID > queues.propagate[1].count) {
+	if (threadID > mesh_data.queues.propagate[1].count) {
 		return;
 	}
-	uint selfID = queues.propagate[1].entries[threadID];
-	auto self = bisector_data[selfID];
+	uint selfID = mesh_data.queues.propagate[1].entries[threadID];
+	auto self = mesh_data.bisector_data[selfID];
 	uint deleted = self.propagationID;
 	uint neighborID = self.problem_neighbor;
 
-	auto neighbor = bisector_data[neighborID];
+	auto neighbor = mesh_data.bisector_data[neighborID];
 
 	if (neighbor.state != merged_element) {
 		update_neighbor (neighborID, deleted, selfID);
 	} else {
-		if (!bisector_ids[neighborID]) {
-			neighborID = bisector_neighbors[neighborID].next;
+		if (!mesh_data.bisector_ids[neighborID]) {
+			auto neighbors = mesh_data.neighbors[neighbor_inds.next];
+			neighborID = neighbors[neighborID].next;
 		}
 		update_neighbor (neighborID, deleted, selfID);
 	}
 	self.problem_neighbor = ~0u;
-	bisector_data[selfID] = self;
+	mesh_data.bisector_data[selfID] = self;
 }
 }
 
@@ -1054,25 +918,26 @@ main ()
 	if (selfID == ~0u) {
 		return;
 	}
-	bisector_map[threadID] = selfID;
+	mesh_data.bisector_map[threadID] = selfID;
+	auto draw = &mesh_data.draw;
 
 	uint slot;
-	slot = atomicAdd (draw.data.indirect[0].vertexCount, 3);
+	slot = atomicAdd (draw.indirect[0].vertexCount, 3);
 	draw.bisector_indices[slot / 3] = selfID;
 
-	auto self = bisector_data[selfID];
+	auto self = mesh_data.bisector_data[selfID];
 
 	if (!self.visible) {
 		return;
 	}
 
-	slot = atomicAdd (draw.data.indirect[1].vertexCount, 3);
+	slot = atomicAdd (draw.indirect[1].vertexCount, 3);
 	draw.visible_indices[slot / 3] = selfID;
 
 	if (!self.modified) {
 		return;
 	}
-	slot = atomicAdd (draw.data.modified_bisector_count, 4);
+	slot = atomicAdd (draw.modified_bisector_count, 4);
 	draw.modified_indices[slot / 4] = selfID;
 }
 
@@ -1084,15 +949,17 @@ main ()
 void
 prepare ()
 {
-	uint vertexCount = draw.data.indirect[0].vertexCount;
-	draw.data.dispatch[0] = {WGS (vertexCount / 3), 1, 1};
-	draw.data.dispatch[1] = {WGS (vertexCount * 4 / 3), 1, 1};
-	draw.data.dispatch[2] = {WGS (draw.data.modified_bisector_count), 1, 1};
-	draw.data.bisector_count = vertexCount / 3;
+	auto draw = &mesh_data.draw;
+	uint vertexCount = draw.indirect[0].vertexCount;
+	draw.dispatch[0] = {WGS (vertexCount / 3), 1, 1};
+	draw.dispatch[1] = {WGS (vertexCount * 4 / 3), 1, 1};
+	draw.dispatch[2] = {WGS (draw.modified_bisector_count), 1, 1};
+	draw.bisector_count = vertexCount / 3;
 }
 }
 
 #if 0
+#include <QF/math/bitop.h>
 @namespace test {
 @overload void
 dispatch (void (*shader)(), uvec3 counts)
@@ -1130,6 +997,7 @@ initialize_bisectors ()
 		};
 		cbt.set_bit_buffer (i, 1);
 	}
+	const uint D = mesh_data.cbt.depth;
 	for (uint i = countof(halfedges); i < 1u << D; i++) {
 		cbt.set_bit_buffer (i, 0);
 	}
