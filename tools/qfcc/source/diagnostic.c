@@ -31,6 +31,7 @@
 # include "config.h"
 #endif
 
+#include <QF/backtrace.h>
 #include <QF/dstring.h>
 
 #include "tools/qfcc/include/qfcc.h"
@@ -174,7 +175,8 @@ __internal_error (const expr_t *e, const char *file, int line,
 	report_function (e);
 
 	format_message (message, "internal error", e, fmt, args);
-	dasprintf (message, " (%s:%d in %s)", file, line, func);
+	dasprintf (message, " (%s:%d in %s)\n", file, line, func);
+	BT_backtrace (message, 1);
 	fprintf (stderr, "%s\n", message->str);
 	dstring_delete (message);
 	abort ();

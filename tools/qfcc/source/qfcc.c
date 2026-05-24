@@ -56,6 +56,7 @@
 #include <errno.h>
 #include <ctype.h>
 
+#include <QF/backtrace.h>
 #include <QF/cbuf.h>
 #include <QF/crc.h>
 #include <QF/dstring.h>
@@ -927,6 +928,7 @@ main (int argc, char **argv)
 	int         res;
 
 	start = Sys_DoubleTime ();
+	BT_Init (argv[0]);
 
 #ifdef _WIN32
 	if (putenv ("POSIXLY_INCORRECT_GETOPT=1")) {
