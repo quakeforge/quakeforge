@@ -1505,6 +1505,9 @@ is_math_val (const expr_t *e)
 const expr_t *
 new_alias_expr (const type_t *type, const expr_t *expr)
 {
+	if (type_size (get_type (expr)) > type_size (type)) {
+		internal_error (expr, "aliasing type to smaller type");
+	}
 	if (is_pointer (type) && expr->type == ex_address) {
 		auto new = new_address_expr (type, expr->address.lvalue,
 									 expr->address.offset);
@@ -1642,7 +1645,7 @@ param_expr (const char *name, const type_t *type)
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
 	sym_expr = new_symbol_expr (sym);
-	return new_alias_expr (type, sym_expr);
+	return new_offset_alias_expr (type, sym_expr, 0);
 }
 
 const expr_t *

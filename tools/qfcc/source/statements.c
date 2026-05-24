@@ -2458,7 +2458,7 @@ expr_swizzle (sblock_t *sblock, const expr_t *e, operand_t **op)
 	int mask = ((1 << (2 * type_width (res_type))) - 1);
 	if (swiz == (0xe4 & mask)) {
 		// this is a simple alias of the first N components
-		auto alias = new_alias_expr (res_type, e->swizzle.src);
+		auto alias = new_offset_alias_expr (res_type, e->swizzle.src, 0);
 		return statement_subexpr (sblock, alias, op);
 	}
 
