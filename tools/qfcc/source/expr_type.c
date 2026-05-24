@@ -750,7 +750,7 @@ compute_cols (int arg_count, const expr_t **args, comp_ctx_t *ctx)
 }
 
 static type_func_t type_funcs[] = {
-	[QC_ATTRIBUTE] = {
+	[QC_PROPERTY] = {
 		.name = ".property",
 		.check_params = single_type_property,
 		.resolve = resolve_property,

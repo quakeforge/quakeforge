@@ -160,7 +160,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token				RETURN AT_RETURN
 %token				NIL GOTO SWITCH CASE DEFAULT ENUM ALGEBRA IMAGE SAMPLER
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
-%token				NAMESPACE
+%token				NAMESPACE PROPERTY
 %token	<op>		STRUCT BLOCK
 %token				HANDLE INTRINSIC
 %token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL
@@ -322,7 +322,7 @@ type_property (specifier_t spec, const attribute_t *property)
 	auto prop = new_type_expr (nullptr);
 	prop->typ.property = property;
 	expr_append_expr (params, prop);
-	return new_type_function (QC_ATTRIBUTE, params);
+	return new_type_function (QC_PROPERTY, params);
 }
 
 static specifier_t
