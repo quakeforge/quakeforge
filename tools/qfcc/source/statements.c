@@ -1715,7 +1715,9 @@ ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 			*mode = 2;
 			*offset = short_operand (const_offs, ref);
 		} else {
-			auto offs = cast_expr (&type_int, ref->ptroffset.offset);
+			auto ptr_type = get_type (ref->ptroffset.ptr);
+			auto intptr_type = int_type (ptr_type);
+			auto offs = cast_expr (intptr_type, ref->ptroffset.offset);
 			sblock = statement_subexpr (sblock, offs, offset);
 			*mode = 3;
 		}
@@ -1745,6 +1747,8 @@ just_a_pointer:
 		} else {
 			const expr_t *ptr = intptr->expr.e1;
 			const expr_t *offs = intptr->expr.e2;
+			auto ptr_type = get_type (ptr);
+			auto intptr_type = int_type (ptr_type);
 			if (target) {
 				if (ptr->type == ex_alias
 					&& is_ptr (get_type (ptr->alias.expr))) {
@@ -1762,7 +1766,7 @@ just_a_pointer:
 				*offset = short_operand (const_offs, ref);
 			} else {
 				*mode = 3;
-				offs = cast_expr (&type_int, offs);
+				offs = cast_expr (intptr_type, offs);
 				sblock = statement_subexpr (sblock, offs, offset);
 			}
 		}
@@ -1948,7 +1952,7 @@ statement_incop (sblock_t *sblock, const expr_t *e)
 {
 	scoped_src_loc (e);
 	// postop is irrelevant because the value is discarded
-	auto one = new_int_expr (1, false);
+	auto one = new_int_expr (1, true);
 	auto type = get_type (e->incop.expr);
 	if (is_scalar (type)) {
 		one = cast_expr (type, one);
@@ -2540,7 +2544,7 @@ expr_incop (sblock_t *sblock, const expr_t *e, operand_t **op)
 		sblock = statement_subexpr (sblock, tmp, op);
 	}
 	// binary_expr will take care of pointers
-	auto one = new_int_expr (1, false);
+	auto one = new_int_expr (1, true);
 	auto type = get_type (e->incop.expr);
 	if (is_scalar (type)) {
 		one = cast_expr (type, one);
@@ -2735,10 +2739,11 @@ static sblock_t *
 expr_ptroffset (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	auto ptr_type = get_type (e);
+	auto intptr = int_type (ptr_type);
 	auto ptr = e->ptroffset.ptr;
 	auto offs = e->ptroffset.offset;
-	ptr = cast_expr (&type_int, ptr);
-	offs = cast_expr (&type_int, offs);
+	ptr = cast_expr (intptr, ptr);
+	offs = cast_expr (intptr, offs);
 	auto ptroffset = binary_expr ('+', ptr, offs);
 	ptroffset = cast_expr (ptr_type, ptroffset);
 	return statement_subexpr (sblock, ptroffset, op);

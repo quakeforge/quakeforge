@@ -1563,7 +1563,7 @@ _new_offset_alias_expr (const type_t *type, const expr_t *expr, int offset)
 	alias->type = ex_alias;
 	alias->alias.type = type;
 	alias->alias.expr = edag_add_expr (expr);
-	alias->alias.offset = edag_add_expr (new_int_expr (offset, false));
+	alias->alias.offset = edag_add_expr (new_int_expr (offset, true));
 	return edag_add_expr (evaluate_constexpr (alias));
 }
 
@@ -2605,7 +2605,7 @@ incop_expr (int op, const expr_t *e, int postop)
 	if (e->type == ex_error)
 		return e;
 
-	auto one = new_int_expr (1, false);	// int constants get auto-cast to float
+	auto one = new_int_expr (1, true);	// int constants get auto-cast to float
 	if (is_scalar (get_type (e))) {
 		one = cast_expr (get_type (e), one);
 	}

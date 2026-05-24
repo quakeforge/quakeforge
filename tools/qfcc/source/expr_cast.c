@@ -86,6 +86,17 @@ cast_math (const type_t *dstType, const type_t *srcType, const expr_t *expr)
 	return edag_add_expr (e);
 }
 
+static const expr_t * __attribute__((pure))
+ptr_cast_special (const type_t *ptr_type, const expr_t *src)
+{
+	if (type_size (ptr_type) > 1) {
+		auto uint_cast = new_alias_expr (&type_uint, src);
+		auto intptr_type = int_type (ptr_type);
+		src = typed_unary_expr (intptr_type, 'C', uint_cast);
+	}
+	return edag_add_expr (new_alias_expr (ptr_type, src));
+}
+
 static const expr_t *
 do_cast (const type_t *dstType, const expr_t *e, bool value)
 {
@@ -115,11 +126,11 @@ do_cast (const type_t *dstType, const expr_t *e, bool value)
 	}
 	if ((is_pointer (dstType) && is_func (srcType))
 		|| (is_func (dstType) && is_pointer (srcType))) {
-		return edag_add_expr (new_alias_expr (dstType, e));
+		return ptr_cast_special (dstType, e);
 	}
 	if ((is_pointer (dstType) && is_string (srcType))
 		|| (is_string (dstType) && is_pointer (srcType))) {
-		return edag_add_expr (new_alias_expr (dstType, e));
+		return ptr_cast_special (dstType, e);
 	}
 	if (is_enum (dstType) && is_boolean (srcType)) {
 		expr_t     *enum_zero, *enum_one;

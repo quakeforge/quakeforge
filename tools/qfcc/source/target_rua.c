@@ -528,8 +528,14 @@ ruamoko_test_expr (const expr_t *expr)
 		case ev_entity:
 		case ev_field:
 		case ev_func:
-		case ev_ptr:
 			return new_alias_expr (&type_bool, expr);
+		case ev_ptr:
+			expr = new_alias_expr (bool_type (type), expr);
+			if (is_lbool (bool_type (type))) {
+				expr = new_alias_expr (&type_ivec2, expr);
+				return new_horizontal_expr ('|', expr, &type_int);
+			}
+			return expr;
 		case ev_void:
 		case ev_invalid:
 		case ev_type_count:
