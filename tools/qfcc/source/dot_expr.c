@@ -451,11 +451,24 @@ print_decl (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
 		_print_expr (dstr, l->expr, level, printed, next);
 	}
 	for (auto l = e->decl.list.head; l; l = l->next) {
-		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"b\"];\n", indent, "", e,
-				   l->expr);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"id\"];\n", indent, "",
+				   e, l->expr);
+	}
+	if (e->decl.spec.type_list) {
+		auto type_list = e->decl.spec.type_list;
+		_print_expr (dstr, type_list, level, printed, next);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"tl\"];\n", indent, "",
+				   e, type_list);
+	}
+	if (e->decl.spec.type_expr) {
+		auto type_expr = e->decl.spec.type_expr;
+		_print_expr (dstr, type_expr, level, printed, next);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"te\"];\n", indent, "",
+				   e, type_expr);
 	}
 	dasprintf (dstr, "%*se_%p [label=\"decl:%s\\n%d\"];\n", indent, "", e,
-			   get_type_string (e->decl.spec.type), e->loc.line);
+			   e->decl.spec.type ? get_type_string (e->decl.spec.type) : "-",
+			   e->loc.line);
 }
 
 static void
