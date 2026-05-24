@@ -1,5 +1,5 @@
-#ifndef __terrain_h
-#define __terrain_h
+#ifndef __cbtmesh_h
+#define __cbtmesh_h
 
 #include <QF/qfmodel.h>
 
@@ -96,4 +96,4 @@ typedef struct NeighborInds {
 	uint next;
 } NeighborInds;
 
-#endif//__terrain_h
+#endif//__cbtmesh_h

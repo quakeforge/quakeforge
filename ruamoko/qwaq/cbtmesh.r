@@ -3,7 +3,7 @@
 #include <GLSL/atomic.h>
 #include <GLSL/general.h>
 
-#include "terrain.h"
+#include "cbtmesh.h"
 
 //void printf(string fmt, ...)=#0;
 
