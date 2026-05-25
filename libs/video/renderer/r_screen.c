@@ -238,7 +238,7 @@ render_side (int side)
 }
 
 void
-SCR_UpdateScreen_legacy (SCR_Func *scr_funcs)
+SCR_UpdateScreen_legacy (SCR_Func *scr_funcs, void *scrf_data)
 {
 	if (scr_fisheye && !fisheye_cube_map) {
 		fisheye_cube_map = r_funcs->create_cube_map (r_data->vid->height);
@@ -283,14 +283,15 @@ SCR_UpdateScreen_legacy (SCR_Func *scr_funcs)
 	//view_draw (r_data->scr_view);
 	r_funcs->set_2d (1);
 	while (*scr_funcs) {
-		(*scr_funcs) ();
+		(*scr_funcs) (scrf_data);
 		scr_funcs++;
 	}
 	r_funcs->end_frame ();
 }
 
 void
-SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
+SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs,
+				  void *scrf_data)
 {
 	qfZoneNamed (zone, true);
 	R_RunParticles (r_data->frametime);
@@ -343,7 +344,7 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 	if (r_refdef.scene) {
 		R_PushDlights (vec3_origin, &r_visstate);
 	}
-	r_funcs->UpdateScreen (scr_funcs);
+	r_funcs->UpdateScreen (scr_funcs, scrf_data);
 }
 
 static void

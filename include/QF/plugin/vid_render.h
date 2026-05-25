@@ -142,7 +142,7 @@ typedef struct vid_painter_s {
 
 typedef struct vid_render_funcs_s {
 	void      (*init) (void);
-	void (*UpdateScreen) (SCR_Func *scr_funcs);
+	void (*UpdateScreen) (SCR_Func *scr_funcs, void *scrf_data);
 	vid_draw_t  draw;
 	vid_gizmo_t gizmo;
 	vid_painter_t painter;

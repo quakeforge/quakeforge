@@ -36,11 +36,11 @@ struct tex_s;
 void SCR_Init (void);
 void SCR_Shutdown (void);
 
-typedef void (*SCR_Func)(void);
+typedef void (*SCR_Func)(void *data);
 // scr_funcs is a null terminated array
 void SCR_UpdateScreen (struct transform_s camera, double realtime,
-					   SCR_Func *scr_funcs);
-void SCR_UpdateScreen_legacy (SCR_Func *scr_funcs);
+					   SCR_Func *scr_funcs, void *scrf_data);
+void SCR_UpdateScreen_legacy (SCR_Func *scr_funcs, void *scrf_data);
 void SCR_SetFOV (float fov);
 // control whether the 3d viewport is user-controlled or always fullscreen
 void SCR_SetFullscreen (bool fullscreen);

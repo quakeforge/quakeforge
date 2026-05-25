@@ -160,7 +160,7 @@ SCR_CShift (view_pos_t abs, view_pos_t len, void *data)
 }
 
 static void
-scr_draw_views (void)
+scr_draw_views (void *data)
 {
 	qfZoneNamed (zone, true);
 	if (scr_showturtle) {
@@ -357,5 +357,5 @@ CL_UpdateScreen (viewstate_t *vs)
 	auto animpool = reg->comp_pools + c_animation;
 	auto rendpool = reg->comp_pools + c_renderer;
 	Anim_Update (cl_realtime, animpool, rendpool);
-	SCR_UpdateScreen (vs->camera_transform, vs->time, scr_funcs);
+	SCR_UpdateScreen (vs->camera_transform, vs->time, scr_funcs, nullptr);
 }

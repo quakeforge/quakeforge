@@ -130,7 +130,7 @@ static pr_func_t qc2d;
 static canvas_system_t canvas_sys;
 
 static void
-bi_2d (void)
+bi_2d (void *data)
 {
 	if (qc2d)
 		PR_ExecuteProgram (bi_rprogs, qc2d);
@@ -488,7 +488,7 @@ bi_refresh (progs_t *pr, void *_res)
 			Light_CalculateBounds (scene->lights);
 		}
 	}
-	SCR_UpdateScreen (camera, res->con_realtime, bi_2dfuncs);
+	SCR_UpdateScreen (camera, res->con_realtime, bi_2dfuncs, nullptr);
 	R_FLOAT (pr) = res->con_frametime;
 }
 

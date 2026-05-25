@@ -228,7 +228,8 @@ typedef struct drawctx_s {
 	VkDescriptorSet core_quad_set;
 	drawframeset_t frames;
 	drawfontset_t fonts;
-	SCR_Func *scr_funcs;
+	SCR_Func   *scr_funcs;
+	void       *scrf_data;
 
 	vertqueue_t slice_vert_queue;
 	quadvert_t  slice_verts[QUEUED_QUADS * VERTS_PER_SLICE];
@@ -1233,11 +1234,12 @@ draw_scr_funcs (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}));
 
 	auto scr_funcs = dctx->scr_funcs;
+	auto scrf_data = dctx->scrf_data;
 	if (!scr_funcs) {
 		return;
 	}
 	while (*scr_funcs) {
-		(*scr_funcs) ();
+		(*scr_funcs) (scrf_data);
 		scr_funcs++;
 	}
 	dctx->scr_funcs = 0;
@@ -1947,10 +1949,11 @@ Vulkan_LineGraph (int x, int y, int *h_vals, int count, int height,
 }
 
 void
-Vulkan_SetScrFuncs (SCR_Func *scr_funcs, vulkan_ctx_t *ctx)
+Vulkan_SetScrFuncs (SCR_Func *scr_funcs, void *scrf_data, vulkan_ctx_t *ctx)
 {
 	auto dctx = ctx->draw_context;
 	dctx->scr_funcs = scr_funcs;
+	dctx->scrf_data = scrf_data;
 }
 
 void
