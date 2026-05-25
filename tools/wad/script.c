@@ -101,6 +101,7 @@ load_image (const char *name)
 	image->height = tex->height;
 	image->format = tex_rgba;
 	image->palette = 0;
+	image->data = (byte *) &image[1];
 	switch (tex->format) {
 		case tex_palette:
 			for (i = 0, s = tex->data, d = image->data; i < pixels; i++) {
