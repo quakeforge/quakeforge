@@ -140,8 +140,8 @@ qwaq_debug_handler (prdebug_t debug_event, void *param, void *data)
 }
 
 //FIXME need a better way to get this from one thread to the others
-pthread_cond_t debug_data_cond = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t debug_data_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t debug_data_cond = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t debug_data_mutex = PTHREAD_MUTEX_INITIALIZER;
 static qwaq_debug_t *qwaq_debug_data;
 
 static int
