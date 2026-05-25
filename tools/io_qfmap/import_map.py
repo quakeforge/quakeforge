@@ -75,6 +75,7 @@ def load_material(tx):
         tex_node = mat.node_tree.nodes.new("ShaderNodeTexImage")
         tex_node.image = tx.image
         tex_node.interpolation = "Closest"
+        tex_node.extension = 'REPEAT'
 
         emissionNode.location = (0, 0)
         shaderOut.location = (200, 0)
@@ -82,17 +83,6 @@ def load_material(tx):
 
         mat.node_tree.links.new(tex_node.outputs[0], emissionNode.inputs[0])
         mat.node_tree.links.new(emissionNode.outputs[0], shaderOut.inputs[0])
-
-        #FIXME uvs etc
-        #tex = bpy.data.textures.new(tx.name, 'IMAGE')
-        #tex.extension = 'REPEAT'
-        #tex.use_preview_alpha = True
-        #tex.image = tx.image
-        #ts = mat.texture_paint_slots.new()
-        #ts = mat.texture_paint_slots[0]
-        #ts.texture = tex
-        #ts.use_map_alpha = True
-        #ts.texture_coords = 'UV'
     return mat
 
 def load_textures(texdefs, wads):
@@ -127,6 +117,15 @@ def build_uvs(verts, faces, texdefs):
             fuv.append((s, 1 - t))
         uvs[i] = fuv
     return uvs
+
+def set_uvs_tex(uvs, mesh, texdefs, name):
+    uv_layer = mesh.uv_layers.new(name=name).data
+    for i, poly in enumerate(mesh.polygons):
+        fuv = uvs[i]
+        for j in range(poly.loop_total):
+            uv_layer[poly.loop_start + j].uv = fuv[j]
+        tx = texdefs[i]
+        poly.material_index = tx.matindex
 
 def process_entity(ent, wads):
     qfmap = bpy.context.scene.qfmap
@@ -174,16 +173,7 @@ def process_entity(ent, wads):
             tx.matindex = len(mesh.materials)
             mesh.materials.append(tx.material)
         mesh.from_pydata(verts, [], faces)
-        """uvlay = mesh.uv_textures.new(name)
-        uvloop = mesh.uv_layers[0]
-        for i, texpoly in enumerate(uvlay.data):
-            poly = mesh.polygons[i]
-            uv = uvs[i]
-            tx = texdefs[i]
-            texpoly.image = tx.image
-            poly.material_index = tx.matindex
-            for j, k in enumerate(poly.loop_indices):
-                uvloop.data[k].uv = uv[j]"""#FIXME
+        set_uvs_tex(uvs, mesh, texdefs, "UVMap")
         mesh.update()
         obj = bpy.data.objects.new(name, mesh)
     else:
