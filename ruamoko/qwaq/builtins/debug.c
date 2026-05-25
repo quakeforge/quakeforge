@@ -47,7 +47,6 @@
 
 #include "ruamoko/qwaq/qwaq.h"
 #include "ruamoko/qwaq/ui/event.h"
-#include "ruamoko/qwaq/ui/curses.h"
 #include "ruamoko/qwaq/debugger/debug.h"
 
 typedef struct qwaq_target_s {
