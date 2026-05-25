@@ -105,6 +105,11 @@ void traceoff();
 
 #else//GCC
 
+typedef struct qwaq_event_s qwaq_event_t;
+typedef int (*qwaq_debug_handler_f) (void *data, qwaq_event_t *event);
+
+void QWAQ_Debug_SetEvent (progs_t *pr, qwaq_debug_handler_f send,
+						  void *data);
 void QWAQ_Debug_Init (progs_t *pr);
 void QWAQ_DebugTarget_Init (progs_t *pr);
 

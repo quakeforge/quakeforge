@@ -56,6 +56,7 @@
 
 #include "ruamoko/qwaq/qwaq.h"
 #include "ruamoko/qwaq/qwaq-input.h"
+#include "ruamoko/qwaq/debugger/debug.h"
 #include "ruamoko/qwaq/ui/event.h"
 
 #define always_inline inline __attribute__((__always_inline__))
@@ -895,6 +896,12 @@ bi_input_destroy (progs_t *pr, void *_res)
 	free (_res);
 }
 
+static int
+qwaq_send_event (void *data, qwaq_event_t *event)
+{
+	return qwaq_add_event (data, event);
+}
+
 void
 BI_TermInput_Init (progs_t *pr)
 {
@@ -914,4 +921,6 @@ BI_TermInput_Init (progs_t *pr)
 
 	PR_Resources_Register (pr, "input", res, bi_input_clear, bi_input_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
+
+	QWAQ_Debug_SetEvent (pr, qwaq_send_event, res);
 }

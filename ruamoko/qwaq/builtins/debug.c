@@ -61,7 +61,8 @@ typedef struct qwaq_target_s {
 
 typedef struct qwaq_debug_s {
 	progs_t    *pr;
-	qwaq_input_resources_t *input;	// to communicate with the debugger thread
+	int       (*event_handler) (void *data, qwaq_event_t *event);
+	void       *event_data;
 	PR_RESMAP (qwaq_target_t) targets;
 } qwaq_debug_t;
 
@@ -121,12 +122,13 @@ qwaq_debug_handler (prdebug_t debug_event, void *param, void *data)
 	event.what = qe_debug_event;
 	event.message.pointer_val = target->handle;
 
-	while ((ret = qwaq_add_event (debug->input, &event)) == ETIMEDOUT) {
-		// spin
-	}
-	if (ret == EINVAL) {
-		Sys_Error ("event queue broke");
-	}
+	do {
+		ret = debug->event_handler (debug->event_data, &event);
+		if (ret == EINVAL) {
+			Sys_Error ("event queue broke");
+		}
+	} while (ret == ETIMEDOUT);
+
 	pthread_mutex_lock (&target->run_cond.mut);
 	while (!target->run_command) {
 		pthread_cond_wait (&target->run_cond.rcond, &target->run_cond.mut);
@@ -721,12 +723,19 @@ static builtin_t builtins[] = {
 };
 
 void
+QWAQ_Debug_SetEvent (progs_t *pr, qwaq_debug_handler_f send, void *data)
+{
+	auto debug = (qwaq_debug_t *) PR_Resources_Find (pr, "qwaq-debug");
+	debug->event_handler = send;
+	debug->event_data = data;
+}
+
+void
 QWAQ_Debug_Init (progs_t *pr)
 {
 	qwaq_debug_t *debug = calloc (sizeof (*debug), 1);
 
 	debug->pr = pr;
-	debug->input = PR_Resources_Find (pr, "input");
 
 	PR_AddLoadFunc (pr, qwaq_debug_load);
 	PR_Resources_Register (pr, "qwaq-debug", debug, qwaq_debug_clear,
