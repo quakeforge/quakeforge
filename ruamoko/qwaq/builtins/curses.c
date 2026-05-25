@@ -37,6 +37,7 @@
 #include <errno.h>
 #include <panel.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -87,6 +88,7 @@ typedef struct qwaq_resources_s {
 #define CMD_SIZE(x) sizeof(x)/sizeof(x[0])
 
 typedef enum qwaq_commands_e {
+	qwaq_cmd_quit,
 	qwaq_cmd_syncprint,
 	qwaq_cmd_newwin,
 	qwaq_cmd_delwin,
@@ -123,6 +125,7 @@ typedef enum qwaq_commands_e {
 } qwaq_commands;
 
 static const char *qwaq_command_names[]= {
+	"quit",
 	"syncprint",
 	"newwin",
 	"delwin",
@@ -647,13 +650,14 @@ dump_command (qwaq_resources_t *res, int len)
 	}
 }
 
-static void
+static bool
 process_commands (qwaq_resources_t *res)
 {
 	struct timespec timeout;
 	int         avail;
 	int         len;
 	int         ret = 0;
+	bool        quit = false;
 
 	pthread_mutex_lock (&res->commands.pipe_cond.mut);
 	qwaq_init_timeout (&timeout, 20 * 1000000);
@@ -672,6 +676,9 @@ process_commands (qwaq_resources_t *res)
 		dump_command (res, len);
 		qwaq_commands cmd = qwaq_cmd_peek (res, 0);
 		switch (cmd) {
+			case qwaq_cmd_quit:
+				quit = true;
+				break;
 			case qwaq_cmd_syncprint:
 				cmd_syncprint (res);
 				break;
@@ -779,6 +786,7 @@ process_commands (qwaq_resources_t *res)
 		// the loop
 	}
 	pthread_mutex_unlock (&res->commands.pipe_cond.mut);
+	return !quit;
 }
 
 static int need_endwin;
@@ -1592,9 +1600,7 @@ qwaq_curses_thread (qwaq_thread_t *thread)
 {
 	qwaq_resources_t *res = thread->data;
 
-	while (1) {
-		process_commands (res);
-	}
+	while (process_commands (res)) continue;
 	thread->return_code = 0;
 	return thread;
 }
@@ -1620,7 +1626,7 @@ bi_initialize (progs_t *pr, void *data)
 
 	res->stdscr.win = stdscr;
 
-	create_thread (qwaq_curses_thread, res);
+	res->command_thread = create_thread (qwaq_curses_thread, res);
 }
 
 static void
@@ -1881,6 +1887,18 @@ static void
 bi_curses_clear (progs_t *pr, void *_res)
 {
 	__auto_type res = (qwaq_resources_t *) _res;
+
+	if (res->command_thread) {
+		void *ret;
+		puts("foobar");
+		int         command[] = { qwaq_cmd_quit, 0 };
+		command[1] = CMD_SIZE(command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
+
+		pthread_join (res->command_thread->thread_id, &ret);
+		free (res->command_thread);
+		res->command_thread = nullptr;
+	}
 
 	if (res->initialized) {
 		qwaq_input_disable_mouse ();
