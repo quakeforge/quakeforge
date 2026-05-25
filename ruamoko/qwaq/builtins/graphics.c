@@ -103,6 +103,7 @@ typedef struct graphics_resources_s {
 	double      con_realtime, basetime;
 	double      old_conrealtime;
 
+	pr_func_t   qc2d;
 	pr_func_t   qcevent;
 	pr_ptr_t    qcevent_data;
 	int         event_handler_id;
@@ -123,15 +124,15 @@ quit_f (void)
 static byte default_palette[256][3];
 static byte default_colormap[64 * 256 + 1] = { [64 * 256] = 32 };
 
-static progs_t *bi_rprogs;
-static pr_func_t qc2d;
 static canvas_system_t canvas_sys;
 
 static void
 bi_2d (void *data)
 {
-	if (qc2d)
-		PR_ExecuteProgram (bi_rprogs, qc2d);
+	graphics_resources_t *res = data;
+	if (res->qc2d) {
+		PR_ExecuteProgram (res->pr, res->qc2d);
+	}
 	Con_DrawConsole ();
 	Canvas_Draw (canvas_sys);
 }
@@ -406,7 +407,6 @@ bi(refresh)
 	res->con_realtime = Sys_DoubleTime () - res->basetime;
 	res->con_frametime = res->con_realtime - res->old_conrealtime;
 	res->old_conrealtime = res->con_realtime;
-	bi_rprogs = pr;
 	IN_ProcessEvents ();
 	//GIB_Thread_Execute ();
 	Cbuf_Execute_Stack (qwaq_cbuf);
@@ -479,13 +479,14 @@ bi(refresh)
 			Light_CalculateBounds (scene->lights);
 		}
 	}
-	SCR_UpdateScreen (camera, res->con_realtime, bi_2dfuncs, nullptr);
+	SCR_UpdateScreen (camera, res->con_realtime, bi_2dfuncs, res);
 	R_FLOAT (pr) = res->con_frametime;
 }
 
 bi(refresh_2d)
 {
-	qc2d = P_FUNCTION (pr, 0);
+	graphics_resources_t *res = _res;
+	res->qc2d = P_FUNCTION (pr, 0);
 }
 
 bi(setpalette)
