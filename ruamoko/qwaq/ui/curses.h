@@ -135,42 +135,6 @@ Rect getwrect (struct window_s *window);
 
 void printf(string fmt, ...);
 // qfcc stuff
-#else
-// gcc stuff
-
-#include <curses.h>
-#include <panel.h>
-
-#include "QF/dstring.h"
-#include "QF/progs.h"
-#include "QF/ringbuffer.h"
-
-#include "ruamoko/qwaq/threading.h"
-
-#define QUEUE_SIZE 16
-#define STRING_ID_QUEUE_SIZE 8		// must be > 1
-#define COMMAND_QUEUE_SIZE 1280
-
-typedef struct window_s {
-	WINDOW     *win;
-} window_t;
-
-typedef struct panel_s {
-	PANEL      *panel;
-	int         window_id;
-} panel_t;
-
-typedef struct qwaq_resources_s {
-	progs_t    *pr;
-	int         initialized;
-	window_t    stdscr;
-	PR_RESMAP (window_t) window_map;
-	PR_RESMAP (panel_t) panel_map;
-
-	qwaq_pipe_t commands;
-	qwaq_pipe_t results;
-} qwaq_resources_t;
-// gcc stuff
 #endif
 
 #endif//__qwaq_ui_curses_h

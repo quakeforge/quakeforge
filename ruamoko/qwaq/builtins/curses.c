@@ -41,6 +41,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <curses.h>
+#include <panel.h>
+
 #include "QF/dstring.h"
 #include "QF/progs.h"
 #include "QF/ringbuffer.h"
@@ -49,9 +52,36 @@
 #include "rua_internal.h"
 
 #include "ruamoko/qwaq/qwaq.h"
+#include "ruamoko/qwaq/threading.h"
 #include "ruamoko/qwaq/ui/curses.h"
 #include "ruamoko/qwaq/ui/rect.h"
 #include "ruamoko/qwaq/ui/textcontext.h"
+
+#define QUEUE_SIZE 16
+#define STRING_ID_QUEUE_SIZE 8		// must be > 1
+#define COMMAND_QUEUE_SIZE 1280
+
+typedef struct window_s {
+	WINDOW     *win;
+} window_t;
+
+typedef struct panel_s {
+	PANEL      *panel;
+	int         window_id;
+} panel_t;
+
+typedef struct qwaq_resources_s {
+	progs_t    *pr;
+	int         initialized;
+	window_t    stdscr;
+	PR_RESMAP (window_t) window_map;
+	PR_RESMAP (panel_t) panel_map;
+
+	qwaq_pipe_t commands;
+	qwaq_pipe_t results;
+
+	qwaq_thread_t *command_thread;
+} qwaq_resources_t;
 
 #define always_inline inline __attribute__((__always_inline__))
 #define CMD_SIZE(x) sizeof(x)/sizeof(x[0])
