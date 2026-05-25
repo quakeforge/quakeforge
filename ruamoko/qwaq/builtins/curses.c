@@ -1889,12 +1889,11 @@ bi_curses_clear (progs_t *pr, void *_res)
 	__auto_type res = (qwaq_resources_t *) _res;
 
 	if (res->command_thread) {
-		void *ret;
-		puts("foobar");
 		int         command[] = { qwaq_cmd_quit, 0 };
 		command[1] = CMD_SIZE(command);
 		qwaq_pipe_submit (&res->commands, command, command[1]);
 
+		void *ret;
 		pthread_join (res->command_thread->thread_id, &ret);
 		free (res->command_thread);
 		res->command_thread = nullptr;
