@@ -149,8 +149,9 @@ vidsize_listener (void *data, const viddef_t *vdef)
 				   (view_pos_t) { vdef->width, vdef->height });
 }
 
-static void
-bi_has_component (progs_t *pr, void *_res)
+#define bi(x) static void bi_##x (progs_t *pr, void *_res)
+
+bi(has_component)
 {
 	qfZoneScoped (true);
 	graphics_resources_t *res = _res;
@@ -159,8 +160,7 @@ bi_has_component (progs_t *pr, void *_res)
 	R_INT (pr) = Ent_HasComponent (ent, comp + res->ecs.base, res->ecs.reg);
 }
 
-static void
-bi_get_component (progs_t *pr, void *_res)
+bi(get_component)
 {
 	qfZoneScoped (true);
 	graphics_resources_t *res = _res;
@@ -171,8 +171,7 @@ bi_get_component (progs_t *pr, void *_res)
 	memcpy (dst, src, res->ecs.components[comp].size);
 }
 
-static void
-bi_set_component (progs_t *pr, void *_res)
+bi(set_component)
 {
 	qfZoneScoped (true);
 	graphics_resources_t *res = _res;
@@ -182,8 +181,7 @@ bi_set_component (progs_t *pr, void *_res)
 	Ent_SetComponent (ent, comp + res->ecs.base, res->ecs.reg, src);
 }
 
-static void
-bi_set_update (progs_t *pr, void *_res)
+bi(set_update)
 {
 	graphics_resources_t *res = _res;
 	uint32_t ent = P_UINT (pr, 0);
@@ -191,15 +189,13 @@ bi_set_update (progs_t *pr, void *_res)
 	Ent_SetComponent (ent, res->ecs.update, res->ecs.reg, &func);
 }
 
-static void
-bi_new_entity (progs_t *pr, void *_res)
+bi(new_entity)
 {
 	graphics_resources_t *res = _res;
 	R_UINT (pr) = ECS_NewEntity (res->ecs.reg);
 }
 
-static void
-bi_del_entity (progs_t *pr, void *_res)
+bi(del_entity)
 {
 	graphics_resources_t *res = _res;
 	ECS_DelEntity (res->ecs.reg, P_UINT (pr, 0));
@@ -299,8 +295,7 @@ bi_create_registry (graphics_resources_t *res, int num_components,
 	ECS_CreateComponentPools (res->ecs.reg);
 }
 
-static void
-bi_init_graphics (progs_t *pr, void *_res)
+bi(init_graphics)
 {
 	graphics_resources_t *res = _res;
 	VID_Init (default_palette[0], default_colormap);
@@ -355,8 +350,7 @@ bi_init_graphics (progs_t *pr, void *_res)
 	res->basetime = Sys_DoubleTime ();
 }
 
-static void
-bi_newscene (progs_t *pr, void *_res)
+bi(newscene)
 {
 	pr_ulong_t  scene_id = P_ULONG (pr, 0);
 	SCR_NewScene (Scene_GetScene (pr, scene_id));
@@ -405,8 +399,7 @@ transform_bounds (const mat4f_t mat, ent_aabb_t bounds)
 }
 
 
-static void
-bi_refresh (progs_t *pr, void *_res)
+bi(refresh)
 {
 	qfFrameMark;
 	graphics_resources_t *res = _res;
@@ -490,40 +483,36 @@ bi_refresh (progs_t *pr, void *_res)
 	R_FLOAT (pr) = res->con_frametime;
 }
 
-static void
-bi_refresh_2d (progs_t *pr, void *_res)
+bi(refresh_2d)
 {
 	qc2d = P_FUNCTION (pr, 0);
 }
 
-static void
-bi_setpalette (progs_t *pr, void *_res)
+bi(setpalette)
 {
 	byte       *palette = (byte *) P_GPOINTER (pr, 0);
 	byte       *colormap = (byte *) P_GPOINTER (pr, 1);
 	VID_SetPalette (palette, colormap);
 }
 
-static void
-bi_setevents (progs_t *pr, void *_res)
+bi(setevents)
 {
 	graphics_resources_t *res = _res;
 	res->qcevent = P_FUNCTION (pr, 0);
 	res->qcevent_data = P_POINTER (pr, 1);
 }
 
-static void
-bi_setctxcbuf (progs_t *pr, void *_res)
+bi(setctxcbuf)
 {
 	IMT_SetContextCbuf (P_INT (pr, 0), qwaq_cbuf);
 }
 
-static void
-bi_addcbuftxt (progs_t *pr, void *_res)
+bi(addcbuftxt)
 {
 	Cbuf_AddText (qwaq_cbuf, P_GSTRING (pr, 0));
 }
 
+#undef bi
 #define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
