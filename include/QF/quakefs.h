@@ -261,8 +261,7 @@ typedef struct qfs_allocator_s {
 
 /**	Load a file into memory.
 
-	The file will be loaded into memory allocated from the location indicated
-	by \a usehunk.
+	The file will be loaded into memory allocated via \alloc.
 
 	\param file		The handle of the file to load.
 	\param alloc	The allocator to use for allocating memory for the file.
