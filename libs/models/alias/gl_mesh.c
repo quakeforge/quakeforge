@@ -491,7 +491,8 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	auto mdl = alias_ctx->mdl;
 	int numposes = alias_ctx->poseverts.size;
 
-	int size = sizeof (qfm_attrdesc_t[3])
+	int size = sizeof (gl_mesh_t)
+			 + sizeof (qfm_attrdesc_t[3])
 			 + sizeof (qfm_frame_t[numposes]);
 	if (!gl_alias_render_tri) {
 		gl_build_lists (alias_ctx, _m, _s);
@@ -506,8 +507,9 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		size += sizeof (trivertx_t[numposes * numorder]);
 	}
 
-	qfm_attrdesc_t *attribs = Hunk_AllocName (alias_ctx->hunk, size,
-											  alias_ctx->mod->name);
+	gl_mesh_t  *rmesh = Hunk_AllocName (alias_ctx->hunk, size,
+										alias_ctx->mod->name);
+	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
 	auto aframes = (qfm_frame_t *) &attribs[3];
 	void *vertices = nullptr;
 
@@ -626,4 +628,10 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	mesh->index_type = qfm_special;	// none
 	mesh->indices = 0;
 	mesh->morph.data = (byte *) aframes - (byte *) mesh;
+
+	*rmesh = (gl_mesh_t) {
+		.numverts = numorder,
+	};
+	auto model = alias_ctx->model;
+	model->render_data = (byte *) rmesh - (byte *) model;
 }
