@@ -122,7 +122,6 @@ int fnmatch (const char *__pattern, const char *__string, int __flags);
 
 // QUAKE FILESYSTEM
 
-static memhunk_t *qfs_hunk;
 static char *fs_userpath;
 static cvar_t fs_userpath_cvar = {
 	.name = "fs_userpath",
@@ -1453,11 +1452,9 @@ qfs_shutdown (void *data)
 }
 
 VISIBLE void
-QFS_Init (memhunk_t *hunk, const char *game)
+QFS_Init (const char *game)
 {
 	int         i;
-
-	qfs_hunk = hunk;
 
 	Cvar_Register (&fs_sharepath_cvar, qfs_path_cvar, &fs_sharepath);
 	Cvar_Register (&fs_userpath_cvar, qfs_path_cvar, &fs_userpath);

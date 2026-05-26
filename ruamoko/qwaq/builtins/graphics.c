@@ -779,7 +779,7 @@ BI_Graphics_Init (progs_t *pr)
 	QFS_SetConfig (PL_GetPropertyList (bi_dirconf, nullptr));
 
 	qwaq_thread_t *thread = PR_Resources_Find (pr, "qwaq_thread");
-	QFS_Init (thread->hunk, "qwaq");
+	QFS_Init ("qwaq");
 
 	PI_Init ();
 	PI_RegisterPlugins (client_plugin_list);

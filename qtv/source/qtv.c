@@ -295,7 +295,7 @@ qtv_init (void)
 	COM_ParseConfig (qtv_cbuf);
 	cmd_warncmd = 1;
 
-	QFS_Init (qtv_hunk, "qw");
+	QFS_Init ("qw");
 	PI_Init ();
 
 	Cvar_Register (&qtv_console_plugin_cvar, 0, 0);

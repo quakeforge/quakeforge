@@ -108,7 +108,7 @@ Game_Init (memhunk_t *hunk)
 	} else if ((i = COM_CheckParm ("-abyss"))) {
 		game = "abyss";
 	}
-	QFS_Init (hunk, game);
+	QFS_Init (game);
 
 	Cvar_Register (&registered_cvar, 0, 0);
 	Cvar_Register (&cmdline_cvar, Cvar_Info, &cmdline);

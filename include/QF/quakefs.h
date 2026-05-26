@@ -108,7 +108,6 @@ extern int qfs_filesize;
 
 struct cache_user_s;
 struct dstring_s;
-struct memhunk_s;
 struct plitem_s;
 
 /**	Initialize the Quake Filesystem.
@@ -117,14 +116,13 @@ struct plitem_s;
 	\c fs_dirconf Cvars. It then loads the \ref dirconf and parses the
 	\c -game command line option.
 
-	\param hunk		Memory pool to use for hunk-based allocations.
 	\param game		The game type used for searching the directory
 					configuration. Currently, this is \"qw\" for
 					quakeworld clients and servers, and one of \"nq\",
 					\"hexen\", \"rogue\" or \"abyss\" for the netquake
 					clients and servers.
 */
-void QFS_Init (struct memhunk_s *hunk, const char *game);
+void QFS_Init (const char *game);
 
 /**	Set the directory configuration prior to initialization
 

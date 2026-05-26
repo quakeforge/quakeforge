@@ -2108,7 +2108,7 @@ Host_Init (void)
 
 	pr_gametype = "quakeworld";
 
-	QFS_Init (cl_hunk, "qw");
+	QFS_Init ("qw");
 	QFS_GamedirCallback (CL_Autoexec, 0);
 	PI_Init ();
 

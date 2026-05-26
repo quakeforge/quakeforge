@@ -2689,7 +2689,7 @@ SV_Init (void)
 	SV_InitOperatorCommands ();
 	SV_GIB_Init ();
 
-	QFS_Init (sv_hunk, "qw");
+	QFS_Init ("qw");
 	PI_Init ();
 
 	Cvar_Register (&sv_console_plugin_cvar, 0, 0);
