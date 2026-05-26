@@ -498,16 +498,17 @@ SCR_Shutdown (void)
 }
 
 void
-SCR_NewScene (scene_t *scene)
+SCR_NewScene (scene_t *scene, memhunk_t *hunk)
 {
 	qfZoneScoped (true);
+	r_refdef.hunk = hunk;
 	r_refdef.scene = scene;
 	if (scene) {
 		mod_brush_t *brush = &r_refdef.scene->worldmodel->brush;
 		int         count = brush->numnodes + brush->modleafs
 							+ brush->numsurfaces;
 		int         size = count * sizeof (int);
-		int        *node_visframes = Hunk_AllocName (0, size, "visframes");
+		int        *node_visframes = Hunk_AllocName (hunk, size, "visframes");
 		int        *leaf_visframes = node_visframes + brush->numnodes;
 		int        *face_visframes = leaf_visframes + brush->modleafs;
 		r_visstate = (visstate_t) {

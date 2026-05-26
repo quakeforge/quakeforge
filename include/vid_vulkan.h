@@ -58,6 +58,8 @@ static inline void __qftVkZoneEnd (___tracy_vkctx_scope ***zone)
 
 #endif
 
+typedef struct memhunk_s memhunk_t;
+
 #define VA_CTX_COUNT 64
 
 typedef struct vulkan_ctx_s {
@@ -74,6 +76,7 @@ typedef struct vulkan_ctx_s {
 	void        (*create_window) (struct vulkan_ctx_s *ctx);
 	VkSurfaceKHR (*create_surface) (struct vulkan_ctx_s *ctx);
 
+	memhunk_t  *hunk;
 	struct va_ctx_s *va_ctx;
 	struct qfv_instance_s *instance;
 	struct qfv_device_s *device;

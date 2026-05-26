@@ -562,6 +562,15 @@ PR_SetReturnString (progs_t *pr, const char *s)
 	return string_index (res, sr);
 }
 
+VISIBLE pr_string_t
+PR_SetReturnStringN (progs_t *pr, const char *s, size_t n)
+{
+	char str[n + 1];
+	str[n] = 0;
+	strncpy (str, s, n);
+	return PR_SetReturnString (pr, str);
+}
+
 static inline pr_string_t
 pr_settempstring (progs_t *pr, prstr_resources_t *res, char *s)
 {

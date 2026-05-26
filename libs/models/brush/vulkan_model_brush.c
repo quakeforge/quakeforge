@@ -268,7 +268,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 				+ sizeof (qfv_resobj_t[num_tex])	// images
 				+ sizeof (qfv_resobj_t[num_tex]);	// views
 
-	modelctx_t *mctx = Hunk_AllocName (nullptr, size, mod->name);
+	modelctx_t *mctx = Hunk_AllocName (ctx->hunk, size, mod->name);
 	*mctx = (modelctx_t) {
 		.ctx = ctx,
 		.resource = (qfv_resource_t *) &mctx[1],
@@ -374,6 +374,18 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 	load_textures (mod, ctx);
 }
 
+typedef struct vulkan_brush_alloc_s {
+	memhunk_t *hunk;
+	const char *name;
+} vulkan_brush_alloc_t;
+
+static void *
+vulkan_brush_allocator (void *data, size_t size)
+{
+	vulkan_brush_alloc_t *alloc = data;
+	return Hunk_RawAllocName (alloc->hunk, size, alloc->name);
+}
+
 void
 Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
 {
@@ -399,7 +411,16 @@ Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
 		QFS_StripExtension (litfilename->str, litfilename->str);
 		dstring_appendstr (litfilename, ".lit");
 		lit_file = QFS_VOpenFile (litfilename->str, 0, mod->vpath);
-		data = (byte *) QFS_LoadHunkFile (lit_file);
+
+		vulkan_brush_alloc_t vulkan_brush_alloc = {
+			.hunk = ctx->hunk,
+			.name = litfilename->str,
+		};
+		qfs_allocator_t alloc = {
+			.alloc = vulkan_brush_allocator,
+			.data = &vulkan_brush_alloc,
+		};
+		data = (byte *) QFS_LoadFile (lit_file, &alloc);
 		if (data) {
 			if (data[0] == 'Q' && data[1] == 'L' && data[2] == 'I'
 				&& data[3] == 'T') {
@@ -421,7 +442,8 @@ Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
 		return;
 	}
 	// LordHavoc: oh well, expand the white lighting data
-	brush->lightdata = Hunk_AllocName (0, bsp->lightdatasize * 3, mod->name);
+	brush->lightdata = Hunk_AllocName (ctx->hunk, bsp->lightdatasize * 3,
+									   mod->name);
 	in = bsp->lightdata;
 	out = brush->lightdata;
 

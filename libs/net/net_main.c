@@ -815,7 +815,7 @@ NET_shutdown (void *data)
 }
 
 void
-NET_Init (cbuf_t *cbuf)
+NET_Init (cbuf_t *cbuf, memhunk_t *hunk)
 {
 	qfZoneScoped (true);
 	int         i;
@@ -857,14 +857,14 @@ NET_Init (cbuf_t *cbuf)
 	SetNetTime ();
 
 	for (i = 0; i < net_numsockets; i++) {
-		s = (qsocket_t *) Hunk_AllocName (0, sizeof (qsocket_t), "qsocket");
+		s = (qsocket_t *) Hunk_AllocName (hunk, sizeof (qsocket_t), "qsocket");
 		s->next = net_freeSockets;
 		net_freeSockets = s;
 		s->disconnected = true;
 	}
 
 	// allocate space for network message buffer
-	SZ_Alloc (&_net_message_message, NET_MAXMESSAGE);
+	SZ_Alloc (&_net_message_message, NET_MAXMESSAGE, hunk);
 
 	Cvar_Register (&net_messagetimeout_cvar, 0, 0);
 	Cvar_Register (&hostname_cvar, 0, 0);

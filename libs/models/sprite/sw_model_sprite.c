@@ -45,7 +45,8 @@ sw_Mod_SpriteLoadFrames (mod_sprite_ctx_t *ctx)
 		size_t      pixels = dframe->width * dframe->height;
 		size_t      size = offsetof (qpic_t, data[pixels])
 							+ sizeof (mspriteframe_t);
-		mspriteframe_t *frame = Hunk_AllocName (0, size, ctx->mod->name);
+		mspriteframe_t *frame = Hunk_AllocName (ctx->hunk, size,
+												ctx->mod->name);
 		ctx->frames[i]->data = (byte *) frame - (byte *) sprite;
 		Mod_LoadSpriteFrame (frame, dframe);
 		auto pic = (qpic_t *) &frame[1];

@@ -561,7 +561,7 @@ SV_Record (char *name)
 	// send server info string
 	MSG_WriteByte (&buf, svc_stufftext);
 	MSG_WriteString (&buf, va ("fullserverinfo \"%s\"\n",
-							   Info_MakeString (svs.info, 0)));
+							   Info_MakeString (svs.info, 0, sv_hunk)));
 
 	// flush packet
 	SV_WriteRecordDemoMessage (&buf);
@@ -658,7 +658,8 @@ SV_Record (char *name)
 		MSG_WriteFloat (&buf, realtime - player->connection_started);
 
 		info = player->userinfo ? Info_MakeString (player->userinfo,
-												   make_info_string_filter)
+												   make_info_string_filter,
+												   sv_hunk)
 								: "";
 
 		MSG_WriteByte (&buf, svc_updateuserinfo);
@@ -899,7 +900,7 @@ Demo_Init (void)
 	demo_name = dstring_newstr ();
 	demo_text = dstring_newstr ();
 
-	svs.demomem = Hunk_AllocName (0, size, "demo");
+	svs.demomem = Hunk_AllocName (sv_hunk, size, "demo");
 	svs.demomemsize = size;
 	demo_max_size = size - 0x80000;
 	sv_demoCacheSize_cvar.default_value = nva ("%d", size / 1024);

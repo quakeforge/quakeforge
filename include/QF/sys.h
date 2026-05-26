@@ -38,7 +38,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 
-struct dstring_s;
+typedef struct dstring_s dstring_t;
 
 extern int sys_nostdout;
 extern int sys_extrasleep;
@@ -209,7 +209,7 @@ char *Sys_ExpandSquiggle (const char *path);
 					Suitable for use with read, write, fdopen, Qdopen, etc.
 	\note	It is the caller's responsibility to close the file.
 */
-int Sys_UniqueFile (struct dstring_s *name, const char *prefix,
+int Sys_UniqueFile (dstring_t *name, const char *prefix,
 					const char *suffix, int mindigits);
 
 typedef intptr_t sys_jmpbuf[5];

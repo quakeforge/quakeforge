@@ -306,15 +306,18 @@ alias_error (model_t *mod, const char *fmt, ...)
 }
 
 void
-Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
+Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator,
+					memhunk_t *hunk)
 {
 	int			extra = 0;		// extra precision bytes
 
 	if (strcmp (mod->name, "flame2")==0) {
 		extra = 0;
 	}
-	mod_alias_ctx_t alias_ctx = {};
-	alias_ctx.mod = mod;
+	mod_alias_ctx_t alias_ctx = {
+		.mod = mod,
+		.hunk = hunk,
+	};
 	//FIXME should be per batch rather than per model
 	DARRAY_INIT (&alias_ctx.poseverts, 256);
 	DARRAY_INIT (&alias_ctx.stverts, 256);
@@ -328,7 +331,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	CRC_Init (&crc);
 	CRC_ProcessBlock (buffer, &crc, qfs_filesize);
 
-	size_t      start = Hunk_LowMark (nullptr);
+	size_t      start = Hunk_LowMark (hunk);
 
 	mdl_t      *mdl = buffer;
 	void       *skindata = swap_mdl (mdl);
@@ -375,7 +378,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 						+ sizeof (keyframe_t[alias_ctx.poseverts.size])
 						+ sizeof (qfm_frame_t[alias_ctx.poseverts.size])
 						+ alias_ctx.names_size;
-	qf_model_t *model = Hunk_AllocName (nullptr, size, mod->name);
+	qf_model_t *model = Hunk_AllocName (hunk, size, mod->name);
 	auto mesh = (qf_mesh_t *) &model[1];
 	alias_ctx.model = model;
 	alias_ctx.mesh = mesh;
@@ -454,13 +457,13 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 	// move the complete, relocatable alias model to the cache
 	if (m_funcs->alias_cache) {
-		size_t      end = Hunk_LowMark (nullptr);
+		size_t      end = Hunk_LowMark (hunk);
 		size_t      total = end - start;
 		void       *mem = allocator (&mod->cache, total, mod->name);
 		if (mem)
 			memcpy (mem, model, total);
 
-		Hunk_FreeToLowMark (nullptr, start);
+		Hunk_FreeToLowMark (hunk, start);
 		mod->model = nullptr;
 	} else {
 		memset (&mod->cache, 0, sizeof (mod->cache));

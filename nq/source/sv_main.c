@@ -48,6 +48,7 @@
 #include "nq/include/server.h"
 #include "nq/include/sv_progs.h"
 
+memhunk_t  *sv_hunk;
 server_t    sv;
 server_static_t svs;
 double      sv_frametime;

@@ -205,14 +205,14 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 }
 
 qfv_skin_t *
-Vulkan_Mod_AllocSkins (int count, bool use_hunk)
+Vulkan_Mod_AllocSkins (int count, memhunk_t *hunk)
 {
 	size_t res_size = sizeof (qfv_resource_t) + sizeof (qfv_resobj_t[2]);
 	size_t size = sizeof (qfv_skin_t[count]) + res_size * count;
 
 	qfv_skin_t *skins;
-	if (use_hunk) {
-		skins = Hunk_Alloc (nullptr, size);
+	if (hunk) {
+		skins = Hunk_Alloc (hunk, size);
 	} else {
 		skins = malloc (size);
 	}
@@ -231,7 +231,7 @@ Vulkan_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	int         skinsize = alias_ctx->skinwidth * alias_ctx->skinheight;
 	int         numskins = alias_ctx->skins.size;
 
-	auto vskins = Vulkan_Mod_AllocSkins (numskins, true);
+	auto vskins = Vulkan_Mod_AllocSkins (numskins, alias_ctx->hunk);
 	for (int i = 0; i < numskins; i++) {
 		auto askin = alias_ctx->skins.a + i;
 		Vulkan_Mod_LoadSkin (alias_ctx, askin, skinsize, &vskins[i], ctx);
@@ -489,7 +489,7 @@ Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 				+ sizeof (qfv_resobj_t[3]);
 
 	const char *name = alias_ctx->mod->name;
-	qfv_mesh_t *rmesh = Hunk_AllocName (0, size, name);
+	qfv_mesh_t *rmesh = Hunk_AllocName (alias_ctx->hunk, size, name);
 	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
 	auto bone_descs = (VkDescriptorSet *) &attribs[5];
 	auto resources = (qfv_resource_t *) &bone_descs[rctx->frames.size];

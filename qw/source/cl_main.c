@@ -137,6 +137,7 @@ bool        noclip_anglehack;			// remnant from old quake
 
 cbuf_t     *cl_cbuf;
 cbuf_t     *cl_stbuf;
+memhunk_t  *cl_hunk;
 
 float cl_mem_size;
 static cvar_t cl_mem_size_cvar = {
@@ -524,7 +525,7 @@ CL_SendConnectPacket (void)
 	const char *data = va ("%c%c%c%cconnect %i %i %i \"%s\"\n",
 						   255, 255, 255, 255, PROTOCOL_VERSION,
 						   cls.qport, cls.challenge,
-						   Info_MakeString (cls.userinfo, 0));
+						   Info_MakeString (cls.userinfo, 0, cl_hunk));
 	Netchan_SendPacket (strlen (data), data, cls.server_addr);
 }
 
@@ -652,13 +653,13 @@ CL_ClearState (void)
 
 	for (i = 0; i < UPDATE_BACKUP; i++)
 		cl.frames[i].packet_entities.entities = qw_entstates.frame[i];
-	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
+	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0, cl_hunk);
 
 	Sys_MaskPrintf (SYS_dev, "Clearing memory\n");
 	VID_ClearMemory ();
 	Mod_ClearAll ();
 	if (host_hunklevel)					// FIXME: check this...
-		Hunk_FreeToLowMark (0, host_hunklevel);
+		Hunk_FreeToLowMark (cl_hunk, host_hunklevel);
 
 	CL_World_Clear ();
 	CL_ClearTEnts ();
@@ -672,7 +673,7 @@ CL_ClearState (void)
 
 	CL_TEnts_Precache ();
 
-	SCR_NewScene (0);
+	SCR_NewScene (0, cl_hunk);
 
 	SZ_Clear (&cls.netchan.message);
 
@@ -848,9 +849,10 @@ CL_FullServerinfo_f (void)
 
 	Sys_MaskPrintf (SYS_dev, "Cmd_Argv (1): '%s'\n", Cmd_Argv (1));
 	Info_Destroy (cl.serverinfo);
-	cl.serverinfo = Info_ParseString (Cmd_Argv (1), MAX_SERVERINFO_STRING, 0);
+	cl.serverinfo = Info_ParseString (Cmd_Argv (1), MAX_SERVERINFO_STRING, 0,
+									  cl_hunk);
 	Sys_MaskPrintf (SYS_dev, "cl.serverinfo: '%s'\n",
-					Info_MakeString (cl.serverinfo, 0));
+					Info_MakeString (cl.serverinfo, 0, cl_hunk));
 
 	if ((p = Info_ValueForKey (cl.serverinfo, "*qf_version")) && *p) {
 		if (server_version == NULL)
@@ -940,7 +942,7 @@ CL_FullInfo_f (void)
 		return;
 	}
 
-	info = Info_ParseString (Cmd_Argv (1), MAX_INFO_STRING, 0);
+	info = Info_ParseString (Cmd_Argv (1), MAX_INFO_STRING, 0, cl_hunk);
 	Info_AddKeys (cls.userinfo, info);
 	Info_Destroy (info);
 }
@@ -1406,7 +1408,7 @@ CL_SetState (cactive_t state)
 			if (cl_autorecord && cls.demorecording)
 				CL_StopRecording ();
 
-			SCR_NewScene (0);
+			SCR_NewScene (0, cl_hunk);
 		} else if (state == ca_active) {
 			// entering active state
 			VID_SetCaption (cls.servername->str);
@@ -1457,22 +1459,45 @@ CL_Shutdown (void *data)
 	Mod_ClearAll ();
 }
 
+typedef struct cl_alloc_s {
+	memhunk_t *hunk;
+	const char *name;
+} cl_alloc_t;
+
+static void *
+cl_allocator (void *data, size_t size)
+{
+	cl_alloc_t *alloc = data;
+	return Hunk_RawAllocName (alloc->hunk, size, alloc->name);
+}
+
 void
 CL_Init (void)
 {
 	byte       *basepal, *colormap;
 
-	basepal = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/palette.lmp"));
+	cl_alloc_t cl_alloc = {
+		.hunk = cl_hunk,
+		.name = "palette",
+	};
+	qfs_allocator_t alloc = {
+		.alloc = cl_allocator,
+		.data = &cl_alloc,
+	};
+	basepal = (byte *) QFS_LoadFile (QFS_FOpenFile ("gfx/palette.lmp"),
+									 &alloc);
 	if (!basepal)
 		Sys_Error ("Couldn't load gfx/palette.lmp");
-	colormap = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/colormap.lmp"));
+	cl_alloc.name = "colormap";
+	colormap = (byte *) QFS_LoadFile (QFS_FOpenFile ("gfx/colormap.lmp"),
+									  &alloc);
 	if (!colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
 
-	W_LoadWadFile ("gfx.wad");
+	W_LoadWadFile ("gfx.wad", cl_hunk);
 	VID_Init (basepal, colormap);
-	IN_Init ();
-	Mod_Init ();
+	IN_Init (cl_hunk);
+	Mod_Init (cl_hunk);
 	R_Init (nullptr);
 	r_data->lightstyle = cl.lightstyle;
 	Font_Init ();	//FIXME not here
@@ -1523,7 +1548,7 @@ CL_Init (void)
 	cls.downloadname = dstring_newstr ();
 	cls.downloadurl = dstring_newstr ();
 	Info_Destroy (cl.serverinfo);
-	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
+	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0, cl_hunk);
 	free (cl.players);
 	cl.players = calloc (MAX_CLIENTS, sizeof (player_info_t));
 	Sbar_SetPlayers (cl.players, MAX_CLIENTS);
@@ -1641,7 +1666,7 @@ CL_Init_Cvars (void)
 	var = Cvar_FindVar ("cl_yawspeed");
 	Cvar_AddListener (var, cl_yawspeed_f, 0);
 
-	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
+	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0, cl_hunk);
 
 	Cvar_Register (&cl_model_crcs_cvar, 0, 0);
 	Cvar_Register (&cl_allow_cmd_pkt_cvar, 0, 0);
@@ -2038,7 +2063,7 @@ CL_Init_Memory (void)
 		Sys_Error ("Can't allocate %zd", mem_size);
 
 	Sys_PageIn (mem_base, mem_size);
-	memhunk_t  *hunk = Memory_Init (mem_base, mem_size);
+	memhunk_t  *hunk = Hunk_Init (mem_base, mem_size);
 
 	Sys_Printf ("%4.1f megabyte heap.\n", cl_mem_size);
 	return hunk;
@@ -2072,15 +2097,18 @@ Host_Init (void)
 	cl_stbuf = Cbuf_New (&id_interp);
 
 	Sys_Init ();
-	GIB_Init (true);
+
+	cl_hunk = CL_Init_Memory ();
+	Cmd_SetHunk (cl_hunk);
+
+	Cache_Init (cl_hunk);
+	GIB_Init (true, cl_hunk);
 	GIB_Key_Init ();
 	COM_ParseConfig (cl_cbuf);
 
-	memhunk_t  *hunk = CL_Init_Memory ();
-
 	pr_gametype = "quakeworld";
 
-	QFS_Init (hunk, "qw");
+	QFS_Init (cl_hunk, "qw");
 	QFS_GamedirCallback (CL_Autoexec, 0);
 	PI_Init ();
 
@@ -2126,8 +2154,8 @@ Host_Init (void)
 	// make sure all + commands have been executed
 	Cbuf_Execute_Stack (cl_cbuf);
 
-	Hunk_AllocName (0, 0, "-HOST_HUNKLEVEL-");
-	host_hunklevel = Hunk_LowMark (0);
+	Hunk_AllocName (cl_hunk, 0, "-HOST_HUNKLEVEL-");
+	host_hunklevel = Hunk_LowMark (cl_hunk);
 
 	Sys_Printf ("\nClient version %s (build %04d)\n\n", PACKAGE_VERSION,
 				build_number ());

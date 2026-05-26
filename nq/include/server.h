@@ -38,6 +38,9 @@
 #include "protocol.h"
 #include "sv_progs.h"
 
+typedef struct memhunk_s memhunk_t;
+
+extern memhunk_t *sv_hunk;
 extern progs_t sv_pr_state;
 
 typedef struct

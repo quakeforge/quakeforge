@@ -88,7 +88,8 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 	mod->clear = vulkan_sprite_clear;
 	mod->data = ctx;
 
-	qfv_sprite_t *sprite = Hunk_AllocName (0, sizeof (*sprite), mod->name);
+	qfv_sprite_t *sprite = Hunk_AllocName (sprite_ctx->hunk,
+										   sizeof (*sprite), mod->name);
 	int         mipLevels = QFV_MipLevels (dsprite->width, dsprite->height);
 	VkExtent3D  extent = { dsprite->width, dsprite->height, 1 };
 	sprite->image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,

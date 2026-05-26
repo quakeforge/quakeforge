@@ -250,7 +250,7 @@ update_vertex_joints (mod_iqm_ctx_t *iqm_ctx, uint32_t *bone_map)
 }
 
 void
-Mod_LoadIQM (model_t *mod, void *buffer)
+Mod_LoadIQM (model_t *mod, void *buffer, memhunk_t *hunk)
 {
 	byte       *buf = buffer;
 	iqmheader  *hdr = buffer;
@@ -275,6 +275,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 
 	mod_iqm_ctx_t iqm = {
 		.mod       = mod,
+		.hunk      = hunk,
 		.hdr       = hdr,
 		.text      = (const char *)     (buf + hdr->ofs_text),
 		.meshes    = (iqmmesh *)        (buf + hdr->ofs_meshes),
@@ -314,7 +315,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 				+ sizeof (uint16_t[frame_data_count])
 				+ sizeof (qfm_frame_t[hdr->num_frames])
 				+ text_base + hdr->num_text;
-	qf_model_t *model = Hunk_AllocName (nullptr, size, mod->name);
+	qf_model_t *model = Hunk_AllocName (hunk, size, mod->name);
 	auto meshes    = (qf_mesh_t *)      &model[1];
 	auto joints    = (qfm_joint_t *)    &meshes[hdr->num_meshes];
 	auto inverse   = (qfm_motor_t *)    &joints[hdr->num_joints];

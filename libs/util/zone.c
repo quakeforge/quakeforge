@@ -620,8 +620,6 @@ cs_ind (memhunk_t *hunk, cache_system_t *cs_ptr)
 	return cs_ptr - hunk->cache_head;
 }
 
-static memhunk_t *global_hunk;
-
 static int
 hunk_check (memhunk_t *hunk, hunkblk_t *h, int err)
 {
@@ -675,7 +673,6 @@ hunk_check (memhunk_t *hunk, hunkblk_t *h, int err)
 VISIBLE void
 Hunk_Check (memhunk_t *hunk)
 {
-	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
 	hunkblk_t  *h;
 	byte       *hunk_end = hunk->base + hunk->low_used;
 
@@ -696,7 +693,6 @@ Hunk_Check (memhunk_t *hunk)
 VISIBLE void
 Hunk_Print (memhunk_t *hunk, bool all)
 {
-	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
 	hunkblk_t  *h, *next, *endlow, *starthigh, *endhigh;
 	int         sum, totalblocks;
 
@@ -761,7 +757,6 @@ Hunk_Print (memhunk_t *hunk, bool all)
 static void
 Hunk_FreeToHighMark (memhunk_t *hunk, size_t mark)
 {
-	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
 	if (hunk->tempactive) {
 		hunk->tempactive = false;
 		Hunk_FreeToHighMark (hunk, hunk->tempmark);
@@ -778,7 +773,6 @@ Hunk_FreeToHighMark (memhunk_t *hunk, size_t mark)
 static int
 Hunk_HighMark (memhunk_t *hunk)
 {
-	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
 	if (hunk->tempactive) {
 		hunk->tempactive = false;
 		Hunk_FreeToHighMark (hunk, hunk->tempmark);
@@ -838,7 +832,6 @@ Hunk_RawAllocName (memhunk_t *hunk, size_t size, const char *name)
 VISIBLE void *
 Hunk_AllocName (memhunk_t *hunk, size_t size, const char *name)
 {
-	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
 	void       *mem = Hunk_RawAllocName (hunk, size, name);
 	memset (mem, 0, size);
 	return mem;
@@ -847,7 +840,6 @@ Hunk_AllocName (memhunk_t *hunk, size_t size, const char *name)
 VISIBLE void *
 Hunk_Alloc (memhunk_t *hunk, size_t size)
 {
-	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
 	void       *mem = Hunk_RawAlloc (hunk, size);
 	memset (mem, 0, size);
 	return mem;
@@ -856,7 +848,6 @@ Hunk_Alloc (memhunk_t *hunk, size_t size)
 VISIBLE size_t
 Hunk_LowMark (memhunk_t *hunk)
 {
-	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
 	return hunk->low_used;
 }
 
@@ -873,7 +864,6 @@ Hunk_RawFreeToLowMark (memhunk_t *hunk, size_t mark)
 VISIBLE void
 Hunk_FreeToLowMark (memhunk_t *hunk, size_t mark)
 {
-	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
 	if (mark == hunk->low_used)
 		return;
 	if (mark > hunk->low_used)
@@ -921,7 +911,6 @@ Hunk_HighAlloc (memhunk_t *hunk, size_t size)
 VISIBLE void *
 Hunk_TempAlloc (memhunk_t *hunk, size_t size)
 {
-	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
 	void       *buf;
 
 	size = (size + HUNK_ALIGN - 1) & ~(HUNK_ALIGN - 1);
@@ -948,8 +937,6 @@ Hunk_TempAlloc (memhunk_t *hunk, size_t size)
 VISIBLE int
 Hunk_PointerIsValid (memhunk_t *hunk, void *ptr)
 {
-	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
-
 	size_t      offset = (byte *) ptr - hunk->base;
 	if (offset >= hunk->size) {
 		return 0;
@@ -1194,10 +1181,12 @@ Cache_Profile_r (memhunk_t *hunk)
 				count ? total / count : -1);
 }
 
+static memhunk_t *cache_hunk;	//FIXME don't want global
+
 static void
 Cache_Profile (void)
 {
-	Cache_Profile_r (global_hunk);
+	Cache_Profile_r (cache_hunk);
 }
 
 static void
@@ -1214,7 +1203,7 @@ Cache_Print_r (memhunk_t *hunk)
 static void
 Cache_Print (void)
 {
-	Cache_Print_r (global_hunk);
+	Cache_Print_r (cache_hunk);
 }
 
 static void
@@ -1228,9 +1217,10 @@ init_cache (memhunk_t *hunk)
 	hunk->cache_head[0].readlock = 1; // don't try to free or move it
 }
 
-static void
-Cache_Init (void)
+void
+Cache_Init (memhunk_t *hunk)
 {
+	cache_hunk = hunk;
 	Cmd_AddCommand ("cache_flush", Cache_Flush, "Clears the current game "
 					"cache");
 	Cmd_AddCommand ("cache_profile", Cache_Profile, "Prints a profile of "
@@ -1264,8 +1254,7 @@ Cache_Flush_r (memhunk_t *hunk)
 VISIBLE void
 Cache_Flush (void)
 {
-	// cache_head.prev is guaranteed to not be free because it's the bottom
-	Cache_Flush_r (global_hunk);
+	Cache_Flush_r (cache_hunk);
 }
 
 VISIBLE void *
@@ -1351,7 +1340,7 @@ Cache_Alloc_r (memhunk_t *hunk, cache_user_t *c, size_t size, const char *name)
 VISIBLE void *
 Cache_Alloc (cache_user_t *c, size_t size, const char *name)
 {
-	return Cache_Alloc_r (global_hunk, c, size, name);
+	return Cache_Alloc_r (cache_hunk, c, size, name);
 }
 
 static void
@@ -1366,7 +1355,7 @@ VISIBLE void
 Cache_Report (void)
 {
 	if (developer & SYS_cache) {
-		Cache_Report_r (global_hunk);
+		Cache_Report_r (cache_hunk);
 	}
 }
 
@@ -1457,12 +1446,4 @@ Hunk_Init (void *buf, size_t size)
 
 	init_cache (hunk);
 	return hunk;
-}
-
-VISIBLE memhunk_t *
-Memory_Init (void *buf, size_t size)
-{
-	global_hunk = Hunk_Init (buf, size);
-	Cache_Init ();
-	return global_hunk;
 }

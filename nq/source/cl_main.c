@@ -154,6 +154,7 @@ static cvar_t r_drawflat_cvar = {
 	.value = { .type = &cexpr_int, .value = &r_drawflat },
 };
 
+memhunk_t  *cl_hunk;
 client_static_t cls;
 client_state_t cl;
 
@@ -252,7 +253,7 @@ CL_ClearMemory (void)
 	CL_World_Clear ();
 	CL_ClearEnts ();
 
-	SCR_NewScene (0);
+	SCR_NewScene (0, cl_hunk);
 }
 
 void
@@ -591,7 +592,7 @@ CL_SetState (cactive_t state)
 		if (old_state == ca_active && state != ca_disconnected) {
 			// leaving active state
 			S_AmbientOff ();
-			SCR_NewScene (0);
+			SCR_NewScene (0, cl_hunk);
 		}
 		switch (state) {
 			case ca_disconnected:
@@ -722,24 +723,48 @@ Force_CenterView_f (void)
 	cl.viewstate.player_angles[PITCH] = 0;
 }
 
+typedef struct cl_alloc_s {
+	memhunk_t *hunk;
+	const char *name;
+} cl_alloc_t;
+
+static void *
+cl_allocator (void *data, size_t size)
+{
+	cl_alloc_t *alloc = data;
+	return Hunk_RawAllocName (alloc->hunk, size, alloc->name);
+}
+
 void
-CL_Init (cbuf_t *cbuf)
+CL_Init (cbuf_t *cbuf, memhunk_t *hunk)
 {
 	qfZoneScoped (true);
 	byte       *basepal, *colormap;
 
-	basepal = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/palette.lmp"));
+	cl_hunk = hunk;
+
+	cl_alloc_t cl_alloc = {
+		.hunk = hunk,
+		.name = "palette",
+	};
+	qfs_allocator_t alloc = {
+		.alloc = cl_allocator,
+		.data = &cl_alloc,
+	};
+	basepal = (byte *) QFS_LoadFile (QFS_FOpenFile ("gfx/palette.lmp"), &alloc);
 	if (!basepal)
 		Sys_Error ("Couldn't load gfx/palette.lmp");
-	colormap = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/colormap.lmp"));
+	cl_alloc.name = "colormap";
+	colormap = (byte *) QFS_LoadFile (QFS_FOpenFile ("gfx/colormap.lmp"),
+									  &alloc);
 	if (!colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
 
 	Host_OnServerSpawn (CL_ClearMemory);
 
-	W_LoadWadFile ("gfx.wad");
+	W_LoadWadFile ("gfx.wad", hunk);
 	VID_Init (basepal, colormap);
-	IN_Init ();
+	IN_Init (hunk);
 	GIB_Key_Init ();
 	R_Init (nullptr);
 	r_data->lightstyle = cl.lightstyle;
@@ -778,6 +803,6 @@ CL_Init (cbuf_t *cbuf)
 	Sys_RegisterShutdown (CL_Shutdown, 0);
 
 	cl_stuffbuff = dstring_newstr ();
-	SZ_Alloc (&cls.message, 1024);
+	SZ_Alloc (&cls.message, 1024, hunk);
 	CL_SetState (ca_disconnected);
 }

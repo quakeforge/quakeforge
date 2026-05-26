@@ -217,8 +217,8 @@ R_NewScene (scene_t *scene)
 		r_cnumsurfs = MINSURFACES;
 
 	if (r_cnumsurfs > NUMSTACKSURFACES) {
-		surfaces = Hunk_AllocName (0, r_cnumsurfs * sizeof (surf_t),
-								   "surfaces");
+		surfaces = Hunk_AllocName (r_refdef.hunk,
+								   r_cnumsurfs * sizeof (surf_t), "surfaces");
 
 		surface_p = surfaces;
 		surf_max = &surfaces[r_cnumsurfs];
@@ -242,7 +242,8 @@ R_NewScene (scene_t *scene)
 	if (r_numallocatededges <= NUMSTACKEDGES) {
 		auxedges = NULL;
 	} else {
-		auxedges = Hunk_AllocName (0, r_numallocatededges * sizeof (edge_t),
+		auxedges = Hunk_AllocName (r_refdef.hunk,
+								   r_numallocatededges * sizeof (edge_t),
 								   "edges");
 	}
 
@@ -610,7 +611,7 @@ R_RenderView (void)
 	if (delta < -10000 || delta > 10000)
 		Sys_Error ("R_RenderView: called without enough stack");
 
-	if (Hunk_LowMark (0) & 3)
+	if (Hunk_LowMark (r_refdef.hunk) & 3)
 		Sys_Error ("Hunk is missaligned");
 
 	if ((intptr_t) (&dummy) & 3)

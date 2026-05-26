@@ -59,6 +59,7 @@
 
 #define MEMSIZE (12 * 1024 * 1024)
 
+memhunk_t  *wad_hunk;
 const char	*this_program;
 options_t	options;
 
@@ -278,7 +279,8 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 			for (i = 0; i < 256; i++)
 				buffer[i + 768] = i;
 			Qread (wad->handle, buffer, count);
-			pcx = EncodePCX (buffer + 768, 16, 16, 16, buffer, false, &len);
+			pcx = EncodePCX (buffer + 768, 16, 16, 16, buffer, false, &len,
+							 wad_hunk);
 			if (Qwrite (file, pcx, len) != len) {
 				fprintf (stderr, "Error writing to %s\n", name.str);
 				return -1;
@@ -292,7 +294,8 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 			qpic = malloc (pf->size);
 			Qread (wad->handle, qpic, pf->size);
 			pcx = EncodePCX (qpic->data, qpic->width, qpic->height,
-							 qpic->width, default_palette, false, &len);
+							 qpic->width, default_palette, false, &len,
+							 wad_hunk);
 			free (qpic);
 			if (Qwrite (file, pcx, len) != len) {
 				fprintf (stderr, "Error writing to %s\n", name.str);
@@ -348,10 +351,12 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 							miptex->width / 8);
 				}
 				pcx = EncodePCX (image, miptex->width, miptex->height * 3 / 2,
-								 miptex->width, default_palette, false, &len);
+								 miptex->width, default_palette, false, &len,
+								 wad_hunk);
 			} else {
 				pcx = EncodePCX (image, miptex->width, miptex->height,
-								 miptex->width, default_palette, false, &len);
+								 miptex->width, default_palette, false, &len,
+								 wad_hunk);
 			}
 			free (image);
 			free (buffer);
@@ -395,8 +400,9 @@ main (int argc, char **argv)
 	int         i;//, j, rehash = 0;
 	lumpinfo_t *pf;
 
+	wad_hunk = Hunk_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
+
 	Sys_Init ();
-	Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
 
 	this_program = argv[0];
 

@@ -254,36 +254,26 @@ QFile *_QFS_FOpenFile (const char *filename, int zip);
 */
 QFile *QFS_FOpenFile (const char *filename);
 
+typedef struct qfs_allocator_s {
+	void     *(*alloc) (void *data, size_t size);
+	void     *data;
+} qfs_allocator_t;
+
 /**	Load a file into memory.
 
 	The file will be loaded into memory allocated from the location indicated
 	by \a usehunk.
 
 	\param file		The handle of the file to load.
-	\param usehunk	The location from which to allocate memory for the file's
-					data. Use 0.
+	\param alloc	The allocator to use for allocating memory for the file.
+					If null, malloc will be used.
 	\return			Pointer to the file's data, or NULL on error.
-	\todo remove \a usehunk
 
 	\note The file is closed on return as any error is either file not found
 	(\a file is null) or there was a memory allocation error (bigger
 	problems).
 */
-byte *QFS_LoadFile (QFile *file, int usehunk);
-
-/** Load a file into memeory.
-
-	The file is loaded into memory allocated from the hunk.
-*/
-byte *QFS_LoadHunkFile (QFile *file);
-
-/** Load a file into memeory.
-
-	This is a wrapper for QFS_LoadFile().
-
-	\deprecated This should go away soon.
-*/
-void QFS_LoadCacheFile (QFile *file, struct cache_user_s *cu);
+byte *QFS_LoadFile (QFile *file, qfs_allocator_t *alloc);
 
 /**	Rename a file.
 
@@ -322,13 +312,16 @@ int QFS_Remove (const char *path);
 QFile *QFS_NextFile (struct dstring_s *filename, const char *prefix,
 					 const char *ext);
 
+typedef struct qfs_substr_s {
+	size_t      start;
+	size_t      len;
+} qfs_substr_t;
 /** Extract the non-extension part of the file name from the path.
 
 	\param in		The path from which the name will be extracted.
-	\return			The extracted name.
-	\note It is the caller's responsibility to free the extracted name.
+	\return			Start and length of the extracted name
 */
-char *QFS_FileBase (const char *in);
+qfs_substr_t QFS_FileBase (const char *in);
 
 /**	Set the file extention if not already present.
 

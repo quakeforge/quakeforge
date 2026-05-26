@@ -506,7 +506,8 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		size += sizeof (trivertx_t[numposes * numorder]);
 	}
 
-	qfm_attrdesc_t *attribs = Hunk_AllocName (0, size, alias_ctx->mod->name);
+	qfm_attrdesc_t *attribs = Hunk_AllocName (alias_ctx->hunk, size,
+											  alias_ctx->mod->name);
 	auto aframes = (qfm_frame_t *) &attribs[3];
 	void *vertices = nullptr;
 

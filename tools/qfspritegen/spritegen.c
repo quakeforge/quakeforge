@@ -40,9 +40,13 @@
 #include "QF/script.h"
 #include "QF/spritegn.h"
 #include "QF/sys.h"
+#include "QF/zone.h"
 
 #define MAX_BUFFER_SIZE		0x100000
 #define MAX_FRAMES			1000
+
+#define MEMSIZE (8 * 1024 * 1024)
+memhunk_t      *sprite_hunk;
 
 tex_t          *image;
 dsprite_t		sprite;
@@ -194,7 +198,7 @@ LoadScreen (const char *name)
 	file = Qopen (name, "rb");
 	if (!file)
 		Sys_Error ("could not open");
-	image = LoadPCX (file, false, 0, 1);
+	image = LoadPCX (file, false, 0, 1, sprite_hunk);
 }
 
 
@@ -512,6 +516,7 @@ int main (int argc, char **argv)
 
 	spritedir = dstring_newstr ();
 	spriteoutname = dstring_newstr ();
+	sprite_hunk = Hunk_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
 
 	i = 1;
 

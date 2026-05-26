@@ -566,7 +566,7 @@ IN_shutdown (void *data)
 }
 
 void
-IN_Init (void)
+IN_Init (memhunk_t *hunk)
 {
 	qfZoneScoped (true);
 	Sys_RegisterShutdown (IN_shutdown, 0);
@@ -574,7 +574,7 @@ IN_Init (void)
 	IN_ButtonInit ();
 	IN_AxisInit ();
 	IMT_Init ();
-	IN_Binding_Init ();
+	IN_Binding_Init (hunk);
 
 	for (size_t i = 0; i < in_drivers.size; i++) {
 		in_regdriver_t *rd = &in_drivers.a[i];

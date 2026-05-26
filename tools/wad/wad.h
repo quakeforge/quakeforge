@@ -56,6 +56,8 @@ extern struct tex_s *image;
 extern byte default_palette[];
 extern byte *lumpbuffer, *lump_p;
 extern struct dstring_s *lumpname;
+typedef struct memhunk_s memhunk_t;
+extern memhunk_t *wad_hunk;
 
 struct script_s;
 void GrabPalette (struct script_s *script);

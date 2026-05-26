@@ -112,6 +112,7 @@ static int in_keyhelp_saved_handler;
 
 static int *in_keyhelp_devices;
 static in_axisinfo_t *in_keyhelp_axisinfo;
+static memhunk_t *in_hunk;
 static size_t in_keyhelp_hunk_mark;
 static size_t in_keyhelp_hunk_mark_check;
 
@@ -337,10 +338,10 @@ in_keyhelp_event_handler (const IE_event_t *ie_event, void *unused)
 	IE_Set_Focus (in_keyhelp_saved_handler);
 	Sys_Printf ("%s (%s %s) %s %d (%s)\n", bind_name, devname, id, type, num,
 				name ? name : "");
-	if (in_keyhelp_hunk_mark_check != Hunk_LowMark (nullptr)) {
+	if (in_keyhelp_hunk_mark_check != Hunk_LowMark (in_hunk)) {
 		Sys_Error ("can't free keyhelp device info");
 	}
-	Hunk_FreeToLowMark (nullptr, in_keyhelp_hunk_mark);
+	Hunk_FreeToLowMark (in_hunk, in_keyhelp_hunk_mark);
 	in_keyhelp_hunk_mark = in_keyhelp_hunk_mark_check = 0;
 	in_keyhelp_devices = nullptr;
 	in_keyhelp_axisinfo = nullptr;
@@ -735,9 +736,9 @@ keyhelp_f (void)
 	}
 	size_t size = sizeof (uint32_t[known_devices.size])
 				+ sizeof (in_axisinfo_t[num_axes]);
-	in_keyhelp_hunk_mark = Hunk_LowMark (nullptr);
-	in_keyhelp_devices = Hunk_AllocName (nullptr, size, "keyhelp axes");
-	in_keyhelp_hunk_mark_check = Hunk_LowMark (nullptr);
+	in_keyhelp_hunk_mark = Hunk_LowMark (in_hunk);
+	in_keyhelp_devices = Hunk_AllocName (in_hunk, size, "keyhelp axes");
+	in_keyhelp_hunk_mark_check = Hunk_LowMark (in_hunk);
 	in_keyhelp_axisinfo = (in_axisinfo_t *) &in_keyhelp_devices[num_dev];
 	num_axes = 0;
 	for (size_t i = 0; i < known_devices.size; i++) {
@@ -834,8 +835,10 @@ IN_Binding_Shutdown (void *data)
 }
 
 void
-IN_Binding_Init (void)
+IN_Binding_Init (memhunk_t *hunk)
 {
+	in_hunk = hunk;
+
 	Sys_RegisterShutdown (IN_Binding_Shutdown, 0);
 	in_binding_handler = IE_Add_Handler (in_binding_event_handler, 0);
 	in_keyhelp_handler = IE_Add_Handler (in_keyhelp_event_handler, 0);

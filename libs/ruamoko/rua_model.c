@@ -192,7 +192,8 @@ bi (Model_LoadMesh)
 	strncpy (model->name, name, len);
 	model->name[len] = 0;
 	model->name[sizeof(model->name) - 1] = 0;
-	mod_funcs->Mod_LoadMesh (model, sizebuf->data, sizebuf->cursize);
+	mod_funcs->Mod_LoadMesh (model, sizebuf->data, sizebuf->cursize,
+							 pr->pr_hunk);
 	if (!(R_INT (pr) = alloc_handle (res, model))) {
 		Mod_UnloadModel (model);
 	}

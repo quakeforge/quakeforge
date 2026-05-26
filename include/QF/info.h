@@ -28,6 +28,8 @@
 #ifndef __QF_info_h
 #define __QF_info_h
 
+typedef struct memhunk_s memhunk_t;
+
 /** \defgroup info Info Keys
 	\ingroup utils
 */
@@ -58,9 +60,11 @@ int Info_SetValueForKey (info_t *info, const char *key, const char *value, int f
 int Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int flags);
 const char *Info_ValueForKey (info_t *info, const char *key);
 
-info_t *Info_ParseString (const char *s, int maxsize, int flags);
+info_t *Info_ParseString (const char *s, int maxsize, int flags,
+						  memhunk_t *hunk);
 void Info_Destroy (info_t *info);
-char *Info_MakeString (info_t *info, int (*filter)(const char *));
+char *Info_MakeString (info_t *info, int (*filter)(const char *),
+					   memhunk_t *hunk);
 void Info_AddKeys (info_t *info, info_t *keys);
 
 ///@}

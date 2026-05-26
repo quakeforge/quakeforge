@@ -88,6 +88,7 @@ static cvar_t sv_timeout_cvar = {
 
 cbuf_t     *qtv_cbuf;
 cbuf_args_t *qtv_args;
+memhunk_t  *qtv_hunk;
 
 static char *qtv_console_plugin;
 static cvar_t qtv_console_plugin_cvar = {
@@ -237,7 +238,7 @@ qtv_end_redirect (void)
 	qtv_redirect_client = 0;
 }
 
-static memhunk_t *
+static void
 qtv_memory_init (void)
 {
 	int         mem_size;
@@ -249,7 +250,7 @@ qtv_memory_init (void)
 	mem_base = Sys_Alloc (mem_size);
 	if (!mem_base)
 		Sys_Error ("Can't allocate %d", mem_size);
-	return Memory_Init (mem_base, mem_size);
+	qtv_hunk = Hunk_Init (mem_base, mem_size);
 }
 
 static void
@@ -287,12 +288,14 @@ qtv_init (void)
 	Sys_RegisterShutdown (qtv_shutdown, 0);
 
 	Sys_Init ();
+
+	qtv_memory_init ();
+	Cmd_SetHunk (qtv_hunk);
+
 	COM_ParseConfig (qtv_cbuf);
 	cmd_warncmd = 1;
 
-	memhunk_t  *hunk = qtv_memory_init ();
-
-	QFS_Init (hunk, "qw");
+	QFS_Init (qtv_hunk, "qw");
 	PI_Init ();
 
 	Cvar_Register (&qtv_console_plugin_cvar, 0, 0);

@@ -513,6 +513,13 @@ Cmd_Help_f (void)
 	Sys_Printf ("variable/command not found\n");
 }
 
+static memhunk_t *cmd_hunk;
+static void *
+cmd_allocator (void *data, size_t size)
+{
+	return Hunk_RawAllocName (cmd_hunk, size, data);
+}
+
 static void
 Cmd_Exec_f (void)
 {
@@ -525,16 +532,26 @@ Cmd_Exec_f (void)
 		return;
 	}
 
-	mark = Hunk_LowMark (0);
-	f = (char *) QFS_LoadHunkFile (QFS_FOpenFile (Cmd_Argv (1)));
+	mark = Hunk_LowMark (cmd_hunk);
+	auto fname = Cmd_Argv (1);
+	auto substr = QFS_FileBase (fname);
+	char *base = Hunk_RawAlloc (cmd_hunk, substr.len + 1);
+	strncpy (base, fname + substr.start, substr.len);
+	base[substr.len] = 0;
+	qfs_allocator_t alloc = {
+		.alloc = cmd_allocator,
+		.data = base,
+	};
+
+	f = (char *) QFS_LoadFile (QFS_FOpenFile (fname), &alloc);
 	if (!f) {
-		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
+		Sys_Printf ("couldn't exec %s\n", fname);
 		return;
 	}
 	if (!Cvar_Command () && (cmd_warncmd || (developer & SYS_dev)))
-		Sys_Printf ("execing %s\n", Cmd_Argv (1));
+		Sys_Printf ("execing %s\n", fname);
 	Cbuf_InsertText (cbuf_active, f);
-	Hunk_FreeToLowMark (0, mark);
+	Hunk_FreeToLowMark (cmd_hunk, mark);
 }
 
 /*
@@ -653,11 +670,18 @@ Cmd_Init (void)
 	Cmd_AddCommand ("exec", Cmd_Exec_f, "Execute a script file");
 	Cmd_AddCommand ("echo", Cmd_Echo_f, "Print text to console");
 	Cmd_AddCommand ("wait", Cmd_Wait_f, "Wait a game tic");
-	Cmd_AddCommand ("sleep", Cmd_Sleep_f, "Wait for a certain number of seconds.");
+	Cmd_AddCommand ("sleep", Cmd_Sleep_f,
+					"Wait for a certain number of seconds.");
 	Cvar_Register (&cmd_warncmd_cvar, 0, 0);
 	cmd_cbuf = Cbuf_New (&id_interp);
 
 	Cmd_AddProvider("id", &id_interp);
+}
+
+VISIBLE void
+Cmd_SetHunk (memhunk_t *hunk)
+{
+	cmd_hunk = hunk;
 }
 
 VISIBLE int

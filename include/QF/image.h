@@ -60,7 +60,9 @@ typedef struct tex_s {
 	byte       *data;
 } tex_t;
 
-tex_t *LoadImage (const char *imageFile, int load);
+typedef struct memhunk_s memhunk_t;
+
+tex_t *LoadImage (const char *imageFile, int load, memhunk_t *hunk);
 
 size_t ImageSize (const tex_t *tex, int incl_struct) __attribute__((pure));
 
@@ -71,6 +73,7 @@ colcache_t *ColorCache_New (void);
 void ColorCache_Delete (colcache_t *cache);
 void ColorCache_Shutdown (void);
 byte ConvertColor (const byte *rgb, const byte *pal, colcache_t *cache);
-qpic_t *ConvertImage (const tex_t *tex, const byte *pal, const char *name);
+qpic_t *ConvertImage (const tex_t *tex, const byte *pal, const char *name,
+					  memhunk_t *hunk);
 
 #endif//__QF_image_h

@@ -116,7 +116,7 @@ readpng_init (QFile *infile, png_structp *png_ptr, png_infop *info_ptr)
 
 /* Load the png file and return a texture */
 VISIBLE tex_t *
-LoadPNG (QFile *infile, int load)
+LoadPNG (QFile *infile, int load, memhunk_t *hunk)
 {
 	double			gamma;
 	png_structp		png_ptr = NULL;
@@ -166,12 +166,12 @@ LoadPNG (QFile *infile, int load)
 
 		/* Allocate tex_t structure */
 		rowbytes = png_get_rowbytes(png_ptr, info_ptr);
-		tex = Hunk_TempAlloc (0, sizeof (tex_t) + height * rowbytes);
+		tex = Hunk_TempAlloc (hunk, sizeof (tex_t) + height * rowbytes);
 		*tex = (tex_t) {
 			.data = (byte *) (tex + 1),
 		};
 	} else {
-		tex = Hunk_TempAlloc (0, sizeof (tex_t));
+		tex = Hunk_TempAlloc (hunk, sizeof (tex_t));
 		*tex = (tex_t) { };
 	}
 

@@ -300,8 +300,8 @@ bi(init_graphics)
 {
 	graphics_resources_t *res = _res;
 	VID_Init (default_palette[0], default_colormap);
-	IN_Init ();
-	Mod_Init ();
+	IN_Init (pr->pr_hunk);
+	Mod_Init (pr->pr_hunk);
 	int plitem_id = P_INT (pr, 0);
 	plitem_t *plitem = nullptr;
 	if (plitem_id) {
@@ -354,7 +354,7 @@ bi(init_graphics)
 bi(newscene)
 {
 	pr_ulong_t  scene_id = P_ULONG (pr, 0);
-	SCR_NewScene (Scene_GetScene (pr, scene_id));
+	SCR_NewScene (Scene_GetScene (pr, scene_id), pr->pr_hunk);
 	r_funcs->R_LoadSkys ("eso0932a");
 }
 
@@ -686,7 +686,7 @@ generate_palette (void)
 }
 
 static void
-generate_colormap (void)
+generate_colormap (memhunk_t *hunk)
 {
 	byte        colors[64][256][3];
 	tex_t       tex = {
@@ -716,13 +716,13 @@ generate_colormap (void)
 			memcpy (colors[i][224], colors[31][224], 32 * 3);
 		}
 	}
-	size_t mark = Hunk_LowMark (nullptr);
-	auto cmap = ConvertImage (&tex, default_palette[0], "cmap");
+	size_t mark = Hunk_LowMark (hunk);
+	auto cmap = ConvertImage (&tex, default_palette[0], "cmap", hunk);
 	// the colormap has an extra byte indicating the number of fullbright
 	// entries, but that byte is not in the image, so don't try to copy it,
 	// thus the - 1
 	memcpy (default_colormap, cmap->data, sizeof (default_colormap) - 1);
-	Hunk_FreeToLowMark (nullptr, mark);
+	Hunk_FreeToLowMark (hunk, mark);
 }
 
 static void
@@ -796,7 +796,7 @@ BI_Graphics_Init (progs_t *pr)
 	S_Init_Cvars ();
 
 	generate_palette ();
-	generate_colormap ();
+	generate_colormap (pr->pr_hunk);
 
 	res->event_handler_id = IE_Add_Handler (event_handler, res);
 	IE_Set_Focus (res->event_handler_id);

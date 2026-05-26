@@ -164,7 +164,7 @@ find_frames (mod_sprite_ctx_t *sprite_ctx, dsprite_t *dsprite)
 }
 
 void
-Mod_LoadSpriteModel (model_t *mod, void *buffer)
+Mod_LoadSpriteModel (model_t *mod, void *buffer, memhunk_t *hunk)
 {
 	auto dsprite = (dsprite_t *) buffer;
 	msprite_t  *sprite;
@@ -184,7 +184,7 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 	size_t      size = sizeof (msprite_t)
 						+ sizeof (clipdesc_t[dsprite->numframes])
 						+ sizeof (keyframe_t[numframes]);
-	sprite = Hunk_AllocName (0, size, mod->name);
+	sprite = Hunk_AllocName (hunk, size, mod->name);
 	auto clips = (clipdesc_t *) &sprite[1];
 	auto frames = (keyframe_t *) &clips[dsprite->numframes];
 	*sprite = (msprite_t) {
@@ -207,6 +207,7 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 
 	mod_sprite_ctx_t sprite_ctx = {
 		.mod = mod,
+		.hunk = hunk,
 		.dsprite = dsprite,
 		.sprite = sprite,
 		.numframes = numframes,

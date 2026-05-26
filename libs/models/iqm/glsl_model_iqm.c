@@ -87,7 +87,7 @@ glsl_iqm_clear (model_t *mod, void *data)
 }
 
 static void
-glsl_iqm_load_textures (qf_model_t *model)
+glsl_iqm_load_textures (qf_model_t *model, memhunk_t *hunk)
 {
 	dstring_t  *str = dstring_new ();
 	tex_t      *tex;
@@ -99,7 +99,7 @@ glsl_iqm_load_textures (qf_model_t *model)
 		dstring_copystr (str, text + meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
 		uint32_t texid;
-		if ((tex = LoadImage (va ("textures/%s", str->str), 1))) {
+		if ((tex = LoadImage (va ("textures/%s", str->str), 1, hunk))) {
 			texid = GLSL_LoadRGBATexture (str->str, tex->width, tex->height,
 										  tex->data);
 		} else {
@@ -150,7 +150,7 @@ glsl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 				+ sizeof (clipdesc_t[model->meshes.count])
 				+ sizeof (keyframe_t[model->meshes.count]);
 	const char *name = iqm_ctx->mod->name;
-	glsl_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
+	glsl_mesh_t *rmesh = Hunk_AllocName (iqm_ctx->hunk, size, name);
 	auto attribs = (qfm_attrdesc_t *) &((GLuint *) &rmesh[1])[num_tex];
 	auto skinclips = (clipdesc_t *) &attribs[iqm->num_vertexarrays];
 	auto skinframes = (keyframe_t *) &skinclips[model->meshes.count];
@@ -206,5 +206,5 @@ glsl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 	auto index_bytes = pack_indices (indices, indices, index_count, index_type);
 	glsl_iqm_load_arrays (model, vertices, vertex_size, indices, index_bytes);
 
-	glsl_iqm_load_textures (model);
+	glsl_iqm_load_textures (model, iqm_ctx->hunk);
 }

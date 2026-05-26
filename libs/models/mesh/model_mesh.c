@@ -42,7 +42,7 @@ check_loc (qfm_loc_t loc, size_t size, size_t buf_size, const char *name,
 }
 
 void
-Mod_LoadMeshModel (model_t *mod, byte *buffer, size_t buf_size)
+Mod_LoadMeshModel (model_t *mod, byte *buffer, size_t buf_size, memhunk_t *hunk)
 {
 	if (!m_funcs->Mod_MeshFinish) {
 		Sys_Error ("Mod_LoadMeshModel: not supported for this renderer");
@@ -85,7 +85,7 @@ Mod_LoadMeshModel (model_t *mod, byte *buffer, size_t buf_size)
 				+ sizeof (qfm_motor_t[in->inverse.count])
 				+ sizeof (qfm_joint_t[in->pose.count])
 				+ in->text.count;
-	qf_model_t *model = Hunk_AllocName (nullptr, size, mod->name);
+	qf_model_t *model = Hunk_AllocName (hunk, size, mod->name);
 	auto meshes    = (qf_mesh_t *)      &model[1];
 	auto joints    = (qfm_joint_t *)    &meshes[in->meshes.count];
 	auto inverse   = (qfm_motor_t *)    &joints[in->joints.count];
@@ -132,6 +132,7 @@ Mod_LoadMeshModel (model_t *mod, byte *buffer, size_t buf_size)
 		.qf_model = model,
 		.qf_meshes = meshes,
 		.mod = mod,
+		.hunk = hunk,
 		.in = in,
 	};
 	m_funcs->Mod_MeshFinish (&mesh_ctx);

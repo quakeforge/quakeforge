@@ -99,6 +99,7 @@ static plugin_list_t server_plugin_list[] = {
 
 cbuf_t     *sv_cbuf;
 cbuf_args_t *sv_args;
+memhunk_t  *sv_hunk;
 
 client_t   *host_client;				// current client
 entity_state_t cl_entities[MAX_CLIENTS][UPDATE_BACKUP+1][MAX_PACKET_ENTITIES]; // client entities
@@ -749,7 +750,8 @@ SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 	MSG_WriteFloat (buf, realtime - client->connection_started);
 
 	info = client->userinfo ? Info_MakeString (client->userinfo,
-											   make_info_string_filter) : "";
+											   make_info_string_filter,
+											   sv_hunk) : "";
 
 	MSG_WriteByte (buf, svc_updateuserinfo);
 	MSG_WriteByte (buf, i);
@@ -868,7 +870,7 @@ SVC_Status (void)
 
 	con_printf_no_log = 1;
 	SV_BeginRedirect (RD_PACKET);
-	SV_Printf ("%s\n", Info_MakeString (svs.info, 0));
+	SV_Printf ("%s\n", Info_MakeString (svs.info, 0, sv_hunk));
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		cl = &svs.clients[i];
 		if ((cl->state >= cs_connected) && !cl->spectator) {
@@ -1101,7 +1103,7 @@ SVC_DirectConnect (void)
 
 	if (strlen (Cmd_Argv (4)) < MAX_INFO_STRING)
 		userinfo = Info_ParseString (Cmd_Argv (4), 1023,
-									 !sv_highchars);
+									 !sv_highchars, sv_hunk);
 
 	// Validate the userinfo string.
 	if (!userinfo) {
@@ -2652,7 +2654,9 @@ SV_Init_Memory (void)
 	if (!mem_base)
 		Sys_Error ("Can't allocate %zd", mem_size);
 
-	return Memory_Init (mem_base, mem_size);
+	auto hunk = Hunk_Init (mem_base, mem_size);
+	Cmd_SetHunk (hunk);
+	return hunk;
 }
 
 void
@@ -2664,8 +2668,13 @@ SV_Init (void)
 
 	Sys_RegisterShutdown (SV_Shutdown, 0);
 
+
 	Sys_Init ();
-	GIB_Init (true);
+
+	sv_hunk = SV_Init_Memory ();
+
+	Cache_Init (sv_hunk);
+	GIB_Init (true, sv_hunk);
 	COM_ParseConfig (sv_cbuf);
 
 	cmd_warncmd = 1;
@@ -2673,16 +2682,14 @@ SV_Init (void)
 	// snax: Init experimental object system and run a test
 	//Object_Init();
 
-	memhunk_t  *hunk = SV_Init_Memory ();
-
 	QFS_GamedirCallback (gamedir_f, 0);
 	svs.maxclients = MAX_CLIENTS;
-	svs.info = Info_ParseString ("", MAX_SERVERINFO_STRING, 0);
-	localinfo = Info_ParseString ("", 0, 0);	// unlimited
+	svs.info = Info_ParseString ("", MAX_SERVERINFO_STRING, 0, sv_hunk);
+	localinfo = Info_ParseString ("", 0, 0, sv_hunk);	// unlimited
 	SV_InitOperatorCommands ();
 	SV_GIB_Init ();
 
-	QFS_Init (hunk, "qw");
+	QFS_Init (sv_hunk, "qw");
 	PI_Init ();
 
 	Cvar_Register (&sv_console_plugin_cvar, 0, 0);
@@ -2709,7 +2716,7 @@ SV_Init (void)
 	Game_Init ();
 
 	SV_Progs_Init ();
-	Mod_Init ();
+	Mod_Init (sv_hunk);
 
 	SV_InitNet ();
 
@@ -2719,8 +2726,8 @@ SV_Init (void)
 	SVR_Init ();
 	Demo_Init ();
 
-	Hunk_AllocName (0, 0, "-HOST_HUNKLEVEL-");
-	host_hunklevel = Hunk_LowMark (0);
+	Hunk_AllocName (sv_hunk, 0, "-HOST_HUNKLEVEL-");
+	host_hunklevel = Hunk_LowMark (sv_hunk);
 
 	Cbuf_InsertText (sv_cbuf, "exec server.cfg\n");
 

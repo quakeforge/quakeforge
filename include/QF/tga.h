@@ -31,6 +31,8 @@
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
 
+typedef struct memhunk_s memhunk_t;
+
 #ifndef __GNUC__
 # if defined (__BORLANDC__) || defined (_MSC_VER)
 #  if (defined(__BORLANDC__) && (__BORLANDC__ < 0x550))
@@ -78,7 +80,7 @@ typedef struct _TargaHeader {
 # endif
 #endif
 
-struct tex_s *LoadTGA (QFile *fin, int load);
+struct tex_s *LoadTGA (QFile *fin, int load, memhunk_t *hunk);
 void WriteTGAfile (const char *tganame, byte *data, int width, int height);
 
 #endif//__QF_tga_h

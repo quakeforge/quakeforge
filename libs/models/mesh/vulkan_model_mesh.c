@@ -282,7 +282,7 @@ Vulkan_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx, vulkan_ctx_t *ctx)
 				+ sizeof (qfv_resobj_t[num_objects]);
 
 	const char *name = mesh_ctx->mod->name;
-	qfv_mesh_t *rmesh = Hunk_AllocName (0, size, name);
+	qfv_mesh_t *rmesh = Hunk_AllocName (mesh_ctx->hunk, size, name);
 	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
 	auto bone_descs = (VkDescriptorSet *) &attribs[in_attributes->count];
 	auto resources = (qfv_resource_t *) &bone_descs[rctx->frames.size];

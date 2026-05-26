@@ -29,6 +29,8 @@
 #ifndef __QF_wad_h
 #define __QF_wad_h
 
+typedef struct memhunk_s memhunk_t;
+
 /** \addtogroup wad
 	Wad Files
 */
@@ -41,7 +43,7 @@ extern	int			wad_numlumps;
 extern	lumpinfo_t	*wad_lumps;
 extern	byte		*wad_base;
 
-void	W_LoadWadFile (const char *filename);
+void	W_LoadWadFile (const char *filename, memhunk_t *hunk);
 void	*W_GetLumpName (const char *name) __attribute__((const));
 
 void SwapPic (qpic_t *pic);

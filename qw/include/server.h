@@ -463,6 +463,8 @@ extern	const char *client_info_filters[];
 
 extern struct cbuf_s *sv_cbuf;
 extern struct cbuf_args_s *sv_args;
+typedef struct memhunk_s memhunk_t;
+extern memhunk_t *sv_hunk;
 
 //===========================================================
 // FIXME: declare exported functions in their own relevant .h

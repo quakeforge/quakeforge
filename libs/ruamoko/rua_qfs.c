@@ -199,9 +199,9 @@ bi (QFS_GetDirectory)
 bi (QFS_FileBase)
 {
 	qfZoneScoped (true);
-	char *base = QFS_FileBase (P_GSTRING (pr, 0));
-	RETURN_STRING (pr, base);
-	free (base);
+	const char *fname = P_GSTRING (pr, 0);
+	auto substr = QFS_FileBase (fname);
+	RETURN_STRING_N (pr, fname + substr.start, substr.len);
 }
 
 bi (QFS_FileExtension)

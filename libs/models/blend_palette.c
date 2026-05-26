@@ -63,10 +63,11 @@ cofactor_matrix (mat4f_t cf, const mat4f_t m)
 
 VISIBLE mat4f_t *
 Mod_BlendPalette (qfm_blend_t *blend_palette, uint32_t palette_size,
-				  qfm_motor_t *motors, uint32_t num_motors, size_t extra)
+				  qfm_motor_t *motors, uint32_t num_motors, size_t extra,
+				  memhunk_t *hunk)
 {
 	size_t size = 2 * palette_size * sizeof (mat4f_t) + extra;
-	mat4f_t *frame = Hunk_TempAlloc (0, size);
+	mat4f_t *frame = Hunk_TempAlloc (hunk, size);
 	for (uint32_t i = 0; i < num_motors; i++) {
 		auto out = &frame[i * 2];
 		qfm_motor_to_mat (out[0], motors[i]);

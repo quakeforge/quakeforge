@@ -413,7 +413,7 @@ bi (Entity_SetSkin)
 	entity_t    ent = rua_entity_get (res, ent_id);
 
 	auto renderer = Entity_GetRenderer (ent);
-	renderer->skin = mod_funcs->skin_set (skinname);;
+	renderer->skin = mod_funcs->skin_set (skinname, pr->pr_hunk);
 }
 
 bi (Entity_SetTexture)
@@ -425,7 +425,7 @@ bi (Entity_SetTexture)
 	entity_t    ent = rua_entity_get (res, ent_id);
 
 	auto renderer = Entity_GetRenderer (ent);
-	renderer->skin = mod_funcs->texture_set (skinname);;
+	renderer->skin = mod_funcs->texture_set (skinname, pr->pr_hunk);
 }
 
 bi (Entity_GetPoseMotors)
@@ -450,7 +450,8 @@ bi (Entity_GetPoseMotors)
 
 	auto anim = Entity_GetAnimation (ent);
 	float blend = R_IQMGetLerpedFrames (time, anim, model);
-	auto f = R_IQMBlendPoseFrames (model, anim->pose1, anim->pose2, blend, 0);
+	auto f = R_IQMBlendPoseFrames (model, anim->pose1, anim->pose2, blend, 0,
+								   pr->pr_hunk);
 	memcpy (frame, f, model->pose.count * sizeof (frame[0]));
 
 	R_INT (pr) = 1;

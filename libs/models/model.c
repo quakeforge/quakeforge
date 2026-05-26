@@ -196,6 +196,8 @@ typedef struct {
 
 static model_registry_t *model_registry;
 
+static memhunk_t *mod_hunk;
+
 model_t *
 qfm_alloc_model (void)
 {
@@ -277,16 +279,18 @@ qfm_model_free_model (void *m, void *data)
 }
 
 VISIBLE void
-Mod_Init (void)
+Mod_Init (memhunk_t *hunk)
 {
 	qfZoneScoped (true);
 	byte   *dest;
 	int		m, x, y;
 	int		mip0size = 16*16, mip1size = 8*8, mip2size = 4*4, mip3size = 2*2;
 
+	mod_hunk = hunk;
+
 	Sys_RegisterShutdown (mod_shutdown, 0);
 
-	r_notexture_mip = Hunk_AllocName (0,
+	r_notexture_mip = Hunk_AllocName (hunk,
 									  sizeof (texture_t) + mip0size + mip1size
 									  + mip2size + mip3size, "notexture");
 
@@ -360,7 +364,8 @@ Mod_FindName (const char *name)
 }
 
 static model_t *
-Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator)
+Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator,
+				   memhunk_t *hunk)
 {
 	qfZoneScoped (true);
 	uint32_t   *buf;
@@ -373,10 +378,12 @@ Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator)
 		return NULL;
 	}
 
-	char *name = QFS_FileBase (mod->path);
-	strncpy (mod->name, name, sizeof (mod->name) - 1);
-	mod->name[sizeof (mod->name) - 1] = 0;
-	free (name);
+	auto substr = QFS_FileBase (mod->path);
+	if (substr.len > sizeof (mod->name) - 1) {
+		substr.len = sizeof (mod->name) - 1;
+	}
+	strncpy (mod->name, mod->path + substr.start, substr.len);
+	mod->name[substr.len] = 0;
 
 	// fill it in
 	mod->vpath = qfs_foundfile.vpath;
@@ -391,7 +398,7 @@ Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator)
 		case IQM_SMAGIC:
 			if (strequal ((char *) buf, IQM_MAGIC)) {
 				if (mod_funcs)
-					mod_funcs->Mod_LoadIQM (mod, buf);
+					mod_funcs->Mod_LoadIQM (mod, buf, hunk);
 			}
 			break;
 		case IDHEADER_MDL:			// Type 6: Quake 1 .mdl
@@ -410,21 +417,21 @@ Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator)
 				mod->min_light = 0.04;
 			}
 			if (mod_funcs)
-				mod_funcs->Mod_LoadAliasModel (mod, buf, allocator);
+				mod_funcs->Mod_LoadAliasModel (mod, buf, allocator, hunk);
 			break;
 		case IDHEADER_MD2:			// Type 8: Quake 2 .md2
 //			Mod_LoadMD2 (mod, buf, allocator);
 			break;
 		case IDHEADER_SPR:			// Type 1: Quake 1 .spr
 			if (mod_funcs)
-				mod_funcs->Mod_LoadSpriteModel (mod, buf);
+				mod_funcs->Mod_LoadSpriteModel (mod, buf, hunk);
 			break;
 		case IDHEADER_SP2:			// Type 2: Quake 2 .sp2
 //			Mod_LoadSP2 (mod, buf);
 			break;
 		default:					// Version 29: Quake 1 .bsp
 									// Version 38: Quake 2 .bsp
-			Mod_LoadBrushModel (mod, buf);
+			Mod_LoadBrushModel (mod, buf, hunk);
 			break;
 	}
 	free (buf);
@@ -438,7 +445,7 @@ Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator)
 	Loads a model into the cache
 */
 static model_t *
-Mod_LoadModel (model_t *mod, bool crash)
+Mod_LoadModel (model_t *mod, bool crash, memhunk_t *hunk)
 {
 	qfZoneScoped (true);
 	if (!mod->needload) {
@@ -448,7 +455,7 @@ Mod_LoadModel (model_t *mod, bool crash)
 		} else
 			return mod;					// not cached at all
 	}
-	return Mod_RealLoadModel (mod, crash, Cache_Alloc);
+	return Mod_RealLoadModel (mod, crash, Cache_Alloc, hunk);
 }
 
 /*
@@ -462,8 +469,8 @@ Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 	qfZoneScoped (true);
 	if (((model_t *)object)->type != mod_mesh)
 		Sys_Error ("Mod_CallbackLoad for non-alias model?  FIXME!");
-	// FIXME: do we want crash set to true?
-	Mod_RealLoadModel (object, true, allocator);
+	// FIXME: do we want crash set to true? global hunk
+	Mod_RealLoadModel (object, true, allocator, mod_hunk);
 }
 
 /*
@@ -480,7 +487,7 @@ Mod_ForName (const char *name, bool crash)
 	mod = Mod_FindName (name);
 
 	Sys_MaskPrintf (SYS_dev, "Mod_ForName: %s, %p\n", name, mod);
-	Mod_LoadModel (mod, crash);
+	Mod_LoadModel (mod, crash, mod_hunk);
 	qfa_register (mod);
 	return mod;
 }

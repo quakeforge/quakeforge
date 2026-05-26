@@ -88,6 +88,8 @@ size_t      minimum_memory;
 
 client_t   *host_client;				// current client
 
+memhunk_t  *host_hunk;
+
 static sys_jmpbuf host_abortserver;
 
 float host_mem_size;
@@ -367,7 +369,8 @@ Host_FindMaxClients (void)
 	if (svs.maxclientslimit < 4)
 		svs.maxclientslimit = 4;
 	svs.clients =
-		Hunk_AllocName (0, svs.maxclientslimit * sizeof (client_t), "clients");
+		Hunk_AllocName (host_hunk, svs.maxclientslimit * sizeof (client_t),
+						"clients");
 
 	if (svs.maxclients > 1)
 		deathmatch = 1.0;
@@ -614,7 +617,7 @@ Host_ClearMemory (void)
 	Sys_MaskPrintf (SYS_dev, "Clearing memory\n");
 	Mod_ClearAll ();
 	if (host_hunklevel)
-		Hunk_FreeToLowMark (0, host_hunklevel);
+		Hunk_FreeToLowMark (host_hunk, host_hunklevel);
 }
 
 static struct LISTENER_SET_TYPE(void) host_server_spawn = LISTENER_SET_STATIC_INIT(4);
@@ -876,10 +879,11 @@ Host_Init_Memory (void)
 		Sys_Error ("Can't allocate %zd", mem_size);
 
 	Sys_PageIn (mem_base, mem_size);
-	memhunk_t  *hunk = Memory_Init (mem_base, mem_size);
+	host_hunk = Hunk_Init (mem_base, mem_size);
+	Cache_Init (host_hunk);
 
 	Sys_Printf ("%4.1f megabyte heap\n", host_mem_size);
-	return hunk;
+	return host_hunk;
 }
 
 static void
@@ -921,15 +925,17 @@ Host_Init (void)
 	cmd_source = src_command;
 
 	Sys_Init ();
-	GIB_Init (true);
 
 	COM_ParseConfig (host_cbuf);
 
-	memhunk_t  *hunk = Host_Init_Memory ();
+	Host_Init_Memory ();
+	sv_hunk = host_hunk;
+	Cmd_SetHunk (host_hunk);
+	GIB_Init (true, host_hunk);
 
 	PI_Init ();
 
-	Game_Init (hunk);
+	Game_Init (host_hunk);
 
 	if (!isDedicated)
 		CL_InitCvars ();
@@ -943,14 +949,14 @@ Host_Init (void)
 	Host_InitVCR (&host_parms);
 	Host_InitLocal ();
 
-	NET_Init (host_cbuf);
+	NET_Init (host_cbuf, host_hunk);
 
-	Mod_Init ();
+	Mod_Init (host_hunk);
 
 	SV_Init ();
 
 	if (!net_is_dedicated)
-		CL_Init (host_cbuf);
+		CL_Init (host_cbuf, host_hunk);
 
 	if (con_module) {
 		con_module->data->console->realtime = &con_realtime;
@@ -963,8 +969,8 @@ Host_Init (void)
 
 	Host_ExecConfig (host_cbuf, isDedicated || !cl_quakerc);
 
-	Hunk_AllocName (0, 0, "-HOST_HUNKLEVEL-");
-	host_hunklevel = Hunk_LowMark (0);
+	Hunk_AllocName (host_hunk, 0, "-HOST_HUNKLEVEL-");
+	host_hunklevel = Hunk_LowMark (host_hunk);
 
 	Sys_Printf ("\nVersion %s (build %04d)\n\n", PACKAGE_VERSION,
 				build_number ());

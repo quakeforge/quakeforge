@@ -30,6 +30,8 @@
 
 #include "QF/qtypes.h"
 
+typedef struct memhunk_s memhunk_t;
+
 // Object interface
 
 typedef void (*gib_reply_handler) (int argc, const char **argv, void *data);
@@ -203,7 +205,7 @@ unsigned int GIB_Thread_Count (void) __attribute__((pure));
 
 // Init interface
 
-void GIB_Init (bool sandbox);
+void GIB_Init (bool sandbox, memhunk_t *hunk);
 
 // Handle interface
 

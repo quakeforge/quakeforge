@@ -71,6 +71,8 @@ const char	*this_program;
 options_t	options;
 Pixel		*palette;
 
+static memhunk_t *lmp_hunk;
+
 static const struct option long_options[] = {
 	{"export", no_argument, 0, 'e'},
 	{"import", no_argument, 0, 'i'},
@@ -177,7 +179,8 @@ exportFile (const char *inpath)
 	data = malloc (fsize);
 	Qread (infile, data, fsize);
 
-	pcx = EncodePCX (data, width, height, width, (byte *) palette, false, &pcx_size);
+	pcx = EncodePCX (data, width, height, width, (byte *) palette, false,
+					 &pcx_size, lmp_hunk);
 	free (data);
 
 	if (options.verbosity > 1)
@@ -213,7 +216,7 @@ importFile (const char *inpath)
 	if (options.verbosity > 1)
 		Sys_Printf ("PCX file size: %d\n", fsize);
 
-	lmp = LoadPCX (infile, false, NULL, 1);
+	lmp = LoadPCX (infile, false, NULL, 1, lmp_hunk);
 
 	if (!lmp) {
 		Sys_Printf ("%s: Failed to load %s as texture.\n",
@@ -333,8 +336,9 @@ main (int argc, char **argv)
 
 	this_program = argv[0];
 
+	lmp_hunk = Hunk_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
+
 	Sys_Init ();
-	Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
 
 	decode_args (argc, argv);
 

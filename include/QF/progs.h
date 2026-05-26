@@ -1061,6 +1061,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define RETURN_STRING(p,s)		(R_STRING (p) = PR_SetReturnString((p), s))
+#define RETURN_STRING_N(p,s,n)	(R_STRING (p) = PR_SetReturnStringN((p), s, n))
 
 /** Set the return value to the given C entity pointer. The pointer is
 	converted into a progs entity address.
@@ -1530,6 +1531,7 @@ pr_string_t PR_FindString(progs_t *pr, const char *s);
 	\return			string index of the progs string
 */
 pr_string_t PR_SetReturnString(progs_t *pr, const char *s);
+pr_string_t PR_SetReturnStringN(progs_t *pr, const char *s, size_t len);
 
 /** Make a temporary progs string that will be freed when the current progs
 	stack frame is exited. Will not duplicate a permantent string.
@@ -2016,7 +2018,7 @@ extern int pr_faultchecks;
 	\todo This really doesn't belong in progs.
 */
 ///@{
-
+typedef struct memhunk_s memhunk_t;
 char *PF_VarString (progs_t *pr, int first, int count);
 void PR_Cmds_Init (progs_t *pr);
 
@@ -2222,6 +2224,8 @@ struct progs_s {
 		pr_int_t    this;		///< optional for entity<->object linking
 	} fields;
 	///@}
+
+	memhunk_t      *pr_hunk;
 };
 
 /** \addtogroup progs_data_access

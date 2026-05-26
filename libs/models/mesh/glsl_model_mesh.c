@@ -162,7 +162,7 @@ glsl_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx)
 				+ sizeof (qfm_attrdesc_t[in_attributes->count]);
 
 	const char *name = mesh_ctx->mod->name;
-	glsl_mesh_t *rmesh = Hunk_AllocName (0, size, name);
+	glsl_mesh_t *rmesh = Hunk_AllocName (mesh_ctx->hunk, size, name);
 	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
 
 	uint32_t offsets[3] = {};

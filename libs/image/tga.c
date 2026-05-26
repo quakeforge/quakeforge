@@ -238,7 +238,7 @@ skip_colormap (TargaHeader *targa, byte *data)
 }
 
 static cmap_t *
-parse_colormap (TargaHeader *targa, byte **dataByte)
+parse_colormap (TargaHeader *targa, byte **dataByte, memhunk_t *hunk)
 {
 	byte       *data;
 	cmap_t     *cm, *cmap;
@@ -264,7 +264,7 @@ parse_colormap (TargaHeader *targa, byte **dataByte)
 		case 24:
 		case 16:
 		case 15:
-			cmap = Hunk_AllocName (0, 256 * sizeof (cmap_t), "TGA cmap");
+			cmap = Hunk_AllocName (hunk, 256 * sizeof (cmap_t), "TGA cmap");
 			break;
 		default:
 			Sys_Error ("LoadTGA: unsupported color map size");
@@ -316,13 +316,14 @@ parse_colormap (TargaHeader *targa, byte **dataByte)
 }
 
 static void
-decode_colormap (TargaHeader *targa, tex_t *tex, byte *dataByte)
+decode_colormap (TargaHeader *targa, tex_t *tex, byte *dataByte,
+				 memhunk_t *hunk)
 {
 	byte       *pixcol, *pixrow;
 	cmap_t     *cmap;
 	int         column, columns, rows, span;
 
-	cmap = parse_colormap (targa, &dataByte);
+	cmap = parse_colormap (targa, &dataByte, hunk);
 
 	tex->format = tex_rgba;
 
@@ -448,13 +449,14 @@ do {                                                                          \
 } while (0)
 
 static void
-decode_colormap_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
+decode_colormap_rle (TargaHeader *targa, tex_t *tex, byte *dataByte,
+					 memhunk_t *hunk)
 {
 	byte       *pixcol, *pixrow;
 	cmap_t     *cmap;
 	int         column, columns, rows, span;
 
-	cmap = parse_colormap (targa, &dataByte);
+	cmap = parse_colormap (targa, &dataByte, hunk);
 
 	tex->format = tex_rgba;
 
@@ -506,7 +508,8 @@ decode_truecolor_32_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 }
 
 static void
-decode_truecolor (TargaHeader *targa, tex_t *tex, byte *dataByte)
+decode_truecolor (TargaHeader *targa, tex_t *tex, byte *dataByte,
+				  memhunk_t *hunk)
 {
 	dataByte = skip_colormap (targa, dataByte);
 
@@ -525,7 +528,8 @@ decode_truecolor (TargaHeader *targa, tex_t *tex, byte *dataByte)
 }
 
 static void
-decode_truecolor_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
+decode_truecolor_rle (TargaHeader *targa, tex_t *tex, byte *dataByte,
+					  memhunk_t *hunk)
 {
 	dataByte = skip_colormap (targa, dataByte);
 
@@ -544,7 +548,8 @@ decode_truecolor_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 }
 
 static void
-decode_greyscale (TargaHeader *targa, tex_t *tex, byte *dataByte)
+decode_greyscale (TargaHeader *targa, tex_t *tex, byte *dataByte,
+				  memhunk_t *hunk)
 {
 	byte       *pixcol, *pixrow;
 	int         column, columns, rows, span;
@@ -580,7 +585,8 @@ decode_greyscale (TargaHeader *targa, tex_t *tex, byte *dataByte)
 }
 
 static void
-decode_greyscale_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
+decode_greyscale_rle (TargaHeader *targa, tex_t *tex, byte *dataByte,
+					  memhunk_t *hunk)
 {
 	byte       *pixcol, *pixrow;
 	int         column, columns, rows, span;
@@ -603,7 +609,7 @@ decode_greyscale_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 		rle_expand (read_l);
 }
 
-typedef void (*decoder_t) (TargaHeader *, tex_t *, byte *);
+typedef void (*decoder_t) (TargaHeader *, tex_t *, byte *, memhunk_t *);
 static decoder_t decoder_functions[] = {
 	[targa_colormap]       = decode_colormap,
 	[targa_truecolor]      = decode_truecolor,
@@ -626,7 +632,7 @@ static QFFormat targa_formats[] = {
 };
 
 struct tex_s *
-LoadTGA (QFile *fin, int load)
+LoadTGA (QFile *fin, int load, memhunk_t *hunk)
 {
 	byte       *dataByte;
 	decoder_t   decode;
@@ -639,8 +645,8 @@ LoadTGA (QFile *fin, int load)
 	if (load) {
 		fsize = Qfilesize (fin);
 	}
-	targa_mark = Hunk_LowMark (0);
-	targa = Hunk_AllocName (0, fsize, "TGA");
+	targa_mark = Hunk_LowMark (hunk);
+	targa = Hunk_AllocName (hunk, fsize, "TGA");
 	Qread (fin, targa, fsize);
 
 	targa->colormap_index = LittleShort (targa->colormap_index);
@@ -653,7 +659,7 @@ LoadTGA (QFile *fin, int load)
 	if (targa->image_type >= NUM_DECODERS
 		|| !(decode = decoder_functions[targa->image_type])) {
 		Sys_Printf ("LoadTGA: Unsupported targa type");
-		Hunk_FreeToLowMark (0, targa_mark);
+		Hunk_FreeToLowMark (hunk, targa_mark);
 		return 0;
 	}
 
@@ -662,7 +668,7 @@ LoadTGA (QFile *fin, int load)
 	} else {
 		numPixels = 0;
 	}
-	tex = Hunk_TempAlloc (0, sizeof (tex_t) + numPixels * 4);
+	tex = Hunk_TempAlloc (hunk, sizeof (tex_t) + numPixels * 4);
 	*tex = (tex_t) {
 		.width = targa->width,
 		.height = targa->height,
@@ -675,7 +681,7 @@ LoadTGA (QFile *fin, int load)
 		dataByte = (byte *) (targa + 1);
 		dataByte += targa->id_length;
 
-		decode (targa, tex, dataByte);
+		decode (targa, tex, dataByte, hunk);
 	} else {
 		//FIXME
 		// assume the format is valid so we can return a format type without
@@ -683,7 +689,7 @@ LoadTGA (QFile *fin, int load)
 		tex->format = targa_formats[targa->image_type];
 	}
 
-	Hunk_FreeToLowMark (0, targa_mark);
+	Hunk_FreeToLowMark (hunk, targa_mark);
 	return tex;
 }
 

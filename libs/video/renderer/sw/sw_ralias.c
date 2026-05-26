@@ -1161,13 +1161,14 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting, int trivial_accept)
 		auto blend_palette = (qfm_blend_t *) ((byte *) model
 											  + rmesh->blend_palette);
 		palette = Mod_BlendPalette (blend_palette, rmesh->palette_size,
-									mp, model->joints.count, size);
+									mp, model->joints.count, size,
+									r_refdef.hunk);
 		if (!palette) {
 			Sys_Error ("R_AliasDrawModel: out of memory");
 		}
 		finalverts = (finalvert_t *) &palette[2 * rmesh->palette_size];
 	} else {
-		finalverts = Hunk_TempAlloc (0, size);
+		finalverts = Hunk_TempAlloc (r_refdef.hunk, size);
 		if (!finalverts) {
 			Sys_Error ("R_AliasDrawModel: out of memory");
 		}

@@ -41,6 +41,7 @@ struct cvar_s;
 struct scene_s;
 struct particle_s;
 typedef struct progs_s progs_t;
+typedef struct memhunk_s memhunk_t;
 
 typedef struct qf_model_s qf_model_t;
 
@@ -60,14 +61,17 @@ struct texture_s;
 
 typedef struct vid_model_funcs_s {
 	size_t      texture_render_size;// size of renderer specific texture data
-	void (*Mod_LoadLighting) (model_t *mod, bsp_t *bsp);
-	void (*Mod_SubdivideSurface) (model_t *mod, msurface_t *fa);
-	void (*Mod_ProcessTexture) (model_t *mod, struct texture_s *tx);
-	void (*Mod_LoadMesh) (model_t *mod, byte *buffer, size_t buf_size);
-	void (*Mod_LoadIQM) (model_t *mod, void *buffer);
+	void (*Mod_LoadLighting) (model_t *mod, bsp_t *bsp, memhunk_t *hunk);
+	void (*Mod_SubdivideSurface) (model_t *mod, msurface_t *fa,
+								  memhunk_t *hunk);
+	void (*Mod_ProcessTexture) (model_t *mod, struct texture_s *tx,
+								memhunk_t *hunk);
+	void (*Mod_LoadMesh) (model_t *mod, byte *buffer, size_t buf_size,
+						  memhunk_t *hunk);
+	void (*Mod_LoadIQM) (model_t *mod, void *buffer, memhunk_t *hunk);
 	void (*Mod_LoadAliasModel) (model_t *mod, void *buffer,
-								cache_allocator_t allocator);
-	void (*Mod_LoadSpriteModel) (model_t *mod, void *buffer);
+								cache_allocator_t allocator, memhunk_t *hunk);
+	void (*Mod_LoadSpriteModel) (model_t *mod, void *buffer, memhunk_t *hunk);
 	void (*Mod_MakeAliasModelDisplayLists) (struct mod_alias_ctx_s *alias_ctx,
 											void *_m, int _s, int extra);
 	void (*Mod_LoadAllSkins) (struct mod_alias_ctx_s *alias_ctx);
@@ -78,8 +82,8 @@ typedef struct vid_model_funcs_s {
 	int alias_cache;
 	void (*Mod_SpriteLoadFrames) (struct mod_sprite_ctx_s *sprite_ctx);
 
-	uint32_t (*skin_set) (const char *skinname);
-	uint32_t (*texture_set) (const char *skinname);
+	uint32_t (*skin_set) (const char *skinname, memhunk_t *hunk);
+	uint32_t (*texture_set) (const char *skinname, memhunk_t *hunk);
 	void (*skin_setupskin) (skin_t *skin);
 	void (*skin_destroy) (skin_t *skin);
 } vid_model_funcs_t;

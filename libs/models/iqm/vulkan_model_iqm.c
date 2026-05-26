@@ -103,7 +103,8 @@ vulkan_iqm_clear (model_t *mod, void *data)
 }
 
 static void
-vulkan_iqm_init_image (const char *text, qf_mesh_t *mesh, qfv_resobj_t *image)
+vulkan_iqm_init_image (const char *text, qf_mesh_t *mesh, qfv_resobj_t *image,
+					   memhunk_t *hunk)
 {
 	const char *material = text + mesh->material;
 	dstring_t  *str = dstring_new ();
@@ -116,7 +117,7 @@ vulkan_iqm_init_image (const char *text, qf_mesh_t *mesh, qfv_resobj_t *image)
 		.format = tex_rgba,
 	};
 	tex_t      *tex;
-	if (!(tex = LoadImage (va ("textures/%s", str->str), 0))) {
+	if (!(tex = LoadImage (va ("textures/%s", str->str), 0, hunk))) {
 		tex = &dummy_tex;
 	}
 	QFV_ResourceInitTexImage (image, material, 1, tex);
@@ -192,7 +193,8 @@ vulkan_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 
 		dstring_copystr (str, text + meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
-		if (!(tex = LoadImage (va ("textures/%s", str->str), 1))) {
+		if (!(tex = LoadImage (va ("textures/%s", str->str), 1,
+							   iqm_ctx->hunk))) {
 			static tex_t       null_tex = {
 				.width = 2,
 				.height = 2,
@@ -408,7 +410,7 @@ setup_mesh_resources (qfv_resource_t *mesh_res, qfv_resobj_t *mesh_objs,
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
 		int   image_ind = 2 * i;
 		auto  image = &image_objs[image_ind];
-		vulkan_iqm_init_image (text, &meshes[i], image);
+		vulkan_iqm_init_image (text, &meshes[i], image, iqm_ctx->hunk);
 
 		image_objs[image_ind + 1] = (qfv_resobj_t) {
 			.name = "view",
@@ -454,7 +456,7 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 				+ sizeof (qfv_resobj_t[num_objects]);
 
 	const char *name = iqm_ctx->mod->name;
-	qfv_mesh_t *rmesh = Hunk_AllocName (0, size, name);
+	qfv_mesh_t *rmesh = Hunk_AllocName (iqm_ctx->hunk, size, name);
 	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
 	auto skins = (qfv_skin_t *) &attribs[iqm->num_vertexarrays];
 	auto skinclips = (clipdesc_t *) &skins[model->meshes.count];

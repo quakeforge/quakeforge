@@ -32,6 +32,7 @@
 struct scene_s;
 struct transform_s;
 struct tex_s;
+typedef struct memhunk_s memhunk_t;
 
 void SCR_Init (void);
 void SCR_Shutdown (void);
@@ -46,7 +47,7 @@ void SCR_SetFOV (float fov);
 void SCR_SetFullscreen (bool fullscreen);
 void SCR_SetBottomMargin (int lines);
 
-void SCR_NewScene (struct scene_s *scene);
+void SCR_NewScene (struct scene_s *scene, memhunk_t *hunk);
 
 extern int r_timegraph;
 extern int r_zgraph;

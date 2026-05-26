@@ -66,7 +66,8 @@ sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 	int         skinsize = width * height;
 	int         picsize = offsetof (qpic_t, data[width * height]);
 	int         num_skins = alias_ctx->skins.size;
-	byte       *texel_block = Hunk_AllocName (0, picsize * num_skins,
+	byte       *texel_block = Hunk_AllocName (alias_ctx->hunk,
+											  picsize * num_skins,
 											  alias_ctx->mod->name);
 
 	for (size_t i = 0; i < alias_ctx->skins.size; i++) {
@@ -132,7 +133,7 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	}
 
 	const char *name = alias_ctx->mod->name;
-	sw_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
+	sw_mesh_t *rmesh = Hunk_AllocName (alias_ctx->hunk, size, name);
 	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
 	auto stverts = (stvert_t *) &attribs[3];
 	auto tris = (dtriangle_t *) &stverts[numv];

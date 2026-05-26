@@ -67,9 +67,11 @@ gl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 	auto mesh = alias_ctx->mesh;
 	int         skinsize = alias_ctx->skinwidth * alias_ctx->skinheight;
 	uint32_t    num_skins = alias_ctx->skins.size;
-	tex_t      *tex_block = Hunk_AllocName (nullptr, sizeof (tex_t[num_skins]),
+	tex_t      *tex_block = Hunk_AllocName (alias_ctx->hunk,
+											sizeof (tex_t[num_skins]),
 											alias_ctx->mod->name);
-	byte       *texel_block = Hunk_AllocName (nullptr, skinsize * num_skins,
+	byte       *texel_block = Hunk_AllocName (alias_ctx->hunk,
+											  skinsize * num_skins,
 											  alias_ctx->mod->name);
 	auto skindesc = (clipdesc_t *) ((byte *) mesh + mesh->skin.clips);
 	auto skinframe = (keyframe_t *) ((byte *) mesh + mesh->skin.keyframes);
@@ -109,7 +111,7 @@ gl_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx)
 }
 
 static void
-Mod_LoadExternalSkin (glskin_t *skin, char *filename)
+Mod_LoadExternalSkin (glskin_t *skin, char *filename, memhunk_t *hunk)
 {
 	tex_t		*tex, *glow;
 	char		*ptr;
@@ -118,9 +120,9 @@ Mod_LoadExternalSkin (glskin_t *skin, char *filename)
 	if (!ptr)
 		ptr = filename;
 
-	tex = LoadImage (filename, 1);
+	tex = LoadImage (filename, 1, hunk);
 	if (!tex)
-		tex = LoadImage (va ("textures/%s", ptr + 1), 1);
+		tex = LoadImage (va ("textures/%s", ptr + 1), 1, hunk);
 	if (tex) {
 		skin->id = GL_LoadTexture (filename, tex->width, tex->height,
 								   tex->data, true, false,
@@ -128,13 +130,13 @@ Mod_LoadExternalSkin (glskin_t *skin, char *filename)
 
 		skin->fb = 0;
 
-		glow = LoadImage (va ("%s_luma", filename), 1);
+		glow = LoadImage (va ("%s_luma", filename), 1, hunk);
 		if (!glow)
-			glow = LoadImage (va ("%s_glow", filename), 1);
+			glow = LoadImage (va ("%s_glow", filename), 1, hunk);
 		if (!glow)
-			glow = LoadImage (va ("textures/%s_luma", ptr + 1), 1);
+			glow = LoadImage (va ("textures/%s_luma", ptr + 1), 1, hunk);
 		if (!glow)
-			glow = LoadImage (va ("textures/%s_glow", ptr + 1), 1);
+			glow = LoadImage (va ("textures/%s_glow", ptr + 1), 1, hunk);
 		if (glow)
 			skin->fb =
 				GL_LoadTexture (va ("fb_%s", filename), glow->width,
@@ -160,7 +162,8 @@ gl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 	char modname[strlen (alias_ctx->mod->path) + 1];
 	QFS_StripExtension (alias_ctx->mod->path, modname);
 
-	glskin_t   *skins = Hunk_AllocName (nullptr, sizeof (glskin_t[num_skins]),
+	glskin_t   *skins = Hunk_AllocName (alias_ctx->hunk,
+										sizeof (glskin_t[num_skins]),
 										alias_ctx->mod->name);
 	uint32_t    index = 0;
 
@@ -171,7 +174,8 @@ gl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 			} else {
 				dsprintf (filename, "%s_%i_%i", modname, i, j);
 			}
-			Mod_LoadExternalSkin (&skins[index], filename->str);
+			Mod_LoadExternalSkin (&skins[index], filename->str,
+								  alias_ctx->hunk);
 			skinframe[index].data = (byte *) &skins[index] - (byte *) mesh;
 		}
 	}

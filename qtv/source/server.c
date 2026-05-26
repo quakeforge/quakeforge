@@ -402,7 +402,7 @@ server_challenge (connection_t *con, void *object)
 	data = dstring_new ();
 	dsprintf (data, "%c%c%c%cconnect %s %i %i \"%s\"\n", 255, 255, 255, 255,
 			  qtv, sv->qport, challenge,
-			  Info_MakeString (sv->info, 0));
+			  Info_MakeString (sv->info, 0, qtv_hunk));
 	Netchan_SendPacket (strlen (data->str), data->str, net_from);
 	dstring_delete (data);
 	con->handler = server_connect;
@@ -450,7 +450,7 @@ sv_new_f (void)
 	sv->address = strdup (address);
 	sv->adr = adr;
 	sv->qport = qport;
-	sv->info = Info_ParseString ("", MAX_INFO_STRING, 0);
+	sv->info = Info_ParseString ("", MAX_INFO_STRING, 0, qtv_hunk);
 	Info_SetValueForStarKey (sv->info, "*ver",
 							 va ("%s QTV %s", QW_VERSION, PACKAGE_VERSION),
 							 0);

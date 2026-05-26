@@ -36,6 +36,8 @@
 #include "QF/qtypes.h"
 #include "QF/cbuf.h"
 
+typedef struct memhunk_s memhunk_t;
+
 typedef void (*xcommand_t) (void);
 typedef void (*xdatacmd_t) (void *data);
 
@@ -58,6 +60,7 @@ extern cmd_source_t	cmd_source;
 
 void	Cmd_Init_Hash (void);
 void	Cmd_Init (void);
+void	Cmd_SetHunk (memhunk_t *hunk);
 
 int		Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 						const char *description);

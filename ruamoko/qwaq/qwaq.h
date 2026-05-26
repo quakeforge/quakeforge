@@ -7,6 +7,8 @@
 #include "QF/progs.h"
 #include "QF/sys.h"
 
+typedef struct memhunk_s memhunk_t;
+
 typedef void (*progsinit_f) (progs_t *pr);
 
 typedef struct qwaq_thread_s {
@@ -17,7 +19,7 @@ typedef struct qwaq_thread_s {
 	progsinit_f*progsinit;
 	progs_t    *pr;
 	int         rua_security;
-	struct memhunk_s *hunk;
+	memhunk_t  *hunk;
 	struct hashctx_s *hashctx;
 	pr_func_t   main_func;
 	void       *data;
@@ -33,6 +35,6 @@ extern struct cbuf_s *qwaq_cbuf;
 extern const char *this_program;
 qwaq_thread_t *create_thread (void *(*thread_func) (qwaq_thread_t *), void *);
 
-int qwaq_init_threads (qwaq_thread_set_t *thread_data);
+int qwaq_init_threads (qwaq_thread_set_t *thread_data, memhunk_t *main_hunk);
 
 #endif//__qwaq_h

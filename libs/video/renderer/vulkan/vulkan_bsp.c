@@ -131,10 +131,12 @@ init_visstate (bspctx_t *bctx)
 	int     count = brush->numnodes + brush->modleafs
 					+ brush->numsurfaces;
 	int         size = count * sizeof (int);
-	int        *shadow_node_frames = Hunk_AllocName (0, size, "visframes");
+	int        *shadow_node_frames = Hunk_AllocName (r_refdef.hunk, size,
+													 "visframes");
 	int        *shadow_leaf_frames = shadow_node_frames + brush->numnodes;
 	int        *shadow_face_frames = shadow_leaf_frames + brush->modleafs;
-	int        *debug_node_frames = Hunk_AllocName (0, size, "visframes");
+	int        *debug_node_frames = Hunk_AllocName (r_refdef.hunk, size,
+													"visframes");
 	int        *debug_leaf_frames = debug_node_frames + brush->numnodes;
 	int        *debug_face_frames = debug_leaf_frames + brush->modleafs;
 	bctx->shadow_pass.vis_frame = 0;
@@ -287,7 +289,8 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	// 2.5 for two texanim_t structs (32-bits each) and 1 uint16_t for each
 	// element
 	size_t      texdata_size = 2.5 * num_tex * sizeof (texanim_t);
-	texanim_t  *texdata = Hunk_AllocName (0, texdata_size, "texdata");
+	texanim_t  *texdata = Hunk_AllocName (r_refdef.hunk, texdata_size,
+										  "texdata");
 	bctx->texdata.anim_main = texdata;
 	bctx->texdata.anim_alt = texdata + num_tex;
 	bctx->texdata.frame_map = (uint16_t *) (texdata + 2 * num_tex);
@@ -1777,7 +1780,7 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 	}
 
 	name = vac (ctx->va_ctx, "env/%s_map", sky);
-	tex = LoadImage (name, 1);
+	tex = LoadImage (name, 1, r_refdef.hunk);
 	qfv_tex_t *sky_tex = nullptr;
 	bool is_box = true;
 	if (tex) {
@@ -1792,12 +1795,12 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 
 		for (i = 0; i < 6; i++) {
 			name = vac (ctx->va_ctx, "env/%s%s", sky, sky_suffix[i]);
-			tex = LoadImage (name, 1);
+			tex = LoadImage (name, 1, r_refdef.hunk);
 			if (!tex) {
 				Sys_MaskPrintf (SYS_vulkan, "Couldn't load %s\n", name);
 				// also look in gfx/env, where Darkplaces looks for skies
 				name = vac (ctx->va_ctx, "gfx/env/%s%s", sky, sky_suffix[i]);
-				tex = LoadImage (name, 1);
+				tex = LoadImage (name, 1, r_refdef.hunk);
 				if (!tex) {
 					Sys_MaskPrintf (SYS_vulkan, "Couldn't load %s\n", name);
 					failed = 1;

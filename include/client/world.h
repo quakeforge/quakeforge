@@ -54,6 +54,7 @@ extern worldscene_t cl_world;
 struct msg_s;
 struct entity_state_s;
 struct lightingdata_s;
+typedef struct memhunk_s memhunk_t;
 
 void CL_World_Init (void);
 
@@ -68,7 +69,8 @@ void CL_ParseBaseline (struct msg_s *msg, struct entity_state_s *baseline,
 */
 void CL_ParseStatic (struct msg_s *msg, int version);
 void CL_MapCfg (const char *mapname);
-void CL_World_NewMap (const char *mapname, const char *skyname);
+void CL_World_NewMap (const char *mapname, const char *skyname,
+					  memhunk_t *hunk);
 void CL_World_Clear (void);
 void CL_LoadLights (struct plitem_s *entities, struct scene_s *scene);
 

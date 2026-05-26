@@ -125,6 +125,11 @@ Draw_PicFromWad (const char *name)
 	return W_GetLumpName (name);
 }
 
+static void *
+sw_draw_cache_alloc (void *data, size_t size)
+{
+	return Cache_Alloc (data, size, "draw");
+}
 
 qpic_t *
 Draw_CachePic (const char *path, bool alpha)
@@ -155,7 +160,11 @@ Draw_CachePic (const char *path, bool alpha)
 		return dat;
 
 	// load the pic from disk
-	QFS_LoadCacheFile (QFS_FOpenFile (path), &pic->cache);
+	qfs_allocator_t alloc = {
+		.alloc = sw_draw_cache_alloc,
+		.data = &pic->cache,
+	};
+	QFS_LoadFile (QFS_FOpenFile (path), &alloc);
 
 	dat = (qpic_t *) pic->cache.data;
 	if (!dat) {

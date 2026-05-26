@@ -221,10 +221,10 @@ free_key (void *_k, void *unused)
 }
 
 VISIBLE info_t *
-Info_ParseString (const char *s, int maxsize, int flags)
+Info_ParseString (const char *s, int maxsize, int flags, memhunk_t *hunk)
 {
 	info_t     *info;
-	char       *string = Hunk_TempAlloc (0, strlen (s) + 1);
+	char       *string = Hunk_TempAlloc (hunk, strlen (s) + 1);
 	char       *key, *value, *end;
 
 	info = malloc (sizeof (info_t));
@@ -263,7 +263,7 @@ Info_Destroy (info_t *info)
 }
 
 VISIBLE char *
-Info_MakeString (info_t *info, int (*filter) (const char *))
+Info_MakeString (info_t *info, int (*filter) (const char *), memhunk_t *hunk)
 {
 	char       *string;
 	const char *s;
@@ -271,7 +271,7 @@ Info_MakeString (info_t *info, int (*filter) (const char *))
 	info_key_t **key_list;
 	info_key_t **key;
 
-	d = string = Hunk_TempAlloc (0, info->cursize + 1);
+	d = string = Hunk_TempAlloc (hunk, info->cursize + 1);
 	key_list = (info_key_t **) Hash_GetList (info->tab);
 
 	for (key = key_list; *key; key++) {

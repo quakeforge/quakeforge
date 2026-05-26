@@ -179,7 +179,7 @@ main (int argc, const char **argv)
 				high + size, hunk->base + hunk->size);
 	}
 
-	global_hunk = hunk;//FIXME put hunk in cache_user_t ?
+	cache_hunk = hunk;//FIXME put hunk in cache_user_t ?
 	cache_user_t cu = {};
 	void       *cm = Cache_Alloc (&cu, 512, "cache test");
 	ret |= check_cache_block (hunk, cm, 512);

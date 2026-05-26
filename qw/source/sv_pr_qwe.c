@@ -174,7 +174,7 @@ PF_substr (progs_t *pr, void *data)
 	if (len > l)
 		len = l;
 
-	tmp = Hunk_TempAlloc (0, len + 1);
+	tmp = Hunk_TempAlloc (pr->pr_hunk, len + 1);
 	strncpy (tmp, s, len);
 	tmp[len] = 0;
 

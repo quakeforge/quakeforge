@@ -157,7 +157,7 @@ init_qf (void)
 	Sys_Init ();
 	developer = options.developer;
 
-	Memory_Init (Sys_Alloc (1024 * 1024), 1024 * 1024);
+	auto hunk = Hunk_Init (Sys_Alloc (1024 * 1024), 1024 * 1024);
 
 	test_pr.pr_edicts = &edicts;
 	test_pr.num_edicts = &num_edicts;
@@ -166,6 +166,7 @@ init_qf (void)
 	test_pr.allocate_progs_mem = allocate_progs_mem;
 	test_pr.free_progs_mem = free_progs_mem;
 	test_pr.no_exec_limit = 0;	// absolutely want a limit!
+	test_pr.pr_hunk = hunk;
 
 	PR_Init_Cvars ();
 

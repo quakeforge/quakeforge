@@ -147,7 +147,8 @@ ConvertColor (const byte *rgb, const byte *pal, colcache_t *cache)
 }
 
 qpic_t *
-ConvertImage (const tex_t *tex, const byte *pal, const char *name)
+ConvertImage (const tex_t *tex, const byte *pal, const char *name,
+			  memhunk_t *hunk)
 {
 	qpic_t     *new;
 	int         pixels;
@@ -156,7 +157,7 @@ ConvertImage (const tex_t *tex, const byte *pal, const char *name)
 	colcache_t *cache;
 
 	pixels = tex->width * tex->height;
-	new = Hunk_AllocName (nullptr, offsetof (qpic_t, data[pixels]), name);
+	new = Hunk_AllocName (hunk, offsetof (qpic_t, data[pixels]), name);
 	new->width = tex->width;
 	new->height = tex->height;
 	switch (tex->format) {

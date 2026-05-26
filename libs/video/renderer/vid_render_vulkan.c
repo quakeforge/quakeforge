@@ -559,20 +559,24 @@ vulkan_BufferSize (const char *name)
 }
 
 static void
-vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
+vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, memhunk_t *hunk)
 {
+	vulkan_ctx->hunk = hunk;
 	Vulkan_Mod_LoadLighting (mod, bsp, vulkan_ctx);
+	vulkan_ctx->hunk = nullptr;
 }
 
 static void
-vulkan_Mod_SubdivideSurface (model_t *mod, msurface_t *fa)
+vulkan_Mod_SubdivideSurface (model_t *mod, msurface_t *fa, memhunk_t *hunk)
 {
 }
 
 static void
-vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx)
+vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, memhunk_t *hunk)
 {
+	vulkan_ctx->hunk = hunk;
 	Vulkan_Mod_ProcessTexture (mod, tx, vulkan_ctx);
+	vulkan_ctx->hunk = nullptr;
 }
 
 static void

@@ -784,21 +784,15 @@ qfs_expand_userpath (dstring_t *full_path, const char *path)
 	return qfs_expand_path (full_path, qfs_userpath, path, 0);
 }
 
-VISIBLE char *
+VISIBLE qfs_substr_t
 QFS_FileBase (const char *in)
 {
 	const char *base;
 	const char *ext;
-	int         len;
-	char       *out;
 
 	base = QFS_SkipPath (in);
 	ext = QFS_FileExtension (base);
-	len = ext - base;
-	out = malloc (len + 1);
-	strncpy (out, base, len);
-	out [len] = 0;
-	return out;
+	return (qfs_substr_t) { .start = base - in, .len = ext - base };
 }
 
 static void
@@ -1163,8 +1157,6 @@ QFS_FOpenFile (const char *filename)
 	return _QFS_VOpenFile (filename, 1, 0, 0);
 }
 
-static cache_user_t *loadcache;
-
 /*
 	QFS_LoadFile
 
@@ -1172,58 +1164,33 @@ static cache_user_t *loadcache;
 	Always appends a 0 byte to the loaded data.
 */
 VISIBLE byte *
-QFS_LoadFile (QFile *file, int usehunk)
+QFS_LoadFile (QFile *file, qfs_allocator_t *alloc)
 {
 	byte       *buf = NULL;
-	char       *base;
 	int         len;
 
 	// look for it in the filesystem or pack files
 	if (!file)
 		return NULL;
 
-	base = strdup ("QFS_LoadFile");
-
 	len = qfs_filesize = Qfilesize (file);
 
-	// extract the filename base name for hunk tag
-	//base = QFS_FileBase (path);
-
-	if (usehunk == 1)
-		buf = Hunk_RawAllocName (qfs_hunk, len + 1, base);
-	else if (usehunk == 2)
-		buf = Hunk_TempAlloc (qfs_hunk, len + 1);
-	else if (usehunk == 0)
+	if (alloc) {
+		buf = alloc->alloc (alloc->data, len + 1);
+	} else {
 		buf = malloc (len + 1);
-	else if (usehunk == 3)
-		buf = Cache_Alloc (loadcache, len + 1, base);
-	else
-		Sys_Error ("QFS_LoadFile: bad usehunk");
+	}
 
-	if (!buf)
+	if (!buf) {
 		Sys_Error ("QFS_LoadFile: not enough space");
 		//Sys_Error ("QFS_LoadFile: not enough space for %s", path);
+	}
 
 	len = Qread (file, buf, len);
 	buf[len] = 0;
 	Qclose (file);
 
-	free (base);
-
 	return buf;
-}
-
-VISIBLE byte *
-QFS_LoadHunkFile (QFile *file)
-{
-	return QFS_LoadFile (file, 1);
-}
-
-VISIBLE void
-QFS_LoadCacheFile (QFile *file, struct cache_user_s *cu)
-{
-	loadcache = cu;
-	QFS_LoadFile (file, 3);
 }
 
 /*

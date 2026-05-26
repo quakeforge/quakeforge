@@ -71,7 +71,8 @@ gl_iqm_load_textures (qf_model_t *model, mod_iqm_ctx_t *iqm_ctx)
 
 	auto meshes = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 	auto text = (const char *) model + model->text.offset;
-	auto skintex = (tex_t *) Hunk_AllocName (nullptr, size, iqm_ctx->mod->name);
+	auto skintex = (tex_t *) Hunk_AllocName (iqm_ctx->hunk, size,
+											 iqm_ctx->mod->name);
 	auto glskin = (glskin_t *) &skintex[model->meshes.count];
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
 		auto mesh = &meshes[i];
@@ -79,7 +80,8 @@ gl_iqm_load_textures (qf_model_t *model, mod_iqm_ctx_t *iqm_ctx)
 		QFS_StripExtension (str->str, str->str);
 		GLuint texid;
 		tex_t *tex;
-		if ((tex = LoadImage (va ("textures/%s", str->str), 1))) {
+		if ((tex = LoadImage (va ("textures/%s", str->str), 1,
+							  iqm_ctx->hunk))) {
 			texid = GL_LoadTexture (str->str, tex->width, tex->height,
 									tex->data, true, false,
 									tex->format > 2 ? tex->format : 1);
@@ -125,7 +127,7 @@ gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 				+ sizeof (keyframe_t[model->meshes.count])
 				+ index_size * index_count
 				+ sizeof (mesh_vrt_t[iqm->num_vertexes]);
-	gl_mesh_t *rmesh = Hunk_AllocName (0, size, iqm_ctx->mod->name);
+	gl_mesh_t *rmesh = Hunk_AllocName (iqm_ctx->hunk, size, iqm_ctx->mod->name);
 	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
 	auto skinclips = (clipdesc_t *) &attribs[4 * model->meshes.count];
 	auto skinframes = (keyframe_t *) &skinclips[model->meshes.count];

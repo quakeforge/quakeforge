@@ -105,7 +105,8 @@ typedef struct in_device_s {
 
 int IN_RegisterDriver (in_driver_t *driver, void *data);
 void IN_DriverData (int handlle, void *data);
-void IN_Init (void);
+typedef struct memhunk_s memhunk_t;
+void IN_Init (memhunk_t *hunk);
 void IN_Init_Cvars (void);
 struct plitem_s;
 void IN_SaveConfig (struct plitem_s *config);

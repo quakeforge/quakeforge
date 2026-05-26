@@ -1502,7 +1502,7 @@ glsl_R_LoadSkys (const char *sky)
 
 
 	GLenum tex_type = GL_TEXTURE_CUBE_MAP;
-	tex = LoadImage (name = va ("env/%s_map", sky), 1);
+	tex = LoadImage (name = va ("env/%s_map", sky), 1, r_refdef.hunk);
 	if (tex && tex->format >= 3) {
 		int         size;
 		if (tex->height * 3 == tex->width * 2) {
@@ -1562,12 +1562,14 @@ glsl_R_LoadSkys (const char *sky)
 		sky_loaded = true;
 		sky_is_box = true;
 		for (i = 0; i < 6; i++) {
-			tex = LoadImage (name = va ("env/%s%s", sky, sky_suffix[i]), 1);
+			tex = LoadImage (name = va ("env/%s%s", sky, sky_suffix[i]), 1,
+							 r_refdef.hunk);
 			if (!tex || tex->format < 3) {	// FIXME pcx support
 				Sys_MaskPrintf (SYS_glsl, "Couldn't load %s\n", name);
 				// also look in gfx/env, where Darkplaces looks for skies
 				tex = LoadImage (name = va ("gfx/env/%s%s", sky,
-											sky_suffix[i]), 1);
+											sky_suffix[i]), 1,
+								 r_refdef.hunk);
 				if (!tex || tex->format < 3) {  // FIXME pcx support
 					Sys_MaskPrintf (SYS_glsl, "Couldn't load %s\n", name);
 					sky_loaded = false;

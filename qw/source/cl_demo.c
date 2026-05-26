@@ -756,7 +756,7 @@ demo_start_recording (int track)
 	// send server info string
 	MSG_WriteByte (&buf, svc_stufftext);
 	MSG_WriteString (&buf, va ("fullserverinfo \"%s\"\n",
-							   Info_MakeString (cl.serverinfo, 0)));
+							   Info_MakeString (cl.serverinfo, 0, cl_hunk)));
 
 	// flush packet
 	CL_WriteRecordDemoMessage (&buf, seq++);
@@ -890,7 +890,7 @@ demo_start_recording (int track)
 		MSG_WriteByte (&buf, svc_updateuserinfo);
 		MSG_WriteByte (&buf, i);
 		MSG_WriteLong (&buf, player->userid);
-		MSG_WriteString (&buf, Info_MakeString (player->userinfo, 0));
+		MSG_WriteString (&buf, Info_MakeString (player->userinfo, 0, cl_hunk));
 
 		if (buf.cursize > MAX_MSGLEN / 2) {
 			CL_WriteRecordDemoMessage (&buf, seq++);

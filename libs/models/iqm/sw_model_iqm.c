@@ -109,7 +109,7 @@ get_texcoord (qf_mesh_t *mesh, uint32_t index)
 }
 
 static void
-sw_iqm_load_textures (qf_model_t *model)
+sw_iqm_load_textures (qf_model_t *model, memhunk_t *hunk)
 {
 	dstring_t  *str = dstring_new ();
 
@@ -140,12 +140,12 @@ sw_iqm_load_textures (qf_model_t *model)
 		}
 		dstring_copystr (str, text + meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
-		auto tex = LoadImage (va ("textures/%s", str->str), 1);
+		auto tex = LoadImage (va ("textures/%s", str->str), 1, hunk);
 		qpic_t *pic;
 		if (tex) {
-			pic = ConvertImage (tex, vid.basepal, str->str);
+			pic = ConvertImage (tex, vid.basepal, str->str, hunk);
 		} else {
-			pic = Hunk_AllocName (nullptr, null_texture_size, "null texture");
+			pic = Hunk_AllocName (hunk, null_texture_size, "null texture");
 			*pic = null_texture;
 			memcpy (pic->data, null_data, sizeof (null_data));
 		}
@@ -248,7 +248,7 @@ sw_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 				+ sizeof (iqm_vert_t[numv]);
 
 	const char *name = iqm_ctx->mod->name;
-	sw_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
+	sw_mesh_t *rmesh = Hunk_AllocName (iqm_ctx->hunk, size, name);
 	auto blend = (qfm_blend_t *) &rmesh[1];
 	auto attribs = (qfm_attrdesc_t *) &blend[palette_size];
 	auto tris     = (dtriangle_t *) &attribs[4 * model->meshes.count];
@@ -318,5 +318,5 @@ sw_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 
 	sw_iqm_transfer_verts (verts, numv, iqm_ctx);
 	sw_iqm_convert_tris (iqm_ctx, tris);
-	sw_iqm_load_textures (model);
+	sw_iqm_load_textures (model, iqm_ctx->hunk);
 }

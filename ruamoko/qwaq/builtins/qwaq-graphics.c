@@ -56,12 +56,10 @@ static progsinit_f secondary_app[] = {
 #endif
 
 int
-qwaq_init_threads (qwaq_thread_set_t *thread_data)
+qwaq_init_threads (qwaq_thread_set_t *thread_data, memhunk_t *main_hunk)
 {
 	int         main_ind = -1;
-	//FIXME LoadTGA and friends use the wrong hunk
-	size_t      memsize = 64 * 1024 * 1024;
-	memhunk_t  *hunk = Hunk_Init (Sys_Alloc (memsize), memsize);
+	size_t      memsize = 128 * 1024 * 1024;
 
 	for (size_t i = 1, thread_ind = 0; i < thread_data->size; i++) {
 		qwaq_thread_t *thread = thread_data->a[i];
@@ -84,7 +82,7 @@ qwaq_init_threads (qwaq_thread_set_t *thread_data)
 		}
 		thread->progsinit = app_funcs;
 		thread->rua_security = 0;
-		thread->hunk = hunk;	//FIXME shared (but currently only one thread)
+		thread->hunk = Hunk_Init (Sys_Alloc (memsize), memsize);
 	}
 	return main_ind;
 }

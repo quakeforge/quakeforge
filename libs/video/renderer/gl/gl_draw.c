@@ -195,7 +195,7 @@ gl_Draw_PicFromWad (const char *name)
 	tex_t	   *targa;
 
 	pic = W_GetLumpName (name);
-	targa = LoadImage (name, 1);
+	targa = LoadImage (name, 1, r_refdef.hunk);
 	if (targa) {
 		p = malloc (sizeof (qpic_t) + sizeof (glpic_t));
 		p->width = pic->width;
@@ -256,7 +256,7 @@ gl_Draw_CachePic (const char *path, bool alpha)
 		// Adjust for endian..
 		SwapPic (dat);
 		// Check for a .tga first
-		targa = LoadImage (path, 1);
+		targa = LoadImage (path, 1, r_refdef.hunk);
 		if (targa) {
 			if (targa->format < 4) {
 				gl->texnum = GL_LoadTexture ("", targa->width, targa->height,
@@ -373,7 +373,7 @@ gl_Draw_Init (void)
 	// write the version string into the background before turning it into a
 	// texture
 
-	image = LoadImage ("gfx/conchars", 1);
+	image = LoadImage ("gfx/conchars", 1, r_refdef.hunk);
 	if (image) {
 		if (image->format < 4) {
 			char_texture = GL_LoadTexture ("charset", image->width,

@@ -30,6 +30,8 @@
 
 #include "QF/qtypes.h"
 
+typedef struct memhunk_s memhunk_t;
+
 typedef struct
 {
 	int		argc;
@@ -55,6 +57,7 @@ extern	double		realtime;			// not bounded in any way, changed at
 										// start of every frame, never reset
 
 extern struct cbuf_s *host_cbuf;
+extern memhunk_t *host_hunk;
 
 void Host_ClearMemory (void);
 void Host_SpawnServer (void);

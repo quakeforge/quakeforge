@@ -171,9 +171,9 @@ void R_IQMDrawModel (entity_t ent, alight_t *plighting);
 float R_IQMGetLerpedFrames (double time, animation_t *animation,
 							qf_model_t *model);
 qfm_motor_t *R_IQMBlendPoseFrames (qf_model_t *model, int frame1, int frame2,
-								   float blend, int extra);
+								   float blend, int extra, memhunk_t *hunk);
 mat4f_t *R_IQMBlendFrames (qf_model_t *model, int frame1, int frame2,
-						   float blend, size_t extra);
+						   float blend, size_t extra, memhunk_t *hunk);
 float R_EntityBlend (double time, animation_t *animation, int pose,
 					 float interval);
 void R_BeginEdgeFrame (void);

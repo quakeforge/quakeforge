@@ -245,7 +245,7 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	size_t size = sizeof (glsl_mesh_t)
 				+ sizeof (qfm_attrdesc_t[3]);
 	const char * name = alias_ctx->mod->name;
-	glsl_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
+	glsl_mesh_t *rmesh = Hunk_AllocName (alias_ctx->hunk, size, name);
 	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
 
 	*rmesh = (glsl_mesh_t) {

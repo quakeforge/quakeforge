@@ -221,7 +221,7 @@ CL_Color_f (void)
 static void
 skin_f (void *data, const cvar_t *cvar)
 {
-	char       *s = Hunk_TempAlloc (0, strlen (skin) + 1);
+	char       *s = Hunk_TempAlloc (cl_hunk, strlen (skin) + 1);
 	QFS_StripExtension (skin, s);
 	free (skin);	// cvar allocated one FIXME do in validator?
 	skin = strdup (s);

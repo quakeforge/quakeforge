@@ -218,7 +218,7 @@ snap_capture (tex_t *snap, void *data)
 						 tex->height - 21);
 
 		pcx = EncodePCX (tex->data, tex->width, tex->height, tex->width,
-						 r_data->vid->basepal, tex->flipped, &pcx_len);
+						 r_data->vid->basepal, tex->flipped, &pcx_len, cl_hunk);
 		free (tex);
 	}
 	if (pcx) {

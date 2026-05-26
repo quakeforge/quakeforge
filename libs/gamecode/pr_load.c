@@ -117,10 +117,34 @@ file_error (progs_t *pr, const char *path)
 	Sys_Printf ("failed to load %s\n", path);
 }
 
+typedef struct pr_alloc_s {
+	memhunk_t *hunk;
+	const char *name;
+} pr_alloc_t;
+
+static void *
+pr_allocator (void *data, size_t size)
+{
+	pr_alloc_t *alloc = data;
+	return Hunk_RawAllocName (alloc->hunk, size, alloc->name);
+}
+
 static void *
 load_file (progs_t *pr, const char *path, off_t *size)
 {
-	void *data = QFS_LoadHunkFile (QFS_FOpenFile (path));
+	auto substr = QFS_FileBase (path);
+	char *base = Hunk_TempAlloc (pr->pr_hunk, substr.len + 1);
+	strncpy (base, path + substr.start, substr.len);
+	base[substr.len] = 0;
+	pr_alloc_t pr_alloc = {
+		.hunk = pr->pr_hunk,
+		.name = base,
+	};
+	qfs_allocator_t alloc = {
+		.alloc = pr_allocator,
+		.data = &pr_alloc,
+	};
+	void *data = QFS_LoadFile (QFS_FOpenFile (path), &alloc);
 	*size = qfs_filesize;
 	return data;
 }
@@ -128,7 +152,7 @@ load_file (progs_t *pr, const char *path, off_t *size)
 static void *
 allocate_progs_mem (progs_t *pr, int size)
 {
-	return Hunk_AllocName (0, size, pr->progs_name);
+	return Hunk_AllocName (pr->pr_hunk, size, pr->progs_name);
 }
 
 static void

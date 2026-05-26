@@ -35,6 +35,8 @@
 
 #include "QF/qtypes.h"
 
+typedef struct memhunk_s memhunk_t;
+
 typedef struct sizebuf_s
 {
 	bool        allowoverflow;	// if false, do a Sys_Error
@@ -45,7 +47,7 @@ typedef struct sizebuf_s
 	unsigned    write_offset;
 } sizebuf_t;
 
-void SZ_Alloc (sizebuf_t *buf, unsigned maxsize);
+void SZ_Alloc (sizebuf_t *buf, unsigned maxsize, memhunk_t *hunk);
 void SZ_Free (sizebuf_t *buf);
 void SZ_Clear (sizebuf_t *buf);
 unsigned SZ_Seek (sizebuf_t *buf, int offset, int whence);

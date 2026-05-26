@@ -100,7 +100,7 @@ apply_channels (qfm_joint_t *joints, qf_model_t *model,
 
 VISIBLE qfm_motor_t *
 R_IQMBlendPoseFrames (qf_model_t *model, int frame1, int frame2,
-					  float blend, int extra)
+					  float blend, int extra, memhunk_t *hunk)
 {
 	qfZoneScoped (true);
 
@@ -113,7 +113,7 @@ R_IQMBlendPoseFrames (qf_model_t *model, int frame1, int frame2,
 	}
 
 	size_t size = sizeof (qfm_motor_t[model->joints.count]) + extra;
-	qfm_motor_t *motors = Hunk_TempAlloc (0, size);
+	qfm_motor_t *motors = Hunk_TempAlloc (hunk, size);
 	if (model->channels.count && model->joints.count == model->pose.count) {
 		memcpy (motors, pose, sizeof (qfm_motor_t[model->pose.count]));
 		pose = (qfm_joint_t *) motors;
@@ -147,12 +147,13 @@ R_IQMBlendPoseFrames (qf_model_t *model, int frame1, int frame2,
 
 mat4f_t *
 R_IQMBlendFrames (qf_model_t *model, int frame1, int frame2, float blend,
-				  size_t extra)
+				  size_t extra, memhunk_t *hunk)
 {
 	qfZoneScoped (true);
 
 	extra += 2 * model->joints.count * sizeof (mat4f_t);
-	auto pose = R_IQMBlendPoseFrames (model, frame1, frame2, blend, extra);
+	auto pose = R_IQMBlendPoseFrames (model, frame1, frame2, blend, extra,
+									  hunk);
 	auto frame = (mat4f_t *) &pose[model->joints.count];
 
 	for (uint32_t i = 0; i < model->joints.count; i++) {

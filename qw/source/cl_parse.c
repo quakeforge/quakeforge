@@ -266,7 +266,7 @@ CL_NewMap (const char *mapname)
 	if (cl.serverinfo) {
 		skyname = Info_ValueForKey (cl.serverinfo, "sky");
 	}
-	CL_World_NewMap (mapname, skyname);
+	CL_World_NewMap (mapname, skyname, cl_hunk);
 	V_NewScene (&cl.viewstate, cl_world.scene);
 	cl.chasestate.worldmodel = cl_world.scene->worldmodel;
 
@@ -274,7 +274,7 @@ CL_NewMap (const char *mapname)
 	Con_NewMap ();
 	Sbar_CenterPrint (0);
 
-	Hunk_Check (0);								// make sure nothing is hurt
+	Hunk_Check (cl_hunk);						// make sure nothing is hurt
 }
 
 static void
@@ -1025,7 +1025,7 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	const char *spec = Info_ValueForKey (player->userinfo, "*spectator");
 	player->spectator = spec && *spec;
 
-	player->skin = mod_funcs->skin_set (player->skinname->value);
+	player->skin = mod_funcs->skin_set (player->skinname->value, cl_hunk);
 
 	Sbar_UpdateInfo (slot);
 }
@@ -1050,7 +1050,7 @@ CL_UpdateUserinfo (void)
 		player->userid = uid;
 		if (player->userinfo)
 			Info_Destroy (player->userinfo);
-		player->userinfo = Info_ParseString (info, MAX_INFO_STRING, 0);
+		player->userinfo = Info_ParseString (info, MAX_INFO_STRING, 0, cl_hunk);
 		CL_ProcessUserInfo (slot, player);
 		CL_Chat_Check_Name (Info_ValueForKey (player->userinfo, "name"), slot);
 	} else {
@@ -1081,7 +1081,7 @@ CL_SetInfo (void)
 	key[sizeof (value) - 1] = 0;
 
 	if (!player->userinfo)
-		player->userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
+		player->userinfo = Info_ParseString ("", MAX_INFO_STRING, 0, cl_hunk);
 
 	flags = !strequal (key, "name");
 	flags |= strequal (key, "team") << 1;

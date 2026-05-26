@@ -108,6 +108,7 @@ Carne_Execute_Stdin (void)
 	return carne_exitcode;
 }
 
+#define MEMSIZE ((size_t) 8 * 1024 * 1024)
 int
 main (int argc, char **argv)
 {
@@ -116,7 +117,10 @@ main (int argc, char **argv)
 
 	// Initialize required QF subsystems
 	Sys_Init ();
-	GIB_Init (false); // No sandbox
+
+	memhunk_t *hunk = Hunk_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
+	Cmd_SetHunk (hunk);
+	GIB_Init (false, hunk); // No sandbox
 
 	GIB_Builtin_Add ("exit", Carne_GIB_Exit_f);
 

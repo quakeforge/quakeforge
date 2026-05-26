@@ -81,7 +81,7 @@ qwaq_print (const char *fmt, va_list args)
 }
 
 int
-qwaq_init_threads (qwaq_thread_set_t *thread_data)
+qwaq_init_threads (qwaq_thread_set_t *thread_data, memhunk_t *main_hunk)
 {
 	int         main_ind = -1;
 
@@ -89,7 +89,7 @@ qwaq_init_threads (qwaq_thread_set_t *thread_data)
 	Sys_SetStdPrintf (qwaq_print);
 
 	IN_Init_Cvars ();
-	IN_Init ();
+	IN_Init (main_hunk);
 
 	for (size_t i = 1, thread_ind = 0; i < thread_data->size; i++) {
 		qwaq_thread_t *thread = thread_data->a[i];

@@ -62,7 +62,7 @@ static progsinit_f main_app[] = {
 };
 
 int
-qwaq_init_threads (qwaq_thread_set_t *thread_data)
+qwaq_init_threads (qwaq_thread_set_t *thread_data, memhunk_t *main_hunk)
 {
 	int         main_ind = -1;
 

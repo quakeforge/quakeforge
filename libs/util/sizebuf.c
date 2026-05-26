@@ -41,11 +41,11 @@
 
 
 VISIBLE void
-SZ_Alloc (sizebuf_t *buf, unsigned maxsize)
+SZ_Alloc (sizebuf_t *buf, unsigned maxsize, memhunk_t *hunk)
 {
 	if (maxsize < 256)
 		maxsize = 256;
-	buf->data = Hunk_AllocName (0, maxsize, "sizebuf");
+	buf->data = Hunk_AllocName (hunk, maxsize, "sizebuf");
 	buf->maxsize = maxsize;
 	buf->cursize = 0;
 }

@@ -274,7 +274,7 @@ struct cbuf_s;
 
 /** Initialize the networking sub-system.
 */
-void		NET_Init (struct cbuf_s *cbuf);
+void		NET_Init (struct cbuf_s *cbuf, memhunk_t *hunk);
 
 /** Check for new connections.
 

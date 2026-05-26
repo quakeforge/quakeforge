@@ -372,7 +372,8 @@ void IN_AxisRemoveListener (in_axis_t *axis, axis_listener_t listener,
 struct IE_event_s;
 int IN_Binding_HandleEvent (const struct IE_event_s *ie_event);
 void IN_Binding_Activate (void);
-void IN_Binding_Init (void);
+typedef struct memhunk_s memhunk_t;
+void IN_Binding_Init (memhunk_t *hunk);
 struct plitem_s;
 void IN_Binding_SaveConfig (struct plitem_s *config);
 void IN_Binding_LoadConfig (struct plitem_s *config);

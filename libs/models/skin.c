@@ -152,7 +152,7 @@ freestr (char **strptr)
 }
 
 VISIBLE uint32_t
-Skin_Set (const char *skinname)
+Skin_Set (const char *skinname, memhunk_t *hunk)
 {
 	if (!skinname || !*skinname) {
 		return nullskin;
@@ -180,7 +180,7 @@ Skin_Set (const char *skinname)
 		Sys_Printf ("Couldn't load skin %s\n", name);
 		return skinent;
 	}
-	tex_t      *tex = LoadPCX (file, 0, r_data->vid->palette, 1);
+	tex_t      *tex = LoadPCX (file, 0, r_data->vid->palette, 1, hunk);
 	Qclose (file);
 	if (!tex) {
 		Sys_Printf ("Bad skin %s\n", name);
@@ -197,7 +197,7 @@ Skin_Set (const char *skinname)
 }
 
 VISIBLE uint32_t
-Skin_Texture (const char *skinname)
+Skin_Texture (const char *skinname, memhunk_t *hunk)
 {
 	if (!skinname || !*skinname) {
 		return nullskin;
@@ -220,7 +220,7 @@ Skin_Texture (const char *skinname)
 	Ent_SetComponent (skinent, skinsys.base + skin_name, skinsys.reg, &sname);
 	Hash_Add (skin_hash, (void *) (uintptr_t) skinent);
 
-	tex_t      *tex = LoadImage (va ("skins/%s", name), 1);
+	tex_t      *tex = LoadImage (va ("skins/%s", name), 1, hunk);
 	if (!tex) {
 		Sys_Printf ("Couldn't load skin %s\n", name);
 		return skinent;

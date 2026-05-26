@@ -53,7 +53,8 @@
 #include "r_internal.h"
 
 static tex_t *
-Mod_LoadAnExternalTexture (const char *tname, const char *mname)
+Mod_LoadAnExternalTexture (const char *tname, const char *mname,
+						   memhunk_t *hunk)
 {
 	char		rname[32];
 	tex_t	   *image;
@@ -63,29 +64,29 @@ Mod_LoadAnExternalTexture (const char *tname, const char *mname)
 	if (rname[0] == '*') rname[0] = '#';
 
 	image = LoadImage (va ("textures/%.*s/%s", (int) strlen (mname + 5) - 4,
-						   mname + 5, rname), 1);
+						   mname + 5, rname), 1, hunk);
 	if (!image)
 		image = LoadImage (va ("maps/%.*s/%s", (int) strlen (mname + 5) - 4,
-							   mname + 5, rname), 1);
+							   mname + 5, rname), 1, hunk);
 //	if (!image)
-//			image = LoadImage (va ("textures/bmodels/%s", rname));
+//		image = LoadImage (va ("textures/bmodels/%s", rname), hunk);
 	if (!image)
-			image = LoadImage (va ("textures/%s", rname), 1);
+		image = LoadImage (va ("textures/%s", rname), 1, hunk);
 	if (!image)
-			image = LoadImage (va ("maps/%s", rname), 1);
+		image = LoadImage (va ("maps/%s", rname), 1, hunk);
 
 	return image;
 }
 
 static int
-Mod_LoadExternalTextures (model_t *mod, texture_t *tx)
+Mod_LoadExternalTextures (model_t *mod, texture_t *tx, memhunk_t *hunk)
 {
 	tex_t	   *base, *luma;
 	gltex_t    *gltx;
 	int         external = 0;
 
 	gltx = tx->render;
-	if ((base = Mod_LoadAnExternalTexture (tx->name, mod->path))) {
+	if ((base = Mod_LoadAnExternalTexture (tx->name, mod->path, hunk))) {
 		external = 1;
 		gltx->gl_texturenum =
 			GL_LoadTexture (tx->name, base->width, base->height,
@@ -93,10 +94,10 @@ Mod_LoadExternalTextures (model_t *mod, texture_t *tx)
 							base->format > 2 ? base->format : 1);
 
 		luma = Mod_LoadAnExternalTexture (va ("%s_luma", tx->name),
-										  mod->path);
+										  mod->path, hunk);
 		if (!luma)
 			luma = Mod_LoadAnExternalTexture (va ("%s_glow", tx->name),
-											  mod->path);
+											  mod->path, hunk);
 
 		gltx->gl_fb_texturenum = 0;
 
@@ -115,7 +116,7 @@ Mod_LoadExternalTextures (model_t *mod, texture_t *tx)
 }
 
 void
-gl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
+gl_Mod_ProcessTexture (model_t *mod, texture_t *tx, memhunk_t *hunk)
 {
 	const char *name;
 
@@ -123,7 +124,7 @@ gl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 		return;
 	}
 	if (gl_textures_external) {
-		if (Mod_LoadExternalTextures (mod, tx)) {
+		if (Mod_LoadExternalTextures (mod, tx, hunk)) {
 			return;
 		}
 	}
@@ -139,8 +140,20 @@ gl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 						true, false, 1);
 }
 
+typedef struct gl_brush_alloc_s {
+	memhunk_t *hunk;
+	const char *name;
+} gl_brush_alloc_t;
+
+static void *
+gl_brush_allocator (void *data, size_t size)
+{
+	gl_brush_alloc_t *alloc = data;
+	return Hunk_RawAllocName (alloc->hunk, size, alloc->name);
+}
+
 void
-gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
+gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp, memhunk_t *hunk)
 {
 	byte        d;
 	byte       *in, *out, *data;
@@ -157,7 +170,16 @@ gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 		QFS_StripExtension (litfilename->str, litfilename->str);
 		dstring_appendstr (litfilename, ".lit");
 		lit_file = QFS_VOpenFile (litfilename->str, 0, mod->vpath);
-		data = (byte *) QFS_LoadHunkFile (lit_file);
+
+		gl_brush_alloc_t gl_brush_alloc = {
+			.hunk = hunk,
+			.name = litfilename->str,
+		};
+		qfs_allocator_t alloc = {
+			.alloc = gl_brush_allocator,
+			.data = &gl_brush_alloc,
+		};
+		data = (byte *) QFS_LoadFile (lit_file, &alloc);
 		if (data) {
 			if (data[0] == 'Q' && data[1] == 'L' && data[2] == 'I'
 				&& data[3] == 'T') {
@@ -178,7 +200,7 @@ gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 		dstring_delete (litfilename);
 		return;
 	}
-	brush->lightdata = Hunk_AllocName (0,
+	brush->lightdata = Hunk_AllocName (hunk,
 									   bsp->lightdatasize * mod_lightmap_bytes,
 									   litfilename->str);
 	in = bsp->lightdata;
@@ -219,7 +241,7 @@ BoundPoly (int numverts, float *verts, vec3_t mins, vec3_t maxs)
 }
 
 static void
-SubdividePolygon (int numverts, float *verts)
+SubdividePolygon (int numverts, float *verts, memhunk_t *hunk)
 {
 	float       frac, m, s, t;
 	float       dist[64];
@@ -275,12 +297,12 @@ SubdividePolygon (int numverts, float *verts)
 			}
 		}
 
-		SubdividePolygon (f, front[0]);
-		SubdividePolygon (b, back[0]);
+		SubdividePolygon (f, front[0], hunk);
+		SubdividePolygon (b, back[0], hunk);
 		return;
 	}
 
-	poly = Hunk_Alloc (0, offsetof (glpoly_t, verts[numverts]));
+	poly = Hunk_Alloc (hunk, offsetof (glpoly_t, verts[numverts]));
 	poly->next = warpface->polys;
 	warpface->polys = poly;
 	poly->numverts = numverts;
@@ -301,7 +323,7 @@ SubdividePolygon (int numverts, float *verts)
 	can be done reasonably.
 */
 void
-gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa)
+gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa, memhunk_t *hunk)
 {
 	float      *vec;
 	int         lindex, numverts, i;
@@ -324,6 +346,6 @@ gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa)
 	}
 
 	if (numverts > 3) {
-		SubdividePolygon (numverts, verts[0]);
+		SubdividePolygon (numverts, verts[0], hunk);
 	}
 }

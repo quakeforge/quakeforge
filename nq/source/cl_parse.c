@@ -256,7 +256,7 @@ static void
 CL_NewMap (const char *mapname)
 {
 	qfZoneScoped (true);
-	CL_World_NewMap (mapname, 0);
+	CL_World_NewMap (mapname, 0, cl_hunk);
 	V_NewScene (&cl.viewstate, cl_world.scene);
 
 	cl.chasestate.worldmodel = cl_world.scene->worldmodel;
@@ -264,7 +264,7 @@ CL_NewMap (const char *mapname)
 	Con_NewMap ();
 	Sbar_CenterPrint (0);
 
-	Hunk_Check (0);								// make sure nothing is hurt
+	Hunk_Check (cl_hunk);						// make sure nothing is hurt
 }
 
 static void
@@ -303,12 +303,12 @@ CL_ParseServerInfo (void)
 		Sys_Printf ("Bad maxclients (%u) from server\n", cl.maxclients);
 		goto done;
 	}
-	cl.players = Hunk_AllocName (0, cl.maxclients * sizeof (*cl.players),
+	cl.players = Hunk_AllocName (cl_hunk, cl.maxclients * sizeof (*cl.players),
 								 "players");
 	cl.viewstate.voffs_enabled = cl.maxclients == 1;
 	cl.viewstate.bob_enabled = 1;
 	for (i = 0; i < cl.maxclients; i++) {
-		cl.players[i].userinfo = Info_ParseString ("name\\", 0, 0);
+		cl.players[i].userinfo = Info_ParseString ("name\\", 0, 0, cl_hunk);
 		cl.players[i].name = Info_Key (cl.players[i].userinfo, "name");
 		cl.players[i].topcolor = TOP_COLOR;
 		cl.players[i].bottomcolor = BOTTOM_COLOR;

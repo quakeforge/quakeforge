@@ -25,6 +25,7 @@ typedef struct mod_alias_ctx_s {
 	qf_mesh_t  *mesh;
 	model_t    *mod;
 	mdl_t      *mdl;
+	memhunk_t  *hunk;
 	stvertset_t stverts;
 	dtriangleset_t triangles;
 	trivertxset_t poseverts;
@@ -43,6 +44,7 @@ typedef struct mod_iqm_ctx_s {
 	qf_model_t *qf_model;
 	qf_mesh_t  *qf_meshes;
 	model_t    *mod;
+	memhunk_t  *hunk;
 
 	iqmheader  *hdr;
 	const char *text;
@@ -63,12 +65,14 @@ typedef struct mod_mesh_ctx_s {
 	qf_model_t *qf_model;
 	qf_mesh_t  *qf_meshes;
 	model_t    *mod;
+	memhunk_t  *hunk;
 
 	qf_model_t *in;
 } mod_mesh_ctx_t;
 
 typedef struct mod_sprite_ctx_s {
 	model_t    *mod;
+	memhunk_t  *hunk;
 	dsprite_t  *dsprite;
 	msprite_t  *sprite;
 	int         numframes;
@@ -91,7 +95,7 @@ void Mod_FloodFillSkin (byte *skin, int skinwidth, int skinheight);
 //FIXME gl specific. rewrite to use above
 int Mod_Fullbright (byte * skin, int width, int height, const char *name);
 
-void Mod_LoadBrushModel (model_t *mod, void *buffer);
+void Mod_LoadBrushModel (model_t *mod, void *buffer, memhunk_t *hunk);
 void Mod_FindClipDepth (hull_t *hull);
 
 model_t	*Mod_FindName (const char *name);
@@ -121,15 +125,17 @@ void sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx);
 void sw_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx);
 void sw_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx);
 
-void gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp);
-void gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa);
+void gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp, memhunk_t *hunk);
+void gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa, memhunk_t *hunk);
 struct texture_s;
-void gl_Mod_ProcessTexture (model_t *mod, struct texture_s *tx);
+void gl_Mod_ProcessTexture (model_t *mod, struct texture_s *tx,
+							memhunk_t *hunk);
 
-void glsl_Mod_LoadLighting (model_t *mod, bsp_t *bsp);
-void glsl_Mod_ProcessTexture (model_t *mod, struct texture_s *tx);
+void glsl_Mod_LoadLighting (model_t *mod, bsp_t *bsp, memhunk_t *hunk);
+void glsl_Mod_ProcessTexture (model_t *mod, struct texture_s *tx,
+							  memhunk_t *hunk);
 
-void sw_Mod_LoadLighting (model_t *mod, bsp_t *bsp);
+void sw_Mod_LoadLighting (model_t *mod, bsp_t *bsp, memhunk_t *hunk);
 
 void Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp,
 							  struct vulkan_ctx_s *ctx);
@@ -143,17 +149,18 @@ void gl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx);
 void glsl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx);
 void sw_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx);
 
-void Mod_LoadMeshModel (model_t *mod, byte *buffer, size_t buf_size);
+void Mod_LoadMeshModel (model_t *mod, byte *buffer, size_t buf_size,
+						memhunk_t *hunk);
 
-void Mod_LoadIQM (model_t *mod, void *buffer);
+void Mod_LoadIQM (model_t *mod, void *buffer, memhunk_t *hunk);
 qfm_blend_t *Mod_IQMBuildBlendPalette (mod_iqm_ctx_t *iqm, uint32_t *size);
 mat4f_t *Mod_BlendPalette (qfm_blend_t *blend_palette, uint32_t palette_size,
 						   qfm_motor_t *motors, uint32_t num_motors,
-						   size_t extra);
+						   size_t extra, memhunk_t *hunk);
 
 void Mod_LoadAliasModel (model_t *mod, void *buffer,
-                         cache_allocator_t allocator);
-void Mod_LoadSpriteModel (model_t *mod, void *buffer);
+                         cache_allocator_t allocator, memhunk_t *hunk);
+void Mod_LoadSpriteModel (model_t *mod, void *buffer, memhunk_t *hunk);
 
 int Skin_CalcTopColors (byte *out, const byte *in, size_t pixels, int stride);
 int Skin_CalcTopMask (byte *out, const byte *in, size_t pixels, int stride);
@@ -180,8 +187,8 @@ typedef struct glskin_s {
 } glskin_t;
 
 void Skin_Init (void);
-uint32_t Skin_Set (const char *skinname);
-uint32_t Skin_Texture (const char *skinname);
+uint32_t Skin_Set (const char *skinname, memhunk_t *hunk);
+uint32_t Skin_Texture (const char *skinname, memhunk_t *hunk);
 skin_t *Skin_Get (uint32_t skin) __attribute__((pure));
 
 void sw_Skin_SetupSkin (skin_t *skin);

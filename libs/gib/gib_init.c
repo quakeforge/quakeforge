@@ -58,6 +58,12 @@
 static U void (*const gib_progs_init)(struct progs_s *) = GIB_Progs_Init;
 #undef U
 
+static memhunk_t *gib_hunk;
+static void *
+gib_allocator (void *data, size_t size)
+{
+	return Hunk_RawAllocName (gib_hunk, size, data);
+}
 
 static void
 GIB_Exec_Override_f (void)
@@ -70,8 +76,17 @@ GIB_Exec_Override_f (void)
 		return;
 	}
 
-	mark = Hunk_LowMark (0);
-	f = (char *) QFS_LoadHunkFile (QFS_FOpenFile (Cmd_Argv (1)));
+	mark = Hunk_LowMark (gib_hunk);
+	auto fname = Cmd_Argv (1);
+	auto substr = QFS_FileBase (fname);
+	char *base = Hunk_RawAlloc (gib_hunk, substr.len + 1);
+	strncpy (base, fname + substr.start, substr.len);
+	base[substr.len] = 0;
+	qfs_allocator_t alloc = {
+		.alloc = gib_allocator,
+		.data = base,
+	};
+	f = (char *) QFS_LoadFile (QFS_FOpenFile (Cmd_Argv (1)), &alloc);
 	if (!f) {
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
 		return;
@@ -96,13 +111,14 @@ GIB_Exec_Override_f (void)
 					   Cmd_Argv (0), Cmd_Argv (1));
 	} else
 		Cbuf_InsertText (cbuf_active, f);
-	Hunk_FreeToLowMark (0, mark);
+	Hunk_FreeToLowMark (gib_hunk, mark);
 }
 
 VISIBLE void
-GIB_Init (bool sandbox)
+GIB_Init (bool sandbox, memhunk_t *hunk)
 {
 	qfZoneScoped (true);
+	gib_hunk = hunk;
 	// Override the exec command with a GIB-aware one
 	if (Cmd_Exists ("exec")) {
 		Cmd_RemoveCommand ("exec");

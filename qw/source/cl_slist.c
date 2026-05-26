@@ -505,7 +505,7 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 					Info_ValueForKey (cp->status, "*gamedir"));
 		Sys_Printf ("%cMap: %s\n", 3, Info_ValueForKey (cp->status, "map"));
 
-		s = Info_MakeString (cp->status, 0);
+		s = Info_MakeString (cp->status, 0, cl_hunk);
 		for (i = 0; i < strlen (s); i++)
 			if (s[i] == '\n')
 				playercount++;
@@ -697,7 +697,8 @@ SL_CheckStatus (const char *cs_from, const char *cs_data)
 					}
 				if (temp->status)
 					Info_Destroy (temp->status);
-				temp->status = Info_ParseString (cs_data, strlen (data), 0);
+				temp->status = Info_ParseString (cs_data, strlen (data), 0,
+												 cl_hunk);
 				temp->waitstatus = 0;
 				tmp_desc = Info_ValueForKey (temp->status, "hostname");
 				if (tmp_desc[0] != '\0') {

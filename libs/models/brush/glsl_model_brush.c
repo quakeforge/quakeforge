@@ -100,7 +100,7 @@ load_skytex (texture_t *tx, byte *data)
 }
 
 void
-glsl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
+glsl_Mod_ProcessTexture (model_t *mod, texture_t *tx, memhunk_t *hunk)
 {
 	if (!tx) {
 		return;
@@ -143,7 +143,7 @@ glsl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 }
 
 void
-glsl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
+glsl_Mod_LoadLighting (model_t *mod, bsp_t *bsp, memhunk_t *hunk)
 {
 	// a bit hacky, but it's as good a place as any
 	mod->clear = glsl_brush_clear;
@@ -152,6 +152,6 @@ glsl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 		mod->brush.lightdata = NULL;
 		return;
 	}
-	mod->brush.lightdata = Hunk_AllocName (0, bsp->lightdatasize, mod->name);
+	mod->brush.lightdata = Hunk_AllocName (hunk, bsp->lightdatasize, mod->name);
 	memcpy (mod->brush.lightdata, bsp->lightdata, bsp->lightdatasize);
 }

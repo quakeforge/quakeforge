@@ -69,7 +69,7 @@ init (void)
 	COM_ParseConfig (testsound_cbuf);
 	cmd_warncmd = 1;
 
-	memhunk_t *hunk = Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
+	memhunk_t *hunk = Hunk_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
 
 	QFS_Init (hunk, "qw");
 	PI_Init ();

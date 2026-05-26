@@ -79,7 +79,8 @@ glsl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *ctx)
 	for (int i = 0; i < ctx->numframes; i++) {
 		auto dframe = ctx->dframes[i];
 		size_t      size = sizeof (GLuint) + sizeof (mspriteframe_t);
-		mspriteframe_t *frame = Hunk_AllocName (nullptr, size, ctx->mod->name);
+		mspriteframe_t *frame = Hunk_AllocName (ctx->hunk, size,
+												ctx->mod->name);
 		ctx->frames[i]->data = (byte *) frame - (byte *) sprite;
 		Mod_LoadSpriteFrame (frame, dframe);
 		const char *name = va ("%s_%i", ctx->mod->path, i);

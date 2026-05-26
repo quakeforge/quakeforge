@@ -224,7 +224,7 @@ cl_spawn_f (client_t *cl, void *unused)
 		MSG_WriteByte (msg, svc_updateentertime);
 		MSG_WriteByte (msg, i);
 		MSG_WriteFloat (msg, pl->time);
-		info = pl->info ? Info_MakeString (pl->info, 0) : "";
+		info = pl->info ? Info_MakeString (pl->info, 0, qtv_hunk) : "";
 		MSG_WriteByte (msg, svc_updateuserinfo);
 		MSG_WriteByte (msg, i);
 		MSG_WriteLong (msg, pl->uid);
@@ -1180,7 +1180,7 @@ client_connect (connection_t *con, void *object)
 		return;
 	}
 	free (con->object);
-	userinfo = Info_ParseString (Cmd_Argv (4), 0, 0);
+	userinfo = Info_ParseString (Cmd_Argv (4), 0, 0, qtv_hunk);
 	if (!userinfo) {
 		Netchan_OutOfBandPrint (net_from, "%c\nInvalid userinfo string.\n",
 								A2C_PRINT);
@@ -1278,7 +1278,7 @@ Client_New (client_t *cl)
 	MSG_WriteByte (&cl->netchan.message, svc_stufftext);
 	MSG_WriteString (&cl->netchan.message,
 					 va ("fullserverinfo \"%s\"\n",
-						 Info_MakeString (sv->info, 0)));
+						 Info_MakeString (sv->info, 0, qtv_hunk)));
 }
 
 static void

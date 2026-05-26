@@ -200,7 +200,8 @@ sv_serverdata (server_t *sv, qmsg_t *msg)
 	COM_TokenizeString (MSG_ReadString (msg), qtv_args);
 	cmd_args = qtv_args;
 	Info_Destroy (sv->info);
-	sv->info = Info_ParseString (Cmd_Argv (1), MAX_SERVERINFO_STRING, 0);
+	sv->info = Info_ParseString (Cmd_Argv (1), MAX_SERVERINFO_STRING, 0,
+								 qtv_hunk);
 
 	str = Info_ValueForKey (sv->info, "hostname");
 	if (strcmp (str, "unnamed"))
@@ -726,8 +727,7 @@ sv_setinfo (server_t *sv, qmsg_t *msg)
 	} else {
 		pl = sv->players + slot;
 		if (!pl->info)
-			pl->info = Info_ParseString ("", MAX_INFO_STRING,
-										 0);
+			pl->info = Info_ParseString ("", MAX_INFO_STRING, 0, qtv_hunk);
 		Info_SetValueForKey (pl->info, key->str, value->str,
 							 0);
 	}
@@ -753,7 +753,7 @@ sv_updateuserinfo (server_t *sv, qmsg_t *msg)
 	if (pl->info)
 		Info_Destroy (pl->info);
 	if (info) {
-		pl->info = Info_ParseString (info, MAX_INFO_STRING, 0);
+		pl->info = Info_ParseString (info, MAX_INFO_STRING, 0, qtv_hunk);
 		pl->uid = uid;
 	}
 }

@@ -44,12 +44,13 @@
 #include "mod_internal.h"
 
 static int
-load_texture (model_t *mod, int framenum, const dspriteframe_t *dframe)
+load_texture (model_t *mod, int framenum, const dspriteframe_t *dframe,
+			  memhunk_t *hunk)
 {
 	tex_t      *targa;
 	const char *name;
 
-	targa = LoadImage (name = va ("%s_%i", mod->path, framenum), 1);
+	targa = LoadImage (name = va ("%s_%i", mod->path, framenum), 1, hunk);
 	if (targa) {
 		if (targa->format < 4) {
 			return GL_LoadTexture (name, targa->width, targa->height,
@@ -70,10 +71,11 @@ gl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *ctx)
 	for (int i = 0; i < ctx->numframes; i++) {
 		auto dframe = ctx->dframes[i];
 		size_t      size = sizeof (GLuint) + sizeof (mspriteframe_t);
-		mspriteframe_t *frame = Hunk_AllocName (nullptr, size, ctx->mod->name);
+		mspriteframe_t *frame = Hunk_AllocName (ctx->hunk, size,
+												ctx->mod->name);
 		ctx->frames[i]->data = (byte *) frame - (byte *) sprite;
 		Mod_LoadSpriteFrame (frame, dframe);
 		auto texnum = (GLuint *) &frame[1];
-		*texnum = load_texture (ctx->mod, i, dframe);
+		*texnum = load_texture (ctx->mod, i, dframe, ctx->hunk);
 	}
 }

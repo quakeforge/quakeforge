@@ -696,7 +696,7 @@ Host_Loadgame_f (void)
 			break;
 		item = PL_ObjectAtIndex (list, i);
 		style = PL_String (item);
-		sv.lightstyles[i] = str = Hunk_Alloc (0, strlen (style) + 1);
+		sv.lightstyles[i] = str = Hunk_Alloc (host_hunk, strlen (style) + 1);
 		strcpy (str, style);
 	}
 
@@ -812,7 +812,7 @@ Host_Say (bool teamonly)
 
 	save = host_client;
 
-	p = Hunk_TempAlloc (0, strlen (Cmd_Args (1)) + 1);
+	p = Hunk_TempAlloc (host_hunk, strlen (Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 	// remove quotes if present
 	if (*p == '"') {
@@ -878,7 +878,7 @@ Host_Tell_f (void)
 	strcpy (text, host_client->name);
 	strcat (text, ": ");
 
-	p = Hunk_TempAlloc (0, strlen (Cmd_Args (1)) + 1);
+	p = Hunk_TempAlloc (host_hunk, strlen (Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 
 	// remove quotes if present

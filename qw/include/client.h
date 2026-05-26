@@ -288,6 +288,8 @@ extern	int			fps_count;
 
 extern struct cbuf_s *cl_cbuf;
 extern struct cbuf_s *cl_stbuf;
+typedef struct memhunk_s memhunk_t;
+extern memhunk_t *cl_hunk;
 
 struct cvar_s;
 void Cvar_Info (void *data, const struct cvar_s *cvar);

@@ -30,6 +30,8 @@
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
 
+typedef struct memhunk_s memhunk_t;
+
 /** A ZSoft PC Paintbrush (PCX) header */
 typedef struct
 {
@@ -63,7 +65,8 @@ typedef struct
 	\warning Uses Hunk_TempAlloc() to allocate the output PCX content.
 */
 pcx_t *EncodePCX (const byte *data, int width, int height, int rowbytes,
-                  const byte *palette, bool flip, int *length);
+                  const byte *palette, bool flip, int *length,
+				  memhunk_t *hunk);
 
 /**
 	Load a texture from a PCX file.
@@ -76,6 +79,7 @@ pcx_t *EncodePCX (const byte *data, int width, int height, int rowbytes,
 	\return A pointer to the texture.
 	\warning Uses Hunk_TempAlloc() to allocate the texture.
 */
-struct tex_s *LoadPCX (QFile *f, bool convert, const byte *pal, int load);
+struct tex_s *LoadPCX (QFile *f, bool convert, const byte *pal, int load,
+					   memhunk_t *hunk);
 
 #endif//__QF_pcx_h

@@ -140,19 +140,21 @@ free_progs_mem (progs_t *pr, void *mem)
 #endif
 }
 
-static void
+static memhunk_t *
 init_qf (void)
 {
 	qwaq_cbuf = Cbuf_New (&id_interp);
 
 	Sys_Init ();
+	size_t size = (size_t) 8 * 1024 * 1024;
+	auto hunk = Hunk_Init (Sys_Alloc (size), size);
+	Cache_Init (hunk);
 	COM_ParseConfig (qwaq_cbuf);
 
 	//Cvar_Set (developer, "1");
 
-	//FIXME LoadTGA and friends use the wrong hunk
-	Memory_Init (Sys_Alloc (128 * 1024 * 1024), 128 * 1024 * 1024);
 	PR_Init_Cvars ();
+	return hunk;
 }
 
 static void
@@ -217,6 +219,7 @@ create_progs (qwaq_thread_t *thread)
 	pr->free_progs_mem = free_progs_mem;
 	pr->no_exec_limit = 1;
 	pr->hashctx = &thread->hashctx;
+	pr->pr_hunk = thread->hunk;
 
 	pr_debug = 2;
 	pr_boundscheck = 0;
@@ -457,7 +460,7 @@ main (int argc, char **argv)
 		COM_InitArgv (1, args);
 	}
 
-	init_qf ();
+	auto hunk = init_qf ();
 
 	if (thread_data.a[0]->args.size < 1) {
 		DARRAY_APPEND (&thread_data.a[0]->args, "qwaq-app.dat");
@@ -470,7 +473,7 @@ main (int argc, char **argv)
 		DARRAY_APPEND (&thread_data, thread);
 	}
 
-	main_ind = qwaq_init_threads (&thread_data);
+	main_ind = qwaq_init_threads (&thread_data, hunk);
 	if (main_ind >= 0) {
 		// threads might start new threads before the end is reached
 		size_t      count = thread_data.size;

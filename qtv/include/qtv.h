@@ -54,6 +54,8 @@ extern double realtime;
 
 extern struct cbuf_s *qtv_cbuf;
 extern struct cbuf_args_s *qtv_args;
+typedef struct memhunk_s memhunk_t;
+extern memhunk_t *qtv_hunk;
 extern float sv_timeout;
 
 struct client_s;

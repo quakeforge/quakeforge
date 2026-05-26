@@ -40,6 +40,7 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/wad.h"
+#include "QF/zone.h"
 
 int         wad_numlumps;
 lumpinfo_t *wad_lumps;
@@ -73,15 +74,35 @@ W_CleanupName (const char *in, char *out)
 		out[i] = 0;
 }
 
+typedef struct wad_alloc_s {
+	memhunk_t *hunk;
+	const char *name;
+} wad_alloc_t;
+
+static void *
+wad_allocator (void *data, size_t size)
+{
+	wad_alloc_t *alloc = data;
+	return Hunk_RawAllocName (alloc->hunk, size, alloc->name);
+}
+
 VISIBLE void
-W_LoadWadFile (const char *filename)
+W_LoadWadFile (const char *filename, memhunk_t *hunk)
 {
 	lumpinfo_t *lump_p;
 	wadinfo_t  *header;
 	int         i;
 	int			infotableofs;
 
-	wad_base = QFS_LoadHunkFile (QFS_FOpenFile (filename));
+	wad_alloc_t wad_alloc = {
+		.hunk = hunk,
+		.name = filename,
+	};
+	qfs_allocator_t alloc = {
+		.alloc = wad_allocator,
+		.data = &wad_alloc,
+	};
+	wad_base = QFS_LoadFile (QFS_FOpenFile (filename), &alloc);
 	if (!wad_base)
 		Sys_Error ("W_LoadWadFile: unable to load %s", filename);
 
