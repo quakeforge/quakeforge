@@ -152,7 +152,7 @@ static cvar_t fs_dirconf_cvar = {
 
 VISIBLE const char *qfs_userpath;
 
-VISIBLE int qfs_filesize;
+VISIBLE int __thread qfs_filesize;
 
 typedef struct searchpath_s {
 	char       *filename;
@@ -836,7 +836,7 @@ QFS_WriteFile (const char *filename, const void *data, int len)
 	Qclose (f);
 }
 
-static int_findfile_t found;
+static __thread int_findfile_t found;
 static void
 clear_findfile (void)
 {
@@ -1052,7 +1052,7 @@ QFS_CompressPath (const char *pth)
 	return path;
 }
 
-VISIBLE findfile_t qfs_foundfile;
+VISIBLE findfile_t __thread qfs_foundfile;
 
 /*
 	QFS_FOpenFile

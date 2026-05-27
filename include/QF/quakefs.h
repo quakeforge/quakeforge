@@ -98,13 +98,13 @@ extern const char *qfs_userpath;
 
 	Set by QFS_FOpenFile() and _QFS_FOpenFile().
 */
-extern findfile_t qfs_foundfile;
+extern findfile_t __thread qfs_foundfile;
 
 /**	The size of the file found via QFS_FOpenFile() or _QFS_FOpenFile().
 
 	Set by QFS_FOpenFile() and _QFS_FOpenFile().
 */
-extern int qfs_filesize;
+extern int __thread qfs_filesize;
 
 struct cache_user_s;
 struct dstring_s;
