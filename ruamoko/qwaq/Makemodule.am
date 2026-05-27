@@ -5,6 +5,7 @@ QWAQ_INCS=@QWAQ_INCS@
 noinst_PROGRAMS += @QWAQ_TARGETS@ \
 	ruamoko/qwaq/qwaq-app.dat$(EXEEXT) \
 	ruamoko/qwaq/qwaq-ed.dat$(EXEEXT) \
+	ruamoko/qwaq/qwaq-dbg.dat$(EXEEXT) \
 	ruamoko/qwaq/gcd.dat$(EXEEXT) \
 	ruamoko/qwaq/input-app.dat$(EXEEXT) \
 	ruamoko/qwaq/z-transform.dat$(EXEEXT)
@@ -84,14 +85,16 @@ qwaq_app_dat_src= \
 	ruamoko/qwaq/editor/editor.r	\
 	ruamoko/qwaq/editor/status.r
 
-qwaq_ed_dat_src= \
+qwaq_core_src= \
 	ruamoko/qwaq/gui/editview.r \
 	ruamoko/qwaq/gui/editwindow.r \
 	ruamoko/qwaq/gui/filewindow.r \
 	ruamoko/qwaq/gui/listview.r \
 	ruamoko/qwaq/gui/ui_object.r \
 	ruamoko/qwaq/gui/virtinput.r \
-	ruamoko/qwaq/gui/window.r \
+	ruamoko/qwaq/gui/window.r
+
+qwaq_ed_dat_src= \
 	ruamoko/qwaq/armature.r \
 	ruamoko/qwaq/camera.r \
 	ruamoko/qwaq/leafnode.r \
@@ -100,6 +103,9 @@ qwaq_ed_dat_src= \
 	ruamoko/qwaq/player.r \
 	ruamoko/qwaq/playercam.r \
 	ruamoko/qwaq/qwaq-ed.r
+
+qwaq_dbg_dat_src= \
+	ruamoko/qwaq/qwaq-dbg.r
 
 ruamoko/qwaq/qwaq-ed.o: \
 	ruamoko/qwaq/qwaq-ed.r \
@@ -209,12 +215,21 @@ ruamoko/qwaq/qwaq-app.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_app_obj) $(QFCC_DEP) $(l
 include $(ruamoko_qwaq_qwaq_app_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_app_dep)
 
-ruamoko_qwaq_qwaq_ed_dat_SOURCES=$(qwaq_ed_dat_src)
+qwaq_core_dep=$(call qcautodep,$(qwaq_core_src:.o=.Qo))
+r_depfiles_remade += $(qwaq_core_dep)
+
+ruamoko_qwaq_qwaq_dbg_dat_SOURCES=$(qwaq_core_src) $(qwaq_dbg_dat_src)
+ruamoko_qwaq_qwaq_dbg_obj=$(ruamoko_qwaq_qwaq_dbg_dat_SOURCES:.r=.o)
+ruamoko_qwaq_qwaq_dbg_dep=$(call qcautodep,$(qwaq_dbg_dat_src:.o=.Qo))
+ruamoko/qwaq/qwaq-dbg.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_dbg_obj) $(QFCC_DEP) $(libedit) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_dbg_obj) $(libedit) -lcsqc -lr
+
+ruamoko_qwaq_qwaq_ed_dat_SOURCES=$(qwaq_core_src) $(qwaq_ed_dat_src)
 ruamoko_qwaq_qwaq_ed_obj=$(ruamoko_qwaq_qwaq_ed_dat_SOURCES:.r=.o)
-ruamoko_qwaq_qwaq_ed_dep=$(call qcautodep,$(ruamoko_qwaq_qwaq_ed_dat_SOURCES:.o=.Qo))
+ruamoko_qwaq_qwaq_ed_dep=$(call qcautodep,$(qwaq_ed_dat_src:.o=.Qo))
 ruamoko/qwaq/qwaq-ed.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_ed_obj) $(QFCC_DEP) $(libedit) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_ed_obj) $(libedit) -lcsqc -lr
-include $(ruamoko_qwaq_qwaq_ed_dep) # am--include-marker
+include $(qwaq_core_dep) $(ruamoko_qwaq_qwaq_dbg_dep) $(ruamoko_qwaq_qwaq_ed_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_ed_dep)
 
 ruamoko_qwaq_input_app_dat_SOURCES=$(qwaq_input_app_dat_src)
