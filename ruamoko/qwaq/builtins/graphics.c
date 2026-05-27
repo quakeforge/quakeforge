@@ -65,6 +65,7 @@
 #include "rua_internal.h"
 
 #include "ruamoko/qwaq/qwaq.h"
+#include "ruamoko/qwaq/debugger/debug.h"
 
 CLIENT_PLUGIN_PROTOS
 static plugin_list_t client_plugin_list[] = {
@@ -763,8 +764,19 @@ static const char *bi_dirconf = R"(
 }
 )";
 
+static int
+qwaq_gfx_send_event (void *data, qwaq_event_t *event)
+{
+	return 0;
+}
+
+//FIXME need a better way to get this from one thread to the others
+//static pthread_cond_t gfx_data_cond = PTHREAD_COND_INITIALIZER;
+//static pthread_mutex_t gfx_data_mutex = PTHREAD_MUTEX_INITIALIZER;
+//static qwaq_debug_t *gfx_data;
+
 void
-BI_Graphics_Init (progs_t *pr)
+BI_Graphics_Main_Init (progs_t *pr)
 {
 	graphics_resources_t *res = malloc (sizeof (graphics_resources_t));
 	*res = (graphics_resources_t) {
@@ -800,4 +812,11 @@ BI_Graphics_Init (progs_t *pr)
 
 	res->event_handler_id = IE_Add_Handler (event_handler, res);
 	IE_Set_Focus (res->event_handler_id);
+
+	QWAQ_Debug_SetEvent (pr, qwaq_gfx_send_event, res);
+}
+
+void
+BI_Graphics_Secondary_Init (progs_t *pr)
+{
 }

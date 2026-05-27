@@ -36,6 +36,7 @@
 #include "QF/zone.h"
 
 #include "ruamoko/qwaq/qwaq.h"
+#include "ruamoko/qwaq/debugger/debug.h"
 
 static void
 qwaq_graphics_init (progs_t *pr)
@@ -44,16 +45,19 @@ qwaq_graphics_init (progs_t *pr)
 }
 
 static progsinit_f main_app[] = {
-	qwaq_graphics_init,
-	BI_Graphics_Init,
+	QWAQ_Debug_Init,
 	QWAQ_EditBuffer_Init,
+	qwaq_graphics_init,
+	BI_Graphics_Main_Init,
 	0
 };
-#if 0// FIXME no multi-thread support yet
+
 static progsinit_f secondary_app[] = {
+	QWAQ_EditBuffer_Init,
+	qwaq_graphics_init,
+	BI_Graphics_Secondary_Init,
 	0
 };
-#endif
 
 int
 qwaq_init_threads (qwaq_thread_set_t *thread_data, memhunk_t *main_hunk)
@@ -63,7 +67,7 @@ qwaq_init_threads (qwaq_thread_set_t *thread_data, memhunk_t *main_hunk)
 
 	for (size_t i = 1, thread_ind = 0; i < thread_data->size; i++) {
 		qwaq_thread_t *thread = thread_data->a[i];
-		progsinit_f *app_funcs = 0;//secondary_app;
+		progsinit_f *app_funcs = secondary_app;
 
 		if (thread->args.size && thread->args.a[0]
 			&& strcmp (thread->args.a[0], "--qargs")) {

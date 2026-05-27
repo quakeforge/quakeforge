@@ -164,10 +164,12 @@ qwaq_client_libs= \
 	$(top_builddir)/libs/image/libQFimage.la
 
 qwaq_client_sources= \
+	ruamoko/qwaq/builtins/debug.c \
 	ruamoko/qwaq/builtins/editbuffer.c \
+	ruamoko/qwaq/builtins/graphics.c \
 	ruamoko/qwaq/builtins/main.c \
 	ruamoko/qwaq/builtins/qwaq-graphics.c \
-	ruamoko/qwaq/builtins/graphics.c \
+	ruamoko/qwaq/builtins/threading.c \
 	$(tracy_src) $(tracyvk_src)
 
 qwaq_win_libs= \
