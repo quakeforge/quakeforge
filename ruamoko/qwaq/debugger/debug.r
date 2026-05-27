@@ -3,6 +3,7 @@
 void traceon() = #0;
 void traceoff() = #0;
 
+void qdb_load_progs (string fname) = #0;
 void qdb_set_trace (qdb_target_t target, int state) = #0;
 int qdb_set_breakpoint (qdb_target_t target, unsigned staddr) = #0;
 int qdb_clear_breakpoint (qdb_target_t target, unsigned staddr) = #0;

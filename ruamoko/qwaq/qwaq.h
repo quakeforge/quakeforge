@@ -14,6 +14,7 @@ typedef void (*progsinit_f) (progs_t *pr);
 typedef struct qwaq_thread_s {
 	pthread_t   thread_id;
 	int         return_code;
+	int         thread_index;
 	struct DARRAY_TYPE (const char *) args;
 	sys_printf_t sys_printf;
 	progsinit_f*progsinit;
@@ -27,6 +28,7 @@ typedef struct qwaq_thread_s {
 
 typedef struct qwaq_thread_set_s DARRAY_TYPE(qwaq_thread_t *) qwaq_thread_set_t;
 
+void qwaq_graphics_init (progs_t *pr);
 void BI_Graphics_Main_Init (progs_t *pr);
 void BI_Graphics_Secondary_Init (progs_t *pr);
 void BI_Curses_Init (progs_t *pr);
@@ -34,6 +36,15 @@ void BI_TermInput_Init (progs_t *pr);
 void QWAQ_EditBuffer_Init (progs_t *pr);
 extern struct cbuf_s *qwaq_cbuf;
 extern const char *this_program;
+
+typedef struct qwaq_progs_s {
+	qwaq_thread_t *thread;
+	pr_debug_handler_t debug_handler;
+	void *debug_data;
+	void *data;
+} qwaq_progs_t;
+void start_progs_thread (qwaq_progs_t *qwaq_progs);
+
 qwaq_thread_t *create_thread (void *(*thread_func) (qwaq_thread_t *), void *);
 
 int qwaq_init_threads (qwaq_thread_set_t *thread_data, memhunk_t *main_hunk);

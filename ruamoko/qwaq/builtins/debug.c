@@ -52,6 +52,7 @@
 typedef struct qwaq_target_s {
 	progs_t    *pr;
 	struct qwaq_debug_s *debugger;
+	qwaq_thread_t *thread;
 	int         handle;
 	prdebug_t   event;
 	void       *param;
@@ -64,6 +65,8 @@ typedef struct qwaq_debug_s {
 	int       (*event_handler) (void *data, qwaq_event_t *event);
 	void       *event_data;
 	PR_RESMAP (qwaq_target_t) targets;
+	progsinit_f *init_funcs;
+	qwaq_thread_set_t target_threads;
 } qwaq_debug_t;
 
 #define always_inline inline __attribute__((__always_inline__))
@@ -175,7 +178,8 @@ static void
 qwaq_target_clear (progs_t *pr, void *_res)
 {
 	qwaq_target_t *target = pr->debug_data;
-	if (target) {
+	//FIXME I'm not sure if anything should be done here after all
+	if (0&&target) {
 		target_free (target->debugger, target);
 	}
 }
@@ -199,10 +203,12 @@ qwaq_target_load (progs_t *pr)
 	target->pr = pr;
 	target->debugger = qwaq_debug_data;
 	target->handle = target_index (qwaq_debug_data, target);
+	target->thread = PR_Resources_Find (pr, "qwaq_thread");
 	qwaq_init_cond (&target->run_cond);
 	target->run_command = 0;
 
 	pr->debug_handler = qwaq_debug_handler;
+	free (pr->debug_data);
 	pr->debug_data = target;
 
 	// start tracing immediately so the debugger has a chance to start up
@@ -211,6 +217,65 @@ qwaq_target_load (progs_t *pr)
 	pr->pr_trace_depth = -1;
 
 	return 1;
+}
+
+static void
+pre_debug_handler (prdebug_t debug_event, void *param, void *data)
+{
+	qwaq_progs_t *qp = data;
+	qwaq_debug_t *debug = qp->data;
+
+	qwaq_target_t *target = target_new (debug);
+	target->pr = debug->pr;
+	target->debugger = debug;
+	target->handle = target_index (debug, target);
+	target->thread = qp->thread;
+
+	target->event = debug_event;
+	target->param = param;
+	qwaq_event_t event = {
+		.what = qe_debug_event,
+		.message.pointer_val = target->handle,
+	};
+
+	int ret;
+	do {
+		ret = debug->event_handler (debug->event_data, &event);
+		if (ret == EINVAL) {
+			Sys_Error ("event queue broke");
+		}
+	} while (ret == ETIMEDOUT);
+
+	pthread_exit (nullptr);
+}
+
+static void
+qdb_load_progs (progs_t *pr, void *_res)
+{
+	auto debug = (qwaq_debug_t *) _res;
+	auto fname = P_GSTRING (pr, 0);
+
+	if (!debug->init_funcs) {
+		Sys_Error ("init_funcs not set");
+	}
+
+	qwaq_thread_t *thread = malloc (sizeof (*thread));
+	*thread = (qwaq_thread_t) {
+		.thread_index = debug->target_threads.size,
+		.args = DARRAY_STATIC_INIT (8),
+	};
+	DARRAY_APPEND (&thread->args, fname);
+	thread->progsinit = debug->init_funcs;
+
+	DARRAY_APPEND (&debug->target_threads, thread);
+	qwaq_progs_t *qp = malloc (sizeof (*qp));
+	*qp = (qwaq_progs_t) {
+		.thread = thread,
+		.debug_handler = pre_debug_handler,
+		.debug_data = qp,
+		.data = debug,
+	};
+	start_progs_thread (qp);
 }
 
 static void
@@ -694,6 +759,7 @@ qdb_get_frame_addr (progs_t *pr, void *_res)
 #define bi(x,np,params...) {#x, x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
+	bi(qdb_load_progs,           1, p(string)),
 	bi(qdb_set_trace,            2, p(int), p(int)),
 	bi(qdb_set_breakpoint,       2, p(int), p(uint)),
 	bi(qdb_clear_breakpoint,     2, p(int), p(uint)),
@@ -723,6 +789,20 @@ static builtin_t builtins[] = {
 };
 
 void
+QWAQ_Debug_SetFuncs (progs_t *pr, progsinit_f *funcs)
+{
+	auto debug = (qwaq_debug_t *) PR_Resources_Find (pr, "qwaq-debug");
+	int count = 0;
+	for (auto f = funcs; *f; f++, count++) continue;
+	debug->init_funcs = malloc (sizeof (progsinit_f[count + 2]));
+	for (int i = 0; i < count; i++) {
+		debug->init_funcs[i] = funcs[i];
+	}
+	debug->init_funcs[count] = QWAQ_DebugTarget_Init;
+	debug->init_funcs[count + 1] = nullptr;
+}
+
+void
 QWAQ_Debug_SetEvent (progs_t *pr, qwaq_debug_handler_f send, void *data)
 {
 	auto debug = (qwaq_debug_t *) PR_Resources_Find (pr, "qwaq-debug");
@@ -733,9 +813,13 @@ QWAQ_Debug_SetEvent (progs_t *pr, qwaq_debug_handler_f send, void *data)
 void
 QWAQ_Debug_Init (progs_t *pr)
 {
-	qwaq_debug_t *debug = calloc (sizeof (*debug), 1);
+	qwaq_debug_t *debug = malloc (sizeof (*debug));
 
-	debug->pr = pr;
+	*debug = (qwaq_debug_t) {
+		.pr = pr,
+		.target_threads = DARRAY_STATIC_INIT (4),
+	};
+	DARRAY_APPEND (&debug->target_threads, nullptr);
 
 	PR_AddLoadFunc (pr, qwaq_debug_load);
 	PR_Resources_Register (pr, "qwaq-debug", debug, qwaq_debug_clear,

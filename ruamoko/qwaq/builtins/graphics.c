@@ -65,7 +65,9 @@
 #include "rua_internal.h"
 
 #include "ruamoko/qwaq/qwaq.h"
+#include "ruamoko/qwaq/threading.h"
 #include "ruamoko/qwaq/debugger/debug.h"
+#include "ruamoko/qwaq/ui/event.h"
 
 CLIENT_PLUGIN_PROTOS
 static plugin_list_t client_plugin_list[] = {
@@ -112,6 +114,10 @@ typedef struct graphics_resources_s {
 	uint32_t    canvas;
 
 	qwaq_ecs_t  ecs;
+
+	struct graphics_resources_s *debug;
+	rwcond_t    pipe_cond;
+	RING_BUFFER (int, 16) pipe;
 } graphics_resources_t;
 
 static void
@@ -400,6 +406,36 @@ transform_bounds (const mat4f_t mat, ent_aabb_t bounds)
 	};
 }
 
+static void
+gfx_check_pipe (graphics_resources_t *res)
+{
+	int ret = 0;
+	int handle = 0;
+	struct timespec timeout;
+	qwaq_init_timeout (&timeout, 50 * 1000);
+
+	pthread_mutex_lock (&res->pipe_cond.mut);
+	while (RB_DATA_AVAILABLE (res->pipe) < 1 && ret == 0) {
+		ret = pthread_cond_timedwait (&res->pipe_cond.rcond,
+									  &res->pipe_cond.mut, &timeout);
+	}
+	if (ret == 0) {
+		RB_READ_DATA (res->pipe, &handle, 1);
+	}
+	pthread_cond_broadcast (&res->pipe_cond.wcond);
+	pthread_mutex_unlock (&res->pipe_cond.mut);
+
+	if (ret == 0) {
+		IE_event_t event = {
+			.type = ie_message,
+			.message = {
+				.code = 0,
+				.int_val = handle,
+			}
+		};
+		IE_Send_Event (&event);
+	}
+}
 
 bi(refresh)
 {
@@ -409,6 +445,9 @@ bi(refresh)
 	res->con_frametime = res->con_realtime - res->old_conrealtime;
 	res->old_conrealtime = res->con_realtime;
 	IN_ProcessEvents ();
+	if (!res->debug) {
+		gfx_check_pipe (res);
+	}
 	//GIB_Thread_Execute ();
 	Cbuf_Execute_Stack (qwaq_cbuf);
 	auto scene = Scene_GetScene (pr, P_ULONG (pr, 0));
@@ -767,13 +806,27 @@ static const char *bi_dirconf = R"(
 static int
 qwaq_gfx_send_event (void *data, qwaq_event_t *event)
 {
+	graphics_resources_t *res = data;
+	pthread_mutex_lock (&res->pipe_cond.mut);
+	while (RB_SPACE_AVAILABLE (res->pipe) < 1) {
+		pthread_cond_wait (&res->pipe_cond.wcond,
+						   &res->pipe_cond.mut);
+	}
+	RB_WRITE_DATA (res->pipe, &event->message.int_val, 1);
+	pthread_cond_broadcast (&res->pipe_cond.rcond);
+	pthread_mutex_unlock (&res->pipe_cond.mut);
 	return 0;
 }
 
 //FIXME need a better way to get this from one thread to the others
-//static pthread_cond_t gfx_data_cond = PTHREAD_COND_INITIALIZER;
-//static pthread_mutex_t gfx_data_mutex = PTHREAD_MUTEX_INITIALIZER;
-//static qwaq_debug_t *gfx_data;
+static graphics_resources_t *gfx_data;
+
+static progsinit_f secondary_init[] = {
+	QWAQ_EditBuffer_Init,
+	qwaq_graphics_init,
+	BI_Graphics_Secondary_Init,
+	0
+};
 
 void
 BI_Graphics_Main_Init (progs_t *pr)
@@ -813,10 +866,48 @@ BI_Graphics_Main_Init (progs_t *pr)
 	res->event_handler_id = IE_Add_Handler (event_handler, res);
 	IE_Set_Focus (res->event_handler_id);
 
+	qwaq_init_cond (&res->pipe_cond);
+
+	QWAQ_Debug_SetFuncs (pr, secondary_init);
 	QWAQ_Debug_SetEvent (pr, qwaq_gfx_send_event, res);
+
+	gfx_data = res;
+}
+
+static void
+secondary_destroy (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	graphics_resources_t *res = _res;
+
+	free (res);
+}
+
+static void
+secondary_clear (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
 }
 
 void
 BI_Graphics_Secondary_Init (progs_t *pr)
 {
+	graphics_resources_t *res = malloc (sizeof (graphics_resources_t));
+	*res = (graphics_resources_t) {
+		.pr = pr,
+	};
+
+	PR_Resources_Register (pr, "Graphics", res,
+						   secondary_clear, secondary_destroy);
+	PR_RegisterBuiltins (pr, builtins, res);
+
+	qwaq_thread_t *thread = PR_Resources_Find (pr, "qwaq_thread");
+
+	Sys_RegisterShutdown (BI_shutdown, pr);
+
+	R_Progs_Init (pr);
+	RUA_Game_Init (pr, thread->rua_security);
+	S_Progs_Init (pr);
+
+	res->debug = gfx_data;
 }

@@ -38,7 +38,7 @@
 #include "ruamoko/qwaq/qwaq.h"
 #include "ruamoko/qwaq/debugger/debug.h"
 
-static void
+void
 qwaq_graphics_init (progs_t *pr)
 {
 	pr->zone_size = 128 * 1024 * 1024;
@@ -49,15 +49,10 @@ static progsinit_f main_app[] = {
 	QWAQ_EditBuffer_Init,
 	qwaq_graphics_init,
 	BI_Graphics_Main_Init,
-	0
+	nullptr
 };
 
-static progsinit_f secondary_app[] = {
-	QWAQ_EditBuffer_Init,
-	qwaq_graphics_init,
-	BI_Graphics_Secondary_Init,
-	0
-};
+static progsinit_f secondary_app[] = { nullptr };
 
 int
 qwaq_init_threads (qwaq_thread_set_t *thread_data, memhunk_t *main_hunk)

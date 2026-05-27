@@ -1,7 +1,6 @@
 #ifndef __qwaq_debugger_debug_h
 #define __qwaq_debugger_debug_h
 
-#include "ruamoko/qwaq/ui/event.h"
 
 typedef enum {
 	qe_debug_event = 0x0100,
@@ -72,6 +71,7 @@ typedef struct qdb_auxfunction_s {
 
 typedef @handle qdb_target_s qdb_target_t;
 
+void qdb_load_progs (string fname);
 void qdb_set_trace (qdb_target_t target, int state);
 int qdb_set_breakpoint (qdb_target_t target, unsigned staddr);
 int qdb_clear_breakpoint (qdb_target_t target, unsigned staddr);
@@ -108,6 +108,7 @@ void traceoff();
 typedef struct qwaq_event_s qwaq_event_t;
 typedef int (*qwaq_debug_handler_f) (void *data, qwaq_event_t *event);
 
+void QWAQ_Debug_SetFuncs (progs_t *pr, progsinit_f *funcs);
 void QWAQ_Debug_SetEvent (progs_t *pr, qwaq_debug_handler_f send,
 						  void *data);
 void QWAQ_Debug_Init (progs_t *pr);

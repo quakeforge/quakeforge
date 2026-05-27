@@ -41,6 +41,7 @@
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/gib.h"
 #include "QF/hash.h"
 #include "QF/idparse.h"
@@ -261,7 +262,7 @@ load_progs (progs_t *pr, const char *name)
 }
 
 static void
-spawn_progs (qwaq_thread_t *thread)
+spawn_progs (qwaq_progs_t *qp)
 {
 	dfunction_t *dfunc;
 	const char *name = 0;
@@ -269,14 +270,17 @@ spawn_progs (qwaq_thread_t *thread)
 	int         pr_argc = 1, i;
 	progs_t    *pr;
 
+	auto thread = qp->thread;
 	thread->main_func = 0;
 	pr = thread->pr = create_progs (thread);
+	pr->debug_handler = qp->debug_handler;
+	pr->debug_data = qp->debug_data;
 	if (thread->args.size) {
 		name = thread->args.a[0];
 	}
 
 	if (!load_progs (pr, name)) {
-		Sys_Error ("couldn't load %s", name);
+		PR_Error (pr, "couldn't load %s", name);
 	}
 
 	if ((dfunc = PR_FindFunction (pr, ".main"))
@@ -314,9 +318,10 @@ spawn_progs (qwaq_thread_t *thread)
 static void *
 run_progs (void *data)
 {
-	__auto_type thread = (qwaq_thread_t *) data;
+	qwaq_progs_t *qp = data;
+	auto thread = qp->thread;
 
-	spawn_progs (thread);
+	spawn_progs (qp);
 	//Sys_Printf ("starting thread for %s\n", thread->args.a[0]);
 
 	PR_ExecuteProgram (thread->pr, thread->main_func);
@@ -335,10 +340,11 @@ run_progs (void *data)
 	return thread;
 }
 
-static void
-start_progs_thread (qwaq_thread_t *thread)
+void
+start_progs_thread (qwaq_progs_t *qwaq_progs)
 {
-	pthread_create (&thread->thread_id, 0, run_progs, thread);
+	auto thread = qwaq_progs->thread;
+	pthread_create (&thread->thread_id, 0, run_progs, qwaq_progs);
 }
 
 qwaq_thread_t *
@@ -479,7 +485,10 @@ main (int argc, char **argv)
 		size_t      count = thread_data.size;
 		for (size_t i = 0; i < count; i++) {
 			if (thread_data.a[i]->progsinit) {
-				start_progs_thread (thread_data.a[i]);
+				qwaq_progs_t qp = {
+					.thread = thread_data.a[i],
+				};
+				start_progs_thread (&qp);
 			}
 		}
 		pthread_join (thread_data.a[main_ind]->thread_id, 0);

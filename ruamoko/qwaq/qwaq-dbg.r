@@ -8,14 +8,16 @@
 #include <scene.h>
 #include <QF/keys.h>
 
+#include "debugger/debug.h"
+
 #include "gui/editwindow.h"
 #include "gui/filewindow.h"
 #include "gui/listview.h"
 #include "gui/virtinput.h"
 #include "gui/window.h"
 
-void traceon() = #0;
-void traceoff() = #0;
+void traceon();
+void traceoff();
 void printf (string fmt, ...) = #0;
 
 static string render_graph_cfg =
@@ -213,7 +215,8 @@ hs (imui_ctx_t ctx)
 {
 	if (forSave) {
 	} else {
-		[EditWindow openFile:path ctx:imui_ctx];
+		//[EditWindow openFile:path ctx:imui_ctx];
+		qdb_load_progs (path);
 		[file_window close];
 		file_window = nil;
 	}
@@ -244,6 +247,18 @@ static int
 event_handler (IE_event_t *event, void *data)
 {
 	switch (event.type) {
+	case ie_message:
+		printf ("message: %d %d\n", event.message.code, event.message.int_val);
+		auto target = (qdb_target_t) event.message.int_val;
+		qdb_event_t dbg_event;
+		if (qdb_get_event (target, &dbg_event)) {
+			printf ("    %d %d\n", dbg_event.what, dbg_event.exit_code);
+			if (dbg_event.what == prd_error
+				|| dbg_event.what == prd_runerror) {
+				printf ("    %s\n", dbg_event.message);
+			}
+		}
+		return event.message.code == 0;
 	case ie_mouse:
 		return IMUI_ProcessEvent (imui_ctx, event);
 	default:

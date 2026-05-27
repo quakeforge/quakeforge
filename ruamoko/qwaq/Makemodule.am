@@ -105,6 +105,7 @@ qwaq_ed_dat_src= \
 	ruamoko/qwaq/qwaq-ed.r
 
 qwaq_dbg_dat_src= \
+	ruamoko/qwaq/debugger/debug.r	\
 	ruamoko/qwaq/qwaq-dbg.r
 
 ruamoko/qwaq/qwaq-ed.o: \
