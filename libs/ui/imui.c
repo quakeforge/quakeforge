@@ -535,10 +535,10 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 			ctx->mouse_released = (old ^ new) & ~new;
 			ctx->mouse_buttons = m->buttons;
 			if (ctx->mouse_released & 0x18) {
-				ctx->mouse_scroll.x += ((ctx->mouse_released & 0x18) >> 2) - 3;
+				ctx->mouse_scroll.y += ((ctx->mouse_released & 0x18) >> 2) - 3;
 			}
 			if (ctx->mouse_released & 0x60) {
-				ctx->mouse_scroll.y += ((ctx->mouse_released & 0x60) >> 4) - 3;
+				ctx->mouse_scroll.x += ((ctx->mouse_released & 0x60) >> 4) - 3;
 			}
 		}
 		if (ie_event->mouse.type == ie_mousedown) {
