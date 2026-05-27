@@ -101,6 +101,7 @@ struct imui_ctx_s {
 	view_t      root_view;
 	view_t      current_parent;
 	struct DARRAY_TYPE(view_t) parent_stack;
+	struct DARRAY_TYPE(imui_state_t *) state_stack;
 	struct DARRAY_TYPE(imui_state_t *) windows;
 	struct DARRAY_TYPE(imui_state_t *) links;
 	struct DARRAY_TYPE(imui_state_t *) scrollers;
@@ -301,6 +302,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.shaper = Shaper_New (),
 		.root_view = Canvas_GetRootView (canvas_sys, canvas),
 		.parent_stack = DARRAY_STATIC_INIT (8),
+		.state_stack = DARRAY_STATIC_INIT (8),
 		.windows = DARRAY_STATIC_INIT (8),
 		.links = DARRAY_STATIC_INIT (8),
 		.scrollers = DARRAY_STATIC_INIT (8),
@@ -380,7 +382,30 @@ clear_items (imui_ctx_t *ctx)
 		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
 		View_Delete (window);
 	}
+	if (ctx->parent_stack.size) {
+		for (size_t i = 0; i < ctx->parent_stack.size; i++) {
+			uint32_t parent = ctx->parent_stack.a[i].id;
+			const char *name = nullptr;
+			if (Ent_HasComponent (parent, ecs_name, ctx->csys.reg)) {
+				name = *(char **) Ent_GetComponent (parent, ecs_name,
+													ctx->csys.reg);
+			}
+			Sys_Printf ("%s\n", name);
+		}
+		Sys_Error ("parent_stack not empty %zd", ctx->parent_stack.size);
+	}
+	if (ctx->state_stack.size) {
+		for (size_t i = 0; i < ctx->state_stack.size; i++) {
+			auto state = ctx->state_stack.a[i];
+			Sys_Printf ("%s\n", state ? state->label : "--null state--");
+		}
+		Sys_Error ("state_stack not empty %zd", ctx->state_stack.size);
+	}
+	if (ctx->style_stack.size) {
+		Sys_Error ("style_stack not empty %zd", ctx->style_stack.size);
+	}
 	DARRAY_RESIZE (&ctx->parent_stack, 0);
+	DARRAY_RESIZE (&ctx->state_stack, 0);
 	DARRAY_RESIZE (&ctx->windows, 0);
 	DARRAY_RESIZE (&ctx->links, 0);
 	DARRAY_RESIZE (&ctx->scrollers, 0);
@@ -405,6 +430,7 @@ IMUI_DestroyContext (imui_ctx_t *ctx)
 	}
 
 	DARRAY_CLEAR (&ctx->parent_stack);
+	DARRAY_CLEAR (&ctx->state_stack);
 	DARRAY_CLEAR (&ctx->windows);
 	DARRAY_CLEAR (&ctx->links);
 	DARRAY_CLEAR (&ctx->scrollers);
@@ -1337,6 +1363,7 @@ IMUI_SetDragId (imui_ctx_t *ctx, uint32_t drag_id)
 int
 IMUI_PushLayout (imui_ctx_t *ctx, bool vertical)
 {
+	DARRAY_APPEND (&ctx->state_stack, ctx->current_state);
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
 	auto view = View_New (ctx->vsys, ctx->current_parent);
 	auto pcont = View_Control (ctx->current_parent);
@@ -1370,6 +1397,7 @@ void
 IMUI_PopLayout (imui_ctx_t *ctx)
 {
 	ctx->current_parent = DARRAY_REMOVE (&ctx->parent_stack);
+	ctx->current_state = DARRAY_REMOVE (&ctx->state_stack);
 }
 
 void
@@ -1999,6 +2027,7 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 	auto panel_view = Canvas_GetRootView (ctx->csys, canvas);
 
 	auto panel_name = IMUI_PanelId (ctx, panel);
+	DARRAY_APPEND (&ctx->state_stack, ctx->current_state);
 	auto state = imui_get_state (ctx, panel_name, panel_view.id);
 	panel->state = state->self;
 	state->window = panel->self;
@@ -2123,6 +2152,7 @@ IMUI_ExtendPanel (imui_ctx_t *ctx, const char *panel_name)
 	if (!state || !ECS_EntValid (state->entity, ctx->vsys.reg)) {
 		return 1;
 	}
+	DARRAY_APPEND (&ctx->state_stack, ctx->current_state);
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
 	ctx->current_parent = View_FromEntity (ctx->vsys, state->content);
 	return 0;
@@ -2311,6 +2341,7 @@ IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name)
 	*Canvas_DrawGroup (ctx->csys, canvas) = panel->draw_group;
 	auto scroll_box = Canvas_GetRootView (ctx->csys, canvas);
 
+	DARRAY_APPEND (&ctx->state_stack, ctx->current_state);
 	auto state = imui_get_state (ctx, name, scroll_box.id);
 	update_hot_active (ctx, state);
 
@@ -2461,17 +2492,10 @@ IMUI_StartScroller (imui_ctx_t *ctx)
 	if (Ent_HasComponent (parent, ecs_name, ctx->csys.reg)) {
 		name = *(char **) Ent_GetComponent (parent, ecs_name, ctx->csys.reg);
 	}
+	DARRAY_APPEND (&ctx->state_stack, ctx->current_state);
 	auto state = imui_get_state (ctx, va ("%s#content", name), anchor_view.id);
 	update_hot_active (ctx, state);
 	DARRAY_APPEND (&ctx->scrollers, state);
-
-	if (ctx->scroll == state->entity) {
-		state->pos = VP_add (state->pos,
-							 VP_mul (state->scroll_scale,
-									 ctx->mouse_scroll));
-		state->pos.x = bound (0, state->pos.x, state->len.x);
-		state->pos.y = bound (0, state->pos.y, state->len.y);
-	}
 
 	// Position the content based on the scroll inputs: pos is the content's
 	// pixel in the top-left corner of the scroll box
@@ -2486,6 +2510,19 @@ void
 IMUI_EndScroller (imui_ctx_t *ctx)
 {
 	IMUI_PopLayout (ctx);
+	auto state = ctx->current_state;
+	auto name = state->label;
+	auto content = IMUI_FindState (ctx, va ("%s#content", name));
+
+	if (ctx->scroll == content->entity) {
+		auto slen = state->len;
+		auto clen = content->len;
+		auto max = VP_sub (clen, slen);
+		auto delta = VP_mul (content->scroll_scale, ctx->mouse_scroll);
+		content->pos = VP_add (content->pos, delta);
+		content->pos.x = bound (0, content->pos.x, max.x);
+		content->pos.y = bound (0, content->pos.y, max.y);
+	}
 }
 
 void
