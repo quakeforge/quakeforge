@@ -224,6 +224,7 @@ ruamoko_qwaq_qwaq_dbg_obj=$(ruamoko_qwaq_qwaq_dbg_dat_SOURCES:.r=.o)
 ruamoko_qwaq_qwaq_dbg_dep=$(call qcautodep,$(qwaq_dbg_dat_src:.o=.Qo))
 ruamoko/qwaq/qwaq-dbg.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_dbg_obj) $(QFCC_DEP) $(libedit) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_dbg_obj) $(libedit) -lcsqc -lr
+r_depfiles_remade += $(ruamoko_qwaq_qwaq_dbg_dep)
 
 ruamoko_qwaq_qwaq_ed_dat_SOURCES=$(qwaq_core_src) $(qwaq_ed_dat_src)
 ruamoko_qwaq_qwaq_ed_obj=$(ruamoko_qwaq_qwaq_ed_dat_SOURCES:.r=.o)
