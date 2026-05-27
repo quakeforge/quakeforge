@@ -609,14 +609,14 @@ Sys_Error (const char *error, ...)
 	}
 	in_sys_error = 1;
 
-	dstring_t *bt = dstring_newstr ();
-	BT_backtrace (bt, 1);
-	sys_err_printf ("%s\n", bt->str);
-	dstring_delete (bt);
-
+	dstring_t *msg = dstring_newstr ();
 	va_start (args, error);
-	sys_err_printf_function (error, args);
+	dvsprintf (msg, error, args);
 	va_end (args);
+	dstring_appendstr (msg, "\n");
+	BT_backtrace (msg, 1);
+
+	sys_err_printf ("%s\n", msg->str);
 
 	if (error_handler) {
 		error_handler->func (error_handler->data);
@@ -627,10 +627,11 @@ Sys_Error (const char *error, ...)
 	if (sys_err_printf_function != Sys_ErrPrintf) {
 		// print the message again using the default error printer to increase
 		// the chances of the error being seen.
-		va_start (args, error);
-		Sys_ErrPrintf (error, args);
-		va_end (args);
+		sys_err_printf_function = Sys_ErrPrintf;
+		sys_err_printf ("%s\n", msg->str);
 	}
+
+	dstring_delete (msg);
 
 	exit (1);
 }
