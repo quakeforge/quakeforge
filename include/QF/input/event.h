@@ -126,6 +126,16 @@ typedef struct {
 	int         devid;
 } IE_device_event_t;
 
+typedef struct {
+	int         code;
+	union {
+		int     int_val;
+		float   float_val;
+		double  double_val;
+		long    long_val;
+	};
+} IE_message_event_t;
+
 #define IE_EVENT(event) ie_##event,
 typedef enum {
 #include "QF/input/event_names.h"
@@ -160,6 +170,7 @@ typedef struct IE_event_s {
 		IE_axis_event_t axis;
 		IE_button_event_t button;
 		IE_device_event_t device;
+		IE_message_event_t message;
 	};
 } IE_event_t;
 #ifndef __QFCC__

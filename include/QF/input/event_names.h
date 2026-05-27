@@ -41,5 +41,6 @@ IE_EVENT (mouse)
 IE_EVENT (key)
 IE_EVENT (axis)
 IE_EVENT (button)
+IE_EVENT (message)
 
 #undef IE_EVENT
