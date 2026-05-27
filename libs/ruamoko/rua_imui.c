@@ -116,6 +116,8 @@ bi_imui_destroy (progs_t *pr, void *_res)
 	free (res);
 }
 
+#define VP_ivec2(x) (pr_ivec2_t) { VP_exp (x) }
+
 #define bi(x) static void bi_##x (progs_t *pr, void *_res)
 
 bi(IMUI_NewWindow)
@@ -425,7 +427,7 @@ bi(IMUI_State_GetPos)
 		state = IMUI_CurrentState (bi_ctx->imui_ctx);
 	}
 	if (state) {
-		R_var (pr, ivec2) = (pr_ivec2_t) { state->pos.x, state->pos.y };
+		R_var (pr, ivec2) = VP_ivec2 (state->pos);
 	}
 }
 
@@ -442,7 +444,7 @@ bi(IMUI_State_GetLen)
 		state = IMUI_CurrentState (bi_ctx->imui_ctx);
 	}
 	if (state) {
-		R_var (pr, ivec2) = (pr_ivec2_t) { state->len.x, state->len.y };
+		R_var (pr, ivec2) = VP_ivec2 (state->len);
 	}
 }
 
@@ -617,7 +619,7 @@ bi (IMUI_TextSize)
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	const char *str = P_GSTRING (pr, 1);
 	auto size = IMUI_TextSize (bi_ctx->imui_ctx, str);
-	R_var (pr, ivec2) = (pr_ivec2_t) { size.x, size.y };
+	R_var (pr, ivec2) = VP_ivec2 (size);
 }
 
 bi (IMUI_ActiveItem)
@@ -772,7 +774,7 @@ bi (IMUI_Dragable)
 	auto delta = IMUI_Dragable (bi_ctx->imui_ctx, P_INT (pr, 1), P_INT (pr, 2),
 								P_INT (pr, 3), P_INT (pr, 4),
 								P_GSTRING (pr, 5));
-	R_var (pr, ivec2) = (pr_ivec2_t) { delta.x, delta.y };
+	R_var (pr, ivec2) = VP_ivec2 (delta);
 }
 
 bi (IMUI_StartPanel)
