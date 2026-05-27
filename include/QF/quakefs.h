@@ -318,7 +318,7 @@ typedef struct qfs_substr_s {
 	\param in		The path from which the name will be extracted.
 	\return			Start and length of the extracted name
 */
-qfs_substr_t QFS_FileBase (const char *in);
+qfs_substr_t QFS_FileBase (const char *in) __attribute__((pure));
 
 /**	Set the file extention if not already present.
 
