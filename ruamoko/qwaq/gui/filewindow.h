@@ -2,6 +2,7 @@
 #define __qwaq_gui_filewindow_h
 
 #include <dirent.h>
+#include <Array.h>
 
 #include "window.h"
 #include "listview.h"
@@ -20,8 +21,6 @@
 -(bool)hidden;
 -(bool)match:(string)wildcard;
 @end
-
-@class Array;
 
 @interface Array (FileItem)
 -sort_file_items;
