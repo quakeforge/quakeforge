@@ -674,6 +674,7 @@ center (uint v, uint len)
 		}
 		auto sblen = IMUI_State_GetLen (IMUI_context, nil);
 		UI_Scroller () {
+			IMUI_State_SetScrollScale (IMUI_context, nil, { 0, X_size.y });
 			scroll_pos = IMUI_State_GetPos (IMUI_context, nil);
 			if (io.active == io.self || io.hot == io.self) {
 				[self handleMouse:io];
