@@ -143,6 +143,7 @@ typedef void (*view_move_f) (view_t view, view_pos_t abs);
 
 VIEWINLINE view_pos_t VP_add (view_pos_t a, view_pos_t b);
 VIEWINLINE view_pos_t VP_sub (view_pos_t a, view_pos_t b);
+VIEWINLINE view_pos_t VP_mul (view_pos_t a, view_pos_t b);
 #define VP_exp(a) a.x, a.y
 
 VIEWINLINE view_t View_FromEntity (ecs_system_t viewsys, uint32_t ent);
@@ -207,6 +208,15 @@ VP_sub (view_pos_t a, view_pos_t b)
 	return (view_pos_t) {
 		.x = a.x - b.x,
 		.y = a.y - b.y,
+	};
+}
+
+VIEWINLINE view_pos_t
+VP_mul (view_pos_t a, view_pos_t b)
+{
+	return (view_pos_t) {
+		.x = a.x * b.x,
+		.y = a.y * b.y,
 	};
 }
 
