@@ -122,6 +122,7 @@ struct imui_ctx_s {
 	view_pos_t  hot_position;
 	view_pos_t  active_position;
 	view_pos_t  mouse_active;
+	view_pos_t  mouse_scroll;
 	uint32_t    mouse_pressed;
 	uint32_t    mouse_released;
 	uint32_t    mouse_buttons;
@@ -533,6 +534,12 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 			ctx->mouse_pressed = (old ^ new) & new;
 			ctx->mouse_released = (old ^ new) & ~new;
 			ctx->mouse_buttons = m->buttons;
+			if (ctx->mouse_released & 0x18) {
+				ctx->mouse_scroll.x += ((ctx->mouse_released & 0x18) >> 2) - 3;
+			}
+			if (ctx->mouse_released & 0x60) {
+				ctx->mouse_scroll.y += ((ctx->mouse_released & 0x60) >> 4) - 3;
+			}
 		}
 		if (ie_event->mouse.type == ie_mousedown) {
 			while (ctx->modal_stack.size) {
@@ -599,6 +606,7 @@ IMUI_GetIO (imui_ctx_t *ctx)
 		.mouse = ctx->mouse_position,
 		.mouse_hot = VP_sub (ctx->mouse_position, ctx->hot_position),
 		.mouse_active = VP_sub (ctx->mouse_position, ctx->active_position),
+		.scroll = ctx->mouse_scroll,
 		.buttons = ctx->mouse_buttons,
 		.pressed = ctx->mouse_pressed,
 		.released = ctx->mouse_released,
@@ -1267,6 +1275,7 @@ IMUI_Draw (imui_ctx_t *ctx)
 	}
 	ctx->mouse_pressed = 0;
 	ctx->mouse_released = 0;
+	ctx->mouse_scroll = (view_pos_t) {};
 	sort_windows (ctx);
 	auto href = View_GetRef (ctx->root_view);
 	set_hierarchy_tree_mode (ctx, href, false);

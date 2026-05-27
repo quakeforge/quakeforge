@@ -50,6 +50,7 @@ typedef struct imui_io_s {
 	ivec2       mouse;
 	ivec2       mouse_hot;
 	ivec2       mouse_active;
+	ivec2       scroll;
 	uint        buttons;
 	uint        pressed;
 	uint        released;

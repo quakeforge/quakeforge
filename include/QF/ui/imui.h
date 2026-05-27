@@ -133,6 +133,7 @@ typedef struct imui_io_s {
 	view_pos_t  mouse;
 	view_pos_t  mouse_hot;
 	view_pos_t  mouse_active;
+	view_pos_t  scroll;
 	uint32_t    buttons;
 	uint32_t    pressed;
 	uint32_t    released;
