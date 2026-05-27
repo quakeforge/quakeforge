@@ -1336,6 +1336,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 #define PR_AUTOBUILTIN	(PR_RANGE_AUTO << PR_RANGE_SHIFT)
 
 typedef void (*builtin_proc) (progs_t *pr, void *data);
+typedef void (*pr_debug_handler_t) (prdebug_t event, void *param, void *data);
 
 /** Create a static array of these and pass the array to PR_RegisterBuiltins()
 	to register the module's QC builtin functions.
@@ -2202,7 +2203,7 @@ struct progs_s {
 	/// \name debugging
 	///@{
 	struct prdeb_resources_s *pr_debug_resources;
-	void      (*debug_handler) (prdebug_t event, void *param, void *data);
+	pr_debug_handler_t debug_handler;
 	void       *debug_data;
 	pr_type_t  *watch;
 	int         wp_conditional;
