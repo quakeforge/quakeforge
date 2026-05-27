@@ -162,7 +162,7 @@ main ()
 	//}
 	if ((!(uvec2)planetary.bodies) || (!(uvec2)planetary.atmospheres)) {
 		frag_color = color;
-		frag_color = vec4(1,0,1,1);
+		//frag_color = vec4(1,0,1,1);
 		return;
 	}
 
