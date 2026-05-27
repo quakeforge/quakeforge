@@ -395,6 +395,23 @@ bi(IMUI_State_SetLen)
 	}
 }
 
+bi(IMUI_State_SetScrollScale)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	auto label = P_GSTRING (pr, 1);
+	imui_state_t *state;
+	if (label && *label) {
+		state = IMUI_FindState (bi_ctx->imui_ctx, label);
+	} else {
+		state = IMUI_CurrentState (bi_ctx->imui_ctx);
+	}
+	if (state) {
+		state->scroll_scale = (view_pos_t) { VEC2_EXP (P_var (pr, 2, ivec2)) };
+	}
+}
+
 bi(IMUI_State_GetPos)
 {
 	qfZoneScoped (true);
@@ -967,6 +984,7 @@ static builtin_t builtins[] = {
 
 	bi(IMUI_State_SetPos,       3, p(int), p(string), p(ivec2)),
 	bi(IMUI_State_SetLen,       3, p(int), p(string), p(ivec2)),
+	bi(IMUI_State_SetScrollScale, 3, p(int), p(string), p(ivec2)),
 	bi(IMUI_State_GetPos,       2, p(int), p(string)),
 	bi(IMUI_State_GetLen,       2, p(int), p(string)),
 

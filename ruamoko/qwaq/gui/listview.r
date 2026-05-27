@@ -127,11 +127,12 @@ void printf(string, ...);
 	UI_ScrollBox(name + "##ListView:scroller") {
 		auto sblen = IMUI_State_GetLen (IMUI_context, nil);
 		UI_Scroller () {
+			int height = IMUI_TextSize (IMUI_context, "X").y;
+			IMUI_State_SetScrollScale (IMUI_context, nil, { 0, height });
 			uint count = [items count];
 			if (count) {
 				ivec2 pos = IMUI_State_GetPos (IMUI_context, nil);
 				ivec2 len = IMUI_State_GetLen (IMUI_context, nil);
-				int height = IMUI_TextSize (IMUI_context, "X").y;
 				len.y = count * height;
 				IMUI_State_SetLen (IMUI_context, nil, len);
 				ivec2 delta = { 0, -pos.y % height };

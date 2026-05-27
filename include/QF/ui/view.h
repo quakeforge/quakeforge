@@ -91,6 +91,7 @@ typedef struct viewcont_s {
 	unsigned vertical:1;		///< true: layout is vertical, else horizontal
 	unsigned active:1;			///< can respond to the mouse
 	unsigned drop_target:1;		///< target for drag and drop
+	unsigned scroll:1;			///< can respond to the scroll wheel
 	unsigned focus:1;			///< can respond to the keyboard
 	unsigned is_link:1;			///< has non-root reference component
 } viewcont_t;

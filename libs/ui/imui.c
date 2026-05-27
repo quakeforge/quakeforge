@@ -119,6 +119,7 @@ struct imui_ctx_s {
 	uint32_t    hot;
 	uint32_t    active;
 	uint32_t    focused;
+	uint32_t    scroll;
 	view_pos_t  hot_position;
 	view_pos_t  active_position;
 	view_pos_t  mouse_active;
@@ -272,6 +273,7 @@ imui_get_state (imui_ctx_t *ctx, const char *label, uint32_t entity)
 	state->label = strdup (label);
 	state->label_len = label_len == ~0u ? strlen (label) : label_len;
 	state->key_offset = key_offset;
+	state->scroll_scale = (view_pos_t) { 1, 1 };
 	Hash_Add (ctx->tab, state);
 	ctx->current_state = state;
 	Ent_SetComponent (entity, ecs_name, ctx->csys.reg, &state->label);
@@ -309,6 +311,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.hot = nullent,
 		.active = nullent,
 		.focused = nullent,
+		.scroll = nullent,
 		.mouse_position = {-1, -1},
 		.key_utf8 = dstring_newstr (),
 		.key_preedit = dstring_new (),	// so size starts at 0
@@ -1176,12 +1179,16 @@ check_inside (imui_ctx_t *ctx, hierref_t href, int level)
 		check_inside (ctx, View_GetRef (sub_view), level + 1);
 		return;
 	}
-	if ((c.active | c.focus | c.drop_target) && is_inside (mp, abs, len)) {
+	if ((c.active | c.focus | c.drop_target | c.scroll)
+		&& is_inside (mp, abs, len)) {
 		if (c.active | c.drop_target) {
 			if (c.drop_target || ctx->active == ent || ctx->active == nullent) {
 				ctx->hot = ent;
 				ctx->hot_position = abs;
 			}
+		}
+		if (c.scroll) {
+			ctx->scroll = ent;
 		}
 		if (c.focus) {
 			ctx->focused = ent;
@@ -1301,6 +1308,7 @@ IMUI_Draw (imui_ctx_t *ctx)
 	ctx->hot = nullent;
 	bool was_focused = ctx->focused != nullent;
 	ctx->focused = nullent;
+	ctx->scroll = nullent;
 	check_inside (ctx, View_GetRef (ctx->root_view), 0);
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
 		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
@@ -1515,6 +1523,9 @@ update_hot_active (imui_ctx_t *ctx, imui_state_t *state)
 		if (ctx->active == state->old_entity) {
 			ctx->active = state->entity;
 			mode = 2;
+		}
+		if (ctx->scroll == state->old_entity) {
+			ctx->scroll = state->entity;
 		}
 	}
 	return mode;
@@ -2439,6 +2450,7 @@ IMUI_StartScroller (imui_ctx_t *ctx)
 		.free_y = 1,
 		.vertical = true,
 		.active = 1,
+		.scroll = 1,
 	};
 	auto reg = ctx->csys.reg;
 	Ent_SetComponent (anchor_view.id, c_fraction_x, reg,
@@ -2450,7 +2462,16 @@ IMUI_StartScroller (imui_ctx_t *ctx)
 		name = *(char **) Ent_GetComponent (parent, ecs_name, ctx->csys.reg);
 	}
 	auto state = imui_get_state (ctx, va ("%s#content", name), anchor_view.id);
+	update_hot_active (ctx, state);
 	DARRAY_APPEND (&ctx->scrollers, state);
+
+	if (ctx->scroll == state->entity) {
+		state->pos = VP_add (state->pos,
+							 VP_mul (state->scroll_scale,
+									 ctx->mouse_scroll));
+		state->pos.x = bound (0, state->pos.x, state->len.x);
+		state->pos.y = bound (0, state->pos.y, state->len.y);
+	}
 
 	// Position the content based on the scroll inputs: pos is the content's
 	// pixel in the top-left corner of the scroll box

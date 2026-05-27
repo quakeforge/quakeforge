@@ -31,6 +31,7 @@ int IMUI_Window_GetGroupOffset (imui_window_t *window) = #0;
 
 void IMUI_State_SetPos (imui_ctx_t ctx, string state, ivec2 pos) = #0;
 void IMUI_State_SetLen (imui_ctx_t ctx, string state, ivec2 pos) = #0;
+void IMUI_State_SetScrollScale (imui_ctx_t ctx, string state, ivec2 pos) = #0;
 ivec2 IMUI_State_GetPos (imui_ctx_t ctx, string state) = #0;
 ivec2 IMUI_State_GetLen (imui_ctx_t ctx, string state) = #0;
 

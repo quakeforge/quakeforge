@@ -125,6 +125,7 @@ typedef struct imui_state_s {
 	uint32_t    content;
 	view_pos_t  pos;
 	view_pos_t  len;
+	view_pos_t  scroll_scale;
 	imui_frac_t fraction;
 	bool        auto_fit;
 } imui_state_t;
