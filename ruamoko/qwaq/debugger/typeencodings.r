@@ -2,7 +2,6 @@
 #include <hash.h>
 #include <string.h>
 
-#include "ruamoko/qwaq/ui/curses.h"	// printf FIXME
 #include "ruamoko/qwaq/debugger/typeencodings.h"
 
 @implementation TypeEncodings
@@ -253,8 +252,13 @@ error:
 			}
 			break;
 		case ty_enum:
-			// enums are ints
+			// enums default to int
 			size = pr_type_size[ev_int];
+			if (type.strct.num_fields) {
+				// all enumants have the same type
+				aux_type = type.strct.fields[0].type;
+				size = [TypeEncodings typeSize:aux_type];
+			}
 			break;
 		case ty_class:
 			//FIXME
