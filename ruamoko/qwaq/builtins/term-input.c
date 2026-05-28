@@ -68,11 +68,13 @@
 #define WHEEL_BUTTONS 0x78	// scroll up/down/left/right - always click
 
 typedef enum qwaq_input_commands_e {
+	qwaq_cmd_quit,
 	qwaq_cmd_send_connected_devices,
 	qwaq_cmd_get_device_info,
 } qwaq_input_commands;
 
 static const char *qwaq_input_command_names[]= {
+	"quit",
 	"send_connected_devices",
 	"get_device_info",
 };
@@ -801,13 +803,14 @@ dump_command (qwaq_input_resources_t *res, int len)
 	}
 }
 
-static void
+static bool
 process_commands (qwaq_input_resources_t *res)
 {
 	struct timespec timeout;
 	int         avail;
 	int         len;
 	int         ret = 0;
+	bool        quit = false;
 
 	pthread_mutex_lock (&res->commands.pipe_cond.mut);
 	qwaq_init_timeout (&timeout, 20 * 1000000);
@@ -820,12 +823,16 @@ process_commands (qwaq_input_resources_t *res)
 	// It should be only the data availability check that's not threadsafe
 	// as the mutex is not released until after the data has been written to
 	// the buffer.
-	while ((avail = RB_DATA_AVAILABLE (res->commands.pipe)) >= 2
+	while (!quit
+		   && (avail = RB_DATA_AVAILABLE (res->commands.pipe)) >= 2
 		   && avail >= (len = qwaq_cmd_peek (res, 1))) {
 		pthread_mutex_unlock (&res->commands.pipe_cond.mut);
 		dump_command (res, len);
 		qwaq_input_commands cmd = qwaq_cmd_peek (res, 0);
 		switch (cmd) {
+			case qwaq_cmd_quit:
+				quit = true;
+				break;
 			case qwaq_cmd_send_connected_devices:
 				cmd_send_connected_devices (res);
 				break;
@@ -840,6 +847,7 @@ process_commands (qwaq_input_resources_t *res)
 		// the loop
 	}
 	pthread_mutex_unlock (&res->commands.pipe_cond.mut);
+	return !quit;
 }
 
 static void *
@@ -847,10 +855,9 @@ qwaq_input_thread (qwaq_thread_t *thread)
 {
 	qwaq_input_resources_t *res = thread->data;
 
-	while (1) {
+	do {
 		qwaq_process_input (res);
-		process_commands (res);
-	}
+	} while (process_commands (res));
 	thread->return_code = 0;
 	return thread;
 }
@@ -861,13 +868,14 @@ bi_init_input (progs_t *pr, void *_res)
 	qwaq_input_resources_t *res = _res;
 	qwaq_input_init (res);
 	res->initialized = 1;
-	create_thread (qwaq_input_thread, res);
 
 	IE_event_t  event = {
 		.type = ie_app_gain_focus,
 		.when = Sys_LongTime (),
 	};
 	IE_Send_Event (&event);
+
+	res->input_thread = create_thread (qwaq_input_thread, res);
 }
 
 #define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
@@ -886,6 +894,15 @@ bi_input_clear (progs_t *pr, void *_res)
 {
 	__auto_type res = (qwaq_input_resources_t *) _res;
 
+	if (res->input_thread) {
+		int         command[] = { qwaq_cmd_quit, 0 };
+		command[1] = CMD_SIZE(command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
+
+		void *ret;
+		pthread_join (res->input_thread->thread_id, &ret);
+		res->input_thread = nullptr;
+	}
 	if (res->initialized) {
 		qwaq_input_shutdown (res);
 	}

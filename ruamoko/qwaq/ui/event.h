@@ -112,6 +112,7 @@ typedef struct qwaq_input_resources_s {
 
 	qwaq_event_queue_t events;
 
+	qwaq_thread_t *input_thread;
 	qwaq_pipe_t commands;
 	qwaq_pipe_t results;
 
