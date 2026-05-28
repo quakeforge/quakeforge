@@ -54,12 +54,11 @@ typedef struct bi_cmd_s {
 } bi_cmd_t;
 
 typedef struct {
+	progs_t   *pr;
 	bi_cmd_t  *cmds;
+	hashtab_t *cmd_tab;
+	hashctx_t *cmd_hashctx;
 } cmd_resources_t;
-
-static hashtab_t *bi_cmds;
-static hashctx_t *bi_cmd_hashctx;
-static int bi_cmds_refs;
 
 static const char *
 bi_cmd_get_key (const void *c, void *unused)
@@ -79,10 +78,11 @@ bi_cmd_free (void *_c, void *unused)
 }
 
 static void
-bi_cmd_f (void)
+bi_cmd_f (void *_res)
 {
 	qfZoneScoped (true);
-	bi_cmd_t   *cmd = Hash_Find (bi_cmds, Cmd_Argv (0));
+	cmd_resources_t *res = _res;
+	bi_cmd_t   *cmd = Hash_Find (res->cmd_tab, Cmd_Argv (0));
 
 	if (!cmd)
 		Sys_Error ("bi_cmd_f: unexpected call %s", Cmd_Argv (0));
@@ -98,7 +98,8 @@ bi_Cmd_AddCommand (progs_t *pr, void *_res)
 	char       *name = strdup (P_GSTRING (pr, 0));
 	pr_func_t   func = P_FUNCTION (pr, 1);
 
-	if (!cmd || !name || !Cmd_AddCommand (name, bi_cmd_f, "CSQC command")) {
+	if (!cmd || !name
+		|| !Cmd_AddDataCommand (name, bi_cmd_f, res, "CSQC command")) {
 		if (name)
 			free (name);
 		if (cmd)
@@ -109,7 +110,7 @@ bi_Cmd_AddCommand (progs_t *pr, void *_res)
 	cmd->name = name;
 	cmd->func = func;
 	cmd->pr = pr;
-	Hash_Add (bi_cmds, cmd);
+	Hash_Add (res->cmd_tab, cmd);
 	cmd->next = res->cmds;
 	res->cmds = cmd;
 	R_INT (pr) = 1;
@@ -124,7 +125,7 @@ bi_cmd_clear (progs_t *pr, void *data)
 
 	while ((cmd = res->cmds)) {
 		Cmd_RemoveCommand (cmd->name);
-		Hash_Del (bi_cmds, cmd->name);
+		Hash_Del (res->cmd_tab, cmd->name);
 		res->cmds = cmd->next;
 		bi_cmd_free (cmd, 0);
 	}
@@ -134,10 +135,9 @@ static void
 bi_cmd_destroy (progs_t *pr, void *data)
 {
 	qfZoneScoped (true);
-	if (!--bi_cmds_refs) {
-		Hash_DelTable (bi_cmds);
-		Hash_DelContext (bi_cmd_hashctx);
-	}
+	cmd_resources_t *res = data;
+	Hash_DelTable (res->cmd_tab);
+	Hash_DelContext (res->cmd_hashctx);
 	free (data);
 }
 
@@ -181,15 +181,10 @@ RUA_Cmd_Init (progs_t *pr, int secure)
 {
 	qfZoneScoped (true);
 	cmd_resources_t *res = calloc (1, sizeof (cmd_resources_t));
-
-	res->cmds = 0;
-
-	if (!bi_cmds) {
-		//FIXME not thread-safe
-		bi_cmds = Hash_NewTable (1021, bi_cmd_get_key, bi_cmd_free, 0,
-								 &bi_cmd_hashctx);
-	}
-	bi_cmds_refs++;
+	*res = (cmd_resources_t) {
+		.cmd_tab = Hash_NewTable (1021, bi_cmd_get_key, bi_cmd_free, 0,
+								  &res->cmd_hashctx),
+	};
 
 	PR_Resources_Register (pr, "Cmd", res, bi_cmd_clear, bi_cmd_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
