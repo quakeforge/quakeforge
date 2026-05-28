@@ -86,7 +86,7 @@
 			// FIXME 1) need memcpy/memmove
 			// 2) the generated code could be better
 			// github issue #3
-			 *d++ = *s++;
+			*d++ = *s++;
 		}
 	}
 	return self;
