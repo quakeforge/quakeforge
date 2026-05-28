@@ -93,8 +93,8 @@
 	[locals_window setTitle: "Locals"];
 	locals_data = [[LocalsData withTarget:target] retain];
 	locals_view = [TableView withRect:{{1, 1}, {38, 8}}];
-	[locals_view addColumn:[TableViewColumn named:"name" width:12]];
-	[locals_view addColumn:[[TableViewColumn named:"value" width:26]
+	[locals_view addColumn:[TableColumn named:"name" width:12]];
+	[locals_view addColumn:[[TableColumn named:"value" width:26]
 							setGrowMode:gfGrowHiX]];
 	ScrollBar *sb = [ScrollBar vertical:8 at:{39, 1}];
 	[locals_view setVerticalScrollBar:sb];

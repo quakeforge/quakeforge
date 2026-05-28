@@ -85,7 +85,7 @@
 	return 1 + element_rows[type.array.count];
 }
 
--(DefView *) cellAtRow:(int)row forColumn:(TableViewColumn *)column level:(int)level
+-(DefView *) cellAtRow:(int)row forColumn:(TableColumn *)column level:(int)level
 {
 	if (row == 0) {
 		if ([column name] == "name") {

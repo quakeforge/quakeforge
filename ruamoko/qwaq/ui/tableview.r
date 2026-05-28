@@ -3,63 +3,6 @@
 #include "ruamoko/qwaq/ui/scrollbar.h"
 #include "ruamoko/qwaq/ui/tableview.h"
 
-@implementation TableViewColumn
--initWithName:(string)name width:(int)width
-{
-	if (!(self = [super init])) {
-		return nil;
-	}
-	self.name = name;
-	self.width = width;
-	return self;
-}
-
-+(TableViewColumn *)named:(string)name
-{
-	return [[[self alloc] initWithName:name width:-1] autorelease];
-}
-
-+(TableViewColumn *)named:(string)name width:(int)width
-{
-	return [[[self alloc] initWithName:name width:width] autorelease];
-}
-
--setGrowMode: (int) mode
-{
-	growMode = mode;
-	return self;
-}
-
--(int)growMode
-{
-	return growMode;
-}
-
--(string)name
-{
-	return name;
-}
-
--(int)width
-{
-	return width;
-}
-
--setWidth:(int)width
-{
-	self.width = width;
-	return self;
-}
-
--grow:(Extent)delta
-{
-	if (growMode & gfGrowHiX) {
-		width += delta.width;
-	}
-	return self;
-}
-@end
-
 @implementation TableView
 -initWithRect:(Rect)rect
 {
@@ -88,14 +31,14 @@
 	return [[[self alloc] initWithRect:rect] autorelease];
 }
 
--addColumn:(TableViewColumn *)column
+-addColumn:(TableColumn *)column
 {
 	[columns addObject:column];
 	columns_dirty = 1;
 	return self;
 }
 
--setDataSource:(id<TableViewDataSource>)dataSource
+-setDataSource:(id<TableDataSource>)dataSource
 {
 	self.dataSource = [dataSource retain];
 	[[dataSource onRowCountChanged] addListener:self
@@ -122,8 +65,8 @@
 
 -draw
 {
-	id<TableViewCell> cell;
-	TableViewColumn *col;
+	id<TableCell> cell;
+	TableColumn *col;
 	[super draw];
 	int         numCols = [columns count];
 	int         numRows = [dataSource numberOfRows];

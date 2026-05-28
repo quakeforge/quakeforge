@@ -36,6 +36,7 @@ ruamoko_qwaq_libui_a_SOURCES= \
 	ruamoko/qwaq/ui/rect.r	\
 	ruamoko/qwaq/ui/scrollbar.r	\
 	ruamoko/qwaq/ui/stringview.r	\
+	ruamoko/qwaq/ui/table.r	\
 	ruamoko/qwaq/ui/tableview.r	\
 	ruamoko/qwaq/ui/textcontext.r	\
 	ruamoko/qwaq/ui/titlebar.r	\

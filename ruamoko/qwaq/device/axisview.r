@@ -29,7 +29,7 @@
 	return 1;
 }
 
--(AxisView *)cellAtRow:(int)row forColumn:(TableViewColumn *)column
+-(AxisView *)cellAtRow:(int)row forColumn:(TableColumn *)column
 {
 	if ([column name] == "axis") {
 		return [NameView withName:sprintf("%d", axis.axis)];

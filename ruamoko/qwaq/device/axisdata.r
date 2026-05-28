@@ -42,7 +42,7 @@
 	return numaxes;
 }
 
--(id<TableViewCell>)cellForColumn:(TableViewColumn *)column row:(int)row
+-(id<TableCell>)cellForColumn:(TableColumn *)column row:(int)row
 {
 	AxisView   *cell = nil;
 

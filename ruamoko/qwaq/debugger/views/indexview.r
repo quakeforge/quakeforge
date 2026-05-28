@@ -23,7 +23,7 @@
 	return sprintf ("%*.*s", width, width, val);
 }
 
--(DefView *) cellAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level
+-(DefView *) cellAtRow:(int) row forColumn:(TableColumn *)column level:(int)level
 {
 	return self;
 }

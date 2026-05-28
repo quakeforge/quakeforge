@@ -90,7 +90,7 @@ static string meta_views[] = {
 	return 1;
 }
 
--(DefView *) cellAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level
+-(DefView *) cellAtRow:(int) row forColumn:(TableColumn *)column level:(int)level
 {
 	if ([column name] == "name") {
 		string name = qdb_get_string (target, def.name);

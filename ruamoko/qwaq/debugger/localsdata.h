@@ -8,7 +8,7 @@
 @class DefView;
 @class ListenerGroup;
 
-@interface LocalsData : Object <TableViewDataSource>
+@interface LocalsData : Object <TableDataSource>
 {
 	ListenerGroup *onRowCountChanged;
 	qdb_target_t target;

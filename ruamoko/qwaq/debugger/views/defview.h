@@ -5,7 +5,7 @@
 #include "ruamoko/qwaq/ui/tableview.h"
 #include "ruamoko/qwaq/debugger/debug.h"
 
-@interface DefView : Object <TableViewCell>
+@interface DefView : Object <TableCell>
 {
 	qdb_def_t   def;
 	qfot_type_t *type;
@@ -18,7 +18,7 @@
 -setTarget:(qdb_target_t)target;
 -fetchData;
 -(int) rows;
--(DefView *) cellAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level;
+-(DefView *) cellAtRow:(int) row forColumn:(TableColumn *)column level:(int)level;
 @end
 
 #endif//__qwaq_debugger_defview_h

@@ -6,7 +6,7 @@
 
 @class AxisView;
 
-@interface AxisData : Object <TableViewDataSource>
+@interface AxisData : Object <TableDataSource>
 {
 	int         numaxes;
 	in_axisinfo_t *axes;

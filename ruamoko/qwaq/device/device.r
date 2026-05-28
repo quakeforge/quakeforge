@@ -24,8 +24,8 @@
 	[window insert:[StringView withRect:{{1, 1}, {38, 1}} string:device.name]];
 	axis_data = [[AxisData withDevice:device] retain];
 	axis_view = [TableView withRect:{{1, 2}, {38, 7}}];
-	[axis_view addColumn:[TableViewColumn named:"axis" width:3]];
-	[axis_view addColumn:[TableViewColumn named:"value" width:6]];
+	[axis_view addColumn:[TableColumn named:"axis" width:3]];
+	[axis_view addColumn:[TableColumn named:"value" width:6]];
 	ScrollBar *sb = [ScrollBar vertical:7 at:{39, 2}];
 	[axis_view setVerticalScrollBar:sb];
 	[axis_view setDataSource:axis_data];

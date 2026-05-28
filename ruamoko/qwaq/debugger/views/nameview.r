@@ -28,7 +28,7 @@
 	return str_mid (name, 0, width);
 }
 
--(DefView *) cellAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level
+-(DefView *) cellAtRow:(int) row forColumn:(TableColumn *)column level:(int)level
 {
 	return self;
 }

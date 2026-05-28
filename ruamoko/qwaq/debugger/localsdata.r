@@ -153,7 +153,7 @@ free_defs (LocalsData *self)
 	return 0;
 }
 
--(id<TableViewCell>)cellForColumn:(TableViewColumn *)column row:(int)row
+-(id<TableCell>)cellForColumn:(TableColumn *)column row:(int)row
 {
 	DefView   *cell = nil;
 	int       *index = fbsearch (&row, def_rows, num_user_defs, 1, nil);
