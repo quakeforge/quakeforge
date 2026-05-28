@@ -3,12 +3,6 @@
 
 #ifdef __QFCC__
 #include <Object.h>
-
-//FIXME finish unsigned in qfcc
-#ifndef umax
-#define umax 0x7fffffff
-#endif
-
 #endif//__QFCC__
 
 typedef struct eb_sel_s {

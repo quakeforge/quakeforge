@@ -10,11 +10,6 @@ typedef enum {
 
 #include <QF/progs/pr_debug.h>
 
-//FIXME finish unsigned in qfcc
-#ifndef umax
-#define umax 0x7fffffff
-#endif
-
 typedef string pr_string_t;
 
 #endif
