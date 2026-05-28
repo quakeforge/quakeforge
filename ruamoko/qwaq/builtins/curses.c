@@ -1895,7 +1895,6 @@ bi_curses_clear (progs_t *pr, void *_res)
 
 		void *ret;
 		pthread_join (res->command_thread->thread_id, &ret);
-		free (res->command_thread);
 		res->command_thread = nullptr;
 	}
 
