@@ -2947,7 +2947,7 @@ protocol
 protocolrefs
 	: /* emtpy */				{ $$ = 0; }
 	| LT 						{ $<protocol_list>$ = new_protocol_list (); }
-	  protocol_list GT			{ $$ = $3; }
+	  protocol_list GT			{ $$ = $3->count ? $3 : nullptr; }
 	;
 
 protocol_list
