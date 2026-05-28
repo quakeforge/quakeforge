@@ -2908,6 +2908,7 @@ classdef
 		{ class_begin (&$class->class_type, ctx); }
 	| REFERENCE class_reference ';'		{ }
 	| REFERENCE category_reference ';'	{ }
+	| INTERFACE error END		{ current_class = nullptr; }
 	;
 
 ivar_scope
