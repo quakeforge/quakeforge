@@ -75,6 +75,7 @@ struct expr_s;
 struct dstring_s;
 
 typedef struct rua_ctx_s rua_ctx_t;
+typedef struct class_s class_t;
 
 method_t *new_method (const struct type_s *ret_type, param_t *selector,
 					  param_t *opt_parms, rua_ctx_t *ctx);
@@ -91,7 +92,8 @@ void methodset_add_methods (methodset_t *methodset, methodlist_t *methods);
 int methodset_contains_method (methodset_t *methodset, method_t *method);
 //NOTE frees the source list and any methods not copied
 void merge_method_lists (methodlist_t *dst, methodlist_t *src);
-void copy_methods (methodlist_t *dst, methodlist_t *src, methodset_t *except);
+void copy_methods (methodlist_t *dst, methodlist_t *src, methodset_t *except,
+				   class_t *class);
 int method_compare (method_t *m1, method_t *m2);
 
 keywordarg_t *new_keywordarg (const char *selector, const expr_t *expr);

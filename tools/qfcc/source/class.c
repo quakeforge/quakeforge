@@ -802,7 +802,7 @@ class_add_protocols (class_t *class, protocollist_t *protocols)
 	for (i = 0; i < protocols->count; i++) {
 		p = protocols->list[i];
 		if (p->methods) {
-			copy_methods (methods, p->methods, except);
+			copy_methods (methods, p->methods, except, class);
 		} else {
 			warning (0, "definition of protocol `%s' not found", p->name);
 		}
@@ -1521,7 +1521,7 @@ category_add_protocols (category_t *category, protocollist_t *protocols)
 
 	for (i = 0; i < protocols->count; i++) {
 		p = protocols->list[i];
-		copy_methods (methods, p->methods, except);
+		copy_methods (methods, p->methods, except, category->class);
 		if (p->protocols)
 			category_add_protocols (category, p->protocols);
 	}

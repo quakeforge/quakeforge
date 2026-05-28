@@ -296,10 +296,12 @@ merge_method_lists (methodlist_t *dst, methodlist_t *src)
 }
 
 void
-copy_methods (methodlist_t *dst, methodlist_t *src, methodset_t *except)
+copy_methods (methodlist_t *dst, methodlist_t *src, methodset_t *except,
+			  class_t *class)
 {
 	method_t   *s, *d;
 	param_t    *self;
+	const type_t *class_ptr = pointer_type (class->type);
 
 	for (s = src->head; s; s = s->next) {
 		if (methodset_contains_method (except, s) || method_in_list (dst, s)) {
@@ -316,6 +318,9 @@ copy_methods (methodlist_t *dst, methodlist_t *src, methodset_t *except)
 		// to be copied as they will not be altered.
 		self = malloc (sizeof (param_t));
 		*self = *d->params;
+		if (d->instance) {
+			self->type = class_ptr;
+		}
 		d->params = self;
 		d->next = 0;
 		// add_method does the duplicate check
