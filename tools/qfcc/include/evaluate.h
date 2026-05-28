@@ -40,15 +40,15 @@
 
 void evaluate_debug_handler (prdebug_t event, void *param, void *data);
 
+typedef struct expr_s expr_t;
 typedef struct type_s type_t;
 typedef struct ex_value_s ex_value_t;
 typedef struct sblock_s sblock_t;
 typedef struct operand_s operand_t;
 
-struct ex_value_s *convert_value (struct ex_value_s *value,
-								  const struct type_s *type);
+ex_value_t *convert_value (ex_value_t *value, const type_t *type);
 ex_value_t *evaluate_run_sblock (sblock_t *sblock, operand_t *return_op);
-const struct expr_s *evaluate_constexpr (const struct expr_s *e);
+const expr_t *evaluate_constexpr (const expr_t *e);
 void setup_value_progs (void);
 
 ///@}
