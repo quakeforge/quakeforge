@@ -155,6 +155,10 @@ init_qf (void)
 	//Cvar_Set (developer, "1");
 
 	PR_Init_Cvars ();
+
+	pr_debug = 2;
+	pr_boundscheck = 0;
+
 	return hunk;
 }
 
@@ -222,8 +226,6 @@ create_progs (qwaq_thread_t *thread)
 	pr->hashctx = &thread->hashctx;
 	pr->pr_hunk = thread->hunk;
 
-	pr_debug = 2;
-	pr_boundscheck = 0;
 	PR_Init (pr);
 	PR_Resources_Register (pr, "qwaq_thread", thread, qwaq_thread_clear,
 						   qwaq_thread_destroy);
@@ -481,18 +483,24 @@ main (int argc, char **argv)
 
 	main_ind = qwaq_init_threads (&thread_data, hunk);
 	if (main_ind >= 0) {
-		// threads might start new threads before the end is reached
-		size_t      count = thread_data.size;
+		// threads might start new threads which would invalidate count
+		// and possibly the pointer
+		size_t count = thread_data.size;
+		qwaq_progs_t qp[count] = {};
 		for (size_t i = 0; i < count; i++) {
 			if (thread_data.a[i]->progsinit) {
-				qwaq_progs_t qp = {
+				qp[i] = (qwaq_progs_t) {
 					.thread = thread_data.a[i],
 				};
-				start_progs_thread (&qp);
 			}
 		}
-		pthread_join (thread_data.a[main_ind]->thread_id, 0);
-		ret = thread_data.a[main_ind]->return_code;
+		for (size_t i = 0; i < count; i++) {
+			if (qp[i].thread) {
+				start_progs_thread (&qp[i]);
+			}
+		}
+		pthread_join (qp[main_ind].thread->thread_id, 0);
+		ret = qp[main_ind].thread->return_code;
 	}
 
 	for (size_t i = 0; i < thread_data.size; i++) {
