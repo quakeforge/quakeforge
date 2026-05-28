@@ -29,12 +29,10 @@
 	[super dealloc];
 }
 
--draw
+-(string)format:(int)width
 {
-	[super draw];
 	string val = sprintf ("%s [0x%x]", type.encoding, data[0]);
-	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
-	return self;
+	return sprintf ("%*.*s", width, width, val);
 }
 
 -fetchData
@@ -64,7 +62,7 @@
 	return 1 + [ptr_view rows];
 }
 
--(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level
+-(DefView *) viewAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level
 {
 	if (row == 0) {
 		if ([column name] == "name") {
@@ -79,7 +77,7 @@
 		}
 		return [NameView withName:"Invalid pointer"];
 	}
-	return [ptr_view viewAtRow:row - 1 forColumn:column level:level + 1];
+	return [ptr_view cellAtRow:row - 1 forColumn:column level:level + 1];
 }
 
 @end

@@ -2,12 +2,10 @@
 #define __qwaq_debugger_defview_h
 
 #include <types.h>
-#include "ruamoko/qwaq/ui/view.h"
+#include "ruamoko/qwaq/ui/tableview.h"
 #include "ruamoko/qwaq/debugger/debug.h"
 
-@class TableViewColumn;
-
-@interface DefView : View
+@interface DefView : Object <TableViewCell>
 {
 	qdb_def_t   def;
 	qfot_type_t *type;
@@ -20,7 +18,7 @@
 -setTarget:(qdb_target_t)target;
 -fetchData;
 -(int) rows;
--(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level;
+-(DefView *) cellAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level;
 @end
 
 #endif//__qwaq_debugger_defview_h

@@ -44,22 +44,4 @@ static string type_views[] = {
 	}
 	return [NameView withName:"Invalid Type"];
 }
-#if 0
-+(DefView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type
-{
-	string typename = nil;
-	if (type.type == ty_alias) {
-		type = type.alias.aux_type;
-	}
-	if (type.type >= 0 && type.type < countof(type_views)) {
-		typename = type_views[type.type];
-	}
-	printf ("AlgebraView: %s\n", typename);
-	id class = obj_lookup_class (typename);
-	if (class) {
-		return [class withDef:def in:data type:type];
-	}
-	return [NameView withName:"Invalid Type"];
-}
-#endif
 @end

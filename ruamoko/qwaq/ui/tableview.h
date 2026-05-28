@@ -9,12 +9,14 @@
 @class Array;
 @class ListenerGroup;
 
+@protocol TableViewCell
+-(string) format:(int)width;
+@end
+
 @protocol TableViewDataSource
 -(ListenerGroup *)onRowCountChanged;
--(int)numberOfRows:(TableView *)tableview;
--(View *)tableView:(TableView *)tableView
-		 forColumn:(TableViewColumn *)column
-		       row:(int)row;
+-(int)numberOfRows;
+-(id<TableViewCell>)cellForColumn:(TableViewColumn *)column row:(int)row;
 -retain;
 -release;
 @end

@@ -17,13 +17,11 @@
 	return [[[self alloc] initWithDef:def in:data type:type] autorelease];
 }
 
--draw
+-(string)format:(int)width
 {
-	[super draw];
 	string val = sprintf ("\"%s\"",
 						  str_quote (qdb_get_string (target, data[0])));
-	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
-	return self;
+	return sprintf ("%*.*s", width, width, val);
 }
 
 @end

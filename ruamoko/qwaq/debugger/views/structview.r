@@ -67,12 +67,10 @@
 	[super dealloc];
 }
 
--draw
+-(string)format:(int)width
 {
-	[super draw];
 	string      val = sprintf ("%s", type.strct.tag);
-	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
-	return self;
+	return sprintf ("%*.*s", width, width, val);
 }
 
 -fetchData
@@ -95,27 +93,27 @@
 	return 1 + field_rows[type.strct.num_fields];
 }
 
--(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level
+-(DefView *) viewAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level
 {
 	if (row == 0) {
 		if ([column name] == "name") {
 			string name = qdb_get_string (target, def.name);
 			return [NameView withName: sprintf ("%*s%s", level, "", name)];
 		}
-		return [NameView withName: sprintf ("%*.*s", xlen, xlen, "{}")];
+		return [NameView withName: "{}"];
 	}
 
 	row -= 1;
 
-	View      *view = nil;
+	DefView   *cell = nil;
 	int       *index = fbsearch (&row, field_rows, type.strct.num_fields, 1, nil);
 
 	if (index) {
 		DefView    *dv = field_views[index - field_rows];
 		int         r = row - *index;
-		view = [dv viewAtRow: r forColumn:column level:level + 1];
+		cell = [dv cellAtRow: r forColumn:column level:level + 1];
 	}
-	return view;
+	return cell;
 }
 
 @end

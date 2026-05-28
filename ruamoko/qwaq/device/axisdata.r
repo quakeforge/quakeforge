@@ -37,22 +37,20 @@
 	return nil;
 }
 
--(int)numberOfRows:(TableView *)tableview
+-(int)numberOfRows
 {
 	return numaxes;
 }
 
--(View *)tableView:(TableView *)tableview
-		 forColumn:(TableViewColumn *)column
-			   row:(int)row
+-(id<TableViewCell>)cellForColumn:(TableViewColumn *)column row:(int)row
 {
-	View       *view = nil;
+	AxisView   *cell = nil;
 
 	if (row >= 0 && row < numaxes) {
 		AxisView   *av = axis_views[row];
-		view = [av viewAtRow:0 forColumn:column];
+		cell = [av cellAtRow:0 forColumn:column];
 	}
-	return view;
+	return cell;
 }
 
 @end

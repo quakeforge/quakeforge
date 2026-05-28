@@ -60,14 +60,12 @@
 	[super dealloc];
 }
 
--draw
+-(string)format:(int)width
 {
-	[super draw];
 	string      val = sprintf ("%s[%d..%d]", type.array.type.encoding,
 							   type.array.base,
 							   type.array.base + type.array.count - 1);
-	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
-	return self;
+	return sprintf ("%*.*s", width, width, val);
 }
 
 -fetchData
@@ -87,7 +85,7 @@
 	return 1 + element_rows[type.array.count];
 }
 
--(View *) viewAtRow:(int)row forColumn:(TableViewColumn *)column level:(int)level
+-(DefView *) cellAtRow:(int)row forColumn:(TableViewColumn *)column level:(int)level
 {
 	if (row == 0) {
 		if ([column name] == "name") {
@@ -99,7 +97,7 @@
 
 	row -= 1;
 
-	View      *view = nil;
+	DefView   *cell = nil;
 	int       *index = fbsearch (&row, element_rows, type.array.count, 1, nil);
 
 	if ([column name] == "name") {
@@ -109,9 +107,9 @@
 	if (index) {
 		DefView    *dv = element_views[index - element_rows];
 		int         r = row - *index;
-		view = [dv viewAtRow: r forColumn:column level:level + 1];
+		cell = [dv cellAtRow: r forColumn:column level:level + 1];
 	}
-	return view;
+	return cell;
 }
 
 @end

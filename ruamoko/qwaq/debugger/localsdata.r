@@ -140,7 +140,7 @@ free_defs (LocalsData *self)
 	return onRowCountChanged;
 }
 
--(int)numberOfRows:(TableView *)tableview
+-(int)numberOfRows
 {
 	if (aux_func) {
 		if (!num_user_defs) {
@@ -153,19 +153,17 @@ free_defs (LocalsData *self)
 	return 0;
 }
 
--(View *)tableView:(TableView *)tableview
-		 forColumn:(TableViewColumn *)column
-			   row:(int)row
+-(id<TableViewCell>)cellForColumn:(TableViewColumn *)column row:(int)row
 {
-	View      *view = nil;
+	DefView   *cell = nil;
 	int       *index = fbsearch (&row, def_rows, num_user_defs, 1, nil);
 
 	if (index) {
 		DefView    *dv = def_views[index - def_rows];
 		int         r = row - *index;
-		view = [dv viewAtRow: r forColumn:column level:0];
+		cell = [dv cellAtRow: r forColumn:column level:0];
 	}
-	return view;
+	return cell;
 }
 
 @end

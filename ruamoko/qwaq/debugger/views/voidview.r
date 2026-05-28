@@ -17,13 +17,11 @@
 	return [[[self alloc] initWithDef:def in:data type:type] autorelease];
 }
 
--draw
+-(string)format:(int)width
 {
-	[super draw];
 	string val = sprintf ("%08x %08x %08x %08x",
 						  data[0], data[1], data[2], data[3]);
-	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
-	return self;
+	return sprintf ("%*.*s", width, width, val);
 }
 
 @end

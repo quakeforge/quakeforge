@@ -90,13 +90,18 @@ static string meta_views[] = {
 	return 1;
 }
 
--(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level
+-(DefView *) cellAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level
 {
 	if ([column name] == "name") {
 		string name = qdb_get_string (target, def.name);
 		return [NameView withName: sprintf ("%*s%s", level, "", name)];
 	}
 	return self;
+}
+
+-(string)format:(int)width
+{
+	return sprintf ("%*.*s", width, width, "<invalid>");
 }
 
 @end

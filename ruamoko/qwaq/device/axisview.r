@@ -19,11 +19,9 @@
 	return [[[self alloc] initWithAxis:axis] retain];
 }
 
--draw
+-(string)format:(int)width
 {
-	[super draw];
-	[self mvprintf:{0, 0}, "%*d", xlen, axis.value];
-	return self;
+	return sprintf ("%*d", width, axis.value);
 }
 
 -(int)rows
@@ -31,7 +29,7 @@
 	return 1;
 }
 
--(View *)viewAtRow:(int)row forColumn:(TableViewColumn *)column
+-(AxisView *)cellAtRow:(int)row forColumn:(TableViewColumn *)column
 {
 	if ([column name] == "axis") {
 		return [NameView withName:sprintf("%d", axis.axis)];

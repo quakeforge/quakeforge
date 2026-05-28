@@ -100,13 +100,13 @@
 	self.dataSource = [dataSource retain];
 	[[dataSource onRowCountChanged] addListener:self
 											   :@selector(onRowCountChanged:)];
-	[vScrollBar setRange:[dataSource numberOfRows:self]];
+	[vScrollBar setRange:[dataSource numberOfRows]];
 	return self;
 }
 
 -(void)onRowCountChanged:(id)sender
 {
-	[vScrollBar setRange:[sender numberOfRows:self]];
+	[vScrollBar setRange:[sender numberOfRows]];
 }
 
 -resize:(Extent)delta
@@ -122,11 +122,11 @@
 
 -draw
 {
-	View       *cell;
+	id<TableViewCell> cell;
 	TableViewColumn *col;
 	[super draw];
 	int         numCols = [columns count];
-	int         numRows = [dataSource numberOfRows:self];
+	int         numRows = [dataSource numberOfRows];
 	[buffer clear];
 	for (int y = 0; y < ylen; y++) {
 		for (int i = 0, x = 0; i < numCols; i++) {
@@ -135,11 +135,8 @@
 				break;
 			}
 			col = [columns objectAtIndex:i];
-			cell = [dataSource tableView:self forColumn:col row:row];
-			[[[[cell setContext:buffer]
-				moveTo:{x, y}]
-				resizeTo:{[col width], 1}]
-				draw];
+			cell = [dataSource cellForColumn:col row:row];
+			[buffer mvaddstr:{x, y}, [cell format:[col width]]];
 			x += [col width];
 		}
 	}

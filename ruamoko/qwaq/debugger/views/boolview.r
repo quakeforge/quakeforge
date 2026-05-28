@@ -28,15 +28,13 @@
 	return b ? "true" : "false";
 }
 
--draw
+-(string)format:(int)width
 {
-	[super draw];
 	string val = sprintf ("%s", [self get_val:0]);
 	for (int i = 1; i < type.basic.width; i++) {
 		val = sprintf ("%s %s", val, [self get_val:i]);
 	}
-	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
-	return self;
+	return sprintf ("%*.*s", width, width, val);
 }
 
 @end

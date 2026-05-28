@@ -23,11 +23,9 @@
 	return [[[self alloc] initWithName:name] autorelease];
 }
 
--draw
+-(string)format:(int)width
 {
-	[super draw];
-	[self mvaddstr:{0, 0}, str_mid (name, 0, xlen)];
-	return self;
+	return str_mid (name, 0, width);
 }
 
 @end

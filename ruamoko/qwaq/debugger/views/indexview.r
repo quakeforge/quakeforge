@@ -17,15 +17,13 @@
 	return [[[self alloc] initWithIndex:index] autorelease];
 }
 
--draw
+-(string)format:(int)width
 {
-	[super draw];
 	string      val = sprintf ("[%d]", index);
-	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
-	return self;
+	return sprintf ("%*.*s", width, width, val);
 }
 
--(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level
+-(DefView *) cellAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level
 {
 	return self;
 }

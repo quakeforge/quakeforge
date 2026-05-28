@@ -17,15 +17,13 @@
 	return [[[self alloc] initWithDef:def in:data type:type] autorelease];
 }
 
--draw
+-(string)format:(int)width
 {
-	[super draw];
 	string val = sprintf ("%.17g", data[0]);
 	for (int i = 1; i < type.basic.width; i++) {
 		val = sprintf ("%s %.17g", val, data[i]);
 	}
-	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
-	return self;
+	return sprintf ("%*.*s", width, width, val);
 }
 
 @end
