@@ -388,6 +388,27 @@ is_array_sym (const expr_t *e)
 }
 
 static void
+init_def_value (def_t *def, ex_value_t *v, const expr_t *init,
+				const type_t *init_type)
+{
+	if (!init->implicit
+		&& is_double (init_type)
+		&& (is_integral (def->type) || is_float (def->type))) {
+		warning (init, "assigning double to %s in initializer "
+				 "(use a cast)", def->type->name);
+	}
+	if (!type_same (def->type, init_type)) {
+		v = convert_value (v, def->type);
+	}
+	if (v->lltype == ev_string) {
+		EMIT_STRING (def->space, D_STRING (def), v->string_val);
+	} else {
+		memcpy (D_POINTER (pr_type_t, def), &v->raw_value,
+				type_size (def->type) * sizeof (pr_type_t));
+	}
+}
+
+static void
 init_def (def_t *def, const expr_t *init, symbol_t *sym)
 {
 	if (!(is_constant (init) || is_array_sym (init))) {
@@ -437,29 +458,12 @@ init_def (def_t *def, const expr_t *init, symbol_t *sym)
 			   && init->symbol->metafunc->func) {
 		auto func = init->symbol->metafunc->func;
 		reloc_def_func (func, def);
-	} else if (init->type == ex_value
-			   || (init->type == ex_symbol
-				   && init->symbol->sy_type == sy_const)) {
-		ex_value_t *v = init->value;
-		if (init->type == ex_symbol
-			&& init->symbol->sy_type == sy_const) {
-			v = init->symbol->value;
-		}
-		if (!init->implicit
-			&& is_double (init_type)
-			&& (is_integral (def->type) || is_float (def->type))) {
-			warning (init, "assigning double to %s in initializer "
-					 "(use a cast)", def->type->name);
-		}
-		if (!type_same (def->type, init_type)) {
-			v = convert_value (v, def->type);
-		}
-		if (v->lltype == ev_string) {
-			EMIT_STRING (def->space, D_STRING (def), v->string_val);
-		} else {
-			memcpy (D_POINTER (pr_type_t, def), &v->raw_value,
-					type_size (def->type) * sizeof (pr_type_t));
-		}
+	} else if (init->type == ex_value) {
+		init_def_value (def, init->value, init, init_type);
+	} else if (init->type == ex_symbol && init->symbol->sy_type == sy_const) {
+		init_def_value (def, init->symbol->value, init, init_type);
+	} else if (is_nil (init)) {
+		init_def_value (def, new_nil_val (init->nil), init, init_type);
 	} else {
 		internal_error (0, "bogus initializier");
 	}
