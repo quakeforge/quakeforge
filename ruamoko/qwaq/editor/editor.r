@@ -8,9 +8,9 @@
 @implementation Editor
 
 static int
-center (unsigned v, int len)
+center (unsigned v, unsigned len)
 {
-	return v > (unsigned) (len / 2) ? v / 2 : 0;
+	return v > (len / 2) ? v - len / 2 : 0;
 }
 
 static void
