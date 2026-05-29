@@ -32,4 +32,10 @@
 -(int)width;
 @end
 
+@protocol Table
+-addColumn:(TableColumn *)column;
+-setDataSource:(id<TableDataSource>)dataSource;
+@end
+
+
 #endif//__qwaq_ui_table_h

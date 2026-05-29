@@ -6,9 +6,8 @@
 
 @class DrawBuffer;
 @class Array;
-@class ListenerGroup;
 
-@interface TableView : View
+@interface TableView : View <Table>
 {
 	Array      *columns;
 	DrawBuffer *buffer;
@@ -17,8 +16,6 @@
 	Point       base;
 }
 +(TableView *)withRect:(Rect)rect;
--addColumn:(TableColumn *)column;
--setDataSource:(id<TableDataSource>)dataSource;
 @end
 
 #endif//__qwaq_ui_tableview_h
