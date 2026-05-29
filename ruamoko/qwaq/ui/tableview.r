@@ -58,7 +58,8 @@
 	[super resize:delta];
 	[buffer resizeTo:self.size];
 	for (int i = [columns count]; i-- > 0; ) {
-		[[columns objectAtIndex: i] grow: delta];
+		TableColumn *col = [columns objectAtIndex: i];
+		[col grow: @bitcast(ivec2, delta)];
 	}
 	return self;
 }

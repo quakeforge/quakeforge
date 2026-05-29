@@ -20,13 +20,14 @@
 {
 	string      name;
 	int         width;
-	int         growMode;	// Y flags ignored
+	bool        growWidth;
 }
 +(TableColumn *)named:(string)name;
 +(TableColumn *)named:(string)name width:(int)width;
 
--setGrowMode: (int) mode;
--(int)growMode;
+-setGrowMode: (bool) mode;
+-(bool)growMode;
+-grow:(ivec2)delta;
 
 -(string)name;
 -(int)width;

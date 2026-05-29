@@ -2,7 +2,7 @@
 #define __qwaq_debugger_localsview_h
 
 #include <types.h>
-#include "ruamoko/qwaq/ui/tableview.h"
+#include "ruamoko/qwaq/ui/table.h"
 #include "ruamoko/qwaq/debugger/debug.h"
 
 @class DefView;

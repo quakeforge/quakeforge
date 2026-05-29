@@ -6,6 +6,8 @@
 #include "ruamoko/qwaq/debugger/debugger.h"
 #include "ruamoko/qwaq/debugger/typeencodings.h"
 
+void printf(string fmt, ...);
+
 @implementation Debugger
 -initWithTarget:(qdb_target_t) target
 	fileManager:(id<DebugGetFile>) fileManager
@@ -46,7 +48,7 @@
 	//locals_view = [TableView withRect:{{1, 1}, {38, 8}}];
 	[locals_view addColumn:[TableColumn named:"name" width:12]];
 	[locals_view addColumn:[[TableColumn named:"value" width:26]
-							setGrowMode:gfGrowHiX]];
+							setGrowMode:true]];
 	[locals_view setDataSource:locals_data];
 }
 
@@ -222,12 +224,12 @@ is_new_line (qdb_state_t last_state, qdb_state_t state)
 				[self stop:event.what];
 				break;
 			case prd_terminate:
-				wprintf(stdscr, "Program ended: %d\n", event.exit_code);
+				printf("Program ended: %d\n", event.exit_code);
 				[self stop:event.what];
 				break;
 			case prd_runerror:
 			case prd_error:
-				wprintf(stdscr, "%s\n", event.message);
+				printf("%s\n", event.message);
 				[self stop:event.what];
 				break;
 		}

@@ -1,6 +1,5 @@
 #include <Array.h>
 #include "ruamoko/qwaq/ui/listener.h"
-#include "ruamoko/qwaq/ui/scrollbar.h"
 #include "ruamoko/qwaq/ui/table.h"
 
 @implementation TableColumn
@@ -24,15 +23,15 @@
 	return [[[self alloc] initWithName:name width:width] autorelease];
 }
 
--setGrowMode: (int) mode
+-setGrowMode: (bool) mode
 {
-	growMode = mode;
+	growWidth = mode;
 	return self;
 }
 
--(int)growMode
+-(bool)growMode
 {
-	return growMode;
+	return growWidth;
 }
 
 -(string)name
@@ -51,10 +50,10 @@
 	return self;
 }
 
--grow:(Extent)delta
+-grow:(ivec2)delta
 {
-	if (growMode & gfGrowHiX) {
-		width += delta.width;
+	if (growWidth) {
+		width += delta.x;
 	}
 	return self;
 }
