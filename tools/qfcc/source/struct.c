@@ -74,15 +74,18 @@ find_tag (const type_t *tag_type, symbol_t *tag, type_t *type)
 
 	if (tag) {
 		tag_name = va ("tag %s", tag->name);
+		sym = symtab_lookup (current_symtab, tag_name);
+		if (sym) {
+			if (sym->table == current_symtab
+				&& sym->type->meta != tag_type->meta) {
+				error (0, "%s defined as wrong kind of tag", tag_name);
+			}
+			if (sym->type->meta == tag_type->meta) {
+				return sym;
+			}
+		}
 	} else {
 		tag_name = va ("tag %s", loc_name (pr.loc));
-	}
-	sym = symtab_lookup (current_symtab, tag_name);
-	if (sym) {
-		if (sym->table == current_symtab && sym->type->meta != tag_type->meta)
-			error (0, "%s defined as wrong kind of tag", tag_name);
-		if (sym->type->meta == tag_type->meta)
-			return sym;
 	}
 	sym = new_symbol (tag_name);
 	if (type) {
