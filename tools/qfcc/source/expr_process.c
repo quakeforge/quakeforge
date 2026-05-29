@@ -527,14 +527,27 @@ proc_selector (const expr_t *expr, rua_ctx_t *ctx)
 static const expr_t *
 proc_message (const expr_t *expr, rua_ctx_t *ctx)
 {
+	const expr_t *err = nullptr;
+
 	auto receiver = expr_process (expr->message.receiver, ctx);
+	if (is_error (receiver)) {
+		err = receiver;
+	}
+
 	auto message = expr->message.message;
 	scoped_src_loc (receiver);
 	for (auto k = message; k; k = k->next) {
 		if (k->expr) {
 			k->expr = expr_process (k->expr, ctx);
+			if (is_error (k->expr)) {
+				err = k->expr;
+			}
 		}
 	}
+	if (err) {
+		return err;
+	}
+
 	return message_expr (receiver, message, ctx);
 }
 
