@@ -25,8 +25,7 @@ center (uint v, uint len)
 		return nil;
 	}
 	self.name = str_hold (name);
-	//filepath is owned by the window
-	self.filepath = filepath;
+	self.filepath = str_hold (filepath);
 
 	buffer = [[EditBuffer withFile:filepath] retain];
 	line_count = [buffer countLines: {0, [buffer textSize]}];
@@ -41,6 +40,7 @@ center (uint v, uint len)
 -(void)dealloc
 {
 	str_free (name);
+	str_free (filepath);
 	[buffer release];
 	[super dealloc];
 }
