@@ -109,9 +109,9 @@ arp_end (void)
 	return [editor filename];
 }
 
--(ivec2)cursor
+-(uvec2)cursor
 {
-	return @bitcast(ivec2, [editor cursor]);
+	return @bitcast(uvec2, [editor cursor]);
 }
 
 -setDebugger:(Debugger *)debugger

@@ -11,7 +11,7 @@
 -gotoLine:(int)line;
 -highlightLine;
 -(string)filename;
--(ivec2)cursor;
+-(uvec2)cursor;
 -setDebugger:(Debugger *)debugger;
 @end
 
