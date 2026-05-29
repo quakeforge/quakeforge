@@ -1,19 +1,23 @@
 #ifndef __qwaq_debugger_debugger_h
 #define __qwaq_debugger_debugger_h
 
-#include <types.h>
 #include <Object.h>
 
 #include "ruamoko/qwaq/debugger/debug.h"
 #include "ruamoko/qwaq/debugger/localsdata.h"
 
-@class ProxyView;
-@class Editor;
-@class EditStatus;
-@class ScrollBar;
-@class Window;
-@class Array;
-@class TableView;
+@class Debugger;
+@protocol DebugFile
+-gotoLine:(int)line;
+-highlightLine;
+-(string)filename;
+-(ivec2)cursor;
+-setDebugger:(Debugger *)debugger;
+@end
+
+@protocol DebugGetFile <Object>
+-(id<DebugFile>)showFile:(string)filename path:(string)filepath;
+@end
 
 @interface Debugger : Object
 {
@@ -32,21 +36,19 @@
 	SEL         breakHandler;
 	int         running;
 
-	Window     *source_window;
-	ScrollBar  *source_scrollbar;
-	EditStatus *source_status;
-	ProxyView  *file_proxy;
-	Array      *files;
-	Editor     *current_file;
-
-	Window     *locals_window;
 	LocalsData *locals_data;
-	TableView  *locals_view;
+	id<Table>   locals_view;
+	id<DebugGetFile> file_manager;
 }
-+(Debugger *)withTarget:(qdb_target_t)target;
--initWithTarget:(qdb_target_t) target;
++(Debugger *)withTarget:(qdb_target_t)target
+			fileManager:(id<DebugGetFile>) fileManager;
 -(qdb_target_t)target;
 -handleDebugEvent;
+
+-run:(id<DebugFile>)file;
+-gotoCursor:(id<DebugFile>)file;
+-traceInto:(id<DebugFile>)file;
+-stepOver:(id<DebugFile>)file;
 @end
 
 #endif//__qwaq_debugger_debugger_h

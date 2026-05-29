@@ -1,11 +1,16 @@
 int fence;
 
+#include <QF/keys.h>
+
 #include <AutoreleasePool.h>
 
+#include "ruamoko/qwaq/editor/editor.h"
 #include "ruamoko/qwaq/ui/color.h"
 #include "ruamoko/qwaq/ui/curses.h"
 #include "ruamoko/qwaq/ui/group.h"
+#include "ruamoko/qwaq/ui/scrollbar.h"
 #include "ruamoko/qwaq/ui/view.h"
+#include "ruamoko/qwaq/ui/window.h"
 #include "ruamoko/qwaq/debugger/debugger.h"
 #include "ruamoko/qwaq/qwaq-app.h"
 #include "ruamoko/qwaq/qwaq-input.h"
@@ -27,6 +32,94 @@ arp_end (void)
 	[autorelease_pool release];
 	autorelease_pool = nil;
 }
+
+@interface EditWindow : Window <DebugFile>
+{
+	Editor *editor;
+	Debugger *debugger;
+}
++(EditWindow *)withRect:(Rect) rect Editor:(Editor*) editor;
+@end
+@implementation EditWindow
+-(EditWindow *)initWithRect:(Rect) rect Editor:(Editor*) editor
+{
+	if (!(self = [super initWithRect:rect])) {
+		return nil;
+	}
+	self.editor = editor;
+
+	auto s = rect.extent;
+	auto vertical = [ScrollBar vertical:s.height - 2 at:{s.width - 1, 1}];
+	[self insert:vertical];
+	[self insert:[EditStatus withRect:{{1, 0}, {2, 1}}]];
+
+	[self insertSelected:editor];
+	[editor setVerticalScrollBar:vertical];
+	[self setTitle:[editor filename]];
+
+	return self;
+}
+
++(EditWindow *)withRect:(Rect) rect Editor:(Editor*) editor
+{
+	return [[[self alloc] initWithRect:rect Editor:editor] autorelease];
+}
+
+-handleEvent: (qwaq_event_t *) event
+{
+	printf ("handleEvent: %d %@\r\n", event.what, debugger);
+	if (event.what == qe_key) {
+		switch (event.key.code) {
+			case QFK_F7:
+				[debugger traceInto:self];
+				event.what = qe_none;
+				break;
+			case QFK_F8:
+				[debugger stepOver:self];
+				event.what = qe_none;
+				break;
+			case QFK_F4:
+				[debugger gotoCursor:self];
+				event.what = qe_none;
+				break;
+		}
+	}
+	if (event.what != qe_none) {
+		[super handleEvent: event];
+	}
+	return self;
+}
+
+-gotoLine:(int)line
+{
+	[editor gotoLine:line];
+	[editor redraw];
+	return self;
+}
+
+-highlightLine
+{
+	[editor highlightLine];
+	[editor redraw];
+	return self;
+}
+
+-(string)filename
+{
+	return [editor filename];
+}
+
+-(ivec2)cursor
+{
+	return @bitcast(ivec2, [editor cursor]);
+}
+
+-setDebugger:(Debugger *)debugger
+{
+	self.debugger = debugger;
+	return self;
+}
+@end
 
 @implementation QwaqApplication
 +app
@@ -57,6 +150,7 @@ arp_end (void)
 	wrefresh (stdscr);//FIXME
 
 	debuggers = [[Array array] retain];
+	editors = [[Array array] retain];
 	return self;
 }
 
@@ -87,7 +181,7 @@ arp_end (void)
 			return debugger;
 		}
 	}
-	debugger = [Debugger withTarget: target];
+	debugger = [Debugger withTarget: target fileManager:self];
 	[debuggers addObject: debugger];
 	return debugger;
 }
@@ -152,6 +246,25 @@ arp_end (void)
 	[screen refresh];
 	return self;
 }
+
+-(id<DebugFile>)showFile:(string)filename path:(string)filepath
+{
+	for (int i = [editors count]; i-- > 0; ) {
+		EditWindow *ew = [editors objectAtIndex:i];
+		if ([ew filename] == filename) {
+			[ew raise];
+			return ew;
+		}
+	}
+	Extent s = [application size];
+	Rect rect = {{1, 1}, {s.width - 2, s.height - 2}};
+	Editor *editor = [Editor withRect:rect file:filename path:filepath];
+	EditWindow *ew = [EditWindow withRect:{nil, s} Editor:editor];
+	[editors addObject:ew];
+	[self addView:ew];
+	return ew;
+}
+
 @end
 
 QwaqApplication *application;

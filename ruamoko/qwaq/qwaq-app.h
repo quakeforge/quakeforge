@@ -5,6 +5,7 @@
 
 #include "ruamoko/qwaq/ui/event.h"
 #include "ruamoko/qwaq/ui/rect.h"
+#include "ruamoko/qwaq/debugger/debugger.h"
 
 @class Array;
 @class Group;
@@ -13,7 +14,7 @@
 
 extern int color_palette[64];
 
-@interface QwaqApplication: Object
+@interface QwaqApplication: Object <DebugGetFile>
 {
 	qwaq_event_t event;
 	qwaq_command endState;
@@ -25,6 +26,7 @@ extern int color_palette[64];
 	int         autocount;
 
 	Array      *debuggers;
+	Array      *editors;
 }
 -(Extent)size;
 -(TextContext *)screen;
