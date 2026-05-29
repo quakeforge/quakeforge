@@ -516,6 +516,9 @@ center (uint v, uint len)
 
 -handleKey:(imui_key_t)key
 {
+	if ([keyHook handleKey:key]) {
+		return self;
+	}
 	switch (key.code) {
 	case QFK_F2:
 		[buffer saveFile:filepath];
@@ -691,4 +694,34 @@ center (uint v, uint len)
 	return [buffer modified];
 }
 
+-setKeyHook:(id<EditViewKeyHook>) keyHook
+{
+	self.keyHook = keyHook;
+	return self;
+}
+
+-gotoLine:(uint)line
+{
+	return [self jumpTo:{0, line} mode:0];
+}
+
+-highlightLine
+{
+	return self;
+}
+
+-(string)filename
+{
+	return filename;
+}
+
+-(string)filepath
+{
+	return filepath;
+}
+
+-(uvec2)cursor
+{
+	return cursor;
+}
 @end

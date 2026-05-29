@@ -12,6 +12,7 @@
 	string window_name;
 }
 +(EditWindow *) openFile:(string)filePath ctx:(imui_ctx_t)ctx;
+-initWithFile:(string)filePath ctx:(imui_ctx_t)ctx;
 -draw;
 @end
 

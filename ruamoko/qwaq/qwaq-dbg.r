@@ -8,8 +8,9 @@
 #include <scene.h>
 #include <QF/keys.h>
 
-#include "debugger/debug.h"
+#include "debugger/debugger.h"
 
+#include "gui/editview.h"
 #include "gui/editwindow.h"
 #include "gui/filewindow.h"
 #include "gui/listview.h"
@@ -65,6 +66,7 @@ float frametime;
 
 @class MainMenu;
 MainMenu *main_menu;
+Debugger *debugger;
 
 static void
 color_window (void)
@@ -137,12 +139,85 @@ color_window (void)
 	}
 }
 
-@interface MainMenu : UI_Object<FileWindow>
+@interface DebugEditor : EditWindow <DebugFile, EditViewKeyHook>
+{
+	Debugger *debugger;
+}
++(DebugEditor *)withFile:(string)filepath ctx:(imui_ctx_t)ctx;
+@end
+
+@implementation DebugEditor
+-initWithFile:(string)filepath ctx:(imui_ctx_t)ctx
+{
+	if (!(self = [super initWithFile:filepath ctx:ctx])) {
+		return nil;
+	}
+	[editView setKeyHook:self];
+	return self;
+}
+
++(DebugEditor *)withFile:(string)filepath ctx:(imui_ctx_t)ctx
+{
+	return [[[self alloc] initWithFile:filepath ctx:ctx] autorelease];
+}
+
+-gotoLine:(int)line
+{
+	[editView gotoLine:line];
+	return self;
+}
+
+-highlightLine
+{
+	[editView highlightLine];
+	return self;
+}
+
+-(string)filename
+{
+	return [editView filename];
+}
+
+-(string)filepath
+{
+	return [editView filepath];
+}
+
+-(uvec2)cursor
+{
+	return [editView cursor];
+}
+
+-setDebugger:(Debugger *)debugger
+{
+	self.debugger = debugger;
+	return self;
+}
+
+-(bool)handleKey:(imui_key_t)key
+{
+	switch (key.code) {
+		case QFK_F7:
+			[debugger traceInto:self];
+			return true;
+		case QFK_F8:
+			[debugger stepOver:self];
+			return true;
+		case QFK_F4:
+			[debugger gotoCursor:self];
+			return true;
+	}
+	return false;
+}
+@end
+
+@interface MainMenu : UI_Object<FileWindow, DebugGetFile>
 {
 	imui_window_t *main_menu;
 	imui_window_t *file_menu;
 	imui_window_t *window_menu;
 	FileWindow *file_window;
+	Array *debug_editors;
 }
 +(imui_window_t *)create_menu:(string)name;
 +(MainMenu *) menu:(imui_ctx_t)ctx;
@@ -179,6 +254,8 @@ hs (imui_ctx_t ctx)
 
 	file_menu = [MainMenu create_menu:"File"];
 	window_menu = [MainMenu create_menu:"Window"];
+
+	debug_editors = [[Array array] retain];
 
 	file_window = nil;
 
@@ -221,6 +298,21 @@ hs (imui_ctx_t ctx)
 		file_window = nil;
 	}
 }
+
+-(id<DebugFile>)showFile:(string)filename path:(string)filepath
+{
+	for (int i = [debug_editors count]; i-- > 0; ) {
+		DebugEditor *de = [debug_editors objectAtIndex:i];
+		if ([de filepath] == filepath) {
+			[de raise];
+			return de;
+		}
+	}
+	DebugEditor *de = [[DebugEditor withFile:filepath ctx:IMUI_context]
+					   retain];
+	[debug_editors addObject:de];
+	return de;
+}
 @end
 
 static void
@@ -248,16 +340,16 @@ event_handler (IE_event_t *event, void *data)
 {
 	switch (event.type) {
 	case ie_message:
-		printf ("message: %d %d\n", event.message.code, event.message.int_val);
+		// for now, this is always a debugger message
 		auto target = (qdb_target_t) event.message.int_val;
-		qdb_event_t dbg_event;
-		if (qdb_get_event (target, &dbg_event)) {
-			printf ("    %d %d\n", dbg_event.what, dbg_event.exit_code);
-			if (dbg_event.what == prd_error
-				|| dbg_event.what == prd_runerror) {
-				printf ("    %s\n", dbg_event.message);
-			}
+		if (debugger && [debugger target] != target) {
+			obj_error (main_menu, 1, "can't have more than one debugger yet");
 		}
+		if (!debugger) {
+			debugger = [[Debugger withTarget:target fileManager:main_menu]
+						retain];
+		}
+		[debugger handleDebugEvent];
 		return event.message.code == 0;
 	case ie_mouse:
 		return IMUI_ProcessEvent (imui_ctx, event);

@@ -6,6 +6,10 @@
 #include "ui_object.h"
 #include "../editor/editbuffer.h"
 
+@protocol EditViewKeyHook
+-(bool)handleKey:(imui_key_t)key;
+@end
+
 @interface EditView : UI_Object
 {
 	string name;
@@ -27,10 +31,19 @@
 	uint        line_index;		// current line
 	uint        char_index;		// current character
 	uint        old_char_index;
+
+	id<EditViewKeyHook> keyHook;
 }
 +(EditView *) edit:(string)name file:(string)filepath ctx:(imui_ctx_t)ctx;
 -draw;
 -(bool)modified;
+-setKeyHook:(id<EditViewKeyHook>) keyHook;
+
+-gotoLine:(uint)line;
+-highlightLine;
+-(string)filename;
+-(string)filepath;
+-(uvec2)cursor;
 @end
 
 #endif//__qwaq_gui_editview_h
