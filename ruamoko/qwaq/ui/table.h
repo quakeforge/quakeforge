@@ -10,12 +10,10 @@
 -(string) format:(int)width;
 @end
 
-@protocol TableDataSource
+@protocol TableDataSource <Object>
 -(ListenerGroup *)onRowCountChanged;
 -(int)numberOfRows;
 -(id<TableCell>)cellForColumn:(TableColumn *)column row:(int)row;
--retain;
--release;
 @end
 
 @interface TableColumn : Object
