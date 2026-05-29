@@ -2867,8 +2867,7 @@ classdef
 		}
 	  methodprotolist[methods]	{ class_add_methods ($class, $methods); }
 	  END						{ current_class = 0; }
-	| INTERFACE new_class_with_super[class]
-	  protocolrefs[protos]
+	| INTERFACE new_class_with_super[class] protocolrefs[protos]
 		{
 			$class->interface_declared = 1;
 			class_add_protocols ($class, $protos);
