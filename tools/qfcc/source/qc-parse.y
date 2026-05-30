@@ -212,6 +212,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %type	<symbol>	tag
 %type	<spec>		struct_specifier struct_list
+%type	<mut_expr>	ivars_list
 %type	<spec>		enum_specifier algebra_specifier
 %type	<spec>		image_specifier sampler_specifier
 %type	<symbol>	enum_list enumerator_list enumerator
@@ -2833,14 +2834,21 @@ protocol_name
 		}
 	;
 
+ivars_list
+	: '{' ivar_scope[tab] struct_defs[defs] '}'
+		{
+			current_symtab = pop_scope ($tab);
+			$tab->parent = nullptr;
+			$$ = $defs;
+		}
+	;
+
 classdef
 	: INTERFACE new_class_name[class] protocolrefs[protos]
 		{ class_add_protocols ($class, $protos); }
-	  '{' ivar_scope[tab] struct_defs[defs] '}'
+	  ivars_list[defs]
 		{
 			$class->interface_declared = 1;
-			current_symtab = pop_scope ($tab);
-			$tab->parent = nullptr;
 			class_add_ivars ($class, $defs, ctx);
 			$<class>$ = $class;
 		}
@@ -2857,11 +2865,9 @@ classdef
 	  END						{ current_class = 0; }
 	| INTERFACE new_class_with_super[class] protocolrefs[protos]
 		{ class_add_protocols ($class, $protos);}
-	  '{' ivar_scope[tab] struct_defs[defs] '}'
+	  ivars_list[defs]
 		{
 			$class->interface_declared = 1;
-			current_symtab = pop_scope ($tab);
-			$tab->parent = nullptr;
 			class_add_ivars ($class, $defs, ctx);
 			$<class>$ = $class;
 		}
@@ -2885,22 +2891,14 @@ classdef
 	  END						{ current_class = 0; }
 	| IMPLEMENTATION class_name[class]
 		{ class_begin (&$class->class_type, ctx); }
-	  '{' ivar_scope[tab] struct_defs[defs] '}'
-		{
-			current_symtab = pop_scope ($tab);
-			$tab->parent = nullptr;
-			class_check_ivars ($class, $defs, ctx);
-		}
+	  ivars_list[defs]
+		{ class_check_ivars ($class, $defs, ctx); }
 	| IMPLEMENTATION class_name[class]
 		{ class_begin (&$class->class_type, ctx); }
 	| IMPLEMENTATION class_with_super[class]
 		{ class_begin (&$class->class_type, ctx); }
-	  '{' ivar_scope[tab] struct_defs[defs] '}'
-		{
-			current_symtab = pop_scope ($tab);
-			$tab->parent = nullptr;
-			class_check_ivars ($class, $defs, ctx);
-		}
+	  ivars_list[defs]
+		{ class_check_ivars ($class, $defs, ctx); }
 	| IMPLEMENTATION class_with_super[class]
 		{ class_begin (&$class->class_type, ctx); }
 	| IMPLEMENTATION category_name[class]
