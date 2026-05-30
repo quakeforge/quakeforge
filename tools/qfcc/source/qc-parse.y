@@ -236,7 +236,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<expr>		method_optional_state_expr optional_state_expr
 %type	<expr>		intrinsic
 %type	<expr>		statement
-%type	<mut_expr>	statement_list compound_statement compound_statement_ns
+%type	<mut_expr>	statement_list compound_statement body_statements_ns
 %type	<mut_expr>	new_block new_scope algebra_block algebra_scope
 %type	<expr>		else line break_label continue_label
 %type	<expr>		unary_expr cast_expr
@@ -1067,10 +1067,9 @@ qc_nocode_func
 	;
 
 qc_code_func
-	: identifier '=' optional_state_expr[state]
-	  save_storage[storage]
+	: identifier[ident] '=' optional_state_expr[state] save_storage[storage] '{'
 		{
-			auto spec = qc_set_symbol ($<spec>0, $1, ctx);
+			auto spec = qc_set_symbol ($<spec>0, $ident, ctx);
 			spec.is_overload |= ctx->language->always_overload;
 			spec.sym = function_symbol (spec, ctx);
 			$<funcstate>$ = (funcstate_t) {
@@ -1080,10 +1079,10 @@ qc_code_func
 			current_func = begin_function (spec, nullptr, current_symtab, ctx);
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
-		}
-	  compound_statement_ns[body]
+		}[funcstate]
+	  body_statements_ns[body] '}'
 		{
-			auto fs = $<funcstate>5;
+			auto fs = $<funcstate>funcstate;
 			auto state = $state;
 			build_code_function (fs.spec, state, $body, ctx);
 			current_symtab = pop_scope (current_func->parameters);
@@ -1384,7 +1383,7 @@ save_storage
 	;
 
 function_body
-	: save_storage[storage]
+	: save_storage[storage] '{'
 		{
 			auto spec = $<spec>0;
 			spec.is_overload |= ctx->language->always_overload;
@@ -1396,10 +1395,10 @@ function_body
 			current_func = begin_function (spec, nullptr, current_symtab, ctx);
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
-		}
-	  compound_statement_ns[body]
+		}[funcstate]
+	  body_statements_ns[body] '}'
 		{
-			auto fs = $<funcstate>2;
+			auto fs = $<funcstate>funcstate;
 			auto state = fs.spec.sym->metafunc->state_expr;
 			build_code_function (fs.spec, state, $body, ctx);
 			current_symtab = pop_scope (current_func->parameters);
@@ -1409,7 +1408,7 @@ function_body
 	| '=' '#' expr ';'
 		{
 			specifier_t spec = $<spec>0;
-			const expr_t *bi_val = expr_process ($3, ctx);
+			const expr_t *bi_val = expr_process ($expr, ctx);
 
 			spec.is_overload |= ctx->language->always_overload;
 			spec.sym = function_symbol (spec, ctx);
@@ -1418,7 +1417,7 @@ function_body
 	| '=' intrinsic
 		{
 			specifier_t spec = $<spec>0;
-			build_intrinsic_function (spec, $2, ctx);
+			build_intrinsic_function (spec, $intrinsic, ctx);
 		}
 	;
 
@@ -2262,9 +2261,9 @@ compound_statement
 	| '{' new_scope statement_list '}' end_scope	{ $$ = $3; }
 	;
 
-compound_statement_ns
-	: '{' '}'										{ $$ = new_block_expr (0); }
-	| '{' new_block statement_list '}'				{ $$ = $3; }
+body_statements_ns
+	: /* emtpy */									{ $$ = new_block_expr (0); }
+	| new_block statement_list						{ $$ = $2; }
 	;
 
 statement_list
@@ -2960,19 +2959,20 @@ protocol_list
 	;
 
 methoddef
-	: ci methoddecl method_optional_state_expr
-		{
-			method_t   *method = $2;
+	: ci methoddecl method {}
+	| ci methoddecl builtin_method {}
+	| ci error {}
+	;
 
-			method->instance = $1;
-			$2 = method = class_find_method (current_class, method);
-			$<symbol>$ = method_symbol (current_class, method, ctx);
-		}
-	  save_storage
+method
+	: method_optional_state_expr[state] save_storage[storage] '{'
 		{
-			method_t   *method = $2;
+			method_t   *method = $<method>0;
+			method->instance = $<op>-1;
+			method = class_find_method (current_class, method);
+
 			const char *nicename = method_name (method);
-			symbol_t   *sym = $<symbol>4;
+			symbol_t   *sym = method_symbol (current_class, method, ctx);
 			symtab_t   *ivar_scope;
 
 			auto spec = (specifier_t) {
@@ -2984,6 +2984,7 @@ methoddef
 			ivar_scope = class_ivar_scope (current_class, current_symtab);
 			$<funcstate>$ = (funcstate_t) {
 				.symtab = ivar_scope,
+				.sym = sym,
 				.function = current_func,
 			};
 			current_func = begin_function (spec, nicename, ivar_scope, ctx);
@@ -2993,23 +2994,25 @@ methoddef
 			method->def = method->func->def;
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
-		}
-	  compound_statement_ns
+		}[funcstate]
+	  body_statements_ns[body] '}'
 		{
-			auto fs = $<funcstate>6;
-			auto fsym = $<symbol>4;
-			fs.spec.sym = fsym;
-			build_code_function (fs.spec, $3, $7, ctx);
+			auto fs = $<funcstate>funcstate;
+			fs.spec.sym = fs.sym;
+			build_code_function (fs.spec, $state, $body, ctx);
 			current_symtab = pop_scope (fs.symtab);
 			current_func = fs.function;
-			restore_storage ($5);
+			restore_storage ($storage);
 		}
-	| ci methoddecl '=' '#' const ';'
-		{
-			method_t   *method = $2;
-			const expr_t *bi_val = expr_process ($5, ctx);
+	;
 
-			method->instance = $1;
+builtin_method
+	: '=' '#' const ';'
+		{
+			method_t   *method = $<method>-0;
+			const expr_t *bi_val = expr_process ($const, ctx);
+
+			method->instance = $<op>-1;
 			method = class_find_method (current_class, method);
 
 			auto spec = (specifier_t) {
