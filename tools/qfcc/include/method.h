@@ -120,7 +120,4 @@ struct def_s *emit_method_descriptions (methodlist_t *_methods,
 
 void clear_selectors (void);
 
-const struct expr_s *method_check_params (method_t *method,
-										  const struct expr_s *args);
-
 #endif//__method_h

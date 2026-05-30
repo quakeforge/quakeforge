@@ -239,9 +239,6 @@ message_expr (const expr_t *receiver, keywordarg_t *message, rua_ctx_t *ctx)
 
 	send_msg = send_message (super, ctx);
 	if (method) {
-		const expr_t *err;
-		if ((err = method_check_params (method, args)))
-			return err;
 		method_type = method->type;
 	}
 	call = build_function_call (send_msg, method_type, args, ctx);
