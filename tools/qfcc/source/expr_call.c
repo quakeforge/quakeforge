@@ -107,6 +107,7 @@ check_arg_types (const expr_t **arguments, const type_t **arg_types,
 	const expr_t *err = 0;
 	for (int i = 0; i < arg_count; i++) {
 		auto e = arguments[i];
+		scoped_src_loc (e);	// for type warnings
 		const type_t *t;
 
 		if (e->type == ex_compound) {
