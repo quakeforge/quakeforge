@@ -575,15 +575,44 @@ class_conforms_to_protocol (class_t *src_class, protocol_t *proto)
 	return false;
 }
 
+static bool
+check_protocols (const type_t *dst, const type_t *src)
+{
+	protocollist_t *dst_protos = 0, *src_protos = 0;
+	bool dst_is_proto = is_id (dst) && (dst_protos = obj_get_protos (dst));
+	bool src_is_proto = is_id (src) && (src_protos = obj_get_protos (src));
+
+	if (dst_is_proto) {
+		if (src_is_proto) {
+			// id <protos> = id <protos>
+			for (int i = 0; i < dst_protos->count; i++) {
+				if (!procollist_find_protocol (src_protos,
+											   dst_protos->list[i])) {
+					warning (0, "type %s does not conform to the %s protocol",
+							 obj_classname (src), dst_protos->list[i]->name);
+					return false;
+				}
+			}
+		} else if (!is_id (src)) {
+			auto src_class = obj_get_class (src);
+			for (int i = 0; i < dst_protos->count; i++) {
+				auto proto = dst_protos->list[i];
+				if (!class_conforms_to_protocol (src_class, proto)) {
+					warning (0, "class %s does not implement the %s protocol",
+							 obj_classname (src), dst_protos->list[i]->name);
+				}
+			}
+			return false;
+		}
+	} else if (src_is_proto) {
+	} else {
+	}
+	return true;
+}
+
 int
 obj_type_assignable (const type_t *dst, const type_t *src)
 {
-	class_t    *dst_class, *src_class = 0;
-	int         dst_is_proto, src_is_proto;
-	protocollist_t *dst_protos = 0, *src_protos = 0;
-	int         i;
-
-	//puts ("%$$\"$#%");
 	if (!is_classptr (src)) {
 		// if dst is a class pointer, then the types are not compatible,
 		// otherwise unknown
@@ -593,39 +622,16 @@ obj_type_assignable (const type_t *dst, const type_t *src)
 		return -1;
 	}
 
-	dst_is_proto = is_id (dst) && (dst_protos = obj_get_protos (dst));
-	src_is_proto = is_id (src) && (src_protos = obj_get_protos (src));
-
-	if (dst_is_proto) {
-		if (src_is_proto) {
-			// id <protos> = id <protos>
-			for (i = 0; i < dst_protos->count; i++) {
-				if (!procollist_find_protocol (src_protos,
-											   dst_protos->list[i])) {
-					warning (0, "type %s does not conform to the %s protocol",
-							 obj_classname (src), dst_protos->list[i]->name);
-					return 1;
-				}
-			}
-		} else if (!is_id (src)) {
-			src_class = obj_get_class (src);
-			for (i = 0; i < dst_protos->count; i++) {
-				auto proto = dst_protos->list[i];
-				if (!class_conforms_to_protocol (src_class, proto)) {
-					warning (0, "class %s does not implement the %s protocol",
-							 obj_classname (src), dst_protos->list[i]->name);
-				}
-			}
-			return 1;
-		}
-	} else if (src_is_proto) {
-	} else {
+	if (!check_protocols (dst, src)) {
+		return 1;
 	}
+
 	if (is_id (dst) || is_id (src))
 		return 1;
 
 	// check dst is a base class of src
-	dst_class = dst->fldptr.type->class;
+	class_t *src_class = nullptr;
+	auto dst_class = dst->fldptr.type->class;
 	if (src->fldptr.type->meta == ty_class) {
 		src_class = src->fldptr.type->class;
 	}
