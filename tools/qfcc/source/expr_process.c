@@ -467,9 +467,6 @@ proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
 		}
 		return new_symbol_expr (sym);
 	}
-	specifier_t spec = {
-		.type = type_default,
-	};
 	sym = expr->symbol;
 	auto symtab = current_symtab;
 	for (auto s = symtab; s->parent; s = s->parent) {
@@ -478,10 +475,9 @@ proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
 			break;
 		}
 	}
-	auto space = symtab->space;
-	symtab->space = pr.error_space;
-	ctx->language->parse_declaration (spec, sym, nullptr, symtab, nullptr, ctx);
-	symtab->space = space;
+	sym->sy_type = sy_expr;
+	sym->expr = new_nil_expr ();
+	symtab_addsymbol (symtab, sym);
 	return error (expr, "undefined symbol `%s`", sym->name);
 }
 
