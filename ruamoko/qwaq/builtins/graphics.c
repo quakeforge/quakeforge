@@ -903,8 +903,6 @@ BI_Graphics_Secondary_Init (progs_t *pr)
 
 	qwaq_thread_t *thread = PR_Resources_Find (pr, "qwaq_thread");
 
-	Sys_RegisterShutdown (BI_shutdown, pr);
-
 	R_Progs_Init (pr);
 	RUA_Game_Init (pr, thread->rua_security);
 	S_Progs_Init (pr);
