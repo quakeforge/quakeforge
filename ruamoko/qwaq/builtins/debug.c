@@ -50,6 +50,12 @@
 #include "ruamoko/qwaq/ui/event.h"
 #include "ruamoko/qwaq/debugger/debug.h"
 
+typedef enum {
+	qdbc_none,
+	qdbc_quit,
+	qdbc_run,
+} qdb_command_t;
+
 typedef struct qwaq_target_s {
 	progs_t    *pr;
 	struct qwaq_debug_s *debugger;
@@ -58,7 +64,7 @@ typedef struct qwaq_target_s {
 	prdebug_t   event;
 	void       *param;
 	rwcond_t    run_cond;
-	int         run_command;
+	qdb_command_t run_command;
 } qwaq_target_t;
 
 typedef struct qwaq_debug_s {
@@ -134,12 +140,14 @@ qwaq_debug_handler (prdebug_t debug_event, void *param, void *data)
 	} while (ret == ETIMEDOUT);
 
 	pthread_mutex_lock (&target->run_cond.mut);
-	while (!target->run_command) {
+	while (target->run_command == qdbc_none) {
 		pthread_cond_wait (&target->run_cond.rcond, &target->run_cond.mut);
 	}
-	target->run_command = 0;
+	qdb_command_t cmd = target->run_command;
+	target->run_command = qdbc_none;
 	pthread_mutex_unlock (&target->run_cond.mut);
-	if (debug_event == prd_run_error || debug_event == prd_error) {
+	if (cmd == qdbc_quit
+		|| debug_event == prd_run_error || debug_event == prd_error) {
 		pthread_exit (param);
 	}
 }
@@ -206,7 +214,7 @@ qwaq_target_load (progs_t *pr)
 	target->handle = target_index (qwaq_debug_data, target);
 	target->thread = PR_Resources_Find (pr, "qwaq_thread");
 	qwaq_init_cond (&target->run_cond);
-	target->run_command = 0;
+	target->run_command = qdbc_none;
 
 	pr->debug_handler = qwaq_debug_handler;
 	free (pr->debug_data);
@@ -371,7 +379,7 @@ qdb_continue (progs_t *pr, void *_res)
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 
 	pthread_mutex_lock (&target->run_cond.mut);
-	target->run_command = 1;
+	target->run_command = qdbc_run;
 	pthread_cond_signal (&target->run_cond.rcond);
 	pthread_mutex_unlock (&target->run_cond.mut);
 }
