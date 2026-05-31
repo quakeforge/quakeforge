@@ -17,6 +17,7 @@
 
 @protocol DebugGetFile <Object>
 -(id<DebugFile>)showFile:(string)filename path:(string)filepath;
+-(id<Table>)showData:(string)name for:(Debugger*)debugger;
 @end
 
 @interface Debugger : Object

@@ -139,6 +139,72 @@ color_window (void)
 	}
 }
 
+bool handleKey(id self, imui_key_t key, Debugger *debugger)
+{
+	switch (key.code) {
+		case QFK_F7:
+			[debugger traceInto:self];
+			return true;
+		case QFK_F8:
+			[debugger stepOver:self];
+			return true;
+		case QFK_F4:
+			[debugger gotoCursor:self];
+			return true;
+	}
+	return false;
+}
+
+@interface Locals : Window <Table>
+{
+	Debugger *debugger;
+	id<Table> table;
+}
++(Locals *)withDebugger:(Debugger *)debugger ctx:(imui_ctx_t)ctx;
+@end
+
+@implementation Locals
+-initWithDebugger:(Debugger *)debugger ctx:(imui_ctx_t)ctx
+{
+	if (!(self = [super initWithContext:ctx name:"Locals"])) {
+		return nil;
+	}
+	self.debugger = debugger;
+	return self;
+}
+
++(Locals *)withDebugger:(Debugger *)debugger ctx:(imui_ctx_t)ctx
+{
+	return [[[self alloc] initWithDebugger:debugger ctx:ctx] autorelease];
+}
+
+-addColumn:(TableColumn *)column
+{
+	return [table addColumn:column];
+}
+
+-setDataSource:(id<TableDataSource>)dataSource
+{
+	return [table setDataSource:dataSource];
+}
+
+-draw
+{
+	if (![super draw]) {
+		return nil;
+	}
+	UI_Window (window) {
+		IMUI_SetActive (IMUI_context, true);
+		IMUI_SetFocus (IMUI_context, true);
+		imui_key_t key = {};
+		if (IMUI_GetKey (IMUI_context, &key)) {
+			handleKey (self, key, debugger);
+		}
+	}
+	return self;
+}
+@end
+
 @interface DebugEditor : EditWindow <DebugFile, EditViewKeyHook>
 {
 	Debugger *debugger;
@@ -196,18 +262,7 @@ color_window (void)
 
 -(bool)handleKey:(imui_key_t)key
 {
-	switch (key.code) {
-		case QFK_F7:
-			[debugger traceInto:self];
-			return true;
-		case QFK_F8:
-			[debugger stepOver:self];
-			return true;
-		case QFK_F4:
-			[debugger gotoCursor:self];
-			return true;
-	}
-	return false;
+	return handleKey (self, key, debugger);
 }
 @end
 
@@ -218,6 +273,7 @@ color_window (void)
 	imui_window_t *window_menu;
 	FileWindow *file_window;
 	Array *debug_editors;
+	Locals *locals;
 }
 +(imui_window_t *)create_menu:(string)name;
 +(MainMenu *) menu:(imui_ctx_t)ctx;
@@ -312,6 +368,17 @@ hs (imui_ctx_t ctx)
 					   retain];
 	[debug_editors addObject:de];
 	return de;
+}
+
+-(id<Table>)showData:(string)name for:(Debugger *)debugger
+{
+	if (name == "Locals") {
+		if (!locals) {
+			locals = [Locals withDebugger:debugger ctx:IMUI_context];
+		}
+		return locals;
+	}
+	return nil;
 }
 @end
 

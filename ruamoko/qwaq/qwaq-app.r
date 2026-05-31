@@ -9,6 +9,7 @@ int fence;
 #include "ruamoko/qwaq/ui/curses.h"
 #include "ruamoko/qwaq/ui/group.h"
 #include "ruamoko/qwaq/ui/scrollbar.h"
+#include "ruamoko/qwaq/ui/tableview.h"
 #include "ruamoko/qwaq/ui/view.h"
 #include "ruamoko/qwaq/ui/window.h"
 #include "ruamoko/qwaq/debugger/debugger.h"
@@ -31,6 +32,28 @@ arp_end (void)
 {
 	[autorelease_pool release];
 	autorelease_pool = nil;
+}
+
+static id
+handleEvent (id self, qwaq_event_t *event, Debugger *debugger)
+{
+	if (event.what == qe_key) {
+		switch (event.key.code) {
+			case QFK_F7:
+				[debugger traceInto:self];
+				event.what = qe_none;
+				break;
+			case QFK_F8:
+				[debugger stepOver:self];
+				event.what = qe_none;
+				break;
+			case QFK_F4:
+				[debugger gotoCursor:self];
+				event.what = qe_none;
+				break;
+		}
+	}
+	return self;
 }
 
 @interface EditWindow : Window <DebugFile>
@@ -67,23 +90,7 @@ arp_end (void)
 
 -handleEvent: (qwaq_event_t *) event
 {
-	printf ("handleEvent: %d %@\r\n", event.what, debugger);
-	if (event.what == qe_key) {
-		switch (event.key.code) {
-			case QFK_F7:
-				[debugger traceInto:self];
-				event.what = qe_none;
-				break;
-			case QFK_F8:
-				[debugger stepOver:self];
-				event.what = qe_none;
-				break;
-			case QFK_F4:
-				[debugger gotoCursor:self];
-				event.what = qe_none;
-				break;
-		}
-	}
+	handleEvent (self, event, debugger);
 	if (event.what != qe_none) {
 		[super handleEvent: event];
 	}
@@ -119,6 +126,60 @@ arp_end (void)
 	self.debugger = debugger;
 	return self;
 }
+@end
+
+@interface Locals : Window <Table>
+{
+	TableView *table;
+	Debugger *debugger;
+}
++(Locals *)withRect:(Rect)rect for:(Debugger*)debugger;
+@end
+@implementation Locals
+-(Locals *)initWithRect:(Rect)rect for:(Debugger*)debugger
+{
+	if (!(self = [super initWithRect:rect])) {
+		return nil;
+	}
+
+	[self setBackground: color_palette[064]];
+	self.debugger = debugger;
+	auto s = rect.extent;
+	table = [[TableView withRect:{{1, 1}, {s.width - 2, s.height - 2}}] retain];
+	auto vertical = [ScrollBar vertical:s.height - 2 at:{s.width - 1, 1}];
+	[self insert:vertical];
+	[self insert:[EditStatus withRect:{{1, 0}, {2, 1}}]];
+
+	[self insertSelected:table];
+	[table setVerticalScrollBar:vertical];
+	[self setTitle:"Locals"];
+	return self;
+}
+
++(Locals *)withRect:(Rect)rect for:(Debugger*)debugger
+{
+	return [[[self alloc] initWithRect:rect for:debugger] autorelease];
+}
+
+-handleEvent: (qwaq_event_t *) event
+{
+	handleEvent (self, event, debugger);
+	if (event.what != qe_none) {
+		[super handleEvent: event];
+	}
+	return self;
+}
+
+-addColumn:(TableColumn *)column
+{
+	return [table addColumn:column];
+}
+
+-setDataSource:(id<TableDataSource>)dataSource
+{
+	return [table setDataSource:dataSource];
+}
+
 @end
 
 @implementation QwaqApplication
@@ -263,6 +324,18 @@ arp_end (void)
 	[editors addObject:ew];
 	[self addView:ew];
 	return ew;
+}
+
+-(id<Table>)showData:(string)name for:(Debugger*)debugger
+{
+	if (name == "Locals") {
+		if (!locals) {
+			locals = [Locals withRect:{{0, 0}, {40, 10}} for:debugger];
+			[self addView:locals];
+		}
+		return locals;
+	}
+	return nil;
 }
 
 @end

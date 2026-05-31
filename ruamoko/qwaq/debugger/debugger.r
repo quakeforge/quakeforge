@@ -45,7 +45,7 @@ void printf(string fmt, ...);
 	qdb_state_t state = qdb_get_state (target);
 
 	locals_data = [[LocalsData withTarget:target] retain];
-	//locals_view = [TableView withRect:{{1, 1}, {38, 8}}];
+	locals_view = [file_manager showData:"Locals" for:self];
 	[locals_view addColumn:[TableColumn named:"name" width:12]];
 	[locals_view addColumn:[[TableColumn named:"value" width:26]
 							setGrowMode:true]];
@@ -56,11 +56,14 @@ void printf(string fmt, ...);
 {
 	qdb_state_t state = qdb_get_state (target);
 	string      filename = state.file;
-	string      filepath = qdb_get_file_path (target, filename);
-	id<DebugFile> file = [file_manager showFile:filename path:filepath];
-	[file setDebugger:self];
-	if (state.line) {
-		[[file gotoLine:state.line - 1] highlightLine];
+	if (filename) {
+		string      filepath = qdb_get_file_path (target, filename);
+		id<DebugFile> file = [file_manager showFile:filename path:filepath];
+		[file setDebugger:self];
+		if (state.line) {
+			[[file gotoLine:state.line - 1] highlightLine];
+		}
+	} else {
 	}
 }
 

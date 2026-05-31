@@ -11,6 +11,7 @@
 @class Group;
 @class TextContext;
 @class View;
+@class Locals;
 
 extern int color_palette[64];
 
@@ -27,6 +28,7 @@ extern int color_palette[64];
 
 	Array      *debuggers;
 	Array      *editors;
+	Locals     *locals;
 }
 -(Extent)size;
 -(TextContext *)screen;
