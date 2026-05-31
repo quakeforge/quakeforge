@@ -44,6 +44,7 @@
 #include "QF/keys.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
+#include "QF/zone.h"
 
 #include "ruamoko/qwaq/qwaq.h"
 #include "ruamoko/qwaq/ui/event.h"
@@ -259,13 +260,21 @@ qdb_load_progs (progs_t *pr, void *_res)
 		Sys_Error ("init_funcs not set");
 	}
 
-	qwaq_thread_t *thread = malloc (sizeof (*thread));
+	size_t      memsize = 128 * 1024 * 1024;
+	auto hunk = Hunk_Init (Sys_Alloc (memsize), memsize);
+
+	qwaq_thread_t *thread = Hunk_Alloc (hunk, sizeof (*thread));
+
+	char *arg0 = Hunk_Alloc (hunk, strlen (fname) + 1);
+	strcpy (arg0, fname);
+
 	*thread = (qwaq_thread_t) {
 		.thread_index = debug->target_threads.size,
 		.args = DARRAY_STATIC_INIT (8),
+		.progsinit = debug->init_funcs,
+		.hunk = hunk,
 	};
-	DARRAY_APPEND (&thread->args, fname);
-	thread->progsinit = debug->init_funcs;
+	DARRAY_APPEND (&thread->args, arg0);
 
 	DARRAY_APPEND (&debug->target_threads, thread);
 	qwaq_progs_t *qp = malloc (sizeof (*qp));
