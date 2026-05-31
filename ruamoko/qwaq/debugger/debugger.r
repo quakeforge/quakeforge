@@ -76,6 +76,10 @@ void printf(string fmt, ...);
 
 -run:(id<DebugFile>)file
 {
+	qdb_set_trace (self.target, 0);
+	self.trace_cond.state = qdb_get_state (self.target);
+	self.running = 1;
+	qdb_continue (self.target);
 	return self;
 }
 

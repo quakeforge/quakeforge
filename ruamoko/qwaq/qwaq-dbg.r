@@ -148,6 +148,12 @@ bool handleKey(id self, imui_key_t key, Debugger *debugger)
 		case QFK_F8:
 			[debugger stepOver:self];
 			return true;
+		case QFK_F9:
+			if (key.shift & ies_control) {
+				[debugger run:self];
+				return true;
+			}
+			break;
 		case QFK_F4:
 			[debugger gotoCursor:self];
 			return true;
