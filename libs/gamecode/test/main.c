@@ -39,10 +39,17 @@ test_debug_handler (prdebug_t event, void *param, void *data)
 			}
 			longjmp (jump_buffer, 1);
 		case prd_sub_enter:
+		case prd_func_enter:
+		case prd_func_exit:
 			if (verbose > 0) {
-				printf ("debug: subenter %d\n", *(pr_func_t *) param);
+				printf ("debug: %s %d\n", prdebug_names[event],
+						*(pr_func_t *) param);
 			}
+			break;
 		case prd_sub_exit:
+			if (verbose > 0) {
+				printf ("debug: %s\n", prdebug_names[event]);
+			}
 			break;
 		case prd_trace:
 			st = test_pr.pr_statements + test_pr.pr_xstatement;

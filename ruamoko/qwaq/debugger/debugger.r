@@ -222,6 +222,9 @@ is_new_line (qdb_state_t last_state, qdb_state_t state)
 					qdb_continue (self.target);
 				}
 				break;
+			case prd_func_enter:
+			case prd_func_exit:
+				break;
 			case prd_begin:
 				trace_cond.until_function = event.function;
 				[self stop:event.what];

@@ -67,6 +67,8 @@ evaluate_debug_handler (prdebug_t event, void *param, void *data)
 		case prd_break_point:
 		case prd_sub_enter:
 		case prd_sub_exit:
+		case prd_func_enter:
+		case prd_func_exit:
 		case prd_watch_point:
 		case prd_begin:
 		case prd_terminate:

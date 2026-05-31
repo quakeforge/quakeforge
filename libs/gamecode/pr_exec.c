@@ -59,6 +59,8 @@ const char *prdebug_names[] = {
 	[prd_watch_point] = "watch_point",
 	[prd_sub_enter]   = "sub_enter",
 	[prd_sub_exit]    = "sub_exit",
+	[prd_func_enter]  = "func_enter",
+	[prd_func_exit]   = "func_exit",
 	[prd_begin]       = "begin",
 	[prd_terminate]   = "terminate",
 	[prd_run_error]   = "run_error",
@@ -222,7 +224,10 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 	pr_type_t  *dstParams[PR_MAX_PARAMS];
 	pr_ptr_t    paramofs = 0;
 
-	if (pr->pr_trace && !pr->debug_handler) {
+	if (pr->debug_handler) {
+		int fnum = f - pr->function_table;
+		pr->debug_handler (prd_func_enter, &fnum, pr->debug_data);
+	} else if (pr->pr_trace) {
 		Sys_Printf (GRN"Entering function %s"DFL"\n",
 					PR_GetString (pr, f->descriptor->name));
 	}
@@ -320,7 +325,10 @@ PR_LeaveFunction (progs_t *pr, int to_engine)
 
 	PR_PopFrame (pr);
 
-	if (pr->pr_trace && !pr->debug_handler) {
+	if (pr->debug_handler) {
+		int fnum = f - pr->function_table;
+		pr->debug_handler (prd_func_exit, &fnum, pr->debug_data);
+	} else if (pr->pr_trace) {
 		Sys_Printf (GRN"Leaving function %s"DFL"\n",
 					PR_GetString (pr, f->descriptor->name));
 		if (to_engine) {
@@ -447,7 +455,9 @@ PR_CallFunction (progs_t *pr, pr_func_t fnum, pr_type_t *return_ptr)
 		if (pr->progs->version == PROG_VERSION) {
 			PR_SetupParams (pr, 0, 0);
 		}
-		if (pr->pr_trace && !pr->debug_handler) {
+		if (pr->debug_handler) {
+			pr->debug_handler (prd_func_enter, &fnum, pr->debug_data);
+		} else if (pr->pr_trace) {
 			Sys_Printf (MAG"Calling builtin %s @ %p"DFL"\n",
 						PR_GetString (pr, f->descriptor->name), f->func);
 		}
@@ -456,6 +466,9 @@ PR_CallFunction (progs_t *pr, pr_func_t fnum, pr_type_t *return_ptr)
 		pr->pr_return = return_ptr;
 		f->func (pr, f->data);
 		f->profile++;	// to show number times the builtin is called
+		if (pr->debug_handler) {
+			pr->debug_handler (prd_func_exit, &fnum, pr->debug_data);
+		}
 		if (builtin_depth == pr->pr_depth) {
 			pr->pr_return = saved_return;
 		} else if (builtin_depth < pr->pr_depth) {

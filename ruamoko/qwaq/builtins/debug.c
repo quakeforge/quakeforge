@@ -461,6 +461,8 @@ qdb_get_event (progs_t *pr, void *_res)
 	event->what = target->event;
 	switch (event->what) {
 		case prd_sub_enter:
+		case prd_func_enter:
+		case prd_func_exit:
 			event->function = *(pr_func_t *) target->param;
 			break;
 		case prd_run_error:
