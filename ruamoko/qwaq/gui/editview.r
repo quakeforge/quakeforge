@@ -707,6 +707,7 @@ center (uint v, uint len)
 
 -highlightLine
 {
+	sel = { line_index, [buffer nextLine:line_index] };
 	return self;
 }
 
