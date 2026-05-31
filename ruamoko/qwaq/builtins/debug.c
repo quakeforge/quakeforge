@@ -186,11 +186,6 @@ qwaq_debug_destroy (progs_t *pr, void *_res)
 static void
 qwaq_target_clear (progs_t *pr, void *_res)
 {
-	qwaq_target_t *target = pr->debug_data;
-	//FIXME I'm not sure if anything should be done here after all
-	if (0&&target) {
-		target_free (target->debugger, target);
-	}
 }
 
 static void
@@ -280,6 +275,7 @@ qdb_load_progs (progs_t *pr, void *_res)
 		.thread_index = debug->target_threads.size,
 		.args = DARRAY_STATIC_INIT (8),
 		.progsinit = debug->init_funcs,
+		.hunk_size = memsize,
 		.hunk = hunk,
 	};
 	DARRAY_APPEND (&thread->args, arg0);
@@ -382,6 +378,38 @@ qdb_continue (progs_t *pr, void *_res)
 	target->run_command = qdbc_run;
 	pthread_cond_signal (&target->run_cond.rcond);
 	pthread_mutex_unlock (&target->run_cond.mut);
+}
+
+static void
+qdb_terminate (progs_t *pr, void *_res)
+{
+	__auto_type debug = (qwaq_debug_t *) _res;
+	pr_ptr_t    handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+
+	pthread_mutex_lock (&target->run_cond.mut);
+	target->run_command = qdbc_quit;
+	pthread_cond_signal (&target->run_cond.rcond);
+	pthread_mutex_unlock (&target->run_cond.mut);
+}
+
+static void
+qdb_delete_target (progs_t *pr, void *_res)
+{
+	__auto_type debug = (qwaq_debug_t *) _res;
+	pr_ptr_t    handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+
+	if (target->thread->thread_index) {
+		int index = target->thread->thread_index;
+		auto thread = debug->target_threads.a[index];
+		debug->target_threads.a[index] = nullptr;
+		qdb_continue (pr, debug);
+		pthread_join (thread->thread_id, 0);
+
+		Sys_Free (thread->hunk, thread->hunk_size);
+	}
+	target_free (target->debugger, target);
 }
 
 static void
@@ -785,6 +813,8 @@ static builtin_t builtins[] = {
 	bi(qdb_set_watchpoint,       2, p(int), p(uint)),
 	bi(qdb_clear_watchpoint,     1, p(int)),
 	bi(qdb_continue,             1, p(int)),
+	bi(qdb_terminate,            1, p(int)),
+	bi(qdb_delete_target,        1, p(int)),
 	bi(qdb_get_state,            1, p(int)),
 	bi(qdb_get_stack_depth,      1, p(int)),
 	bi(qdb_get_stack,            1, p(int)),

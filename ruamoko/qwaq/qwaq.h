@@ -20,6 +20,7 @@ typedef struct qwaq_thread_s {
 	progsinit_f*progsinit;
 	progs_t    *pr;
 	int         rua_security;
+	size_t      hunk_size;
 	memhunk_t  *hunk;
 	struct hashctx_s *hashctx;
 	pr_func_t   main_func;

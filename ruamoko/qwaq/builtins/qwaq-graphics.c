@@ -81,6 +81,7 @@ qwaq_init_threads (qwaq_thread_set_t *thread_data, memhunk_t *main_hunk)
 		}
 		thread->progsinit = app_funcs;
 		thread->rua_security = 0;
+		thread->hunk_size = memsize;
 		thread->hunk = Hunk_Init (Sys_Alloc (memsize), memsize);
 	}
 	return main_ind;

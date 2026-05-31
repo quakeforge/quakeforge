@@ -73,6 +73,8 @@ int qdb_clear_breakpoint (qdb_target_t target, unsigned staddr);
 int qdb_set_watchpoint (qdb_target_t target, unsigned offset);
 int qdb_clear_watchpoint (qdb_target_t target);
 int qdb_continue (qdb_target_t target);
+int qdb_terminate (qdb_target_t target);
+void qdb_delete_target (qdb_target_t target);
 qdb_state_t qdb_get_state (qdb_target_t target);
 int qdb_get_stack_depth (qdb_target_t target);
 qdb_stack_t *qdb_get_stack (qdb_target_t target);
