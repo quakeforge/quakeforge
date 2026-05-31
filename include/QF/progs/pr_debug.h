@@ -82,13 +82,13 @@ extern const char *prdebug_names[];
 typedef enum prdebug_e {
 	prd_none,
 	prd_trace,
-	prd_breakpoint,
-	prd_watchpoint,
-	prd_subenter,
-	prd_subexit,		// current invocation of PR_ExecuteProgram finished
+	prd_break_point,
+	prd_watch_point,
+	prd_sub_enter,
+	prd_sub_exit,		// current invocation of PR_ExecuteProgram finished
 	prd_begin,			// not sent by VM
 	prd_terminate,		// not sent by VM
-	prd_runerror,
+	prd_run_error,
 	prd_error,			// lower level error than prd_runerror
 } prdebug_t;
 

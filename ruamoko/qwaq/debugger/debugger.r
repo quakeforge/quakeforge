@@ -203,19 +203,19 @@ is_new_line (qdb_state_t last_state, qdb_state_t state)
 			case prd_trace:
 				[self performSelector:traceHandler];
 				break;
-			case prd_breakpoint:
-			case prd_watchpoint:
+			case prd_break_point:
+			case prd_watch_point:
 				[self performSelector:breakHandler];
 				[self stop:event.what];
 				break;
-			case prd_subenter:
+			case prd_sub_enter:
 				if (sub_cond.onEnter) {
 					[self stop:event.what];
 				} else {
 					qdb_continue (self.target);
 				}
 				break;
-			case prd_subexit:
+			case prd_sub_exit:
 				if (sub_cond.onExit) {
 					[self stop:event.what];
 				} else {
@@ -230,7 +230,7 @@ is_new_line (qdb_state_t last_state, qdb_state_t state)
 				printf("Program ended: %d\n", event.exit_code);
 				[self stop:event.what];
 				break;
-			case prd_runerror:
+			case prd_run_error:
 			case prd_error:
 				printf("%s\n", event.message);
 				[self stop:event.what];

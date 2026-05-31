@@ -139,7 +139,7 @@ qwaq_debug_handler (prdebug_t debug_event, void *param, void *data)
 	}
 	target->run_command = 0;
 	pthread_mutex_unlock (&target->run_cond.mut);
-	if (debug_event == prd_runerror || debug_event == prd_error) {
+	if (debug_event == prd_run_error || debug_event == prd_error) {
 		pthread_exit (param);
 	}
 }
@@ -460,10 +460,10 @@ qdb_get_event (progs_t *pr, void *_res)
 	memset (event, 0, sizeof (*event));
 	event->what = target->event;
 	switch (event->what) {
-		case prd_subenter:
+		case prd_sub_enter:
 			event->function = *(pr_func_t *) target->param;
 			break;
-		case prd_runerror:
+		case prd_run_error:
 		case prd_error:
 			event->message = PR_SetReturnString (pr, (char *) target->param);
 			break;
@@ -474,9 +474,9 @@ qdb_get_event (progs_t *pr, void *_res)
 			event->exit_code = *(int *) target->param;
 			break;
 		case prd_trace:
-		case prd_breakpoint:
-		case prd_watchpoint:
-		case prd_subexit:
+		case prd_break_point:
+		case prd_watch_point:
+		case prd_sub_exit:
 		case prd_none:
 			break;
 	}

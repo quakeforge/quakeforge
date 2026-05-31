@@ -53,16 +53,16 @@
 #include "compat.h"
 
 const char *prdebug_names[] = {
-	[prd_none] = "none",
-	[prd_trace] = "trace",
-	[prd_breakpoint] = "breakpoint",
-	[prd_watchpoint] = "watchpoint",
-	[prd_subenter] = "subenter",
-	[prd_subexit] = "subexit",
-	[prd_begin] = "begin",
-	[prd_terminate] = "terminate",
-	[prd_runerror] = "runerror",
-	[prd_error] = "error",
+	[prd_none]        = "none",
+	[prd_trace]       = "trace",
+	[prd_break_point] = "break_point",
+	[prd_watch_point] = "watch_point",
+	[prd_sub_enter]   = "sub_enter",
+	[prd_sub_exit]    = "sub_exit",
+	[prd_begin]       = "begin",
+	[prd_terminate]   = "terminate",
+	[prd_run_error]   = "run_error",
+	[prd_error]       = "error",
 };
 
 /*
@@ -71,7 +71,7 @@ const char *prdebug_names[] = {
 	Aborts the currently executing function
 */
 VISIBLE void
-PR_RunError (progs_t * pr, const char *error, ...)
+PR_RunError (progs_t *pr, const char *error, ...)
 {
 	dstring_t  *string = dstring_new ();//FIXME leaks when debugging
 	va_list     argptr;
@@ -81,7 +81,7 @@ PR_RunError (progs_t * pr, const char *error, ...)
 	va_end (argptr);
 
 	if (pr->debug_handler) {
-		pr->debug_handler (prd_runerror, string->str, pr->debug_data);
+		pr->debug_handler (prd_run_error, string->str, pr->debug_data);
 		// not expected to return, but if so, behave as if there was no handler
 	}
 
@@ -565,7 +565,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 
 		if (st->op & OP_BREAK) {
 			if (pr->debug_handler) {
-				pr->debug_handler (prd_breakpoint, 0, pr->debug_data);
+				pr->debug_handler (prd_break_point, 0, pr->debug_data);
 			} else {
 				PR_RunError (pr, "breakpoint hit");
 			}
@@ -1748,7 +1748,7 @@ op_call:
 			if (!pr->wp_conditional
 				|| pr->watch->value == pr->wp_val.value) {
 				if (pr->debug_handler) {
-					pr->debug_handler (prd_watchpoint, 0, pr->debug_data);
+					pr->debug_handler (prd_watch_point, 0, pr->debug_data);
 				} else {
 					PR_RunError (pr, "watchpoint hit: %d -> %d",
 								 old_val.value, pr->watch->value);
@@ -2166,7 +2166,8 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				if (!pr->wp_conditional \
 					|| pr->watch->value == pr->wp_val.value) { \
 					if (pr->debug_handler) { \
-						pr->debug_handler (prd_watchpoint, 0, pr->debug_data); \
+						pr->debug_handler (prd_watch_point, 0, \
+										   pr->debug_data); \
 					} else { \
 						PR_RunError (pr, "watchpoint hit: %d -> %d", \
 									 old_val.value, pr->watch->value); \
@@ -2199,7 +2200,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			};
 			OP_begin(OP_break) {
 				if (pr->debug_handler) {
-					pr->debug_handler (prd_breakpoint, 0, pr->debug_data);
+					pr->debug_handler (prd_break_point, 0, pr->debug_data);
 				} else {
 					PR_RunError (pr, "breakpoint hit");
 				}
@@ -2932,7 +2933,7 @@ PR_ExecuteProgram (progs_t *pr, pr_func_t fnum)
 	Sys_PushErrorHandler (error_handler, pr);
 
 	if (pr->debug_handler) {
-		pr->debug_handler (prd_subenter, &fnum, pr->debug_data);
+		pr->debug_handler (prd_sub_enter, &fnum, pr->debug_data);
 	}
 
 	int         exitdepth = pr->pr_depth;
@@ -2947,7 +2948,7 @@ PR_ExecuteProgram (progs_t *pr, pr_func_t fnum)
 	}
 exit_program:
 	if (pr->debug_handler) {
-		pr->debug_handler (prd_subexit, 0, pr->debug_data);
+		pr->debug_handler (prd_sub_exit, 0, pr->debug_data);
 	}
 	pr->pr_argc = 0;
 	Sys_PopErrorHandler ();
