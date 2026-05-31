@@ -66,6 +66,7 @@ typedef struct qdb_auxfunction_s {
 
 typedef @handle qdb_target_s qdb_target_t;
 
+string qdb_event_name (int event);
 void qdb_load_progs (string fname);
 void qdb_set_trace (qdb_target_t target, int state);
 int qdb_set_breakpoint (qdb_target_t target, unsigned staddr);

@@ -254,6 +254,17 @@ pre_debug_handler (prdebug_t debug_event, void *param, void *data)
 }
 
 static void
+qdb_event_name (progs_t *pr, void *_res)
+{
+	int         event = P_INT (pr, 0);
+
+	R_STRING (pr) = 0;
+	if (event >= 0 && event <= prd_error) {
+		RETURN_STRING (pr, prdebug_names[event]);
+	}
+}
+
+static void
 qdb_load_progs (progs_t *pr, void *_res)
 {
 	auto debug = (qwaq_debug_t *) _res;
@@ -806,6 +817,7 @@ qdb_get_frame_addr (progs_t *pr, void *_res)
 #define bi(x,np,params...) {#x, x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
+	bi(qdb_event_name,           1, p(int)),
 	bi(qdb_load_progs,           1, p(string)),
 	bi(qdb_set_trace,            2, p(int), p(int)),
 	bi(qdb_set_breakpoint,       2, p(int), p(uint)),
