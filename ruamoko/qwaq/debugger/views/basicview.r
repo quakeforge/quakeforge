@@ -2,6 +2,20 @@
 #include "ruamoko/qwaq/debugger/views/basicview.h"
 #include "ruamoko/qwaq/debugger/views/nameview.h"
 
+@reference VoidView;
+@reference StringView;
+@reference FloatView;
+@reference VectorView;
+@reference EntityView;
+@reference FieldView;
+@reference FuncView;
+@reference PointerView;
+@reference QuatView;
+@reference IntView;
+@reference UIntView;
+@reference IntView;
+@reference DoubleView;
+
 static string type_views[] = {
 	"VoidView",
 	"StringView",

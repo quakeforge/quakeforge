@@ -4,6 +4,17 @@
 #include "ruamoko/qwaq/debugger/views/nameview.h"
 #include "ruamoko/qwaq/ui/tableview.h"
 
+@reference BasicView;
+@reference StructView;
+@reference StructView;
+//@reference EnumView;
+@reference ArrayView;
+//@reference ClassView;
+//@reference AliasView;
+@reference HandleView;
+@reference AlgebraView;
+@reference BoolView;
+
 static string meta_views[] = {
 	"BasicView",
 	"StructView",
