@@ -16,7 +16,7 @@ void printf(string fmt, ...);
 		return nil;
 	}
 	self.target = target;
-	self.file_manager = [fileManager retain];
+	file_manager = [fileManager retain];
 
 	return self;
 }
@@ -78,11 +78,12 @@ void printf(string fmt, ...);
 
 -run:(id<DebugFile>)file
 {
-	qdb_set_trace (self.target, 0);
+	qdb_set_trace (target, 0);
 	traceHandler = @selector(traceNext);
-	self.trace_cond.state = qdb_get_state (self.target);
-	self.running = 1;
-	qdb_continue (self.target);
+	trace_cond.state = qdb_get_state (target);
+	trace_cond.until_function = 0;
+	running = 1;
+	qdb_continue (target);
 	return self;
 }
 
@@ -90,22 +91,23 @@ void printf(string fmt, ...);
 {
 	string      filename = [file filename];
 	unsigned    line = [file cursor].y + 1;
-	unsigned    addr = qdb_get_source_line_addr (self.target,
+	unsigned    addr = qdb_get_source_line_addr (target,
 												 filename, line);
 	int         set = -1;
 	if (addr) {
-		set = qdb_set_breakpoint (self.target, addr);
+		set = qdb_set_breakpoint (target, addr);
 	}
 	if (set >= 0) {
 		traceHandler = @selector(traceNext);
-		qdb_set_trace (self.target, 0);
+		trace_cond.until_function = 0;
+		qdb_set_trace (target, 0);
 		if (set) {
-			self.breakHandler = @selector(breakKeep);
+			breakHandler = @selector(breakKeep);
 		} else {
-			self.breakHandler = @selector(breakClear);
+			breakHandler = @selector(breakClear);
 		}
-		self.running = 1;
-		qdb_continue (self.target);
+		running = 1;
+		qdb_continue (target);
 	} else {
 	}
 	return self;
@@ -113,27 +115,27 @@ void printf(string fmt, ...);
 
 -traceInto:(id<DebugFile>)file
 {
-	self.traceHandler = @selector(traceStep);
-	qdb_set_trace (self.target, 1);
-	self.trace_cond.state = qdb_get_state (self.target);
-	self.running = 1;
-	qdb_continue (self.target);
+	traceHandler = @selector(traceStep);
+	qdb_set_trace (target, 1);
+	trace_cond.state = qdb_get_state (target);
+	running = 1;
+	qdb_continue (target);
 	return self;
 }
 
 -stepOver:(id<DebugFile>)file
 {
-	self.traceHandler = @selector(traceNext);
+	traceHandler = @selector(traceNext);
 	if (event.what == prd_begin) {
 		// the event handler set until_function to the prog's main function
-		qdb_set_trace (self.target, 0);
+		qdb_set_trace (target, 0);
 	} else {
-		qdb_set_trace (self.target, 1);
-		self.trace_cond.state = qdb_get_state (self.target);
-		self.trace_cond.depth = qdb_get_stack_depth (self.target);
+		qdb_set_trace (target, 1);
+		trace_cond.state = qdb_get_state (target);
+		trace_cond.depth = qdb_get_stack_depth (target);
 	}
-	self.running = 1;
-	qdb_continue (self.target);
+	running = 1;
+	qdb_continue (target);
 	return self;
 }
 
@@ -173,7 +175,7 @@ is_new_line (qdb_state_t last_state, qdb_state_t state)
 		return self;
 	}
 	trace_cond.state = state;
-	qdb_continue (self.target);
+	qdb_continue (target);
 	return self;
 }
 
@@ -191,7 +193,7 @@ is_new_line (qdb_state_t last_state, qdb_state_t state)
 		return self;
 	}
 	trace_cond.state = state;
-	qdb_continue (self.target);
+	qdb_continue (target);
 	return self;
 }
 
@@ -225,14 +227,14 @@ is_new_line (qdb_state_t last_state, qdb_state_t state)
 				if (sub_cond.onEnter) {
 					[self stop:event.what];
 				} else {
-					qdb_continue (self.target);
+					qdb_continue (target);
 				}
 				break;
 			case prd_sub_exit:
 				if (sub_cond.onExit) {
 					[self stop:event.what];
 				} else {
-					qdb_continue (self.target);
+					qdb_continue (target);
 				}
 				break;
 			case prd_func_enter:
@@ -244,17 +246,17 @@ is_new_line (qdb_state_t last_state, qdb_state_t state)
 					} else {
 						// trace into the function
 						qdb_set_trace (target, 1);
-						qdb_continue (self.target);
+						qdb_continue (target);
 					}
 				} else {
-					qdb_continue (self.target);
+					qdb_continue (target);
 				}
 				break;
 			case prd_func_exit:
 				if (trace_cond.depth == event.depth) {
 					qdb_set_trace (target, 1);
 				}
-				qdb_continue (self.target);
+				qdb_continue (target);
 				break;
 			case prd_begin:
 				// record main function so stepOver will go directly to it
