@@ -122,9 +122,14 @@ void printf(string fmt, ...);
 -stepOver:(id<DebugFile>)file
 {
 	self.traceHandler = @selector(traceNext);
-	qdb_set_trace (self.target, 1);
-	self.trace_cond.state = qdb_get_state (self.target);
-	self.trace_cond.depth = qdb_get_stack_depth (self.target);
+	if (event.what == prd_begin) {
+		// the event handler set until_function to the prog's main function
+		qdb_set_trace (self.target, 0);
+	} else {
+		qdb_set_trace (self.target, 1);
+		self.trace_cond.state = qdb_get_state (self.target);
+		self.trace_cond.depth = qdb_get_stack_depth (self.target);
+	}
 	self.running = 1;
 	qdb_continue (self.target);
 	return self;
@@ -229,9 +234,29 @@ is_new_line (qdb_state_t last_state, qdb_state_t state)
 				}
 				break;
 			case prd_func_enter:
+				if (trace_cond.until_function == event.function) {
+					auto func = qdb_get_function (target, event.function);
+					if (func.staddr <= 0) {
+						// builtin function: can't trace into it, so just stop
+						[self stop:event.what];
+					} else {
+						// trace into the function
+						qdb_set_trace (target, 1);
+						qdb_continue (self.target);
+					}
+				} else {
+					qdb_continue (self.target);
+				}
+				break;
 			case prd_func_exit:
+				if (trace_cond.depth == event.depth) {
+					qdb_set_trace (target, 1);
+				}
+				qdb_continue (self.target);
 				break;
 			case prd_begin:
+				// record main function so stepOver will go directly to it
+				// (traceInto will visit any .ctor functions).
 				trace_cond.until_function = event.function;
 				[self stop:event.what];
 				break;
