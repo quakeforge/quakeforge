@@ -696,7 +696,8 @@ bi (IMUI_IntLabel)
 	for (int i = 0; i < len; i++) {
 		//unicode is expected to never go beyond 0x10ffff
 		text[i] = ustr[i] & 0x1fffff;
-		attr[i] = ustr[i] >> 21;
+		//enable background color
+		attr[i] = (1 << 12) | (ustr[i] >> 21);
 	}
 	text[len] = 0;
 	attr[len] = 0;

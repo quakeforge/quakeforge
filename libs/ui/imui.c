@@ -1700,8 +1700,8 @@ IMUI_Label32Attr (imui_ctx_t *ctx, const uint32_t *str, const uint32_t *attr,
 		uint32_t color = ctx->fg_palette [attr[ind] & 077];
 		Ent_SetComponent (text.id, c_color, ctx->tsys.reg, &color);
 		//Ent_SetComponent (text.id, c_outline, ctx->tsys.reg, &color);
-		if (attr[ind] & 0100) {
-			set_fill (ctx, text, ctx->bg_palette[0]);
+		if (attr[ind] & (1 << 12)) {
+			set_fill (ctx, text, ctx->bg_palette[(attr[ind] >> 6) & 077]);
 		}
 	}
 }
