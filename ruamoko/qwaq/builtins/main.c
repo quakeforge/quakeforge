@@ -324,15 +324,19 @@ run_progs (void *data)
 	qwaq_progs_t *qp = data;
 	auto thread = qp->thread;
 
-	spawn_progs (qp);
-	//Sys_Printf ("starting thread for %s\n", thread->args.a[0]);
+	if (!Sys_setjmp (thread->jmpbuf)) {
+		spawn_progs (qp);
+		//Sys_Printf ("starting thread for %s\n", thread->args.a[0]);
 
-	PR_ExecuteProgram (thread->pr, thread->main_func);
-	PR_PopFrame (thread->pr);
-	thread->return_code = R_INT (thread->pr);
-	if (thread->pr->debug_handler) {
-		thread->pr->debug_handler (prd_terminate, &thread->return_code,
-								   thread->pr->debug_data);
+		PR_ExecuteProgram (thread->pr, thread->main_func);
+		PR_PopFrame (thread->pr);
+		thread->return_code = R_INT (thread->pr);
+		if (thread->pr->debug_handler) {
+			thread->pr->debug_handler (prd_terminate, &thread->return_code,
+									   thread->pr->debug_data);
+		}
+	} else {
+		printf ("well, that went well\n");
 	}
 	PR_Shutdown (thread->pr);
 	free (thread->pr);

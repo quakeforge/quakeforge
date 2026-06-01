@@ -148,7 +148,9 @@ qwaq_debug_handler (prdebug_t debug_event, void *param, void *data)
 	pthread_mutex_unlock (&target->run_cond.mut);
 	if (cmd == qdbc_quit
 		|| debug_event == prd_run_error || debug_event == prd_error) {
-		pthread_exit (param);
+		target->thread->return_code = -1 - cmd != qdbc_quit;
+		// return directly to run_progs
+		Sys_longjmp (target->thread->jmpbuf);
 	}
 }
 
@@ -250,7 +252,18 @@ pre_debug_handler (prdebug_t debug_event, void *param, void *data)
 		}
 	} while (ret == ETIMEDOUT);
 
-	pthread_exit (nullptr);
+	pthread_mutex_lock (&target->run_cond.mut);
+	while (target->run_command == qdbc_none) {
+		pthread_cond_wait (&target->run_cond.rcond, &target->run_cond.mut);
+	}
+	// don't care about the command: can't do anything but exit
+	target->run_command = qdbc_none;
+	pthread_mutex_unlock (&target->run_cond.mut);
+
+	// signal that some error occured
+	target->thread->return_code = -2;
+	// return directly to run_progs
+	Sys_longjmp (target->thread->jmpbuf);
 }
 
 static void
