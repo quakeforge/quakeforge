@@ -219,6 +219,7 @@ create_progs (qwaq_thread_t *thread)
 	progs_t    *pr = calloc (1, sizeof (*pr));
 	progsinit_f *funcs = thread->progsinit;
 
+	thread->pr = pr;
 	pr->load_file = load_file;
 	pr->allocate_progs_mem = allocate_progs_mem;
 	pr->free_progs_mem = free_progs_mem;

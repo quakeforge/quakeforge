@@ -44,12 +44,14 @@ void printf(string fmt, ...);
 {
 	qdb_state_t state = qdb_get_state (target);
 
-	locals_data = [[LocalsData withTarget:target] retain];
-	locals_view = [file_manager showData:"Locals" for:self];
-	[locals_view addColumn:[TableColumn named:"name" width:12]];
-	[locals_view addColumn:[[TableColumn named:"value" width:26]
-							setGrowMode:true]];
-	[locals_view setDataSource:locals_data];
+	if (state.staddr != ~0) {
+		locals_data = [[LocalsData withTarget:target] retain];
+		locals_view = [file_manager showData:"Locals" for:self];
+		[locals_view addColumn:[TableColumn named:"name" width:12]];
+		[locals_view addColumn:[[TableColumn named:"value" width:26]
+								setGrowMode:true]];
+		[locals_view setDataSource:locals_data];
+	}
 }
 
 -(void) show_line

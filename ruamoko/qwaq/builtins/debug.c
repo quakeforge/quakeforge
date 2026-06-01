@@ -230,7 +230,7 @@ pre_debug_handler (prdebug_t debug_event, void *param, void *data)
 	qwaq_debug_t *debug = qp->data;
 
 	qwaq_target_t *target = target_new (debug);
-	target->pr = debug->pr;
+	target->pr = qp->thread->pr;
 	target->debugger = debug;
 	target->handle = target_index (debug, target);
 	target->thread = qp->thread;
@@ -434,13 +434,22 @@ qdb_get_state (progs_t *pr, void *_res)
 	pr_auxfunction_t *f;
 	pr_string_t file = 0;
 	unsigned    line = 0;
-	unsigned    staddr = tpr->pr_xstatement;
 	pr_func_t   func = 0;
+
+	if (!tpr->progs) {
+		R_PACKED (pr, qdb_state_t) = (qdb_state_t) {
+			.staddr = ~0,
+			.func = ~0,
+			.line = ~0,
+		};
+		return;
+	}
 
 	if (tpr->pr_xfunction) {
 		func = tpr->pr_xfunction - tpr->function_table;
 	}
 
+	unsigned    staddr = tpr->pr_xstatement;
 	lineno = PR_Find_Lineno (tpr, staddr);
 	if (lineno) {
 		f = PR_Get_Lineno_Func (tpr, lineno);
@@ -452,11 +461,12 @@ qdb_get_state (progs_t *pr, void *_res)
 		line += f->source_line;
 	}
 
-	qdb_state_t state = {};
-	state.staddr = staddr;
-	state.func = func;
-	state.file = file;
-	state.line = line;
+	qdb_state_t state = {
+		.staddr = staddr,
+		.func = func,
+		.file = file,
+		.line = line,
+	};
 
 	R_PACKED (pr, qdb_state_t) = state;
 }
