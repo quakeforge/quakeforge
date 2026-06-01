@@ -79,6 +79,7 @@ void printf(string fmt, ...);
 -run:(id<DebugFile>)file
 {
 	qdb_set_trace (self.target, 0);
+	traceHandler = @selector(traceNext);
 	self.trace_cond.state = qdb_get_state (self.target);
 	self.running = 1;
 	qdb_continue (self.target);
@@ -96,6 +97,7 @@ void printf(string fmt, ...);
 		set = qdb_set_breakpoint (self.target, addr);
 	}
 	if (set >= 0) {
+		traceHandler = @selector(traceNext);
 		qdb_set_trace (self.target, 0);
 		if (set) {
 			self.breakHandler = @selector(breakKeep);
