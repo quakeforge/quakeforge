@@ -129,7 +129,7 @@ typedef struct probj_resources_s {
 	dtable_t   *dtable_list;
 	pr_func_t   obj_forward;
 	pr_sel_t   *forward_selector;
-	dstring_t  *msg;
+	dstring_t  *msg[2];
 	hashtab_t  *selector_hash;
 	hashtab_t  *classes;
 	hashtab_t  *protocols;
@@ -1157,9 +1157,9 @@ obj_verror (probj_t *probj, pr_id_t *object, int code, const char *fmt, int coun
 		name = PR_GetString (pr, class->name);
 	}
 
-	PR_Sprintf (pr, probj->msg, "obj_verror", fmt, count, args);
+	PR_Sprintf (pr, probj->msg[0], "obj_verror", fmt, count, args);
 	PR_RunError (pr, "%s@%x: %s", name, PR_SetPointer (pr, object),
-				 probj->msg->str);
+				 probj->msg[0]->str);
 }
 
 static void
@@ -1447,10 +1447,10 @@ rua___obj_forward (progs_t *pr, void *data)
 		return;
 	}
 	if (sel->sel_id >= probj->selector_index_max) {
-		dsprintf (probj->msg, "invalid selector: {$%x, %d} @ $%x\n",
+		dsprintf (probj->msg[0], "invalid selector: {$%x, %d} @ $%x\n",
 				  sel->sel_id, sel->sel_types, P_POINTER (pr, 1));
 	} else {
-		dsprintf (probj->msg, "(%s) %s does not recognize %s\n",
+		dsprintf (probj->msg[0], "(%s) %s does not recognize %s\n",
 				  PR_CLS_ISMETA (class) ? "class" : "instance",
 				  PR_GetString (pr, class->name),
 				  PR_GetString (pr, probj->selector_names[sel->sel_id]));
@@ -1461,14 +1461,14 @@ rua___obj_forward (progs_t *pr, void *data)
 		RUA_CALL_BEGIN (pr, 4)
 		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
 		P_POINTER (pr, 1) = PR_SetPointer (pr, err_sel);
-		P_POINTER (pr, 2) = PR_SetTempString (pr, probj->msg->str);
+		P_POINTER (pr, 2) = PR_SetTempString (pr, probj->msg[0]->str);
 		P_PACKED  (pr, pr_va_list_t, 3).count = 0;
 		P_PACKED  (pr, pr_va_list_t, 3).list = 0;
 		RUA_CALL_END (pr, get_imp (probj, class, err_sel))
 		return;
 	}
 
-	PR_RunError (pr, "%s", probj->msg->str);
+	PR_RunError (pr, "%s", probj->msg[0]->str);
 }
 
 static void
@@ -2231,10 +2231,10 @@ rua__i_Object_error_error_ (progs_t *pr, void *data)
 			args = 0;
 		}
 	}
-	dsprintf (probj->msg, "error: %s (%s)\n%s",
+	dsprintf (probj->msg[1], "error: %s (%s)\n%s",
 			  PR_GetString (pr, object_get_class_name (probj, self)),
 			  object_is_instance (probj, self) ? "instance" : "class", fmt);
-	obj_verror (probj, self, 0, probj->msg->str, count, args);
+	obj_verror (probj, self, 0, probj->msg[1]->str, count, args);
 }
 
 static int
@@ -2497,7 +2497,8 @@ rua_obj_destroy (progs_t *pr, void *_res)
 	qfZoneScoped (true);
 	probj_t    *probj = _res;
 
-	dstring_delete (probj->msg);
+	dstring_delete (probj->msg[0]);
+	dstring_delete (probj->msg[1]);
 	Hash_DelTable (probj->selector_hash);
 	Hash_DelTable (probj->classes);
 	Hash_DelTable (probj->protocols);
@@ -2537,7 +2538,8 @@ RUA_Obj_Init (progs_t *pr, int secure)
 	probj->load_methods = Hash_NewTable (1021, 0, 0, probj, pr->hashctx);
 	Hash_SetHashCompare (probj->load_methods, load_methods_get_hash,
 						 load_methods_compare);
-	probj->msg = dstring_newstr();
+	probj->msg[0] = dstring_newstr();
+	probj->msg[1] = dstring_newstr();
 	DARRAY_INIT (&probj->obj_list_sets, 32);
 	DARRAY_INIT (&probj->class_tree_sets, 32);
 
