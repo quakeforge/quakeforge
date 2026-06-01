@@ -620,5 +620,5 @@ PR_Error (progs_t *pr, const char *error, ...)
 		pr->debug_handler (prd_error, string->str, pr->debug_data);
 		// not expected to return, but if so, behave as if there was no handler
 	}
-	Sys_Error ("%s: %s", pr->progs_name, string->str);
+	Sys_Error ("%s\n%s", pr->progs_name, string->str);
 }

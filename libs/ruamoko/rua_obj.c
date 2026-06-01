@@ -1158,7 +1158,7 @@ obj_verror (probj_t *probj, pr_id_t *object, int code, const char *fmt, int coun
 	}
 
 	PR_Sprintf (pr, probj->msg[0], "obj_verror", fmt, count, args);
-	PR_RunError (pr, "%s@%x: %s", name, PR_SetPointer (pr, object),
+	PR_RunError (pr, "%s@%x\n%s", name, PR_SetPointer (pr, object),
 				 probj->msg[0]->str);
 }
 
