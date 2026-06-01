@@ -1820,10 +1820,11 @@ rua_sel_get_name (progs_t *pr, void *data)
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
 
-	if (sel->sel_id > 0 && sel->sel_id <= probj->selector_index)
+	if (sel && sel->sel_id > 0 && sel->sel_id <= probj->selector_index) {
 		R_STRING (pr) = probj->selector_names[sel->sel_id];
-	else
-		R_STRING (pr) = 0;
+	} else {
+		RETURN_STRING (pr, "(null)");
+	}
 }
 
 static void
