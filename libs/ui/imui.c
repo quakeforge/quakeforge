@@ -653,7 +653,6 @@ IMUI_GetKey (imui_ctx_t *ctx, imui_key_t *key)
 	auto state = ctx->current_state;
 	if (ctx->focused == state->old_entity) {
 		*key = ctx->key;
-		ctx->key = (imui_key_t) { };
 		return true;
 	} else {
 		*key = (imui_key_t) { };
@@ -1306,6 +1305,7 @@ IMUI_Draw (imui_ctx_t *ctx)
 	if (ctx->key_preedit->size) {
 		imui_draw_preinput (ctx);
 	}
+	ctx->key = (imui_key_t) { };
 	ctx->mouse_pressed = 0;
 	ctx->mouse_released = 0;
 	ctx->mouse_scroll = (view_pos_t) {};
