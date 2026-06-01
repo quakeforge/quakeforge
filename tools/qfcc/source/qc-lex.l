@@ -535,6 +535,7 @@ parse_number (const rua_tok_t *tok, rua_ctx_t *ctx)
 {
 	bool binary = false;
 	const char *type = "integer";
+	bool octal = false;
 	bool hex = false;
 	bool fp = false;
 	char buf[tok->textlen + 1], *dst = buf;
@@ -548,6 +549,10 @@ parse_number (const rua_tok_t *tok, rua_ctx_t *ctx)
 			case 'x': case 'X':
 				hex = true;
 				type = "hexadecimal";
+				break;
+			case 'o': case 'O':
+				octal = true;
+				type = "octal";
 				break;
 			case '.':
 				fp = true;
@@ -593,6 +598,12 @@ parse_number (const rua_tok_t *tok, rua_ctx_t *ctx)
 		// to get here, 0b (or 0B) was seen, so buf is guaranted to start with
 		// that
 		lvalue = strtoll (buf + 2, &endptr, 2);
+	} else if (hex && !fp) {
+		// 0x or 0X was seen
+		lvalue = strtoll (buf + 2, &endptr, 16);
+	} else if (octal && !fp) {
+		// 0o or 0O was seen
+		lvalue = strtoll (buf + 2, &endptr, 8);
 	} else {
 		if (fp) {
 			fvalue = strtod (buf, &endptr);
