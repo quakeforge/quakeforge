@@ -326,8 +326,7 @@ PR_LeaveFunction (progs_t *pr, int to_engine)
 	PR_PopFrame (pr);
 
 	if (pr->debug_handler) {
-		int fnum = f - pr->function_table;
-		pr->debug_handler (prd_func_exit, &fnum, pr->debug_data);
+		pr->debug_handler (prd_func_exit, &pr->pr_depth, pr->debug_data);
 	} else if (pr->pr_trace) {
 		Sys_Printf (GRN"Leaving function %s"DFL"\n",
 					PR_GetString (pr, f->descriptor->name));
@@ -467,7 +466,7 @@ PR_CallFunction (progs_t *pr, pr_func_t fnum, pr_type_t *return_ptr)
 		f->func (pr, f->data);
 		f->profile++;	// to show number times the builtin is called
 		if (pr->debug_handler) {
-			pr->debug_handler (prd_func_exit, &fnum, pr->debug_data);
+			pr->debug_handler (prd_func_exit, &pr->pr_depth, pr->debug_data);
 		}
 		if (builtin_depth == pr->pr_depth) {
 			pr->pr_return = saved_return;

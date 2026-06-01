@@ -19,6 +19,7 @@ typedef struct qdb_event_s {
 	union {
 		pr_string_t message;
 		unsigned    function;
+		int         depth;
 		int         exit_code;
 	};
 } qdb_event_t;
