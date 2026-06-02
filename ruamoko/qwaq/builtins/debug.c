@@ -569,11 +569,11 @@ qdb_get_data (progs_t *pr, void *_res)
 	pr_type_t  *src = PR_GetPointer(tpr, srcoff);
 	pr_type_t  *dst = PR_GetPointer(pr, dstoff);
 
-	if (srcoff >= tpr->globals_size || srcoff + length >= tpr->globals_size) {
+	if (srcoff >= tpr->globals_size || srcoff + length > tpr->globals_size) {
 		R_INT (pr) = -1;
 		return;
 	}
-	if (dstoff >= pr->globals_size || dstoff + length >= pr->globals_size) {
+	if (dstoff >= pr->globals_size || dstoff + length > pr->globals_size) {
 		R_INT (pr) = -1;
 		return;
 	}
