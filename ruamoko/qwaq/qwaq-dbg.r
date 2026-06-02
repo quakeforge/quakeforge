@@ -164,7 +164,8 @@ bool handleKey(id self, imui_key_t key, Debugger *debugger)
 @interface Locals : Window <Table>
 {
 	Debugger *debugger;
-	id<Table> table;
+	Array *columns;
+	id<TableDataSource> locals;
 }
 +(Locals *)withDebugger:(Debugger *)debugger ctx:(imui_ctx_t)ctx;
 @end
@@ -175,6 +176,8 @@ bool handleKey(id self, imui_key_t key, Debugger *debugger)
 	if (!(self = [super initWithContext:ctx name:"Locals"])) {
 		return nil;
 	}
+	IMUI_Window_SetSize (window, {400, 300});
+	columns = [[Array array] retain];
 	self.debugger = debugger;
 	return self;
 }
@@ -186,12 +189,49 @@ bool handleKey(id self, imui_key_t key, Debugger *debugger)
 
 -addColumn:(TableColumn *)column
 {
-	return [table addColumn:column];
+	[columns addObject:column];
+	return self;
 }
 
 -setDataSource:(id<TableDataSource>)dataSource
 {
-	return [table setDataSource:dataSource];
+	locals = dataSource;
+	return self;
+}
+
+static void
+draw_locals (Locals *self)
+{
+	UI_ScrollBox("Locals##Table:scroller") {
+		auto sblen = IMUI_State_GetLen (IMUI_context, nil);
+		UI_Scroller () {
+			int height = IMUI_TextSize (IMUI_context, "X").y;
+			IMUI_State_SetScrollScale (IMUI_context, nil, { 0, height });
+			uint numCols = [self.columns count];
+			uint numRows = [self.locals numberOfRows];
+			if (numRows) {
+				ivec2 pos = IMUI_State_GetPos (IMUI_context, nil);
+				ivec2 len = IMUI_State_GetLen (IMUI_context, nil);
+				len.y = numRows * height;
+				IMUI_State_SetLen (IMUI_context, nil, len);
+				ivec2 delta = { 0, -pos.y % height };
+				IMUI_SetViewPos (IMUI_context, delta);
+				UI_Horizontal for (uint j = 0; j < numCols; j++) {
+					UI_Vertical {
+						len = sblen - delta;
+						auto col = [self.columns objectAtIndex:j];
+						for (uint i = pos.y / height; len.y > 0 && i < numRows;
+							 i++, len.y -= height) {
+							int row = i;
+							auto cell = [self.locals cellForColumn:col row:row];
+							UI_Label ([cell format:[col width]]);
+						}
+					}
+				}
+			}
+		}
+	}
+	UI_ScrollBar ("Locals##Table:scroller");
 }
 
 -draw
@@ -199,12 +239,22 @@ bool handleKey(id self, imui_key_t key, Debugger *debugger)
 	if (![super draw]) {
 		return nil;
 	}
+	imui_style_t style;
+	IMUI_Style_Fetch (IMUI_context, &style);
 	UI_Window (window) {
+		if (IMUI_Window_IsCollapsed (window)) {
+			continue;
+		}
 		IMUI_SetActive (IMUI_context, true);
 		IMUI_SetFocus (IMUI_context, true);
 		imui_key_t key = {};
 		if (IMUI_GetKey (IMUI_context, &key)) {
 			handleKey (self, key, debugger);
+		}
+		UI_Horizontal {
+			IMUI_Layout_SetYSize (IMUI_context, imui_size_expand, 100);
+			UI_SetFill (style.background.normal);
+			draw_locals (self);
 		}
 	}
 	return self;
