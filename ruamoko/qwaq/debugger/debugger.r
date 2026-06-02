@@ -78,7 +78,11 @@ void printf(string fmt, ...);
 
 -run:(id<DebugFile>)file
 {
+	if (running) {
+		return self;
+	}
 	qdb_set_trace (target, 0);
+	qdb_set_stepping (target, 1);
 	traceHandler = @selector(traceNext);
 	trace_cond.state = qdb_get_state (target);
 	trace_cond.until_function = 0;
@@ -89,6 +93,9 @@ void printf(string fmt, ...);
 
 -gotoCursor:(id<DebugFile>)file
 {
+	if (running) {
+		return self;
+	}
 	string      filename = [file filename];
 	unsigned    line = [file cursor].y + 1;
 	unsigned    addr = qdb_get_source_line_addr (target,
@@ -101,6 +108,7 @@ void printf(string fmt, ...);
 		traceHandler = @selector(traceNext);
 		trace_cond.until_function = 0;
 		qdb_set_trace (target, 0);
+		qdb_set_stepping (target, 1);
 		if (set) {
 			breakHandler = @selector(breakKeep);
 		} else {
@@ -115,8 +123,13 @@ void printf(string fmt, ...);
 
 -traceInto:(id<DebugFile>)file
 {
+	if (running) {
+		return self;
+	}
 	traceHandler = @selector(traceStep);
 	qdb_set_trace (target, 1);
+	qdb_set_stepping (target, 0);
+	qdb_until_new_line (target);
 	trace_cond.state = qdb_get_state (target);
 	running = 1;
 	qdb_continue (target);
@@ -125,14 +138,23 @@ void printf(string fmt, ...);
 
 -stepOver:(id<DebugFile>)file
 {
+	if (running) {
+		return self;
+	}
 	traceHandler = @selector(traceNext);
 	if (event.what == prd_begin) {
 		// the event handler set until_function to the prog's main function
 		qdb_set_trace (target, 0);
+		qdb_set_stepping (target, 1);
+		qdb_until_function (target, trace_cond.until_function);
+		qdb_until_depth (target, -1);
 	} else {
 		qdb_set_trace (target, 1);
+		qdb_set_stepping (target, 1);
 		trace_cond.state = qdb_get_state (target);
 		trace_cond.depth = qdb_get_stack_depth (target);
+		qdb_until_new_line (target);
+		qdb_until_depth (target, trace_cond.depth);
 	}
 	running = 1;
 	qdb_continue (target);

@@ -65,6 +65,12 @@ typedef struct qwaq_target_s {
 	void       *param;
 	rwcond_t    run_cond;
 	qdb_command_t run_command;
+
+	qdb_state_t state;
+	pr_func_t   until_function;
+	int         depth;
+	bool        go_fast;
+	bool        stepping;
 } qwaq_target_t;
 
 typedef struct qwaq_debug_s {
@@ -119,6 +125,47 @@ get_target (qwaq_debug_t *debug, const char *name, int handle)
 	return target;
 }
 
+static qdb_state_t
+get_state (progs_t *tpr)
+{
+	pr_lineno_t *lineno;
+	pr_auxfunction_t *f;
+	pr_string_t file = 0;
+	unsigned    line = 0;
+	pr_func_t   func = 0;
+
+	if (tpr->pr_xfunction) {
+		func = tpr->pr_xfunction - tpr->function_table;
+	}
+
+	unsigned    staddr = tpr->pr_xstatement;
+	lineno = PR_Find_Lineno (tpr, staddr);
+	if (lineno) {
+		f = PR_Get_Lineno_Func (tpr, lineno);
+		file = tpr->pr_functions[f->function].file;
+		func = f->function;
+		line = PR_Get_Lineno_Line (tpr, lineno);
+		line += f->source_line;
+	}
+
+	qdb_state_t state = {
+		.staddr = staddr,
+		.func = func,
+		.file = file,
+		.line = line,
+	};
+	return state;
+}
+
+static bool
+is_new_line (qdb_state_t last_state, qdb_state_t state)
+{
+	return !(last_state.staddr != state.staddr
+			 && last_state.func == state.func
+			 && last_state.file == state.file
+			 && last_state.line == state.line);
+}
+
 static void
 qwaq_debug_handler (prdebug_t debug_event, void *param, void *data)
 {
@@ -131,6 +178,41 @@ qwaq_debug_handler (prdebug_t debug_event, void *param, void *data)
 	target->param = param;
 	event.what = qe_debug_event;
 	event.message.pointer_val = target->handle;
+
+	if (target->go_fast) {
+		switch (debug_event) {
+			case prd_trace:
+				auto state = get_state (target->pr);
+				if (is_new_line (target->state, state)) {
+					break;
+				}
+				target->state = state;
+				return;
+			case prd_sub_enter:
+			case prd_sub_exit:
+				return;
+			case prd_func_enter:
+				if (target->until_function == *(pr_func_t *) param) {
+					break;
+				}
+				target->pr->pr_trace = !target->stepping;
+				return;
+			case prd_func_exit:
+				if (target->depth >= *(int *) param) {
+					break;
+				}
+				return;
+			// these are always handled in the high-level code
+			case prd_none:
+			case prd_break_point:
+			case prd_watch_point:
+			case prd_begin:
+			case prd_terminate:
+			case prd_run_error:
+			case prd_error:
+				break;
+		}
+	}
 
 	do {
 		ret = debug->event_handler (debug->event_data, &event);
@@ -328,6 +410,17 @@ qdb_set_trace (progs_t *pr, void *_res)
 }
 
 static void
+qdb_set_stepping (progs_t *pr, void *_res)
+{
+	__auto_type debug = (qwaq_debug_t *) _res;
+	pr_ptr_t    handle = P_INT (pr, 0);
+	int         state = P_INT (pr, 1);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+
+	target->stepping = state;
+}
+
+static void
 qdb_set_breakpoint (progs_t *pr, void *_res)
 {
 	__auto_type debug = (qwaq_debug_t *) _res;
@@ -405,6 +498,39 @@ qdb_continue (progs_t *pr, void *_res)
 }
 
 static void
+qdb_until_new_line (progs_t *pr, void *_res)
+{
+	__auto_type debug = (qwaq_debug_t *) _res;
+	pr_ptr_t    handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+
+	target->state = get_state (target->pr);
+	target->go_fast = true;
+}
+
+static void
+qdb_until_function (progs_t *pr, void *_res)
+{
+	__auto_type debug = (qwaq_debug_t *) _res;
+	pr_ptr_t    handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+
+	target->until_function = P_INT (pr, 1);
+	target->go_fast = true;
+}
+
+static void
+qdb_until_depth (progs_t *pr, void *_res)
+{
+	__auto_type debug = (qwaq_debug_t *) _res;
+	pr_ptr_t    handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+
+	target->depth = P_INT (pr, 1);
+	target->go_fast = true;
+}
+
+static void
 qdb_terminate (progs_t *pr, void *_res)
 {
 	__auto_type debug = (qwaq_debug_t *) _res;
@@ -443,11 +569,6 @@ qdb_get_state (progs_t *pr, void *_res)
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
-	pr_lineno_t *lineno;
-	pr_auxfunction_t *f;
-	pr_string_t file = 0;
-	unsigned    line = 0;
-	pr_func_t   func = 0;
 
 	if (!tpr->progs) {
 		R_PACKED (pr, qdb_state_t) = (qdb_state_t) {
@@ -458,29 +579,10 @@ qdb_get_state (progs_t *pr, void *_res)
 		return;
 	}
 
-	if (tpr->pr_xfunction) {
-		func = tpr->pr_xfunction - tpr->function_table;
-	}
-
-	unsigned    staddr = tpr->pr_xstatement;
-	lineno = PR_Find_Lineno (tpr, staddr);
-	if (lineno) {
-		f = PR_Get_Lineno_Func (tpr, lineno);
-		//FIXME file is a permanent string. dynamic would be better
-		//but they're not merged (and would need refcounting)
-		file = PR_SetString (pr, PR_Get_Source_File (tpr, lineno));
-		func = f->function;
-		line = PR_Get_Lineno_Line (tpr, lineno);
-		line += f->source_line;
-	}
-
-	qdb_state_t state = {
-		.staddr = staddr,
-		.func = func,
-		.file = file,
-		.line = line,
-	};
-
+	auto state = get_state (tpr);
+	//FIXME file is a permanent string. dynamic would be better
+	//but they're not merged (and would need refcounting)
+	state.file = PR_SetString (pr, PR_GetString (tpr, state.file));
 	R_PACKED (pr, qdb_state_t) = state;
 }
 
@@ -843,11 +945,15 @@ static builtin_t builtins[] = {
 	bi(qdb_event_name,           1, p(int)),
 	bi(qdb_load_progs,           1, p(string)),
 	bi(qdb_set_trace,            2, p(int), p(int)),
+	bi(qdb_set_stepping,         2, p(int), p(int)),
 	bi(qdb_set_breakpoint,       2, p(int), p(uint)),
 	bi(qdb_clear_breakpoint,     2, p(int), p(uint)),
 	bi(qdb_set_watchpoint,       2, p(int), p(uint)),
 	bi(qdb_clear_watchpoint,     1, p(int)),
 	bi(qdb_continue,             1, p(int)),
+	bi(qdb_until_new_line,       1, p(int)),
+	bi(qdb_until_function,       1, p(int), p(uint)),
+	bi(qdb_until_depth,          1, p(int), p(int)),
 	bi(qdb_terminate,            1, p(int)),
 	bi(qdb_delete_target,        1, p(int)),
 	bi(qdb_get_state,            1, p(int)),
