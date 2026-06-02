@@ -1994,7 +1994,8 @@ pr_lineno_t *PR_Debug_Linenos (progs_t *pr, pr_auxfunction_t *aux_function,
 pr_auxfunction_t *PR_Get_Lineno_Func (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 pr_uint_t PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 pr_uint_t PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
-pr_lineno_t *PR_Find_Lineno (progs_t *pr, pr_uint_t addr) __attribute__((pure));
+bool PR_Find_FuncLine (progs_t *pr, pr_uint_t addr, pr_auxfunction_t **aux,
+					   pr_lineno_t **lineno);
 pr_uint_t PR_FindSourceLineAddr (progs_t *pr, const char *file, pr_uint_t line) __attribute__((pure));
 const char *PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 const char *PR_Get_Source_Line (progs_t *pr, pr_uint_t addr);

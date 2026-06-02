@@ -86,6 +86,12 @@ typedef struct {
 	pr_uint_t   line;
 } func_key_t;
 
+typedef struct {
+	pr_uint_t   addr;
+	pr_int_t    func;
+	pr_int_t    num_linenos;
+} addr_func_t;
+
 typedef struct prdeb_resources_s {
 	progs_t    *pr;
 	dstring_t  *string;
@@ -98,6 +104,7 @@ typedef struct prdeb_resources_s {
 	pr_auxfunction_t *auxfunctions;
 	pr_auxfunction_t **auxfunction_map;
 	pr_func_t  *sorted_functions;
+	addr_func_t *func_by_addr;
 	pr_lineno_t *linenos;
 	pr_def_t   *local_defs;
 	pr_def_t   *type_encodings_def;
@@ -420,6 +427,9 @@ pr_debug_clear (progs_t *pr, void *data)
 	if (res->auxfunction_map)
 		pr->free_progs_mem (pr, res->auxfunction_map);
 	res->auxfunction_map = 0;
+	if (res->func_by_addr)
+		pr->free_progs_mem (pr, res->func_by_addr);
+	res->func_by_addr = 0;
 	if (res->sorted_functions)
 		pr->free_progs_mem (pr, res->sorted_functions);
 	res->sorted_functions = 0;
@@ -552,6 +562,22 @@ def_compare_sort (const void *_da, const void *_db, void *_res)
 }
 
 static int
+lineno_compare (const void *_la, const void *_lb, void *_res)
+{
+	auto la = *(const pr_lineno_t *)_la;
+	auto lb = *(const pr_lineno_t *)_lb;
+	return la.fa.addr > lb.fa.addr ? 1 : la.fa.addr < lb.fa.addr ? -1 : 0;
+}
+
+static int
+addr_func_compare (const void *_fa, const void *_fb, void *_res)
+{
+	auto fa = *(const addr_func_t *) _fa;
+	auto fb = *(const addr_func_t *) _fb;
+	return fa.addr > fb.addr ? 1 : fa.addr < fb.addr ? -1 : 0;
+}
+
+static int
 func_compare_sort (const void *_fa, const void *_fb, void *_res)
 {
 	prdeb_resources_t *res = _res;
@@ -588,10 +614,26 @@ func_compare_search (const void *_key, const void *_f, void *_res)
 	return key->line - f_line;
 }
 
+static pr_uint_t __attribute__((pure))
+count_func_linenos (pr_auxfunction_t *aux_function, prdeb_resources_t *res)
+{
+	//FIXME put lineno count in sym file
+	pr_uint_t   count;
+	pr_uint_t   i;
+	for (count = 1, i = aux_function->line_info + 1;
+		 i < res->debug->num_linenos; i++, count++) {
+		if (!res->linenos[i].line) {
+			break;
+		}
+	}
+	return count;
+}
+
 VISIBLE void
 PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
+	res->debug = debug;
 
 	res->auxfunctions = (pr_auxfunction_t*)((char*)debug + debug->auxfunctions);
 	res->linenos = (pr_lineno_t*)((char*)debug + debug->linenos);
@@ -602,12 +644,18 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 	size_t      size;
 	size = pr->progs->functions.count * sizeof (pr_auxfunction_t *);
 	res->auxfunction_map = pr->allocate_progs_mem (pr, size);
+	size = pr->progs->functions.count * sizeof (addr_func_t);
+	res->func_by_addr = pr->allocate_progs_mem (pr, size);
 	size = pr->progs->functions.count * sizeof (pr_func_t);
 	res->sorted_functions = pr->allocate_progs_mem (pr, size);
 
 	for (pr_uint_t i = 0; i < pr->progs->functions.count; i++) {
+		auto f = &pr->pr_functions[i];
 		res->auxfunction_map[i] = 0;
 		res->sorted_functions[i] = i;
+		res->func_by_addr[i] = (addr_func_t) {
+			.addr = f->first_statement > 0 ? f->first_statement : ~0,
+		};
 	}
 
 	qfot_type_encodings_t *encodings = 0;
@@ -620,17 +668,25 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 	}
 
 	for (pr_uint_t i = 0; i < debug->num_auxfunctions; i++) {
+		auto aux = &res->auxfunctions[i];
 		if (type_encodings) {
-			res->auxfunctions[i].return_type += type_encodings;
+			aux->return_type += type_encodings;
 		}
-		res->auxfunction_map[res->auxfunctions[i].function] =
-			&res->auxfunctions[i];
-		heapsort_r (res->local_defs + res->auxfunctions[i].local_defs,
-					res->auxfunctions[i].num_locals, sizeof (pr_def_t),
-					def_compare_sort, res);
+		res->auxfunction_map[aux->function] = aux;
+		heapsort_r (res->local_defs + aux->local_defs, aux->num_locals,
+					sizeof (pr_def_t), def_compare_sort, res);
+		pr_uint_t num_linenos = count_func_linenos (aux, res);
+		res->func_by_addr[aux->function].num_linenos = num_linenos;
+		res->func_by_addr[aux->function].func = i;
+		if (num_linenos > 1) {
+			heapsort_r (res->linenos + aux->line_info + 1, num_linenos - 1,
+						sizeof (pr_lineno_t), lineno_compare, res);
+		}
 	}
 	heapsort_r (res->sorted_functions, pr->progs->functions.count,
 				sizeof (pr_func_t), func_compare_sort, res);
+	heapsort_r (res->func_by_addr, pr->progs->functions.count,
+				sizeof (addr_func_t), addr_func_compare, res);
 
 	for (pr_uint_t i = 0; i < debug->num_locals; i++) {
 		if (type_encodings) {
@@ -663,8 +719,6 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 			}
 		}
 	}
-
-	res->debug = debug;
 }
 
 VISIBLE int
@@ -812,7 +866,6 @@ VISIBLE pr_lineno_t *
 PR_Debug_Linenos (progs_t *pr, pr_auxfunction_t *aux_function,
 				  pr_uint_t *num_linenos)
 {
-	pr_uint_t   i, count;
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	if (!res->debug) {
 		return 0;
@@ -824,14 +877,7 @@ PR_Debug_Linenos (progs_t *pr, pr_auxfunction_t *aux_function,
 	if (aux_function->line_info > res->debug->num_linenos) {
 		return 0;
 	}
-	//FIXME put lineno count in sym file
-	for (count = 1, i = aux_function->line_info + 1;
-		 i < res->debug->num_linenos; i++, count++) {
-		if (!res->linenos[i].line) {
-			break;
-		}
-	}
-	*num_linenos = count;
+	*num_linenos = count_func_linenos (aux_function, res);
 	return res->linenos + aux_function->line_info;
 }
 
@@ -871,23 +917,48 @@ PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno)
 	return 0;
 }
 
-pr_lineno_t *
+bool
+PR_Find_FuncLine (progs_t *pr, pr_uint_t addr, pr_auxfunction_t **aux,
+				  pr_lineno_t **lineno)
+{
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	addr_func_t af_key = { .addr = addr };
+	pr_uint_t   count = res->debug->num_auxfunctions;
+	addr_func_t *af = fbsearch_r (&af_key, res->func_by_addr, count,
+								  sizeof (addr_func_t), addr_func_compare, res);
+	if (af) {
+		*aux = &res->auxfunctions[af->func];
+		pr_lineno_t ln_key = { .fa.addr = addr };
+		auto lines = res->linenos + (*aux)->line_info;
+		*lineno = nullptr;
+		if (!af->num_linenos) {
+			return true;
+		}
+		if (af->num_linenos < 2 || addr < lines[1].fa.addr) {
+			*lineno = &lines[0];
+			return true;
+		}
+		*lineno = fbsearch_r (&ln_key, lines + 1, af->num_linenos - 1,
+							  sizeof (pr_lineno_t), lineno_compare, res);
+		if (*lineno) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static pr_lineno_t *
 PR_Find_Lineno (progs_t *pr, pr_uint_t addr)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
-	pr_uint_t   i;
 	pr_lineno_t *lineno = 0;
 
 	if (!res->debug)
 		return 0;
 	if (!res->debug->num_linenos)
 		return 0;
-	for (i = res->debug->num_linenos; i > 0; i--) {
-		if (PR_Get_Lineno_Addr (pr, &res->linenos[i - 1]) <= addr) {
-			lineno = &res->linenos[i - 1];
-			break;
-		}
-	}
+	pr_auxfunction_t *aux;
+	PR_Find_FuncLine (pr, addr, &aux, &lineno);
 	return lineno;
 }
 

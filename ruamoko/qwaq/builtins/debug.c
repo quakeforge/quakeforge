@@ -128,8 +128,6 @@ get_target (qwaq_debug_t *debug, const char *name, int handle)
 static qdb_state_t
 get_state (progs_t *tpr)
 {
-	pr_lineno_t *lineno;
-	pr_auxfunction_t *f;
 	pr_string_t file = 0;
 	unsigned    line = 0;
 	pr_func_t   func = 0;
@@ -139,13 +137,15 @@ get_state (progs_t *tpr)
 	}
 
 	unsigned    staddr = tpr->pr_xstatement;
-	lineno = PR_Find_Lineno (tpr, staddr);
-	if (lineno) {
-		f = PR_Get_Lineno_Func (tpr, lineno);
-		file = tpr->pr_functions[f->function].file;
-		func = f->function;
-		line = PR_Get_Lineno_Line (tpr, lineno);
-		line += f->source_line;
+	pr_lineno_t *lineno;
+	pr_auxfunction_t *aux;
+	if (PR_Find_FuncLine (tpr, staddr, &aux, &lineno)) {
+		file = tpr->pr_functions[aux->function].file;
+		func = aux->function;
+		line = aux->source_line;
+		if (lineno) {
+			line += PR_Get_Lineno_Line (tpr, lineno);
+		}
 	}
 
 	qdb_state_t state = {
