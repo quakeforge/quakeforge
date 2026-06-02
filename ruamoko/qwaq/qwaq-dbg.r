@@ -266,6 +266,7 @@ draw_locals (Locals *self)
 	Debugger *debugger;
 }
 +(DebugEditor *)withFile:(string)filepath ctx:(imui_ctx_t)ctx;
+-(bool)closed;
 @end
 
 @implementation DebugEditor
@@ -281,6 +282,11 @@ draw_locals (Locals *self)
 +(DebugEditor *)withFile:(string)filepath ctx:(imui_ctx_t)ctx
 {
 	return [[[self alloc] initWithFile:filepath ctx:ctx] autorelease];
+}
+
+-(bool)closed
+{
+	return !IMUI_Window_IsOpen (window);
 }
 
 -gotoLine:(int)line
@@ -416,12 +422,20 @@ hs (imui_ctx_t ctx)
 	for (int i = [debug_editors count]; i-- > 0; ) {
 		DebugEditor *de = [debug_editors objectAtIndex:i];
 		if ([de filepath] == filepath) {
+			[de retain];
+			[debug_editors removeObject:de];
+			if ([de closed]) {
+				// the window was closed, so it needs to be recreated
+				[de release];
+				break;
+			}
+			[debug_editors addObject:de];
+			[de release];
 			[de raise];
 			return de;
 		}
 	}
-	DebugEditor *de = [[DebugEditor withFile:filepath ctx:IMUI_context]
-					   retain];
+	DebugEditor *de = [DebugEditor withFile:filepath ctx:IMUI_context];
 	[debug_editors addObject:de];
 	return de;
 }
