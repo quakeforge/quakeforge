@@ -93,7 +93,7 @@
 	return 1 + field_rows[type.strct.num_fields];
 }
 
--(DefView *) viewAtRow:(int) row forColumn:(TableColumn *)column level:(int)level
+-(DefView *) cellAtRow:(int) row forColumn:(TableColumn *)column level:(int)level
 {
 	if (row == 0) {
 		if ([column name] == "name") {
@@ -106,7 +106,7 @@
 	row -= 1;
 
 	DefView   *cell = nil;
-	int       *index = fbsearch (&row, field_rows, type.strct.num_fields, 1, nil);
+	int *index = fbsearch (&row, field_rows, type.strct.num_fields, 1, nil);
 
 	if (index) {
 		DefView    *dv = field_views[index - field_rows];
