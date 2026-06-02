@@ -229,8 +229,10 @@ error:
 			break;
 		case ty_bool:
 		case ty_basic:
-			size = pr_type_size[type.type] * type.basic.width
-					* type.basic.columns;
+			size = pr_type_size[type.type];
+			if (type.type != ev_ptr && type.type != ev_field) {
+				size *= type.basic.width * type.basic.columns;
+			}
 			break;
 		case ty_array:
 			aux_type = type.array.type;
