@@ -22,6 +22,7 @@
 	DefView   **def_views;
 	int        *def_rows;
 	void       *data;
+	unsigned    data_size;
 }
 +(LocalsData *)withTarget:(qdb_target_t)target;
 -setFunction:(unsigned)fnum;

@@ -68,13 +68,17 @@ free_defs (LocalsData *self)
 	if (defs) {
 		free_defs (self);
 	}
-	if (data) {
-		obj_free (data);
-		data = nil;
+	if (func) {
+		obj_free (func);
+		func = nil;
 	}
 	func = qdb_get_function (target, fnum);
-	if (func && func.local_size) {
-		data = obj_malloc (func.local_size * sizeof (int));
+	if (func && func.local_size > data_size) {
+		if (data) {
+			obj_free (data);
+		}
+		data_size = func.local_size;
+		data = obj_malloc (data_size * sizeof (int));
 	}
 	aux_func = qdb_get_auxfunction (target, fnum);
 	num_user_defs = 0;
