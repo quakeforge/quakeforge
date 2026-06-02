@@ -1047,7 +1047,7 @@ signal_handler (int sig)
 
 			if (!recover) {
 				signal (SIGILL,  SIG_DFL);
-				//signal (SIGSEGV, SIG_DFL);
+				signal (SIGSEGV, SIG_DFL);
 				signal (SIGFPE,  SIG_DFL);
 			}
 	}
@@ -1059,7 +1059,7 @@ hook_signals (void)
 	// catch signals
 	signal (SIGINT,  signal_handler);
 	signal (SIGILL,  signal_handler);
-	//signal (SIGSEGV, signal_handler);
+	signal (SIGSEGV, signal_handler);
 	signal (SIGTERM, signal_handler);
 	signal (SIGFPE,  signal_handler);
 }
@@ -1072,7 +1072,7 @@ static __thread struct sigaction save_iot;
 static __thread struct sigaction save_bus;
 static __thread struct sigaction save_int;
 static __thread struct sigaction save_ill;
-//static __thread struct sigaction save_segv;
+static __thread struct sigaction save_segv;
 static __thread struct sigaction save_term;
 static __thread struct sigaction save_fpe;
 
@@ -1109,7 +1109,7 @@ signal_handler (int sig, siginfo_t *info, void *ucontext)
 				sigaction (SIGIOT,  &save_iot,  0);
 				sigaction (SIGBUS,  &save_bus,  0);
 				sigaction (SIGILL,  &save_ill,  0);
-				//sigaction (SIGSEGV, &save_segv, 0);
+				sigaction (SIGSEGV, &save_segv, 0);
 				sigaction (SIGFPE,  &save_fpe,  0);
 			}
 	}
@@ -1131,7 +1131,7 @@ hook_signals (void)
 #endif
 	sigaction (SIGINT,  &action, &save_int);
 	sigaction (SIGILL,  &action, &save_ill);
-	//sigaction (SIGSEGV, &action, &save_segv);
+	sigaction (SIGSEGV, &action, &save_segv);
 	sigaction (SIGTERM, &action, &save_term);
 	sigaction (SIGFPE,  &action, &save_fpe);
 }
