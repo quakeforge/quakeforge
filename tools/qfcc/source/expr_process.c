@@ -440,7 +440,7 @@ static struct {
 };
 
 static const expr_t *
-proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
+builtin_symbol (const expr_t *expr, rua_ctx_t *ctx)
 {
 	auto sym = expr->symbol;
 	for (auto bi = builtin_names; bi->name; bi++) {
@@ -453,7 +453,30 @@ proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
 			break;
 		}
 	}
-	sym = symtab_lookup (current_symtab, sym->name);
+	return nullptr;
+}
+
+static const expr_t *
+undefined_symbol (const expr_t *expr, rua_ctx_t *ctx)
+{
+	auto sym = expr->symbol;
+	auto symtab = current_symtab;
+	for (auto s = symtab; s->parent; s = s->parent) {
+		if (s->type == stab_local) {
+			symtab = s;
+			break;
+		}
+	}
+	sym->sy_type = sy_expr;
+	sym->expr = new_nil_expr ();
+	symtab_addsymbol (symtab, sym);
+	return error (expr, "undefined symbol `%s`", sym->name);
+}
+
+static const expr_t *
+proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
+{
+	auto sym = symtab_lookup (current_symtab, expr->symbol->name);
 	if (sym) {
 		scoped_src_loc (expr);
 		if (sym->is_constexpr) {
@@ -467,18 +490,10 @@ proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
 		}
 		return new_symbol_expr (sym);
 	}
-	sym = expr->symbol;
-	auto symtab = current_symtab;
-	for (auto s = symtab; s->parent; s = s->parent) {
-		if (s->type == stab_local) {
-			symtab = s;
-			break;
-		}
+	if (auto e = builtin_symbol (expr, ctx)) {
+		return e;
 	}
-	sym->sy_type = sy_expr;
-	sym->expr = new_nil_expr ();
-	symtab_addsymbol (symtab, sym);
-	return error (expr, "undefined symbol `%s`", sym->name);
+	return undefined_symbol (expr, ctx);
 }
 
 bool
