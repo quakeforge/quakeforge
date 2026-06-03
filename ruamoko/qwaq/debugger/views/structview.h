@@ -9,7 +9,7 @@
 	DefView   **field_views;
 	int        *field_rows;
 }
-+(StructView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type;
++(StructView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type target:(qdb_target_t)target;
 @end
 
 #endif//__qwaq_debugger_structview_h

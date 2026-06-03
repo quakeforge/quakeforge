@@ -13,7 +13,7 @@
 	void       *ptr_data;
 	DefView    *ptr_view;
 }
-+(PointerView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type;
++(PointerView *)withDef:(qdb_def_t)def type:(qfot_type_t *)type in:(void *)data target:(qdb_target_t)target;
 @end
 
 #endif//__qwaq_debugger_pointerview_h

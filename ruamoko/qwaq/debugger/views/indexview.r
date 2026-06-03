@@ -5,7 +5,7 @@
 
 -initWithIndex:(int)index
 {
-	if (!(self = [super initWithDef:def type:nil])) {
+	if (!(self = [super initWithDef:def type:nil target:nil])) {
 		return nil;
 	}
 	self.index = index;

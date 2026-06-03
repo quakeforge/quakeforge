@@ -9,7 +9,7 @@
 @reference StructView;
 //@reference EnumView;
 @reference ArrayView;
-//@reference ClassView;
+@reference ClassView;
 //@reference AliasView;
 @reference HandleView;
 @reference AlgebraView;
@@ -30,6 +30,22 @@ static string meta_views[] = {
 
 @implementation DefView
 
+-initWithDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type target:(qdb_target_t)target
+{
+	if (!(self = [super init])) {
+		return nil;
+	}
+	self.def = def;
+	self.type = type;
+	self.target = target;
+	return self;
+}
+
++(DefView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type target:(qdb_target_t)target
+{
+	return [[[self alloc] initWithDef:def in:data type:type target:target] autorelease];
+}
+
 -init
 {
 	if (!(self = [super init])) {
@@ -38,13 +54,14 @@ static string meta_views[] = {
 	return self;
 }
 
--initWithDef:(qdb_def_t)def type:(qfot_type_t *)type
+-initWithDef:(qdb_def_t)def type:(qfot_type_t *)type target:(qdb_target_t)target
 {
 	if (!(self = [super init])) {
 		return nil;
 	}
 	self.def = def;
 	self.type = type;
+	self.target = target;
 	return self;
 }
 
@@ -73,7 +90,7 @@ static string meta_views[] = {
 	}
 	id class = obj_lookup_class (metaname);
 	if (class) {
-		return [[class withDef:def in:data type:type] setTarget:target];
+		return [class withDef:def in:data type:type target:target];
 	}
 	return [NameView withName:"Invalid Meta"];
 }

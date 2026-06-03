@@ -3,18 +3,18 @@
 
 @implementation BoolView
 
--initWithDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type
+-initWithDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type target:(qdb_target_t)target
 {
-	if (!(self = [super initWithDef:def type:type])) {
+	if (!(self = [super initWithDef:def type:type target:target])) {
 		return nil;
 	}
 	self.data = data + def.offset;
 	return self;
 }
 
-+(BoolView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type
++(BoolView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type target:(qdb_target_t)target
 {
-	return [[[self alloc] initWithDef:def in:data type:type] autorelease];
+	return [[[self alloc] initWithDef:def in:data type:type target:target] autorelease];
 }
 
 -(string) get_val:(int)ind

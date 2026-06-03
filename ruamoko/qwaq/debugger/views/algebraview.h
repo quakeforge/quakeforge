@@ -4,7 +4,7 @@
 #include "ruamoko/qwaq/debugger/views/basicview.h"
 
 @interface AlgebraView : BasicView
-+(DefView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type;
++(DefView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type target:(qdb_target_t)target;
 @end
 
 #endif//__qwaq_debugger_algebraview_h
