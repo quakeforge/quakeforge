@@ -17,11 +17,11 @@
 	return [[[self alloc] initWithDef:def in:data type:type target:target] autorelease];
 }
 
--(string)format:(int)width
+-(string)format
 {
 	string val = sprintf ("%08x %08x %08x %08x",
 						  data[0], data[1], data[2], data[3]);
-	return sprintf ("%*.*s", width, width, val);
+	return val;
 }
 
 @end

@@ -28,13 +28,13 @@
 	return b ? "true" : "false";
 }
 
--(string)format:(int)width
+-(string)format
 {
 	string val = sprintf ("%s", [self get_val:0]);
 	for (int i = 1; i < type.basic.width; i++) {
 		val = sprintf ("%s %s", val, [self get_val:i]);
 	}
-	return sprintf ("%*.*s", width, width, val);
+	return val;
 }
 
 @end

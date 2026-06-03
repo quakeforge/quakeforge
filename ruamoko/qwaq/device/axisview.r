@@ -19,9 +19,9 @@
 	return [[[self alloc] initWithAxis:axis] retain];
 }
 
--(string)format:(int)width
+-(string)format
 {
-	return sprintf ("%*d", width, axis.value);
+	return sprintf ("%d", axis.value);
 }
 
 -(int)rows

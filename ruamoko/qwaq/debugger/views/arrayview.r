@@ -51,12 +51,12 @@
 	[super dealloc];
 }
 
--(string)format:(int)width
+-(string)format
 {
 	string      val = sprintf ("%s[%d..%d]", type.array.type.encoding,
 							   type.array.base,
 							   type.array.base + type.array.count - 1);
-	return sprintf ("%*.*s", width, width, val);
+	return val;
 }
 
 -fetchData

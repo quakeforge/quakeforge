@@ -29,10 +29,10 @@
 	[super dealloc];
 }
 
--(string)format:(int)width
+-(string)format
 {
 	string val = sprintf ("%s [0x%x]", type.encoding, data[0]);
-	return sprintf ("%*.*s", width, width, val);
+	return val;
 }
 
 -fetchData

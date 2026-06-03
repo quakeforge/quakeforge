@@ -17,11 +17,11 @@
 	return [[[self alloc] initWithDef:def in:data type:type target:target] autorelease];
 }
 
--(string)format:(int)width
+-(string)format
 {
 	string val = sprintf ("\"%s\"",
 						  str_quote (qdb_get_string (target, data[0])));
-	return sprintf ("%*.*s", width, width, val);
+	return val;
 }
 
 @end

@@ -1,4 +1,5 @@
 #include <Array.h>
+#include <string.h>
 #include "ruamoko/qwaq/ui/listener.h"
 #include "ruamoko/qwaq/ui/scrollbar.h"
 #include "ruamoko/qwaq/ui/tableview.h"
@@ -80,7 +81,9 @@
 			}
 			col = [columns objectAtIndex:i];
 			cell = [dataSource cellForColumn:col row:row];
-			[buffer mvaddstr:{x, y}, [cell format:[col width]]];
+			int width = [col width];
+			string val = [cell format];
+			[buffer mvaddstr:{x, y}, sprintf ("%*.*s", width, width, val)];
 			x += [col width];
 		}
 	}

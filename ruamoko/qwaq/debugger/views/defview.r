@@ -127,9 +127,9 @@ static string meta_views[] = {
 	return self;
 }
 
--(string)format:(int)width
+-(string)format
 {
-	return sprintf ("%*.*s", width, width, "<invalid>");
+	return "<invalid>";
 }
 
 @end

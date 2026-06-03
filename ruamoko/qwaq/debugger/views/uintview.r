@@ -17,13 +17,13 @@
 	return [[[self alloc] initWithDef:def in:data type:type target:target] autorelease];
 }
 
--(string)format:(int)width
+-(string)format
 {
 	string val = sprintf ("%u", data[0]);
 	for (int i = 1; i < type.basic.width; i++) {
 		val = sprintf ("%s %u", val, data[i]);
 	}
-	return sprintf ("%*.*s", width, width, val);
+	return val;
 }
 
 @end

@@ -224,7 +224,7 @@ draw_locals (Locals *self)
 							 i++, len.y -= height) {
 							int row = i;
 							auto cell = [self.locals cellForColumn:col row:row];
-							UI_Label ([cell format:[col width]]);
+							UI_Label ([cell format]);
 						}
 					}
 				}

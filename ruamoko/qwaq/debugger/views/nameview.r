@@ -23,9 +23,9 @@
 	return [[[self alloc] initWithName:name] autorelease];
 }
 
--(string)format:(int)width
+-(string)format
 {
-	return str_mid (name, 0, width);
+	return name;
 }
 
 -(DefView *) cellAtRow:(int) row forColumn:(TableColumn *)column level:(int)level

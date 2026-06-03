@@ -178,10 +178,10 @@ collect_ivars (ClassView *self, classptr_t class)
 	[super dealloc];
 }
 
--(string)format:(int)width
+-(string)format
 {
 	string      val = sprintf ("%s", type.strct.tag);
-	return sprintf ("%*.*s", width, width, val);
+	return val;
 }
 
 -fetchData:(uint)ptr

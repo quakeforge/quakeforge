@@ -17,10 +17,10 @@
 	return [[[self alloc] initWithIndex:index] autorelease];
 }
 
--(string)format:(int)width
+-(string)format
 {
 	string      val = sprintf ("[%d]", index);
-	return sprintf ("%*.*s", width, width, val);
+	return val;
 }
 
 -(DefView *) cellAtRow:(int) row forColumn:(TableColumn *)column level:(int)level

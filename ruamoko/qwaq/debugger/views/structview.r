@@ -54,10 +54,10 @@
 	[super dealloc];
 }
 
--(string)format:(int)width
+-(string)format
 {
 	string      val = sprintf ("%s", type.strct.tag);
-	return sprintf ("%*.*s", width, width, val);
+	return val;
 }
 
 -fetchData

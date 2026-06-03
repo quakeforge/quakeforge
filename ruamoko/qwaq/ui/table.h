@@ -7,7 +7,7 @@
 @class ListenerGroup;
 
 @protocol TableCell
--(string) format:(int)width;
+-(string) format;
 @end
 
 @protocol TableDataSource <Object>
