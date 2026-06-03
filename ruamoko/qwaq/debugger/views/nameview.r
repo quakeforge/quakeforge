@@ -8,7 +8,7 @@
 	if (!(self = [super initWithDef:def type:nil target:nil])) {
 		return nil;
 	}
-	self.name = name;
+	self.name = str_hold (name);
 	return self;
 }
 
