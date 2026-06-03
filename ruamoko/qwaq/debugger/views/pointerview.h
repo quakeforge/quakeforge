@@ -7,7 +7,6 @@
 {
 	unsigned   *data;
 	bool        invalid;
-	unsigned    ptr;
 	qfot_type_t *ptr_type;
 	int         ptr_size;
 	void       *ptr_data;
