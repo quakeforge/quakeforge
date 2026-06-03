@@ -147,7 +147,7 @@ typedef struct pr_ivar_list_s {
 	pr_int_t    ivar_count;
 	struct pr_ivar_s {
 		pr_string_t ivar_name;
-		pr_string_t ivar_type;
+		pr_ptr_t    ivar_type;		// qfot_type_t
 		pr_int_t    ivar_offset;
 	} ivar_list[1];
 } pr_ivar_list_t;
