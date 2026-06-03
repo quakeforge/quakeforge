@@ -316,7 +316,7 @@ qp_yyparse (FILE *in, rua_ctx_t *ctx)
 
 	yylex_init_extra (ctx, &ctx->scanner);
 	yyset_in (in, ctx->scanner);
-	YYLTYPE lloc = { 1, 1, 1, 1 };
+	YYLTYPE lloc = pr.loc;
 	do {
 		YYSTYPE lval;
 		int token = yylex (&lval, &lloc, ctx->scanner);
