@@ -2079,20 +2079,30 @@ init_objective_structs (void)
 static void
 init_classes (void)
 {
+	auto class = new_symbol ("obj_class");
+	auto object = new_symbol ("obj_object");
+	auto protocol = new_symbol ("obj_protocol");
+
+	find_struct ('s', class, &type_class);
+	find_struct ('s', object, &type_object);
+	find_struct ('s', protocol, &type_protocol);
+
 	chain_type (&type_class);
-	make_structure ("obj_class", 's', class_struct, &type_class);
+	make_structure (class->name, 's', class_struct, &type_class);
 	chain_type (&type_Class);
-	make_structure ("obj_object", 's', object_struct, &type_object);
+	make_structure (object->name, 's', object_struct, &type_object);
 	chain_type (&type_object);
 	chain_type (&type_id);
-	make_structure ("obj_protocol", 's', protocol_struct, &type_protocol);
+	make_structure (protocol->name, 's', protocol_struct, &type_protocol);
 	chain_type (&type_protocol);
 }
 
 static void
 class_init_obj_module (void)
 {
-	make_structure ("obj_module", 's', module_struct, &type_module);
+	auto module = new_symbol ("obj_module");
+	find_struct ('s', module, &type_module);
+	make_structure (module->name, 's', module_struct, &type_module);
 
 	chain_type (&type_module);
 	chain_type (&type_moduleptr);
