@@ -297,7 +297,7 @@ restore_src_loc (expr_t **e)
 expr_t *
 set_src_loc (const expr_t *e)
 {
-	if (!e) {
+	if (!e || !e->loc.line) {
 		return nullptr;
 	}
 	// save the current source location

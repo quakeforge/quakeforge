@@ -184,7 +184,9 @@ lvalue_expr (const expr_t *expr)
 		// convert rvalue to lvalue (validity checked later)
 		expr = expr->xvalue.expr;
 	}
-	return new_xvalue_expr (expr, true);
+	auto lval = new_xvalue_expr (expr, true);
+	lval->loc = (rua_loc_t) {};
+	return lval;
 }
 
 static const expr_t *
@@ -199,7 +201,9 @@ rvalue_expr (const expr_t *expr)
 		bug (expr, "lvalue in rvalue?");
 		expr = expr->xvalue.expr;
 	}
-	return new_xvalue_expr (expr, false);
+	auto rval = new_xvalue_expr (expr, false);
+	rval->loc = (rua_loc_t) {};
+	return rval;
 }
 
 static symbol_t *
@@ -220,8 +224,10 @@ function_decl (symbol_t *sym, param_t *params, const type_t *ret_type,
 								.params = params
 							}, ctx);
 	auto fsym_expr = new_symbol_expr (fsym);
+	fsym_expr->loc = (rua_loc_t) {};
 	if (!params) {
 		fsym_expr = new_call_expr (fsym_expr, nullptr, nullptr);
+		fsym_expr->loc = (rua_loc_t) {};
 	}
 
 	auto csym = new_symbol (sym->name);
@@ -267,6 +273,7 @@ function_return (function_t *func)
 	expr_t     *ret_val = 0;
 	if (ret) {
 		ret_val = new_symbol_expr (ret);
+		ret_val->loc = (rua_loc_t) {};
 	}
 	return ret_val;
 }
