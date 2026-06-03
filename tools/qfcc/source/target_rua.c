@@ -424,7 +424,8 @@ ruamoko_test_expr (const expr_t *expr)
 		// the above is_bool and is_lbool tests ensure a boolean type
 		// is a vector (there are no bool matrices)
 		if (is_relational (expr)) {
-			return error (expr, "ambiguous conversion to bool");
+			return error (expr, "ambiguous conversion to bool, use @horiz"
+						  " with appropriate operator");
 		}
 		int op = '&';
 		if (is_equality (expr)) {
@@ -439,7 +440,8 @@ ruamoko_test_expr (const expr_t *expr)
 			expr = typed_binary_expr (btype, QC_EQ, val, zero);
 			op = '&';
 		} else {
-			return error (expr, "ambiguous conversion to bool");
+			return error (expr, "ambiguous conversion to bool, use @horiz"
+						  " with appropriate operator");
 		}
 		type = base_type (type);
 		expr = new_horizontal_expr (op, expr, type);
