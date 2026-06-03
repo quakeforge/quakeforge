@@ -1471,7 +1471,6 @@ dag_create (flownode_t *flownode)
 				n->label = op;
 				dagnode_add_children (dag, n, operands, children);
 				dagnode_set_edges (dag, n, s);
-				dagnode_set_reachable (dag, n);
 			}
 		}
 		lx = operand_label (dag, operands[0]);
@@ -1519,6 +1518,7 @@ dag_create (flownode_t *flownode)
 		s->dag_node = n->number;
 
 		dag_analyze_node (dag, n, s);
+		dagnode_set_reachable (dag, n);
 #if 0
 		if (options.block_dot.dags) {
 			dump_dot ("raw-dags", flownode->graph, dump_dot_flow_dags);
