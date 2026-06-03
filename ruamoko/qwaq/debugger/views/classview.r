@@ -41,11 +41,13 @@ count_ivars (classptr_t class, qdb_target_t target)
 			return -1;
 		}
 
-		int c;
-		if (qdb_get_data (target, ivar_list, 1, &c) < 0) {
-			return -1;
+		if (ivar_list) {
+			int c;
+			if (qdb_get_data (target, ivar_list, 1, &c) < 0) {
+				return -1;
+			}
+			count += c;
 		}
-		count += c;
 
 		uint super;
 		// if we could read the ivars pointer, we can count the super_class
@@ -85,10 +87,10 @@ collect_ivars (ClassView *self, classptr_t class)
 		qfot_type_t *ivar_type = [TypeEncodings getType:(uint)ivar.ivar_type
 											 fromTarget:self.target];
 		qdb_def_t   def = {
-			0,	// XXX type/size not needed at this stage
-			ivar.ivar_offset,
-			@bitcast (int, ivar.ivar_name),
-			(uint)ivar.ivar_type,
+			.type_size = 0,	// XXX type/size not needed at this stage
+			.offset = ivar.ivar_offset,
+			.name = @bitcast (uint, ivar.ivar_name),
+			.type_encoding = (uint)ivar.ivar_type,
 		};
 
 		int i = self.ivar_count++;
