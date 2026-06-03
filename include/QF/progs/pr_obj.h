@@ -31,7 +31,9 @@
 #ifndef __QF_pr_obj_h
 #define __QF_pr_obj_h
 
+#ifndef __QFCC__
 #include "QF/progs/pr_comp.h"
+#endif
 
 #define PR_BITS_PER_INT (sizeof (pr_int_t) * 8)
 
