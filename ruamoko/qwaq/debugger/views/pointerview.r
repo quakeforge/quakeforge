@@ -41,7 +41,7 @@
 		qdb_def_t   def = { 0, 0, 0, (unsigned)type.fldptr.aux_type };
 		ptr_type = type.fldptr.aux_type;
 		ptr_size = [TypeEncodings typeSize:ptr_type];
-		ptr_data = obj_malloc (ptr_size);
+		ptr_data = obj_malloc (ptr_size * sizeof (int));
 		ptr_view = [[DefView withDef:def
 								type:ptr_type
 								  in:ptr_data

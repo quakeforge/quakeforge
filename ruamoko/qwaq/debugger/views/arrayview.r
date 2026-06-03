@@ -14,8 +14,8 @@
 		return nil;
 	}
 	self.data = (unsigned *)(data + def.offset);
-	element_views = obj_malloc (type.array.count);
-	element_rows = obj_malloc (type.array.count);
+	element_views = obj_malloc (type.array.count * sizeof (DefView*));
+	element_rows = obj_malloc ((type.array.count + 1) * sizeof (int));
 	element_rows[0] = 0;
 	qfot_type_t *element_type = type.array.type;
 	int         element_size = [TypeEncodings typeSize:element_type];

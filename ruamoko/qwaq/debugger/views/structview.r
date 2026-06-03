@@ -13,8 +13,8 @@
 		return nil;
 	}
 	self.data = (unsigned *)(data + def.offset);
-	field_views = obj_malloc (type.strct.num_fields);
-	field_rows = obj_malloc (type.strct.num_fields);
+	field_views = obj_malloc (type.strct.num_fields * sizeof (int));
+	field_rows = obj_malloc ((type.strct.num_fields + 1) * sizeof (int));
 	field_rows[0] = 0;
 	for (int i = 0; i < type.strct.num_fields; i++) {
 		qfot_type_t *field_type = type.strct.fields[i].type;
