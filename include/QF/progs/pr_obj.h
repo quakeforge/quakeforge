@@ -94,7 +94,7 @@ typedef struct pr_class_s {
 	pr_int_t    instance_size;
 	pr_ptr_t    ivars;				// pr_ivar_list_t
 	pr_ptr_t    methods;			// pr_method_list_t
-	pr_ptr_t    dtable;			// resource index
+	pr_ptr_t    dtable;				// resource index
 	pr_ptr_t    subclass_list;		// pr_class_t
 	pr_ptr_t    sibling_class;		// pr_class_t
 	pr_ptr_t    protocols;			// pr_protocol_list_t
