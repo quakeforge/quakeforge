@@ -276,26 +276,33 @@ function_return (function_t *func)
 %%
 
 program
-	: program_head
+	: program_head[head]
 	  declarations
 	  subprogram_declarations
-	  compound_statement '.'
 	  	{
-			symtab_t   *st = current_symtab;
 			// move the symbol for the program name to the end of the list
-			symtab_removesymbol (current_symtab, $1);
-			symtab_addsymbol (current_symtab, $1);
+			symtab_removesymbol (current_symtab, $head);
+			symtab_addsymbol (current_symtab, $head);
 
 			auto spec = (specifier_t) {
-				.sym = $1,
+				.sym = $head,
+				.symtab = current_symtab,
 				.storage = current_storage,
 			};
+			$<spec>$ = spec;
 			current_func = begin_function (spec, nullptr, current_symtab, ctx);
 			current_symtab = current_func->locals;
-			build_code_function (spec, 0, $4, ctx);
+		}[spec]
+	  compound_statement[body] '.'
+		{
+			auto spec = $<spec>spec;
+			symtab_t   *st = spec.symtab;
+			spec.symtab = nullptr;
+
+			build_code_function (spec, 0, $body, ctx);
 			current_symtab = st;
 
-			build_dotmain ($1, ctx);
+			build_dotmain ($head, ctx);
 			current_symtab = st;
 		}
 	;

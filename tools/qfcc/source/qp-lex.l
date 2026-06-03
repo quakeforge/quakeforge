@@ -320,6 +320,7 @@ qp_yyparse (FILE *in, rua_ctx_t *ctx)
 	do {
 		YYSTYPE lval;
 		int token = yylex (&lval, &lloc, ctx->scanner);
+		pr.loc = lloc;
 		status = qp_yypush_parse (ps, token, &lval, &lloc, ctx);
 	} while (status == YYPUSH_MORE);
 
