@@ -19,10 +19,12 @@
 	for (int i = 0; i < type.strct.num_fields; i++) {
 		qfot_type_t *field_type = type.strct.fields[i].type;
 		qdb_def_t   def = {
-			0,	// XXX type/size not needed at this stage
-			type.strct.fields[i].offset,
-			0,	// filled in by setTarget
-			(unsigned)type.fldptr.aux_type
+			.type_size = 0,	// XXX type/size not needed at this stage
+			.offset = type.strct.fields[i].offset,
+			// the field name is already in local space because the same type
+			// may be defined in both progs
+			.name = qdb_find_string (target, type.strct.fields[i].name),
+			.type_encoding = (unsigned)type.fldptr.aux_type
 		};
 		field_views[i] = [[DefView withDef:def
 									  type:field_type
@@ -40,21 +42,6 @@
 +(StructView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type target:(qdb_target_t)target
 {
 	return [[[self alloc] initWithDef:def in:data type:type target:target] autorelease];
-}
-
--setTarget:(qdb_target_t)target
-{
-	[super setTarget:target];
-	for (int i = 0; i < type.strct.num_fields; i++) {
-		if (target) {
-			// the field name is already in local space because the same type
-			// may be defined in both progs
-			string name = type.strct.fields[i].name;
-			field_views[i].def.name = qdb_find_string (target, name);
-		}
-		[field_views[i] setTarget:target];
-	}
-	return self;
 }
 
 -(void)dealloc

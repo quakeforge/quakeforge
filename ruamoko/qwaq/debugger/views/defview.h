@@ -14,7 +14,6 @@
 +(DefView *)withDef:(qdb_def_t)def in:(void *)data target:(qdb_target_t)target;
 +(DefView *)withDef:(qdb_def_t)def type:(qfot_type_t *)type in:(void *)data target:(qdb_target_t)target;
 -initWithDef:(qdb_def_t)def type:(qfot_type_t *)type target:(qdb_target_t)target;
--setTarget:(qdb_target_t)target;
 -fetchData;
 -fetchData:(uint)ptr;
 -(int) rows;

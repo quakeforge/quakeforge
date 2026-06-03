@@ -21,10 +21,10 @@
 	int         element_size = [TypeEncodings typeSize:element_type];
 	for (int i = 0; i < type.array.count; i++) {
 		qdb_def_t   def = {
-			0,	// XXX type/size not needed at this stage
-			i * element_size,
-			0,	// filled in by setTarget
-			(unsigned)type.fldptr.aux_type
+			.type_size = 0,	// XXX type/size not needed at this stage
+			.offset = i * element_size,
+			.name = 0,
+			.type_encoding = (unsigned)type.fldptr.aux_type
 		};
 		element_views[i] = [[DefView withDef:def
 										type:element_type
@@ -39,15 +39,6 @@
 +(ArrayView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type target:(qdb_target_t)target
 {
 	return [[[self alloc] initWithDef:def in:data type:type target:target] autorelease];
-}
-
--setTarget:(qdb_target_t)target
-{
-	[super setTarget:target];
-	for (int i = 0; i < type.array.count; i++) {
-		[element_views[i] setTarget:target];
-	}
-	return self;
 }
 
 -(void)dealloc

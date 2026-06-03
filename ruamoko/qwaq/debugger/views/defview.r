@@ -65,12 +65,6 @@ static string meta_views[] = {
 	return self;
 }
 
--setTarget:(qdb_target_t)target
-{
-	self.target = target;
-	return self;
-}
-
 +(DefView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type
 {
 	return [self withDef:def in:data target:nil];
