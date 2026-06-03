@@ -113,6 +113,12 @@ static string meta_views[] = {
 	return self;
 }
 
+-fetchData:(uint)ptr
+{
+	// most def views do not need to update themselves
+	return self;
+}
+
 -(int) rows
 {
 	return 1;

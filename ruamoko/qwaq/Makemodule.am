@@ -70,6 +70,7 @@ ruamoko_qwaq_libdbg_a_SOURCES= \
 	ruamoko/qwaq/debugger/views/arrayview.r	\
 	ruamoko/qwaq/debugger/views/basicview.r	\
 	ruamoko/qwaq/debugger/views/boolview.r	\
+	ruamoko/qwaq/debugger/views/classview.r	\
 	ruamoko/qwaq/debugger/views/defview.r	\
 	ruamoko/qwaq/debugger/views/doubleview.r	\
 	ruamoko/qwaq/debugger/views/entityview.r	\

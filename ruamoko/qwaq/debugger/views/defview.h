@@ -16,6 +16,7 @@
 -initWithDef:(qdb_def_t)def type:(qfot_type_t *)type target:(qdb_target_t)target;
 -setTarget:(qdb_target_t)target;
 -fetchData;
+-fetchData:(uint)ptr;
 -(int) rows;
 -(DefView *) cellAtRow:(int) row forColumn:(TableColumn *)column level:(int)level;
 @end
