@@ -67,6 +67,7 @@ typedef struct {
 	const expr_t *(*check_types_compatible) (const expr_t **dst,
 											 const expr_t **src);
 	const expr_t *(*pointer_diff) (const expr_t *ptra, const expr_t *ptrb);
+	const expr_t *(*constructor) (const expr_t *expr, const expr_t *params);
 	int       (*ptr_type_size) (const type_t *type);
 	bool      (*type_assignable) (const type_t *dst, const type_t *src);
 	bool      (*init_type_ok) (const type_t *dst, const type_t *src);

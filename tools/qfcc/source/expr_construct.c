@@ -34,6 +34,7 @@
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -341,6 +342,11 @@ constructor_expr (const expr_t *e, const expr_t *params)
 	}
 	if (is_struct (type)) {
 		return struct_constructor (type, params, e);
+	}
+	if (current_target.constructor) {
+		if (auto expr = current_target.constructor (e, params)) {
+			return expr;
+		}
 	}
 	return error (e, "not implemented");
 }

@@ -636,6 +636,15 @@ spirv_TypeImage (image_t *image, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_TypeSampler (spirvctx_t *ctx)
+{
+	auto globals = ctx->module->globals;
+	auto insn = spirv_new_insn (SpvOpTypeSampler, 2, globals, ctx);
+	INSN (insn, 1) = spirv_id (ctx);
+	return INSN (insn, 1);
+}
+
+static unsigned
 spirv_TypeSampledImage (unsigned image_id, spirvctx_t *ctx)
 {
 	auto globals = ctx->module->globals;
@@ -776,6 +785,8 @@ spirv_Type (const type_t *type, spirvctx_t *ctx)
 		if (type->handle.type == &type_sampled_image) {
 			id = spirv_TypeSampledImage (id, ctx);
 		}
+	} else if (is_sampler (type)) {
+		id = spirv_TypeSampler (ctx);
 	}
 	if (!id) {
 		dstring_t  *str = dstring_newstr ();
@@ -3939,6 +3950,43 @@ spirv_pointer_diff (const expr_t *ptra, const expr_t *ptrb)
 	return binary_expr ('/', binary_expr ('-', e1, e2), psize);
 }
 
+static const expr_t *
+spirv_constructor (const expr_t *expr, const expr_t *params)
+{
+	auto type = expr->typ.type;
+	if (is_sampler (type)) {
+		int count = list_count (&params->list);
+		if (count != 2) {
+			return error (expr, "@sampler requires two arguments");
+		}
+		const expr_t *args[count];
+		list_scatter_rev (&params->list, args);
+		auto img_type = get_type (args[0]);
+		if (is_reference (img_type)) {
+			img_type = dereference_type (img_type);
+			args[0] = pointer_deref (args[0]);
+		}
+		if (!is_image (img_type)) {
+			return error (expr, "first argument must be an image");
+		}
+		auto smp_type = get_type (args[1]);
+		if (is_reference (smp_type)) {
+			smp_type = dereference_type (smp_type);
+			args[1] = pointer_deref (args[1]);
+		}
+		if (!is_sampler (smp_type)) {
+			return error (expr, "second argument must be a samper");
+		}
+		auto smp = new_intrinsic_expr (nullptr);
+		smp->intrinsic.opcode = new_int_expr (SpvOpSampledImage, false);
+		smp->intrinsic.res_type = sampler_type (img_type);
+		smp->intrinsic.is_pure = true;
+		list_gather (&smp->intrinsic.operands, args, count);
+		return smp;
+	}
+	return nullptr;
+}
+
 target_t spirv_target = {
 	.init = spirv_init,
 	.value_too_large = spirv_value_too_large,
@@ -3960,6 +4008,7 @@ target_t spirv_target = {
 	.cast_expr = spirv_cast_expr,
 	.check_types_compatible = spirv_check_types_compatible,
 	.pointer_diff = spirv_pointer_diff,
+	.constructor = spirv_constructor,
 	.ptr_type_size = spirv_ptr_type_size,
 	.type_assignable = spirv_types_logically_match,
 	.init_type_ok = spirv_types_logically_match,

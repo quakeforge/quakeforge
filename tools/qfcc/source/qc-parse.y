@@ -1617,6 +1617,11 @@ sampler_specifier
 			spec = type_spec (sampler_type (spec.type));
 			$$ = spec;
 		}
+	| SAMPLER %prec LOW
+		{
+			auto spec = type_spec (&type_sampler);
+			$$ = spec;
+		}
 	;
 
 enum_specifier
@@ -2563,6 +2568,12 @@ cast_expr
 	| typespec '(' arg_list[args] ')'
 		{
 			auto spec = $typespec;
+			auto decl = new_decl_expr (spec);
+			$$ = new_call_expr (decl, $args, nullptr);
+		}
+	| SAMPLER '(' arg_list[args] ')'
+		{
+			auto spec = type_spec (&type_sampler);
 			auto decl = new_decl_expr (spec);
 			$$ = new_call_expr (decl, $args, nullptr);
 		}
@@ -3607,6 +3618,7 @@ rua_pre_init (rua_ctx_t *ctx)
 		if (options.code.spirv) {
 			const char *vulkan = va ("VULKAN=%d", 140);
 			cpp_define (vulkan);
+			image_init_types ();
 		}
 	}
 }

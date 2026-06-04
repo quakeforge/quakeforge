@@ -432,6 +432,13 @@ is_sampled_image (const type_t *type)
 }
 
 bool
+is_sampler (const type_t *type)
+{
+	type = unalias_type (type);
+	return type == &type_sampler;
+}
+
+bool
 image_type_promotes (const type_t *dst, const type_t *src)
 {
 	//FIXME which is demote and which is promote?
