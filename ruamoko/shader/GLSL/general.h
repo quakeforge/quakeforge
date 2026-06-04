@@ -182,10 +182,10 @@ genFType normalize(genFType x) = GLSL(Normalize);
 genDType normalize(genDType x) = GLSL(Normalize);
 genFType faceforward(genFType N, genFType I, genFType Nref);
 genDType faceforward(genDType N, genDType I, genDType Nref);
-genFType reflect(genFType I, genFType N);
-genDType reflect(genDType I, genDType N);
-genFType refract(genFType I, genFType N, float eta);
-genDType refract(genDType I, genDType N, double eta);
+genFType reflect(genFType I, genFType N) = GLSL(Reflect);
+genDType reflect(genDType I, genDType N) = GLSL(Reflect);
+genFType refract(genFType I, genFType N, float eta) = GLSL(Refract);
+genDType refract(genDType I, genDType N, double eta) = GLSL(Refract);
 
 //matrix functions
 mat matrixCompMult(mat x, mat y) = SPV(SpvOpMatrixTimesMatrix);
@@ -259,13 +259,13 @@ genIType bitfieldInsert(genIType base, genIType insert, int offset, int bits)
 genUType bitfieldInsert(genUType base, genUType insert, int offset, int bits)
 	= SPV(OpBitFieldInsert);
 genIType bitfieldReverse(highp genIType value) = SPV(OpBitReverse);
-givec(genUType) bitfieldReverse(highp genUType value) = SPV(OpBitReverse);
+genUType bitfieldReverse(highp genUType value) = SPV(OpBitReverse);
 genIType bitCount(genIType value) = SPV(OpBitCount);
-givec(genUType) bitCount(genUType value) = SPV(OpBitCount);
+genUType bitCount(genUType value) = SPV(OpBitCount);
 genIType findLSB(genIType value) = GLSL(FindSLsb);
-givec(genUType) findLSB(genUType value) = GLSL(FindULsb);
+genUType findLSB(genUType value) = GLSL(FindULsb);
 genIType findMSB(highp genIType value) = GLSL(FindSMsb);
-givec(genUType) findMSB(highp genUType value) = GLSL(FindUMsb);
+genUType findMSB(highp genUType value) = GLSL(FindUMsb);
 
 };
 
