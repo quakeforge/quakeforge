@@ -671,6 +671,7 @@ SV_Progs_Init (void)
 	sv_pr_state.free_edict = free_edict; // eww, I hate the need for this :(
 	sv_pr_state.bi_map = bi_map;
 	sv_pr_state.resolve = resolve;
+	sv_pr_state.pr_hunk = sv_hunk;
 
 	PR_AddLoadFunc (&sv_pr_state, sv_init_edicts);
 	PR_Init (&sv_pr_state);
