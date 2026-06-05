@@ -146,7 +146,6 @@ glsl_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx)
 	auto in_meshes = (qf_mesh_t *) ((byte *) in + in->meshes.offset);
 
 	auto in_attributes = &in_meshes[0].attributes;
-	uint32_t num_indices = 0;
 	uint32_t num_vertices = 0;
 	for (uint32_t i = 0; i < in->meshes.count; i++) {
 		if (in_meshes[i].attributes.count != in_attributes->count
@@ -154,7 +153,6 @@ glsl_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx)
 			Sys_Error ("%s: multiple attribute descriptor sets",
 					   mesh_ctx->mod->name);
 		}
-		num_indices += in_meshes[i].triangle_count * 3;
 		num_vertices += in_meshes[i].vertices.count;
 	}
 

@@ -385,8 +385,6 @@ Text_Size (struct font_s *font, const char *str, uint32_t len,
 		.font = font,
 	};
 
-	uint32_t    glyph_count = 0;
-
 	auto shaped_glyphs = Shaper_ShapeText (shaper, &shaping, str, len);
 	unsigned    c = shaped_glyphs.count;
 	auto glyphInfo = shaped_glyphs.glyphInfo;
@@ -400,7 +398,6 @@ Text_Size (struct font_s *font, const char *str, uint32_t len,
 		.mins = { 0, 0 },
 		.maxs = { INT32_MIN, INT32_MIN },
 	};
-	glyph_count += c;
 	auto size = layout_glyphs (*head, font, c, glyphInfo, glyphPos);
 	if (!size.x) {
 		size.x = (*head)->maxs[0] - (*head)->mins[0];
