@@ -536,7 +536,7 @@ render_graph = {
 				gbuf_fragment = {
 					stage = fragment;
 					name = main;
-					module = $builtin/bsp_gbuf.frag;
+					module = $builtin/bsp_gbuf.r;
 				};
 				quake_vertex = {
 					stage = vertex;
