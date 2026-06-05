@@ -144,7 +144,7 @@ static const byte alignas(uint32_t) qskin_fwd_frag[] = {
 #embed "libs/video/renderer/vulkan/shader/qskin_fwd.frag.spv"
 };
 static const byte alignas(uint32_t) qskin_gbuf_frag[] = {
-#embed "libs/video/renderer/vulkan/shader/qskin_gbuf.frag.spv"
+#embed "libs/video/renderer/vulkan/shader/qskin_gbuf.r.spv"
 };
 static const byte alignas(uint32_t) output_frag[] = {
 #embed "libs/video/renderer/vulkan/shader/output.frag.spv"
@@ -225,7 +225,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "mesh.r", mesh_r, sizeof (mesh_r) },
 	{ "mesh_shadow.r", mesh_shadow_r, sizeof (mesh_shadow_r) },
 	{ "qskin_fwd.frag", qskin_fwd_frag, sizeof (qskin_fwd_frag) },
-	{ "qskin_gbuf.frag", qskin_gbuf_frag, sizeof (qskin_gbuf_frag) },
+	{ "qskin_gbuf.r", qskin_gbuf_frag, sizeof (qskin_gbuf_frag) },
 	{ "output.frag", output_frag, sizeof (output_frag) },
 	{ "painter.r", painter_r, sizeof (painter_r) },
 	{ "expand.r", expand_r, sizeof (expand_r) },

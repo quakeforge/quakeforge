@@ -470,7 +470,7 @@ properties = {
 			fragment = {
 				stage = fragment;
 				name = main;
-				module = $builtin/qskin_gbuf.frag;
+				module = $builtin/qskin_gbuf.r;
 			};
 		};
 	};

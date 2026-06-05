@@ -1,24 +1,26 @@
-#version 450
+#include "GLSL/general.h"
+#include "GLSL/texture.h"
 
-layout (set = 1, binding = 0) uniform sampler2D Palette;
-layout (set = 3, binding = 0) uniform sampler2DArray Skin;
+[uniform, set(1), binding(0)] @sampler(@image(float,2D)) Palette;
+[uniform, set(3), binding(0)] @sampler(@image(float,2D,Array)) Skin;
 
-layout (push_constant) uniform PushConstants {
-	layout (offset = 76)
+[push_constant] @block PushConstants {
+	[offset(76)]
 	uint        colors;
 	vec4        base_color;
 	vec4        fog;
 };
 
-layout (location = 0) in vec2 st;
-layout (location = 1) in vec4 position;
-layout (location = 2) in vec3 normal;
-layout (location = 3) in vec4 color;
+[in(0)] vec2 st;
+[in(1)] vec4 position;
+[in(2)] vec3 normal;
+[in(3)] vec4 color;
 
-layout (location = 0) out vec4 frag_color;
-layout (location = 1) out vec4 frag_emission;
-layout (location = 2) out vec4 frag_normal;
+[out(0)] vec4 frag_color;
+[out(1)] vec4 frag_emission;
+[out(2)] vec4 frag_normal;
 
+[shader(Fragment)]
 void
 main (void)
 {
