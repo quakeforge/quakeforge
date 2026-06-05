@@ -1,21 +1,24 @@
-#version 450
+#include <GLSL/general.h>
+#include <GLSL/texture.h>
 
-layout (set = 3, binding = 0) uniform sampler2DArray Texture;
+[uniform, set(3), binding(0)] @sampler(@image(float,2D,Array)) Texture;
 
-layout (push_constant) uniform PushConstants {
+[push_constant] @block PushConstants {
 	vec4        fog;
 	float       time;
 	float       alpha;
 };
 
-layout (location = 0) in vec4 tl_st;
-layout (location = 1) in vec3 direction;
-layout (location = 2) in vec3 normal;
-layout (location = 4) in vec4 color;
+[in(0)] vec4 tl_st;
+[in(1)] vec3 direction;
+[in(2)] vec3 normal;
+[in(4)] vec4 color;
 
-layout (location = 0) out vec4 frag_color;
-layout (location = 1) out vec4 frag_emission;
-layout (location = 2) out vec4 frag_normal;
+[out(0)] vec4 frag_color;
+[out(1)] vec4 frag_emission;
+[out(2)] vec4 frag_normal;
+
+[in("FragCoord")] vec4 gl_FragCoord;
 
 vec4
 fogBlend (vec4 color)
@@ -27,6 +30,7 @@ fogBlend (vec4 color)
 	return vec4 (mix (fog_color.rgb, color.rgb, fog_factor), color.a);
 }
 
+[shader(Fragment)]
 void
 main (void)
 {

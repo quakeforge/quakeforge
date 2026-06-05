@@ -86,8 +86,8 @@ static const byte alignas(uint32_t) bsp_depth_vert[] = {
 static const byte alignas(uint32_t) bsp_gbuf_vert[] = {
 #embed "libs/video/renderer/vulkan/shader/bsp_gbuf.vert.spv"
 };
-static const byte alignas(uint32_t) bsp_gbuf_frag[] = {
-#embed "libs/video/renderer/vulkan/shader/bsp_gbuf.frag.spv"
+static const byte alignas(uint32_t) bsp_gbuf_r[] = {
+#embed "libs/video/renderer/vulkan/shader/bsp_gbuf.r.spv"
 };
 static const byte alignas(uint32_t) bsp_shadow_vert[] = {
 #embed "libs/video/renderer/vulkan/shader/bsp_shadow.vert.spv"
@@ -143,7 +143,7 @@ static const byte alignas(uint32_t) mesh_shadow_r[] = {
 static const byte alignas(uint32_t) qskin_fwd_frag[] = {
 #embed "libs/video/renderer/vulkan/shader/qskin_fwd.frag.spv"
 };
-static const byte alignas(uint32_t) qskin_gbuf_frag[] = {
+static const byte alignas(uint32_t) qskin_gbuf_r[] = {
 #embed "libs/video/renderer/vulkan/shader/qskin_gbuf.r.spv"
 };
 static const byte alignas(uint32_t) output_frag[] = {
@@ -206,7 +206,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "quakebsp.frag", quakebsp_frag, sizeof (quakebsp_frag) },
 	{ "bsp_depth.vert", bsp_depth_vert, sizeof (bsp_depth_vert) },
 	{ "bsp_gbuf.vert", bsp_gbuf_vert, sizeof (bsp_gbuf_vert) },
-	{ "bsp_gbuf.frag", bsp_gbuf_frag, sizeof (bsp_gbuf_frag) },
+	{ "bsp_gbuf.r", bsp_gbuf_r, sizeof (bsp_gbuf_r) },
 	{ "bsp_shadow.vert", bsp_shadow_vert, sizeof (bsp_shadow_vert) },
 	{ "bsp_sky.frag", bsp_sky_frag, sizeof (bsp_sky_frag) },
 	{ "bsp_turb.frag", bsp_turb_frag, sizeof (bsp_turb_frag) },
@@ -225,7 +225,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "mesh.r", mesh_r, sizeof (mesh_r) },
 	{ "mesh_shadow.r", mesh_shadow_r, sizeof (mesh_shadow_r) },
 	{ "qskin_fwd.frag", qskin_fwd_frag, sizeof (qskin_fwd_frag) },
-	{ "qskin_gbuf.r", qskin_gbuf_frag, sizeof (qskin_gbuf_frag) },
+	{ "qskin_gbuf.r", qskin_gbuf_r, sizeof (qskin_gbuf_r) },
 	{ "output.frag", output_frag, sizeof (output_frag) },
 	{ "painter.r", painter_r, sizeof (painter_r) },
 	{ "expand.r", expand_r, sizeof (expand_r) },
