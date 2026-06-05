@@ -656,6 +656,7 @@ Vulkan_UnloadTex (vulkan_ctx_t *ctx, qfv_tex_t *tex)
 static byte black_data[] = {0, 0, 0, 0};
 static byte white_data[] = {255, 255, 255, 255};
 static byte magenta_data[] = {255, 0, 255, 255};
+static byte normal_data[] = {128, 128, 255, 255};
 static byte skin_data_main[] = {240, 240, 240, 255};	// main color
 static byte skin_data_glow[] = {  0,   0,   0,   0};	// fullbright
 static byte skin_data_cmap[] = {  0,   0,   0,   0};	// color map
@@ -682,6 +683,14 @@ static tex_t default_magenta_tex = {
 	.loaded = true,
 	.palette =0,
 	.data = magenta_data,
+};
+static tex_t default_normal_tex = {
+	.width = 1,
+	.height = 1,
+	.format = tex_rgba,
+	.loaded = true,
+	.palette =0,
+	.data = normal_data,
 };
 static tex_t *default_skin_tex[] = {
 	&(tex_t) {
@@ -735,8 +744,8 @@ texture_startup (exprctx_t *ectx)
 
 	tctx->dsmanager = QFV_Render_DSManager (ctx, "texture_set");
 
-	const int num_images = 4;
-	const int num_views = 7;
+	const int num_images = 5;
+	const int num_views = 9;
 	size_t size = sizeof (qfv_resource_t)
 				+ sizeof (qfv_resobj_t[num_images])
 				+ sizeof (qfv_resobj_t[num_views]);
@@ -756,24 +765,28 @@ texture_startup (exprctx_t *ectx)
 							  &default_white_tex);
 	QFV_ResourceInitTexImage (&images[2], "default_magenta", true,
 							  &default_magenta_tex);
-	QFV_ResourceInitTexImage (&images[3], "default_skin", true,
+	QFV_ResourceInitTexImage (&images[3], "default_normal", true,
+							  &default_normal_tex);
+	QFV_ResourceInitTexImage (&images[4], "default_skin", true,
 							  default_skin_tex[0]);
-	images[3].image.num_layers = 3;
-	for (int i = 0; i < 3; i++) {
+	images[4].image.num_layers = 3;
+	for (int i = 0; i < 4; i++) {
 		QFV_ResourceInitImageView (&views[i + 0], i, &images[i]);
-		QFV_ResourceInitImageView (&views[i + 3], i, &images[i]);
-		views[i + 3].name = vac (ctx->va_ctx, "%s_array", images[i].name);
-		views[i + 3].image_view.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+		QFV_ResourceInitImageView (&views[i + 4], i, &images[i]);
+		views[i + 4].name = vac (ctx->va_ctx, "%s_array", images[i].name);
+		views[i + 4].image_view.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 	}
-	QFV_ResourceInitImageView (&views[6], 3, &images[3]);
+	QFV_ResourceInitImageView (&views[8], 4, &images[4]);
 	QFV_CreateResource (ctx->device, tctx->tex_resource);
 	ctx->default_black[0] = views[0 + 0].image_view.view;
-	ctx->default_black[1] = views[3 + 0].image_view.view;
+	ctx->default_black[1] = views[4 + 0].image_view.view;
 	ctx->default_white[0] = views[0 + 1].image_view.view;
-	ctx->default_white[1] = views[3 + 1].image_view.view;
+	ctx->default_white[1] = views[4 + 1].image_view.view;
 	ctx->default_magenta[0] = views[0 + 2].image_view.view;
-	ctx->default_magenta[1] = views[3 + 2].image_view.view;
-	ctx->default_skin = views[6].image_view.view;
+	ctx->default_magenta[1] = views[4 + 2].image_view.view;
+	ctx->default_normal[0] = views[0 + 3].image_view.view;
+	ctx->default_normal[1] = views[4 + 3].image_view.view;
+	ctx->default_skin = views[8].image_view.view;
 
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.startup");
 	auto black_bytes = stage_tex_data_rows (packet, &default_black_tex,
@@ -782,6 +795,8 @@ texture_startup (exprctx_t *ectx)
 											 0, 0, 4, 0, 0);
 	auto magenta_bytes =  stage_tex_data_rows (packet, &default_magenta_tex,
 											   0, 0, 4, 0, 0);
+	auto normal_bytes =  stage_tex_data_rows (packet, &default_normal_tex,
+											  0, 0, 4, 0, 0);
 	auto skin_bytes = stage_multi_tex_data (packet, default_skin_tex, 3, 4);
 
 	auto sb = imageBarriers[qfv_LT_Undefined_to_TransferDst];
@@ -798,6 +813,9 @@ texture_startup (exprctx_t *ectx)
 						 offset, (qfv_extent_t) { 1, 1, 1, 1 },
 						 QFV_PacketOffset (packet, magenta_bytes), &sb, &db);
 	QFV_PacketCopyImage (packet, images[3].image.image,
+						 offset, (qfv_extent_t) { 1, 1, 1, 1 },
+						 QFV_PacketOffset (packet, normal_bytes), &sb, &db);
+	QFV_PacketCopyImage (packet, images[4].image.image,
 						 offset, (qfv_extent_t) { 1, 1, 1, 3 },
 						 QFV_PacketOffset (packet, skin_bytes), &sb, &db);
 

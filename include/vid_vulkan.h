@@ -115,6 +115,7 @@ typedef struct vulkan_ctx_s {
 	VkImageView default_black[2];	// 2d, 2d array
 	VkImageView default_white[2];	// 2d, 2d array
 	VkImageView default_magenta[2];	// 2d, 2d array
+	VkImageView default_normal[2];	// 2d, 2d array
 	VkImageView default_skin;		// 3 layer array
 
 	// size of window
