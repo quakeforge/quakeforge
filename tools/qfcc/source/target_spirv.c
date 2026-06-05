@@ -544,9 +544,8 @@ spirv_emit_symtab (symtab_t *symtab, spirvctx_t *ctx)
 	INSN (insn, 1) = id;
 	memcpy (&INSN (insn, 2), member_types, sizeof (member_types));
 
-	int i = 0;
 	num_members = 0;
-	for (auto s = symtab->symbols; s; s = s->next, i++) {
+	for (auto s = symtab->symbols; s; s = s->next) {
 		if (s->sy_type != sy_offset) {
 			continue;
 		}
