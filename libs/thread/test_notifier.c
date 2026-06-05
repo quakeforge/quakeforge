@@ -104,13 +104,19 @@ typedef struct thread_s {
 #define num_threads (3)
 #define num_queues (10)
 
+static int
+test_rand (unsigned *next) {
+	*next = *next * 1103515245 + 12345;
+	return (*next >> 16) % 32768;
+}
+
 static void *
 run_producer (void *_t)
 {
 	thread_t   *t = _t;
 	unsigned    rnd = t->id;
 	for (int j = 0; j < num_events; j++) {
-		unsigned    ind = rand_r (&rnd) % num_queues;
+		unsigned    ind = test_rand (&rnd) % num_queues;
 		if (testqueue_push (t->queues[ind])) {
 			notifier_notify (t->notifier, 1);
 			continue;
@@ -129,7 +135,7 @@ run_consumer (void *_t)
 	waiter_t   *w = t->waiter;
 	unsigned    rnd = t->id;
 	for (int j = 0; j < num_events; j++) {
-		unsigned    ind = rand_r (&rnd) % num_queues;
+		unsigned    ind = test_rand (&rnd) % num_queues;
 		if (testqueue_pop (t->queues[ind])) {
 			continue;
 		}

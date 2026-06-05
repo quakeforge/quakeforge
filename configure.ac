@@ -77,7 +77,7 @@ case "$host_os" in
 			)]
 		)
 	;;
-esac	
+esac
 
 m4_include(config.d/compression.m4)
 
@@ -166,7 +166,7 @@ TOPSRC=`readlink -f ${srcdir}`
 AC_SUBST(TOPSRC)
 
 case "${host}" in
-	i?86-*-mingw32*|x86_64-w64-mingw32*)
+	i?86-*-mingw32*|x86_64-w64-mingw32*|x86_64-pc-cygwin*)
 		QF_REQUIRES([
 			[libsamplerate, HAVE_SAMPLERATE],
 			[flac, HAVE_FLAC],
