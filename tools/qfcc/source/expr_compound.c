@@ -432,10 +432,10 @@ initialize_temp (const expr_t *temp, const type_t *type, const expr_t *expr)
 	expr_t     *block = new_block_expr (0);
 	block->block.result = temp;
 
-	element_chain_t element_chain;
+	element_chain_t element_chain = {
+		.tail = &element_chain.head,
+	};
 
-	element_chain.head = 0;
-	element_chain.tail = &element_chain.head;
 	build_element_chain (&element_chain, type, expr, 0);
 	assign_elements (block, temp, &element_chain);
 	free_element_chain (&element_chain);
