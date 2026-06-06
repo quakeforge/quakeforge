@@ -512,6 +512,7 @@ render_graph = {
 								  texture_set, texture_set, texture_set);
 				pushConstants = {
 					vertex|fragment = {
+						orm = vec4;
 						fog = vec4;
 						time = float;
 						alpha = float;
@@ -784,7 +785,7 @@ render_graph = {
 			layout = {
 				descriptorSets = (matrix_set, gizmo_set);
 				pushConstants = {
-					vertex = { frag_size = vec2; };
+					vertex = { frag_size = vec2; full_screen = uint; };
 				};
 			};
 		};
@@ -1848,6 +1849,8 @@ render_graph = {
 					{ func = output_select_pipeline;
 					  params = ("\"output\""); },
 					{ func = flush_draw; },
+					{ func = painter_update_framebuffer;
+					  params = ("\"output\""); },
 					{ func = painter_flush; },
 				);
 			};
