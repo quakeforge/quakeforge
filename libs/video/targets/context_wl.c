@@ -210,9 +210,9 @@ match_interface (const char *name, uint32_t iface_id, const struct wl_interface 
 
 	if (*global == nullptr) {
 		Sys_Error ("Failed to bind registry interface %s", iface->name);
+	} else {
+		Sys_MaskPrintf (SYS_wayland, "Successfully bound interface %s\n", iface->name);
 	}
-
-	Sys_MaskPrintf (SYS_wayland, "Successfully bound interface %s\n", iface->name);
 
 	return *global != nullptr;
 }

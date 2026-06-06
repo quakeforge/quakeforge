@@ -1201,11 +1201,13 @@ in_wl_init (void *data)
 	wp_cursor_shape_device_v1 = wp_cursor_shape_manager_v1_get_pointer (
 			wp_cursor_shape_manager_v1, wl_pointer);
 
-	zwp_text_input_v3 =
-		zwp_text_input_manager_v3_get_text_input (zwp_text_input_manager_v3,
-												 wl_seat);
-	zwp_text_input_v3_add_listener (zwp_text_input_v3,
-									&zwp_text_input_v3_listener, nullptr);
+    if (zwp_text_input_manager_v3) {
+		zwp_text_input_v3 =
+			zwp_text_input_manager_v3_get_text_input (zwp_text_input_manager_v3,
+														wl_seat);
+		zwp_text_input_v3_add_listener (zwp_text_input_v3,
+										&zwp_text_input_v3_listener, nullptr);
+    }
 
 	wl_add_device (&wl_mouse_device);
 	wl_add_device (&wl_keyboard_device);
