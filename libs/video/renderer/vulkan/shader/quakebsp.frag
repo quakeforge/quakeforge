@@ -7,6 +7,7 @@ layout (set = 3, binding = 0) uniform sampler2DArray Texture;
 layout (set = 4, binding = 0) uniform sampler2D Lightmap;
 
 layout (push_constant) uniform PushConstants {
+	vec4        orm;
 	vec4        fog;
 	float       time;
 	float       alpha;
