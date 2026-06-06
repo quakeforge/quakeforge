@@ -8,6 +8,7 @@
 	[offset(76)]
 	uint        colors;
 	vec4        base_color;
+	vec4        orm;
 	vec4        fog;
 };
 
@@ -17,8 +18,9 @@
 [in(3)] vec4 color;
 
 [out(0)] vec4 frag_color;
-[out(1)] vec4 frag_emission;
+[out(1)] vec4 frag_orm;
 [out(2)] vec4 frag_normal;
+[out(3)] vec4 frag_emission;
 
 [shader(Fragment)]
 void
@@ -34,6 +36,7 @@ main (void)
 	c += texture (Palette, vec2 (cmap.z, rows.y)) * cmap.w;
 
 	frag_color = c * color;
-	frag_emission = e;
+	frag_orm = orm;
 	frag_normal = vec4(normalize(normal), 1);
+	frag_emission = e;
 }

@@ -13,6 +13,7 @@ layout (set = 1, binding = 0) readonly buffer Entities {
 };
 
 layout (push_constant) uniform PushConstants {
+	vec4        orm;
 	vec4        fog;
 	float       time;
 	float       alpha;

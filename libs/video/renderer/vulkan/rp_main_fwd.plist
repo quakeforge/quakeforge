@@ -348,6 +348,7 @@ properties = {
 							  texture_set, texture_set, texture_set);
 			pushConstants = {
 				vertex|fragment = {
+					orm = vec4;
 					fog = vec4;
 					time = float;
 					alpha = float;

@@ -61,6 +61,8 @@ typedef struct LightQueue {
 
 [push_constant] @block PushConstants {
 	vec4        fog;
+	float       spec;
+	float       diff;
 	float       near_plane;
 	LightQueue  queue;
 	uint        num_cascades;

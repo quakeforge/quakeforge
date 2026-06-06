@@ -379,6 +379,7 @@ properties = {
 							  texture_set, texture_set, texture_set);
 			pushConstants = {
 				vertex|fragment = {
+					orm = vec4;
 					fog = vec4;
 					time = float;
 					alpha = float;
@@ -443,6 +444,7 @@ properties = {
 					debug_bone = uint;
 					colors = uint;
 					base_color = vec4;
+					orm = vec4;
 					fog = vec4;
 				};
 			};
@@ -678,6 +680,8 @@ properties = {
 			pushConstants = {
 				fragment = {
 					fog = vec4;
+					spec = float;
+					diff = float;
 					near_plane = float;
 					queue = uint;
 					num_cascades = uint;
@@ -1043,11 +1047,15 @@ images = {
 		@inherit = $image_base;
 		format = r8g8b8a8_unorm;
 	};
-	emission = {
+	orm = {
+		@inherit = $image_base;
+		format = r8g8b8a8_unorm;
+	};
+	normal = {
 		@inherit = $image_base;
 		format = r16g16b16a16_sfloat;
 	};
-	normal = {
+	emission = {
 		@inherit = $image_base;
 		format = r16g16b16a16_sfloat;
 	};
@@ -1080,11 +1088,15 @@ images = {
 		@inherit = $cube_image_base;
 		format = r8g8b8a8_unorm;
 	};
-	cube_emission = {
+	cube_orm = {
+		@inherit = $cube_image_base;
+		format = r8g8b8a8_unorm;
+	};
+	cube_normal = {
 		@inherit = $cube_image_base;
 		format = r16g16b16a16_sfloat;
 	};
-	cube_normal = {
+	cube_emission = {
 		@inherit = $cube_image_base;
 		format = r16g16b16a16_sfloat;
 	};
@@ -1126,15 +1138,20 @@ imageviews = {
 		image = color;
 		format = $images.color.format;
 	};
-	emission = {
+	orm = {
 		@inherit = $view_base;
-		image = emission;
-		format = $images.emission.format;
+		image = orm;
+		format = $images.orm.format;
 	};
 	normal = {
 		@inherit = $view_base;
 		image = normal;
 		format = $images.normal.format;
+	};
+	emission = {
+		@inherit = $view_base;
+		image = emission;
+		format = $images.emission.format;
 	};
 	light = {
 		@inherit = $view_base;
@@ -1171,15 +1188,20 @@ imageviews = {
 		image = cube_color;
 		format = $images.cube_color.format;
 	};
-	cube_emission = {
+	cube_orm = {
 		@inherit = $cube_view_base;
-		image = cube_emission;
-		format = $images.cube_emission.format;
+		image = cube_orm;
+		format = $images.cube_orm.format;
 	};
 	cube_normal = {
 		@inherit = $cube_view_base;
 		image = cube_normal;
 		format = $images.cube_normal.format;
+	};
+	cube_emission = {
+		@inherit = $cube_view_base;
+		image = cube_emission;
+		format = $images.cube_emission.format;
 	};
 	cube_light = {
 		@inherit = $cube_view_base;
@@ -1219,16 +1241,22 @@ framebuffers = {
 				loadOp = clear;
 				view = color;
 			};
-			emission = {
+			orm = {
 				@inherit = $attachment_base;
-				format = $images.emission.format;
+				format = $images.orm.format;
 				loadOp = clear;
-				view = emission;
+				view = orm;
 			};
 			normal = {
 				@inherit = $attachment_base;
 				format = $images.normal.format;
 				view = normal;
+			};
+			emission = {
+				@inherit = $attachment_base;
+				format = $images.emission.format;
+				loadOp = clear;
+				view = emission;
 			};
 			light = {
 				@inherit = $attachment_base;
@@ -1273,16 +1301,22 @@ framebuffers = {
 				loadOp = clear;
 				view = cube_color;
 			};
-			emission = {
+			orm = {
 				@inherit = $attachment_base;
-				format = $images.cube_emission.format;
+				format = $images.cube_orm.format;
 				loadOp = clear;
-				view = cube_emission;
+				view = cube_orm;
 			};
 			normal = {
 				@inherit = $attachment_base;
 				format = $images.cube_normal.format;
 				view = cube_normal;
+			};
+			emission = {
+				@inherit = $attachment_base;
+				format = $images.cube_emission.format;
+				loadOp = clear;
+				view = cube_emission;
 			};
 			light = {
 				@inherit = $attachment_base;
@@ -1584,8 +1618,9 @@ renderpasses = {
 					loadOp = load;
 				};
 				color = { };
-				emission = { };
+				orm = { };
 				normal = { };
+				emission = { };
 				light = { };
 				entid = { };
 				output = { };
@@ -1646,11 +1681,15 @@ renderpasses = {
 							layout = color_attachment_optimal;
 							blend = $blend_disable;
 						};
-						emission = {
+						orm = {
 							layout = color_attachment_optimal;
 							blend = $blend_disable;
 						};
 						normal = {
+							layout = color_attachment_optimal;
+							blend = $blend_disable;
+						};
+						emission = {
 							layout = color_attachment_optimal;
 							blend = $blend_disable;
 						};
@@ -1727,6 +1766,8 @@ renderpasses = {
 				};
 				attachments = {
 					input = {
+						color = shader_read_only_optimal;
+						orm = shader_read_only_optimal;
 						normal = shader_read_only_optimal;
 						depth = shader_read_only_optimal;
 					};
@@ -1817,10 +1858,9 @@ renderpasses = {
 				};
 				attachments = {
 					input = {
-						color = shader_read_only_optimal;
+						light = shader_read_only_optimal;
 						emission = shader_read_only_optimal;
 						depth = shader_read_only_optimal;
-						light = shader_read_only_optimal;
 					};
 					color = {
 						output = {
@@ -1989,8 +2029,9 @@ renderpasses = {
 					loadOp = load;
 				};
 				color = { };
-				emission = { };
+				orm = { };
 				normal = { };
+				emission = { };
 				light = { };
 				entid = { };
 				output = { };

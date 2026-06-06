@@ -185,6 +185,9 @@ typedef struct lightingctx_s {
 	struct lightingdata_s *ldata;
 	struct scene_s *scene;
 
+	vec4f_t    *orm;
+	float      *spec;
+	float      *diff;
 	vec4f_t    *fog;
 	float      *near_plane;
 	light_queue_t *queue;

@@ -323,11 +323,15 @@ render_graph = {
 			@inherit = $attachment_base;
 			loadOp = clear;
 		};
-		emission_base = {
+		orm_base = {
 			@inherit = $attachment_base;
 			loadOp = clear;
 		};
 		normal_base = {
+			@inherit = $attachment_base;
+			loadOp = clear;
+		};
+		emission_base = {
 			@inherit = $attachment_base;
 			loadOp = clear;
 		};
@@ -576,6 +580,7 @@ render_graph = {
 								  texture_set, texture_set, texture_set);
 				pushConstants = {
 					vertex|fragment = {
+						orm = vec4;
 						fog = vec4;
 						time = float;
 						alpha = float;
@@ -645,6 +650,7 @@ render_graph = {
 						debug_bone = uint;
 						colors = uint;
 						base_color = vec4;
+						orm = vec4;
 						fog = vec4;
 					};
 				};
@@ -897,6 +903,8 @@ render_graph = {
 				pushConstants = {
 					fragment = {
 						fog = vec4;
+						spec = float;
+						diff = float;
 						near_plane = float;
 						queue = uint;
 						num_cascades = uint;
@@ -1402,11 +1410,15 @@ render_graph = {
 			@inherit = $image_base;
 			format = r8g8b8a8_unorm;
 		};
-		emission = {
+		orm = {
+			@inherit = $image_base;
+			format = r8g8b8a8_unorm;
+		};
+		normal = {
 			@inherit = $image_base;
 			format = r16g16b16a16_sfloat;
 		};
-		normal = {
+		emission = {
 			@inherit = $image_base;
 			format = r16g16b16a16_sfloat;
 		};
@@ -1443,11 +1455,15 @@ render_graph = {
 			@inherit = $cube_image_base;
 			format = r8g8b8a8_unorm;
 		};
-		cube_emission = {
+		cube_orm = {
 			@inherit = $cube_image_base;
 			format = r16g16b16a16_sfloat;
 		};
 		cube_normal = {
+			@inherit = $cube_image_base;
+			format = r16g16b16a16_sfloat;
+		};
+		cube_emission = {
 			@inherit = $cube_image_base;
 			format = r16g16b16a16_sfloat;
 		};
@@ -1493,15 +1509,20 @@ render_graph = {
 			image = color;
 			format = $images.color.format;
 		};
-		emission = {
+		orm = {
 			@inherit = $view_base;
-			image = emission;
-			format = $images.emission.format;
+			image = orm;
+			format = $images.orm.format;
 		};
 		normal = {
 			@inherit = $view_base;
 			image = normal;
 			format = $images.normal.format;
+		};
+		emission = {
+			@inherit = $view_base;
+			image = emission;
+			format = $images.emission.format;
 		};
 		light = {
 			@inherit = $view_base;
@@ -1543,15 +1564,20 @@ render_graph = {
 			image = cube_color;
 			format = $images.cube_color.format;
 		};
-		cube_emission = {
+		cube_orm = {
 			@inherit = $cube_view_base;
-			image = cube_emission;
-			format = $images.cube_emission.format;
+			image = cube_orm;
+			format = $images.cube_orm.format;
 		};
 		cube_normal = {
 			@inherit = $cube_view_base;
 			image = cube_normal;
 			format = $images.cube_normal.format;
+		};
+		cube_emission = {
+			@inherit = $cube_view_base;
+			image = cube_emission;
+			format = $images.cube_emission.format;
 		};
 		cube_light = {
 			@inherit = $cube_view_base;
@@ -1602,15 +1628,20 @@ render_graph = {
 					format = $images.color.format;
 					view = color;
 				};
-				emission = {
-					@inherit = $emission_base;
-					format = $images.emission.format;
-					view = emission;
+				orm = {
+					@inherit = $orm_base;
+					format = $images.orm.format;
+					view = orm;
 				};
 				normal = {
 					@inherit = $normal_base;
 					format = $images.normal.format;
 					view = normal;
+				};
+				emission = {
+					@inherit = $emission_base;
+					format = $images.emission.format;
+					view = emission;
 				};
 				light = {
 					@inherit = $light_base;
@@ -1650,16 +1681,21 @@ render_graph = {
 					format = $images.cube_color.format;
 					view = cube_color;
 				};
-				emission = {
-					@inherit = $emission_base;
-					format = $images.cube_emission.format;
-					loadOp = clear;
-					view = cube_emission;
+				orm = {
+					@inherit = $orm_base;
+					format = $images.cube_orm.format;
+					view = cube_orm;
 				};
 				normal = {
 					@inherit = $normal_base;
 					format = $images.cube_normal.format;
 					view = cube_normal;
+				};
+				emission = {
+					@inherit = $emission_base;
+					format = $images.cube_emission.format;
+					loadOp = clear;
+					view = cube_emission;
 				};
 				light = {
 					@inherit = $light_base;
@@ -2014,8 +2050,9 @@ render_graph = {
 						loadOp = load;
 					};
 					color = { };
-					emission = { };
+					orm = { };
 					normal = { };
+					emission = { };
 					light = { };
 					compo = { };
 					entid = { };
@@ -2100,11 +2137,15 @@ render_graph = {
 								layout = color_attachment_optimal;
 								blend = $blend_disable;
 							};
-							emission = {
+							orm = {
 								layout = color_attachment_optimal;
 								blend = $blend_disable;
 							};
 							normal = {
+								layout = color_attachment_optimal;
+								blend = $blend_disable;
+							};
+							emission = {
 								layout = color_attachment_optimal;
 								blend = $blend_disable;
 							};
@@ -2180,6 +2221,8 @@ render_graph = {
 					};
 					attachments = {
 						input = {
+							color = shader_read_only_optimal;
+							orm = shader_read_only_optimal;
 							normal = shader_read_only_optimal;
 							depth = shader_read_only_optimal;
 						};
@@ -2272,10 +2315,9 @@ render_graph = {
 					};
 					attachments = {
 						input = {
-							color = shader_read_only_optimal;
+							light = shader_read_only_optimal;
 							emission = shader_read_only_optimal;
 							depth = shader_read_only_optimal;
-							light = shader_read_only_optimal;
 						};
 						color = {
 							compo = {
@@ -2500,8 +2542,9 @@ render_graph = {
 						loadOp = load;
 					};
 					color = { };
-					emission = { };
+					orm = { };
 					normal = { };
+					emission = { };
 					light = { };
 					compo = { };
 					entid = { };

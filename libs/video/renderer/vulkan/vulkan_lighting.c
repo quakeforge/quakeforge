@@ -128,6 +128,33 @@ static cvar_t lighting_max_views_cvar = {
 	.value = { .type = &cexpr_uint, .value = &lighting_max_views },
 };
 
+static vec4f_t pbr_orm = {1, 1, 0, 1};
+static cvar_t pbr_orm_cvar = {
+	.name = "pbr_orm",
+	.description =
+		"Value for Occlusion/Roughness/Metalicity.",
+	.default_value = "[1, 1, 0, 1]",
+	.value = { .type = &cexpr_vector, .value = &pbr_orm },
+};
+
+static float pbr_spec = 4;
+static cvar_t pbr_spec_cvar = {
+	.name = "pbr_spec",
+	.description =
+		"Scale factor for specular term.",
+	.default_value = "4",
+	.value = { .type = &cexpr_float, .value = &pbr_spec },
+};
+
+static float pbr_diff = 4;
+static cvar_t pbr_diff_cvar = {
+	.name = "pbr_diff",
+	.description =
+		"Scale factor for diffuse term.",
+	.default_value = "4",
+	.value = { .type = &cexpr_float, .value = &pbr_diff },
+};
+
 static const light_t *
 get_light (entity_t ent)
 {
@@ -1144,6 +1171,9 @@ lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 		// convert scatter to transmission (FIXME ignoring absorbtion)
 		fog = (vec4f_t) { 1, 1, 1, 0 } - fog;
 		fog[3] = -fog[3];
+		*lctx->orm = pbr_orm;
+		*lctx->spec = pbr_spec;
+		*lctx->diff = pbr_diff;
 		*lctx->fog = fog;
 		*lctx->near_plane = r_nearclip;
 		*lctx->queue = lframe->light_queue[shadow_type];
@@ -2165,6 +2195,9 @@ lighting_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 			.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,//FIXME plist
 		},
+		.orm          = QFV_GetBlackboardVar (ctx, "orm"),
+		.spec         = QFV_GetBlackboardVar (ctx, "spec"),
+		.diff         = QFV_GetBlackboardVar (ctx, "diff"),
 		.fog          = QFV_GetBlackboardVar (ctx, "fog"),
 		.near_plane   = QFV_GetBlackboardVar (ctx, "near_plane"),
 		.queue        = QFV_GetBlackboardVar (ctx, "queue"),
@@ -2326,6 +2359,9 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 
 	Cvar_Register (&dynlight_size_cvar, dynlight_size_listener, 0);
 	Cvar_Register (&lighting_max_views_cvar, nullptr, 0);
+	Cvar_Register (&pbr_orm_cvar, nullptr, 0);
+	Cvar_Register (&pbr_spec_cvar, nullptr, 0);
+	Cvar_Register (&pbr_diff_cvar, nullptr, 0);
 
 	QFV_Render_AddTasks (ctx, lighting_task_syms);
 }

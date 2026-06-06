@@ -9,6 +9,7 @@ layout (set = 4, binding = 0) uniform samplerCube SkyBox;
 layout (set = 5, binding = 0) uniform sampler2D SkyMap;
 
 layout (push_constant) uniform PushConstants {
+	vec4        orm;
 	vec4        fog;
 	float       time;
 	float       alpha;

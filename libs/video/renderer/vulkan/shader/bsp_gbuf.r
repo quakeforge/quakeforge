@@ -4,6 +4,7 @@
 [uniform, set(3), binding(0)] @sampler(@image(float,2D,Array)) Texture;
 
 [push_constant] @block PushConstants {
+	vec4        orm;
 	vec4        fog;
 	float       time;
 	float       alpha;
@@ -15,8 +16,9 @@
 [in(4)] vec4 color;
 
 [out(0)] vec4 frag_color;
-[out(1)] vec4 frag_emission;
+[out(1)] vec4 frag_orm;
 [out(2)] vec4 frag_normal;
+[out(3)] vec4 frag_emission;
 
 [in("FragCoord")] vec4 gl_FragCoord;
 
@@ -43,6 +45,7 @@ main (void)
 	c = texture (Texture, t_st) * color;
 	e = texture (Texture, e_st) * 2;//FIXME
 	frag_color = c;//fogBlend (c);
-	frag_emission = e;
+	frag_orm = orm;
 	frag_normal = vec4 (normal, 0);
+	frag_emission = e;
 }
