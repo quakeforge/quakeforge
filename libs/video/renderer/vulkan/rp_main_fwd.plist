@@ -1005,6 +1005,23 @@ renderpasses = {
 						inputAssembly = $brush.inputAssembly;
 						layout = $brush.layout;
 					};
+					bsp:sky = {
+						color = $color.bsp;
+						tasks = (
+							{ func = bsp_draw_queue;
+							  params = (main, background, 1); },
+							{ func = bsp_draw_queue;
+							  params = (lightmap, sky, 1); },
+						);
+
+						stages = (
+							$brush.shader.quake_vertex,
+							$brush.shader.sky_fragment,
+						);
+						vertexInput = $brush.vertexInput;
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.layout;
+					};
 					mesh = {
 						color = $color.mesh;
 						tasks = (
@@ -1059,24 +1076,6 @@ renderpasses = {
 					rasterization = $cw_cull_back;
 				};
 				pipelines = {
-					bsp:sky = {
-						color = $color.bsp;
-						tasks = (
-							// FIXME background and sky should not use OIT
-							{ func = bsp_draw_queue;
-							  params = (main, background, 1); },
-							{ func = bsp_draw_queue;
-							  params = (lightmap, sky, 1); },
-						);
-
-						stages = (
-							$brush.shader.quake_vertex,
-							$brush.shader.sky_fragment,
-						);
-						vertexInput = $brush.vertexInput;
-						inputAssembly = $brush.inputAssembly;
-						layout = $brush.layout;
-					};
 					bsp:trans = {
 						color = $color.bsp;
 						tasks = (
