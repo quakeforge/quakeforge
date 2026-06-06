@@ -262,7 +262,12 @@ in_wl_send_button_event (wl_idevice_t *dev, int32_t btn)
 static void
 in_wl_send_scroll_button_event (IE_mouse_type type, int32_t btn)
 {
-	wl_mouse.buttons |= 1 << btn;
+	if (type == ie_mousedown) {
+		wl_mouse.buttons |= 1 << btn;
+	} else {
+		wl_mouse.buttons &= ~(1 << btn);
+	}
+
 	wl_mouse_buttons[btn].state = type == ie_mousedown;
 	wl_mouse.type = type;
 	if (!in_wl_send_mouse_event ()) {
@@ -274,7 +279,11 @@ static void
 wl_pointer_frame (void *data,
 		      struct wl_pointer *wl_pointer)
 {
-	if (!in_wl_send_mouse_event () && wl_last_button_idx != -1) {
+	if (in_wl_send_mouse_event()) {
+		return;
+	}
+
+	if (wl_last_button_idx != -1) {
 		in_wl_send_button_event (&wl_mouse_device, wl_last_button_idx);
 	}
 	wl_last_button_idx = -1;
@@ -287,8 +296,8 @@ wl_pointer_frame (void *data,
 
 		auto btn = value > 0 ? 4 : 3;
 		for (int32_t j = 0; j < abs (value); ++j) {
-			in_wl_send_scroll_button_event(ie_mousedown, btn);
-			in_wl_send_scroll_button_event(ie_mouseup, btn);
+			in_wl_send_scroll_button_event (ie_mousedown, btn);
+			in_wl_send_scroll_button_event (ie_mouseup, btn);
 		}
 
 		wl_mouse_accumulated_scroll[i] -= value * 120;
@@ -1201,11 +1210,13 @@ in_wl_init (void *data)
 	wp_cursor_shape_device_v1 = wp_cursor_shape_manager_v1_get_pointer (
 			wp_cursor_shape_manager_v1, wl_pointer);
 
-	zwp_text_input_v3 =
-		zwp_text_input_manager_v3_get_text_input (zwp_text_input_manager_v3,
-												 wl_seat);
-	zwp_text_input_v3_add_listener (zwp_text_input_v3,
-									&zwp_text_input_v3_listener, nullptr);
+    if (zwp_text_input_manager_v3) {
+		zwp_text_input_v3 =
+			zwp_text_input_manager_v3_get_text_input (zwp_text_input_manager_v3,
+														wl_seat);
+		zwp_text_input_v3_add_listener (zwp_text_input_v3,
+										&zwp_text_input_v3_listener, nullptr);
+    }
 
 	wl_add_device (&wl_mouse_device);
 	wl_add_device (&wl_keyboard_device);

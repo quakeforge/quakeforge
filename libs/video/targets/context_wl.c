@@ -210,9 +210,9 @@ match_interface (const char *name, uint32_t iface_id, const struct wl_interface 
 
 	if (*global == nullptr) {
 		Sys_Error ("Failed to bind registry interface %s", iface->name);
+	} else {
+		Sys_MaskPrintf (SYS_wayland, "Successfully bound interface %s\n", iface->name);
 	}
-
-	Sys_MaskPrintf (SYS_wayland, "Successfully bound interface %s\n", iface->name);
 
 	return *global != nullptr;
 }
@@ -227,7 +227,7 @@ registry_handle_global (void *data, struct wl_registry *reg, uint32_t name,
 #define MATCH_END() else { Sys_MaskPrintf(SYS_wayland, "wl_interface: %s, v%d\n", interface, version); }
 
 	MATCH_BEGIN ()
-	MATCH_IFACE (wl_compositor, 6) {}
+	MATCH_IFACE (wl_compositor, 5) {}
 	MATCH_IFACE (wl_seat, 9) { IN_WL_RegisterSeat (); }
 	MATCH_IFACE (wl_shm, 2) {}
 	MATCH_IFACE (xdg_wm_base, 6) {
