@@ -53,6 +53,7 @@ void Entity_SetShadowFlags (entity_t ent, bool noshadowcast,
 							bool noshadowreceive, bool onlyshadows);
 void Entity_SetSkin (entity_t ent, string skinname);
 void Entity_SetTexture (entity_t ent, string skinname);
+void Entity_SetTextureID (entity_t ent, uint texid);
 int Entity_GetPoseMotors (entity_t ent, void *motors, double time);
 animation_t *Entity_GetAnimation (entity_t ent);// NOTE: pointer is ephemeral
 void Entity_SetAnimation (entity_t ent, animation_t *anim);

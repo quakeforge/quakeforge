@@ -235,6 +235,24 @@ Skin_Texture (const char *skinname, memhunk_t *hunk)
 	return skinent;
 }
 
+VISIBLE uint32_t
+Skin_TextureID (uint32_t id, memhunk_t *hunk)
+{
+	uint32_t skinent = m_funcs->get_skinid (id);
+	if (skinent != nullent) {
+		return skinent;
+	}
+	skinent = ECS_NewEntity (skinsys.reg);
+	m_funcs->set_skinid (id, skinent);
+
+	skin_t      skin = {
+		.id = id,
+	};
+	m_funcs->skin_setupskin (&skin);
+	Ent_SetComponent (skinent, skinsys.base + skin_skin, skinsys.reg, &skin);
+	return skinent;
+}
+
 skin_t *
 Skin_Get (uint32_t skin)
 {

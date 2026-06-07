@@ -12,9 +12,11 @@ noinst_PROGRAMS += @QWAQ_TARGETS@ \
 
 atmosphere_src = ruamoko/qwaq/atmosphere.r
 planetary_src = ruamoko/qwaq/planetary.r
+pixpal_src = ruamoko/qwaq/pixpal.r
 
 qwaqshader_src = \
 	$(atmosphere_src) \
+	$(pixpal_src) \
 	$(planetary_src)
 qwaqshader_dep = $(call spvautodep, $(qwaqshader_src))
 include $(qwaqshader_dep) # am--include-marker
@@ -343,6 +345,7 @@ EXTRA_DIST += \
 	ruamoko/qwaq/ui/view.h \
 	ruamoko/qwaq/ui/window.h \
 	ruamoko/qwaq/atmosphere.r \
+	ruamoko/qwaq/pixpal.r \
 	ruamoko/qwaq/planetary.r \
 	ruamoko/qwaq/planetary.h \
 	ruamoko/qwaq/armature.h \

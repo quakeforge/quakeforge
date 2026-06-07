@@ -189,6 +189,7 @@ typedef struct glskin_s {
 void Skin_Init (void);
 uint32_t Skin_Set (const char *skinname, memhunk_t *hunk);
 uint32_t Skin_Texture (const char *skinname, memhunk_t *hunk);
+uint32_t Skin_TextureID (uint32_t id, memhunk_t *hunk);
 skin_t *Skin_Get (uint32_t skin) __attribute__((pure));
 
 void sw_Skin_SetupSkin (skin_t *skin);

@@ -27,6 +27,9 @@ VkImageView QFV_Tex_View (vulkan_ctx_t *ctx, uint32_t texid);
 VkSampler QFV_Tex_Sampler (vulkan_ctx_t *ctx, uint32_t texid);
 uint32_t QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
 						  const char *name);
+uint32_t QFV_TexGetSkinid (vulkan_ctx_t *ctx, uint32_t id);
+void QFV_TexSetSkinid (vulkan_ctx_t *ctx, uint32_t id, uint32_t skinid);
+VkDescriptorSet QFV_GetTexture (vulkan_ctx_t *ctx, uint32_t texid);
 
 void Vulkan_ExpandPalette (byte *dst, const byte *src, const byte *palette,
 						   int alpha, int count);

@@ -60,6 +60,7 @@ enum qfv_tex_components {
 	qfv_tex_sampler,
 	qfv_tex_tex,
 	qfv_tex_texture,
+	qfv_tex_skinid,
 
 	qfv_tex_num_components
 };
@@ -917,6 +918,10 @@ static const component_t qfv_tex_components[] = {
 		.size = sizeof (VkDescriptorSet *),
 		.name = "texture",
 	},
+	[qfv_tex_skinid] = {
+		.size = sizeof (uint32_t),
+		.name = "skinid",
+	},
 };
 
 typedef struct {
@@ -1002,6 +1007,36 @@ QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
 	Ent_SetComponent (texid, c_texture, reg, &texture);
 
 	return texid;
+}
+
+uint32_t
+QFV_TexGetSkinid (vulkan_ctx_t *ctx, uint32_t id)
+{
+	auto tctx = ctx->texture_context;
+	auto reg = tctx->reg;
+	uint32_t c_skinid = tctx->comp_base + qfv_tex_skinid;
+	if (!Ent_HasComponent (id, c_skinid, reg)) {
+		return nullent;
+	}
+	return *(uint32_t *) Ent_GetComponent (id, c_skinid, reg);
+}
+
+void
+QFV_TexSetSkinid (vulkan_ctx_t *ctx, uint32_t id, uint32_t skinid)
+{
+	auto tctx = ctx->texture_context;
+	auto reg = tctx->reg;
+	uint32_t c_skinid = tctx->comp_base + qfv_tex_skinid;
+	Ent_SetComponent (id, c_skinid, reg, &skinid);
+}
+
+VkDescriptorSet
+QFV_GetTexture (vulkan_ctx_t *ctx, uint32_t texid)
+{
+	auto tctx = ctx->texture_context;
+	auto reg = tctx->reg;
+	uint32_t c_texture = tctx->comp_base + qfv_tex_texture;
+	return *(VkDescriptorSet *) Ent_GetComponent (texid, c_texture, reg);
 }
 
 static void

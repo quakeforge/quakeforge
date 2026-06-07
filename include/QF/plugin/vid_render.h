@@ -85,10 +85,13 @@ typedef struct vid_model_funcs_s {
 
 	uint32_t (*skin_set) (const char *skinname, memhunk_t *hunk);
 	uint32_t (*texture_set) (const char *skinname, memhunk_t *hunk);
+	uint32_t (*texture_id_set) (uint32_t id, memhunk_t *hunk);
 	void (*skin_setupskin) (skin_t *skin);
 	void (*skin_destroy) (skin_t *skin);
 
 	uint32_t (*load_resource) (const char *name, plitem_t *res);
+	uint32_t (*get_skinid) (uint32_t id);
+	void (*set_skinid) (uint32_t id, uint32_t skinid);
 } vid_model_funcs_t;
 
 struct tex_s;

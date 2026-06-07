@@ -60,21 +60,31 @@ Vulkan_Skin_Clear (qfv_skin_t *skin, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 
-	QFV_DeviceWaitIdle (device);
-	Vulkan_MeshRemoveSkin (ctx, skin);
-	if (skin->resource) {
-		QFV_DestroyResource (device, skin->resource);
-	} else {
-		Vulkan_UnloadTex (ctx, (qfv_tex_t *) skin->tex);
+	if (skin->tex) {
+		QFV_DeviceWaitIdle (device);
+		Vulkan_MeshRemoveSkin (ctx, skin);
+		if (skin->resource) {
+			QFV_DestroyResource (device, skin->resource);
+		} else {
+			Vulkan_UnloadTex (ctx, skin->tex);
+		}
 	}
 }
 
 void
 Vulkan_Skin_SetupSkin (skin_t *skin, struct vulkan_ctx_s *ctx)
 {
-	tex_t *tex = skin->tex;
 	// FIXME this is gross, but the vulkan skin (and even model) handling
 	// needs a complete overhaul.
+	if (!skin->tex) {
+		qfv_skin_t *vskin = malloc (sizeof (qfv_skin_t));
+		*vskin = (qfv_skin_t) {
+			.descriptor = QFV_GetTexture (ctx, skin->id),
+		};
+		skin->tex = (tex_t *) vskin;
+		return;
+	}
+	tex_t *tex = skin->tex;
 	model_t dummy_model = { };
 	mod_alias_ctx_t alias_ctx = {
 		.skinwidth = tex->width,

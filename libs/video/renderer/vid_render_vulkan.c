@@ -649,6 +649,18 @@ vulkan_load_resource (const char *name, plitem_t *res)
 	return QFV_LoadTexinfo (vulkan_ctx, texinfo, name);
 }
 
+static uint32_t
+vulkan_get_skinid (uint32_t id)
+{
+	return QFV_TexGetSkinid (vulkan_ctx, id);
+}
+
+static void
+vulkan_set_skinid (uint32_t id, uint32_t skind)
+{
+	QFV_TexSetSkinid (vulkan_ctx, id, skind);
+}
+
 static void
 set_palette (void *data, const byte *palette)
 {
@@ -710,10 +722,13 @@ static vid_model_funcs_t model_funcs = {
 
 	.skin_set                = Skin_Set,
 	.texture_set             = Skin_Texture,
+	.texture_id_set          = Skin_TextureID,
 	.skin_setupskin          = vulkan_Skin_SetupSkin,
 	.skin_destroy            = vulkan_Skin_Destroy,
 
 	.load_resource = vulkan_load_resource,
+	.get_skinid = vulkan_get_skinid,
+	.set_skinid = vulkan_set_skinid,
 };
 
 static void
