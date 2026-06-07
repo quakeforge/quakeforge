@@ -128,7 +128,7 @@ static cvar_t lighting_max_views_cvar = {
 	.value = { .type = &cexpr_uint, .value = &lighting_max_views },
 };
 
-static vec4f_t pbr_orm = {1, 1, 0, 1};
+static vec4f_t pbr_orm = {1, 1, 0, 2};
 static cvar_t pbr_orm_cvar = {
 	.name = "pbr_orm",
 	.description =
