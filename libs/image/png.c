@@ -185,6 +185,7 @@ LoadPNG (QFile *infile, int load, memhunk_t *hunk)
 	tex->loaded = load;
 
 	if (!load) {
+		png_destroy_read_struct (&png_ptr, &info_ptr, NULL);
 		png_read_end (png_ptr, NULL);
 		return tex;
 	}
