@@ -1,6 +1,6 @@
 {
 entqueues = {
-	queues = (planetary);
+	queues = (planetary, pixpal);
 };
 samplers = {
 	samplers = {
@@ -620,6 +620,11 @@ render_graph = {
 					name = main;
 					module = planetary.r.spv;
 				};
+				pixpal = {
+					stage = fragment;
+					name = main;
+					module = pixpal.r.spv;
+				};
 			};
 			vertexInput = {
 				bindings = (
@@ -651,7 +656,7 @@ render_graph = {
 						colors = uint;
 						base_color = vec4;
 						orm = vec4;
-						fog = vec4;
+						time = float;
 					};
 				};
 			};
@@ -1781,6 +1786,8 @@ render_graph = {
 								{ func = mesh_draw;
 								  params = (main, 0); },
 								{ func = mesh_draw_queue;
+								  params = (main, 0, pixpal); },
+								{ func = mesh_draw_queue;
 								  params = (main, 0, planetary); },
 							);
 
@@ -2184,6 +2191,28 @@ render_graph = {
 							stages = (
 								$mesh.shader.gbuf_vertex,
 								$qskin.shader.fragment,
+							);
+							vertexInput = $mesh.vertexInput;
+							inputAssembly = $mesh.inputAssembly;
+							layout = $mesh.layout;
+							dynamic = {
+								dynamicState = (
+									viewport,
+									scissor,
+									vertex_input_ext,
+								);
+							};
+						};
+						mesh.pixpal:gbuffer = {
+							color = $color.mesh;
+							tasks = (
+								{ func = mesh_draw_queue;
+								  params = (main, 1, pixpal); },
+							);
+
+							stages = (
+								$mesh.shader.gbuf_vertex,
+								$mesh.shader.pixpal,
 							);
 							vertexInput = $mesh.vertexInput;
 							inputAssembly = $mesh.inputAssembly;
@@ -2730,6 +2759,8 @@ render_graph = {
 							tasks = (
 								{ func = mesh_draw;
 								  params = (shadow, 0); },
+								{ func = mesh_draw_queue;
+								  params = (shadow, 0, pixpal); },
 							);
 
 							stages = (

@@ -1,0 +1,26 @@
+type = texture;
+image = {
+	format = r8g8b8a8_srgb;
+};
+sampler = {
+	magFilter = nearest;
+	minFilter = nearest;
+	mipmapMode = nearest;
+	addressModeU = repeat;
+	addressModeV = repeat;
+	addressModeW = repeat;
+	mipLodBias = 0;
+	anisotropyEnable = false;
+	maxAnisotropy = 0;
+	compareEnable = false;
+	compareOp = always;
+	minLod = 0;
+	maxLod = 0;
+	borderColor = float_transparent_black;
+	unnormalizedCoordinates = false;
+};
+layers = (
+	ImphenziaPixPal_BaseColor.png,
+	ImphenziaPixPal_Emission.png,
+	ImphenziaPixPal_Attributes.png,
+);

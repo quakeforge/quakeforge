@@ -445,7 +445,7 @@ properties = {
 					colors = uint;
 					base_color = vec4;
 					orm = vec4;
-					fog = vec4;
+					time = float;
 				};
 			};
 		};

@@ -43,6 +43,10 @@ static string atmosphere_shader =
 #embed "ruamoko/qwaq/atmosphere.r.spv"
 ;
 
+static string pixpal_shader =
+#embed "ruamoko/qwaq/pixpal.r.spv"
+;
+
 static string planetary_shader =
 #embed "ruamoko/qwaq/planetary.r.spv"
 ;
@@ -103,6 +107,7 @@ uint new_entity () = #0;
 void del_entity (uint ent) = #0;
 void init_graphics (plitem_t *config, int num_components,
 					component_t *components) = #0;
+uint load_resource (string name) = #0;
 float refresh (scene_t scene) = #0;
 void refresh_2d (void (func)(void)) = #0;
 void setpalette (void *palette, void *colormap) = #0;
@@ -2183,6 +2188,8 @@ main (int argc, string *argv)
 	init_graphics (config, qent_comp_count, qwaq_components);
 	PL_Release (config);
 
+	uint pixpal = load_resource ("pixpal.meta");
+
 	IN_SendConnectedDevices ();
 	setup_bindings ();
 
@@ -2260,6 +2267,7 @@ main (int argc, string *argv)
 	#define SUBDIV 5
 	auto quadsphere = create_quadsphere(false);
 	int planetary_queue = Scene_Entqueue ([main_window scene], "planetary");
+	int pixpal_queue = Scene_Entqueue ([main_window scene], "pixpal");
 
 	entity_t moon_ent = Scene_CreateEntity ([main_window scene]);
 	add_target (moon_ent);
@@ -2283,6 +2291,13 @@ main (int argc, string *argv)
 	Entity_SetTexture (QuadSphere_ent, "8k_earth_daymap");
 	Transform_SetLocalPosition(Entity_GetTransform (QuadSphere_ent), { 12770e3, -20, 20, 1});
 	Transform_SetLocalScale(Entity_GetTransform (QuadSphere_ent), { 6370e3, 6370e3, 6370e3, 1});
+
+	entity_t Plane_ent = Scene_CreateEntity ([main_window scene]);
+	Entity_SetModel (Plane_ent, Model_Load ("progs/Plane.mdl"));
+	Transform_SetLocalPosition (Entity_GetTransform (Plane_ent), {5, 5, 1, 1});
+	Entity_SetEntqueue (Plane_ent, pixpal_queue);
+	Entity_SetTextureID (Plane_ent, pixpal);
+
 	qf_mesh_t qsmesh;
 	vec4 stuff = {};
 	{

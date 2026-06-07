@@ -9,7 +9,7 @@
 	uint        colors;
 	vec4        base_color;
 	vec4        orm;
-	vec4        fog;
+	float       time;
 };
 
 [in(0)] vec2 st;
