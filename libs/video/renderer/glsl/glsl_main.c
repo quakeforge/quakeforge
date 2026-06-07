@@ -182,7 +182,7 @@ glsl_R_TimeRefresh_f (void)
 }
 
 void
-glsl_R_Init (struct plitem_s *config)
+glsl_R_Init (memhunk_t *hunk, struct plitem_s *config)
 {
 	if (config) {
 		Sys_Printf (ONG"WARNING"DFL": glsl_R_Init: render config ignored\n");
@@ -191,7 +191,7 @@ glsl_R_Init (struct plitem_s *config)
 					"Test the current refresh rate for the current location.");
 	R_Init_Cvars ();
 	glsl_Draw_Init ();
-	SCR_Init ();
+	SCR_Init (hunk);
 
 	qfeglDepthFunc (GL_LEQUAL);
 

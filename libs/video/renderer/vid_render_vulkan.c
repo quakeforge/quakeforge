@@ -118,8 +118,10 @@ vulkan_ParticleSystem (void)
 }
 
 static void
-vulkan_R_Init (struct plitem_s *config)
+vulkan_R_Init (memhunk_t *hunk, struct plitem_s *config)
 {
+	vulkan_ctx->hunk = hunk;
+
 	QFV_Render_Init (vulkan_ctx);
 
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
@@ -224,7 +226,7 @@ cache_bail:
 
 	Skin_Init ();
 
-	SCR_Init ();
+	SCR_Init (hunk);
 }
 
 static void
@@ -561,9 +563,10 @@ vulkan_BufferSize (const char *name)
 static void
 vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, memhunk_t *hunk)
 {
+	auto save_hunk = vulkan_ctx->hunk;
 	vulkan_ctx->hunk = hunk;
 	Vulkan_Mod_LoadLighting (mod, bsp, vulkan_ctx);
-	vulkan_ctx->hunk = nullptr;
+	vulkan_ctx->hunk = save_hunk;
 }
 
 static void
@@ -574,9 +577,10 @@ vulkan_Mod_SubdivideSurface (model_t *mod, msurface_t *fa, memhunk_t *hunk)
 static void
 vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, memhunk_t *hunk)
 {
+	auto save_hunk = vulkan_ctx->hunk;
 	vulkan_ctx->hunk = hunk;
 	Vulkan_Mod_ProcessTexture (mod, tx, vulkan_ctx);
-	vulkan_ctx->hunk = nullptr;
+	vulkan_ctx->hunk = save_hunk;
 }
 
 static void

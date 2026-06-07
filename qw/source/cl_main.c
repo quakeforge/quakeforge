@@ -673,7 +673,7 @@ CL_ClearState (void)
 
 	CL_TEnts_Precache ();
 
-	SCR_NewScene (0, cl_hunk);
+	SCR_NewScene (0);
 
 	SZ_Clear (&cls.netchan.message);
 
@@ -1408,7 +1408,7 @@ CL_SetState (cactive_t state)
 			if (cl_autorecord && cls.demorecording)
 				CL_StopRecording ();
 
-			SCR_NewScene (0, cl_hunk);
+			SCR_NewScene (0);
 		} else if (state == ca_active) {
 			// entering active state
 			VID_SetCaption (cls.servername->str);
@@ -1498,7 +1498,7 @@ CL_Init (void)
 	VID_Init (basepal, colormap);
 	IN_Init (cl_hunk);
 	Mod_Init (cl_hunk);
-	R_Init (nullptr);
+	R_Init (cl_hunk, nullptr);
 	r_data->lightstyle = cl.lightstyle;
 	Font_Init ();	//FIXME not here
 

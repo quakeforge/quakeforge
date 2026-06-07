@@ -105,7 +105,7 @@ float       r_viewmatrix[3][4];
 float       r_aliastransition, r_resfudge;
 
 void
-sw_R_Init (struct plitem_s *config)
+sw_R_Init (memhunk_t *hunk, struct plitem_s *config)
 {
 	if (config) {
 		Sys_Printf (ONG"WARNING"DFL": sw_R_Init: render config ignored\n");
@@ -118,7 +118,7 @@ sw_R_Init (struct plitem_s *config)
 	R_Init_Cvars ();
 
 	Draw_Init ();
-	SCR_Init ();
+	SCR_Init (hunk);
 	R_SetFPCW ();
 #ifdef USE_INTEL_ASM
 	R_InitVars ();

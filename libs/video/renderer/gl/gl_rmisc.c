@@ -115,7 +115,7 @@ gl_R_TimeRefresh_f (void)
 }
 
 void
-gl_R_Init (struct plitem_s *config)
+gl_R_Init (memhunk_t *hunk, struct plitem_s *config)
 {
 	if (config) {
 		Sys_Printf (ONG"WARNING"DFL": gl_R_Init: render config ignored\n");
@@ -131,7 +131,7 @@ gl_R_Init (struct plitem_s *config)
 	gl_Draw_Init ();
 	glrmain_init ();
 	gl_lightmap_init ();
-	SCR_Init ();
+	SCR_Init (hunk);
 	gl_R_InitBubble ();
 
 	GDT_Init ();

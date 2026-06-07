@@ -266,7 +266,7 @@ CL_NewMap (const char *mapname)
 	if (cl.serverinfo) {
 		skyname = Info_ValueForKey (cl.serverinfo, "sky");
 	}
-	CL_World_NewMap (mapname, skyname, cl_hunk);
+	CL_World_NewMap (mapname, skyname);
 	V_NewScene (&cl.viewstate, cl_world.scene);
 	cl.chasestate.worldmodel = cl_world.scene->worldmodel;
 

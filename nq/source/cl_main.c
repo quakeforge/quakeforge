@@ -253,7 +253,7 @@ CL_ClearMemory (void)
 	CL_World_Clear ();
 	CL_ClearEnts ();
 
-	SCR_NewScene (0, cl_hunk);
+	SCR_NewScene (0);
 }
 
 void
@@ -592,7 +592,7 @@ CL_SetState (cactive_t state)
 		if (old_state == ca_active && state != ca_disconnected) {
 			// leaving active state
 			S_AmbientOff ();
-			SCR_NewScene (0, cl_hunk);
+			SCR_NewScene (0);
 		}
 		switch (state) {
 			case ca_disconnected:
@@ -766,7 +766,7 @@ CL_Init (cbuf_t *cbuf, memhunk_t *hunk)
 	VID_Init (basepal, colormap);
 	IN_Init (hunk);
 	GIB_Key_Init ();
-	R_Init (nullptr);
+	R_Init (cl_hunk, nullptr);
 	r_data->lightstyle = cl.lightstyle;
 	S_Init (&cl.viewentity, &host_frametime);
 	Font_Init ();	//FIXME not here

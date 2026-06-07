@@ -238,7 +238,7 @@ CL_LoadSky (const char *name)
 }
 
 void
-CL_World_NewMap (const char *mapname, const char *skyname, memhunk_t *hunk)
+CL_World_NewMap (const char *mapname, const char *skyname)
 {
 	qfZoneScoped (true);
 	Scene_SetWorld (cl_world.scene, cl_world.models.a[1]);
@@ -268,7 +268,7 @@ CL_World_NewMap (const char *mapname, const char *skyname, memhunk_t *hunk)
 
 	cl_world.scene->models = cl_world.models.a;
 	cl_world.scene->num_models = cl_world.models.size;
-	SCR_NewScene (cl_world.scene, hunk);
+	SCR_NewScene (cl_world.scene);
 	map_cfg (mapname, 1);
 }
 

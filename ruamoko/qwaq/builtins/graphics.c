@@ -314,7 +314,7 @@ bi(init_graphics)
 	if (plitem_id) {
 		plitem = Plist_GetItem (pr, plitem_id);
 	}
-	R_Init (plitem);
+	R_Init (pr->pr_hunk, plitem);
 	Font_Init ();
 
 	Con_Load ("client");
@@ -361,7 +361,7 @@ bi(init_graphics)
 bi(newscene)
 {
 	pr_ulong_t  scene_id = P_ULONG (pr, 0);
-	SCR_NewScene (Scene_GetScene (pr, scene_id), pr->pr_hunk);
+	SCR_NewScene (Scene_GetScene (pr, scene_id));
 	r_funcs->R_LoadSkys ("eso0932a");
 }
 

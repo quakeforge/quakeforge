@@ -100,10 +100,10 @@ R_LoadModule (vid_internal_t *vid_internal)
 }
 
 VISIBLE void
-R_Init (struct plitem_s *config)
+R_Init (memhunk_t *hunk, struct plitem_s *config)
 {
 	qfZoneScoped (true);
-	r_funcs->R_Init (config);
+	r_funcs->R_Init (hunk, config);
 	Fog_Init ();
 	R_Trails_Init ();
 }

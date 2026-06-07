@@ -472,7 +472,7 @@ vidsize_listener (void *data, const viddef_t *vdef)
 }
 
 void
-SCR_Init (void)
+SCR_Init (memhunk_t *hunk)
 {
 	//r_data->scr_view->xlen = r_data->vid->width;
 	//r_data->scr_view->ylen = r_data->vid->height;
@@ -489,6 +489,8 @@ SCR_Init (void)
 	Cvar_AddListener (var, viewsize_listener, 0);
 	VID_OnVidResize_AddListener (vidsize_listener, 0);
 	update_vrect ();
+
+	r_refdef.hunk = hunk;
 }
 
 void
@@ -498,11 +500,11 @@ SCR_Shutdown (void)
 }
 
 void
-SCR_NewScene (scene_t *scene, memhunk_t *hunk)
+SCR_NewScene (scene_t *scene)
 {
 	qfZoneScoped (true);
-	r_refdef.hunk = hunk;
 	r_refdef.scene = scene;
+	auto hunk = r_refdef.hunk;
 	if (scene) {
 		mod_brush_t *brush = &r_refdef.scene->worldmodel->brush;
 		int         count = brush->numnodes + brush->modleafs

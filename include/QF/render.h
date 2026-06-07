@@ -186,7 +186,7 @@ typedef struct {
 extern	struct texture_s	*r_notexture_mip;
 
 struct plitem_s;
-void R_Init (struct plitem_s *config);
+void R_Init (memhunk_t *hunk, struct plitem_s *config);
 struct vid_internal_s;
 void R_LoadModule (struct vid_internal_s *vid_internal);
 struct progs_s;

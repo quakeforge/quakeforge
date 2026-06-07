@@ -153,7 +153,7 @@ typedef struct vid_render_funcs_s {
 
 	struct psystem_s *(*ParticleSystem) (void);
 	struct psystem_s *(*TrailSystem) (void);
-	void (*R_Init) (struct plitem_s *config);
+	void (*R_Init) (memhunk_t *hunk, struct plitem_s *config);
 	void (*R_ClearState) (void);
 	void (*R_LoadSkys) (const char *);
 	void (*R_NewScene) (struct scene_s *scene);
