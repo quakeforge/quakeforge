@@ -1,8 +1,13 @@
 #ifndef __QF_Vulkan_qf_texture_h
 #define __QF_Vulkan_qf_texture_h
 
+#include "QF/ecs.h"
 #include "QF/image.h"
 #include "QF/Vulkan/qf_vid.h"
+
+typedef struct ecs_registry_s ecs_registry_t;
+typedef struct vulkan_ctx_s vulkan_ctx_t;
+typedef struct qfv_textureinfo_s qfv_textureinfo_t;
 
 typedef struct qfv_tex_s {
 	struct qfv_resource_s *resource;
@@ -13,7 +18,15 @@ typedef struct qfv_tex_s {
 typedef struct texturectx_s {
 	struct qfv_dsmanager_s *dsmanager;
 	struct qfv_resource_s *tex_resource;
+
+	ecs_registry_t *reg;
+	uint32_t comp_base;
 } texturectx_t;
+
+VkImageView QFV_Tex_View (vulkan_ctx_t *ctx, uint32_t texid);
+VkSampler QFV_Tex_Sampler (vulkan_ctx_t *ctx, uint32_t texid);
+uint32_t QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
+						  const char *name);
 
 void Vulkan_ExpandPalette (byte *dst, const byte *src, const byte *palette,
 						   int alpha, int count);

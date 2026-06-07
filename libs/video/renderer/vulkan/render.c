@@ -1346,8 +1346,8 @@ QFV_Render_DSManager (vulkan_ctx_t *ctx, const char *setName)
 	return 0;
 }
 
-static void
-create_sampler (vulkan_ctx_t *ctx, qfv_samplercreateinfo_t *sampler)
+void
+QFV_CreateSampler (vulkan_ctx_t *ctx, qfv_samplercreateinfo_t *sampler)
 {
 	VkSamplerCreateInfo create = {
 		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -1387,7 +1387,7 @@ QFV_Render_Sampler (vulkan_ctx_t *ctx, const char *name)
 		auto sci = &si->samplers[i];
 		if (!strcmp (sci->name, name)) {
 			if (!sci->sampler) {
-				create_sampler (ctx, sci);
+				QFV_CreateSampler (ctx, sci);
 			}
 			return sci->sampler;
 		}

@@ -638,6 +638,17 @@ vulkan_Skin_Destroy (struct skin_s *skin)
 	Vulkan_Skin_Destroy (skin, vulkan_ctx);
 }
 
+static uint32_t
+vulkan_load_resource (const char *name, plitem_t *res)
+{
+	const char *type = PL_String (PL_ObjectForKey (res, "type"));
+	if (!type || strcmp (type, "texture") != 0) {
+		Sys_Error ("invalid resource type");
+	}
+	auto texinfo = QFV_Render_TextureInfo (vulkan_ctx, res);
+	return QFV_LoadTexinfo (vulkan_ctx, texinfo, name);
+}
+
 static void
 set_palette (void *data, const byte *palette)
 {
@@ -701,6 +712,8 @@ static vid_model_funcs_t model_funcs = {
 	.texture_set             = Skin_Texture,
 	.skin_setupskin          = vulkan_Skin_SetupSkin,
 	.skin_destroy            = vulkan_Skin_Destroy,
+
+	.load_resource = vulkan_load_resource,
 };
 
 static void

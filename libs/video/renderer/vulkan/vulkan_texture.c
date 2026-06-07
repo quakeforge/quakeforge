@@ -38,6 +38,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/cmem.h"
 #include "QF/mathlib.h"
 #include "QF/va.h"
 #include "QF/Vulkan/qf_texture.h"
@@ -52,6 +53,16 @@
 #include "QF/Vulkan/staging.h"
 
 #include "vid_vulkan.h"
+
+enum qfv_tex_components {
+	qfv_tex_texinfo,
+	qfv_tex_view,
+	qfv_tex_sampler,
+	qfv_tex_tex,
+	qfv_tex_texture,
+
+	qfv_tex_num_components
+};
 
 void
 Vulkan_ExpandPalette (byte *dst, const byte *src, const byte *palette,
@@ -184,9 +195,12 @@ stage_tex_data_rows (qfv_packet_t *packet, tex_t *tex, int y, int rows,
 	return tex_data;
 }
 
+typedef void (*load_tex_t) (tex_t *tex, void *data);
+
 //NOTE: all textures must have the same dimensions or bad things will happen
 static byte *
-stage_multi_tex_data (qfv_packet_t *packet, tex_t **tex, int count, int bpp)
+stage_multi_tex_data (qfv_packet_t *packet, tex_t **tex, int count, int bpp,
+					  load_tex_t load_tex, void *load_tex_data)
 {
 	size_t      texels = tex[0]->width * tex[0]->height;
 	byte       *tex_data = QFV_PacketExtend (packet, bpp * texels * count);
@@ -201,6 +215,9 @@ stage_multi_tex_data (qfv_packet_t *packet, tex_t **tex, int count, int bpp)
 	}
 
 	for (int i = 0; i < count; i++, out_data += bpp * texels) {
+		if (!tex[i]->loaded) {
+			load_tex (tex[i], load_tex_data);
+		}
 		stage (out_data, tex[i]->data, texels, bpp, palette);
 	}
 	return tex_data;
@@ -291,7 +308,8 @@ alloc_qfv_tex ()
 
 static void
 stage_tex_set (qfv_tex_t *qtex, tex_cmd_t *tex_cmd, int num_cmd,
-			   int layers, int mip, vulkan_ctx_t *ctx)
+			   int layers, int mip, vulkan_ctx_t *ctx,
+			   load_tex_t load_tex, void *load_tex_data)
 {
 	auto sb = &imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	auto db = &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
@@ -307,8 +325,12 @@ stage_tex_set (qfv_tex_t *qtex, tex_cmd_t *tex_cmd, int num_cmd,
 		}
 		packet = QFV_PacketAcquire (ctx->staging, "tex.loadarray");
 		if (cmd->count > 1) {
-			stage_multi_tex_data (packet, cmd->tex, cmd->count, cmd->bpp);
+			stage_multi_tex_data (packet, cmd->tex, cmd->count, cmd->bpp,
+								  load_tex, load_tex_data);
 		} else {
+			if (!(*cmd->tex)->loaded) {
+				load_tex (*cmd->tex, load_tex_data);
+			}
 			stage_tex_data_rows (packet, *cmd->tex, cmd->in_y, cmd->rows,
 								 cmd->bpp, cmd->in_x, cmd->row_texels);
 		}
@@ -339,33 +361,22 @@ stage_tex_set (qfv_tex_t *qtex, tex_cmd_t *tex_cmd, int num_cmd,
 
 static void
 load_tex_set (tex_t **tex_set, int layers, int mip, int bpp, qfv_tex_t *qtex,
-			  vulkan_ctx_t *ctx)
+			  vulkan_ctx_t *ctx, load_tex_t load_tex, void *load_tex_data)
 {
 	int num_cmd = calc_tex_stage_commands (tex_set, layers, bpp);
 	tex_cmd_t tex_cmd[num_cmd];
 	init_tex_stage_commands (tex_cmd, tex_set, layers, bpp);
 
-	stage_tex_set (qtex, tex_cmd, num_cmd, layers, mip, ctx);
+	stage_tex_set (qtex, tex_cmd, num_cmd, layers, mip, ctx,
+				   load_tex, load_tex_data);
 }
 
-qfv_tex_t *
-Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
-					 const char *name)
+static qfv_tex_t *
+load_tex_array (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
+				const char *name, VkFormat format, int bpp,
+				load_tex_t load_tex, void *load_tex_data)
 {
 	qfv_device_t *device = ctx->device;
-	int         bpp;
-	VkFormat    format;
-
-	if (!tex_format (tex, &format, &bpp)) {
-		return 0;
-	}
-
-	for (int i = 1; i < layers; i++) {
-		if (tex[i].width != tex[0].width || tex[i].height != tex[0].height
-			|| tex[i].format != tex[0].format) {
-			return 0;
-		}
-	}
 
 	if (mip) {
 		mip = QFV_MipLevels (tex[0].width, tex[0].height);
@@ -396,8 +407,31 @@ Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
 	for (int i = 0; i < layers; i++) {
 		tex_set[i] = &tex[i];
 	}
-	load_tex_set (tex_set, layers, mip, bpp, qtex, ctx);
+	load_tex_set (tex_set, layers, mip, bpp, qtex, ctx,
+				  load_tex, load_tex_data);
 	return qtex;
+}
+
+qfv_tex_t *
+Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
+					 const char *name)
+{
+	VkFormat    format;
+	int         bpp;
+
+	if (!tex_format (tex, &format, &bpp)) {
+		return 0;
+	}
+
+	for (int i = 1; i < layers; i++) {
+		if (tex[i].width != tex[0].width || tex[i].height != tex[0].height
+			|| tex[i].format != tex[0].format) {
+			return 0;
+		}
+	}
+
+	return load_tex_array (ctx, tex, layers, mip, name, format, bpp,
+						   nullptr, nullptr);
 }
 
 qfv_tex_t *
@@ -548,7 +582,7 @@ Vulkan_LoadEnvMap (vulkan_ctx_t *ctx, tex_t *tex, const char *name)
 	}
 
 	int mip = QFV_MipLevels (size, size);
-	stage_tex_set (qtex, tex_cmd, num_cmd * 6, 6, mip, ctx);
+	stage_tex_set (qtex, tex_cmd, num_cmd * 6, 6, mip, ctx, nullptr, nullptr);
 	return qtex;
 }
 
@@ -576,7 +610,7 @@ Vulkan_LoadEnvSides (vulkan_ctx_t *ctx, tex_t **tex, const char *name)
 	qfv_tex_t  *qtex = create_cubetex (ctx, size, format, name);
 
 	int mip = QFV_MipLevels (size, size);
-	load_tex_set (tex, 6, mip, bpp, qtex, ctx);
+	load_tex_set (tex, 6, mip, bpp, qtex, ctx, nullptr, nullptr);
 	return qtex;
 }
 
@@ -725,9 +759,28 @@ texture_shutdown (exprctx_t *ectx)
 	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
 	auto tctx = ctx->texture_context;
 
 	QFV_DestroyResource (ctx->device, tctx->tex_resource);
+
+	auto reg = tctx->reg;
+	auto pools = reg->comp_pools;
+
+	uint32_t c_tex = tctx->comp_base + qfv_tex_tex;
+	for (uint32_t i = 0; i < pools[c_tex].count; i++) {
+		auto tex = ((qfv_tex_t **)pools[c_tex].data)[i];
+		Vulkan_UnloadTex (ctx, tex);
+	}
+
+	uint32_t c_texinfo = tctx->comp_base + qfv_tex_texinfo;
+	for (uint32_t i = 0; i < pools[c_texinfo].count; i++) {
+		auto texinfo = ((qfv_textureinfo_t **)pools[c_texinfo].data)[i];
+		auto sampler = texinfo->sampler.sampler;
+		dfunc->vkDestroySampler (device->dev, sampler, nullptr);
+		delete_memsuper (texinfo->memsuper);
+	}
 
 	free (tctx->tex_resource);
 	free (ctx->texture_context);
@@ -797,7 +850,8 @@ texture_startup (exprctx_t *ectx)
 											   0, 0, 4, 0, 0);
 	auto normal_bytes =  stage_tex_data_rows (packet, &default_normal_tex,
 											  0, 0, 4, 0, 0);
-	auto skin_bytes = stage_multi_tex_data (packet, default_skin_tex, 3, 4);
+	auto skin_bytes = stage_multi_tex_data (packet, default_skin_tex, 3, 4,
+											nullptr, nullptr);
 
 	auto sb = imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	auto db = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
@@ -824,6 +878,132 @@ texture_startup (exprctx_t *ectx)
 	qfvPopDebug (ctx);
 }
 
+VkImageView
+QFV_Tex_View (vulkan_ctx_t *ctx, uint32_t texid)
+{
+	auto tctx = ctx->texture_context;
+	auto reg = tctx->reg;
+	uint32_t comp = qfv_tex_view + tctx->comp_base;
+	return *(VkImageView *) Ent_GetComponent (texid, comp, reg);
+}
+
+VkSampler
+QFV_Tex_Sampler (vulkan_ctx_t *ctx, uint32_t texid)
+{
+	auto tctx = ctx->texture_context;
+	auto reg = tctx->reg;
+	uint32_t comp = qfv_tex_sampler + tctx->comp_base;
+	return *(VkSampler *) Ent_GetComponent (texid, comp, reg);
+}
+
+static const component_t qfv_tex_components[] = {
+	[qfv_tex_texinfo] = {
+		.size = sizeof (qfv_textureinfo_t *),
+		.name = "texinfo",
+	},
+	[qfv_tex_view] = {
+		.size = sizeof (VkImageView),
+		.name = "view",
+	},
+	[qfv_tex_sampler] = {
+		.size = sizeof (VkSampler),
+		.name = "sampler",
+	},
+	[qfv_tex_tex] = {
+		.size = sizeof (qfv_tex_t *),
+		.name = "tex",
+	},
+	[qfv_tex_texture] = {
+		.size = sizeof (VkDescriptorSet *),
+		.name = "texture",
+	},
+};
+
+typedef struct {
+	tex_t *base;
+	qfv_textureinfo_t *texinfo;
+	vulkan_ctx_t *ctx;
+} load_tex_data_t;
+
+static void
+load_tex (tex_t *tex, void *data)
+{
+	load_tex_data_t *lt_data = data;
+	uint32_t index = tex - lt_data->base;
+	auto ctx = lt_data->ctx;
+	auto texinfo = lt_data->texinfo;
+	auto t = LoadImage (texinfo->layer_files[index], 1, ctx->hunk);
+	tex->data = t->data;
+}
+
+uint32_t
+QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
+				 const char *name)
+{
+	if (!texinfo->num_layers) {
+		Sys_Error ("%s: no layers", name);
+	}
+	if (texinfo->num_layers > 8) {
+		Sys_Error ("%s: too many layers", name);
+	}
+	if (texinfo->image.arrayLayers
+		&& texinfo->image.arrayLayers != texinfo->num_layers) {
+		Sys_Error ("%s: invalid arrayLayers", name);
+	}
+	tex_t layers[texinfo->num_layers] = {};
+	for (uint32_t i = 0; i < texinfo->num_layers; i++) {
+		auto tex = LoadImage (texinfo->layer_files[i], 0, ctx->hunk);
+		layers[i] = *tex;
+	}
+
+	for (uint32_t i = 1; i < texinfo->num_layers; i++) {
+		if (layers[i].width != layers[0].width
+			|| layers[i].height != layers[0].height
+			|| layers[i].format != layers[0].format) {
+			Sys_Error ("%s: incompatible layers", name);
+		}
+	}
+
+	VkFormat    format;
+	int         bpp;
+
+	if (!tex_format (layers, &format, &bpp)) {
+		Sys_Error ("%s: unsupported image", name);
+	}
+	name = cmemstrdup (texinfo->memsuper, name);
+
+	load_tex_data_t lt_data = {
+		.base = layers,
+		.texinfo = texinfo,
+		.ctx = ctx,
+	};
+	auto tex = load_tex_array (ctx, layers, texinfo->num_layers,
+							   texinfo->image.mipLevels + 1, name,
+							   texinfo->image.format, bpp,
+							   load_tex, &lt_data);
+	QFV_CreateSampler (ctx, &texinfo->sampler);
+	auto texture = Vulkan_CreateCombinedImageSampler (ctx, tex->view,
+													  texinfo->sampler.sampler);
+
+	auto tctx = ctx->texture_context;
+	auto reg = tctx->reg;
+	uint32_t c_texinfo = tctx->comp_base + qfv_tex_texinfo;
+	uint32_t c_view = tctx->comp_base + qfv_tex_view;
+	uint32_t c_samp = tctx->comp_base + qfv_tex_sampler;
+	uint32_t c_tex = tctx->comp_base + qfv_tex_tex;
+	uint32_t c_texture = tctx->comp_base + qfv_tex_texture;
+
+	uint32_t texid = ECS_NewEntity (reg);
+	Ent_SetComponent (texid, ecs_name, reg, &name);
+	Ent_SetComponent (texid, c_texinfo, reg, &texinfo);
+	Ent_SetComponent (texid, c_view, reg, &tex->view);
+	Ent_SetComponent (texid, c_samp, reg, &texinfo->sampler.sampler);
+	Ent_SetComponent (texid, c_tex, reg, &tex);
+	Ent_SetComponent (texid, c_texture, reg, &texture);
+
+	return texid;
+}
+
 static void
 texture_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
@@ -834,8 +1014,16 @@ texture_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_Render_AddShutdown (ctx, texture_shutdown);
 	QFV_Render_AddStartup (ctx, texture_startup);
 
-	texturectx_t   *tctx = calloc (1, sizeof (texturectx_t));
+	texturectx_t   *tctx = malloc (sizeof (texturectx_t));
 	ctx->texture_context = tctx;
+
+	auto reg = ECS_NewRegistry ("textures");
+	*tctx = (texturectx_t) {
+		.reg = reg,
+		.comp_base = ECS_RegisterComponents (reg, qfv_tex_components,
+											 qfv_tex_num_components),
+	};
+	ECS_CreateComponentPools (reg);
 }
 
 static exprfunc_t texture_init_func[] = {

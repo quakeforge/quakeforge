@@ -337,6 +337,16 @@ typedef struct qfv_entqueueinfo_s {
 	uint32_t    num_queues;
 } qfv_entqueueinfo_t;
 
+typedef struct qfv_textureinfo_s {
+	struct memsuper_s *memsuper;
+	struct plitem_s *plitem;
+	qfv_imageinfo_t image;
+	//qfv_imageviewinfo_t view;
+	qfv_samplercreateinfo_t sampler;
+	const char **layer_files;
+	uint32_t    num_layers;
+} qfv_textureinfo_t;
+
 #ifndef __QFCC__
 
 typedef struct hashtab_s hashtab_t;
@@ -347,6 +357,7 @@ typedef struct qfv_dsmanager_s qfv_dsmanager_t;
 typedef struct qfv_resobj_s qfv_resobj_t;
 typedef struct dstring_s dstring_t;
 typedef struct qfv_resource_s qfv_resource_t;
+typedef struct plitem_s plitem_t;
 
 typedef struct qfv_resourcearray_s {
 	qfv_resource_t *array;
@@ -606,6 +617,7 @@ QFV_REND_INLINE void qfv_resourcearray_next (qfv_resourcearray_t *array);
 
 qfv_dsmanager_t *QFV_Render_DSManager (vulkan_ctx_t *ctx, const char *setName)
 	__attribute__((pure));
+void QFV_CreateSampler (vulkan_ctx_t *ctx, qfv_samplercreateinfo_t *sampler);
 VkSampler QFV_Render_Sampler (vulkan_ctx_t *ctx, const char *name);
 
 qfv_framebufferinfo_t *QFV_FindFramebufferInfo (vulkan_ctx_t *ctx,
@@ -643,6 +655,8 @@ void QFV_Render_UI (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx);
 imui_ctx_t *QFV_Render_UI_Context (vulkan_ctx_t *ctx) __attribute__((pure));
 void QFV_Render_Menu (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx);
 void QFV_Render_UI_Shutdown (vulkan_ctx_t *ctx);
+
+qfv_textureinfo_t *QFV_Render_TextureInfo (vulkan_ctx_t *ctx, plitem_t *info);
 
 #undef QFV_REND_INLINE
 #ifndef IMPLEMENT_QFV_REND_Funcs

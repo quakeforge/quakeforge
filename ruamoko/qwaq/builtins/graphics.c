@@ -41,6 +41,7 @@
 #include "QF/backtrace.h"
 #include "QF/cbuf.h"
 #include "QF/draw.h"
+#include "QF/hash.h"
 #include "QF/image.h"
 #include "QF/input.h"
 #include "QF/keys.h"
@@ -102,6 +103,7 @@ typedef struct qwaq_ecs_s {
 
 typedef struct graphics_resources_s {
 	progs_t    *pr;
+	hashctx_t  *hashctx;
 	double      con_frametime;
 	double      con_realtime, basetime;
 	double      old_conrealtime;
@@ -358,6 +360,17 @@ bi(init_graphics)
 	res->basetime = Sys_DoubleTime ();
 }
 
+bi(load_resource)
+{
+	graphics_resources_t *res = _res;
+	const char *name = P_GSTRING (pr, 0);
+	auto resfile = QFS_FOpenFile (name);
+	auto data = QFS_LoadFile (resfile, nullptr);
+	auto plitem = PL_GetDictionary ((char *) data, &res->hashctx);
+	free (data);
+	R_UINT (pr) = mod_funcs->load_resource (name, plitem);
+}
+
 bi(newscene)
 {
 	pr_ulong_t  scene_id = P_ULONG (pr, 0);
@@ -564,6 +577,7 @@ static builtin_t builtins[] = {
 	bi(new_entity,    -1, 0),
 	bi(del_entity,    -1, 1, p(uint)),
 	bi(init_graphics, -1, 1, p(ptr)),
+	bi(load_resource, -1, 1, p(string)),
 	bi(newscene,      -1, 1, p(long)),
 	bi(refresh,       -1, 1, p(long)),
 	bi(refresh_2d,    -1, 1, p(func)),

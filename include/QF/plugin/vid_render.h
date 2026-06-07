@@ -44,6 +44,7 @@ typedef struct progs_s progs_t;
 typedef struct memhunk_s memhunk_t;
 
 typedef struct qf_model_s qf_model_t;
+typedef struct plitem_s plitem_t;
 
 struct mod_alias_ctx_s;
 struct mod_iqm_ctx_s;
@@ -86,6 +87,8 @@ typedef struct vid_model_funcs_s {
 	uint32_t (*texture_set) (const char *skinname, memhunk_t *hunk);
 	void (*skin_setupskin) (skin_t *skin);
 	void (*skin_destroy) (skin_t *skin);
+
+	uint32_t (*load_resource) (const char *name, plitem_t *res);
 } vid_model_funcs_t;
 
 struct tex_s;

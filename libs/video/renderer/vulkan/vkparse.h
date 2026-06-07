@@ -62,4 +62,7 @@ struct qfv_samplerinfo_s *QFV_ParseSamplerInfo (vulkan_ctx_t *ctx,
 struct qfv_entqueueinfo_s *QFV_ParseEntqueueInfo (vulkan_ctx_t *ctx,
 												  plitem_t *item,
 												  struct qfv_renderctx_s *rctx);
+struct qfv_textureinfo_s *QFV_ParseTextureInfo (vulkan_ctx_t *ctx,
+												plitem_t *item,
+												qfv_renderctx_t *rctx);
 #endif//__vkparse_h

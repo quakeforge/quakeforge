@@ -169,6 +169,13 @@ QFV_LoadEntqueueInfo (vulkan_ctx_t *ctx, plitem_t *item)
 	}
 }
 
+qfv_textureinfo_t *
+QFV_Render_TextureInfo (vulkan_ctx_t *ctx, plitem_t *info)
+{
+	auto rctx = ctx->render_context;
+	return QFV_ParseTextureInfo (ctx, info, rctx);
+}
+
 typedef struct {
 	uint32_t    num_images;
 	uint32_t    num_imageviews;
