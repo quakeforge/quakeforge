@@ -425,11 +425,11 @@ find_bufferinfo (qfv_graphinfo_t *graphinfo, const qfv_reference_t *ref)
 }
 
 static uint32_t __attribute__((pure))
-find_framebuffer (const qfv_reference_t *ref, qfv_graphinfo_t *jinfo,
+find_framebuffer (const qfv_reference_t *ref, qfv_graphinfo_t *ginfo,
 				  qfv_renderpassinfo_t *rpi)
 {
-	for (uint32_t i = 0; i < jinfo->num_framebuffers; i++) {
-		auto fb = &jinfo->framebuffers[i];
+	for (uint32_t i = 0; i < ginfo->num_framebuffers; i++) {
+		auto fb = &ginfo->framebuffers[i];
 		if (strcmp (fb->name, ref->name) == 0) {
 			return i;
 		}
@@ -443,22 +443,22 @@ QFV_FindFramebufferInfo (vulkan_ctx_t *ctx, const qfv_reference_t *ref,
 						 const char *rpname)
 {
 	auto rctx = ctx->render_context;
-	auto jinfo = rctx->graphinfo;
+	auto ginfo = rctx->graphinfo;
 	qfv_renderpassinfo_t rpi = {
 		.name = rpname,
 		.framebuffer.use = *ref,
 	};
-	uint32_t ind = find_framebuffer (ref, jinfo, &rpi);
-	return &jinfo->framebuffers[ind];
+	uint32_t ind = find_framebuffer (ref, ginfo, &rpi);
+	return &ginfo->framebuffers[ind];
 }
 
 qfv_bufferinfo_t *
 QFV_FindBufferInfo (vulkan_ctx_t *ctx, const char *name)
 {
 	auto rctx = ctx->render_context;
-	auto jinfo = rctx->graphinfo;
+	auto ginfo = rctx->graphinfo;
 	qfv_reference_t ref = { .name = name };
-	return find_bufferinfo (jinfo, &ref);
+	return find_bufferinfo (ginfo, &ref);
 }
 
 static bool
@@ -468,7 +468,7 @@ setup_resources (vulkan_ctx_t *ctx,
 				 qfv_resobj_t *images, qfv_resobj_t *image_views)
 {
 	auto rctx = ctx->render_context;
-	auto jinfo = rctx->graphinfo;
+	auto ginfo = rctx->graphinfo;
 
 	resources[0] = (qfv_resource_t) {
 		.name = name,
@@ -480,12 +480,12 @@ setup_resources (vulkan_ctx_t *ctx,
 	bool error = false;
 	for (uint32_t i = 0; i < num_attachments; i++) {
 		auto attach = &fbi->attachments[i];
-		auto imgview = find_imageviewinfo (jinfo, &attach->view);
+		auto imgview = find_imageviewinfo (ginfo, &attach->view);
 		if (!imgview) {
 			error = true;
 			continue;
 		}
-		auto img = find_imageinfo (jinfo, &imgview->image);
+		auto img = find_imageinfo (ginfo, &imgview->image);
 		if (!img) {
 			error = true;
 			continue;
@@ -656,10 +656,10 @@ uint32_t
 QFV_GetDSIndex (vulkan_ctx_t *ctx, const char *name)
 {
 	auto rctx = ctx->render_context;
-	auto jinfo = rctx->graphinfo;
+	auto ginfo = rctx->graphinfo;
 
-	for (uint32_t i = 0; i < jinfo->num_dslayouts; i++) {
-		auto ds = &jinfo->dslayouts[i];
+	for (uint32_t i = 0; i < ginfo->num_dslayouts; i++) {
+		auto ds = &ginfo->dslayouts[i];
 		if (strcmp (ds->name, name) == 0) {
 			return i;
 		}
@@ -1176,10 +1176,10 @@ make_label (const char *name, vec4f_t color)
 static void
 init_tasks (uint32_t *task_count, qfv_taskinfo_t **tasks,
 			uint32_t num_tasks, qfv_taskinfo_t *intasks,
-			graphptr_t *jp, objstate_t *s)
+			graphptr_t *gp, objstate_t *s)
 {
 	*task_count = num_tasks;
-	*tasks = &jp->tasks[s->inds.num_tasks];
+	*tasks = &gp->tasks[s->inds.num_tasks];
 	for (uint32_t i = 0; i < num_tasks; i++) {
 		(*tasks)[i] = intasks[i];
 	}
@@ -1188,7 +1188,7 @@ init_tasks (uint32_t *task_count, qfv_taskinfo_t **tasks,
 
 static void
 init_pipeline (qfv_pipeline_t *pl, qfv_pipelineinfo_t *plinfo,
-			   graphptr_t *jp, objstate_t *s, int is_compute)
+			   graphptr_t *gp, objstate_t *s, int is_compute)
 {
 	auto blackboard = &s->ctx->render_context->blackboard;
 	auto li = find_layout (&plinfo->layout, s);
@@ -1202,12 +1202,12 @@ init_pipeline (qfv_pipeline_t *pl, qfv_pipelineinfo_t *plinfo,
 							   : s->ptr.gpl[s->inds.num_graph_pipelines],
 		.layout = li->layout,
 		.num_indices = li->num_sets,
-		.ds_indices = &jp->ds_indices[s->inds.num_ds_indices],
+		.ds_indices = &gp->ds_indices[s->inds.num_ds_indices],
 		.first_push_constant = blackboard->layout_start[layout_ind],
 		.num_push_constants = blackboard->layout_count[layout_ind],
 	};
 	init_tasks (&pl->task_count, &pl->tasks, plinfo->num_tasks, plinfo->tasks,
-			    jp, s);
+			    gp, s);
 	s->inds.num_ds_indices += li->num_sets;
 	for (uint32_t i = 0; i < pl->num_indices; i++) {
 		pl->ds_indices[i] = find_ds_index (&li->sets[i], s);
@@ -1216,7 +1216,7 @@ init_pipeline (qfv_pipeline_t *pl, qfv_pipelineinfo_t *plinfo,
 
 static void
 init_subpass (qfv_subpass_t *sp, qfv_subpassinfo_t *isp,
-			  graphptr_t *jp, objstate_t *s)
+			  graphptr_t *gp, objstate_t *s)
 {
 	s->subpass = isp;
 	auto attachments = isp->attachments;
@@ -1234,10 +1234,10 @@ init_subpass (qfv_subpass_t *sp, qfv_subpassinfo_t *isp,
 			.pInheritanceInfo = &sp->inherit,
 		},
 		.pipeline_count = isp->num_pipelines,
-		.pipelines = &jp->pipelines[np],
+		.pipelines = &gp->pipelines[np],
 		.frame_index = s->inds.num_subpass_inputs,
 		.num_inputs = ni,
-		.input_indices = &jp->input_indices[s->inds.num_input_indices],
+		.input_indices = &gp->input_indices[s->inds.num_input_indices],
 	};
 	if (ni) {
 		for (uint32_t i = 0; i < ni; i++) {
@@ -1251,7 +1251,7 @@ init_subpass (qfv_subpass_t *sp, qfv_subpassinfo_t *isp,
 		s->inds.num_input_indices += ni;
 	}
 	for (uint32_t i = 0; i < isp->num_pipelines; i++) {
-		init_pipeline (&sp->pipelines[i], &isp->pipelines[i], jp, s, 0);
+		init_pipeline (&sp->pipelines[i], &isp->pipelines[i], gp, s, 0);
 		s->inds.num_graph_pipelines++;
 	}
 	s->subpass = nullptr;
@@ -1277,7 +1277,7 @@ clear_value_count (qfv_renderpassinfo_t *rpinfo)
 
 static void
 init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
-				 graphptr_t *jp, objstate_t *s)
+				 graphptr_t *gp, objstate_t *s)
 {
 	s->rpi = rpinfo;
 	*rp = (qfv_renderpass_t) {
@@ -1287,14 +1287,14 @@ init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			.renderPass = s->ptr.rp[s->inds.num_renderpasses],
 			.clearValueCount = clear_value_count (rpinfo),
-			.pClearValues = &jp->clearvalues[s->inds.num_attachments],
+			.pClearValues = &gp->clearvalues[s->inds.num_attachments],
 		},
 		.subpassContents = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS,
 		.subpass_count = rpinfo->num_subpasses,
-		.subpasses = &jp->subpasses[s->inds.num_subpasses],
+		.subpasses = &gp->subpasses[s->inds.num_subpasses],
 		.framebuffer = {
 			.num_attachments = rpinfo->framebuffer.num_attachments,
-			.views = &jp->attachment_views[s->inds.num_attachments],
+			.views = &gp->attachment_views[s->inds.num_attachments],
 		},
 		.framebufferinfo = &rpinfo->framebuffer,
 		.outputref = rpinfo->output,
@@ -1303,7 +1303,7 @@ init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
 										   rp->label.name);
 	s->inds.num_attachments += rpinfo->framebuffer.num_attachments;
 	for (uint32_t i = 0; i < rpinfo->num_subpasses; i++) {
-		init_subpass (&rp->subpasses[i], &rpinfo->subpasses[i], jp, s);
+		init_subpass (&rp->subpasses[i], &rpinfo->subpasses[i], gp, s);
 		rp->subpasses[i].inherit.renderPass = rp->beginInfo.renderPass;
 		rp->subpasses[i].inherit.subpass = i;
 		s->inds.num_subpasses++;
@@ -1312,16 +1312,16 @@ init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
 
 static void
 init_render (qfv_render_t *rend, qfv_renderinfo_t *rinfo,
-			 graphptr_t *jp, objstate_t *s)
+			 graphptr_t *gp, objstate_t *s)
 {
 	*rend = (qfv_render_t) {
 		.label = make_label (rinfo->name, rinfo->color),
 		.num_renderpasses = rinfo->num_renderpasses,
-		.renderpasses = &jp->renderpasses[s->inds.num_renderpasses],
+		.renderpasses = &gp->renderpasses[s->inds.num_renderpasses],
 	};
 	for (uint32_t i = 0; i < rend->num_renderpasses; i++) {
 		init_renderpass (&rend->renderpasses[i], &rinfo->renderpasses[i],
-						 jp, s);
+						 gp, s);
 		s->inds.num_renderpasses++;
 	}
 	rend->active = &rend->renderpasses[0];
@@ -1329,35 +1329,35 @@ init_render (qfv_render_t *rend, qfv_renderinfo_t *rinfo,
 
 static void
 init_compute (qfv_compute_t *comp, qfv_computeinfo_t *cinfo,
-			  graphptr_t *jp, objstate_t *s)
+			  graphptr_t *gp, objstate_t *s)
 {
 	uint32_t    np = s->inds.num_graph_pipelines + s->inds.num_comp_pipelines;
 	*comp = (qfv_compute_t) {
 		.label = make_label (cinfo->name, cinfo->color),
-		.pipelines = &jp->pipelines[np],
+		.pipelines = &gp->pipelines[np],
 		.pipeline_count = cinfo->num_pipelines,
 	};
 	for (uint32_t i = 0; i < cinfo->num_pipelines; i++) {
-		init_pipeline (&comp->pipelines[i], &cinfo->pipelines[i], jp, s, 1);
+		init_pipeline (&comp->pipelines[i], &cinfo->pipelines[i], gp, s, 1);
 		s->inds.num_comp_pipelines++;
 	}
 }
 
 static void
 init_process (qfv_process_t *proc, qfv_processinfo_t *pinfo,
-			  graphptr_t *jp, objstate_t *s)
+			  graphptr_t *gp, objstate_t *s)
 {
 	*proc = (qfv_process_t) {
 		.label = make_label (pinfo->name, pinfo->color),
 	};
 	init_tasks (&proc->task_count, &proc->tasks, pinfo->num_tasks, pinfo->tasks,
-			    jp, s);
+			    gp, s);
 }
 
 static void
-init_step (uint32_t ind, graphptr_t *jp, objstate_t *s)
+init_step (uint32_t ind, graphptr_t *gp, objstate_t *s)
 {
-	__auto_type step = &jp->steps[s->inds.num_steps++];
+	__auto_type step = &gp->steps[s->inds.num_steps++];
 	__auto_type sinfo = &s->jinfo->steps[ind];
 
 	*step = (qfv_step_t) {
@@ -1365,16 +1365,16 @@ init_step (uint32_t ind, graphptr_t *jp, objstate_t *s)
 		.step_info = sinfo,
 	};
 	if (sinfo->render) {
-		step->render = &jp->renders[s->inds.num_render++];
-		init_render (step->render, sinfo->render, jp, s);
+		step->render = &gp->renders[s->inds.num_render++];
+		init_render (step->render, sinfo->render, gp, s);
 	}
 	if (sinfo->compute) {
-		step->compute = &jp->computes[s->inds.num_compute++];
-		init_compute (step->compute, sinfo->compute, jp, s);
+		step->compute = &gp->computes[s->inds.num_compute++];
+		init_compute (step->compute, sinfo->compute, gp, s);
 	}
 	if (sinfo->process) {
-		step->process = &jp->processes[s->inds.num_process++];
-		init_process (step->process, sinfo->process, jp, s);
+		step->process = &gp->processes[s->inds.num_process++];
+		init_process (step->process, sinfo->process, gp, s);
 		step->process->label = step->label;
 	}
 }
@@ -1759,7 +1759,7 @@ blackboard_getkey (const void *_pc, void *data)
 }
 
 static void
-create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, graphptr_t jp,
+create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, graphptr_t gp,
 				   objstate_t *s)
 {
 	auto rctx = ctx->render_context;
@@ -1958,22 +1958,22 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 	}
 	s.inds.num_ds_indices = 0;
 
-	auto jp = create_graph (ctx, counts, &s);
+	auto gp = create_graph (ctx, counts, &s);
 
-	create_blackboard (ctx, counts, jp, &s);
+	create_blackboard (ctx, counts, gp, &s);
 
 	auto graph = rctx->graph;
 	init_tasks (&graph->newscene_task_count, &graph->newscene_tasks,
 			    ginfo->newscene_num_tasks, ginfo->newscene_tasks,
-				&jp, &s);
+				&gp, &s);
 	init_tasks (&graph->init_task_count, &graph->init_tasks,
 			    ginfo->init_num_tasks, ginfo->init_tasks,
-				&jp, &s);
+				&gp, &s);
 
 	uint32_t num_descriptor_sets = graph->num_dsmanagers;
 	for (size_t i = 0; i < rctx->frames.size; i++) {
 		auto frame = &rctx->frames.a[i];
-		frame->descriptor_sets = jp.descriptor_sets + i * num_descriptor_sets;
+		frame->descriptor_sets = gp.descriptor_sets + i * num_descriptor_sets;
 		for (uint32_t j = 0; j < num_descriptor_sets; j++) {
 			frame->descriptor_sets[0] = 0;
 		}
@@ -2043,12 +2043,12 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 	s.inds = (objcount_t) {};
 	s.inds.num_layouts = num_layouts;
 	s.inds.num_tasks = num_tasks;
-	init_graph (ctx, counts, jp, &s);
+	init_graph (ctx, counts, gp, &s);
 
 	uint32_t num_subpass_inputs = counts->num_subpass_inputs;
 	for (size_t i = 0; i < rctx->frames.size; i++) {
 		auto frame = &rctx->frames.a[i];
-		frame->subpass_inputs = jp.subpass_inputs + i * num_subpass_inputs;
+		frame->subpass_inputs = gp.subpass_inputs + i * num_subpass_inputs;
 		for (uint32_t j = 0; j < num_subpass_inputs; j++) {
 			uint32_t ds_index = ginfo->num_dslayouts + j;
 			auto dsmanager = graph->dsmanager[ds_index];
