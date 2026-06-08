@@ -448,13 +448,14 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 	qfZoneNamed (zone, true);
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
+	auto job = &graph->jobs[0];
 	int64_t start = Sys_LongTime ();
 
 	run_deletion_queue (ctx);
 
-	for (uint32_t i = 0; i < graph->num_steps; i++) {
+	for (uint32_t i = 0; i < job->num_steps; i++) {
 		int64_t step_start = Sys_LongTime ();
-		__auto_type step = &graph->steps[i];
+		__auto_type step = &job->steps[i];
 		if (!step->process) {
 			// run render and compute steps automatically only if there's no
 			// process for the step (the idea is the process uses the compute
@@ -477,7 +478,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 	if (++ctx->curFrame >= rctx->frames.size) {
 		ctx->curFrame = 0;
 	}
-	update_time (&graph->time, start, Sys_LongTime ());
+	update_time (&job->time, start, Sys_LongTime ());
 }
 
 static qfv_imageviewinfo_t * __attribute__((pure))
@@ -1010,17 +1011,20 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 		for (uint32_t i = 0; i < graph->num_layouts; i++) {
 			dfunc->vkDestroyPipelineLayout (device->dev, graph->layouts[i], 0);
 		}
-		for (uint32_t i = 0; i < graph->num_steps; i++) {
-			if (graph->steps[i].render) {
-				auto render = graph->steps[i].render;
-				for (uint32_t j = 0; j < render->num_renderpasses; j++) {
-					auto rp = &render->renderpasses[j];
-					auto bi = &rp->beginInfo;
-					if (bi->framebuffer) {
-						dfunc->vkDestroyFramebuffer (device->dev,
-													 bi->framebuffer, 0);
+		for (uint32_t k = 0; k < graph->num_jobs; k++) {
+			auto job = &graph->jobs[k];
+			for (uint32_t i = 0; i < job->num_steps; i++) {
+				if (job->steps[i].render) {
+					auto render = job->steps[i].render;
+					for (uint32_t j = 0; j < render->num_renderpasses; j++) {
+						auto rp = &render->renderpasses[j];
+						auto bi = &rp->beginInfo;
+						if (bi->framebuffer) {
+							dfunc->vkDestroyFramebuffer (device->dev,
+														 bi->framebuffer, 0);
+						}
+						destroy_resource_array (ctx, &rp->resources);
 					}
-					destroy_resource_array (ctx, &rp->resources);
 				}
 			}
 		}
@@ -1161,8 +1165,9 @@ QFV_FindResource (vulkan_ctx_t *ctx, const char *name, qfv_renderpass_t *rp)
 qfv_step_t *
 QFV_FindStep (const char *name, qfv_graph_t *graph)
 {
-	for (uint32_t i = 0; i < graph->num_steps; i++) {
-		auto step = &graph->steps[i];
+	auto job = &graph->jobs[0];
+	for (uint32_t i = 0; i < job->num_steps; i++) {
+		auto step = &job->steps[i];
 		if (!strcmp (step->label.name, name)) {
 			return step;
 		}

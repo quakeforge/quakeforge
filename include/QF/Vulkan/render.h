@@ -271,12 +271,21 @@ typedef struct qfv_stepinfo_s {
 	qfv_taskinfo_t *init;
 } qfv_stepinfo_t;
 
+typedef struct qfv_jobinfo_s {
+	vec4f_t     color;
+	const char *name;
+	int         line;
+
+	uint32_t     num_steps;
+	qfv_stepinfo_t *steps;
+} qfv_jobinfo_t;
+
 typedef struct qfv_graphinfo_s {
 	struct memsuper_s *memsuper;
 
 	struct plitem_s *plitem;
-	uint32_t     num_steps;
-	qfv_stepinfo_t *steps;
+	uint32_t     num_jobs;
+	qfv_jobinfo_t *jobs;
 
 	uint32_t    num_images;
 	uint32_t    num_imageviews;
@@ -472,6 +481,13 @@ typedef struct qfv_step_s {
 	qfv_stepinfo_t *step_info;
 } qfv_step_t;
 
+typedef struct qfv_job_s {
+	qfv_label_t label;
+	uint32_t    num_steps;
+	qfv_step_t *steps;
+	qfv_time_t  time;
+} qfv_job_t;
+
 typedef void (*qfv_initfunc_f) (exprctx_t *ectx);
 typedef struct qfv_initfuncset_s
 	DARRAY_TYPE (qfv_initfunc_f) qfv_initfuncset_t;
@@ -482,18 +498,17 @@ typedef struct qfv_graph_s {
 	uint32_t    num_renderpasses;
 	uint32_t    num_pipelines;
 	uint32_t    num_layouts;
-	uint32_t    num_steps;
+	uint32_t    num_jobs;
+	qfv_job_t  *jobs;
 	VkRenderPass *renderpasses;
 	VkPipeline *pipelines;
 	VkPipelineLayout *layouts;
-	qfv_step_t *steps;
 	qfv_cmdbufferset_t commands;
 	qfv_dsmanager_t **dsmanager;
 	uint32_t    num_dsmanagers;
 	uint32_t    num_framebuffers;
 	qfv_framebuffer_t *framebuffers;
 	qfv_resourcearray_t *framebuffer_resources;
-	qfv_time_t  time;
 
 	qfv_resource_t *resources;
 

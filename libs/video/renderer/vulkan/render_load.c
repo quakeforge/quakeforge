@@ -187,6 +187,7 @@ typedef struct {
 	uint32_t    num_pushconstantranges;
 	uint32_t    num_pushconstants;
 
+	uint32_t    num_jobs;
 	uint32_t    num_steps;
 	uint32_t    num_render;
 	uint32_t    num_compute;
@@ -300,7 +301,7 @@ count_comp_stuff (qfv_computeinfo_t *ci, objcount_t *counts)
 
 static void
 count_step_stuff (qfv_stepinfo_t *step, objcount_t *counts,
-				  qfv_graphinfo_t *jinfo, vulkan_ctx_t *ctx)
+				  qfv_graphinfo_t *ginfo, vulkan_ctx_t *ctx)
 {
 	if (step->render && step->render_template) {
 		Sys_Error ("%d:%s: invalid step: cannot have both render and "
@@ -313,7 +314,7 @@ count_step_stuff (qfv_stepinfo_t *step, objcount_t *counts,
 	if (step->init) {
 		qfv_taskctx_t taskctx = {
 			.ctx = ctx,
-			.memsuper = jinfo->memsuper,
+			.memsuper = ginfo->memsuper,
 			.stepinfo = step,
 		};
 		auto init = step->init;
@@ -349,6 +350,15 @@ count_step_stuff (qfv_stepinfo_t *step, objcount_t *counts,
 }
 
 static void
+count_job_stuff (qfv_jobinfo_t *jobinfo, qfv_graphinfo_t *ginfo,
+				 objcount_t *counts, vulkan_ctx_t *ctx)
+{
+	for (uint32_t i = 0; i < jobinfo->num_steps; i++) {
+		count_step_stuff (&jobinfo->steps[i], counts, ginfo, ctx);
+	}
+}
+
+static void
 count_stuff (qfv_graphinfo_t *graphinfo, objcount_t *counts, vulkan_ctx_t *ctx)
 {
 	counts->num_images += graphinfo->num_images;
@@ -356,12 +366,14 @@ count_stuff (qfv_graphinfo_t *graphinfo, objcount_t *counts, vulkan_ctx_t *ctx)
 	counts->num_buffers += graphinfo->num_buffers;
 	counts->num_bufferviews += graphinfo->num_bufferviews;
 	counts->num_framebuffers += graphinfo->num_framebuffers;
+	counts->num_jobs += graphinfo->num_jobs;
+	for (uint32_t i = 0; i < graphinfo->num_jobs; i++) {
+		auto job = &graphinfo->jobs[i];
+		count_job_stuff (job, graphinfo, counts, ctx);
+	}
 	for (uint32_t i = 0; i < graphinfo->num_framebuffers; i++) {
 		auto fb = &graphinfo->framebuffers[i];
 		counts->num_attachments += fb->num_attachments;
-	}
-	for (uint32_t i = 0; i < graphinfo->num_steps; i++) {
-		count_step_stuff (&graphinfo->steps[i], counts, graphinfo, ctx);
 	}
 	counts->num_tasks += graphinfo->newscene_num_tasks;
 	counts->num_tasks += graphinfo->init_num_tasks;
@@ -371,7 +383,7 @@ static qfv_imageinfo_t * __attribute__((pure))
 find_imageinfo (qfv_graphinfo_t *graphinfo, const qfv_reference_t *ref)
 {
 	if (strcmp (ref->name, "$output.image") == 0) {
-		//auto image = jinfo->output.image;
+		//auto image = ginfo->output.image;
 		//graph->image_views[i].image_view.external_image = image;
 		//graph->image_views[i].image_view.image = -1;
 	} else {
@@ -547,7 +559,8 @@ typedef struct {
 	const qfv_pipelineinfo_t *pipeline;
 
 	vulkan_ctx_t *ctx;
-	qfv_graphinfo_t *jinfo;
+	qfv_graphinfo_t *ginfo;
+	qfv_jobinfo_t *jinfo;
 	exprtab_t  *symtab;
 	qfv_renderpassinfo_t *rpi;
 	VkRenderPassCreateInfo *rpc;
@@ -627,10 +640,10 @@ find_ds_index (const qfv_reference_t *ref, objstate_t *s)
 		if (!subpass->attachments || !subpass->attachments->num_input) {
 			Sys_Error ("%d: subpass has no input attachments", subpass->line);
 		}
-		return s->jinfo->num_dslayouts + subpass->subpass_input;
+		return s->ginfo->num_dslayouts + subpass->subpass_input;
 	}
-	for (uint32_t i = 0; i < s->jinfo->num_dslayouts; i++) {
-		__auto_type ds = &s->jinfo->dslayouts[i];
+	for (uint32_t i = 0; i < s->ginfo->num_dslayouts; i++) {
+		__auto_type ds = &s->ginfo->dslayouts[i];
 		if (strcmp (ds->name, ref->name) == 0) {
 			return i;
 		}
@@ -678,13 +691,13 @@ static VkDescriptorSetLayout
 find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
 {
 	uint32_t ds_index = find_ds_index (ref, s);
-	auto ds = &s->jinfo->dslayouts[ds_index];
+	auto ds = &s->ginfo->dslayouts[ds_index];
 	if (ds->setLayout) {
 		return ds->setLayout;
 	}
 
-	if (ds_index >= s->jinfo->num_dslayouts) {
-		auto memsuper = s->jinfo->memsuper;
+	if (ds_index >= s->ginfo->num_dslayouts) {
+		auto memsuper = s->ginfo->memsuper;
 		auto subpass = s->subpass;
 		auto attach = subpass->attachments;
 		size_t size = sizeof (VkDescriptorSetLayoutBinding[attach->num_input]);
@@ -779,7 +792,8 @@ find_layout (const qfv_reference_t *ref, objstate_t *s)
 			return &s->ptr.layouts[i];
 		}
 	}
-	if (!QFV_ParseLayoutInfo (s->ctx, s->jinfo->memsuper, s->symtab, ref->name,
+	auto memsuper = s->ginfo->memsuper;
+	if (!QFV_ParseLayoutInfo (s->ctx, memsuper, s->symtab, ref->name,
 							  &s->ptr.layouts[s->inds.num_layouts])) {
 		Sys_Error ("%s.%s:%d: invalid layout: %s",
 				   s->rpi->name, s->spi->name, ref->line, ref->name);
@@ -1036,8 +1050,8 @@ init_rpCreate (uint32_t index, const qfv_renderinfo_t *rinfo, objstate_t *s)
 	qfv_framebufferinfo_t *use_fb = nullptr;
 	fbi->use_index = ~0u;
 	if (fbi->use.name) {
-		fbi->use_index = find_framebuffer (&fbi->use, s->jinfo, s->rpi);
-		use_fb = &s->jinfo->framebuffers[fbi->use_index];
+		fbi->use_index = find_framebuffer (&fbi->use, s->ginfo, s->rpi);
+		use_fb = &s->ginfo->framebuffers[fbi->use_index];
 	}
 
 	for (uint32_t i = 0; i < fbi->num_attachments; i++) {
@@ -1122,6 +1136,7 @@ init_rpCreate (uint32_t index, const qfv_renderinfo_t *rinfo, objstate_t *s)
 }
 
 typedef struct {
+	qfv_job_t *jobs;
 	qfv_step_t *steps;
 	qfv_render_t *renders;
 	qfv_compute_t *computes;
@@ -1364,6 +1379,23 @@ init_step (uint32_t ind, graphptr_t *jp, objstate_t *s)
 	}
 }
 
+static void
+init_job (uint32_t ind, graphptr_t *gp, objstate_t *s)
+{
+	auto job = &gp->jobs[s->inds.num_jobs++];
+	auto jinfo = &s->ginfo->jobs[ind];
+
+	*job = (qfv_job_t) {
+		.label = make_label (jinfo->name, jinfo->color),
+		.num_steps = jinfo->num_steps,
+		.steps = &gp->steps[s->inds.num_steps],
+	};
+	s->jinfo = jinfo;
+	for (uint32_t i = 0; i < jinfo->num_steps; i++) {
+		init_step (i, gp, s);
+	}
+}
+
 static graphptr_t
 create_graph (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 {
@@ -1374,6 +1406,7 @@ create_graph (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 	uint32_t     num_dslayouts = graphinfo->num_dslayouts
 							   + counts->num_subpass_inputs;
 	size_t      size = sizeof (qfv_graph_t);
+	size += sizeof (qfv_job_t        [counts->num_jobs]);
 	size += sizeof (qfv_step_t       [counts->num_steps]);
 	size += sizeof (qfv_render_t     [counts->num_render]);
 	size += sizeof (qfv_compute_t    [counts->num_compute]);
@@ -1405,7 +1438,7 @@ create_graph (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 		.num_pipelines = counts->num_graph_pipelines
 						 + counts->num_comp_pipelines,
 		.num_layouts = counts->num_layouts,
-		.num_steps = counts->num_steps,
+		.num_jobs = counts->num_jobs,
 		.commands = DARRAY_STATIC_INIT (16),
 		.num_dsmanagers = num_dslayouts,
 		.num_framebuffers = counts->num_framebuffers,
@@ -1413,8 +1446,9 @@ create_graph (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 		.shutdown_funcs = DARRAY_STATIC_INIT (16),
 		.clearstate_funcs = DARRAY_STATIC_INIT (16),
 	};
-	graph->steps = (qfv_step_t *) &graph[1];
-	auto rn = (qfv_render_t *) &graph->steps[graph->num_steps];
+	graph->jobs = (qfv_job_t *) &graph[1];
+	auto st = (qfv_step_t *) &graph->jobs[graph->num_jobs];
+	auto rn = (qfv_render_t *) &st[counts->num_steps];
 	auto cp = (qfv_compute_t *) &rn[counts->num_render];
 	auto pr = (qfv_process_t *) &cp[counts->num_compute];
 	auto rp = (qfv_renderpass_t *) &pr[counts->num_process];
@@ -1455,7 +1489,8 @@ create_graph (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 	}
 
 	return (graphptr_t) {
-		.steps = graph->steps,
+		.jobs = graph->jobs,
+		.steps = st,
 		.renders = rn,
 		.computes = cp,
 		.processes = pr,
@@ -1473,7 +1508,7 @@ create_graph (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 }
 
 static void
-init_graph (vulkan_ctx_t *ctx, objcount_t *counts, graphptr_t jp, objstate_t *s)
+init_graph (vulkan_ctx_t *ctx, objcount_t *counts, graphptr_t gp, objstate_t *s)
 {
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
@@ -1492,15 +1527,15 @@ init_graph (vulkan_ctx_t *ctx, objcount_t *counts, graphptr_t jp, objstate_t *s)
 	for (uint32_t i = s->inds.num_layouts; i < counts->num_layouts; i++) {
 		graph->layouts[i] = nullptr;
 	}
-	auto cv = jp.clearvalues;
+	auto cv = gp.clearvalues;
 	memcpy (cv, s->ptr.clear, sizeof (VkClearValue [counts->num_attachments]));
 
 	for (uint32_t i = 0; i < graph->num_dsmanagers; i++) {
 		auto layoutInfo = &graphinfo->dslayouts[i];
 		graph->dsmanager[i] = QFV_DSManager_Create (layoutInfo, 16, ctx);
 	}
-	for (uint32_t i = 0; i < graph->num_steps; i++) {
-		init_step (i, &jp, s);
+	for (uint32_t i = 0; i < graph->num_jobs; i++) {
+		init_job (i, &gp, s);
 	}
 
 	if (graphinfo->num_buffers) {
@@ -1703,13 +1738,16 @@ create_layouts (vulkan_ctx_t *ctx, objstate_t *s)
 {
 	qfZoneScoped (true);
 	auto rctx = ctx->render_context;
-	auto jinfo = rctx->graphinfo;
+	auto ginfo = rctx->graphinfo;
 
-	for (uint32_t i = 0; i < jinfo->num_steps; i++) {
-		create_step_render_layouts (i, &jinfo->steps[i], s);
-	}
-	for (uint32_t i = 0; i < jinfo->num_steps; i++) {
-		create_step_compute_layouts (i, &jinfo->steps[i], s);
+	for (uint32_t j = 0; j < ginfo->num_jobs; j++) {
+		auto jinfo = &ginfo->jobs[j];
+		for (uint32_t i = 0; i < jinfo->num_steps; i++) {
+			create_step_render_layouts (i, &jinfo->steps[i], s);
+		}
+		for (uint32_t i = 0; i < jinfo->num_steps; i++) {
+			create_step_compute_layouts (i, &jinfo->steps[i], s);
+		}
 	}
 }
 
@@ -1840,18 +1878,18 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 {
 	qfZoneScoped (true);
 	__auto_type rctx = ctx->render_context;
-	__auto_type jinfo = rctx->graphinfo;
+	__auto_type ginfo = rctx->graphinfo;
 
 	if (counts->num_subpass_inputs) {
-		uint32_t num_dslayouts = jinfo->num_dslayouts;
+		uint32_t num_dslayouts = ginfo->num_dslayouts;
 		uint32_t count = num_dslayouts + counts->num_subpass_inputs;
 		size_t asize = sizeof (qfv_descriptorsetlayoutinfo_t[count]);
 		size_t csize = sizeof (qfv_descriptorsetlayoutinfo_t[num_dslayouts]);
-		void *new_layouts = cmemalloc (jinfo->memsuper, asize);
+		void *new_layouts = cmemalloc (ginfo->memsuper, asize);
 		memset (new_layouts, 0, asize);
-		memcpy (new_layouts, jinfo->dslayouts, csize);
-		jinfo->dslayouts = new_layouts;
-		jinfo->num_splayouts = counts->num_subpass_inputs;
+		memcpy (new_layouts, ginfo->dslayouts, csize);
+		ginfo->dslayouts = new_layouts;
+		ginfo->num_splayouts = counts->num_subpass_inputs;
 	}
 
 	VkRenderPass renderpasses[counts->num_renderpasses + 1] = {};
@@ -1901,8 +1939,8 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 			.cpl       = pipelines + counts->num_graph_pipelines,
 		},
 		.ctx = ctx,
-		.jinfo = jinfo,
-		.symtab = QFV_CreateSymtab (jinfo->plitem, "properties", 0, 0, &ectx),
+		.ginfo = ginfo,
+		.symtab = QFV_CreateSymtab (ginfo->plitem, "properties", 0, 0, &ectx),
 	};
 
 	// Create pipeline layouts first so they and the descriptor set indices
@@ -1926,10 +1964,10 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 
 	auto graph = rctx->graph;
 	init_tasks (&graph->newscene_task_count, &graph->newscene_tasks,
-			    jinfo->newscene_num_tasks, jinfo->newscene_tasks,
+			    ginfo->newscene_num_tasks, ginfo->newscene_tasks,
 				&jp, &s);
 	init_tasks (&graph->init_task_count, &graph->init_tasks,
-			    jinfo->init_num_tasks, jinfo->init_tasks,
+			    ginfo->init_num_tasks, ginfo->init_tasks,
 				&jp, &s);
 
 	uint32_t num_descriptor_sets = graph->num_dsmanagers;
@@ -1942,14 +1980,17 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 	}
 	QFV_Render_Run_Init (ctx);
 
-	for (uint32_t i = 0; i < jinfo->num_steps; i++) {
-		create_step_render_objects (i, &jinfo->steps[i], &s);
-	}
-	for (uint32_t i = 0; i < jinfo->num_steps; i++) {
-		create_step_compute_objects (i, &jinfo->steps[i], &s);
-	}
-	for (uint32_t i = 0; i < jinfo->num_steps; i++) {
-		create_step_process_objects (i, &jinfo->steps[i], &s);
+	for (uint32_t j = 0; j < ginfo->num_jobs; j++) {
+		auto jinfo = &ginfo->jobs[j];
+		for (uint32_t i = 0; i < jinfo->num_steps; i++) {
+			create_step_render_objects (i, &jinfo->steps[i], &s);
+		}
+		for (uint32_t i = 0; i < jinfo->num_steps; i++) {
+			create_step_compute_objects (i, &jinfo->steps[i], &s);
+		}
+		for (uint32_t i = 0; i < jinfo->num_steps; i++) {
+			create_step_process_objects (i, &jinfo->steps[i], &s);
+		}
 	}
 	if (s.inds.num_renderpasses != counts->num_renderpasses
 		|| s.inds.num_attachments != counts->num_attachments
@@ -2009,7 +2050,7 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 		auto frame = &rctx->frames.a[i];
 		frame->subpass_inputs = jp.subpass_inputs + i * num_subpass_inputs;
 		for (uint32_t j = 0; j < num_subpass_inputs; j++) {
-			uint32_t ds_index = jinfo->num_dslayouts + j;
+			uint32_t ds_index = ginfo->num_dslayouts + j;
 			auto dsmanager = graph->dsmanager[ds_index];
 			auto set = QFV_DSManager_AllocSet (dsmanager);
 			frame->descriptor_sets[ds_index] = set;
@@ -2032,20 +2073,26 @@ dump_graph (vulkan_ctx_t *ctx)
 	printf ("digraph expr_%p {\n", graph);
 	printf ("  graph [label=\"%s\"];\n", "render graph");
 	printf ("  layout=dot; rankdir=TB; compound=true;\n");
-	for (uint32_t i = 0; i < graph->num_steps; i++) {
-		auto step = &graph->steps[i];
-		printf ("    s_%p [label=\"%s\"];\n", step, step->name);
-		for (uint32_t j = 0; j < step->num_dependencies; j++) {
-			auto dep = &step->dependencies[j];
-			qfv_stepinfo_t *dep_step = nullptr;
-			for (uint32_t k = 0; k < graph->num_steps; k++) {
-				if (!strcmp (graph->steps[k].name, dep->name)) {
-					dep_step = &graph->steps[k];
-					break;
+	for (uint32_t g = 0; g < graph->num_jobs; g++) {
+		auto job = &graph->jobs[g];
+		printf ("  subgraph cluster_job_%s {\n", job->name);
+		printf ("    label=\"%s\";\n", job->name);
+		for (uint32_t i = 0; i < job->num_steps; i++) {
+			auto step = &job->steps[i];
+			printf ("    s_%p [label=\"%s\"];\n", step, step->name);
+			for (uint32_t j = 0; j < step->num_dependencies; j++) {
+				auto dep = &step->dependencies[j];
+				qfv_stepinfo_t *dep_step = nullptr;
+				for (uint32_t k = 0; k < job->num_steps; k++) {
+					if (!strcmp (job->steps[k].name, dep->name)) {
+						dep_step = &job->steps[k];
+						break;
+					}
 				}
+				printf ("    s_%p -> \"s_%p\";\n", step, dep_step);
 			}
-			printf ("    s_%p -> \"s_%p\";\n", step, dep_step);
 		}
+		printf ("  }\n");
 	}
 	printf ("}\n");
 }

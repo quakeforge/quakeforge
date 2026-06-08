@@ -87,28 +87,29 @@ graph_timings_window (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 			continue;
 		}
 		auto graph = rctx->graph;
-		for (uint32_t i = 0; i < graph->num_steps; i++) {
-			auto step = &graph->steps[i];
+		auto job = &graph->jobs[0];
+		for (uint32_t i = 0; i < job->num_steps; i++) {
+			auto step = &job->steps[i];
 			UI_Horizontal {
-				UI_Labelf ("%s##%p.graph.step.%d", step->label.name, rctx, i);
+				UI_Labelf ("%s##%p.job.step.%d", step->label.name, rctx, i);
 				UI_FlexibleSpace ();
 				show_time (&step->time, imui_ctx,
-						   vac (ctx->va_ctx, "##%p.graph.step.%d.time", rctx, i));
+						   vac (ctx->va_ctx, "##%p.job.step.%d.time", rctx, i));
 			}
 		}
 		UI_Horizontal {
 			UI_FlexibleSpace ();
-			show_time (&graph->time, imui_ctx,
-					   vac (ctx->va_ctx, "##%p.graph.time", rctx));
+			show_time (&job->time, imui_ctx,
+					   vac (ctx->va_ctx, "##%p.job.time", rctx));
 		}
 		UI_Horizontal {
 			UI_FlexibleSpace ();
-			if (UI_Button ("Reset##graph.timings")) {
-				for (uint32_t i = 0; i < graph->num_steps; i++) {
-					auto step = &graph->steps[i];
+			if (UI_Button ("Reset##job.timings")) {
+				for (uint32_t i = 0; i < job->num_steps; i++) {
+					auto step = &job->steps[i];
 					reset_time (&step->time);
 				}
-				reset_time (&graph->time);
+				reset_time (&job->time);
 			}
 		}
 	}
@@ -139,8 +140,9 @@ static int __attribute__ ((pure))
 count_pipelines (qfv_graph_t *graph)
 {
 	int count = 0;
-	for (uint32_t i = 0; i < graph->num_steps; i++) {
-		auto step = &graph->steps[i];
+	auto job = &graph->jobs[0];
+	for (uint32_t i = 0; i < job->num_steps; i++) {
+		auto step = &job->steps[i];
 		count += 1;
 		if (step->render) {
 			auto rp = step->render->active;
@@ -205,6 +207,7 @@ draw_graph (qfv_graph_t *graph, view_pos_t sblen, qfv_renderctx_t *rctx,
 		  imui_ctx_t *imui_ctx, vulkan_ctx_t *ctx)
 {
 	int count = count_pipelines (graph);
+	auto job = &graph->jobs[0];
 
 	auto state = IMUI_CurrentState (imui_ctx);
 	auto pos = state->pos;
@@ -216,10 +219,10 @@ draw_graph (qfv_graph_t *graph, view_pos_t sblen, qfv_renderctx_t *rctx,
 	IMUI_SetViewPos (imui_ctx, delta);
 	len = (view_pos_t) {sblen.x, sblen.y - delta.y};
 
-	for (uint32_t i = 0; i < graph->num_steps; i++) {
-		auto step = &graph->steps[i];
+	for (uint32_t i = 0; i < job->num_steps; i++) {
+		auto step = &job->steps[i];
 		UI_Horizontal {
-			UI_Labelf ("%s##%p.graph.step.%d", step->label.name, rctx, i);
+			UI_Labelf ("%s##%p.job.step.%d", step->label.name, rctx, i);
 			UI_FlexibleSpace ();
 		}
 		if (step->render) {

@@ -2249,181 +2249,185 @@ renderpasses = {
 		};
 	};
 };
-steps = {
-	start_frame = {
-		color = "[0.6, 0.8, 0.0]";
-		process = {
-			tasks = (
-				{ func = wait_on_fence; },
-				{ func = capture_finalize; },
-				{ func = mousepick_finalize; },
-				{ func = update_matrices; },
-				{ func = draw_scr_funcs; },
-			);
-		};
-	};
-	particles = {
-		color = "[0.6, 0.8, 0.9]";
-		dependencies = (start_frame);
-		compute = {
-			pipelines = {
-				part:update = {
-					color = "[0.3, 0.8, 0.9]";
-					tasks = (
-						{ func = update_particles; }
-					);
-					stage = {
-						name = update.main;
-						module = $builtin/particles.r;
-					};
-					layout = $particle.layout.update;
-				};
-				part:physics = {
-					color = "[0.6, 0.8, 0.9]";
-					tasks = (
-						{ func = particle_physics; }
-					);
-					stage = {
-						name = physics.main;
-						module = $builtin/particles.r;
-					};
-					layout = $particle.layout.physics;
-				};
-			};
-		};
-	};
-	world = {
-		color = "[0.3, 0.4, 0.0]";
-		dependencies = (start_frame);
-		process = {
-			tasks = (
-				{ func = bsp_reset_queues; },
-				{ func = bsp_visit_world;
-				  params = (main); },
-				{ func = scene_draw_viewmodel; },
-				{ func = lighting_update_lights; },
-				{ func = output_select_renderpass;
-				  params = ("\"depth\""); },
-				{ func = output_select_renderpass;
-				  params = ("\"main\""); },
-				{ func = update_framebuffer;
-				  params = ("\"\""); },
-				{ func = update_framebuffer;
-				  params = ("\"main\""); },
-				{ func = update_framebuffer;
-				  params = ("\"depth\""); },
-				{ func = clear_translucent;
-				  params = ("\"depth\""); },
-			);
-		};
-	};
-	depth = {
-		color = "[0.1, 0.1, 0.1]";
-		dependencies = (world);
-		render = {
-			renderpasses = {
-				depth = $renderpasses.depth;
-				depth_cube = $renderpasses.depth_cube;
-			};
-		};
-	};
-	light_cull = {
-		color = "[0.8, 0.6, 0, 1]";
-		dependencies = (depth);
-		process = {
-			tasks = (
-				{ func = submit_depth; },
-				{ func = lighting_cull_select_renderpass;
-				  params = ("\"light_cull\""); },
-				{ func = update_framebuffer;
-				  params = ("\"light_cull\""); },
-				{ func = lighting_cull_lights;
-				  params = ("\"light_cull\""); },
-			);
-		};
-		render = {
-			renderpasses = {
-				occlusion = $renderpasses.occlusion;
-				occlusion_cube = $renderpasses.occlusion_cube;
-			};
-		};
-	};
-	shadow = {
-		color = "[0.3, 0.3, 0.3]";
-		dependencies = (light_cull);
-		init = { func = lighting_init_shadow; };
-		process = {
-			tasks = (
-				{ func = lighting_setup_shadow; },
-				{ func = bsp_visit_world;
-				  params = (shadow); },
-				{ func = lighting_draw_shadow_maps;
-				  params = ("\"shadow\""); },
-			);
-		};
-		render_template = {
-			renderpasses = {
-				shadow = $renderpasses.shadow;
-			};
-		};
-	};
-	setup_main = {
-		color = "[0.3, 0.8, 0.3]";
-		dependencies = (start_frame);
-		process = {
-			tasks = (
-				{ func = compose_update; },
-				{ func = particle_wait_physics; },
-				{ func = sync_translucent; },
-			);
-		};
-	};
+jobs = {
 	main = {
-		color = "[0.3, 0.8, 0.0]";
-		dependencies = (setup_main, particles, shadow);
-		render = {
-			renderpasses = {
-				deferred = $renderpasses.deferred;
-				deferred_cube = $renderpasses.deferred_cube;
+		steps = {
+			start_frame = {
+				color = "[0.6, 0.8, 0.0]";
+				process = {
+					tasks = (
+						{ func = wait_on_fence; },
+						{ func = capture_finalize; },
+						{ func = mousepick_finalize; },
+						{ func = update_matrices; },
+						{ func = draw_scr_funcs; },
+					);
+				};
 			};
-		};
-	};
-	preoutput = {
-		color = "[0.8, 0.8, 0.0]";
-		dependencies = (main);
-		process = {
-			tasks = (
-				{ func = mousepick_initiate; },
-				{ func = submit_render; },
+			particles = {
+				color = "[0.6, 0.8, 0.9]";
+				dependencies = (start_frame);
+				compute = {
+					pipelines = {
+						part:update = {
+							color = "[0.3, 0.8, 0.9]";
+							tasks = (
+								{ func = update_particles; }
+							);
+							stage = {
+								name = update.main;
+								module = $builtin/particles.r;
+							};
+							layout = $particle.layout.update;
+						};
+						part:physics = {
+							color = "[0.6, 0.8, 0.9]";
+							tasks = (
+								{ func = particle_physics; }
+							);
+							stage = {
+								name = physics.main;
+								module = $builtin/particles.r;
+							};
+							layout = $particle.layout.physics;
+						};
+					};
+				};
+			};
+			world = {
+				color = "[0.3, 0.4, 0.0]";
+				dependencies = (start_frame);
+				process = {
+					tasks = (
+						{ func = bsp_reset_queues; },
+						{ func = bsp_visit_world;
+						  params = (main); },
+						{ func = scene_draw_viewmodel; },
+						{ func = lighting_update_lights; },
+						{ func = output_select_renderpass;
+						  params = ("\"depth\""); },
+						{ func = output_select_renderpass;
+						  params = ("\"main\""); },
+						{ func = update_framebuffer;
+						  params = ("\"\""); },
+						{ func = update_framebuffer;
+						  params = ("\"main\""); },
+						{ func = update_framebuffer;
+						  params = ("\"depth\""); },
+						{ func = clear_translucent;
+						  params = ("\"depth\""); },
+					);
+				};
+			};
+			depth = {
+				color = "[0.1, 0.1, 0.1]";
+				dependencies = (world);
+				render = {
+					renderpasses = {
+						depth = $renderpasses.depth;
+						depth_cube = $renderpasses.depth_cube;
+					};
+				};
+			};
+			light_cull = {
+				color = "[0.8, 0.6, 0, 1]";
+				dependencies = (depth);
+				process = {
+					tasks = (
+						{ func = submit_depth; },
+						{ func = lighting_cull_select_renderpass;
+						  params = ("\"light_cull\""); },
+						{ func = update_framebuffer;
+						  params = ("\"light_cull\""); },
+						{ func = lighting_cull_lights;
+						  params = ("\"light_cull\""); },
+					);
+				};
+				render = {
+					renderpasses = {
+						occlusion = $renderpasses.occlusion;
+						occlusion_cube = $renderpasses.occlusion_cube;
+					};
+				};
+			};
+			shadow = {
+				color = "[0.3, 0.3, 0.3]";
+				dependencies = (light_cull);
+				init = { func = lighting_init_shadow; };
+				process = {
+					tasks = (
+						{ func = lighting_setup_shadow; },
+						{ func = bsp_visit_world;
+						  params = (shadow); },
+						{ func = lighting_draw_shadow_maps;
+						  params = ("\"shadow\""); },
+					);
+				};
+				render_template = {
+					renderpasses = {
+						shadow = $renderpasses.shadow;
+					};
+				};
+			};
+			setup_main = {
+				color = "[0.3, 0.8, 0.3]";
+				dependencies = (start_frame);
+				process = {
+					tasks = (
+						{ func = compose_update; },
+						{ func = particle_wait_physics; },
+						{ func = sync_translucent; },
+					);
+				};
+			};
+			main = {
+				color = "[0.3, 0.8, 0.0]";
+				dependencies = (setup_main, particles, shadow);
+				render = {
+					renderpasses = {
+						deferred = $renderpasses.deferred;
+						deferred_cube = $renderpasses.deferred_cube;
+					};
+				};
+			};
+			preoutput = {
+				color = "[0.8, 0.8, 0.0]";
+				dependencies = (main);
+				process = {
+					tasks = (
+						{ func = mousepick_initiate; },
+						{ func = submit_render; },
 
-				{ func = acquire_output;
-				  params = ("\"output\""); },
-				{ func = update_input;
-				  params = ("\"main\""); },
-				{ func = output_select_pipeline;
-				  params = ("\"output\""); },
-				{ func = flush_draw; },
-			);
-		};
-	};
-	output = {
-		color = "[0.4, 0.8, 0.4]";
-		dependencies = (main, preoutput);
-		render = {
-			renderpasses = {
-				output = $renderpasses.output;
+						{ func = acquire_output;
+						  params = ("\"output\""); },
+						{ func = update_input;
+						  params = ("\"main\""); },
+						{ func = output_select_pipeline;
+						  params = ("\"output\""); },
+						{ func = flush_draw; },
+					);
+				};
 			};
-		};
-	};
-	end_frame = {
-		color = "[0.0, 0.8, 0.4]";
-		dependencies = (output);
-		process = {
-			tasks = (
-				{ func = capture_initiate; },
-				{ func = submit_output; },
-				{ func = present_output; },
-			);
+			output = {
+				color = "[0.4, 0.8, 0.4]";
+				dependencies = (main, preoutput);
+				render = {
+					renderpasses = {
+						output = $renderpasses.output;
+					};
+				};
+			};
+			end_frame = {
+				color = "[0.0, 0.8, 0.4]";
+				dependencies = (output);
+				process = {
+					tasks = (
+						{ func = capture_initiate; },
+						{ func = submit_output; },
+						{ func = present_output; },
+					);
+				};
+			};
 		};
 	};
 };

@@ -1746,131 +1746,135 @@ render_graph = {
 			};
 		};
 	};
-	steps = {
-		start_frame = {
-			process = {
-				tasks = (
-					{ func = wait_on_fence; },
-					{ func = capture_finalize; },
-					{ func = update_matrices; },
-					{ func = draw_scr_funcs; },
-				);
-			};
-		};
-		particles = {
-			dependencies = (start_frame);
-			compute = {
-				pipelines = {
-					part:update = {
-						color = "[0.3, 0.8, 0.9]";
-						tasks = (
-							{ func = update_particles; }
-						);
-						stage = {
-							name = update.main;
-							module = $builtin/particles.r;
-						};
-						layout = $particle.layout.update;
-					};
-					part:physics = {
-						color = "[0.6, 0.8, 0.9]";
-						tasks = (
-							{ func = particle_physics; }
-						);
-						stage = {
-							name = physics.main;
-							module = $builtin/particles.r;
-						};
-						layout = $particle.layout.physics;
-					};
-				};
-			};
-		};
-		world = {
-			dependencies = (start_frame);
-			process = {
-				tasks = (
-					{ func = bsp_reset_queues; },
-					{ func = bsp_visit_world;
-					  params = (lightmap); },
-					{ func = scene_draw_viewmodel; },
-				);
-			};
-		};
-		setup_main = {
-			dependencies = (start_frame);
-			process = {
-				tasks = (
-					{ func = output_select_renderpass;
-					  params = ("\"main\""); },
-					{ func = output_select_renderpass;
-					  params = ("\"gizmo_cmd\""); },
-					{ func = update_framebuffer;
-					  params = ("\"main\""); },
-					{ func = gizmo_update_framebuffer;
-					  params = ("\"gizmo_cmd\"", "\"main\""); },
-					{ func = clear_translucent;
-					  params = ("\"main\""); },
-					{ func = compose_update; },
-					{ func = particle_wait_physics; },
-					{ func = gizmo_flush; },
-				);
-			};
-		};
-		gizmo_cmd = {
-			color = "[0.4, 0.8, 0.3]";
-			dependencies = (setup_main);
-			render = {
-				renderpasses = {
-					gizmo = $renderpasses.gizmo;
-					gizmo_cube = $renderpasses.gizmo_cube;
-				};
-			};
-		};
+	jobs = {
 		main = {
-			dependencies = (gizmo_cmd, particles, world, translucent);
-			render = {
-				renderpasses = {
-					forward = $renderpasses.forward;
-					forward_cube = $renderpasses.forward_cube;
+			steps = {
+				start_frame = {
+					process = {
+						tasks = (
+							{ func = wait_on_fence; },
+							{ func = capture_finalize; },
+							{ func = update_matrices; },
+							{ func = draw_scr_funcs; },
+						);
+					};
 				};
-			};
-		};
-		preoutput = {
-			dependencies = (main);
-			process = {
-				tasks = (
-					{ func = submit_render; },
-					{ func = acquire_output;
-					  params = ("\"output\""); },
-					{ func = update_input;
-					  params = ("\"main\""); },
-					{ func = output_select_pipeline;
-					  params = ("\"output\""); },
-					{ func = flush_draw; },
-					{ func = painter_update_framebuffer;
-					  params = ("\"output\""); },
-					{ func = painter_flush; },
-				);
-			};
-		};
-		output = {
-			dependencies = (preoutput);
-			render = {
-				renderpasses = {
-					output = $renderpasses.output;
+				particles = {
+					dependencies = (start_frame);
+					compute = {
+						pipelines = {
+							part:update = {
+								color = "[0.3, 0.8, 0.9]";
+								tasks = (
+									{ func = update_particles; }
+								);
+								stage = {
+									name = update.main;
+									module = $builtin/particles.r;
+								};
+								layout = $particle.layout.update;
+							};
+							part:physics = {
+								color = "[0.6, 0.8, 0.9]";
+								tasks = (
+									{ func = particle_physics; }
+								);
+								stage = {
+									name = physics.main;
+									module = $builtin/particles.r;
+								};
+								layout = $particle.layout.physics;
+							};
+						};
+					};
 				};
-			};
-		};
-		end_frame = {
-			color = "[0.0, 0.8, 0.4]";
-			dependencies = (output);
-			process = {
-				tasks = (
-					{ func = capture_initiate; },
-					{ func = submit_output; },
-					{ func = present_output; },
-				);
+				world = {
+					dependencies = (start_frame);
+					process = {
+						tasks = (
+							{ func = bsp_reset_queues; },
+							{ func = bsp_visit_world;
+							  params = (lightmap); },
+							{ func = scene_draw_viewmodel; },
+						);
+					};
+				};
+				setup_main = {
+					dependencies = (start_frame);
+					process = {
+						tasks = (
+							{ func = output_select_renderpass;
+							  params = ("\"main\""); },
+							{ func = output_select_renderpass;
+							  params = ("\"gizmo_cmd\""); },
+							{ func = update_framebuffer;
+							  params = ("\"main\""); },
+							{ func = gizmo_update_framebuffer;
+							  params = ("\"gizmo_cmd\"", "\"main\""); },
+							{ func = clear_translucent;
+							  params = ("\"main\""); },
+							{ func = compose_update; },
+							{ func = particle_wait_physics; },
+							{ func = gizmo_flush; },
+						);
+					};
+				};
+				gizmo_cmd = {
+					color = "[0.4, 0.8, 0.3]";
+					dependencies = (setup_main);
+					render = {
+						renderpasses = {
+							gizmo = $renderpasses.gizmo;
+							gizmo_cube = $renderpasses.gizmo_cube;
+						};
+					};
+				};
+				main = {
+					dependencies = (gizmo_cmd, particles, world, translucent);
+					render = {
+						renderpasses = {
+							forward = $renderpasses.forward;
+							forward_cube = $renderpasses.forward_cube;
+						};
+					};
+				};
+				preoutput = {
+					dependencies = (main);
+					process = {
+						tasks = (
+							{ func = submit_render; },
+							{ func = acquire_output;
+							  params = ("\"output\""); },
+							{ func = update_input;
+							  params = ("\"main\""); },
+							{ func = output_select_pipeline;
+							  params = ("\"output\""); },
+							{ func = flush_draw; },
+							{ func = painter_update_framebuffer;
+							  params = ("\"output\""); },
+							{ func = painter_flush; },
+						);
+					};
+				};
+				output = {
+					dependencies = (preoutput);
+					render = {
+						renderpasses = {
+							output = $renderpasses.output;
+						};
+					};
+				};
+				end_frame = {
+					color = "[0.0, 0.8, 0.4]";
+					dependencies = (output);
+					process = {
+						tasks = (
+							{ func = capture_initiate; },
+							{ func = submit_output; },
+							{ func = present_output; },
+						);
+					};
+				};
 			};
 		};
 	};
