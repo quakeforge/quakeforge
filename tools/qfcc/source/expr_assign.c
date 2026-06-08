@@ -110,6 +110,20 @@ is_lvalue (const expr_t *expr)
 				return true;
 			}
 			break;
+		case ex_swizzle:
+			if (!expr->swizzle.neg && !expr->swizzle.zero) {
+				auto swiz = expr->swizzle;
+				// lvalue must not have any duplicate components
+				for (int i = 1; i < type_width (swiz.type); i++) {
+					for (int j = 0; j < i; j++) {
+						if (swiz.source[j] == swiz.source[i]) {
+							return false;
+						}
+					}
+				}
+				return is_lvalue (expr->swizzle.src);
+			}
+			return false;
 		case ex_branch:
 		case ex_inout:
 		case ex_memset:
@@ -131,7 +145,6 @@ is_lvalue (const expr_t *expr)
 		case ex_with:
 		case ex_args:
 		case ex_horizontal:
-		case ex_swizzle:
 		case ex_extend:
 		case ex_multivec:
 		case ex_list:

@@ -2264,23 +2264,72 @@ spirv_offset (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_shuffle (const expr_t *dst, const expr_t *src, spirvctx_t *ctx)
+{
+	// assumes the swizzle is valid (no neg/zero or duplicate components)
+	unsigned dst_id = spirv_emit_expr (dst->swizzle.src, ctx);
+	unsigned src_id = spirv_emit_expr (src, ctx);
+	auto dst_type = get_type (dst->swizzle.src);
+	unsigned tid = spirv_Type (dst_type, ctx);
+	unsigned id = spirv_id (ctx);
+	int count = type_width (dst->swizzle.type);
+	int width = type_width (dst_type);
+	if (count < 1 || width < 1) {
+		internal_error (dst, "invalid type width");
+	}
+	int components[width];
+	for (int i = 0; i < width; i++) {
+		// default to taking the component from dst (essentially a noop)
+		int index = i;
+		for (int j = 0; j < count; j++) {
+			if (dst->swizzle.source[j] == (unsigned) i) {
+				// take the component from src
+				index = width + j;
+				break;
+			}
+		}
+		components[i] = index;
+	}
+
+	auto insn = spirv_new_insn (SpvOpVectorShuffle, 5 + width,
+								ctx->code_space, ctx);
+	INSN (insn, 1) = tid;
+	INSN (insn, 2) = id;
+	INSN (insn, 3) = dst_id;
+	INSN (insn, 4) = src_id;
+	for (int i = 0; i < width; i++) {
+		INSN (insn, 5 + i) = components[i];
+	}
+	return id;
+}
+
+static unsigned
 spirv_assign (const expr_t *e, spirvctx_t *ctx)
 {
-	unsigned src = spirv_emit_expr (e->assign.src, ctx);
+	auto dst_expr = e->assign.dst;
+	auto src_expr = e->assign.src;
+	unsigned src = spirv_emit_expr (src_expr, ctx);
 	unsigned dst = 0;
 	unsigned align = 0;	// default to not emitting Aligned
 
-	if (is_temp (e->assign.dst)) {
+	if (is_temp (dst_expr)) {
 		// spir-v uses SSA, so temps cannot be assigned to directly, so instead
 		// use the temp expression as a reference for the result id of the
 		// rhs of the assignment.
 		spirv_add_expr_id (e, src, ctx);
 		return src;
 	}
-	if (e->assign.dst->type == ex_field || e->assign.dst->type == ex_array) {
+	if (dst_expr->type == ex_swizzle) {
+		// assumes the swizzle is an lvalue
+		// separate dst l-value from r-value
+		auto tmp = new_expr_copy (dst_expr->swizzle.src);
+		src = spirv_shuffle (dst_expr, src_expr, ctx);
+		dst_expr = tmp;
+	}
+	if (dst_expr->type == ex_field || dst_expr->type == ex_array) {
 		const type_t *res_type = nullptr;
 		const type_t *acc_type = nullptr;
-		dst = spirv_access_chain (e->assign.dst, ctx, &res_type, &acc_type);
+		dst = spirv_access_chain (dst_expr, ctx, &res_type, &acc_type);
 		if (res_type == acc_type) {
 			internal_error (e, "assignment to temp?");
 		}
@@ -2290,8 +2339,8 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 		if (acc_type->fldptr.tag == SpvStorageClassPhysicalStorageBuffer) {
 			align = type_align (res_type) * sizeof (pr_type_t);
 		}
-	} else if (is_deref (e->assign.dst)) {
-		auto ptr = e->assign.dst->expr.e1;
+	} else if (is_deref (dst_expr)) {
+		auto ptr = dst_expr->expr.e1;
 		auto ptr_type = get_type (ptr);
 		if (is_pointer (ptr_type)) {
 			align = type_align (ptr_type) * sizeof (pr_type_t);
