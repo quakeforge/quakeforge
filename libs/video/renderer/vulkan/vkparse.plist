@@ -43,7 +43,7 @@ search = (
 	qfv_computeinfo_t,
 	qfv_processinfo_t,
 	qfv_stepinfo_t,
-	qfv_jobinfo_t,
+	qfv_graphinfo_t,
 	qfv_samplercreateinfo_t,
 	qfv_samplerinfo_t,
 	qfv_entqueueinfo_t,
@@ -625,8 +625,8 @@ parse = {
 			value = init;
 		};
 	};
-	qfv_jobinfo_s = {
-		.name = qfv_jobinfo_t;
+	qfv_graphinfo_s = {
+		.name = qfv_graphinfo_t;
 		properties = ignore;
 		output = ignore;
 		renderpasses = ignore;

@@ -463,7 +463,7 @@ lighting_draw_shadow_maps (const exprval_t **params, exprval_t *result,
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto lctx = ctx->lighting_context;
-	auto shadow = QFV_GetStep (params[0], ctx->render_context->job);
+	auto shadow = QFV_GetStep (params[0], ctx->render_context->graph);
 	auto render = shadow->render;
 	auto lframe = &lctx->frames.a[ctx->curFrame];
 
@@ -1375,7 +1375,7 @@ lighting_cull_select_renderpass (const exprval_t **params, exprval_t *result,
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 
-	auto light_cull = QFV_GetStep (params[0], ctx->render_context->job);
+	auto light_cull = QFV_GetStep (params[0], ctx->render_context->graph);
 	auto render = light_cull->render;
 
 	if (scr_fisheye) {
@@ -1408,7 +1408,7 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 		count *= 6;
 	}
 
-	auto light_cull = QFV_GetStep (params[0], ctx->render_context->job);
+	auto light_cull = QFV_GetStep (params[0], ctx->render_context->graph);
 	auto render = light_cull->render;
 
 	auto cmd = QFV_GetCmdBuffer (ctx, false);

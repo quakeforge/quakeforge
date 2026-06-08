@@ -74,8 +74,8 @@ void
 QFV_AppendCmdBuffer (vulkan_ctx_t *ctx, VkCommandBuffer cmd)
 {
 	__auto_type rctx = ctx->render_context;
-	__auto_type job = rctx->job;
-	DARRAY_APPEND (&job->commands, cmd);
+	__auto_type graph = rctx->graph;
+	DARRAY_APPEND (&graph->commands, cmd);
 }
 
 void
@@ -282,7 +282,7 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx, void *data)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	auto rctx = ctx->render_context;
-	auto job = rctx->job;
+	auto graph = rctx->graph;
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
@@ -296,7 +296,7 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx, void *data)
 	QFV_RunRenderPassCmd (cmd, ctx, rp, data);
 
 	dfunc->vkEndCommandBuffer (cmd);
-	DARRAY_APPEND (&job->commands, cmd);
+	DARRAY_APPEND (&graph->commands, cmd);
 }
 
 static void
@@ -336,7 +336,7 @@ run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx, qfv_step_t *step)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type rctx = ctx->render_context;
-	__auto_type job = rctx->job;
+	__auto_type graph = rctx->graph;
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
@@ -358,7 +358,7 @@ run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx, qfv_step_t *step)
 	}
 	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
-	DARRAY_APPEND (&job->commands, cmd);
+	DARRAY_APPEND (&graph->commands, cmd);
 }
 
 static void
@@ -447,14 +447,14 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 {
 	qfZoneNamed (zone, true);
 	auto rctx = ctx->render_context;
-	auto job = rctx->job;
+	auto graph = rctx->graph;
 	int64_t start = Sys_LongTime ();
 
 	run_deletion_queue (ctx);
 
-	for (uint32_t i = 0; i < job->num_steps; i++) {
+	for (uint32_t i = 0; i < graph->num_steps; i++) {
 		int64_t step_start = Sys_LongTime ();
-		__auto_type step = &job->steps[i];
+		__auto_type step = &graph->steps[i];
 		if (!step->process) {
 			// run render and compute steps automatically only if there's no
 			// process for the step (the idea is the process uses the compute
@@ -477,14 +477,14 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 	if (++ctx->curFrame >= rctx->frames.size) {
 		ctx->curFrame = 0;
 	}
-	update_time (&job->time, start, Sys_LongTime ());
+	update_time (&graph->time, start, Sys_LongTime ());
 }
 
 static qfv_imageviewinfo_t * __attribute__((pure))
 find_imageview (qfv_reference_t *ref, qfv_renderpass_t *rp,
 				qfv_renderctx_t *rctx)
 {
-	auto jinfo = rctx->jobinfo;
+	auto jinfo = rctx->graphinfo;
 	const char *name = ref->name;
 
 	if (strncmp (name, "$imageviews.", 7) == 0) {
@@ -529,12 +529,12 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 					   VkExtent2D extent)
 {
 	auto rctx = ctx->render_context;
-	auto job = rctx->job;
+	auto graph = rctx->graph;
 
 	auto resources = &rp->resources;
 	if (!resources->array && rp->framebufferinfo->use.name) {
 		uint32_t use_index = rp->framebufferinfo->use_index;
-		resources = &job->framebuffer_resources[use_index];
+		resources = &graph->framebuffer_resources[use_index];
 	}
 
 	auto res = &resources->array[resources->active];
@@ -553,8 +553,8 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 	auto fb = rp->framebufferinfo;
 	uint32_t layers = fb->layers;
 	if (fb->use.name) {
-		auto jobinfo = rctx->jobinfo;
-		layers = jobinfo->framebuffers[fb->use_index].layers;
+		auto graphinfo = rctx->graphinfo;
+		layers = graphinfo->framebuffers[fb->use_index].layers;
 	}
 	auto views = rp->framebuffer.views;
 	VkFramebufferCreateInfo cInfo = {
@@ -656,15 +656,15 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto rctx = ctx->render_context;
-	auto job = rctx->job;
+	auto graph = rctx->graph;
 
 	VkExtent2D *extent = nullptr;
-	if (job->num_framebuffers) {
+	if (graph->num_framebuffers) {
 		//FIXME select framebuffer robustly
-		auto fb = &job->framebuffers[scr_fisheye != 0];
+		auto fb = &graph->framebuffers[scr_fisheye != 0];
 		extent = &fb->extent;
 	}
-	auto step = QFV_GetStep (params[0], job);
+	auto step = QFV_GetStep (params[0], graph);
 	if (step) {
 		extent = &step->render->output.extent;
 	}
@@ -681,8 +681,8 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 			QFV_DestroyFramebuffer (ctx, rp);
 			QFV_UpdateViewportScissor (render, &output);
 		} else {
-			for (uint32_t i = 0; i < job->num_framebuffers; i++) {
-				auto fbr = &job->framebuffer_resources[i];
+			for (uint32_t i = 0; i < graph->num_framebuffers; i++) {
+				auto fbr = &graph->framebuffer_resources[i];
 				auto res = &fbr->array[fbr->active];
 				if (res->memory) {
 					QFV_QueueResourceDelete (ctx, res);
@@ -735,18 +735,18 @@ submit_depth (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto rctx = ctx->render_context;
-	auto job = rctx->job;
+	auto graph = rctx->graph;
 
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto queue = &device->queue;
 	VkSubmitInfo submitInfo = {
 		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-		.commandBufferCount = job->commands.size,
-		.pCommandBuffers = job->commands.a,
+		.commandBufferCount = graph->commands.size,
+		.pCommandBuffers = graph->commands.a,
 	};
 	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, VK_NULL_HANDLE);
-	DARRAY_RESIZE (&job->commands, 0);
+	DARRAY_RESIZE (&graph->commands, 0);
 }
 
 static void
@@ -756,7 +756,7 @@ submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto rctx = ctx->render_context;
-	auto job = rctx->job;
+	auto graph = rctx->graph;
 
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
@@ -764,14 +764,14 @@ submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto frame = &rctx->frames.a[ctx->curFrame];
 	VkSubmitInfo submitInfo = {
 		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-		.commandBufferCount = job->commands.size,
-		.pCommandBuffers = job->commands.a,
+		.commandBufferCount = graph->commands.size,
+		.pCommandBuffers = graph->commands.a,
 		.signalSemaphoreCount = 1,
 		.pSignalSemaphores = &frame->renderDoneSemaphore,
 	};
 	dfunc->vkResetFences (device->dev, 1, &frame->fence);
 	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
-	DARRAY_RESIZE (&job->commands, 0);
+	DARRAY_RESIZE (&graph->commands, 0);
 }
 
 static void
@@ -936,12 +936,12 @@ void
 QFV_Render_Run_Init (vulkan_ctx_t *ctx)
 {
 	auto rctx = ctx->render_context;
-	if (rctx->job) {
+	if (rctx->graph) {
 		qfv_taskctx_t taskctx = {
 			.ctx = ctx,
 		};
-		auto job = rctx->job;
-		run_tasks (job->init_task_count, job->init_tasks, &taskctx);
+		auto graph = rctx->graph;
+		run_tasks (graph->init_task_count, graph->init_tasks, &taskctx);
 	}
 }
 
@@ -949,13 +949,13 @@ void
 QFV_Render_Run_Startup (vulkan_ctx_t *ctx)
 {
 	auto rctx = ctx->render_context;
-	if (rctx->job) {
+	if (rctx->graph) {
 		qfv_taskctx_t taskctx = {
 			.ctx = ctx,
 		};
-		auto job = rctx->job;
-		for (size_t i = 0; i < job->startup_funcs.size; i++) {
-			job->startup_funcs.a[i] ((exprctx_t *) &taskctx);
+		auto graph = rctx->graph;
+		for (size_t i = 0; i < graph->startup_funcs.size; i++) {
+			graph->startup_funcs.a[i] ((exprctx_t *) &taskctx);
 		}
 	}
 }
@@ -964,13 +964,13 @@ void
 QFV_Render_Run_ClearState (vulkan_ctx_t *ctx)
 {
 	auto rctx = ctx->render_context;
-	if (rctx->job) {
+	if (rctx->graph) {
 		qfv_taskctx_t taskctx = {
 			.ctx = ctx,
 		};
-		auto job = rctx->job;
-		for (size_t i = 0; i < job->clearstate_funcs.size; i++) {
-			job->clearstate_funcs.a[i] ((exprctx_t *) &taskctx);
+		auto graph = rctx->graph;
+		for (size_t i = 0; i < graph->clearstate_funcs.size; i++) {
+			graph->clearstate_funcs.a[i] ((exprctx_t *) &taskctx);
 		}
 	}
 }
@@ -993,26 +993,26 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	auto rctx = ctx->render_context;
-	if (rctx->job) {
+	if (rctx->graph) {
 		qfv_taskctx_t taskctx = {
 			.ctx = ctx,
 		};
-		auto job = rctx->job;
-		for (size_t i = job->shutdown_funcs.size; i-- > 0; ) {
-			job->shutdown_funcs.a[i] ((exprctx_t *) &taskctx);
+		auto graph = rctx->graph;
+		for (size_t i = graph->shutdown_funcs.size; i-- > 0; ) {
+			graph->shutdown_funcs.a[i] ((exprctx_t *) &taskctx);
 		}
-		for (uint32_t i = 0; i < job->num_renderpasses; i++) {
-			dfunc->vkDestroyRenderPass (device->dev, job->renderpasses[i], 0);
+		for (uint32_t i = 0; i < graph->num_renderpasses; i++) {
+			dfunc->vkDestroyRenderPass (device->dev, graph->renderpasses[i], 0);
 		}
-		for (uint32_t i = 0; i < job->num_pipelines; i++) {
-			dfunc->vkDestroyPipeline (device->dev, job->pipelines[i], 0);
+		for (uint32_t i = 0; i < graph->num_pipelines; i++) {
+			dfunc->vkDestroyPipeline (device->dev, graph->pipelines[i], 0);
 		}
-		for (uint32_t i = 0; i < job->num_layouts; i++) {
-			dfunc->vkDestroyPipelineLayout (device->dev, job->layouts[i], 0);
+		for (uint32_t i = 0; i < graph->num_layouts; i++) {
+			dfunc->vkDestroyPipelineLayout (device->dev, graph->layouts[i], 0);
 		}
-		for (uint32_t i = 0; i < job->num_steps; i++) {
-			if (job->steps[i].render) {
-				auto render = job->steps[i].render;
+		for (uint32_t i = 0; i < graph->num_steps; i++) {
+			if (graph->steps[i].render) {
+				auto render = graph->steps[i].render;
 				for (uint32_t j = 0; j < render->num_renderpasses; j++) {
 					auto rp = &render->renderpasses[j];
 					auto bi = &rp->beginInfo;
@@ -1024,15 +1024,15 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 				}
 			}
 		}
-		for (uint32_t i = 0; i < job->num_framebuffers; i++) {
-			destroy_resource_array (ctx, &job->framebuffer_resources[i]);
+		for (uint32_t i = 0; i < graph->num_framebuffers; i++) {
+			destroy_resource_array (ctx, &graph->framebuffer_resources[i]);
 		}
-		DARRAY_CLEAR (&job->commands);
-		for (uint32_t i = 0; i < job->num_dsmanagers; i++) {
-			QFV_DSManager_Destroy (job->dsmanager[i]);
+		DARRAY_CLEAR (&graph->commands);
+		for (uint32_t i = 0; i < graph->num_dsmanagers; i++) {
+			QFV_DSManager_Destroy (graph->dsmanager[i]);
 		}
-		QFV_DestroyResource (device, job->resources);
-		free (rctx->job);
+		QFV_DestroyResource (device, graph->resources);
+		free (rctx->graph);
 	}
 
 	for (uint32_t i = 0; i < rctx->frames.size; i++) {
@@ -1051,8 +1051,8 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 		Hash_DelTable (rctx->blackboard.symbols);
 	}
 
-	if (rctx->jobinfo) {
-		auto jinfo = rctx->jobinfo;
+	if (rctx->graphinfo) {
+		auto jinfo = rctx->graphinfo;
 		uint32_t count = jinfo->num_dslayouts + jinfo->num_splayouts;
 		for (uint32_t i = 0; i < count; i++) {
 			__auto_type setLayout = jinfo->dslayouts[i].setLayout;
@@ -1107,21 +1107,21 @@ void
 QFV_Render_AddStartup (vulkan_ctx_t *ctx, qfv_initfunc_f func)
 {
 	auto rctx = ctx->render_context;
-	DARRAY_APPEND (&rctx->job->startup_funcs, func);
+	DARRAY_APPEND (&rctx->graph->startup_funcs, func);
 }
 
 void
 QFV_Render_AddShutdown (vulkan_ctx_t *ctx, qfv_initfunc_f func)
 {
 	auto rctx = ctx->render_context;
-	DARRAY_APPEND (&rctx->job->shutdown_funcs, func);
+	DARRAY_APPEND (&rctx->graph->shutdown_funcs, func);
 }
 
 void
 QFV_Render_AddClearState (vulkan_ctx_t *ctx, qfv_initfunc_f func)
 {
 	auto rctx = ctx->render_context;
-	DARRAY_APPEND (&rctx->job->clearstate_funcs, func);
+	DARRAY_APPEND (&rctx->graph->clearstate_funcs, func);
 }
 
 void
@@ -1140,13 +1140,13 @@ qfv_resobj_t *
 QFV_FindResource (vulkan_ctx_t *ctx, const char *name, qfv_renderpass_t *rp)
 {
 	auto rctx = ctx->render_context;
-	auto job = rctx->job;
+	auto graph = rctx->graph;
 
 	auto resources = &rp->resources;
 
 	if (!resources->array) {
 		uint32_t use_index = rp->framebufferinfo->use_index;
-		resources = &job->framebuffer_resources[use_index];
+		resources = &graph->framebuffer_resources[use_index];
 	}
 	auto res = &resources->array[resources->active];
 	for (uint32_t i = 0; i < res->num_objects; i++) {
@@ -1159,10 +1159,10 @@ QFV_FindResource (vulkan_ctx_t *ctx, const char *name, qfv_renderpass_t *rp)
 }
 
 qfv_step_t *
-QFV_FindStep (const char *name, qfv_job_t *job)
+QFV_FindStep (const char *name, qfv_graph_t *graph)
 {
-	for (uint32_t i = 0; i < job->num_steps; i++) {
-		auto step = &job->steps[i];
+	for (uint32_t i = 0; i < graph->num_steps; i++) {
+		auto step = &graph->steps[i];
 		if (!strcmp (step->label.name, name)) {
 			return step;
 		}
@@ -1176,8 +1176,8 @@ VkDeviceAddress
 QFV_GetBufferAddress (vulkan_ctx_t *ctx, const char *name, uint32_t frame)
 {
 	auto rctx = ctx->render_context;
-	auto job = rctx->job;
-	auto jinfo = rctx->jobinfo;
+	auto graph = rctx->graph;
+	auto jinfo = rctx->graphinfo;
 	auto buffer = QFV_FindBufferInfo (ctx, name);
 	if (!buffer) {
 		return 0;
@@ -1187,7 +1187,7 @@ QFV_GetBufferAddress (vulkan_ctx_t *ctx, const char *name, uint32_t frame)
 	if (buffer->perframe) {
 		offset = frame * buffer->size;
 	}
-	return job->resources->objects[ind].buffer.address + offset;
+	return graph->resources->objects[ind].buffer.address + offset;
 }
 
 VkDeviceAddress
@@ -1219,14 +1219,14 @@ QFV_UpdateBuffer (vulkan_ctx_t *ctx, const char *name, uint32_t offset,
 				  void *data, uint32_t size)
 {
 	auto rctx = ctx->render_context;
-	auto job = rctx->job;
-	auto jinfo = rctx->jobinfo;
+	auto graph = rctx->graph;
+	auto jinfo = rctx->graphinfo;
 	auto bufferinfo = QFV_FindBufferInfo (ctx, name);
 	if (!bufferinfo) {
 		return;
 	}
 	uint32_t ind = bufferinfo - jinfo->buffers;
-	auto buffer = job->resources->objects[ind].buffer.buffer;
+	auto buffer = graph->resources->objects[ind].buffer.buffer;
 
 	if (offset + size > bufferinfo->size) {
 		Sys_Error ("bad offset + size in update to %s: %u %u:%"PRIu64,
@@ -1312,7 +1312,7 @@ QFV_GetBlackboardVar (struct vulkan_ctx_s *ctx, const char *name)
 }
 
 qfv_step_t *
-QFV_GetStep (const exprval_t *param, qfv_job_t *job)
+QFV_GetStep (const exprval_t *param, qfv_graph_t *graph)
 {
 	// this is a little evil, but need to update the type after resolving
 	// the step name
@@ -1326,7 +1326,7 @@ QFV_GetStep (const exprval_t *param, qfv_job_t *job)
 		}
 		auto name = *(const char **)stepref->value;
 		stepref->type = &cexpr_voidptr;
-		*(qfv_step_t **)stepref->value = QFV_FindStep (name, job);
+		*(qfv_step_t **)stepref->value = QFV_FindStep (name, graph);
 	}
 	return *(qfv_step_t **)stepref->value;
 }
@@ -1335,9 +1335,9 @@ qfv_dsmanager_t *
 QFV_Render_DSManager (vulkan_ctx_t *ctx, const char *setName)
 {
 	qfZoneScoped (true);
-	auto job = ctx->render_context->job;
-	for (uint32_t i = 0; i < job->num_dsmanagers; i++) {
-		auto ds = job->dsmanager[i];
+	auto graph = ctx->render_context->graph;
+	for (uint32_t i = 0; i < graph->num_dsmanagers; i++) {
+		auto ds = graph->dsmanager[i];
 		if (!strcmp (ds->name, setName)) {
 			return ds;
 		}
@@ -1401,7 +1401,7 @@ QFV_Render_NewScene (struct scene_s *scene, vulkan_ctx_t *ctx)
 {
 	auto rctx = ctx->render_context;
 	auto frame = &rctx->frames.a[ctx->curFrame];
-	auto job = rctx->job;
+	auto graph = rctx->graph;
 
 	qfv_taskctx_t taskctx = {
 		.ctx = ctx,
@@ -1409,5 +1409,5 @@ QFV_Render_NewScene (struct scene_s *scene, vulkan_ctx_t *ctx)
 		.data = scene,
 	};
 
-	run_tasks (job->newscene_task_count, job->newscene_tasks, &taskctx);
+	run_tasks (graph->newscene_task_count, graph->newscene_tasks, &taskctx);
 }

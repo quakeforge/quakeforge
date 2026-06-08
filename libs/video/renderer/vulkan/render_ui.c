@@ -47,8 +47,8 @@
 
 typedef struct qfv_renderdebug_s {
 	imui_ctx_t *imui_ctx;
-	imui_window_t job_timings_window;
-	imui_window_t job_control_window;
+	imui_window_t graph_timings_window;
+	imui_window_t graph_control_window;
 	imui_window_t entid_window;
 	uint32_t picked_enties[picked_entity_count];
 	uint32_t locked_entities[picked_entity_count];
@@ -79,36 +79,36 @@ show_time (qfv_time_t *time, imui_ctx_t *imui_ctx, const char *suffix)
 }
 
 static void
-job_timings_window (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
+graph_timings_window (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 {
 	auto rctx = ctx->render_context;
-	UI_Window (&rctx->debug->job_timings_window) {
-		if (rctx->debug->job_timings_window.is_collapsed) {
+	UI_Window (&rctx->debug->graph_timings_window) {
+		if (rctx->debug->graph_timings_window.is_collapsed) {
 			continue;
 		}
-		auto job = rctx->job;
-		for (uint32_t i = 0; i < job->num_steps; i++) {
-			auto step = &job->steps[i];
+		auto graph = rctx->graph;
+		for (uint32_t i = 0; i < graph->num_steps; i++) {
+			auto step = &graph->steps[i];
 			UI_Horizontal {
-				UI_Labelf ("%s##%p.job.step.%d", step->label.name, rctx, i);
+				UI_Labelf ("%s##%p.graph.step.%d", step->label.name, rctx, i);
 				UI_FlexibleSpace ();
 				show_time (&step->time, imui_ctx,
-						   vac (ctx->va_ctx, "##%p.job.step.%d.time", rctx, i));
+						   vac (ctx->va_ctx, "##%p.graph.step.%d.time", rctx, i));
 			}
 		}
 		UI_Horizontal {
 			UI_FlexibleSpace ();
-			show_time (&job->time, imui_ctx,
-					   vac (ctx->va_ctx, "##%p.job.time", rctx));
+			show_time (&graph->time, imui_ctx,
+					   vac (ctx->va_ctx, "##%p.graph.time", rctx));
 		}
 		UI_Horizontal {
 			UI_FlexibleSpace ();
-			if (UI_Button ("Reset##job.timings")) {
-				for (uint32_t i = 0; i < job->num_steps; i++) {
-					auto step = &job->steps[i];
+			if (UI_Button ("Reset##graph.timings")) {
+				for (uint32_t i = 0; i < graph->num_steps; i++) {
+					auto step = &graph->steps[i];
 					reset_time (&step->time);
 				}
-				reset_time (&job->time);
+				reset_time (&graph->time);
 			}
 		}
 	}
@@ -136,11 +136,11 @@ show_pipeline (const char *type, qfv_pipeline_t *pipeline,
 }
 
 static int __attribute__ ((pure))
-count_pipelines (qfv_job_t *job)
+count_pipelines (qfv_graph_t *graph)
 {
 	int count = 0;
-	for (uint32_t i = 0; i < job->num_steps; i++) {
-		auto step = &job->steps[i];
+	for (uint32_t i = 0; i < graph->num_steps; i++) {
+		auto step = &graph->steps[i];
 		count += 1;
 		if (step->render) {
 			auto rp = step->render->active;
@@ -175,7 +175,7 @@ draw_render (qfv_renderpass_t *rp, qfv_renderctx_t *rctx, uint32_t stepind,
 {
 	UI_Horizontal {
 		hs (imui_ctx, 1);
-		UI_Labelf ("%s##%p.job.step.%d.render", rp->label.name,
+		UI_Labelf ("%s##%p.graph.step.%d.render", rp->label.name,
 				   rctx, stepind);
 		UI_FlexibleSpace ();
 	}
@@ -183,7 +183,7 @@ draw_render (qfv_renderpass_t *rp, qfv_renderctx_t *rctx, uint32_t stepind,
 		auto sp = &rp->subpasses[j];
 		UI_Horizontal {
 			hs (imui_ctx, 2);
-			UI_Labelf ("%s##%p.job.step.%d.subpass",
+			UI_Labelf ("%s##%p.graph.step.%d.subpass",
 					   sp->label.name, rctx, stepind);
 			UI_FlexibleSpace ();
 		}
@@ -201,10 +201,10 @@ draw_compute (qfv_compute_t *compute, qfv_renderctx_t *rctx, uint32_t stepind,
 }
 
 static void
-draw_job (qfv_job_t *job, view_pos_t sblen, qfv_renderctx_t *rctx,
+draw_graph (qfv_graph_t *graph, view_pos_t sblen, qfv_renderctx_t *rctx,
 		  imui_ctx_t *imui_ctx, vulkan_ctx_t *ctx)
 {
-	int count = count_pipelines (job);
+	int count = count_pipelines (graph);
 
 	auto state = IMUI_CurrentState (imui_ctx);
 	auto pos = state->pos;
@@ -216,10 +216,10 @@ draw_job (qfv_job_t *job, view_pos_t sblen, qfv_renderctx_t *rctx,
 	IMUI_SetViewPos (imui_ctx, delta);
 	len = (view_pos_t) {sblen.x, sblen.y - delta.y};
 
-	for (uint32_t i = 0; i < job->num_steps; i++) {
-		auto step = &job->steps[i];
+	for (uint32_t i = 0; i < graph->num_steps; i++) {
+		auto step = &graph->steps[i];
 		UI_Horizontal {
-			UI_Labelf ("%s##%p.job.step.%d", step->label.name, rctx, i);
+			UI_Labelf ("%s##%p.graph.step.%d", step->label.name, rctx, i);
 			UI_FlexibleSpace ();
 		}
 		if (step->render) {
@@ -236,23 +236,23 @@ draw_job (qfv_job_t *job, view_pos_t sblen, qfv_renderctx_t *rctx,
 }
 
 static void
-job_control_window (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
+graph_control_window (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 {
 	auto rctx = ctx->render_context;
-	UI_Window (&rctx->debug->job_control_window) {
-		if (rctx->debug->job_control_window.is_collapsed) {
+	UI_Window (&rctx->debug->graph_control_window) {
+		if (rctx->debug->graph_control_window.is_collapsed) {
 			continue;
 		}
 		UI_Horizontal {
 			IMUI_Layout_SetYSize (imui_ctx, imui_size_expand, 100);
-			UI_ScrollBox ("JobControl##ListView:scroller") {
+			UI_ScrollBox ("GraphControl##ListView:scroller") {
 				auto sblen = IMUI_CurrentState (imui_ctx)->len;
 				UI_Scroller () {
-					auto job = rctx->job;
-					draw_job (job, sblen, rctx, imui_ctx, ctx);
+					auto graph = rctx->graph;
+					draw_graph (graph, sblen, rctx, imui_ctx, ctx);
 				}
 			}
-			UI_ScrollBar ("JobControl##ListView:scroller");
+			UI_ScrollBar ("GraphControl##ListView:scroller");
 		}
 	}
 }
@@ -465,14 +465,14 @@ QFV_Render_UI (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 		rctx->debug = malloc (sizeof (qfv_renderdebug_t));
 		*rctx->debug = (qfv_renderdebug_t) {
 			.imui_ctx = imui_ctx,
-			.job_timings_window = {
-				.name = "Job Timings",
+			.graph_timings_window = {
+				.name = "Graph Timings",
 				.xpos = 100,
 				.ypos = 50,
 				.auto_fit = true,
 			},
-			.job_control_window = {
-				.name = "Job Control",
+			.graph_control_window = {
+				.name = "Graph Control",
 				.xpos = 100,
 				.ypos = 50,
 				.xlen = 400,
@@ -487,14 +487,14 @@ QFV_Render_UI (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 			.ent_windows = DARRAY_STATIC_INIT (4),
 			.ent_window_ids = DARRAY_STATIC_INIT (4),
 		};
-		IMUI_RegisterWindow (imui_ctx, &rctx->debug->job_timings_window);
-		IMUI_RegisterWindow (imui_ctx, &rctx->debug->job_control_window);
+		IMUI_RegisterWindow (imui_ctx, &rctx->debug->graph_timings_window);
+		IMUI_RegisterWindow (imui_ctx, &rctx->debug->graph_control_window);
 		IMUI_RegisterWindow (imui_ctx, &rctx->debug->entid_window);
 		memset (rctx->debug->picked_enties, 0xff,
 				sizeof (rctx->debug->picked_enties));
 	}
-	job_timings_window (ctx, imui_ctx);
-	job_control_window (ctx, imui_ctx);
+	graph_timings_window (ctx, imui_ctx);
+	graph_control_window (ctx, imui_ctx);
 	entid_window (ctx, imui_ctx);
 	for (size_t i = 0; i < rctx->debug->ent_windows.size; i++) {
 		while (i < rctx->debug->ent_windows.size
@@ -531,11 +531,11 @@ void
 QFV_Render_Menu (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 {
 	auto rctx = ctx->render_context;
-	if (UI_MenuItem (vac (ctx->va_ctx, "Job Timings##%p", rctx))) {
-		rctx->debug->job_timings_window.is_open = true;
+	if (UI_MenuItem (vac (ctx->va_ctx, "Graph Timings##%p", rctx))) {
+		rctx->debug->graph_timings_window.is_open = true;
 	}
-	if (UI_MenuItem (vac (ctx->va_ctx, "Job Control##%p", rctx))) {
-		rctx->debug->job_control_window.is_open = true;
+	if (UI_MenuItem (vac (ctx->va_ctx, "Graph Control##%p", rctx))) {
+		rctx->debug->graph_control_window.is_open = true;
 	}
 	if (UI_MenuItem (vac (ctx->va_ctx, "Entities##%p", rctx))) {
 		rctx->debug->entid_window.is_open = true;

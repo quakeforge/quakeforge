@@ -271,7 +271,7 @@ typedef struct qfv_stepinfo_s {
 	qfv_taskinfo_t *init;
 } qfv_stepinfo_t;
 
-typedef struct qfv_jobinfo_s {
+typedef struct qfv_graphinfo_s {
 	struct memsuper_s *memsuper;
 
 	struct plitem_s *plitem;
@@ -299,7 +299,7 @@ typedef struct qfv_jobinfo_s {
 	uint32_t    newscene_num_tasks;
 	uint32_t    init_num_tasks;
 	qfv_taskinfo_t *init_tasks;
-} qfv_jobinfo_t;
+} qfv_graphinfo_t;
 
 typedef struct qfv_samplercreateinfo_s {
 	const char *name;
@@ -476,7 +476,7 @@ typedef void (*qfv_initfunc_f) (exprctx_t *ectx);
 typedef struct qfv_initfuncset_s
 	DARRAY_TYPE (qfv_initfunc_f) qfv_initfuncset_t;
 
-typedef struct qfv_job_s {
+typedef struct qfv_graph_s {
 	qfv_label_t label;
 
 	uint32_t    num_renderpasses;
@@ -504,7 +504,7 @@ typedef struct qfv_job_s {
 	qfv_initfuncset_t startup_funcs;
 	qfv_initfuncset_t shutdown_funcs;
 	qfv_initfuncset_t clearstate_funcs;
-} qfv_job_t;
+} qfv_graph_t;
 
 typedef struct qfv_blackboard_s {
 	byte       *data;
@@ -544,10 +544,10 @@ typedef struct qfv_renderctx_s {
 	struct hashctx_s *hashctx;
 	exprtab_t   task_functions;
 	qfv_attachmentinfoset_t external_attachments;
-	qfv_jobinfo_t *jobinfo;
+	qfv_graphinfo_t *graphinfo;
 	qfv_samplerinfo_t *samplerinfo;
 	qfv_entqueueinfo_t *entqueueinfo;
-	qfv_job_t  *job;
+	qfv_graph_t  *graph;
 	qfv_blackboard_t blackboard;
 	qfv_renderframeset_t frames;
 	qfv_deletequeue_t deletion_queue;
@@ -643,8 +643,8 @@ void QFV_PushBlackboard (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 void QFV_BindDescriptors (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 						  qfv_pipeline_t *pipeline);
 
-qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_job_t *job);
-qfv_step_t *QFV_FindStep (const char *step, qfv_job_t *job)
+qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_graph_t *graph);
+qfv_step_t *QFV_FindStep (const char *step, qfv_graph_t *graph)
 	__attribute__((pure));
 qfv_resobj_t *QFV_FindResource (vulkan_ctx_t *ctx, const char *name,
 								qfv_renderpass_t *rp) __attribute__((pure));

@@ -115,7 +115,7 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 
 	//FIXME clean this up
-	auto step = QFV_GetStep (params[0], ctx->render_context->job);
+	auto step = QFV_GetStep (params[0], ctx->render_context->graph);
 	auto render = step->render;
 	auto rp = &render->renderpasses[0];
 	if (!octx->framebuffers) {
@@ -167,7 +167,7 @@ update_input (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto octx = ctx->output_context;
 	auto oframe = &octx->frames.a[ctx->curFrame];
-	auto input = QFV_GetStep (params[0], ctx->render_context->job);
+	auto input = QFV_GetStep (params[0], ctx->render_context->graph);
 
 	if (oframe->input == input->render->active->output) {
 		return;
@@ -194,7 +194,7 @@ output_select_pipeline (const exprval_t **params, exprval_t *result,
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto output = QFV_GetStep (params[0], ctx->render_context->job);
+	auto output = QFV_GetStep (params[0], ctx->render_context->graph);
 	auto sp = output->render->active->subpasses;
 
 	// the output render pass pipelines are in the order
@@ -221,7 +221,7 @@ output_select_renderpass (const exprval_t **params, exprval_t *result,
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto main = QFV_GetStep (params[0], ctx->render_context->job);
+	auto main = QFV_GetStep (params[0], ctx->render_context->graph);
 	auto render = main->render;
 
 	if (scr_fisheye) {
@@ -305,7 +305,7 @@ submit_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	auto rctx = ctx->render_context;
 	auto octx = ctx->output_context;
-	auto job = rctx->job;
+	auto graph = rctx->graph;
 
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
@@ -325,14 +325,14 @@ submit_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.waitSemaphoreCount = 2,
 		.pWaitSemaphores = waitSemaphores,
 		.pWaitDstStageMask = waitStages,
-		.commandBufferCount = job->commands.size,
-		.pCommandBuffers = job->commands.a,
+		.commandBufferCount = graph->commands.size,
+		.pCommandBuffers = graph->commands.a,
 		.signalSemaphoreCount = 1,
 		.pSignalSemaphores = &octx->outputSemaphores[ctx->swapImageIndex],
 	};
 	dfunc->vkResetFences (device->dev, 1, &oframe->fence);
 	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, oframe->fence);
-	DARRAY_RESIZE (&job->commands, 0);
+	DARRAY_RESIZE (&graph->commands, 0);
 }
 
 static void
@@ -380,7 +380,7 @@ output_shutdown (exprctx_t *ectx)
 		}
 		free (octx->outputSemaphores);
 	}
-	auto step = QFV_FindStep ("output", ctx->render_context->job);
+	auto step = QFV_FindStep ("output", ctx->render_context->graph);
 	auto render = step->render;
 	auto rp = &render->renderpasses[0];
 	rp->beginInfo.framebuffer = 0;

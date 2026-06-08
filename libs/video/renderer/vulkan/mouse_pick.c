@@ -233,8 +233,8 @@ QFV_MousePick_Read (vulkan_ctx_t *ctx, uint32_t x, uint32_t y,
 	auto frame = &mpctx->frames.a[ctx->curFrame];
 
 	if (!mpctx->entid_res) {
-		auto job = ctx->render_context->job;
-		auto step = QFV_FindStep ("main", job);
+		auto graph = ctx->render_context->graph;
+		auto step = QFV_FindStep ("main", graph);
 		auto rp = &step->render->renderpasses[0];
 		mpctx->entid_res = QFV_FindResource (ctx, "entid", rp);
 	}

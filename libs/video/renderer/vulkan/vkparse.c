@@ -1539,13 +1539,13 @@ QFV_DestroySymtab (exprtab_t *tab)
 	free (tab);
 }
 
-struct qfv_jobinfo_s *
-QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
+struct qfv_graphinfo_s *
+QFV_ParseGraphInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 {
 	qfZoneScoped (true);
 	memsuper_t *memsuper = new_memsuper ();
-	qfv_jobinfo_t *ji = cmemalloc (memsuper, sizeof (qfv_jobinfo_t));
-	*ji = (qfv_jobinfo_t) { .memsuper = memsuper };
+	qfv_graphinfo_t *ji = cmemalloc (memsuper, sizeof (qfv_graphinfo_t));
+	*ji = (qfv_graphinfo_t) { .memsuper = memsuper };
 
 	scriptctx_t *sctx = ctx->script_context;
 	plitem_t   *messages = PL_NewArray ();
@@ -1581,7 +1581,7 @@ QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 												   &exprctx);
 
 	int         ret;
-	if (!(ret = parse_qfv_jobinfo_t (0, item, ji, messages, &parsectx))) {
+	if (!(ret = parse_qfv_graphinfo_t (0, item, ji, messages, &parsectx))) {
 		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
 			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
 		}
