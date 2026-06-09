@@ -1679,6 +1679,43 @@ QFV_ParseEntqueueInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 	return si;
 }
 
+qfv_jobstepenum_t *
+QFV_ParseJobStepEnum (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
+{
+	memsuper_t *memsuper = new_memsuper ();
+	qfv_jobstepenum_t *jse = cmemalloc (memsuper, sizeof (qfv_jobstepenum_t));
+	*jse = (qfv_jobstepenum_t) { .memsuper = memsuper };
+
+	scriptctx_t *sctx = ctx->script_context;
+	plitem_t   *messages = PL_NewArray ();
+
+	exprctx_t   exprctx = {
+		.symtab = &root_symtab,
+		.messages = messages,
+		.hashctx = &sctx->hashctx,
+		.memsuper = memsuper,
+	};
+	parsectx_t  parsectx = {
+		.ectx = &exprctx,
+		.vctx = ctx,
+		.data = rctx,
+	};
+
+	int         ret;
+	if (!(ret = parse_qfv_jobstepenum_t (0, item, jse, messages, &parsectx))) {
+		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+		}
+	}
+	PL_Release (messages);
+	if (!ret) {
+		delete_memsuper (memsuper);
+		jse = nullptr;
+	}
+
+	return jse;
+}
+
 qfv_textureinfo_t *
 QFV_ParseTextureInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 {

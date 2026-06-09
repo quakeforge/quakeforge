@@ -490,7 +490,7 @@ translucent_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 }
 
 static exprtype_t *clear_translucent_params[] = {
-	&cexpr_string,
+	&cexpr_void,
 };
 static exprfunc_t clear_translucent_func[] = {
 	{ .func = clear_translucent, .num_params = 1, clear_translucent_params },
@@ -519,6 +519,8 @@ Vulkan_Translucent_Init (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, translucent_task_syms);
+
+	clear_translucent_params[0] = &ctx->render_context->step_type;
 }
 
 VkDescriptorSet

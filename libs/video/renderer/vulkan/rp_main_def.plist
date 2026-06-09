@@ -2305,17 +2305,17 @@ jobs = {
 						{ func = scene_draw_viewmodel; },
 						{ func = lighting_update_lights; },
 						{ func = output_select_renderpass;
-						  params = ("\"depth\""); },
+						  params = (main`depth); },
 						{ func = output_select_renderpass;
-						  params = ("\"main\""); },
+						  params = (main`main); },
 						{ func = update_framebuffer;
-						  params = ("\"\""); },
+						  params = (@); },
 						{ func = update_framebuffer;
-						  params = ("\"main\""); },
+						  params = (main`main); },
 						{ func = update_framebuffer;
-						  params = ("\"depth\""); },
+						  params = (main`depth); },
 						{ func = clear_translucent;
-						  params = ("\"depth\""); },
+						  params = (main`depth); },
 					);
 				};
 			};
@@ -2336,11 +2336,11 @@ jobs = {
 					tasks = (
 						{ func = submit_depth; },
 						{ func = lighting_cull_select_renderpass;
-						  params = ("\"light_cull\""); },
+						  params = (main`light_cull); },
 						{ func = update_framebuffer;
-						  params = ("\"light_cull\""); },
+						  params = (main`light_cull); },
 						{ func = lighting_cull_lights;
-						  params = ("\"light_cull\""); },
+						  params = (main`light_cull); },
 					);
 				};
 				render = {
@@ -2360,7 +2360,7 @@ jobs = {
 						{ func = bsp_visit_world;
 						  params = (shadow); },
 						{ func = lighting_draw_shadow_maps;
-						  params = ("\"shadow\""); },
+						  params = (main`shadow); },
 					);
 				};
 				render_template = {
@@ -2399,11 +2399,11 @@ jobs = {
 						{ func = submit_render; },
 
 						{ func = acquire_output;
-						  params = ("\"output\""); },
+						  params = (main`output); },
 						{ func = update_input;
-						  params = ("\"main\""); },
+						  params = (main`main); },
 						{ func = output_select_pipeline;
-						  params = ("\"output\""); },
+						  params = (main`output); },
 						{ func = flush_draw; },
 					);
 				};

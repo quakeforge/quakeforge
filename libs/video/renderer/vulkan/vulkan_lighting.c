@@ -2366,6 +2366,8 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	Cvar_Register (&pbr_diff_cvar, nullptr, 0);
 
 	QFV_Render_AddTasks (ctx, lighting_task_syms);
+
+	stepref_param[0] = &ctx->render_context->step_type;
 }
 
 static void

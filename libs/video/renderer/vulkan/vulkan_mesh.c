@@ -710,7 +710,7 @@ static exprenum_t mesh_stage_enum = {
 };
 
 static exprtype_t *mesh_draw_params[] = {
-	&cexpr_int,		// filled in later from render context entqueue_type
+	&cexpr_void,
 	&cexpr_int,
 	&mesh_stage_type,
 };

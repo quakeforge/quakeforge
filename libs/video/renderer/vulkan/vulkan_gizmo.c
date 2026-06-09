@@ -699,8 +699,8 @@ static exprfunc_t gizmo_init_func[] = {
 };
 
 static exprtype_t *gizmo_update_framebuffer_params[] = {
-	&cexpr_string,
-	&cexpr_string,
+	&cexpr_void,
+	&cexpr_void,
 };
 static exprfunc_t gizmo_update_framebuffer_func[] = {
 	{ .func = gizmo_update_framebuffer, .num_params = 2,
@@ -724,6 +724,8 @@ Vulkan_Gizmo_Init (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, gizmo_task_syms);
+	gizmo_update_framebuffer_params[0] = &ctx->render_context->step_type;
+	gizmo_update_framebuffer_params[1] = &ctx->render_context->step_type;
 }
 
 static uint32_t *

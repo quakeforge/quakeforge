@@ -49,6 +49,9 @@ search = (
 	qfv_samplerinfo_t,
 	qfv_entqueueinfo_t,
 	qfv_textureinfo_t,
+	qfv_stepenum_t,
+	qfv_jobenum_t,
+	qfv_jobstepenum_t,
 );
 parse = {
 	VkValidationFeatureEnableEXT = expflags;
@@ -744,5 +747,38 @@ parse = {
 			values = layer_files;
 		};
 		plitem = ignore;
+	};
+	qfv_stepenum_s = {
+		.name = qfv_stepenum_t;
+		.type = (QFDictionary);
+		.dictionary = {
+			name = $name;
+			line = $item.line;
+		};
+	};
+	qfv_jobenum_s = {
+		.name = qfv_jobenum_t;
+		.type = (QFDictionary);
+		.dictionary = {
+			.parse = auto;
+			name = $name;
+			line = $item.line;
+		};
+		steps = {
+			type = (labeledarray, qfv_stepenum_t, name);
+			size = num_steps;
+			values = steps;
+		};
+	};
+	qfv_jobstepenum_s = {
+		.name = qfv_jobstepenum_t;
+		.type = (QFDictionary);
+		.dictionary = {
+			.parse = {
+				type = (labeledarray, qfv_jobenum_t, name);
+				size = num_jobs;
+				values = jobs;
+			};
+		};
 	};
 };

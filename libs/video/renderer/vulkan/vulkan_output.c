@@ -483,7 +483,7 @@ output_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 }
 
 static exprtype_t *stepref_param[] = {
-	&cexpr_string,
+	&cexpr_void,
 };
 static exprfunc_t acquire_output_func[] = {
 	{ .func = acquire_output, .num_params = 1, .param_types = stepref_param },
@@ -551,4 +551,6 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, output_task_syms);
+
+	stepref_param[0] = &ctx->render_context->step_type;
 }

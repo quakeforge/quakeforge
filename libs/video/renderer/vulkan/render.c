@@ -325,6 +325,7 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 
 	vec4u_t     d = pipeline->dispatch;
 	if (d[0] && d[1] && d[2]) {
+		QFV_PushBlackboard (ctx, cmd, pipeline);
 		dfunc->vkCmdDispatch (cmd, d[0], d[1], d[2]);
 	}
 }
@@ -821,7 +822,7 @@ static exprfunc_t wait_on_fence_func[] = {
 };
 
 static exprtype_t *update_framebuffer_params[] = {
-	&cexpr_string,
+	&cexpr_void,
 };
 static exprfunc_t update_framebuffer_func[] = {
 	{ .func = update_framebuffer, .num_params = 1, update_framebuffer_params },
@@ -889,6 +890,8 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 		.size_time = -1,
 	};
 	DARRAY_RESIZE (&rctx->frames, vulkan_frame_count);
+
+	update_framebuffer_params[0] = &rctx->step_type;
 
 	cexpr_init_symtab (&rctx->task_functions,
 					   &(exprctx_t) { .hashctx = &rctx->hashctx });
@@ -1327,21 +1330,11 @@ QFV_GetBlackboardVar (struct vulkan_ctx_s *ctx, const char *name)
 qfv_step_t *
 QFV_GetStep (const exprval_t *param, qfv_graph_t *graph)
 {
-	// this is a little evil, but need to update the type after resolving
-	// the step name
-	auto stepref = (exprval_t *) param;
-
-	// cache the render step referenced, using the parameter type as a flag
-	// for whether the caching has been performed.
-	if (stepref->type == &cexpr_string) {
-		if (cexpr_string.size != cexpr_voidptr.size) {
-			Sys_Error ("string and voidptr incompatible sizes");
-		}
-		auto name = *(const char **)stepref->value;
-		stepref->type = &cexpr_voidptr;
-		*(qfv_step_t **)stepref->value = QFV_FindStep (name, graph);
+	int index = *(int *) param->value;
+	if (index < 0) {
+		return nullptr;
 	}
-	return *(qfv_step_t **)stepref->value;
+	return &graph->steps[index];
 }
 
 qfv_dsmanager_t *

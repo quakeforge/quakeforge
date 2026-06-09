@@ -280,6 +280,28 @@ typedef struct qfv_jobinfo_s {
 	qfv_stepinfo_t *steps;
 } qfv_jobinfo_t;
 
+typedef struct qfv_stepenum_s {
+	const char *name;
+	int         line;
+	uint32_t    index;
+} qfv_stepenum_t;
+
+typedef struct qfv_jobenum_s {
+	const char *name;
+	int         line;
+
+	uint32_t     num_steps;
+	qfv_stepenum_t *steps;
+} qfv_jobenum_t;
+
+typedef struct qfv_jobstepenum_s {
+	struct memsuper_s *memsuper;
+	struct plitem_s *plitem;
+
+	uint32_t     num_jobs;
+	qfv_jobenum_t *jobs;
+} qfv_jobstepenum_t;
+
 typedef struct qfv_graphinfo_s {
 	struct memsuper_s *memsuper;
 
@@ -500,6 +522,7 @@ typedef struct qfv_graph_s {
 	uint32_t    num_layouts;
 	uint32_t    num_jobs;
 	qfv_job_t  *jobs;
+	qfv_step_t *steps;	// all steps in all jobs
 	VkRenderPass *renderpasses;
 	VkPipeline *pipelines;
 	VkPipelineLayout *layouts;
@@ -562,6 +585,7 @@ typedef struct qfv_renderctx_s {
 	qfv_graphinfo_t *graphinfo;
 	qfv_samplerinfo_t *samplerinfo;
 	qfv_entqueueinfo_t *entqueueinfo;
+	qfv_jobstepenum_t *jobstepenum;
 	qfv_graph_t  *graph;
 	qfv_blackboard_t blackboard;
 	qfv_renderframeset_t frames;
@@ -573,6 +597,13 @@ typedef struct qfv_renderctx_s {
 	exprtab_t   entqueue_symtab;
 	exprenum_t  entqueue_enum;
 	exprtype_t  entqueue_type;
+
+	exprtab_t   job_symtab;
+	exprenum_t  job_enum;
+	exprtype_t  job_type;
+	exprtab_t   step_symtab;
+	exprenum_t  step_enum;
+	exprtype_t  step_type;
 } qfv_renderctx_t;
 
 typedef struct qfv_taskctx_s {
@@ -659,7 +690,7 @@ void QFV_PushBlackboard (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 void QFV_BindDescriptors (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 						  qfv_pipeline_t *pipeline);
 
-qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_graph_t *graph);
+qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_graph_t *graph) __attribute__((pure));
 qfv_step_t *QFV_FindStep (const char *step, qfv_graph_t *graph)
 	__attribute__((pure));
 qfv_resobj_t *QFV_FindResource (vulkan_ctx_t *ctx, const char *name,

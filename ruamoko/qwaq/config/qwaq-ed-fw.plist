@@ -1,6 +1,6 @@
 {
 entqueues = {
-	queues = (planetary);
+	queues = (planetary, pixpal);
 };
 samplers = {
 	samplers = {
@@ -1804,15 +1804,15 @@ render_graph = {
 					process = {
 						tasks = (
 							{ func = output_select_renderpass;
-							  params = ("\"main\""); },
+							  params = (main`main); },
 							{ func = output_select_renderpass;
-							  params = ("\"gizmo_cmd\""); },
+							  params = (main`gizmo_cmd); },
 							{ func = update_framebuffer;
-							  params = ("\"main\""); },
+							  params = (main`main); },
 							{ func = gizmo_update_framebuffer;
-							  params = ("\"gizmo_cmd\"", "\"main\""); },
+							  params = (main`gizmo_cmd, main`main); },
 							{ func = clear_translucent;
-							  params = ("\"main\""); },
+							  params = (main`main); },
 							{ func = compose_update; },
 							{ func = particle_wait_physics; },
 							{ func = gizmo_flush; },
@@ -1844,14 +1844,14 @@ render_graph = {
 						tasks = (
 							{ func = submit_render; },
 							{ func = acquire_output;
-							  params = ("\"output\""); },
+							  params = (main`output); },
 							{ func = update_input;
-							  params = ("\"main\""); },
+							  params = (main`main); },
 							{ func = output_select_pipeline;
-							  params = ("\"output\""); },
+							  params = (main`output); },
 							{ func = flush_draw; },
 							{ func = painter_update_framebuffer;
-							  params = ("\"output\""); },
+							  params = (main`output); },
 							{ func = painter_flush; },
 						);
 					};

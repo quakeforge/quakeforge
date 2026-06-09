@@ -74,12 +74,109 @@ get_output (vulkan_ctx_t *ctx, plitem_t *item)
 	return output;
 }
 
+static void
+build_job_step_enum (vulkan_ctx_t *ctx, qfv_renderctx_t *rctx,
+					 qfv_jobstepenum_t *jsenum)
+{
+	int num_steps = 0;
+	{
+		auto symtab = &rctx->job_symtab;
+		int num_syms = jsenum->num_jobs;
+		size_t size = sizeof(exprsym_t[num_syms]);
+		rctx->job_type = (exprtype_t) {
+			.name = "job",
+			.size = sizeof (int),
+			.binops = cexpr_enum_binops,
+			.get_string = cexpr_enum_get_string,
+			.data = &rctx->job_enum,
+		};
+		rctx->job_enum = (exprenum_t) {
+			.type = &rctx->job_type,
+			.symtab = &rctx->job_symtab,
+		};
+		rctx->job_symtab = (exprtab_t) {
+			.symbols = cmemalloc (jsenum->memsuper, size),
+			.tab = Hash_NewTable (61, cexpr_getkey, 0, 0, &rctx->hashctx),
+		};
+		for (uint32_t i = 0; i < jsenum->num_jobs; i++) {
+			auto job = &jsenum->jobs[i];
+			int ind = i;
+			symtab->symbols[ind] = (exprsym_t) {
+				.name = job->name,
+				.type = &rctx->job_type,
+				.value = cmemalloc (jsenum->memsuper, sizeof (int)),
+			};
+			*(int *) symtab->symbols[ind].value = ind;
+			Hash_Add (symtab->tab, &symtab->symbols[ind]);
+
+			num_steps += job->num_steps;
+			printf ("%s = %d\n", symtab->symbols[ind].name, ind);
+		}
+	}
+	{
+		auto symtab = &rctx->step_symtab;
+		int num_syms = num_steps + 1;	// + 1 for @
+		size_t size = sizeof(exprsym_t[num_syms]);
+		rctx->step_type = (exprtype_t) {
+			.name = "step",
+			.size = sizeof (int),
+			.binops = cexpr_enum_binops,
+			.get_string = cexpr_enum_get_string,
+			.data = &rctx->step_enum,
+		};
+		rctx->step_enum = (exprenum_t) {
+			.type = &rctx->step_type,
+			.symtab = &rctx->step_symtab,
+		};
+		rctx->step_symtab = (exprtab_t) {
+			.symbols = cmemalloc (jsenum->memsuper, size),
+			.tab = Hash_NewTable (61, cexpr_getkey, 0, 0, &rctx->hashctx),
+		};
+		int ind = 0;
+		for (uint32_t i = 0; i < jsenum->num_jobs; i++) {
+			auto job = &jsenum->jobs[i];
+			for (uint32_t j = 0; j < job->num_steps; j++, ind++) {
+				auto step = &job->steps[j];
+				const char *name = vac (ctx->va_ctx, "%s`%s",
+										job->name, step->name);
+				symtab->symbols[ind] = (exprsym_t) {
+					.name = cmemstrdup (jsenum->memsuper, name),
+					.type = &rctx->step_type,
+					.value = cmemalloc (jsenum->memsuper, sizeof (int)),
+				};
+				*(int *) symtab->symbols[ind].value = ind;
+				Hash_Add (symtab->tab, &symtab->symbols[ind]);
+
+				printf ("%s = %d\n", symtab->symbols[ind].name,
+						*(int *) symtab->symbols[ind].value);
+			}
+		}
+		{
+			symtab->symbols[ind] = (exprsym_t) {
+				.name = cmemstrdup (jsenum->memsuper, "@"),
+				.type = &rctx->step_type,
+				.value = cmemalloc (jsenum->memsuper, sizeof (int)),
+			};
+			*(int *) symtab->symbols[ind].value = -1;
+			Hash_Add (symtab->tab, &symtab->symbols[ind]);
+
+			printf ("%s = %d\n", symtab->symbols[ind].name,
+					*(int *) symtab->symbols[ind].value);
+		}
+	}
+}
+
 void
 QFV_LoadRenderInfo (vulkan_ctx_t *ctx, plitem_t *item)
 {
 	qfZoneScoped (true);
 	auto rctx = ctx->render_context;
 	auto output = get_output (ctx, item);
+	auto jobs = PL_ObjectForKey (item, "jobs");
+	if (jobs) {
+		rctx->jobstepenum = QFV_ParseJobStepEnum (ctx, jobs, rctx);
+		build_job_step_enum (ctx, rctx, rctx->jobstepenum);
+	}
 	Vulkan_Script_SetOutput (ctx, &output);
 	rctx->graphinfo = QFV_ParseGraphInfo (ctx, item, rctx);
 	if (rctx->graphinfo) {
@@ -1447,8 +1544,8 @@ create_graph (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 		.clearstate_funcs = DARRAY_STATIC_INIT (16),
 	};
 	graph->jobs = (qfv_job_t *) &graph[1];
-	auto st = (qfv_step_t *) &graph->jobs[graph->num_jobs];
-	auto rn = (qfv_render_t *) &st[counts->num_steps];
+	graph->steps = (qfv_step_t *) &graph->jobs[graph->num_jobs];
+	auto rn = (qfv_render_t *) &graph->steps[counts->num_steps];
 	auto cp = (qfv_compute_t *) &rn[counts->num_render];
 	auto pr = (qfv_process_t *) &cp[counts->num_compute];
 	auto rp = (qfv_renderpass_t *) &pr[counts->num_process];
@@ -1490,7 +1587,7 @@ create_graph (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 
 	return (graphptr_t) {
 		.jobs = graph->jobs,
-		.steps = st,
+		.steps = graph->steps,
 		.renders = rn,
 		.computes = cp,
 		.processes = pr,
