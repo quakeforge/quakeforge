@@ -463,7 +463,7 @@ lighting_draw_shadow_maps (const exprval_t **params, exprval_t *result,
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto lctx = ctx->lighting_context;
-	auto shadow = QFV_GetStep (params[0], ctx->render_context->graph);
+	auto shadow = QFV_GetStep (params[0], taskctx->graph);
 	auto render = shadow->render;
 	auto lframe = &lctx->frames.a[ctx->curFrame];
 
@@ -471,7 +471,10 @@ lighting_draw_shadow_maps (const exprval_t **params, exprval_t *result,
 		return;
 	}
 
+	auto tctx = *taskctx;
 	uint32_t id_base = 0;
+	tctx.data = &id_base;
+
 	int max_views = lctx->max_views;
 	for (int i = 0; i < LIGHTING_STAGES; i++) {
 		auto queue = &lframe->stage_queue[i];
@@ -489,7 +492,7 @@ lighting_draw_shadow_maps (const exprval_t **params, exprval_t *result,
 				lctx->stage_framebuffers[rpind][i] = fbuffer;
 			}
 			bi->framebuffer = fbuffer;
-			QFV_RunRenderPass (ctx, renderpass, size, size, &id_base);
+			QFV_RunRenderPass (&tctx, renderpass, size, size);
 			bi->framebuffer = 0;
 
 			copy_maps (id_base, count, i, lframe, lctx, ctx, taskctx);
@@ -1373,9 +1376,8 @@ lighting_cull_select_renderpass (const exprval_t **params, exprval_t *result,
 								 exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
 
-	auto light_cull = QFV_GetStep (params[0], ctx->render_context->graph);
+	auto light_cull = QFV_GetStep (params[0], taskctx->graph);
 	auto render = light_cull->render;
 
 	if (scr_fisheye) {
@@ -1408,7 +1410,7 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 		count *= 6;
 	}
 
-	auto light_cull = QFV_GetStep (params[0], ctx->render_context->graph);
+	auto light_cull = QFV_GetStep (params[0], taskctx->graph);
 	auto render = light_cull->render;
 
 	auto cmd = QFV_GetCmdBuffer (ctx, false);
@@ -1422,7 +1424,7 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 	dfunc->vkCmdResetQueryPool (cmd, lframe->query, 0, MaxLights * 6);
 	auto qftVkCtx = taskctx->frame->qftVkCtx;
 	taskctx->frame->qftVkCtx = lframe->qftVkCtx;
-	QFV_RunRenderPassCmd (cmd, ctx, render->active, 0);
+	QFV_RunRenderPassCmd (cmd, taskctx, render->active);
 	taskctx->frame->qftVkCtx = qftVkCtx;
 	dfunc->vkEndCommandBuffer (cmd);
 

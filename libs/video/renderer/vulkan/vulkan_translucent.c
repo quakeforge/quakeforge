@@ -161,7 +161,7 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto tctx = ctx->translucent_context;
 	auto tframe = &tctx->frames.a[ctx->curFrame];
-	auto graph = ctx->render_context->graph;
+	auto graph = taskctx->graph;
 	auto step = QFV_GetStep (params[0], graph);
 	auto render = step->render;
 

@@ -645,7 +645,7 @@ gizmo_update_framebuffer (const exprval_t **params, exprval_t *result,
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto graph = ctx->render_context->graph;
+	auto graph = taskctx->graph;
 	auto main_step = QFV_GetStep (params[0], graph);
 	auto gizmo_step = QFV_GetStep (params[1], graph);
 	auto main_render = main_step->render;

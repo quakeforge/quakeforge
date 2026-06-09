@@ -578,6 +578,8 @@ typedef struct qfv_renderctx_s {
 typedef struct qfv_taskctx_s {
 	vulkan_ctx_t *ctx;
 	struct memsuper_s *memsuper;
+	qfv_graph_t *graph;
+	qfv_job_t *job;
 	qfv_step_t *step;
 	qfv_stepinfo_t *stepinfo;
 	qfv_renderframe_t *frame;
@@ -593,11 +595,10 @@ typedef struct qfv_taskctx_s {
 VkCommandBuffer QFV_GetCmdBuffer (vulkan_ctx_t *ctx, bool secondary);
 void QFV_AppendCmdBuffer (vulkan_ctx_t *ctx, VkCommandBuffer cmd);
 
-void QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
-						   qfv_renderpass_t *renderpass,
-						   void *data);
-void QFV_RunRenderPass (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass,
-						uint32_t width, uint32_t height, void *data);
+void QFV_RunRenderPassCmd (VkCommandBuffer cmd, qfv_taskctx_t *taskctx,
+						   qfv_renderpass_t *renderpass);
+void QFV_RunRenderPass (qfv_taskctx_t *taskctx, qfv_renderpass_t *renderpass,
+						uint32_t width, uint32_t height);
 void QFV_RunRenderJob (vulkan_ctx_t *ctx);
 void QFV_LoadRenderInfo (vulkan_ctx_t *ctx, struct plitem_s *item);
 void QFV_LoadSamplerInfo (vulkan_ctx_t *ctx, struct plitem_s *item);

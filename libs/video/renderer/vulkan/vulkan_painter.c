@@ -406,7 +406,7 @@ painter_update_framebuffer (const exprval_t **params, exprval_t *result,
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto graph = ctx->render_context->graph;
+	auto graph = taskctx->graph;
 	auto output_step = QFV_GetStep (params[0], graph);
 	auto output_render = output_step->render;
 	auto pctx = ctx->painter_context;

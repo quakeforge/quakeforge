@@ -220,11 +220,12 @@ run_subpass (qfv_subpass_t *sp, qfv_taskctx_t *taskctx)
 }
 
 void
-QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
-					  qfv_renderpass_t *rp, void *data)
+QFV_RunRenderPassCmd (VkCommandBuffer cmd, qfv_taskctx_t *taskctx,
+					  qfv_renderpass_t *rp)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
 	auto rctx = ctx->render_context;
 	auto frame = &rctx->frames.a[ctx->curFrame];
 
@@ -235,22 +236,22 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 						 {VEC4_EXP (rp->label.color)});
 	dfunc->vkCmdBeginRenderPass (cmd, &rp->beginInfo, rp->subpassContents);
 	for (uint32_t i = 0; i < rp->subpass_count; i++) {
-		__auto_type sp = &rp->subpasses[i];
-		qfv_taskctx_t taskctx = {
-			.ctx = ctx,
-			.frame = frame,
+		auto sp = &rp->subpasses[i];
+		qfv_taskctx_t tctx = {
+			.ctx = taskctx->ctx,
+			.frame = taskctx->frame,
 			.renderpass = rp,
 			.subpass = sp,
 			.cmd = QFV_GetCmdBuffer (ctx, true),
-			.data = data,
+			.data = taskctx->data,
 		};
 		sp->call_count = 0;
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, taskctx.cmd,
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, tctx.cmd,
 							 vac (ctx->va_ctx, "renderpass:%s:%s:%" PRIu64,
 								  rp->label.name, sp->label.name,
 								  ctx->frameNumber));
-		run_subpass (sp, &taskctx);
-		dfunc->vkCmdExecuteCommands (cmd, 1, &taskctx.cmd);
+		run_subpass (sp, &tctx);
+		dfunc->vkCmdExecuteCommands (cmd, 1, &tctx.cmd);
 		//printf ("subpass calls:%s:%s:%d\n", rp->label.name, sp->label.name,
 		//		sp->call_count);
 
@@ -273,14 +274,15 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 }
 
 static void
-run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx, void *data)
+run_renderpass (qfv_renderpass_t *rp, qfv_taskctx_t *taskctx)
 {
 	qfZoneNamed (zone, true);
 	qfZoneName (zone, rp->label.name, rp->label.name_len);
 	qfZoneColor (zone, rp->label.color32);
 
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
 
@@ -293,7 +295,7 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx, void *data)
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
-	QFV_RunRenderPassCmd (cmd, ctx, rp, data);
+	QFV_RunRenderPassCmd (cmd, taskctx, rp);
 
 	dfunc->vkEndCommandBuffer (cmd);
 	DARRAY_APPEND (&graph->commands, cmd);
@@ -328,15 +330,15 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 }
 
 static void
-run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx, qfv_step_t *step)
+run_compute (qfv_compute_t *comp, qfv_taskctx_t *taskctx, qfv_step_t *step)
 {
 	qfZoneNamed (zone, true);
 	qfZoneName (zone, step->label.name, step->label.name_len);
 	qfZoneColor (zone, step->label.color32);
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	__auto_type rctx = ctx->render_context;
-	__auto_type graph = rctx->graph;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto graph = taskctx->graph;
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
@@ -362,20 +364,19 @@ run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx, qfv_step_t *step)
 }
 
 static void
-run_process (qfv_step_t *step, vulkan_ctx_t *ctx)
+run_process (qfv_step_t *step, qfv_taskctx_t *taskctx)
 {
 	auto proc = step->process;
+	auto ctx = taskctx->ctx;
 	auto rctx = ctx->render_context;
 	auto frame = &rctx->frames.a[ctx->curFrame];
 	qfZoneNamed (zone, true);
 	qfZoneName (zone, proc->label.name, proc->label.name_len);
 	qfZoneColor (zone, proc->label.color32);
-	qfv_taskctx_t taskctx = {
-		.ctx = ctx,
-		.step = step,
-		.frame = frame,
-	};
-	run_tasks (proc->task_count, proc->tasks, &taskctx);
+	qfv_taskctx_t tctx = *taskctx;
+	tctx.step = step;
+	tctx.frame = frame;
+	run_tasks (proc->task_count, proc->tasks, &tctx);
 }
 
 static void
@@ -402,8 +403,8 @@ run_collect (vulkan_ctx_t *ctx)
 }
 
 void
-QFV_RunRenderPass (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass,
-				   uint32_t width, uint32_t height, void *data)
+QFV_RunRenderPass (qfv_taskctx_t *taskctx, qfv_renderpass_t *renderpass,
+				   uint32_t width, uint32_t height)
 {
 	qfZoneNamed (zone, true);
 	qfv_output_t output = {
@@ -413,7 +414,7 @@ QFV_RunRenderPass (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass,
 		},
 	};
 	renderpass_update_viewport_sissor (renderpass, &output);
-	run_renderpass (renderpass, ctx, data);
+	run_renderpass (renderpass, taskctx);
 }
 
 static void
@@ -453,6 +454,12 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 
 	run_deletion_queue (ctx);
 
+	qfv_taskctx_t taskctx = {
+		.ctx = ctx,
+		.graph = graph,
+		.job = job,
+	};
+
 	for (uint32_t i = 0; i < job->num_steps; i++) {
 		int64_t step_start = Sys_LongTime ();
 		__auto_type step = &job->steps[i];
@@ -461,14 +468,14 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 			// process for the step (the idea is the process uses the compute
 			// and renderpass objects for its own purposes).
 			if (step->render) {
-				run_renderpass (step->render->active, ctx, 0);
+				run_renderpass (step->render->active, &taskctx);
 			}
 			if (step->compute) {
-				run_compute (step->compute, ctx, step);
+				run_compute (step->compute, &taskctx, step);
 			}
 		}
 		if (step->process) {
-			run_process (step, ctx);
+			run_process (step, &taskctx);
 		}
 		update_time (&step->time, step_start, Sys_LongTime ());
 	}
@@ -995,10 +1002,11 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	auto rctx = ctx->render_context;
 	if (rctx->graph) {
+		auto graph = rctx->graph;
 		qfv_taskctx_t taskctx = {
 			.ctx = ctx,
+			.graph = graph,
 		};
-		auto graph = rctx->graph;
 		for (size_t i = graph->shutdown_funcs.size; i-- > 0; ) {
 			graph->shutdown_funcs.a[i] ((exprctx_t *) &taskctx);
 		}

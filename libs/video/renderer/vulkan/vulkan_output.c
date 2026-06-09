@@ -115,7 +115,7 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 
 	//FIXME clean this up
-	auto step = QFV_GetStep (params[0], ctx->render_context->graph);
+	auto step = QFV_GetStep (params[0], taskctx->graph);
 	auto render = step->render;
 	auto rp = &render->renderpasses[0];
 	if (!octx->framebuffers) {
@@ -167,7 +167,7 @@ update_input (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto octx = ctx->output_context;
 	auto oframe = &octx->frames.a[ctx->curFrame];
-	auto input = QFV_GetStep (params[0], ctx->render_context->graph);
+	auto input = QFV_GetStep (params[0], taskctx->graph);
 
 	if (oframe->input == input->render->active->output) {
 		return;
@@ -193,8 +193,7 @@ output_select_pipeline (const exprval_t **params, exprval_t *result,
 {
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto output = QFV_GetStep (params[0], ctx->render_context->graph);
+	auto output = QFV_GetStep (params[0], taskctx->graph);
 	auto sp = output->render->active->subpasses;
 
 	// the output render pass pipelines are in the order
@@ -221,7 +220,7 @@ output_select_renderpass (const exprval_t **params, exprval_t *result,
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto main = QFV_GetStep (params[0], ctx->render_context->graph);
+	auto main = QFV_GetStep (params[0], taskctx->graph);
 	auto render = main->render;
 
 	if (scr_fisheye) {
@@ -305,7 +304,7 @@ submit_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	auto rctx = ctx->render_context;
 	auto octx = ctx->output_context;
-	auto graph = rctx->graph;
+	auto graph = taskctx->graph;
 
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
@@ -380,7 +379,7 @@ output_shutdown (exprctx_t *ectx)
 		}
 		free (octx->outputSemaphores);
 	}
-	auto step = QFV_FindStep ("output", ctx->render_context->graph);
+	auto step = QFV_FindStep ("output", taskctx->graph);
 	auto render = step->render;
 	auto rp = &render->renderpasses[0];
 	rp->beginInfo.framebuffer = 0;
