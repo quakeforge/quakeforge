@@ -3370,6 +3370,15 @@ spirv_var_attributes (specifier_t *spec, attribute_t **attributes,
 								ctx);
 		} else if (strcmp (attr->name, "binding") == 0) {
 			spirv_add_int_attr (&sym->attributes, "Binding", params[0], ctx);
+		} else if (strcmp (attr->name, "constant_id") == 0) {
+			if (sym->sy_type == sy_expr && sym->expr->type == ex_value) {
+				auto value = new_value ();
+				*value = *sym->expr->value;
+				value->is_constexpr = true;
+				sym->expr = new_value_expr (value, false);
+				sym->is_constexpr = true;
+			}
+			spirv_add_int_attr (&sym->attributes, "SpecId", params[0], ctx);
 		} else if (spirv_qualifier (attr->name, &qual)) {
 			if (qual) {
 				spirv_add_attr (&sym->attributes, qual, nullptr);

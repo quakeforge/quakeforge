@@ -87,6 +87,10 @@ rua_parse_declaration (specifier_t spec, symbol_t *sym, const expr_t *init,
 				sym->type = spec.type;
 				sym->sy_type = sy_expr;
 				sym->expr = init;
+				if (current_target.var_attributes) {
+					current_target.var_attributes (&spec, &spec.attributes,
+												   ctx);
+				}
 				auto s = symtab_lookup (symtab, sym->name);
 				if (s && s->table == symtab) {
 					error (0, "%s redeclared", sym->name);
