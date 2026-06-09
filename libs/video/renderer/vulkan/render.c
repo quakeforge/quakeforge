@@ -1093,6 +1093,9 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 		Hash_DelTable (rctx->entqueue_symtab.tab);
 		delete_memsuper (rctx->entqueueinfo->memsuper);
 	}
+	Hash_DelTable (rctx->job_symtab.tab);
+	Hash_DelTable (rctx->step_symtab.tab);
+	delete_memsuper (rctx->jobstepenum->memsuper);
 	Hash_DelContext (rctx->hashctx);
 
 	QFV_Render_UI_Shutdown (ctx);
