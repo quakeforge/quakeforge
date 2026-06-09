@@ -161,12 +161,12 @@ STRING		\"(\\.|[^"\\])*\"
 						return VALUE;
 					}
 
-{ID}				{
+{ID}(`{id})*		{
 						yylval->symbol = parse_name (yytext, context);
 						return NAME;
 					}
 
-`{id}				{
+`{id}(`{id})*		{
 						yylval->symbol = parse_name (yytext + 1, context);
 						return NAME;
 					}
@@ -180,7 +180,14 @@ STRING		\"(\\.|[^"\\])*\"
 						yylval->value = parse_string (yytext, context);
 						return VALUE;
 					}
-@					return '@';
+@					{
+						auto sym = parse_name ("@", context);
+						if (sym) {
+							yylval->symbol = sym;
+							return NAME;
+						}
+						return '@';
+					}
 
 '(\\[^xX0-7\r\n]|[^'\r\n]|\\[xX][0-9A-Fa-f]+|\\[0-7]+)*'	{
 					}
