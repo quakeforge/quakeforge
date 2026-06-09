@@ -43,6 +43,10 @@
 #undef uint
 #define uint unsigned
 
+exprtype_t cexpr_void = {
+	.name = "void",
+};
+
 #define BINOP(pre, opname, type, op)										\
 static void																	\
 pre##_##opname (const exprval_t *a, const exprval_t *b, exprval_t *c,		\
