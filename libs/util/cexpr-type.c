@@ -850,6 +850,44 @@ exprtype_t cexpr_quaternion = {
 	.get_string = quaternion_get_string,
 };
 
+static const char *
+vec2_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec2f_t     vec = *(vec2f_t *) val->value;
+	return vac (va_ctx, VEC2F_FMT, VEC2_EXP (vec));
+}
+
+exprtype_t cexpr_vec2 = {
+	.name = "vec2",
+	.size = sizeof (vec4f_t),
+	.binops = vector_binops,
+	.unops = vector_unops,
+	.get_string = vec2_get_string,
+};
+
+static const char *
+vec3_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec4f_t     vec = *(vec4f_t *) val->value;
+	return vac (va_ctx, VectorFMT, VectorExpand (vec));
+}
+
+exprtype_t cexpr_vec3 = {
+	.name = "vec3",
+	.size = sizeof (vec4f_t),
+	.binops = vector_binops,
+	.unops = vector_unops,
+	.get_string = vec3_get_string,
+};
+
+exprtype_t cexpr_vec4 = {
+	.name = "vec4",
+	.size = sizeof (vec4f_t),
+	.binops = vector_binops,
+	.unops = vector_unops,
+	.get_string = vector_get_string,
+};
+
 exprtype_t cexpr_exprval = {
 	.name = "exprval",
 	.size = sizeof (exprval_t *),
