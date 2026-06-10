@@ -783,13 +783,11 @@ get_buffer_by_name (vulkan_ctx_t *ctx, const char *name)
 {
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
-	auto ginfo = rctx->graphinfo;
 	auto buffer = QFV_FindBufferInfo (ctx, name);
 	if (!buffer) {
 		return 0;
 	}
-	uint32_t ind = buffer - ginfo->buffers;
-	return graph->resources->objects[ind].buffer.buffer;
+	return graph->resources->objects[buffer->object].buffer.buffer;
 }
 
 static VkImage
@@ -797,13 +795,11 @@ get_image_by_name (vulkan_ctx_t *ctx, const char *name)
 {
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
-	auto ginfo = rctx->graphinfo;
 	auto image = QFV_FindImageInfo (ctx, name);
 	if (!image) {
 		return 0;
 	}
-	uint32_t ind = image - ginfo->images;
-	return graph->resources->objects[ind].image.image;
+	return graph->resources->objects[image->object].image.image;
 }
 
 static void
@@ -1529,17 +1525,15 @@ QFV_GetBufferAddress (vulkan_ctx_t *ctx, const char *name, uint32_t frame)
 {
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
-	auto ginfo = rctx->graphinfo;
 	auto buffer = QFV_FindBufferInfo (ctx, name);
 	if (!buffer) {
 		return 0;
 	}
-	uint32_t ind = buffer - ginfo->buffers;
 	VkDeviceAddress offset = 0;
 	if (buffer->perframe) {
 		offset = frame * buffer->size;
 	}
-	return graph->resources->objects[ind].buffer.address + offset;
+	return graph->resources->objects[buffer->object].buffer.address + offset;
 }
 
 VkDeviceAddress
@@ -1572,13 +1566,11 @@ QFV_UpdateBuffer (vulkan_ctx_t *ctx, const char *name, uint32_t offset,
 {
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
-	auto ginfo = rctx->graphinfo;
 	auto bufferinfo = QFV_FindBufferInfo (ctx, name);
 	if (!bufferinfo) {
 		return;
 	}
-	uint32_t ind = bufferinfo - ginfo->buffers;
-	auto buffer = graph->resources->objects[ind].buffer.buffer;
+	auto buffer = graph->resources->objects[bufferinfo->object].buffer.buffer;
 
 	if (offset + size > bufferinfo->size) {
 		Sys_Error ("bad offset + size in update to %s: %u %u:%"PRIu64,

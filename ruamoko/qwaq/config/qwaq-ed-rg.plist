@@ -1605,11 +1605,17 @@ render_graph = {
 			image = cube_entid;
 		};
 	};
-	buffers = {
-		planetary = {
-			size = 1048576;
-			usage = transfer_dst|shader_device_address|storage_buffer;
-			perframe = true;
+	resources = {
+		buffers = {
+			planetary = {
+				size = 1048576;
+				usage = transfer_dst|shader_device_address|storage_buffer;
+				perframe = true;
+			};
+			brdf = {
+				size = 256*256*4*2;
+				usage = transfer_dst|transfer_src|shader_device_address|storage_buffer;
+			};
 		};
 	};
 	output = {

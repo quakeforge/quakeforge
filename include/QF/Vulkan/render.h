@@ -105,6 +105,7 @@ typedef struct qfv_bufferinfo_s {
 	VkBufferUsageFlags usage;
 	VkSharingMode sharingMode;
 	bool        perframe;
+	uint32_t    object;
 } qfv_bufferinfo_t;
 
 typedef struct qfv_bufferviewinfo_s {
@@ -114,6 +115,7 @@ typedef struct qfv_bufferviewinfo_s {
 	VkFormat    format;
 	VkDeviceSize offset;
 	VkDeviceSize range;
+	uint32_t    object;
 } qfv_bufferviewinfo_t;
 
 typedef struct qfv_dependencymask_s {
@@ -302,6 +304,17 @@ typedef struct qfv_jobstepenum_s {
 	qfv_jobenum_t *jobs;
 } qfv_jobstepenum_t;
 
+typedef struct qfv_resourceinfo_s {
+	uint32_t    num_images;
+	uint32_t    num_imageviews;
+	qfv_imageinfo_t *images;
+	qfv_imageviewinfo_t *imageviews;
+	uint32_t    num_buffers;
+	uint32_t    num_bufferviews;
+	qfv_bufferinfo_t *buffers;
+	qfv_bufferviewinfo_t *bufferviews;
+} qfv_resourceinfo_t;
+
 typedef struct qfv_graphinfo_s {
 	struct memsuper_s *memsuper;
 
@@ -313,10 +326,8 @@ typedef struct qfv_graphinfo_s {
 	uint32_t    num_imageviews;
 	qfv_imageinfo_t *images;
 	qfv_imageviewinfo_t *imageviews;
-	uint32_t    num_buffers;
-	uint32_t    num_bufferviews;
-	qfv_bufferinfo_t *buffers;
-	qfv_bufferviewinfo_t *bufferviews;
+
+	qfv_resourceinfo_t resources;
 
 	// shared framebuffer resources
 	qfv_framebufferinfo_t *framebuffers;

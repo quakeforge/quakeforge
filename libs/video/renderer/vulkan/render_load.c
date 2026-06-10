@@ -459,9 +459,11 @@ static void
 count_stuff (qfv_graphinfo_t *graphinfo, objcount_t *counts, vulkan_ctx_t *ctx)
 {
 	counts->num_images += graphinfo->num_images;
+	counts->num_images += graphinfo->resources.num_images;
 	counts->num_imageviews += graphinfo->num_imageviews;
-	counts->num_buffers += graphinfo->num_buffers;
-	counts->num_bufferviews += graphinfo->num_bufferviews;
+	counts->num_imageviews += graphinfo->resources.num_imageviews;
+	counts->num_buffers += graphinfo->resources.num_buffers;
+	counts->num_bufferviews += graphinfo->resources.num_bufferviews;
 	counts->num_framebuffers += graphinfo->num_framebuffers;
 	counts->num_jobs += graphinfo->num_jobs;
 	for (uint32_t i = 0; i < graphinfo->num_jobs; i++) {
@@ -477,15 +479,16 @@ count_stuff (qfv_graphinfo_t *graphinfo, objcount_t *counts, vulkan_ctx_t *ctx)
 }
 
 static qfv_imageinfo_t * __attribute__((pure))
-find_imageinfo (qfv_graphinfo_t *graphinfo, const qfv_reference_t *ref)
+find_imageinfo (qfv_imageinfo_t *imageinfo, uint32_t num_images,
+				const qfv_reference_t *ref)
 {
 	if (strcmp (ref->name, "$output.image") == 0) {
 		//auto image = ginfo->output.image;
 		//graph->image_views[i].image_view.external_image = image;
 		//graph->image_views[i].image_view.image = -1;
 	} else {
-		for (uint32_t i = 0; i < graphinfo->num_images; i++) {
-			auto img = &graphinfo->images[i];
+		for (uint32_t i = 0; i < num_images; i++) {
+			auto img = &imageinfo[i];
 			if (strcmp (ref->name, img->name) == 0) {
 				return img;
 			}
@@ -509,10 +512,11 @@ find_imageviewinfo (qfv_graphinfo_t *graphinfo, const qfv_reference_t *ref)
 }
 
 static qfv_bufferinfo_t * __attribute__((pure))
-find_bufferinfo (qfv_graphinfo_t *graphinfo, const qfv_reference_t *ref)
+find_bufferinfo (qfv_bufferinfo_t *bufferinfo, uint32_t num_buffers,
+				 const qfv_reference_t *ref)
 {
-	for (uint32_t i = 0; i < graphinfo->num_buffers; i++) {
-		auto img = &graphinfo->buffers[i];
+	for (uint32_t i = 0; i < num_buffers; i++) {
+		auto img = &bufferinfo[i];
 		if (strcmp (ref->name, img->name) == 0) {
 			return img;
 		}
@@ -555,7 +559,8 @@ QFV_FindBufferInfo (vulkan_ctx_t *ctx, const char *name)
 	auto rctx = ctx->render_context;
 	auto ginfo = rctx->graphinfo;
 	qfv_reference_t ref = { .name = name };
-	return find_bufferinfo (ginfo, &ref);
+	auto res = &ginfo->resources;
+	return find_bufferinfo (res->buffers, res->num_buffers, &ref);
 }
 
 qfv_imageinfo_t *
@@ -564,17 +569,62 @@ QFV_FindImageInfo (vulkan_ctx_t *ctx, const char *name)
 	auto rctx = ctx->render_context;
 	auto ginfo = rctx->graphinfo;
 	qfv_reference_t ref = { .name = name };
-	return find_imageinfo (ginfo, &ref);
+	auto res = &ginfo->resources;
+	return find_imageinfo (res->images, res->num_images, &ref);
+}
+
+static void
+setup_image_obj (qfv_resobj_t *image, const qfv_imageinfo_t *img)
+{
+	*image = (qfv_resobj_t) {
+		.name = img->name,
+		.type = qfv_res_image,
+		.image = {
+			.flags = img->flags,
+			.type = img->imageType,
+			.format = img->format,
+			.extent = img->extent,
+			.num_mipmaps = img->mipLevels,
+			.num_layers = img->arrayLayers,
+			.samples = img->samples,
+			.tiling = img->tiling,
+			.usage = img->usage,
+			.initialLayout = img->initialLayout,
+		},
+	};
+}
+
+static void
+setup_imageview_obj (qfv_resobj_t *image_view,
+					 const qfv_resobj_t *image,
+					 const qfv_imageinfo_t *img,
+					 const qfv_imageviewinfo_t *imgview)
+{
+	*image_view = (qfv_resobj_t) {
+		.name = imgview->name,
+		.type = qfv_res_image_view,
+		.image_view = {
+			.image = img->object,
+			.flags = imgview->flags,
+			.type = imgview->viewType,
+			.format = imgview->format,
+			.components = imgview->components,
+			.subresourceRange = imgview->subresourceRange,
+		},
+	};
+	if (!image_view->image_view.format) {
+		image_view->image_view.format = image->image.format;
+	}
 }
 
 static bool
-setup_resources (vulkan_ctx_t *ctx,
-				 qfv_framebufferinfo_t *fbi, const char *name,
-				 uint32_t num_attachments, qfv_resource_t *resources,
-				 qfv_resobj_t *images, qfv_resobj_t *image_views)
+setup_framebuffers (vulkan_ctx_t *ctx,
+					qfv_framebufferinfo_t *fbi, const char *name,
+					uint32_t num_attachments, qfv_resource_t *resources,
+					qfv_resobj_t *images, qfv_resobj_t *image_views)
 {
 	auto rctx = ctx->render_context;
-	auto ginfo = rctx->graphinfo;
+	auto gi = rctx->graphinfo;
 
 	resources[0] = (qfv_resource_t) {
 		.name = name,
@@ -586,52 +636,106 @@ setup_resources (vulkan_ctx_t *ctx,
 	bool error = false;
 	for (uint32_t i = 0; i < num_attachments; i++) {
 		auto attach = &fbi->attachments[i];
-		auto imgview = find_imageviewinfo (ginfo, &attach->view);
+		auto imgview = find_imageviewinfo (gi, &attach->view);
 		if (!imgview) {
 			error = true;
 			continue;
 		}
-		auto img = find_imageinfo (ginfo, &imgview->image);
+		auto img = find_imageinfo (gi->images, gi->num_images, &imgview->image);
 		if (!img) {
 			error = true;
 			continue;
 		}
-		images[i] = (qfv_resobj_t) {
-			.name = img->name,
-			.type = qfv_res_image,
-			.image = {
-				.flags = img->flags,
-				.type = img->imageType,
-				.format = img->format,
-				.extent = img->extent,
-				.num_mipmaps = img->mipLevels,
-				.num_layers = img->arrayLayers,
-				.samples = img->samples,
-				.tiling = img->tiling,
-				.usage = img->usage,
-				.initialLayout = img->initialLayout,
-			},
-		};
+		setup_image_obj (&images[i], img);
 		img->object = &images[i] - resources->objects;
 
-		image_views[i] = (qfv_resobj_t) {
-			.name = imgview->name,
-			.type = qfv_res_image_view,
-			.image_view = {
-				.image = img->object,
-				.flags = imgview->flags,
-				.type = imgview->viewType,
-				.format = imgview->format,
-				.components = imgview->components,
-				.subresourceRange = imgview->subresourceRange,
-			},
-		};
-		if (!image_views[i].image_view.format) {
-			image_views[i].image_view.format = images[img->object].image.format;
-		}
+		setup_imageview_obj (&image_views[i], &images[i], img, imgview);
 		imgview->object = &image_views[i] - resources->objects;
 	}
 	return !error;
+}
+
+static qfv_resource_t *
+setup_resources (qfv_resourceinfo_t *ri, vulkan_ctx_t *ctx)
+{
+	auto rctx = ctx->render_context;
+
+	uint32_t num_obj = ri->num_images
+					 + ri->num_imageviews
+					 + ri->num_buffers
+					 + ri->num_bufferviews;
+	if (!num_obj) {
+		return nullptr;
+	}
+	size_t size = sizeof (qfv_resource_t) + sizeof (qfv_resobj_t[num_obj]);
+	qfv_resource_t *resources = malloc (size);
+	*resources = (qfv_resource_t) {
+		.name = "render",
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = num_obj,
+		.objects = (qfv_resobj_t *) &resources[1],
+	};
+	auto images = resources->objects;
+	auto imageviews = &images[ri->num_images];
+	auto buffers = &imageviews[ri->num_imageviews];
+	auto bufferviews = &buffers[ri->num_buffers];
+
+	bool error = false;
+
+	for (uint32_t i = 0; i < ri->num_images; i++) {
+		auto img = &ri->images[i];
+		setup_image_obj (&images[i], img);
+		img->object = &images[i] - resources->objects;
+	}
+	for (uint32_t i = 0; i < ri->num_imageviews; i++) {
+		auto imgview = &ri->imageviews[i];
+		auto img = find_imageinfo (ri->images, ri->num_images, &imgview->image);
+		setup_imageview_obj (&imageviews[i], &images[img->object],
+							 img, imgview);
+		imgview->object = &imageviews[i] - resources->objects;
+	}
+	for (uint32_t i = 0; i < ri->num_buffers; i++) {
+		auto b = &ri->buffers[i];
+		VkDeviceSize size = b->size;
+		if (b->perframe) {
+			b->size = RUP (b->size, 64);
+			size = b->size * rctx->frames.size;
+		}
+		buffers[i] = (qfv_resobj_t) {
+			.name = b->name,
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = size,
+				.usage = b->usage,
+			},
+		};
+		b->object = &buffers[i] - resources->objects;
+	}
+	for (uint32_t i = 0; i < ri->num_bufferviews; i++) {
+		auto bv = &ri->bufferviews[i];
+		auto b = find_bufferinfo (ri->buffers, ri->num_buffers, &bv->buffer);
+		if (!b) {
+			error = true;
+			continue;
+		}
+		bufferviews[i] = (qfv_resobj_t) {
+			.name = bv->name,
+			.buffer_view = {
+				.buffer = b->object,
+				.format = bv->format,
+				.offset = bv->offset,
+				.size = bv->range,
+			},
+		};
+	}
+	if (error) {
+		free (resources);
+		resources = nullptr;
+	} else {
+		QFV_CreateResource (ctx->device, resources);
+	}
+	return resources;
 }
 
 typedef struct {
@@ -709,9 +813,9 @@ create_resource_array (objstate_t *s, qfv_framebufferinfo_t *fbi,
 		auto images = res;
 		auto image_views = &images[num_attachments];
 		res = &image_views[num_attachments];
-		if (!setup_resources (ctx, fbi, name,
-							  num_attachments, &resources.array[i],
-							  images, image_views)) {
+		if (!setup_framebuffers (ctx, fbi, name,
+								 num_attachments, &resources.array[i],
+								 images, image_views)) {
 			free (resources.array);
 			return (qfv_resourcearray_t) {};
 		}
@@ -1644,61 +1748,7 @@ init_graph (vulkan_ctx_t *ctx, objcount_t *counts, graphptr_t gp, objstate_t *s)
 		init_job (i, &gp, s);
 	}
 
-	if (graphinfo->num_buffers) {
-		size_t size = sizeof (qfv_resource_t)
-					+ sizeof (qfv_resobj_t[graphinfo->num_buffers])
-					+ sizeof (qfv_resobj_t[graphinfo->num_bufferviews]);
-		graph->resources = malloc (size);
-		*graph->resources = (qfv_resource_t) {
-			.name = "render",
-			.va_ctx = ctx->va_ctx,
-			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			.num_objects = graphinfo->num_buffers + graphinfo->num_bufferviews,
-			.objects = (qfv_resobj_t *) &graph->resources[1],
-		};
-		auto buffers = graph->resources->objects;
-		auto bufferviews = &buffers[graphinfo->num_buffers];
-		for (uint32_t i = 0; i < graphinfo->num_buffers; i++) {
-			auto b = &graphinfo->buffers[i];
-			VkDeviceSize size = b->size;
-			if (b->perframe) {
-				b->size = RUP (b->size, 64);
-				size = b->size * rctx->frames.size;
-			}
-			buffers[i] = (qfv_resobj_t) {
-				.name = b->name,
-				.type = qfv_res_buffer,
-				.buffer = {
-					.size = size,
-					.usage = b->usage,
-				},
-			};
-		}
-		bool error = false;
-		for (uint32_t i = 0; i < graphinfo->num_bufferviews; i++) {
-			auto bv = &graphinfo->bufferviews[i];
-			auto b = find_bufferinfo (graphinfo, &bv->buffer);
-			if (!b) {
-				error = true;
-				continue;
-			}
-			bufferviews[i] = (qfv_resobj_t) {
-				.name = bv->name,
-				.buffer_view = {
-					.buffer = b - graphinfo->buffers,
-					.format = bv->format,
-					.offset = bv->offset,
-					.size = bv->range,
-				},
-			};
-		}
-		if (error) {
-			free (graph->resources);
-			graph->resources = nullptr;
-		} else {
-			QFV_CreateResource (ctx->device, graph->resources);
-		}
-	}
+	graph->resources = setup_resources (&graphinfo->resources, ctx);
 }
 
 static void

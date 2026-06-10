@@ -47,6 +47,7 @@ search = (
 	qfv_processinfo_t,
 	qfv_stepinfo_t,
 	qfv_jobinfo_t,
+	qfv_resourceinfo_t,
 	qfv_graphinfo_t,
 	qfv_samplercreateinfo_t,
 	qfv_samplerinfo_t,
@@ -640,11 +641,8 @@ parse = {
 			values = steps;
 		};
 	};
-	qfv_graphinfo_s = {
-		.name = qfv_graphinfo_t;
-		properties = ignore;
-		output = ignore;
-		renderpasses = ignore;
+	qfv_resourceinfo_s = {
+		.name = qfv_resourceinfo_t;
 		images = {
 			type = (labeledarray, qfv_imageinfo_t, name);
 			size = num_images;
@@ -665,6 +663,23 @@ parse = {
 			size = num_bufferviews;
 			values = bufferviews;
 		};
+	};
+	qfv_graphinfo_s = {
+		.name = qfv_graphinfo_t;
+		properties = ignore;
+		output = ignore;
+		renderpasses = ignore;
+		images = {
+			type = (labeledarray, qfv_imageinfo_t, name);
+			size = num_images;
+			values = images;
+		};
+		imageviews = {
+			type = (labeledarray, qfv_imageviewinfo_t, name);
+			size = num_imageviews;
+			values = imageviews;
+		};
+		resources = auto;
 		framebuffers = {
 			type = (labeledarray, qfv_framebufferinfo_t, name);
 			size = num_framebuffers;
