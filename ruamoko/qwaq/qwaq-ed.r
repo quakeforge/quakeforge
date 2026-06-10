@@ -129,6 +129,7 @@ void Painter_AddBox (vec2 c, vec2 e, float r, vec4 color) = #0;
 void Painter_AddBezier (vec2 p0, vec2 p1, vec2 p2, vec2 p3, float r,
 						vec4 color) = #0;
 
+void Render_RunJob (string name) = #0;
 void Render_UpdateBuffer (string name, ulong offset, void *data,
 						  ulong size) = #0;
 ulong Render_BufferAddress (string name) = #0;
@@ -2187,6 +2188,8 @@ main (int argc, string *argv)
 	plitem_t *config = PL_GetPropertyList (render_graph_cfg);
 	init_graphics (config, qent_comp_count, qwaq_components);
 	PL_Release (config);
+
+	Render_RunJob ("brdf");
 
 	uint pixpal = load_resource ("pixpal.meta");
 

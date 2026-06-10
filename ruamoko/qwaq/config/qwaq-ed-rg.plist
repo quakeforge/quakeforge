@@ -802,6 +802,18 @@ render_graph = {
 				};
 			};
 		};
+		brdf = {
+			layout = {
+				descriptorSets = (particle_set);
+				pushConstants = {
+					compute = {
+						brdf_w = uint;
+						brdf_h = uint;
+						brdf_data = ptr;
+					};
+				};
+			};
+		};
 		fstriangle = {
 			shader = {
 				vertex = {
@@ -1606,6 +1618,23 @@ render_graph = {
 		};
 	};
 	resources = {
+		images = {
+			brdf = {
+				imageType = `2d;
+				format = r16g16b16a16_sfloat;
+				samples = 1;
+				extent = {
+					width = 256;
+					height = 256;
+					depth = 1;
+				};
+				mipLevels = 1;
+				arrayLayers = 1;
+				tiling = optimal;
+				usage = transfer_dst|sampled;
+				initialLayout = undefined;
+			};
+		};
 		buffers = {
 			planetary = {
 				size = 1048576;
@@ -3019,6 +3048,56 @@ render_graph = {
 							{ func = capture_initiate; },
 							{ func = submit_output; },
 							{ func = present_output; },
+						);
+					};
+				};
+			};
+		};
+		brdf = {
+			steps = {
+				brdf_compute = {
+					color = "[0.6, 0.8, 0.9]";
+					compute = {
+						pipelines = {
+							brdf = {
+								color = "[0.3, 0.8, 0.9]";
+								tasks = (
+									{ func = blackboard_set_uint;
+									  params = ("\"brdf_w\"", 256); },
+									{ func = blackboard_set_uint;
+									  params = ("\"brdf_h\"", 256); },
+									{ func = blackboard_set_bufferptr;
+									  params = ("\"brdf_data\"", "\"brdf\""); },
+									{ func = set_dispatch;
+									  params = (16, 16, 1); },
+								);
+								stage = {
+									name = main;
+									module = pbr_brdf.r.spv;
+								};
+								layout = $brdf.layout;
+							};
+						};
+					};
+				};
+				brdf_image = {
+					color = "[0.6, 0.8, 0.9]";
+					dependencies = (brdf_compute);
+					process = {
+						tasks = (
+							{ func = buffer_barrier;
+							  params = ("\"brdf\"",
+										bb_shaderwrite_to_transferread); },
+							{ func = image_barrier;
+							  params = ("\"brdf\"",
+										lt_undefined_to_transferdst); },
+							{ func = copy_buffer_to_image;
+							  params = ("\"brdf\"", 0, 0, 0,
+										"\"brdf\"", 0, 0, 0, 256, 256, 1); },
+							{ func = image_barrier;
+							  params = ("\"brdf\"",
+										lt_transferdst_to_shaderreadonly); },
+							{ func = submit_depth; },
 						);
 					};
 				};
