@@ -612,6 +612,15 @@ bi(Painter_AddBezier)
 	}
 }
 
+bi (Render_RunJob)
+{
+	qfZoneScoped (true);
+	if (r_funcs->RunRenderJob) {
+		const char *name = P_GSTRING (pr, 0);
+		r_funcs->RunRenderJob (name);
+	}
+}
+
 bi (Render_UpdateBuffer)
 {
 	qfZoneScoped (true);
@@ -627,7 +636,7 @@ bi (Render_UpdateBuffer)
 bi (Render_BufferAddress)
 {
 	qfZoneScoped (true);
-	if (r_funcs->UpdateBuffer) {
+	if (r_funcs->BufferAddress) {
 		const char *name = P_GSTRING (pr, 0);
 		R_ULONG (pr) = r_funcs->BufferAddress (name);
 	}
@@ -636,7 +645,7 @@ bi (Render_BufferAddress)
 bi (Render_BufferOffset)
 {
 	qfZoneScoped (true);
-	if (r_funcs->UpdateBuffer) {
+	if (r_funcs->BufferOffset) {
 		const char *name = P_GSTRING (pr, 0);
 		R_ULONG (pr) = r_funcs->BufferOffset (name);
 	}
@@ -645,7 +654,7 @@ bi (Render_BufferOffset)
 bi (Render_BufferSize)
 {
 	qfZoneScoped (true);
-	if (r_funcs->UpdateBuffer) {
+	if (r_funcs->BufferSize) {
 		const char *name = P_GSTRING (pr, 0);
 		R_ULONG (pr) = r_funcs->BufferSize (name);
 	}
@@ -738,6 +747,7 @@ static builtin_t builtins[] = {
 	bi(Painter_AddBezier, 6, p(vec2), p(vec2), p(vec2), p(vec2),
 							 p(float), p(vec4)),
 
+	bi(Render_RunJob,          1, p(string)),
 	bi(Render_UpdateBuffer,    4, p(string), p(uint), p(ptr), p(uint)),
 	bi(Render_BufferAddress,   1, p(string)),
 	bi(Render_BufferOffset,    1, p(string)),

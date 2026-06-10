@@ -538,6 +538,14 @@ vulkan_debug_ui (struct imui_ctx_s *imui_ctx)
 }
 
 static void
+vulkan_RunRenderJob (const char *name)
+{
+	auto graph = vulkan_ctx->render_context->graph;
+	auto job = QFV_FindJob (name, graph);
+	QFV_RunRenderJob (vulkan_ctx, job);
+}
+
+static void
 vulkan_UpdateBuffer (const char *name, uint32_t offset,
 					 void *data, uint32_t size)
 {
@@ -846,6 +854,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 
 	.debug_ui = vulkan_debug_ui,
 
+	.RunRenderJob = vulkan_RunRenderJob,
 	.UpdateBuffer = vulkan_UpdateBuffer,
 	.BufferAddress = vulkan_BufferAddress,
 	.BufferOffset = vulkan_BufferOffset,
