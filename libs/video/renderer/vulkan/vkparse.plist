@@ -22,6 +22,9 @@ search = (
 
 	qfv_output_t,
 
+	qfv_imagebarrier_t,
+	qfv_bufferbarrier_t,
+
 	qfv_descriptorsetlayoutinfo_t,
 	qfv_imageinfo_t,
 	qfv_imageviewinfo_t,

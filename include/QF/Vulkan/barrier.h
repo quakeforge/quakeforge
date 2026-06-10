@@ -7,7 +7,7 @@
 #include <vulkan/vulkan.h>
 
 // image layout transitions
-enum {
+typedef enum qfv_imagebarrier_t {
 	qfv_LT_Undefined_to_TransferDst,
 	qfv_LT_Undefined_to_ShaderReadOnly,
 	qfv_LT_TransferDst_to_TransferDst,
@@ -20,10 +20,10 @@ enum {
 	qfv_LT_StorageAtomic_to_StorageReadOnly,
 	qfv_LT_Undefined_to_DepthStencil,
 	qfv_LT_Undefined_to_Color,
-};
+} qfv_imagebarrier_t;
 
 // buffer barriers
-enum {
+typedef enum qfv_bufferbarrier_t {
 	qfv_BB_Unknown_to_TransferWrite,
 	qfv_BB_Unknown_to_ShaderWrite,
 	qfv_BB_UniformRead_to_TransferWrite,
@@ -38,7 +38,7 @@ enum {
 	qfv_BB_ShaderRO_VA_to_ShaderWrite,
 	qfv_BB_ShaderWrite_to_ShaderRO,
 	qfv_BB_ShaderWrite_to_ShaderRW,
-};
+} qfv_bufferbarrier_t;
 
 extern const VkImageMemoryBarrier2 imageBarriers[];
 extern const VkBufferMemoryBarrier2 bufferBarriers[];
