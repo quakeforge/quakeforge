@@ -493,15 +493,15 @@ static qfv_imageviewinfo_t * __attribute__((pure))
 find_imageview (qfv_reference_t *ref, qfv_renderpass_t *rp,
 				qfv_renderctx_t *rctx)
 {
-	auto jinfo = rctx->graphinfo;
+	auto ginfo = rctx->graphinfo;
 	const char *name = ref->name;
 
 	if (strncmp (name, "$imageviews.", 7) == 0) {
 		name += 7;
 	}
 
-	for (uint32_t i = 0; i < jinfo->num_imageviews; i++) {
-		auto viewinfo = &jinfo->imageviews[i];
+	for (uint32_t i = 0; i < ginfo->num_imageviews; i++) {
+		auto viewinfo = &ginfo->imageviews[i];
 		if (strcmp (name, viewinfo->name) == 0) {
 			return viewinfo;
 		}
@@ -1192,13 +1192,13 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 	}
 
 	if (rctx->graphinfo) {
-		auto jinfo = rctx->graphinfo;
-		uint32_t count = jinfo->num_dslayouts + jinfo->num_splayouts;
+		auto ginfo = rctx->graphinfo;
+		uint32_t count = ginfo->num_dslayouts + ginfo->num_splayouts;
 		for (uint32_t i = 0; i < count; i++) {
-			__auto_type setLayout = jinfo->dslayouts[i].setLayout;
+			__auto_type setLayout = ginfo->dslayouts[i].setLayout;
 			dfunc->vkDestroyDescriptorSetLayout (device->dev, setLayout, 0);
 		}
-		delete_memsuper (jinfo->memsuper);
+		delete_memsuper (ginfo->memsuper);
 	}
 	if (rctx->task_functions.tab) {
 		Hash_ForEach (rctx->task_functions.tab, tf_free_syms, 0);
@@ -1321,12 +1321,12 @@ QFV_GetBufferAddress (vulkan_ctx_t *ctx, const char *name, uint32_t frame)
 {
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
-	auto jinfo = rctx->graphinfo;
+	auto ginfo = rctx->graphinfo;
 	auto buffer = QFV_FindBufferInfo (ctx, name);
 	if (!buffer) {
 		return 0;
 	}
-	uint32_t ind = buffer - jinfo->buffers;
+	uint32_t ind = buffer - ginfo->buffers;
 	VkDeviceAddress offset = 0;
 	if (buffer->perframe) {
 		offset = frame * buffer->size;
@@ -1364,12 +1364,12 @@ QFV_UpdateBuffer (vulkan_ctx_t *ctx, const char *name, uint32_t offset,
 {
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
-	auto jinfo = rctx->graphinfo;
+	auto ginfo = rctx->graphinfo;
 	auto bufferinfo = QFV_FindBufferInfo (ctx, name);
 	if (!bufferinfo) {
 		return;
 	}
-	uint32_t ind = bufferinfo - jinfo->buffers;
+	uint32_t ind = bufferinfo - ginfo->buffers;
 	auto buffer = graph->resources->objects[ind].buffer.buffer;
 
 	if (offset + size > bufferinfo->size) {
