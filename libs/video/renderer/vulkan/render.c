@@ -783,6 +783,115 @@ submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	DARRAY_RESIZE (&graph->commands, 0);
 }
 
+static void *
+blackboard_get_var (qfv_renderctx_t *rctx, const char *var, qfv_type_t type)
+{
+	auto bb = &rctx->blackboard;
+	if (!bb->symbols) {
+		Sys_Error ("no blackboard");
+	}
+
+	auto pc = (qfv_pushconstantinfo_t *) Hash_Find (bb->symbols, var);
+	if (!pc) {
+		Sys_Error ("invalid blackboard var %s\n", var);
+	}
+	if (pc->type != type) {
+		Sys_Error ("blackboard var %s wront type: %d vs %d\n", var,
+				   type, pc->type);
+	}
+	return bb->data + pc->offset;
+}
+
+static void
+blackboard_set_float (const exprval_t **params, exprval_t *result,
+						  exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto rctx = ctx->render_context;
+	auto varname = *(const char **) params[1]->value;
+	auto value = *(float *) params[0]->value;
+
+	auto ptr = (float *) blackboard_get_var (rctx, varname, qfv_float);
+	*ptr = value;
+}
+
+static void
+blackboard_set_int (const exprval_t **params, exprval_t *result,
+						  exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto rctx = ctx->render_context;
+	auto varname = *(const char **) params[1]->value;
+	auto value = *(int *) params[0]->value;
+
+	auto ptr = (int *) blackboard_get_var (rctx, varname, qfv_int);
+	*ptr = value;
+}
+
+static void
+blackboard_set_uint (const exprval_t **params, exprval_t *result,
+						  exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto rctx = ctx->render_context;
+	auto varname = *(const char **) params[1]->value;
+	auto value = *(uint32_t *) params[0]->value;
+
+	auto ptr = (uint32_t *) blackboard_get_var (rctx, varname, qfv_uint);
+	*ptr = value;
+}
+
+static void
+blackboard_set_vec2 (const exprval_t **params, exprval_t *result,
+						  exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto rctx = ctx->render_context;
+	auto varname = *(const char **) params[1]->value;
+	auto value = *(vec2f_t *) params[0]->value;
+
+	auto ptr = (vec2f_t *) blackboard_get_var (rctx, varname, qfv_vec2);
+	*ptr = value;
+}
+
+static void
+blackboard_set_vec3 (const exprval_t **params, exprval_t *result,
+						  exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto rctx = ctx->render_context;
+	auto varname = *(const char **) params[1]->value;
+	auto value = *(vec3f_t *) params[0]->value;
+
+	auto ptr = (vec3f_t *) blackboard_get_var (rctx, varname, qfv_vec3);
+	VectorCopy (value, *ptr);
+}
+
+static void
+blackboard_set_vec4 (const exprval_t **params, exprval_t *result,
+						  exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto rctx = ctx->render_context;
+	auto varname = *(const char **) params[1]->value;
+	auto value = *(vec4f_t *) params[0]->value;
+
+	auto ptr = (vec4f_t *) blackboard_get_var (rctx, varname, qfv_vec4);
+	*ptr = value;
+}
+
 static void
 blackboard_set_bufferptr (const exprval_t **params, exprval_t *result,
 						  exprctx_t *ectx)
@@ -794,25 +903,13 @@ blackboard_set_bufferptr (const exprval_t **params, exprval_t *result,
 	auto varname = *(const char **) params[1]->value;
 	auto bufname = *(const char **) params[0]->value;
 
-	auto bb = &rctx->blackboard;
-	if (!bb->symbols) {
-		Sys_Error ("no blackboard");
-	}
 
-	auto pc = (qfv_pushconstantinfo_t *) Hash_Find (bb->symbols, varname);
-	if (!pc) {
-		Sys_Error ("invalid blackboard var %s\n", varname);
-	}
-	if (pc->type != qfv_ptr) {
-		Sys_Error ("blackboard var %s not a pointer\n", varname);
-	}
-
+	auto ptr = (VkDeviceAddress *) blackboard_get_var (rctx, varname, qfv_ptr);
 	auto addr = QFV_GetBufferAddress (ctx, bufname, ctx->curFrame);
 	if (!addr) {
 		Sys_Error ("invalid buffer %s\n", bufname);
 	}
 
-	auto ptr = (VkDeviceAddress *) (bb->data + pc->offset);
 	*ptr = addr;
 }
 
@@ -843,6 +940,23 @@ static exprfunc_t submit_render_func[] = {
 	{}
 };
 
+#define bbfunc(type) \
+static exprtype_t *blackboard_set_##type##_params[] = { \
+	&cexpr_##type, \
+	&cexpr_string, \
+}; \
+static exprfunc_t blackboard_set_##type##_func[] = { \
+	{ .func = blackboard_set_##type, .num_params = 2, \
+		blackboard_set_##type##_params }, \
+	{} \
+}
+
+bbfunc(float);
+bbfunc(int);
+bbfunc(uint);
+bbfunc(vec2);
+bbfunc(vec3);
+bbfunc(vec4);
 static exprtype_t *blackboard_set_bufferptr_params[] = {
 	&cexpr_string,
 	&cexpr_string,
@@ -853,6 +967,11 @@ static exprfunc_t blackboard_set_bufferptr_func[] = {
 	{}
 };
 
+#undef bbfunc
+#define bbfunc_str(str) #str
+#define bbfunc_decl(name) { bbfunc_str(name), &cexpr_function, name##_func }
+#define bbfunc(type) bbfunc_decl(blackboard_set_##type)
+
 static exprsym_t render_task_syms[] = {
 	{ "wait_on_fence", &cexpr_function, wait_on_fence_func },
 	{ "update_framebuffer", &cexpr_function, update_framebuffer_func },
@@ -860,8 +979,14 @@ static exprsym_t render_task_syms[] = {
 	{ "submit_depth", &cexpr_function, submit_depth_func },
 	{ "submit_render", &cexpr_function, submit_render_func },
 
+	bbfunc(float),
+	bbfunc(int),
+	bbfunc(uint),
+	bbfunc(vec2),
+	bbfunc(vec3),
+	bbfunc(vec4),
 	{ "blackboard_set_bufferptr", &cexpr_function,
-		blackboard_set_bufferptr_func },
+	  blackboard_set_bufferptr_func },
 	{}
 };
 
