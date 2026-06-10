@@ -612,13 +612,13 @@ setup_resources (vulkan_ctx_t *ctx,
 				.initialLayout = img->initialLayout,
 			},
 		};
-		img->object = &images[i];
+		img->object = &images[i] - resources->objects;
 
 		image_views[i] = (qfv_resobj_t) {
 			.name = imgview->name,
 			.type = qfv_res_image_view,
 			.image_view = {
-				.image = img->object - resources->objects,
+				.image = img->object,
 				.flags = imgview->flags,
 				.type = imgview->viewType,
 				.format = imgview->format,
@@ -627,7 +627,7 @@ setup_resources (vulkan_ctx_t *ctx,
 			},
 		};
 		if (!image_views[i].image_view.format) {
-			image_views[i].image_view.format = img->object->image.format;
+			image_views[i].image_view.format = images[img->object].image.format;
 		}
 		imgview->object = &image_views[i] - resources->objects;
 	}

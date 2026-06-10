@@ -84,7 +84,7 @@ typedef struct qfv_imageinfo_s {
 	VkImageTiling tiling;
 	VkImageUsageFlags usage;
 	VkImageLayout initialLayout;
-	struct qfv_resobj_s *object;
+	uint32_t    object;
 } qfv_imageinfo_t;
 
 typedef struct qfv_imageviewinfo_s {
