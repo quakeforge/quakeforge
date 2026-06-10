@@ -499,7 +499,9 @@ vulkan_UpdateScreen (SCR_Func *scr_funcs, void *scrf_data)
 	qfZoneNamed (zone, true);
 	vulkan_set_2d (1);//FIXME
 	Vulkan_SetScrFuncs (scr_funcs, scrf_data, vulkan_ctx);
-	QFV_RunRenderJob (vulkan_ctx);
+	auto graph = vulkan_ctx->render_context->graph;
+	auto job = QFV_FindJob ("main", graph);//FIXME
+	QFV_RunRenderJob (vulkan_ctx, job);
 }
 
 static void

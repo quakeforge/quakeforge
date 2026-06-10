@@ -442,12 +442,11 @@ run_deletion_queue (vulkan_ctx_t *ctx)
 }
 
 void
-QFV_RunRenderJob (vulkan_ctx_t *ctx)
+QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job)
 {
 	qfZoneNamed (zone, true);
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
-	auto job = &graph->jobs[0];
 	int64_t start = Sys_LongTime ();
 
 	run_deletion_queue (ctx);
@@ -1297,10 +1296,21 @@ QFV_FindResource (vulkan_ctx_t *ctx, const char *name, qfv_renderpass_t *rp)
 	return 0;
 }
 
-qfv_step_t *
-QFV_FindStep (const char *name, qfv_graph_t *graph)
+qfv_job_t *
+QFV_FindJob (const char *name, qfv_graph_t *graph)
 {
-	auto job = &graph->jobs[0];
+	for (uint32_t i = 0; i < graph->num_jobs; i++) {
+		auto job = &graph->jobs[i];
+		if (!strcmp (job->label.name, name)) {
+			return job;
+		}
+	}
+	return 0;
+}
+
+qfv_step_t *
+QFV_FindStep (const char *name, qfv_job_t *job)
+{
 	for (uint32_t i = 0; i < job->num_steps; i++) {
 		auto step = &job->steps[i];
 		if (!strcmp (step->label.name, name)) {

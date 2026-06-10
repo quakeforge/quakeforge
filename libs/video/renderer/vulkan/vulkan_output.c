@@ -379,7 +379,8 @@ output_shutdown (exprctx_t *ectx)
 		}
 		free (octx->outputSemaphores);
 	}
-	auto step = QFV_FindStep ("output", taskctx->graph);
+	auto job = QFV_FindJob ("main", taskctx->graph);//FIXME
+	auto step = QFV_FindStep ("output", job);
 	auto render = step->render;
 	auto rp = &render->renderpasses[0];
 	rp->beginInfo.framebuffer = 0;

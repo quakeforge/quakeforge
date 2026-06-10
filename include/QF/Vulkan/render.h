@@ -631,7 +631,7 @@ void QFV_RunRenderPassCmd (VkCommandBuffer cmd, qfv_taskctx_t *taskctx,
 						   qfv_renderpass_t *renderpass);
 void QFV_RunRenderPass (qfv_taskctx_t *taskctx, qfv_renderpass_t *renderpass,
 						uint32_t width, uint32_t height);
-void QFV_RunRenderJob (vulkan_ctx_t *ctx);
+void QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job);
 void QFV_LoadRenderInfo (vulkan_ctx_t *ctx, struct plitem_s *item);
 void QFV_LoadSamplerInfo (vulkan_ctx_t *ctx, struct plitem_s *item);
 void QFV_LoadEntqueueInfo (vulkan_ctx_t *ctx, struct plitem_s *item);
@@ -691,8 +691,9 @@ void QFV_PushBlackboard (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 void QFV_BindDescriptors (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 						  qfv_pipeline_t *pipeline);
 
+qfv_job_t *QFV_FindJob (const char *name, qfv_graph_t *graph);
 qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_graph_t *graph) __attribute__((pure));
-qfv_step_t *QFV_FindStep (const char *step, qfv_graph_t *graph)
+qfv_step_t *QFV_FindStep (const char *name, qfv_job_t *job)
 	__attribute__((pure));
 qfv_resobj_t *QFV_FindResource (vulkan_ctx_t *ctx, const char *name,
 								qfv_renderpass_t *rp) __attribute__((pure));
