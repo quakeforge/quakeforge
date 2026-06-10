@@ -38,7 +38,7 @@ vec3 importanceSample_GGX (vec2 Xi, float roughness, vec3 normal)
 	vec3 up = abs(normal.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
 	vec3 tangentX = normalize(cross(up, normal));
 	vec3 tangentY = normalize(cross(normal, tangentX));
-	return normalize(tangentX * H.x + tangentY * H.z + normal * H.z);
+	return normalize(tangentX * H.x + tangentY * H.y + normal * H.z);
 }
 
 float G_SchlicksmithGGX(float dotNL, float dotNV, float roughness)
@@ -53,13 +53,14 @@ float V_Ashikhmin(float NdotL, float NdotV)
 {
 	return clamp (1/(4 * (NdotL + NdotV - NdotL * NdotV)), 0, 1);
 }
+
 float D_Charlie(float sheenRoughness, float NdotH)
 {
 	sheenRoughness = max(sheenRoughness, 1e-6);
 	float invR = 1 / sheenRoughness;
 	float cos2h = NdotH * NdotH;
 	float sin2h = 1 - cos2h;
-	return (1 + invR) * pow (sin2h, invR * 0.5) / (2 * PI);
+	return (2 + invR) * pow (sin2h, invR * 0.5) / (2 * PI);
 }
 
 vec3 importanceSample_Charlie (vec2 Xi, float roughness, vec3 normal)
@@ -69,21 +70,21 @@ vec3 importanceSample_Charlie (vec2 Xi, float roughness, vec3 normal)
 	float sinTheta = pow(Xi.y, alpha / (2 * alpha + 1));
 	float cosTheta = sqrt (1 - sinTheta * sinTheta);
 	vec3 H = vec3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
-	vec3 up = abs(normal.z) < 0.999 ? vec3(0,0,1) : vec3(0,1,0);
+	vec3 up = abs(normal.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
 	vec3 tangentX = normalize(cross(up, normal));
 	vec3 tangentY = normalize(cross(normal, tangentX));
-	return normalize(tangentX * H.x + tangentY * H.z + normal * H.z);
+	return normalize(tangentX * H.x + tangentY * H.y + normal * H.z);
 }
 
 vec3 BRDF (float NoV, float roughness)
 {
 	const vec3 N = vec3(0,0,1);
-	vec3 V = vec3 (sqrt(1- NoV * NoV), 0, NoV);
+	vec3 V = vec3 (sqrt(1 - NoV * NoV), 0, NoV);
 	vec3 LUT = vec3(0);
 	for (uint i = 0; i < NUM_SAMPLES; i++) {
 		vec2 Xi = hammersley2d (i, NUM_SAMPLES);
 		vec3 H = importanceSample_GGX (Xi, roughness, N);
-		vec3 L = normalize (2 * dot(V, H) * H - V);
+		vec3 L = 2 * dot(V, H) * H - V;
 		float dotNL = max(dot(N, L), 0);
 		float dotNV = max(dot(N, V), 0);
 		float dotVH = max(dot(V, H), 0);
@@ -95,7 +96,7 @@ vec3 BRDF (float NoV, float roughness)
 			LUT.rg += vec2((1 - Fc), Fc) * G_Vis;
 		}
 	}
-	return LUT;
+	return LUT / NUM_SAMPLES;
 }
 
 [shader(GLCompute, LocalSize=[16,16,1])]
