@@ -1303,7 +1303,7 @@ pl_parseitem (const char *string, hashctx_t **hashctx,
 
 	if (!(newpl = parse (&pl))) {
 		if (pl.errmsg) {
-			Sys_Printf ("plist: %d,%d: %s\n", pl.line, pl.pos - pl.line_start,
+			Sys_Printf (RED"plist"DFL": %d,%d: %s\n", pl.line, pl.pos - pl.line_start,
 						pl.errmsg->str);
 			dstring_delete (pl.errmsg);
 		}
