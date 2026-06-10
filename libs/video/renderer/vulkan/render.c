@@ -300,25 +300,23 @@ run_renderpass (qfv_renderpass_t *rp, qfv_taskctx_t *taskctx)
 
 static void
 run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
-					  vulkan_ctx_t *ctx)
+					  qfv_taskctx_t *taskctx)
 {
 	if (pipeline->disabled) {
 		return;
 	}
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
 	auto rctx = ctx->render_context;
 	auto frame = &rctx->frames.a[ctx->curFrame];
 	qftVkScopedZone (frame->qftVkCtx, cmd, "compute");
 	dfunc->vkCmdBindPipeline (cmd, pipeline->bindPoint, pipeline->pipeline);
 
-	qfv_taskctx_t taskctx = {
-		.ctx = ctx,
-		.frame = frame,
-		.pipeline = pipeline,
-		.cmd = cmd,
-	};
-	run_tasks (pipeline->task_count, pipeline->tasks, &taskctx);
+	qfv_taskctx_t tctx = *taskctx;
+	tctx.pipeline = pipeline,
+	tctx.cmd = cmd,
+	run_tasks (pipeline->task_count, pipeline->tasks, &tctx);
 
 	vec4u_t     d = pipeline->dispatch;
 	if (d[0] && d[1] && d[2]) {
@@ -354,7 +352,7 @@ run_compute (qfv_compute_t *comp, qfv_taskctx_t *taskctx, qfv_step_t *step)
 
 	for (uint32_t i = 0; i < comp->pipeline_count; i++) {
 		__auto_type pipeline = &comp->pipelines[i];
-		run_compute_pipeline (pipeline, cmd, ctx);
+		run_compute_pipeline (pipeline, cmd, taskctx);
 	}
 	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
@@ -778,6 +776,17 @@ submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	DARRAY_RESIZE (&job->commands, 0);
 }
 
+static void
+set_dispatch (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto pipeline = taskctx->pipeline;
+	pipeline->dispatch[0] = *(uint32_t *) params[2]->value;
+	pipeline->dispatch[1] = *(uint32_t *) params[1]->value;
+	pipeline->dispatch[2] = *(uint32_t *) params[0]->value;
+}
+
 static VkBuffer
 get_buffer_by_name (vulkan_ctx_t *ctx, const char *name)
 {
@@ -886,17 +895,17 @@ copy_buffer_to_image (const exprval_t **params, exprval_t *result, exprctx_t *ec
 	auto dfunc = device->funcs;
 	auto job = taskctx->job;
 
-	uint32_t d = *(uint32_t *) params[10]->value;
-	uint32_t h = *(uint32_t *) params[9]->value;
-	uint32_t w = *(uint32_t *) params[8]->value;
-	uint32_t z = *(uint32_t *) params[7]->value;
-	uint32_t y = *(uint32_t *) params[6]->value;
+	uint32_t d = *(uint32_t *) params[0]->value;
+	uint32_t h = *(uint32_t *) params[1]->value;
+	uint32_t w = *(uint32_t *) params[2]->value;
+	uint32_t z = *(uint32_t *) params[3]->value;
+	uint32_t y = *(uint32_t *) params[4]->value;
 	uint32_t x = *(uint32_t *) params[5]->value;
-	const char *imagename = *(const char **) params[4]->value;
-	uint32_t image_height = *(uint32_t *) params[3]->value;
-	uint32_t row_len = *(uint32_t *) params[2]->value;
-	uint32_t offset = *(uint32_t *) params[1]->value;
-	const char *buffername = *(const char **) params[0]->value;
+	const char *imagename = *(const char **) params[6]->value;
+	uint32_t image_height = *(uint32_t *) params[7]->value;
+	uint32_t row_len = *(uint32_t *) params[8]->value;
+	uint32_t offset = *(uint32_t *) params[9]->value;
+	const char *buffername = *(const char **) params[10]->value;
 
 	VkBufferImageCopy2 region = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
@@ -904,7 +913,7 @@ copy_buffer_to_image (const exprval_t **params, exprval_t *result, exprctx_t *ec
 		.bufferRowLength = row_len,
 		.bufferImageHeight = image_height,
 		//FIXME
-		.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1},
+		.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
 		.imageOffset = {x, y, z},
 		.imageExtent = {w, h, d},
 	};
@@ -1092,6 +1101,16 @@ static exprfunc_t submit_render_func[] = {
 	{}
 };
 
+static exprtype_t *set_dispatch_params[] = {
+	&cexpr_uint,
+	&cexpr_uint,
+	&cexpr_uint,
+};
+static exprfunc_t set_dispatch_func[] = {
+	{ .func = set_dispatch, .num_params = 3, set_dispatch_params },
+	{}
+};
+
 static exprtype_t *buffer_barrier_params[] = {
 	&qfv_bufferbarrier_t_type,
 	&cexpr_string,
@@ -1167,6 +1186,8 @@ static exprsym_t render_task_syms[] = {
 	{ "fullscreen_pass", &cexpr_function, fullscreen_pass_func },
 	{ "submit_depth", &cexpr_function, submit_depth_func },
 	{ "submit_render", &cexpr_function, submit_render_func },
+
+	{ "set_dispatch", &cexpr_function, set_dispatch_func },
 
 	{ "buffer_barrier", &cexpr_function, buffer_barrier_func },
 	{ "image_barrier", &cexpr_function, image_barrier_func },
