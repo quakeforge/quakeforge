@@ -515,7 +515,7 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dep.bufferMemoryBarrierCount = 0;
 	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 	dfunc->vkEndCommandBuffer (cmd);
-	QFV_AppendCmdBuffer (ctx, cmd);
+	QFV_AppendCmdBuffer (taskctx->job, cmd);
 
 	gctx->objects.size = 0;
 	gctx->obj_ids.size = 0;
@@ -612,7 +612,7 @@ gizmo_sync (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 
 	dfunc->vkEndCommandBuffer (cmd);
-	QFV_AppendCmdBuffer (ctx, cmd);
+	QFV_AppendCmdBuffer (taskctx->job, cmd);
 }
 
 static void

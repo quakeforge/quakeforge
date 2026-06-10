@@ -452,7 +452,7 @@ copy_maps (uint32_t start, uint32_t count, int stage_id,
 		dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 	}
 	dfunc->vkEndCommandBuffer (cmd);
-	QFV_AppendCmdBuffer (ctx, cmd);
+	QFV_AppendCmdBuffer (taskctx->job, cmd);
 }
 
 static void
@@ -713,8 +713,9 @@ enqueue_map (uint32_t *ids, lightingframe_t *lframe, light_control_t *r)
 }
 
 static void
-transition_shadow_targets (lightingframe_t *lframe, vulkan_ctx_t *ctx)
+transition_shadow_targets (lightingframe_t *lframe, qfv_taskctx_t *taskctx)
 {
+	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto lctx = ctx->lighting_context;
@@ -772,7 +773,7 @@ transition_shadow_targets (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 	dep.imageMemoryBarrierCount = num_barriers;
 	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 	dfunc->vkEndCommandBuffer (cmd);
-	QFV_AppendCmdBuffer (ctx, cmd);
+	QFV_AppendCmdBuffer (taskctx->job, cmd);
 }
 
 static float
@@ -1211,9 +1212,10 @@ lighting_draw_splats (const exprval_t **params, exprval_t *result,
 }
 
 static void
-lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
+lighting_rewrite_ids (lightingframe_t *lframe, qfv_taskctx_t *taskctx)
 {
 	uint32_t    count = 0;
+	auto ctx = taskctx->ctx;
 	auto lctx = ctx->lighting_context;
 
 	for (int i = 0; i < ST_COUNT; i++) {
@@ -1362,7 +1364,7 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 	}
 
 	QFV_PacketSubmit (packet);
-	transition_shadow_targets (lframe, ctx);
+	transition_shadow_targets (lframe, taskctx);
 
 	if (developer & SYS_lighting) {
 		Vulkan_Draw_String (vid.width - 32, 16,
@@ -1403,7 +1405,7 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 	if (!count) {
 		//FIXME ids shouldn't need rewriting, but lighting_rewrite_ids also
 		//builds the stage queue
-		lighting_rewrite_ids (lframe, ctx);
+		lighting_rewrite_ids (lframe, taskctx);
 		return;
 	}
 	if (scr_fisheye) {
@@ -1501,7 +1503,7 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 		}
 	}
 	if (0) printf ("%d,%d/%d visible\n", c, ci, count);
-	lighting_rewrite_ids (lframe, ctx);
+	lighting_rewrite_ids (lframe, taskctx);
 }
 
 static void

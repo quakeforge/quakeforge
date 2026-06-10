@@ -78,7 +78,7 @@ mousepick_initiate (const exprval_t **params, exprval_t *result,
 		.imageExtent = frame->extent,
 	});
 	dfunc->vkEndCommandBuffer (cmd);
-	QFV_AppendCmdBuffer (ctx, cmd);
+	QFV_AppendCmdBuffer (taskctx->job, cmd);
 
 	frame->initiated = true;
 }

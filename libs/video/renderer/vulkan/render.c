@@ -71,11 +71,9 @@ QFV_GetCmdBuffer (vulkan_ctx_t *ctx, bool secondary)
 }
 
 void
-QFV_AppendCmdBuffer (vulkan_ctx_t *ctx, VkCommandBuffer cmd)
+QFV_AppendCmdBuffer (qfv_job_t *job, VkCommandBuffer cmd)
 {
-	__auto_type rctx = ctx->render_context;
-	__auto_type graph = rctx->graph;
-	DARRAY_APPEND (&graph->commands, cmd);
+	DARRAY_APPEND (&job->commands, cmd);
 }
 
 void
@@ -283,8 +281,7 @@ run_renderpass (qfv_renderpass_t *rp, qfv_taskctx_t *taskctx)
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	auto rctx = ctx->render_context;
-	auto graph = rctx->graph;
+	auto job = taskctx->job;
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
@@ -298,7 +295,7 @@ run_renderpass (qfv_renderpass_t *rp, qfv_taskctx_t *taskctx)
 	QFV_RunRenderPassCmd (cmd, taskctx, rp);
 
 	dfunc->vkEndCommandBuffer (cmd);
-	DARRAY_APPEND (&graph->commands, cmd);
+	DARRAY_APPEND (&job->commands, cmd);
 }
 
 static void
@@ -339,7 +336,7 @@ run_compute (qfv_compute_t *comp, qfv_taskctx_t *taskctx, qfv_step_t *step)
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	auto graph = taskctx->graph;
+	auto job = taskctx->job;
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
@@ -361,7 +358,7 @@ run_compute (qfv_compute_t *comp, qfv_taskctx_t *taskctx, qfv_step_t *step)
 	}
 	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
-	DARRAY_APPEND (&graph->commands, cmd);
+	DARRAY_APPEND (&job->commands, cmd);
 }
 
 static void
@@ -743,19 +740,18 @@ submit_depth (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto rctx = ctx->render_context;
-	auto graph = rctx->graph;
+	auto job = taskctx->job;
 
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto queue = &device->queue;
 	VkSubmitInfo submitInfo = {
 		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-		.commandBufferCount = graph->commands.size,
-		.pCommandBuffers = graph->commands.a,
+		.commandBufferCount = job->commands.size,
+		.pCommandBuffers = job->commands.a,
 	};
 	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, VK_NULL_HANDLE);
-	DARRAY_RESIZE (&graph->commands, 0);
+	DARRAY_RESIZE (&job->commands, 0);
 }
 
 static void
@@ -765,7 +761,7 @@ submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto rctx = ctx->render_context;
-	auto graph = rctx->graph;
+	auto job = taskctx->job;
 
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
@@ -773,14 +769,14 @@ submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto frame = &rctx->frames.a[ctx->curFrame];
 	VkSubmitInfo submitInfo = {
 		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-		.commandBufferCount = graph->commands.size,
-		.pCommandBuffers = graph->commands.a,
+		.commandBufferCount = job->commands.size,
+		.pCommandBuffers = job->commands.a,
 		.signalSemaphoreCount = 1,
 		.pSignalSemaphores = &frame->renderDoneSemaphore,
 	};
 	dfunc->vkResetFences (device->dev, 1, &frame->fence);
 	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
-	DARRAY_RESIZE (&graph->commands, 0);
+	DARRAY_RESIZE (&job->commands, 0);
 }
 
 static void *
@@ -1163,11 +1159,11 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 					}
 				}
 			}
+			DARRAY_CLEAR (&job->commands);
 		}
 		for (uint32_t i = 0; i < graph->num_framebuffers; i++) {
 			destroy_resource_array (ctx, &graph->framebuffer_resources[i]);
 		}
-		DARRAY_CLEAR (&graph->commands);
 		for (uint32_t i = 0; i < graph->num_dsmanagers; i++) {
 			QFV_DSManager_Destroy (graph->dsmanager[i]);
 		}

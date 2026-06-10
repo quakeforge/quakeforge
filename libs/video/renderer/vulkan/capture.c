@@ -154,7 +154,7 @@ capture_initiate (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	dfunc->vkCmdPipelineBarrier2 (cmd, &end_dependency);
 	dfunc->vkEndCommandBuffer (cmd);
-	QFV_AppendCmdBuffer (ctx, cmd);
+	QFV_AppendCmdBuffer (taskctx->job, cmd);
 
 	frame->initiated = true;
 	auto time = Sys_LongTime ();

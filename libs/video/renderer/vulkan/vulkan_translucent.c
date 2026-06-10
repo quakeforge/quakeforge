@@ -230,7 +230,7 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 
 	dfunc->vkEndCommandBuffer (cmd);
-	QFV_AppendCmdBuffer (ctx, cmd);
+	QFV_AppendCmdBuffer (taskctx->job, cmd);
 
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "trans.clear");
 	qfv_transtate_t *state = QFV_PacketExtend (packet, 2 * sizeof (*state));
@@ -297,7 +297,7 @@ sync_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 
 	dfunc->vkEndCommandBuffer (cmd);
-	QFV_AppendCmdBuffer (ctx, cmd);
+	QFV_AppendCmdBuffer (taskctx->job, cmd);
 }
 
 static void

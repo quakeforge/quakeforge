@@ -304,7 +304,7 @@ submit_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	auto rctx = ctx->render_context;
 	auto octx = ctx->output_context;
-	auto graph = taskctx->graph;
+	auto job = taskctx->job;
 
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
@@ -324,14 +324,14 @@ submit_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.waitSemaphoreCount = 2,
 		.pWaitSemaphores = waitSemaphores,
 		.pWaitDstStageMask = waitStages,
-		.commandBufferCount = graph->commands.size,
-		.pCommandBuffers = graph->commands.a,
+		.commandBufferCount = job->commands.size,
+		.pCommandBuffers = job->commands.a,
 		.signalSemaphoreCount = 1,
 		.pSignalSemaphores = &octx->outputSemaphores[ctx->swapImageIndex],
 	};
 	dfunc->vkResetFences (device->dev, 1, &oframe->fence);
 	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, oframe->fence);
-	DARRAY_RESIZE (&graph->commands, 0);
+	DARRAY_RESIZE (&job->commands, 0);
 }
 
 static void

@@ -1486,6 +1486,7 @@ init_job (uint32_t ind, graphptr_t *gp, objstate_t *s)
 		.label = make_label (jinfo->name, jinfo->color),
 		.num_steps = jinfo->num_steps,
 		.steps = &gp->steps[s->inds.num_steps],
+		.commands = DARRAY_STATIC_INIT (16),
 	};
 	s->jinfo = jinfo;
 	for (uint32_t i = 0; i < jinfo->num_steps; i++) {
@@ -1536,7 +1537,6 @@ create_graph (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 						 + counts->num_comp_pipelines,
 		.num_layouts = counts->num_layouts,
 		.num_jobs = counts->num_jobs,
-		.commands = DARRAY_STATIC_INIT (16),
 		.num_dsmanagers = num_dslayouts,
 		.num_framebuffers = counts->num_framebuffers,
 		.startup_funcs = DARRAY_STATIC_INIT (16),

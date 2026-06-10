@@ -508,6 +508,8 @@ typedef struct qfv_job_s {
 	uint32_t    num_steps;
 	qfv_step_t *steps;
 	qfv_time_t  time;
+
+	qfv_cmdbufferset_t commands;
 } qfv_job_t;
 
 typedef void (*qfv_initfunc_f) (exprctx_t *ectx);
@@ -526,7 +528,6 @@ typedef struct qfv_graph_s {
 	VkRenderPass *renderpasses;
 	VkPipeline *pipelines;
 	VkPipelineLayout *layouts;
-	qfv_cmdbufferset_t commands;
 	qfv_dsmanager_t **dsmanager;
 	uint32_t    num_dsmanagers;
 	uint32_t    num_framebuffers;
@@ -624,7 +625,7 @@ typedef struct qfv_taskctx_s {
 #define QFV_REND_INLINE GNU89INLINE inline
 
 VkCommandBuffer QFV_GetCmdBuffer (vulkan_ctx_t *ctx, bool secondary);
-void QFV_AppendCmdBuffer (vulkan_ctx_t *ctx, VkCommandBuffer cmd);
+void QFV_AppendCmdBuffer (qfv_job_t *job, VkCommandBuffer cmd);
 
 void QFV_RunRenderPassCmd (VkCommandBuffer cmd, qfv_taskctx_t *taskctx,
 						   qfv_renderpass_t *renderpass);
