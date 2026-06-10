@@ -778,6 +778,166 @@ submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	DARRAY_RESIZE (&job->commands, 0);
 }
 
+static VkBuffer
+get_buffer_by_name (vulkan_ctx_t *ctx, const char *name)
+{
+	auto rctx = ctx->render_context;
+	auto graph = rctx->graph;
+	auto ginfo = rctx->graphinfo;
+	auto buffer = QFV_FindBufferInfo (ctx, name);
+	if (!buffer) {
+		return 0;
+	}
+	uint32_t ind = buffer - ginfo->buffers;
+	return graph->resources->objects[ind].buffer.buffer;
+}
+
+static VkImage
+get_image_by_name (vulkan_ctx_t *ctx, const char *name)
+{
+	auto rctx = ctx->render_context;
+	auto graph = rctx->graph;
+	auto ginfo = rctx->graphinfo;
+	auto image = QFV_FindImageInfo (ctx, name);
+	if (!image) {
+		return 0;
+	}
+	uint32_t ind = image - ginfo->images;
+	return graph->resources->objects[ind].image.image;
+}
+
+static void
+buffer_barrier (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto job = taskctx->job;
+
+	auto buffername = *(const char **) params[1]->value;
+	auto barrier = *(qfv_bufferbarrier_t*) params[0]->value;
+
+	auto cmd = QFV_GetCmdBuffer (ctx, false);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 vac (ctx->va_ctx, "%s.%s.buffer_barrier",
+							  taskctx->job->label.name,
+							  taskctx->step->label.name));
+	VkCommandBufferBeginInfo beginInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	auto bb = bufferBarriers[barrier];
+	bb.buffer = get_buffer_by_name (ctx, buffername);
+	bb.size = VK_WHOLE_SIZE;
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.bufferMemoryBarrierCount = 1,
+		.pBufferMemoryBarriers = &bb,
+	};
+
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
+
+	dfunc->vkEndCommandBuffer (cmd);
+	QFV_AppendCmdBuffer (job, cmd);
+}
+
+static void
+image_barrier (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto job = taskctx->job;
+
+	auto imagename = *(const char **) params[1]->value;
+	auto barrier = *(qfv_imagebarrier_t*) params[0]->value;
+
+	auto cmd = QFV_GetCmdBuffer (ctx, false);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 vac (ctx->va_ctx, "%s.%s.image_barrier",
+							  taskctx->job->label.name,
+							  taskctx->step->label.name));
+	VkCommandBufferBeginInfo beginInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	auto ib = imageBarriers[barrier];
+	ib.image = get_image_by_name (ctx, imagename);
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &ib,
+	};
+
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
+
+	dfunc->vkEndCommandBuffer (cmd);
+	QFV_AppendCmdBuffer (job, cmd);
+}
+
+static void
+copy_buffer_to_image (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto job = taskctx->job;
+
+	uint32_t d = *(uint32_t *) params[10]->value;
+	uint32_t h = *(uint32_t *) params[9]->value;
+	uint32_t w = *(uint32_t *) params[8]->value;
+	uint32_t z = *(uint32_t *) params[7]->value;
+	uint32_t y = *(uint32_t *) params[6]->value;
+	uint32_t x = *(uint32_t *) params[5]->value;
+	const char *imagename = *(const char **) params[4]->value;
+	uint32_t image_height = *(uint32_t *) params[3]->value;
+	uint32_t row_len = *(uint32_t *) params[2]->value;
+	uint32_t offset = *(uint32_t *) params[1]->value;
+	const char *buffername = *(const char **) params[0]->value;
+
+	VkBufferImageCopy2 region = {
+		.sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
+		.bufferOffset = offset,
+		.bufferRowLength = row_len,
+		.bufferImageHeight = image_height,
+		//FIXME
+		.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1},
+		.imageOffset = {x, y, z},
+		.imageExtent = {w, h, d},
+	};
+	VkCopyBufferToImageInfo2 copy = {
+		.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2,
+		.srcBuffer = get_buffer_by_name (ctx, buffername),
+		.dstImage = get_image_by_name (ctx, imagename),
+		.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		.regionCount = 1,
+		.pRegions = &region,
+	};
+
+	auto cmd = QFV_GetCmdBuffer (ctx, false);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 vac (ctx->va_ctx, "%s.%s.image_barrier",
+							  taskctx->job->label.name,
+							  taskctx->step->label.name));
+	VkCommandBufferBeginInfo beginInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	dfunc->vkCmdCopyBufferToImage2 (cmd, &copy);
+
+	dfunc->vkEndCommandBuffer (cmd);
+	QFV_AppendCmdBuffer (job, cmd);
+}
+
 static void *
 blackboard_get_var (qfv_renderctx_t *rctx, const char *var, qfv_type_t type)
 {
@@ -920,6 +1080,7 @@ static exprfunc_t update_framebuffer_func[] = {
 	{ .func = update_framebuffer, .num_params = 1, update_framebuffer_params },
 	{}
 };
+
 static exprfunc_t fullscreen_pass_func[] = {
 	{ .func = fullscreen_pass },
 	{}
@@ -932,6 +1093,43 @@ static exprfunc_t submit_depth_func[] = {
 
 static exprfunc_t submit_render_func[] = {
 	{ .func = submit_render },
+	{}
+};
+
+static exprtype_t *buffer_barrier_params[] = {
+	&qfv_bufferbarrier_t_type,
+	&cexpr_string,
+};
+static exprfunc_t buffer_barrier_func[] = {
+	{ .func = buffer_barrier, .num_params = 2, buffer_barrier_params },
+	{}
+};
+
+static exprtype_t *image_barrier_params[] = {
+	&qfv_imagebarrier_t_type,
+	&cexpr_string,
+};
+static exprfunc_t image_barrier_func[] = {
+	{ .func = image_barrier, .num_params = 2, image_barrier_params },
+	{}
+};
+
+static exprtype_t *copy_buffer_to_image_params[] = {
+	&cexpr_uint,
+	&cexpr_uint,
+	&cexpr_uint,
+	&cexpr_uint,
+	&cexpr_uint,
+	&cexpr_uint,
+	&cexpr_string,
+	&cexpr_uint,
+	&cexpr_uint,
+	&cexpr_uint,
+	&cexpr_string,
+};
+static exprfunc_t copy_buffer_to_image_func[] = {
+	{ .func = copy_buffer_to_image, .num_params = 11,
+	  copy_buffer_to_image_params },
 	{}
 };
 
@@ -973,6 +1171,10 @@ static exprsym_t render_task_syms[] = {
 	{ "fullscreen_pass", &cexpr_function, fullscreen_pass_func },
 	{ "submit_depth", &cexpr_function, submit_depth_func },
 	{ "submit_render", &cexpr_function, submit_render_func },
+
+	{ "buffer_barrier", &cexpr_function, buffer_barrier_func },
+	{ "image_barrier", &cexpr_function, image_barrier_func },
+	{ "copy_buffer_to_image", &cexpr_function, copy_buffer_to_image_func },
 
 	bbfunc(float),
 	bbfunc(int),

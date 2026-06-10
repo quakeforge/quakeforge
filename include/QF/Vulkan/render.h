@@ -674,6 +674,8 @@ qfv_framebufferinfo_t *QFV_FindFramebufferInfo (vulkan_ctx_t *ctx,
 	__attribute__((pure));
 qfv_bufferinfo_t *QFV_FindBufferInfo (vulkan_ctx_t *ctx, const char *name)
 	__attribute__((pure));
+qfv_imageinfo_t *QFV_FindImageInfo (vulkan_ctx_t *ctx, const char *name)
+	__attribute__((pure));
 VkDeviceAddress QFV_GetBufferAddress (vulkan_ctx_t *ctx,
 									  const char *name, uint32_t frame)
 	__attribute__((pure));

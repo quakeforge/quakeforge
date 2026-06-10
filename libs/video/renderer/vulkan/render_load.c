@@ -558,6 +558,15 @@ QFV_FindBufferInfo (vulkan_ctx_t *ctx, const char *name)
 	return find_bufferinfo (ginfo, &ref);
 }
 
+qfv_imageinfo_t *
+QFV_FindImageInfo (vulkan_ctx_t *ctx, const char *name)
+{
+	auto rctx = ctx->render_context;
+	auto ginfo = rctx->graphinfo;
+	qfv_reference_t ref = { .name = name };
+	return find_imageinfo (ginfo, &ref);
+}
+
 static bool
 setup_resources (vulkan_ctx_t *ctx,
 				 qfv_framebufferinfo_t *fbi, const char *name,

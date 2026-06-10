@@ -37,6 +37,10 @@ void Vulkan_Script_SetOutput (struct vulkan_ctx_s *ctx, qfv_output_t *output);
 
 #define QFV_PROPERTIES "properties"
 
+//FIXME duplicate
+extern exprtype_t qfv_imagebarrier_t_type;
+extern exprtype_t qfv_bufferbarrier_t_type;
+
 exprenum_t *QFV_GetEnum (const char *name);
 
 uint64_t QFV_GetHandle (struct hashtab_s *tab, const char *name);

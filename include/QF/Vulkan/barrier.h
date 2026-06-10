@@ -38,6 +38,7 @@ typedef enum qfv_bufferbarrier_t {
 	qfv_BB_ShaderRO_VA_to_ShaderWrite,
 	qfv_BB_ShaderWrite_to_ShaderRO,
 	qfv_BB_ShaderWrite_to_ShaderRW,
+	qfv_BB_ShaderWrite_to_TransferRead,
 } qfv_bufferbarrier_t;
 
 extern const VkImageMemoryBarrier2 imageBarriers[];

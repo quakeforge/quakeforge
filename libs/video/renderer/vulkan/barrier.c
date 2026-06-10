@@ -390,4 +390,13 @@ const VkBufferMemoryBarrier2 bufferBarriers[] = {
 		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 	},
+	[qfv_BB_ShaderWrite_to_TransferRead] = {
+		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+		.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
+		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+	},
 };
