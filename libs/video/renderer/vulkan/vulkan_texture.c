@@ -965,6 +965,7 @@ load_tex (tex_t *tex, void *data)
 	auto texinfo = lt_data->texinfo;
 	auto t = LoadImage (texinfo->layer_files[index], 1, ctx->hunk);
 	tex->data = t->data;
+	tex->loaded = true;
 }
 
 uint32_t
