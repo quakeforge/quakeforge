@@ -26,7 +26,7 @@ spot_cone (vec2 cone, vec3 axis, vec3 dir)
 	return smoothstep (cone.x, mix (cone.x, 1, cone.y), -adot);
 }
 
-float DistributionGGC (vec3 N, vec3 H, float roughness)
+float DistributionGGX (vec3 N, vec3 H, float roughness)
 {
 	float a = roughness * roughness;
 	float a2 = a * a;
@@ -65,7 +65,7 @@ float GeometrySmith (vec3 N, vec3 V, vec3 L, float roughness)
 float
 spec_factor (vec3 N, vec3 V, vec3 L, vec3 H, float roughness)
 {
-	float NDF = DistributionGGC (N, H, roughness);
+	float NDF = DistributionGGX (N, H, roughness);
 	float G   = GeometrySmith (N, V, L, roughness);
 	float numerator = NDF * G;
 	float denominator = 4 * max (N • V, 0) * max (N • L, 0) + 1e-4;
