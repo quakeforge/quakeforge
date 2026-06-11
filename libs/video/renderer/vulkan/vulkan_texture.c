@@ -1054,7 +1054,7 @@ QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
 }
 
 uint32_t
-QFV_TexGetSkinid (vulkan_ctx_t *ctx, uint32_t id)
+QFV_TexGetSkinId (vulkan_ctx_t *ctx, uint32_t id)
 {
 	auto tctx = ctx->texture_context;
 	auto reg = tctx->reg;
@@ -1066,7 +1066,7 @@ QFV_TexGetSkinid (vulkan_ctx_t *ctx, uint32_t id)
 }
 
 void
-QFV_TexSetSkinid (vulkan_ctx_t *ctx, uint32_t id, uint32_t skinid)
+QFV_TexSetSkinId (vulkan_ctx_t *ctx, uint32_t id, uint32_t skinid)
 {
 	auto tctx = ctx->texture_context;
 	auto reg = tctx->reg;

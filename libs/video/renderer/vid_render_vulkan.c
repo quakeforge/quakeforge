@@ -662,13 +662,13 @@ vulkan_load_resource (const char *name, plitem_t *res)
 static uint32_t
 vulkan_get_skinid (uint32_t id)
 {
-	return QFV_TexGetSkinid (vulkan_ctx, id);
+	return QFV_TexGetSkinId (vulkan_ctx, id);
 }
 
 static void
 vulkan_set_skinid (uint32_t id, uint32_t skind)
 {
-	QFV_TexSetSkinid (vulkan_ctx, id, skind);
+	QFV_TexSetSkinId (vulkan_ctx, id, skind);
 }
 
 static void
