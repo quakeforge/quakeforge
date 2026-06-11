@@ -473,12 +473,11 @@ create_cubetex (vulkan_ctx_t *ctx, int size, VkFormat format,
 	return qtex;
 }
 
-qfv_tex_t *
-Vulkan_LoadEnvMap (vulkan_ctx_t *ctx, tex_t *tex, const char *name)
+static qfv_tex_t *
+load_env_map (vulkan_ctx_t *ctx, tex_t *tex, int mip, const char *name,
+			  VkFormat format, int bpp,
+			  load_tex_t load_tex, void *load_tex_data)
 {
-	int         bpp;
-	VkFormat    format;
-
 	static int env_coords_3x2[][2] = {
 		{2, 0},	// right
 		{0, 0}, // left
@@ -525,11 +524,9 @@ Vulkan_LoadEnvMap (vulkan_ctx_t *ctx, tex_t *tex, const char *name)
 	};
 	int (*env_coords)[2] = nullptr;
 
-	if (!tex_format (tex, &format, &bpp)) {
-		return 0;
-	}
 	if (tex->height * 2 == tex->width) {
-		return Vulkan_LoadTex (ctx, tex, 1, name);
+		return load_tex_array (ctx, tex, 1, mip, name, format, bpp,
+							   load_tex, load_tex_data);
 	}
 	int size;
 	if (tex->height * 3 == tex->width * 2) {
@@ -582,20 +579,33 @@ Vulkan_LoadEnvMap (vulkan_ctx_t *ctx, tex_t *tex, const char *name)
 		}
 	}
 
-	int mip = QFV_MipLevels (size, size);
-	stage_tex_set (qtex, tex_cmd, num_cmd * 6, 6, mip, ctx, nullptr, nullptr);
+	if (mip) {
+		mip = QFV_MipLevels (size, size);
+	} else {
+		mip = 1;
+	}
+	stage_tex_set (qtex, tex_cmd, num_cmd * 6, 6, mip, ctx,
+				   load_tex, load_tex_data);
 	return qtex;
 }
 
 qfv_tex_t *
-Vulkan_LoadEnvSides (vulkan_ctx_t *ctx, tex_t **tex, const char *name)
+Vulkan_LoadEnvMap (vulkan_ctx_t *ctx, tex_t *tex, const char *name)
 {
 	int         bpp;
 	VkFormat    format;
 
-	if (!tex_format (tex[0], &format, &bpp)) {
+	if (!tex_format (tex, &format, &bpp)) {
 		return 0;
 	}
+	return load_env_map (ctx, tex, 1, name, format, bpp, nullptr, nullptr);
+}
+
+static qfv_tex_t *
+load_env_sides (vulkan_ctx_t *ctx, tex_t **tex, int mip, const char *name,
+				VkFormat format, int bpp,
+				load_tex_t load_tex, void *load_tex_data)
+{
 	if (tex[0]->height != tex[0]->width) {
 		return 0;
 	}
@@ -610,9 +620,25 @@ Vulkan_LoadEnvSides (vulkan_ctx_t *ctx, tex_t **tex, const char *name)
 	int size = tex[0]->height;
 	qfv_tex_t  *qtex = create_cubetex (ctx, size, format, name);
 
-	int mip = QFV_MipLevels (size, size);
-	load_tex_set (tex, 6, mip, bpp, qtex, ctx, nullptr, nullptr);
+	if (mip) {
+		mip = QFV_MipLevels (size, size);
+	} else {
+		mip = 1;
+	}
+	load_tex_set (tex, 6, mip, bpp, qtex, ctx, load_tex, load_tex_data);
 	return qtex;
+}
+
+qfv_tex_t *
+Vulkan_LoadEnvSides (vulkan_ctx_t *ctx, tex_t **tex, const char *name)
+{
+	int         bpp;
+	VkFormat    format;
+
+	if (!tex_format (tex[0], &format, &bpp)) {
+		return 0;
+	}
+	return load_env_sides (ctx, tex, 1, name, format, bpp, nullptr, nullptr);
 }
 
 VkImageView
@@ -982,10 +1008,28 @@ QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
 		.texinfo = texinfo,
 		.ctx = ctx,
 	};
-	auto tex = load_tex_array (ctx, layers, texinfo->num_layers,
-							   texinfo->image.mipLevels + 1, name,
-							   texinfo->image.format, bpp,
-							   load_tex, &lt_data);
+	qfv_tex_t *tex = nullptr;
+	if (texinfo->type == qft_unknown) {
+		tex = load_tex_array (ctx, layers, texinfo->num_layers,
+							  texinfo->image.mipLevels + 1, name,
+							  texinfo->image.format, bpp,
+							  load_tex, &lt_data);
+	} else if (texinfo->type == qft_envmap) {
+		//FIXME multi-layer maps?
+		if (texinfo->num_layers == 1) {
+			tex = load_env_map (ctx, layers, texinfo->image.mipLevels + 1,
+								name, texinfo->image.format, bpp,
+								load_tex, &lt_data);
+		} else if (texinfo->num_layers == 6) {
+			tex_t *layer_ptrs[texinfo->num_layers];
+			for (uint32_t i = 0; i < texinfo->num_layers; i++) {
+				layer_ptrs[i] = &layers[i];
+			}
+			tex = load_env_sides (ctx, layer_ptrs, texinfo->image.mipLevels + 1,
+								  name, texinfo->image.format, bpp,
+								  load_tex, &lt_data);
+		}
+	}
 	QFV_CreateSampler (ctx, &texinfo->sampler);
 	auto texture = Vulkan_CreateCombinedImageSampler (ctx, tex->view,
 													  texinfo->sampler.sampler);
@@ -1037,6 +1081,17 @@ QFV_GetTexture (vulkan_ctx_t *ctx, uint32_t texid)
 	auto reg = tctx->reg;
 	uint32_t c_texture = tctx->comp_base + qfv_tex_texture;
 	return *(VkDescriptorSet *) Ent_GetComponent (texid, c_texture, reg);
+}
+
+bool
+QFV_TexIsCubemap (vulkan_ctx_t *ctx, uint32_t texid)
+{
+	auto tctx = ctx->texture_context;
+	auto reg = tctx->reg;
+	uint32_t c_tex = tctx->comp_base + qfv_tex_tex;
+	qfv_tex_t *tex = Ent_GetComponent (texid, c_tex, reg);
+	auto flags = tex->resource->objects[0].image.flags;
+	return (flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) != 0;
 }
 
 static void

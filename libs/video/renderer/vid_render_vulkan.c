@@ -651,7 +651,7 @@ vulkan_Skin_Destroy (struct skin_s *skin)
 static uint32_t
 vulkan_load_resource (const char *name, plitem_t *res)
 {
-	const char *type = PL_String (PL_ObjectForKey (res, "type"));
+	const char *type = PL_String (PL_ObjectForKey (res, "resource_type"));
 	if (!type || strcmp (type, "texture") != 0) {
 		Sys_Error ("invalid resource type");
 	}

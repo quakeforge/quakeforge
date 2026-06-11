@@ -30,6 +30,7 @@ uint32_t QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
 uint32_t QFV_TexGetSkinid (vulkan_ctx_t *ctx, uint32_t id) __attribute__((pure));
 void QFV_TexSetSkinid (vulkan_ctx_t *ctx, uint32_t id, uint32_t skinid);
 VkDescriptorSet QFV_GetTexture (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure));
+bool QFV_TexIsCubemap (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure));
 
 void Vulkan_ExpandPalette (byte *dst, const byte *src, const byte *palette,
 						   int alpha, int count);

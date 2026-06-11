@@ -405,7 +405,7 @@ QFV_ResourceInitImageView (qfv_resobj_t *image_view, unsigned image_ind,
 	bool cube = image->image.flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 	bool array = image->image.num_layers > (cube ? 6 : 1);
 	if (cube) {
-		type = array ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY :VK_IMAGE_VIEW_TYPE_CUBE;
+		type = array ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
 	} else if (array) {
 		// valid only for 1d and 2d
 		type += 4;

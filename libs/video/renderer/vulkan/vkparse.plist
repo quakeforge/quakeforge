@@ -751,7 +751,7 @@ parse = {
 	};
 	qfv_textureinfo_s = {
 		.name = qfv_textureinfo_t;
-		type = ignore;
+		resource_type = ignore;
 		image = auto;
 		sampler = auto;
 		layers = {
@@ -764,6 +764,7 @@ parse = {
 			size = num_layers;
 			values = layer_files;
 		};
+		type = auto;
 		plitem = ignore;
 	};
 	qfv_stepenum_s = {

@@ -1,4 +1,4 @@
-type = texture;
+resource_type = texture;
 image = {
 	format = r8g8b8a8_srgb;
 };

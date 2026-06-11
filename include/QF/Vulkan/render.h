@@ -379,6 +379,11 @@ typedef struct qfv_entqueueinfo_s {
 	uint32_t    num_queues;
 } qfv_entqueueinfo_t;
 
+typedef enum qfv_texturetype_t {
+	qft_unknown,
+	qft_envmap,
+} qfv_texturetype_t;
+
 typedef struct qfv_textureinfo_s {
 	struct memsuper_s *memsuper;
 	struct plitem_s *plitem;
@@ -387,6 +392,7 @@ typedef struct qfv_textureinfo_s {
 	qfv_samplercreateinfo_t sampler;
 	const char **layer_files;
 	uint32_t    num_layers;
+	qfv_texturetype_t type;
 } qfv_textureinfo_t;
 
 #ifndef __QFCC__
