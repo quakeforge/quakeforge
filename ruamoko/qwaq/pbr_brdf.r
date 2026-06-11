@@ -121,7 +121,7 @@ vec3 BRDF (float NoV, float roughness)
 void main ()
 {
 	vec2 uv = (vec2(GlobalInvocationId.xy) + 0.5) / vec2 (brdf_w, brdf_h);
-	vec3 v = BRDF (uv.x, 1 - uv.y);
+	vec3 v = BRDF (uv.x, uv.y);
 	uint offset = GlobalInvocationId.y * brdf_w + GlobalInvocationId.x;
 	//FIXME implement float16_t etc
 	data[offset * 2 + 0] = packHalf2x16 (v.xy);
