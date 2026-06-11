@@ -51,6 +51,10 @@ static string planetary_shader =
 #embed "ruamoko/qwaq/planetary.r.spv"
 ;
 
+static string pbr_brdf_shader =
+#embed "ruamoko/qwaq/pbr_brdf.r.spv"
+;
+
 int in_context;
 in_axis_t *cam_move_forward;
 in_axis_t *cam_move_side;
@@ -2190,7 +2194,7 @@ main (int argc, string *argv)
 	init_graphics (config, qent_comp_count, qwaq_components);
 	PL_Release (config);
 
-	Render_RunJob ("brdf");
+	Render_RunJob ("pbr_brdf");
 
 	uint pixpal = load_resource ("pixpal.meta");
 	uint skyid = load_resource ("eso0932a.meta");

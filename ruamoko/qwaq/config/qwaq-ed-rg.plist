@@ -802,14 +802,15 @@ render_graph = {
 				};
 			};
 		};
-		brdf = {
-			layout = {
-				descriptorSets = (particle_set);
-				pushConstants = {
-					compute = {
-						brdf_w = uint;
-						brdf_h = uint;
-						brdf_data = ptr;
+		pbr = {
+			brdf = {
+				layout = {
+					pushConstants = {
+						compute = {
+							brdf_w = uint;
+							brdf_h = uint;
+							brdf_data = ptr;
+						};
 					};
 				};
 			};
@@ -3053,7 +3054,7 @@ render_graph = {
 				};
 			};
 		};
-		brdf = {
+		pbr_brdf = {
 			steps = {
 				brdf_compute = {
 					color = "[0.6, 0.8, 0.9]";
@@ -3075,7 +3076,7 @@ render_graph = {
 									name = main;
 									module = pbr_brdf.r.spv;
 								};
-								layout = $brdf.layout;
+								layout = $pbr.brdf.layout;
 							};
 						};
 					};
