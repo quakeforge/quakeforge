@@ -1089,7 +1089,7 @@ QFV_TexIsCubemap (vulkan_ctx_t *ctx, uint32_t texid)
 	auto tctx = ctx->texture_context;
 	auto reg = tctx->reg;
 	uint32_t c_tex = tctx->comp_base + qfv_tex_tex;
-	qfv_tex_t *tex = Ent_GetComponent (texid, c_tex, reg);
+	auto tex = *(qfv_tex_t **) Ent_GetComponent (texid, c_tex, reg);
 	auto flags = tex->resource->objects[0].image.flags;
 	return (flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) != 0;
 }

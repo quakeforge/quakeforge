@@ -377,6 +377,7 @@ typedef struct bspctx_s {
 	VkImageView default_skybox;
 	struct qfv_tex_s *skybox_tex;		///< sky box texture for current map
 	VkDescriptorSet skybox_descriptor;
+	uint32_t    skybox_id;
 
 	vulktex_t   notexture_render;
 	vulktex_t   background_render;
@@ -384,6 +385,7 @@ typedef struct bspctx_s {
 	VkImageView default_skymap;
 	struct qfv_tex_s *skymap_tex;		///< sky eqrec map for current map
 	VkDescriptorSet skymap_descriptor;
+	uint32_t    skymap_id;
 
 	bsp_pass_t  main_pass;			///< camera view depth, gbuffer, etc
 	bsp_pass_t  shadow_pass;
@@ -414,6 +416,7 @@ typedef struct bspctx_s {
 
 struct vulkan_ctx_s;
 void Vulkan_LoadSkys (const char *sky, struct vulkan_ctx_s *ctx);
+void Vulkan_SetSkyId (uint32_t id, struct vulkan_ctx_s *ctx);
 void Vulkan_RegisterTextures (model_t **models, int num_models,
 							  struct vulkan_ctx_s *ctx);
 void Vulkan_BuildDisplayLists (model_t **models, int num_models,

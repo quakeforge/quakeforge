@@ -911,9 +911,9 @@ push_bspconst (uint16_t *matrix_base, QFV_BspQueue queue,
 		*bctx->matrix_base = *matrix_base;
 	} else {
 		uint32_t control = 0;
-		if (bctx->skymap_tex) {
+		if (bctx->skymap_tex || bctx->skymap_id != nullent) {
 			control |= 4;
-		} else if (bctx->skybox_tex) {
+		} else if (bctx->skybox_tex || bctx->skybox_id != nullent) {
 			control |= 2;
 		} else {
 			control |= 1;
@@ -1619,6 +1619,9 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	*bctx = (bspctx_t) {
 		.vulkan_ctx = ctx,
 
+		.skybox_id   = nullent,
+		.skymap_id   = nullent,
+
 		.matrix_base = QFV_GetBlackboardVar (ctx, "MatrixBase"),
 		.fog         = QFV_GetBlackboardVar (ctx, "fog"),
 		.time        = QFV_GetBlackboardVar (ctx, "time"),
@@ -1743,26 +1746,84 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	QFV_Render_AddTasks (ctx, bsp_task_syms);
 }
 
-void
-Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
+static void
+set_sky_tex (vulkan_ctx_t *ctx, qfv_tex_t *sky_tex, VkDescriptorSet texture,
+			 bool is_box)
 {
 	bspctx_t   *bctx = ctx->bsp_context;
 
-	const char *name;
-	int         i;
-	tex_t      *tex;
-	static const char *sky_suffix[] = { "ft", "bk", "up", "dn", "rt", "lf"};
-
-	if (bctx->skybox_tex) {
+	if (bctx->skybox_tex && bctx->skybox_id == nullent) {
 		Vulkan_UnloadTex (ctx, bctx->skybox_tex);
 		Vulkan_FreeTexture (ctx, bctx->skybox_descriptor);
 	}
 	bctx->skybox_tex = 0;
-	if (bctx->skymap_tex) {
+	bctx->skybox_id = nullent;
+	if (bctx->skymap_tex && bctx->skymap_id == nullent) {
 		Vulkan_UnloadTex (ctx, bctx->skymap_tex);
 		Vulkan_FreeTexture (ctx, bctx->skymap_descriptor);
 	}
 	bctx->skymap_tex = 0;
+	bctx->skymap_id = nullent;
+
+	if (!sky_tex && !texture) {
+		bctx->skybox_descriptor
+			= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skybox,
+												 bctx->sampler);
+		bctx->skymap_descriptor
+			= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skymap,
+												 bctx->equrect);
+		return;
+	}
+	if (is_box) {
+		bctx->skybox_tex = sky_tex;
+		if (sky_tex) {
+			bctx->skybox_descriptor
+				= Vulkan_CreateTextureDescriptor (ctx, sky_tex, bctx->sampler);
+		} else {
+			bctx->skybox_descriptor = texture;
+		}
+		bctx->skymap_descriptor
+			= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skymap,
+												 bctx->equrect);
+	} else {
+		bctx->skymap_tex = sky_tex;
+		bctx->skybox_descriptor
+			= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skybox,
+												 bctx->sampler);
+		if (sky_tex) {
+			bctx->skymap_descriptor
+				= Vulkan_CreateTextureDescriptor (ctx, sky_tex, bctx->equrect);
+		} else {
+			bctx->skymap_descriptor = texture;
+		}
+	}
+}
+
+void
+Vulkan_SetSkyId (uint32_t id, struct vulkan_ctx_s *ctx)
+{
+	if (id == nullent) {
+		set_sky_tex (ctx, nullptr, nullptr, false);
+	} else {
+		auto bctx = ctx->bsp_context;
+		auto texture = QFV_GetTexture (ctx, id);
+		bool is_box = QFV_TexIsCubemap (ctx, id);
+		set_sky_tex (ctx, nullptr, texture, is_box);
+		if (is_box) {
+			bctx->skybox_id = id;
+		} else {
+			bctx->skymap_id = id;
+		}
+	}
+}
+
+void
+Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
+{
+	const char *name;
+	int         i;
+	tex_t      *tex;
+	static const char *sky_suffix[] = { "ft", "bk", "up", "dn", "rt", "lf"};
 
 	if (!sky || !*sky) {
 		sky = r_skyname;
@@ -1770,12 +1831,7 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 
 	if (!*sky || !strcasecmp (sky, "none")) {
 		Sys_MaskPrintf (SYS_vulkan, "Skybox unloaded\n");
-		bctx->skybox_descriptor
-			= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skybox,
-												 bctx->sampler);
-		bctx->skymap_descriptor
-			= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skymap,
-												 bctx->equrect);
+		set_sky_tex (ctx, nullptr, 0, false);
 		return;
 	}
 
@@ -1820,22 +1876,9 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 			free (sides[i]);
 		}
 	}
+
+	set_sky_tex (ctx, sky_tex, 0, is_box);
 	if (sky_tex) {
-		if (is_box) {
-			bctx->skybox_tex = sky_tex;
-			bctx->skybox_descriptor
-				= Vulkan_CreateTextureDescriptor (ctx, sky_tex, bctx->sampler);
-			bctx->skymap_descriptor
-				= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skymap,
-													 bctx->equrect);
-		} else {
-			bctx->skymap_tex = sky_tex;
-			bctx->skybox_descriptor
-				= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skybox,
-													 bctx->sampler);
-			bctx->skymap_descriptor
-				= Vulkan_CreateTextureDescriptor (ctx, sky_tex, bctx->equrect);
-		}
 		Sys_MaskPrintf (SYS_vulkan, "Sky %s loaded\n", sky);
 	}
 }

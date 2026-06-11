@@ -375,7 +375,12 @@ bi(newscene)
 {
 	pr_ulong_t  scene_id = P_ULONG (pr, 0);
 	SCR_NewScene (Scene_GetScene (pr, scene_id));
-	r_funcs->R_LoadSkys ("eso0932a");
+}
+
+bi(set_sky_id)
+{
+	pr_uint_t   texid = P_UINT (pr, 0);
+	r_funcs->R_SetSkyId (texid);
 }
 
 static vec4f_t
@@ -579,6 +584,7 @@ static builtin_t builtins[] = {
 	bi(init_graphics, -1, 1, p(ptr)),
 	bi(load_resource, -1, 1, p(string)),
 	bi(newscene,      -1, 1, p(long)),
+	bi(set_sky_id,    -1, 1, p(uint)),
 	bi(refresh,       -1, 1, p(long)),
 	bi(refresh_2d,    -1, 1, p(func)),
 	bi(setpalette,    -1, 2, p(ptr), p(ptr)),

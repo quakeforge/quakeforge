@@ -247,6 +247,12 @@ vulkan_R_LoadSkys (const char *skyname)
 }
 
 static void
+vulkan_R_SetSkyId (uint32_t id)
+{
+	Vulkan_SetSkyId (id, vulkan_ctx);
+}
+
+static void
 vulkan_R_NewScene (scene_t *scene)
 {
 	Vulkan_NewScene (scene, vulkan_ctx);
@@ -845,6 +851,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.R_Init           = vulkan_R_Init,
 	.R_ClearState     = vulkan_R_ClearState,
 	.R_LoadSkys       = vulkan_R_LoadSkys,
+	.R_SetSkyId       = vulkan_R_SetSkyId,
 	.R_NewScene       = vulkan_R_NewScene,
 	.R_LineGraph      = vulkan_R_LineGraph,
 

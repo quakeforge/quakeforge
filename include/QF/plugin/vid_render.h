@@ -162,6 +162,7 @@ typedef struct vid_render_funcs_s {
 	void (*R_Init) (memhunk_t *hunk, struct plitem_s *config);
 	void (*R_ClearState) (void);
 	void (*R_LoadSkys) (const char *);
+	void (*R_SetSkyId) (uint32_t id);
 	void (*R_NewScene) (struct scene_s *scene);
 	void (*R_LineGraph) (int x, int y, int *h_vals, int count, int height);
 

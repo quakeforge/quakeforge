@@ -112,6 +112,7 @@ float refresh (scene_t scene) = #0;
 void refresh_2d (void (func)(void)) = #0;
 void setpalette (void *palette, void *colormap) = #0;
 void newscene (scene_t scene) = #0;
+void set_sky_id (uint texid) = #0;
 void setevents (int (func)(struct IE_event_s *, void *), void *data) = #0;
 void setctxcbuf (int ctx) = #0;
 void addcbuftxt (string txt) = #0;
@@ -2192,6 +2193,7 @@ main (int argc, string *argv)
 	Render_RunJob ("brdf");
 
 	uint pixpal = load_resource ("pixpal.meta");
+	uint skyid = load_resource ("eso0932a.meta");
 
 	IN_SendConnectedDevices ();
 	setup_bindings ();
@@ -2257,6 +2259,7 @@ main (int argc, string *argv)
 	arp_start ();
 
 	auto main_window = [[MainWindow window:imui_ctx] retain];
+	set_sky_id (skyid);
 
 	[main_window setModel:Model_Load ("progs/girl14.iqm")];
 
