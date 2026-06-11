@@ -27,18 +27,25 @@ float random(vec2 co) {
 	return fract (sin (sn) * c);
 }
 
-vec3 importanceSample_GGX (vec2 Xi, float roughness, vec3 normal)
+vec3 spherical (const vec2 csTheta, const float phi, const vec3 normal)
 {
-	float alpha = roughness * roughness;
-	float phi = 2 * PI * Xi.x;// + random (normal.xz) * 0.1;
-	float cosTheta = sqrt ((1 - Xi.y) / (1 + (alpha * alpha - 1) * Xi.y));
-	float sinTheta = sqrt (1 - cosTheta * cosTheta);
-	vec3 H = vec3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
+	auto csPhi = vec2 (cos(phi), sin(phi));
+	auto H = vec3(csTheta.y * csPhi, csTheta.x);
 
 	vec3 up = abs(normal.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
 	vec3 tangentX = normalize(cross(up, normal));
 	vec3 tangentY = normalize(cross(normal, tangentX));
 	return normalize(tangentX * H.x + tangentY * H.y + normal * H.z);
+}
+
+vec3 importanceSample_GGX (vec2 Xi, float roughness, vec3 normal)
+{
+	float alpha = roughness * roughness;
+	float phi = 2 * PI * Xi.x + random (normal.xz) * 0.1;
+	float cosTheta = sqrt ((1 - Xi.y) / (1 + (alpha * alpha - 1) * Xi.y));
+	float sinTheta = sqrt (1 - cosTheta * cosTheta);
+
+	return spherical (vec2 (cosTheta, sinTheta), phi, normal);
 }
 
 float G_SchlicksmithGGX(float dotNL, float dotNV, float roughness)
@@ -69,11 +76,8 @@ vec3 importanceSample_Charlie (vec2 Xi, float roughness, vec3 normal)
 	float phi = 2 * PI * Xi.x;
 	float sinTheta = pow(Xi.y, alpha / (2 * alpha + 1));
 	float cosTheta = sqrt (1 - sinTheta * sinTheta);
-	vec3 H = vec3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
-	vec3 up = abs(normal.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
-	vec3 tangentX = normalize(cross(up, normal));
-	vec3 tangentY = normalize(cross(normal, tangentX));
-	return normalize(tangentX * H.x + tangentY * H.y + normal * H.z);
+
+	return spherical (vec2 (cosTheta, sinTheta), phi, normal);
 }
 
 vec3 BRDF (float NoV, float roughness)
