@@ -31,7 +31,7 @@ vec3 importanceSample_GGX (vec2 Xi, float roughness, vec3 normal)
 {
 	float alpha = roughness * roughness;
 	float phi = 2 * PI * Xi.x;// + random (normal.xz) * 0.1;
-	float cosTheta = sqrt ((1 - Xi.y) / (1 - (alpha * alpha - 1) * Xi.y));
+	float cosTheta = sqrt ((1 - Xi.y) / (1 + (alpha * alpha - 1) * Xi.y));
 	float sinTheta = sqrt (1 - cosTheta * cosTheta);
 	vec3 H = vec3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
 
