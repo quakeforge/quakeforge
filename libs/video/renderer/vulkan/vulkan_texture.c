@@ -175,7 +175,7 @@ stage_tex_data_rows (qfv_packet_t *packet, tex_t *tex, int y, int rows,
 	if (tex->format == tex_palette) {
 		stage = stage_pal;
 		in_bpp = 1;
-	} else if (tex->format == 3) {
+	} else if (tex->format == tex_rgb) {
 		stage = stage_rgb;
 		in_bpp = 3;
 	}
@@ -211,7 +211,7 @@ stage_multi_tex_data (qfv_packet_t *packet, tex_t **tex, int count, int bpp,
 	auto palette = tex[0]->palette;
 	if (tex[0]->format == tex_palette) {
 		stage = stage_pal;
-	} else if (tex[0]->format == 3) {
+	} else if (tex[0]->format == tex_rgb) {
 		stage = stage_rgb;
 	}
 
