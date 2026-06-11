@@ -100,6 +100,20 @@ vec3 BRDF (float NoV, float roughness)
 			LUT.rg += vec2((1 - Fc), Fc) * G_Vis;
 		}
 	}
+	for (uint i = 0; i < NUM_SAMPLES; i++) {
+		vec2 Xi = hammersley2d (i, NUM_SAMPLES);
+		vec3 H = importanceSample_Charlie (Xi, roughness, N);
+		vec3 L = 2 * dot(V, H) * H - V;
+		float dotNL = max(dot(N, L), 0);
+		float dotNV = max(dot(N, V), 0);
+		float dotVH = max(dot(V, H), 0);
+		float dotNH = max(dot(N, H), 0);
+		if (dotNL > 0) {
+			float sheenDistribution = D_Charlie (roughness, dotNH);
+			float sheenVisibility   = V_Ashikhmin (dotNL, dotNV);
+			LUT.b += sheenVisibility * sheenDistribution * dotNL * dotVH;
+		}
+	}
 	return LUT / NUM_SAMPLES;
 }
 
