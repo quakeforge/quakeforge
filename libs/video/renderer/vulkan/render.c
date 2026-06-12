@@ -956,101 +956,45 @@ blackboard_get_var (qfv_renderctx_t *rctx, const char *var, qfv_type_t type)
 		Sys_Error ("invalid blackboard var %s\n", var);
 	}
 	if (pc->type != type) {
-		Sys_Error ("blackboard var %s wront type: %d vs %d\n", var,
+		Sys_Error ("blackboard var %s wrong type: %d vs %d\n", var,
 				   type, pc->type);
 	}
 	return bb->data + pc->offset;
 }
 
-static void
-blackboard_set_float (const exprval_t **params, exprval_t *result,
-						  exprctx_t *ectx)
-{
-	qfZoneScoped (true);
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto rctx = ctx->render_context;
-	auto varname = *(const char **) params[1]->value;
-	auto value = *(float *) params[0]->value;
-
-	auto ptr = (float *) blackboard_get_var (rctx, varname, qfv_float);
-	*ptr = value;
+#define BB_assign_s(d,s) d = s
+#define BB_assign_v(d,s) VectorCopy(s,d)
+#define BB_set_func(n,t,a) \
+static void \
+blackboard_set_##n (const exprval_t **params, exprval_t *result, \
+					exprctx_t *ectx) \
+{ \
+	qfZoneScoped (true); \
+	auto taskctx = (qfv_taskctx_t *) ectx; \
+	auto ctx = taskctx->ctx; \
+	auto rctx = ctx->render_context; \
+	auto varname = *(const char **) params[1]->value; \
+	auto value = *(t *) params[0]->value; \
+ \
+	auto ptr = (t *) blackboard_get_var (rctx, varname, qfv_##n); \
+	a(*ptr, value); \
 }
 
-static void
-blackboard_set_int (const exprval_t **params, exprval_t *result,
-						  exprctx_t *ectx)
-{
-	qfZoneScoped (true);
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto rctx = ctx->render_context;
-	auto varname = *(const char **) params[1]->value;
-	auto value = *(int *) params[0]->value;
+typedef int vec3i_t[3];
+typedef uint32_t vec3u_t[3];
 
-	auto ptr = (int *) blackboard_get_var (rctx, varname, qfv_int);
-	*ptr = value;
-}
-
-static void
-blackboard_set_uint (const exprval_t **params, exprval_t *result,
-						  exprctx_t *ectx)
-{
-	qfZoneScoped (true);
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto rctx = ctx->render_context;
-	auto varname = *(const char **) params[1]->value;
-	auto value = *(uint32_t *) params[0]->value;
-
-	auto ptr = (uint32_t *) blackboard_get_var (rctx, varname, qfv_uint);
-	*ptr = value;
-}
-
-static void
-blackboard_set_vec2 (const exprval_t **params, exprval_t *result,
-						  exprctx_t *ectx)
-{
-	qfZoneScoped (true);
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto rctx = ctx->render_context;
-	auto varname = *(const char **) params[1]->value;
-	auto value = *(vec2f_t *) params[0]->value;
-
-	auto ptr = (vec2f_t *) blackboard_get_var (rctx, varname, qfv_vec2);
-	*ptr = value;
-}
-
-static void
-blackboard_set_vec3 (const exprval_t **params, exprval_t *result,
-						  exprctx_t *ectx)
-{
-	qfZoneScoped (true);
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto rctx = ctx->render_context;
-	auto varname = *(const char **) params[1]->value;
-	auto value = *(vec3f_t *) params[0]->value;
-
-	auto ptr = (vec3f_t *) blackboard_get_var (rctx, varname, qfv_vec3);
-	VectorCopy (value, *ptr);
-}
-
-static void
-blackboard_set_vec4 (const exprval_t **params, exprval_t *result,
-						  exprctx_t *ectx)
-{
-	qfZoneScoped (true);
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto rctx = ctx->render_context;
-	auto varname = *(const char **) params[1]->value;
-	auto value = *(vec4f_t *) params[0]->value;
-
-	auto ptr = (vec4f_t *) blackboard_get_var (rctx, varname, qfv_vec4);
-	*ptr = value;
-}
+BB_set_func(float, float, BB_assign_s);
+BB_set_func(int, int, BB_assign_s);
+BB_set_func(uint, uint32_t, BB_assign_s);
+BB_set_func(vec2, vec2f_t, BB_assign_s);
+BB_set_func(vec3, vec3f_t, BB_assign_v);
+BB_set_func(vec4, vec4f_t, BB_assign_s);
+BB_set_func(ivec2, vec2i_t, BB_assign_s);
+BB_set_func(ivec3, vec3i_t, BB_assign_v);
+BB_set_func(ivec4, vec4i_t, BB_assign_s);
+BB_set_func(uvec2, vec2u_t, BB_assign_s);
+BB_set_func(uvec3, vec3u_t, BB_assign_v);
+BB_set_func(uvec4, vec4u_t, BB_assign_s);
 
 static void
 blackboard_set_bufferptr (const exprval_t **params, exprval_t *result,
@@ -1162,6 +1106,12 @@ static exprfunc_t blackboard_set_##type##_func[] = { \
 bbfunc(float);
 bbfunc(int);
 bbfunc(uint);
+bbfunc(ivec2);
+bbfunc(ivec3);
+bbfunc(ivec4);
+bbfunc(uvec2);
+bbfunc(uvec3);
+bbfunc(uvec4);
 bbfunc(vec2);
 bbfunc(vec3);
 bbfunc(vec4);
@@ -1199,6 +1149,12 @@ static exprsym_t render_task_syms[] = {
 	bbfunc(vec2),
 	bbfunc(vec3),
 	bbfunc(vec4),
+	bbfunc(ivec2),
+	bbfunc(ivec3),
+	bbfunc(ivec4),
+	bbfunc(uvec2),
+	bbfunc(uvec3),
+	bbfunc(uvec4),
 	{ "blackboard_set_bufferptr", &cexpr_function,
 	  blackboard_set_bufferptr_func },
 	{}

@@ -45,6 +45,12 @@ typedef enum qfv_type_t : uint32_t {
 	qfv_vec2,
 	qfv_vec3,
 	qfv_vec4,
+	qfv_ivec2,
+	qfv_ivec3,
+	qfv_ivec4,
+	qfv_uvec2,
+	qfv_uvec3,
+	qfv_uvec4,
 	qfv_mat4,
 	qfv_ptr,
 } qfv_type_t;

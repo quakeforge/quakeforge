@@ -934,6 +934,9 @@ find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
 	return ds->setLayout;
 }
 
+typedef int32_t vec3i_t[3];
+typedef uint32_t vec3u_t[3];
+
 #define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
 static uint32_t pc_type_sizes[] = {
 	[qfv_float] = sizeof (float),
@@ -942,6 +945,12 @@ static uint32_t pc_type_sizes[] = {
 	[qfv_vec2]  = sizeof (vec2f_t),
 	[qfv_vec3]  = sizeof (vec3_t),
 	[qfv_vec4]  = sizeof (vec4f_t),
+	[qfv_ivec2]  = sizeof (vec2i_t),
+	[qfv_ivec3]  = sizeof (vec3i_t),
+	[qfv_ivec4]  = sizeof (vec4i_t),
+	[qfv_uvec2]  = sizeof (vec2u_t),
+	[qfv_uvec3]  = sizeof (vec3u_t),
+	[qfv_uvec4]  = sizeof (vec4u_t),
 	[qfv_mat4]  = sizeof (mat4f_t),
 	[qfv_ptr]   = sizeof (VkDeviceAddress),
 };
@@ -953,6 +962,12 @@ static uint32_t pc_type_align[] = {
 	[qfv_vec2]  = alignof (vec2f_t),
 	[qfv_vec3]  = alignof (vec4f_t),
 	[qfv_vec4]  = alignof (vec4f_t),
+	[qfv_ivec2]  = alignof (vec2i_t),
+	[qfv_ivec3]  = alignof (vec4i_t),
+	[qfv_ivec4]  = alignof (vec4i_t),
+	[qfv_uvec2]  = alignof (vec2u_t),
+	[qfv_uvec3]  = alignof (vec4u_t),
+	[qfv_uvec4]  = alignof (vec4u_t),
 	[qfv_mat4]  = alignof (mat4f_t),
 	[qfv_ptr]   = alignof (VkDeviceAddress),
 };
