@@ -895,17 +895,13 @@ copy_buffer_to_image (const exprval_t **params, exprval_t *result, exprctx_t *ec
 	auto dfunc = device->funcs;
 	auto job = taskctx->job;
 
-	uint32_t d = *(uint32_t *) params[0]->value;
-	uint32_t h = *(uint32_t *) params[1]->value;
-	uint32_t w = *(uint32_t *) params[2]->value;
-	uint32_t z = *(uint32_t *) params[3]->value;
-	uint32_t y = *(uint32_t *) params[4]->value;
-	uint32_t x = *(uint32_t *) params[5]->value;
-	const char *imagename = *(const char **) params[6]->value;
-	uint32_t image_height = *(uint32_t *) params[7]->value;
-	uint32_t row_len = *(uint32_t *) params[8]->value;
-	uint32_t offset = *(uint32_t *) params[9]->value;
-	const char *buffername = *(const char **) params[10]->value;
+	auto ext = *(vec3u_t *) params[0]->value;
+	auto ofs = *(vec3u_t *) params[1]->value;
+	const char *imagename = *(const char **) params[2]->value;
+	uint32_t image_height = *(uint32_t *) params[3]->value;
+	uint32_t row_len = *(uint32_t *) params[4]->value;
+	uint32_t offset = *(uint32_t *) params[5]->value;
+	const char *buffername = *(const char **) params[6]->value;
 
 	VkBufferImageCopy2 region = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
@@ -914,8 +910,8 @@ copy_buffer_to_image (const exprval_t **params, exprval_t *result, exprctx_t *ec
 		.bufferImageHeight = image_height,
 		//FIXME
 		.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-		.imageOffset = {x, y, z},
-		.imageExtent = {w, h, d},
+		.imageOffset = {VectorExpand (ofs.v)},
+		.imageExtent = {VectorExpand (ext.v)},
 	};
 	VkCopyBufferToImageInfo2 copy = {
 		.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2,
@@ -1070,12 +1066,8 @@ static exprfunc_t image_barrier_func[] = {
 };
 
 static exprtype_t *copy_buffer_to_image_params[] = {
-	&cexpr_uint,
-	&cexpr_uint,
-	&cexpr_uint,
-	&cexpr_uint,
-	&cexpr_uint,
-	&cexpr_uint,
+	&cexpr_uvec3,
+	&cexpr_uvec3,
 	&cexpr_string,
 	&cexpr_uint,
 	&cexpr_uint,
@@ -1083,7 +1075,7 @@ static exprtype_t *copy_buffer_to_image_params[] = {
 	&cexpr_string,
 };
 static exprfunc_t copy_buffer_to_image_func[] = {
-	{ .func = copy_buffer_to_image, .num_params = 11,
+	{ .func = copy_buffer_to_image, .num_params = 7,
 	  copy_buffer_to_image_params },
 	{}
 };

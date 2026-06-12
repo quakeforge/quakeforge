@@ -3092,7 +3092,8 @@ render_graph = {
 										lt_undefined_to_transferdst); },
 							{ func = copy_buffer_to_image;
 							  params = ("\"brdf\"", 0, 0, 0,
-										"\"brdf\"", 0, 0, 0, 256, 256, 1); },
+										"\"brdf\"", "'0 0 0'u",
+													"'256 256 1'u"); },
 							{ func = image_barrier;
 							  params = ("\"brdf\"",
 										lt_transferdst_to_shaderreadonly); },
