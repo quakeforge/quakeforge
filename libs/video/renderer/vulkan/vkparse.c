@@ -1106,6 +1106,14 @@ QFV_GetEnum (const char *name)
 	return Hash_Find (enum_symtab, name);
 }
 
+static void
+print_messages (plitem_t *messages)
+{
+	for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+		Sys_Printf (MAG"%s"DFL"\n", PL_String (PL_ObjectAtIndex (messages, i)));
+	}
+}
+
 static int
 parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 			  plparser_t parser, void *object, plitem_t *properties)
@@ -1135,9 +1143,7 @@ parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 
 
 	if (!parser (0, plist, object, messages, &parsectx)) {
-		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
-			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
-		}
+		print_messages (messages);
 		return 0;
 	}
 	Hash_DelTable (vars_tab.tab);
@@ -1583,9 +1589,7 @@ QFV_ParseGraphInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 
 	int         ret;
 	if (!(ret = parse_qfv_graphinfo_t (0, item, ji, messages, &parsectx))) {
-		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
-			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
-		}
+		print_messages (messages);
 	}
 	QFV_DestroySymtab (exprctx.external_variables);
 	PL_Release (messages);
@@ -1629,9 +1633,7 @@ QFV_ParseSamplerInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 
 	int         ret;
 	if (!(ret = parse_qfv_samplerinfo_t (0, item, si, messages, &parsectx))) {
-		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
-			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
-		}
+		print_messages (messages);
 	}
 	QFV_DestroySymtab (exprctx.external_variables);
 	PL_Release (messages);
@@ -1667,9 +1669,7 @@ QFV_ParseEntqueueInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 
 	int         ret;
 	if (!(ret = parse_qfv_entqueueinfo_t (0, item, si, messages, &parsectx))) {
-		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
-			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
-		}
+		print_messages (messages);
 	}
 	PL_Release (messages);
 	if (!ret) {
@@ -1704,9 +1704,7 @@ QFV_ParseJobStepEnum (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 
 	int         ret;
 	if (!(ret = parse_qfv_jobstepenum_t (0, item, jse, messages, &parsectx))) {
-		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
-			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
-		}
+		print_messages (messages);
 	}
 	PL_Release (messages);
 	if (!ret) {
@@ -1741,9 +1739,7 @@ QFV_ParseTextureInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 
 	int         ret;
 	if (!(ret = parse_qfv_textureinfo_t (0, item, ti, messages, &parsectx))) {
-		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
-			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
-		}
+		print_messages (messages);
 	}
 	PL_Release (messages);
 	if (!ret) {
@@ -1780,9 +1776,7 @@ QFV_ParseLayoutInfo (vulkan_ctx_t *ctx, memsuper_t *memsuper,
 	int         ret;
 	if (!(ret = parse_qfv_layoutinfo_t (0, item, layout, messages,
 										&parsectx))) {
-		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
-			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
-		}
+		print_messages (messages);
 	}
 	PL_Release (messages);
 	PL_Release (item);
