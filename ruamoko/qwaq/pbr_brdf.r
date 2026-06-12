@@ -1,8 +1,7 @@
 #include "GLSL/general.h"
 
 [push_constant] @block constants {
-	uint brdf_w;
-	uint brdf_h;
+	uvec2 brdf_size;
 	uint *data;
 };
 
@@ -120,9 +119,9 @@ vec3 BRDF (float NoV, float roughness)
 [shader(GLCompute, LocalSize=[16,16,1])]
 void main ()
 {
-	vec2 uv = (vec2(GlobalInvocationId.xy) + 0.5) / vec2 (brdf_w, brdf_h);
+	vec2 uv = (vec2(GlobalInvocationId.xy) + 0.5) / vec2 (brdf_size);
 	vec3 v = BRDF (uv.x, uv.y);
-	uint offset = GlobalInvocationId.y * brdf_w + GlobalInvocationId.x;
+	uint offset = GlobalInvocationId.y * brdf_size.x + GlobalInvocationId.x;
 	//FIXME implement float16_t etc
 	data[offset * 2 + 0] = packHalf2x16 (v.xy);
 	data[offset * 2 + 1] = packHalf2x16 (vec2(v.z, 0));

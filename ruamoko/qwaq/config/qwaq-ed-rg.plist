@@ -807,8 +807,7 @@ render_graph = {
 				layout = {
 					pushConstants = {
 						compute = {
-							brdf_w = uint;
-							brdf_h = uint;
+							brdf_size = uvec2;
 							brdf_data = ptr;
 						};
 					};
@@ -3063,10 +3062,9 @@ render_graph = {
 							brdf = {
 								color = "[0.3, 0.8, 0.9]";
 								tasks = (
-									{ func = blackboard_set_uint;
-									  params = ("\"brdf_w\"", 256); },
-									{ func = blackboard_set_uint;
-									  params = ("\"brdf_h\"", 256); },
+									{ func = blackboard_set_uvec2;
+									  params = ("\"brdf_size\"",
+												"'256 256'u"); },
 									{ func = blackboard_set_bufferptr;
 									  params = ("\"brdf_data\"", "\"brdf\""); },
 									{ func = set_dispatch;
