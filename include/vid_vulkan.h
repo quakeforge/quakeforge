@@ -89,6 +89,7 @@ typedef struct vulkan_ctx_s {
 	struct scriptctx_s *script_context;
 	struct qfv_renderctx_s *render_context;
 	struct qfv_capturectx_s *capture_context;
+	struct miploopctx_s *miploop_context;
 	struct qfv_mousepickctx_s *mousepick_context;
 	struct texturectx_s *texture_context;
 	struct matrixctx_s *matrix_context;

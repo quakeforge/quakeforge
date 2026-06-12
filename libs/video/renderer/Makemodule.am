@@ -220,6 +220,7 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/dsmanager.c \
 	libs/video/renderer/vulkan/image.c \
 	libs/video/renderer/vulkan/instance.c \
+	libs/video/renderer/vulkan/miploop.c \
 	libs/video/renderer/vulkan/mouse_pick.c \
 	libs/video/renderer/vulkan/pipeline.c \
 	libs/video/renderer/vulkan/projection.c \

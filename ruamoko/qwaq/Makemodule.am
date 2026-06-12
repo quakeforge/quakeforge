@@ -14,11 +14,13 @@ atmosphere_src = ruamoko/qwaq/atmosphere.r
 planetary_src = ruamoko/qwaq/planetary.r
 pixpal_src = ruamoko/qwaq/pixpal.r
 pbr_brdf_src = ruamoko/qwaq/pbr_brdf.r
+pbr_conv_src = ruamoko/qwaq/pbr_conv.r
 
 qwaqshader_src = \
 	$(atmosphere_src) \
 	$(pixpal_src) \
 	$(pbr_brdf_src) \
+	$(pbr_conv_src) \
 	$(planetary_src)
 qwaqshader_dep = $(call spvautodep, $(qwaqshader_src))
 include $(qwaqshader_dep) # am--include-marker
@@ -349,6 +351,7 @@ EXTRA_DIST += \
 	ruamoko/qwaq/atmosphere.r \
 	ruamoko/qwaq/pixpal.r \
 	ruamoko/qwaq/pbr_brdf.r \
+	ruamoko/qwaq/pbr_conv.r \
 	ruamoko/qwaq/planetary.r \
 	ruamoko/qwaq/planetary.h \
 	ruamoko/qwaq/armature.h \

@@ -55,6 +55,10 @@ static string pbr_brdf_shader =
 #embed "ruamoko/qwaq/pbr_brdf.r.spv"
 ;
 
+static string pbr_conv_shader =
+#embed "ruamoko/qwaq/pbr_conv.r.spv"
+;
+
 int in_context;
 in_axis_t *cam_move_forward;
 in_axis_t *cam_move_side;

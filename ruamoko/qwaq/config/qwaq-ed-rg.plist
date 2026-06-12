@@ -813,6 +813,23 @@ render_graph = {
 					};
 				};
 			};
+			conv = {
+				layout = {
+					descriptorSets = (texture_set);
+					pushConstants = {
+						fragment = {
+							miploop_base = uvec3;
+							roughness = float;
+							miploop_size = uvec3;
+							miploop_level = uint;
+							miploop_range = uvec2;
+							conv_size = uvec2;
+							sampleCount = uint;
+							distribution = int;
+						};
+					};
+				};
+			};
 		};
 		fstriangle = {
 			shader = {
@@ -1633,6 +1650,28 @@ render_graph = {
 				tiling = optimal;
 				usage = transfer_dst|sampled;
 				initialLayout = undefined;
+			};
+
+			diff_cube = {
+				@inherit = $cube_image_base;
+				format = r32g32b32a32_sfloat;
+				extent = {
+					width = 256;
+					height = 256;
+					depth = 1;
+				};
+				mipLevels = ~0u;
+				arrayLayers = 6;
+			};
+		};
+		imageviews = {
+			diff_cube = {
+				@inherit = $cube_view_base;
+				image = diff_cube;
+				subresourceRange = {
+					aspectMask = color;
+					levelCount = ~0u;
+				};
 			};
 		};
 		buffers = {
@@ -3103,6 +3142,75 @@ render_graph = {
 				};
 			};
 		};
+		pbr_conv = {
+			steps = {
+				conv_process = {
+					color = "[0.6, 0.8, 0.9]";
+					init = { func = miploop_init_loop;
+							 params = ("\"diff_cube\"", 6); };
+					process = {
+						tasks = (
+							{ func = miploop_draw; },
+						);
+					};
+					render_template = {
+						renderpasses = {
+							pbr_conv = {
+								color = "[0.2, 0.2, 0.2, 1]";
+								framebuffer = {
+									layers = 1;
+									attachments = {
+										pbr_conv = $diff_cube;
+									};
+								};
+								subpasses = {
+									pbr_conv = {
+										color = "[ 0.5,  0.5,  0.5, 1]";
+										dependencies = {
+											$external = $extcolor_dependency;
+										};
+										attachments = {
+											color = {
+												pbr_conv = color_attachment_optimal;
+											};
+										};
+
+										base_pipeline = {
+											@inherit = $compose_base;
+											depthStencil = $depth_disable;
+											rasterization = $cw_cull_none;
+										};
+										pipelines = {
+											pbr_conv = {
+												color = $color.bsp;
+												tasks = (
+													{ func = fullscreen_pass; },
+												);
+
+												stages = (
+													$fstriangle.shader.vertexst,
+													{
+														stage = fragment;
+														name = main;
+														module = pbr_conv.r.spv;
+													}
+												);
+												layout = $pbr.conv.layout;
+											};
+										};
+									};
+									$external = {
+										dependencies = {
+											pbr_conv = $extcolor_outdep;
+										};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
 	};
 	newscene_tasks = (
 		{ func = bsp_register_textures; },
@@ -3113,6 +3221,7 @@ render_graph = {
 	init_tasks = (
 		{ func = texture_init; },
 		{ func = palette_init; },
+		{ func = miploop_init; },
 		{ func = mesh_init; },
 		{ func = bsp_init; },
 		{ func = matrices_init; },

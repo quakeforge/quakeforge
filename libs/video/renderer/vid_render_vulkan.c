@@ -68,6 +68,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/miploop.h"
 #include "QF/Vulkan/mouse_pick.h"
 #include "QF/Vulkan/projection.h"
 #include "QF/Vulkan/render.h"
@@ -131,6 +132,7 @@ vulkan_R_Init (memhunk_t *hunk, struct plitem_s *config)
 	Vulkan_CreateSwapchain (vulkan_ctx);
 
 	QFV_Capture_Init (vulkan_ctx);
+	QFV_MipLoop_Init (vulkan_ctx);
 	QFV_MousePick_Init (vulkan_ctx);
 	Vulkan_Output_Init (vulkan_ctx);
 

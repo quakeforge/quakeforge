@@ -47,6 +47,7 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
+#include "QF/Vulkan/image.h"
 #include "QF/Vulkan/pipeline.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
@@ -592,6 +593,11 @@ setup_image_obj (qfv_resobj_t *image, const qfv_imageinfo_t *img)
 			.initialLayout = img->initialLayout,
 		},
 	};
+	if (image->image.num_mipmaps == ~0u) {
+		int width = img->extent.width;
+		int height = img->extent.height;
+		image->image.num_mipmaps = QFV_MipLevels (width, height);
+	}
 }
 
 static void
