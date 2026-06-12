@@ -34,13 +34,6 @@
 #define QF_VEC_TYPE(t,n,s) \
 	typedef t n __attribute__ ((vector_size (s*sizeof (t))))
 
-/** Three element vector type for interfacing with compact data.
- *
- * This cannot be used directly by SIMD code and must be loaded and stored
- * using load_vec3d() and store_vec3d() respectively.
- */
-typedef double vec3d_t[3];
-
 QF_VEC_TYPE (double, vec2d_t, 2);
 QF_VEC_TYPE (int64_t, vec2l_t, 2);
 
@@ -61,10 +54,23 @@ QF_VEC_TYPE (int64_t, vec4l_t, 4);
 
 /** Three element vector type for interfacing with compact data.
  *
- * This cannot be used directly by SIMD code and must be loaded and stored
- * using load_vec3f() and store_vec3f() respectively.
+ * These cannot be used directly by SIMD code and must be loaded and stored
+ * using load_vec3f() and store_vec3f(), or load_vec3d() and store_vec3d()
+ * respectively.
  */
-typedef float vec3f_t[3];
+typedef struct vec3f_s {
+	float v[3];
+} vec3f_t;
+typedef struct vec3d_s {
+	double v[3];
+} vec3d_t;
+
+typedef struct vec3i_s {
+	int v[3];
+} vec3i_t;
+typedef struct vec3u_s {
+	uint32_t v[3];
+} vec3u_t;
 
 QF_VEC_TYPE (float, vec2f_t, 2);
 QF_VEC_TYPE (int, vec2i_t, 2);

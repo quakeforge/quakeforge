@@ -934,9 +934,6 @@ find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
 	return ds->setLayout;
 }
 
-typedef int32_t vec3i_t[3];
-typedef uint32_t vec3u_t[3];
-
 #define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
 static uint32_t pc_type_sizes[] = {
 	[qfv_float] = sizeof (float),

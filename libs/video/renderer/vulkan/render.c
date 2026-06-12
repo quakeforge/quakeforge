@@ -963,8 +963,7 @@ blackboard_get_var (qfv_renderctx_t *rctx, const char *var, qfv_type_t type)
 }
 
 #define BB_assign_s(d,s) d = s
-#define BB_assign_v(d,s) VectorCopy(s,d)
-#define BB_set_func(n,t,a) \
+#define BB_set_func(n,t) \
 static void \
 blackboard_set_##n (const exprval_t **params, exprval_t *result, \
 					exprctx_t *ectx) \
@@ -977,24 +976,21 @@ blackboard_set_##n (const exprval_t **params, exprval_t *result, \
 	auto value = *(t *) params[0]->value; \
  \
 	auto ptr = (t *) blackboard_get_var (rctx, varname, qfv_##n); \
-	a(*ptr, value); \
+	*ptr = value; \
 }
 
-typedef int vec3i_t[3];
-typedef uint32_t vec3u_t[3];
-
-BB_set_func(float, float, BB_assign_s);
-BB_set_func(int, int, BB_assign_s);
-BB_set_func(uint, uint32_t, BB_assign_s);
-BB_set_func(vec2, vec2f_t, BB_assign_s);
-BB_set_func(vec3, vec3f_t, BB_assign_v);
-BB_set_func(vec4, vec4f_t, BB_assign_s);
-BB_set_func(ivec2, vec2i_t, BB_assign_s);
-BB_set_func(ivec3, vec3i_t, BB_assign_v);
-BB_set_func(ivec4, vec4i_t, BB_assign_s);
-BB_set_func(uvec2, vec2u_t, BB_assign_s);
-BB_set_func(uvec3, vec3u_t, BB_assign_v);
-BB_set_func(uvec4, vec4u_t, BB_assign_s);
+BB_set_func(float, float);
+BB_set_func(int, int);
+BB_set_func(uint, uint32_t);
+BB_set_func(vec2, vec2f_t);
+BB_set_func(vec3, vec3f_t);
+BB_set_func(vec4, vec4f_t);
+BB_set_func(ivec2, vec2i_t);
+BB_set_func(ivec3, vec3i_t);
+BB_set_func(ivec4, vec4i_t);
+BB_set_func(uvec2, vec2u_t);
+BB_set_func(uvec3, vec3u_t);
+BB_set_func(uvec4, vec4u_t);
 
 static void
 blackboard_set_bufferptr (const exprval_t **params, exprval_t *result,
