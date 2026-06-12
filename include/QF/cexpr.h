@@ -119,6 +119,8 @@ exprval_t *cexpr_assign_value (exprval_t *dst, const exprval_t *src,
 int cexpr_parse_enum (exprenum_t *enm, const char *str,
 					  const exprctx_t *context, void *data);
 binop_t *cexpr_find_cast (exprtype_t *dst_type, exprtype_t *src_type) __attribute__((pure));
+binop_t *cexpr_find_binop (exprtype_t *type, int op) __attribute__((pure));
+unop_t *cexpr_find_unop (exprtype_t *type, int op) __attribute__((pure));
 exprval_t *cexpr_value (exprtype_t *type, exprctx_t *ctx);
 exprval_t *cexpr_value_reference (exprtype_t *type, void *data, exprctx_t *ctx);
 const char *cexpr_enum_get_string (const exprval_t *val, struct va_ctx_s *va_ctx) __attribute__((pure,nonnull(2)));
@@ -126,6 +128,8 @@ const char *cexpr_flags_get_string (const exprval_t *val, struct va_ctx_s *va_ct
 int cexpr_eval_string (const char *str, exprctx_t *context);
 void cexpr_error(exprctx_t *ctx, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
 
+void cexpr_array_getindex (const exprval_t *a, unsigned index,
+						   exprval_t *c, exprctx_t *ctx);
 void cexpr_array_getelement (const exprval_t *a, const exprval_t *b,
 							 exprval_t *c, exprctx_t *ctx);
 void cexpr_struct_getfield (const exprval_t *a, const exprval_t *b,
@@ -155,9 +159,18 @@ extern exprtype_t cexpr_long;
 extern exprtype_t cexpr_ulong;
 extern exprtype_t cexpr_vector;
 extern exprtype_t cexpr_quaternion;
+extern exprtype_t cexpr_ivec2;
+extern exprtype_t cexpr_ivec3;
+extern exprtype_t cexpr_ivec4;
+extern exprtype_t cexpr_uvec2;
+extern exprtype_t cexpr_uvec3;
+extern exprtype_t cexpr_uvec4;
 extern exprtype_t cexpr_vec2;
 extern exprtype_t cexpr_vec3;
 extern exprtype_t cexpr_vec4;
+extern exprtype_t cexpr_dvec2;
+extern exprtype_t cexpr_dvec3;
+extern exprtype_t cexpr_dvec4;
 extern exprtype_t cexpr_exprval;
 extern exprtype_t cexpr_field;
 extern exprtype_t cexpr_function;

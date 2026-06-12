@@ -38,11 +38,10 @@
 #include "libs/util/cexpr-parse.h"
 
 VISIBLE void
-cexpr_array_getelement (const exprval_t *a, const exprval_t *b, exprval_t *c,
+cexpr_array_getindex (const exprval_t *a, unsigned index, exprval_t *c,
 						exprctx_t *ctx)
 {
 	__auto_type array = (exprarray_t *) a->type->data;
-	unsigned    index = *(const unsigned *) b->value;
 	exprval_t *val = 0;
 	if (index < array->size) {
 		val = cmemalloc (ctx->memsuper, sizeof (exprval_t));
@@ -53,6 +52,14 @@ cexpr_array_getelement (const exprval_t *a, const exprval_t *b, exprval_t *c,
 					 a->type->name);
 	}
 	*(exprval_t **) c->value = val;
+}
+
+VISIBLE void
+cexpr_array_getelement (const exprval_t *a, const exprval_t *b, exprval_t *c,
+						exprctx_t *ctx)
+{
+	unsigned    index = *(const unsigned *) b->value;
+	cexpr_array_getindex (a, index, c, ctx);
 }
 
 VISIBLE binop_t cexpr_array_binops[] = {

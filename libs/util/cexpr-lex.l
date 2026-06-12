@@ -28,6 +28,7 @@
 %option reentrant
 %option prefix="cexpr_yy"
 %option noyywrap
+%option stack
 
 %{
 
@@ -60,7 +61,13 @@
 #define YY_NO_YYINPUT
 #define YY_NO_YYUNPUT
 
-#define YYSTYPE CEXPR_YYSTYPE
+typedef struct cex_tok_s {
+	int textlen;
+	int token;
+	CEXPR_YYSTYPE s;
+} cex_tok_t;
+
+#define YYSTYPE cex_tok_t
 #define YY_EXTRA_TYPE exprctx_t *
 
 exprctx_t *cexpr_yyget_extra (yyscan_t yyscanner) __attribute__((pure));
@@ -73,14 +80,24 @@ int cexpr_yyget_leng (yyscan_t yyscanner) __attribute__((pure));
 FILE *cexpr_yyget_out (yyscan_t yyscanner) __attribute__((pure));
 FILE *cexpr_yyget_in (yyscan_t yyscanner) __attribute__((pure));
 
+static exprval_t *parse_number (cex_tok_t *tok, exprctx_t *context);
+static exprval_t *parse_vector (cex_tok_t *tok, yyscan_t scanner,
+								exprctx_t *context);
 static exprval_t *parse_int (const char *str, exprctx_t *context);
 static exprval_t *parse_uint (const char *str, exprctx_t *context);
 static exprval_t *parse_size_t (const char *str, exprctx_t *context);
+static exprval_t *parse_float (const char *str, exprctx_t *context);
 static exprval_t *parse_float (const char *str, exprctx_t *context);
 static exprval_t *parse_double (const char *str, exprctx_t *context);
 static exprval_t *parse_string (const char *str, exprctx_t *context);
 static exprsym_t *parse_name (const char *str, exprctx_t *context);
 static exprval_t *parse_variable (const char *str, exprctx_t *context);
+
+typedef enum {
+	cex_eof = 1,
+	cex_number,
+	cex_vector,
+} cex_term;
 
 VISIBLE void
 cexpr_error(exprctx_t *ctx, const char *fmt, ...)
@@ -113,102 +130,92 @@ cexpr_error(exprctx_t *ctx, const char *fmt, ...)
 	dstring_delete (string);
 }
 
+static void
+save_text (cex_tok_t *tok, const char *text, size_t textlen, int state,
+		   exprctx_t *context)
+{
+	tok->s.string = text;
+	tok->textlen = textlen;
+}
+
+#define YY_USER_ACTION save_text (yylval, yytext, yyleng, yystart(), context);
+
 %}
 
 s			[ \t]
 m			[\-+]
 D			[0-9]
-B			[01]
-X			[0-9a-fA-F]
-id			[a-zA-Z_0-9]*
-ID			[a-zA-Z_]{id}
-FLOAT		({D}+|{D}*\.{D}+|{D}+\.{D}*)([eE]{m}?{D}+)?
-FLOATf		{FLOAT}[fF]
-FLOATd		{FLOAT}[dD]
-INT			({D}+|0[xX]{X}+|0[bB]{B})
-STRING		\"(\\.|[^"\\])*\"
+IDs			[a-zA-Z_]
+IDc			[a-zA-Z_0-9]
+ID			{IDs}{IDc}*
+id			{IDc}{IDc}*
+FD			[fFdD]
+UL			([uU]?([lL][lL]?)?)
+ULFDZ		({UL}|{FD}|[zZ])
+s_string	\"(\\.|[^"\\])*\"
+c_string	'(\\.|[^'\\])*'
+
+pp_number   \.?{D}({IDc}|'{IDc}|[eEpP]{m}|\.)*
+pp_vnumber  '({s}*{m}?{pp_number}){2,4}{s}*'{ULFDZ}?
+
+%x		VECTOR
 
 %%
 %{
 	__auto_type context = yyget_extra (yyscanner);
 %}
 
-{INT}+[uU]			{
-						yylval->value = parse_uint (yytext, context);
-						return VALUE;
-					}
-
-{INT}+				{
-						yylval->value = parse_int (yytext, context);
-						return VALUE;
-					}
-
-{INT}+[zZ]			{
-						yylval->value = parse_size_t (yytext, context);
-						return VALUE;
-					}
-
-{FLOAT}				{
-						yylval->value = parse_double (yytext, context);
-						return VALUE;
-					}
-{FLOATf}			{
-						yylval->value = parse_float (yytext, context);
-						return VALUE;
-					}
-{FLOATd}			{
-						yylval->value = parse_double (yytext, context);
-						return VALUE;
-					}
+{pp_number}			{ return -cex_number; }
+{pp_vnumber}		{ return -cex_vector; }
+<VECTOR>{pp_number}	{ return -cex_number; }
+<VECTOR>{m}			{ return yytext[0]; }
+<VECTOR>'			{ return -cex_eof; }
 
 {ID}(`{id})*		{
-						yylval->symbol = parse_name (yytext, context);
+						yylval->s.symbol = parse_name (yytext, context);
 						return NAME;
 					}
 
-`{id}(`{id})*		{
-						yylval->symbol = parse_name (yytext + 1, context);
+`{IDc}+(`{id})*		{
+						yylval->s.symbol = parse_name (yytext + 1, context);
 						return NAME;
 					}
 
 \${ID}				{
-						yylval->value = parse_variable (yytext + 1, context);
+						yylval->s.value = parse_variable (yytext + 1, context);
 						return VALUE;
 					}
 
-{STRING}			{
-						yylval->value = parse_string (yytext, context);
+{s_string}			{
+						yylval->s.value = parse_string (yytext, context);
 						return VALUE;
 					}
 @					{
 						auto sym = parse_name ("@", context);
 						if (sym) {
-							yylval->symbol = sym;
+							yylval->s.symbol = sym;
 							return NAME;
 						}
 						return '@';
 					}
 
-'(\\[^xX0-7\r\n]|[^'\r\n]|\\[xX][0-9A-Fa-f]+|\\[0-7]+)*'	{
-					}
-
 [+\-*/&|^%]=		{
-						yylval->op = yytext[0];
+						yylval->s.op = yytext[0];
 						return ASX;
 					}
 
 "%%="				{
-						yylval->op = MOD;
+						yylval->s.op = MOD;
 						return ASX;
 					}
 
 "<<="				{
-						yylval->op = SHL;
+						yylval->s.op = SHL;
 						return ASX;
 					}
 
 ">>="				{
-						yylval->op = SHR;
+						yylval->s.op = SHR;
 						return ASX;
 					}
 
@@ -259,14 +266,30 @@ cexpr_eval_string (const char *str, exprctx_t *context)
 
 	context->errors = 0;
 	do {
-		CEXPR_YYSTYPE lval;
+		cex_tok_t   lval;
 		int         token = yylex (&lval, scanner);
-		status = cexpr_yypush_parse (ps, token, &lval, scanner, context);
+		if (token < 0) {
+			cex_term term = -token;
+			switch (term) {
+				case cex_eof:
+					break;
+				case cex_number:
+					lval.s.value = parse_number (&lval, context);
+					token = VALUE;
+					break;
+				case cex_vector:
+					lval.s.value = parse_vector (&lval, scanner, context);
+					token = VALUE;
+					break;
+			}
+		}
+		status = cexpr_yypush_parse (ps, token, &lval.s, scanner, context);
 	} while (status == YYPUSH_MORE);
 
 	yylex_destroy (scanner);
 	cexpr_yypstate_delete (ps);
 	return status || context->errors;
+	(void)yy_top_state;
 }
 
 static exprval_t *parse_int (const char *str, exprctx_t *context)
@@ -301,6 +324,199 @@ static exprval_t *parse_double (const char *str, exprctx_t *context)
 {
 	exprval_t  *val = cexpr_value (&cexpr_double, context);
 	*(double *) val->value = strtod (str, 0);
+	return val;
+}
+
+static exprval_t *parse_long (const char *str, exprctx_t *context)
+{
+	exprval_t  *val = cexpr_value (&cexpr_long, context);
+	*(int64_t *) val->value = strtol (str, nullptr, 0);
+	return val;
+}
+
+static exprval_t *parse_ulong (const char *str, exprctx_t *context)
+{
+	exprval_t  *val = cexpr_value (&cexpr_ulong, context);
+	*(uint64_t *) val->value = strtoul (str, nullptr, 0);
+	return val;
+}
+
+static exprval_t *parse_number (cex_tok_t *tok, exprctx_t *context)
+{
+	const char *str = tok->s.string;
+	int len = 0;
+	bool is_float = false;
+	bool is_long = false;
+	//FIXME is it worth worrying about too many . or mid-string type chars?
+	for (const char *s = str; *s; s++, len++) {
+		is_float |= *s == '.';
+		is_long |= (*s | 0x20) == 'l';
+	}
+	// known to be at least one char
+	// "tolower" is a no-op on digits or other number-related chars
+	switch (str[len - 1] | 0x20) {
+		case 'f': return parse_float (str, context);
+		case 'd': return parse_double (str, context);
+		case 'z': return parse_size_t (str, context);
+		case 'u': return (is_long ? parse_ulong : parse_uint) (str, context);
+	}
+	if (is_float) {
+		return parse_double (str, context);
+	}
+	return (is_long ? parse_long : parse_int) (str, context);
+}
+
+typedef struct {
+	yyscan_t    scanner;
+	yybuffer    buffer;
+} buffer_raii_t;
+
+
+static void
+cexpr_restore_buffer (buffer_raii_t *raii)
+{
+	yy_switch_to_buffer (raii->buffer, raii->scanner);
+}
+
+static void
+cexpr_delete_buffer (buffer_raii_t *raii)
+{
+	yy_delete_buffer (raii->buffer, raii->scanner);
+}
+
+
+static exprval_t *
+parse_vector (cex_tok_t *tok, yyscan_t scanner, exprctx_t *context)
+{
+	char *text = cmemalloc (context->memsuper, tok->textlen + 1);
+	strncpy (text, tok->s.string, tok->textlen);
+	text[tok->textlen] = 0;
+
+	const char *end = text + tok->textlen;
+	while (end > text && *--end != '\'') continue;
+	const char *start = text + 1;
+
+	auto yyg = (struct yyguts_t *)scanner;
+	auto __attribute__((cleanup (cexpr_restore_buffer)))
+		saved_buffer = (buffer_raii_t) {
+			.scanner = scanner,
+			.buffer = YY_CURRENT_BUFFER,
+		};
+	auto __attribute__((cleanup (cexpr_delete_buffer)))
+		buffer = (buffer_raii_t) {
+			.scanner = scanner,
+			.buffer = yy_scan_bytes (start, end - start, scanner),
+		};
+
+	cex_tok_t   vtok = {};
+	exprval_t  *components[4+1] = {}; // max of 4
+	bool        negate[4] = {};
+	int         width = 0;
+	int         token;
+	static exprtype_t *ivec_types[] = {
+		nullptr, nullptr,	// no 0 or 1 component vectors
+		&cexpr_ivec2,
+		&cexpr_ivec3,
+		&cexpr_ivec4,
+	};
+	static exprtype_t *uvec_types[] = {
+		nullptr, nullptr,	// no 0 or 1 component vectors
+		&cexpr_uvec2,
+		&cexpr_uvec3,
+		&cexpr_uvec4,
+	};
+	static exprtype_t *vec_types[] = {
+		nullptr, nullptr,	// no 0 or 1 component vectors
+		&cexpr_vec2,
+		&cexpr_vec3,
+		&cexpr_vec4,
+	};
+	static exprtype_t *dvec_types[] = {
+		nullptr, nullptr,	// no 0 or 1 component vectors
+		&cexpr_dvec2,
+		&cexpr_dvec3,
+		&cexpr_dvec4,
+	};
+	static exprtype_t **types[] = {
+		ivec_types,
+		uvec_types,
+		vec_types,
+		dvec_types,
+	};
+	int type_ind = 0;//default to int
+
+	yy_push_state (VECTOR, scanner);
+	do {
+		token = yylex (&vtok, scanner);
+		if (-token == cex_number) {
+			auto comp = parse_number (&vtok, context);
+			if (comp) {
+				if (width < 4) {
+					components[width] = comp;
+					int ind = 0;
+					if (comp->type == &cexpr_int) {
+						ind = 0;
+					} else if (comp->type == &cexpr_uint) {
+						ind = 1;
+					} else if (comp->type == &cexpr_float) {
+						ind = 2;
+					} else if (comp->type == &cexpr_double) {
+						ind = 3;
+					} else {
+						cexpr_error (context, "unsupported vector type: %s",
+									 comp->type->name);
+						return nullptr;
+					}
+					if (ind > type_ind) {
+						type_ind = ind;
+					}
+				}
+				width++;
+			}
+		} else if (token == '-') {
+			if (width < 4) {
+				negate[width] = true;
+			}
+		}
+	} while (token && token != -cex_eof);
+	yy_pop_state (scanner);
+
+	if (width > 4) {
+		cexpr_error (context, "too many components in vector literal");
+		return nullptr;
+	}
+	bool is_long = false;
+	bool is_float = false;
+	bool is_double = false;
+	bool is_unsigned = false;
+	for (end++; *end; end++) {
+		is_long |= (*end | 0x20) == 'l';
+		is_float |= (*end | 0x20) == 'f';
+		is_double |= (*end | 0x20) == 'd';
+		is_unsigned |= (*end | 0x20) == 'u';
+	}
+	if (is_long) {
+		cexpr_error (context, "long vectors not supported yet");
+		return nullptr;
+	}
+	if (is_float) {
+		type_ind = 2;
+	} else if (is_unsigned) {
+		type_ind = 1;
+	} else if (is_double) {
+		type_ind = 3;
+	}
+	exprval_t  *val = cexpr_value (types[type_ind][width], context);
+	auto neg = cexpr_find_unop (((exprarray_t *) val->type->data)->type, '-');
+	for (int i = 0; i < width; i++) {
+		exprval_t *dst = nullptr;
+		exprval_t dst_element = { .type = &cexpr_exprval, .value = &dst };
+		cexpr_array_getindex (val, i, &dst_element, context);
+		cexpr_assign_value (dst, components[i], context);
+		if (negate[i]) {
+			neg->func (dst, dst, context);
+		}
+	}
 	return val;
 }
 

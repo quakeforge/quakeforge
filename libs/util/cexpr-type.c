@@ -37,6 +37,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/simd/vec4f.h"
+#include "QF/simd/vec4d.h"
 
 #include "libs/util/cexpr-parse.h"
 
@@ -671,7 +672,7 @@ static void
 vector_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 			exprctx_t *ctx)
 {
-	// implement true modulo for doubles:
+	// implement true modulo for floats:
 	//  5 mod  3 = 2
 	// -5 mod  3 = 1
 	//  5 mod -3 = -1
@@ -683,8 +684,8 @@ vector_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 }
 
 static void
-vector_swizzle (const exprval_t *val1, const exprval_t *val2,
-				exprval_t *result, exprctx_t *ctx)
+vec32_swizzle (const exprval_t *val1, const exprval_t *val2,
+			   exprval_t *result, exprctx_t *ctx)
 {
 #define m(x) (1 << ((x) - 'a'))
 #define v(x, mask) (((x) & 0x60) == 0x60 && (m(x) & (mask)))
@@ -692,14 +693,14 @@ vector_swizzle (const exprval_t *val1, const exprval_t *val2,
 #define cind(x) (-(((x) >> 3) ^ (x)) & 3)
 	const int   color = m('r') | m('g') | m('b') | m('a');
 	const int   vector = m('x') | m('y') | m('z') | m('w');
-	float      *vec = val1->value;
+	uint32_t   *vec = val1->value;
 	const char *name = val2->value;
 	exprval_t  *val = 0;
 
 	if (v (name[0], vector) && v (name[1], vector)
 		&& v (name[2], vector) && v (name[3], vector) && !name[4]) {
 		val = cexpr_value (&cexpr_vector, ctx);
-		float      *res = val->value;
+		uint32_t   *res = val->value;
 		res[0] = vec[vind (name[0])];
 		res[1] = vec[vind (name[1])];
 		res[2] = vec[vind (name[2])];
@@ -707,7 +708,7 @@ vector_swizzle (const exprval_t *val1, const exprval_t *val2,
 	} else if (v (name[0], color) && v (name[1], color)
 			   && v (name[2], color) && v (name[3], color) && !name[4]) {
 		val = cexpr_value (&cexpr_vector, ctx);
-		float      *res = val->value;
+		uint32_t   *res = val->value;
 		res[0] = vec[cind (name[0])];
 		res[1] = vec[cind (name[1])];
 		res[2] = vec[cind (name[2])];
@@ -715,7 +716,7 @@ vector_swizzle (const exprval_t *val1, const exprval_t *val2,
 	} else if (v (name[0], vector) && v (name[1], vector)
 			   && v (name[2], vector) && !name[3]) {
 		val = cexpr_value (&cexpr_vector, ctx);
-		float      *res = val->value;
+		uint32_t   *res = val->value;
 		res[0] = vec[vind (name[0])];
 		res[1] = vec[vind (name[1])];
 		res[2] = vec[vind (name[2])];
@@ -723,32 +724,104 @@ vector_swizzle (const exprval_t *val1, const exprval_t *val2,
 	} else if (v (name[0], color) && v (name[1], color)
 			   && v (name[2], color) && !name[3]) {
 		val = cexpr_value (&cexpr_vector, ctx);
-		float      *res = val->value;
+		uint32_t   *res = val->value;
 		res[0] = vec[cind (name[0])];
 		res[1] = vec[cind (name[1])];
 		res[2] = vec[cind (name[2])];
 		res[3] = 0;
 	} else if (v (name[0], vector) && v (name[1], vector) && !name[2]) {
 		val = cexpr_value (&cexpr_vector, ctx);
-		float      *res = val->value;
+		uint32_t   *res = val->value;
 		res[0] = vec[vind (name[0])];
 		res[1] = vec[vind (name[1])];
 		res[2] = 0;
 		res[3] = 0;
 	} else if (v (name[0], color) && v (name[1], color) && !name[2]) {
 		val = cexpr_value (&cexpr_vector, ctx);
-		float      *res = val->value;
+		uint32_t   *res = val->value;
 		res[0] = vec[cind (name[0])];
 		res[1] = vec[cind (name[1])];
 		res[2] = 0;
 		res[3] = 0;
 	} else if (v (name[0], vector) && !name[1]) {
 		val = cexpr_value (&cexpr_float, ctx);
-		float      *res = val->value;
+		uint32_t   *res = val->value;
 		res[0] = vec[vind (name[0])];
 	} else if (v (name[0], color) && !name[1]) {
 		val = cexpr_value (&cexpr_float, ctx);
-		float      *res = val->value;
+		uint32_t   *res = val->value;
+		res[0] = vec[cind (name[0])];
+	}
+	*(exprval_t **) result->value = val;
+}
+
+static void
+vec64_swizzle (const exprval_t *val1, const exprval_t *val2,
+			   exprval_t *result, exprctx_t *ctx)
+{
+#define m(x) (1 << ((x) - 'a'))
+#define v(x, mask) (((x) & 0x60) == 0x60 && (m(x) & (mask)))
+#define vind(x) ((x) & 3)
+#define cind(x) (-(((x) >> 3) ^ (x)) & 3)
+	const int   color = m('r') | m('g') | m('b') | m('a');
+	const int   vector = m('x') | m('y') | m('z') | m('w');
+	uint64_t   *vec = val1->value;
+	const char *name = val2->value;
+	exprval_t  *val = 0;
+
+	if (v (name[0], vector) && v (name[1], vector)
+		&& v (name[2], vector) && v (name[3], vector) && !name[4]) {
+		val = cexpr_value (&cexpr_vector, ctx);
+		uint64_t   *res = val->value;
+		res[0] = vec[vind (name[0])];
+		res[1] = vec[vind (name[1])];
+		res[2] = vec[vind (name[2])];
+		res[3] = vec[vind (name[3])];
+	} else if (v (name[0], color) && v (name[1], color)
+			   && v (name[2], color) && v (name[3], color) && !name[4]) {
+		val = cexpr_value (&cexpr_vector, ctx);
+		uint64_t   *res = val->value;
+		res[0] = vec[cind (name[0])];
+		res[1] = vec[cind (name[1])];
+		res[2] = vec[cind (name[2])];
+		res[3] = vec[cind (name[3])];
+	} else if (v (name[0], vector) && v (name[1], vector)
+			   && v (name[2], vector) && !name[3]) {
+		val = cexpr_value (&cexpr_vector, ctx);
+		uint64_t   *res = val->value;
+		res[0] = vec[vind (name[0])];
+		res[1] = vec[vind (name[1])];
+		res[2] = vec[vind (name[2])];
+		res[3] = 0;
+	} else if (v (name[0], color) && v (name[1], color)
+			   && v (name[2], color) && !name[3]) {
+		val = cexpr_value (&cexpr_vector, ctx);
+		uint64_t   *res = val->value;
+		res[0] = vec[cind (name[0])];
+		res[1] = vec[cind (name[1])];
+		res[2] = vec[cind (name[2])];
+		res[3] = 0;
+	} else if (v (name[0], vector) && v (name[1], vector) && !name[2]) {
+		val = cexpr_value (&cexpr_vector, ctx);
+		uint64_t   *res = val->value;
+		res[0] = vec[vind (name[0])];
+		res[1] = vec[vind (name[1])];
+		res[2] = 0;
+		res[3] = 0;
+	} else if (v (name[0], color) && v (name[1], color) && !name[2]) {
+		val = cexpr_value (&cexpr_vector, ctx);
+		uint64_t   *res = val->value;
+		res[0] = vec[cind (name[0])];
+		res[1] = vec[cind (name[1])];
+		res[2] = 0;
+		res[3] = 0;
+	} else if (v (name[0], vector) && !name[1]) {
+		val = cexpr_value (&cexpr_float, ctx);
+		uint64_t   *res = val->value;
+		res[0] = vec[vind (name[0])];
+	} else if (v (name[0], color) && !name[1]) {
+		val = cexpr_value (&cexpr_float, ctx);
+		uint64_t   *res = val->value;
 		res[0] = vec[cind (name[0])];
 	}
 	*(exprval_t **) result->value = val;
@@ -780,7 +853,7 @@ binop_t vector_binops[] = {
 	{ '/', &cexpr_vector, &cexpr_vector, vector_div },
 	{ '%', &cexpr_vector, &cexpr_vector, vector_rem },
 	{ MOD, &cexpr_vector, &cexpr_vector, vector_mod },
-	{ '.', &cexpr_field, &cexpr_exprval, vector_swizzle },
+	{ '.', &cexpr_field, &cexpr_exprval, vec32_swizzle },
 	{ '=', &cexpr_plitem, &cexpr_vector, cexpr_cast_plitem },
 	{}
 };
@@ -857,6 +930,282 @@ exprtype_t cexpr_quaternion = {
 	.data = &vector_array,
 };
 
+BINOP(ivec4, add, vec4i_t, +)
+BINOP(ivec4, sub, vec4i_t, -)
+BINOP(ivec4, mul, vec4i_t, *)
+BINOP(ivec4, div, vec4i_t, /)
+
+static void
+ivec4_rem (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
+			exprctx_t *ctx)
+{
+	vec4i_t     a = *(vec4i_t *) val1->value;
+	vec4i_t     b = *(vec4i_t *) val2->value;
+	__auto_type c = (vec4i_t *) result->value;
+	*c = a % b;
+}
+
+static void
+ivec4_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
+			exprctx_t *ctx)
+{
+	// implement true modulo for ints:
+	//  5 mod  3 = 2
+	// -5 mod  3 = 1
+	//  5 mod -3 = -1
+	// -5 mod -3 = -2
+	vec4i_t     a = *(vec4i_t *) val1->value;
+	vec4i_t     b = *(vec4i_t *) val2->value;
+	vec4i_t    *c = (vec4i_t *) result->value;
+	vec4i_t     v = a % b;
+	vec4i_t     mask = (a ^ b) < 0;
+	mask &= v != 0;
+	*c = v + (mask & b);
+}
+
+UNOP(ivec4, pos, vec4i_t, +)
+UNOP(ivec4, neg, vec4i_t, -)
+
+static void
+ivec4_tnot (const exprval_t *val, exprval_t *result, exprctx_t *ctx)
+{
+	vec4i_t     v = *(vec4i_t *) val->value;
+	__auto_type c = (vec4i_t *) result->value;
+	*c = v != 0;
+}
+
+BINOP(uvec4, add, vec4u_t, +)
+BINOP(uvec4, sub, vec4u_t, -)
+BINOP(uvec4, mul, vec4u_t, *)
+BINOP(uvec4, div, vec4u_t, /)
+
+UNOP(uvec4, pos, vec4u_t, +)
+UNOP(uvec4, neg, vec4u_t, -)
+
+static void
+uvec4_tnot (const exprval_t *val, exprval_t *result, exprctx_t *ctx)
+{
+	vec4u_t     v = *(vec4u_t *) val->value;
+	__auto_type c = (vec4u_t *) result->value;
+	*c = v != 0;
+}
+
+BINOP(dvec4, add, vec4d_t, +)
+BINOP(dvec4, sub, vec4d_t, -)
+BINOP(dvec4, mul, vec4d_t, *)
+BINOP(dvec4, div, vec4d_t, /)
+
+static void
+dvec4_rem (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
+		   exprctx_t *ctx)
+{
+	vec4d_t     a = *(vec4d_t *) val1->value;
+	vec4d_t     b = *(vec4d_t *) val2->value;
+	__auto_type c = (vec4d_t *) result->value;
+	*c = a - b * vtrunc4d (a / b);
+}
+
+static void
+dvec4_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
+			exprctx_t *ctx)
+{
+	// implement true modulo for floats:
+	//  5 mod  3 = 2
+	// -5 mod  3 = 1
+	//  5 mod -3 = -1
+	// -5 mod -3 = -2
+	vec4d_t     a = *(vec4d_t *) val1->value;
+	vec4d_t     b = *(vec4d_t *) val2->value;
+	__auto_type c = (vec4d_t *) result->value;
+	*c = a - b * vfloor4d (a / b);
+}
+
+UNOP(dvec4, pos, vec4d_t, +)
+UNOP(dvec4, neg, vec4d_t, -)
+
+binop_t ivector_binops[] = {
+	{ '+', &cexpr_ivec4, &cexpr_ivec4, ivec4_add },
+	{ '-', &cexpr_ivec4, &cexpr_ivec4, ivec4_sub },
+	{ '*', &cexpr_ivec4, &cexpr_ivec4, ivec4_mul },
+	{ '/', &cexpr_ivec4, &cexpr_ivec4, ivec4_div },
+	{ '%', &cexpr_ivec4, &cexpr_ivec4, ivec4_rem },
+	{ MOD, &cexpr_ivec4, &cexpr_ivec4, ivec4_mod },
+	{ '.', &cexpr_field, &cexpr_exprval, vec32_swizzle },
+	{ '=', &cexpr_plitem, &cexpr_ivec4, cexpr_cast_plitem },
+	{}
+};
+
+unop_t ivector_unops[] = {
+	{ '+', &cexpr_ivec4, ivec4_pos },
+	{ '-', &cexpr_ivec4, ivec4_neg },
+	{ '!', &cexpr_ivec4, ivec4_tnot },
+	{}
+};
+
+binop_t uvector_binops[] = {
+	{ '+', &cexpr_uvec4, &cexpr_uvec4, uvec4_add },
+	{ '-', &cexpr_uvec4, &cexpr_uvec4, uvec4_sub },
+	{ '*', &cexpr_uvec4, &cexpr_uvec4, uvec4_mul },
+	{ '/', &cexpr_uvec4, &cexpr_uvec4, uvec4_div },
+	{ '%', &cexpr_uvec4, &cexpr_uvec4, ivec4_rem },
+	{ MOD, &cexpr_uvec4, &cexpr_uvec4, ivec4_mod },
+	{ '.', &cexpr_field, &cexpr_exprval, vec32_swizzle },
+	{ '=', &cexpr_plitem, &cexpr_uvec4, cexpr_cast_plitem },
+	{}
+};
+
+unop_t uvector_unops[] = {
+	{ '+', &cexpr_uvec4, uvec4_pos },
+	{ '-', &cexpr_uvec4, uvec4_neg },
+	{ '!', &cexpr_uvec4, uvec4_tnot },
+	{}
+};
+
+binop_t dvector_binops[] = {
+	{ '+', &cexpr_dvec4, &cexpr_dvec4, dvec4_add },
+	{ '-', &cexpr_dvec4, &cexpr_dvec4, dvec4_sub },
+	{ '*', &cexpr_dvec4, &cexpr_dvec4, dvec4_mul },
+	{ '/', &cexpr_dvec4, &cexpr_dvec4, dvec4_div },
+	{ '%', &cexpr_dvec4, &cexpr_dvec4, dvec4_rem },
+	{ MOD, &cexpr_dvec4, &cexpr_dvec4, dvec4_mod },
+	{ '.', &cexpr_field, &cexpr_exprval, vec64_swizzle },
+	{ '=', &cexpr_plitem, &cexpr_dvec4, cexpr_cast_plitem },
+	{}
+};
+
+unop_t dvector_unops[] = {
+	{ '+', &cexpr_dvec4, dvec4_pos },
+	{ '-', &cexpr_dvec4, dvec4_neg },
+	//{ '!', &cexpr_dvec4, dvec4_tnot },
+	{}
+};
+
+static const char *
+ivec2_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec2i_t     vec = *(vec2i_t *) val->value;
+	return vac (va_ctx, VEC2I_FMT, VEC2_EXP (vec));
+}
+
+static exprarray_t ivec2_array = {
+	.type = &cexpr_int,
+	.size = 2,
+};
+
+exprtype_t cexpr_ivec2 = {
+	.name = "ivec2",
+	.size = sizeof (vec4i_t),
+	.binops = ivector_binops,
+	.unops = ivector_unops,
+	.get_string = ivec2_get_string,
+	.data = &ivec2_array,
+};
+
+static const char *
+ivec3_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec4i_t     vec = *(vec4i_t *) val->value;
+	return vac (va_ctx, "[%d, %d, %d]", VectorExpand (vec));
+}
+
+static exprarray_t ivec3_array = {
+	.type = &cexpr_int,
+	.size = 3,
+};
+
+exprtype_t cexpr_ivec3 = {
+	.name = "ivec3",
+	.size = sizeof (vec4i_t),
+	.binops = ivector_binops,
+	.unops = ivector_unops,
+	.get_string = ivec3_get_string,
+	.data = &ivec3_array,
+};
+
+static const char *
+ivec4_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec4i_t     vec = *(vec4i_t *) val->value;
+	return vac (va_ctx, VEC4I_FMT, VEC4_EXP (vec));
+}
+
+static exprarray_t ivec4_array = {
+	.type = &cexpr_int,
+	.size = 4,
+};
+
+exprtype_t cexpr_ivec4 = {
+	.name = "ivec4",
+	.size = sizeof (vec4i_t),
+	.binops = ivector_binops,
+	.unops = ivector_unops,
+	.get_string = ivec4_get_string,
+	.data = &ivec4_array,
+};
+
+static const char *
+uvec2_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec2u_t     vec = *(vec2u_t *) val->value;
+	return vac (va_ctx, VEC2U_FMT, VEC2_EXP (vec));
+}
+
+static exprarray_t uvec2_array = {
+	.type = &cexpr_uint,
+	.size = 2,
+};
+
+exprtype_t cexpr_uvec2 = {
+	.name = "uvec2",
+	.size = sizeof (vec4i_t),
+	.binops = uvector_binops,
+	.unops = uvector_unops,
+	.get_string = uvec2_get_string,
+	.data = &uvec2_array,
+};
+
+static const char *
+uvec3_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec4u_t     vec = *(vec4u_t *) val->value;
+	return vac (va_ctx, "[%u, %u, %u]", VectorExpand (vec));
+}
+
+static exprarray_t uvec3_array = {
+	.type = &cexpr_uint,
+	.size = 3,
+};
+
+exprtype_t cexpr_uvec3 = {
+	.name = "uvec3",
+	.size = sizeof (vec4u_t),
+	.binops = uvector_binops,
+	.unops = uvector_unops,
+	.get_string = uvec3_get_string,
+	.data = &uvec3_array,
+};
+
+static const char *
+uvec4_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec4u_t     vec = *(vec4u_t *) val->value;
+	return vac (va_ctx, VEC4U_FMT, VEC4_EXP (vec));
+}
+
+static exprarray_t uvec4_array = {
+	.type = &cexpr_uint,
+	.size = 4,
+};
+
+exprtype_t cexpr_uvec4 = {
+	.name = "uvec4",
+	.size = sizeof (vec4u_t),
+	.binops = uvector_binops,
+	.unops = uvector_unops,
+	.get_string = uvec4_get_string,
+	.data = &uvec4_array,
+};
+
 static const char *
 vec2_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 {
@@ -911,6 +1260,69 @@ exprtype_t cexpr_vec4 = {
 	.unops = vector_unops,
 	.get_string = vector_get_string,
 	.data = &vec4_array,
+};
+
+static const char *
+dvec2_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec2d_t     vec = *(vec2d_t *) val->value;
+	return vac (va_ctx, VEC2D_FMT, VEC2_EXP (vec));
+}
+
+static exprarray_t dvec2_array = {
+	.type = &cexpr_double,
+	.size = 2,
+};
+
+exprtype_t cexpr_dvec2 = {
+	.name = "dvec2",
+	.size = sizeof (vec4d_t),
+	.binops = dvector_binops,
+	.unops = dvector_unops,
+	.get_string = dvec2_get_string,
+	.data = &dvec2_array,
+};
+
+static const char *
+dvec3_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec4d_t     vec = *(vec4d_t *) val->value;
+	return vac (va_ctx, "[%.17g, %.17g, %.17g]", VectorExpand (vec));
+}
+
+static exprarray_t dvec3_array = {
+	.type = &cexpr_double,
+	.size = 3,
+};
+
+exprtype_t cexpr_dvec3 = {
+	.name = "dvec3",
+	.size = sizeof (vec4d_t),
+	.binops = vector_binops,
+	.unops = vector_unops,
+	.get_string = dvec3_get_string,
+	.data = &dvec3_array,
+};
+
+static const char *
+dvec4_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec4d_t     vec = *(vec4d_t *) val->value;
+	return vac (va_ctx, VEC4D_FMT, VEC4_EXP (vec));
+}
+
+static exprarray_t dvec4_array = {
+	.type = &cexpr_double,
+	.size = 4,
+};
+
+exprtype_t cexpr_dvec4 = {
+	.name = "dvec4",
+	.size = sizeof (vec4d_t),
+	.binops = dvector_binops,
+	.unops = dvector_unops,
+	.get_string = dvec4_get_string,
+	.data = &dvec4_array,
 };
 
 exprtype_t cexpr_exprval = {
@@ -1143,4 +1555,26 @@ cexpr_flags_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 		val_str = "0";
 	}
 	return val_str;
+}
+
+VISIBLE binop_t *
+cexpr_find_binop (exprtype_t *type, int op)
+{
+	for (auto binop = type->binops; binop->op; binop++) {
+		if (binop->op == op) {
+			return binop;
+		}
+	}
+	return nullptr;
+}
+
+VISIBLE unop_t *
+cexpr_find_unop (exprtype_t *type, int op)
+{
+	for (auto unop = type->unops; unop->op; unop++) {
+		if (unop->op == op) {
+			return unop;
+		}
+	}
+	return nullptr;
 }
