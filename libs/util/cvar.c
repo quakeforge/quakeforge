@@ -85,8 +85,8 @@ static exprtab_t developer_symtab = {
 	developer_symbols,
 };
 static exprenum_t developer_enum = {
-	&developer_type,
-	&developer_symtab,
+	.type = &developer_type,
+	.symtab = &developer_symtab,
 };
 
 VISIBLE int developer;

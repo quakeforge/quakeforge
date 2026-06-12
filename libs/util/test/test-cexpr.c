@@ -46,8 +46,8 @@ vec4f_t plane;
 vec4f_t intercept;
 
 exprarray_t int_array_4_data = {
-	&cexpr_int,
-	sizeof (array) / sizeof (array[0]),
+	.type = &cexpr_int,
+	.size = sizeof (array) / sizeof (array[0]),
 };
 exprtype_t int_array_4 = {
 	.name = "int[4]",

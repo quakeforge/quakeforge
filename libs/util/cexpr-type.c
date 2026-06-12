@@ -125,8 +125,8 @@ static exprtab_t bool_symtab = {
 	bool_symbols,
 };
 exprenum_t cexpr_bool_enum = {
-	&cexpr_bool,
-	&bool_symtab,
+	.type = &cexpr_bool,
+	.symtab = &bool_symtab,
 };
 
 BINOP(int, shl, int, <<)
@@ -792,12 +792,18 @@ unop_t vector_unops[] = {
 	{}
 };
 
+static exprarray_t vector_array = {
+	.type = &cexpr_float,
+	.size = 4,
+};
+
 exprtype_t cexpr_vector = {
 	.name = "vector",
 	.size = sizeof (vec4f_t),
 	.binops = vector_binops,
 	.unops = vector_unops,
 	.get_string = vector_get_string,
+	.data = &vector_array,
 };
 
 static void
@@ -848,6 +854,7 @@ exprtype_t cexpr_quaternion = {
 	.binops = quaternion_binops,
 	.unops = quaternion_unops,
 	.get_string = quaternion_get_string,
+	.data = &vector_array,
 };
 
 static const char *
@@ -857,12 +864,18 @@ vec2_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 	return vac (va_ctx, VEC2F_FMT, VEC2_EXP (vec));
 }
 
+static exprarray_t vec2_array = {
+	.type = &cexpr_float,
+	.size = 2,
+};
+
 exprtype_t cexpr_vec2 = {
 	.name = "vec2",
 	.size = sizeof (vec4f_t),
 	.binops = vector_binops,
 	.unops = vector_unops,
 	.get_string = vec2_get_string,
+	.data = &vec2_array,
 };
 
 static const char *
@@ -872,12 +885,23 @@ vec3_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 	return vac (va_ctx, VectorFMT, VectorExpand (vec));
 }
 
+static exprarray_t vec3_array = {
+	.type = &cexpr_float,
+	.size = 3,
+};
+
 exprtype_t cexpr_vec3 = {
 	.name = "vec3",
 	.size = sizeof (vec4f_t),
 	.binops = vector_binops,
 	.unops = vector_unops,
 	.get_string = vec3_get_string,
+	.data = &vec3_array,
+};
+
+static exprarray_t vec4_array = {
+	.type = &cexpr_float,
+	.size = 4,
 };
 
 exprtype_t cexpr_vec4 = {
@@ -886,6 +910,7 @@ exprtype_t cexpr_vec4 = {
 	.binops = vector_binops,
 	.unops = vector_unops,
 	.get_string = vector_get_string,
+	.data = &vec4_array,
 };
 
 exprtype_t cexpr_exprval = {

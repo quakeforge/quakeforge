@@ -92,7 +92,8 @@ typedef struct exprtab_s {
 typedef struct exprarray_s {
 	exprtype_t *type;
 	unsigned    size;
-} exprarray_t;
+	exprtab_t  *_tab;	// padding so exprarray_t llooks like exprenum_t
+} DESIGNATED_INIT exprarray_t;
 
 typedef struct exprctx_s {
 	struct exprctx_s *parent;		// for nested symol scopes
@@ -109,8 +110,9 @@ typedef struct exprctx_s {
 
 typedef struct exprenum_s {
 	exprtype_t *type;
+	unsigned    _size;	// padding so exprtype_t looks like exprarray_t
 	exprtab_t  *symtab;
-} exprenum_t;
+} DESIGNATED_INIT exprenum_t;
 
 exprval_t *cexpr_assign_value (exprval_t *dst, const exprval_t *src,
 							   exprctx_t *context);

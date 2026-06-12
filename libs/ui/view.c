@@ -79,8 +79,8 @@ static exprtab_t grav_t_symtab = {
 	grav_t_symbols,
 };
 static exprenum_t grav_t_enum = {
-	&grav_t_type,
-	&grav_t_symtab,
+	.type = &grav_t_type,
+	.symtab = &grav_t_symtab,
 };
 
 static void

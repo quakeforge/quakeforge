@@ -198,8 +198,8 @@ skip_value(string name)
 	fprintf (output_file, "\t%s_symbols,\n", [self name]);
 	fprintf (output_file, "};\n");
 	fprintf (output_file, "static exprenum_t %s_enum = {\n", [self name]);
-	fprintf (output_file, "\t&%s_type,\n", [self name]);
-	fprintf (output_file, "\t&%s_symtab,\n", [self name]);
+	fprintf (output_file, "\t.type = &%s_type,\n", [self name]);
+	fprintf (output_file, "\t.symtab = &%s_symtab,\n", [self name]);
 	fprintf (output_file, "};\n");
 
 	fprintf (output_file, "static plfield_t %s_field = { 0, 0, QFString,"

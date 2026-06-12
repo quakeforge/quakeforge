@@ -2233,8 +2233,8 @@ static exprsym_t lighting_stage_symbols[] = {
 };
 static exprtab_t lighting_stage_symtab = { .symbols = lighting_stage_symbols };
 static exprenum_t lighting_stage_enum = {
-	&lighting_stage_type,
-	&lighting_stage_symtab,
+	.type = &lighting_stage_type,
+	.symtab = &lighting_stage_symtab,
 };
 
 static exprenum_t shadow_type_enum;
@@ -2254,8 +2254,8 @@ static exprsym_t shadow_type_symbols[] = {
 };
 static exprtab_t shadow_type_symtab = { .symbols = shadow_type_symbols };
 static exprenum_t shadow_type_enum = {
-	&shadow_type_type,
-	&shadow_type_symtab,
+	.type = &shadow_type_type,
+	.symtab = &shadow_type_symtab,
 };
 
 static exprtype_t *shadow_type_param[] = {

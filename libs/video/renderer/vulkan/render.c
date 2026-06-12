@@ -1274,7 +1274,7 @@ tf_free_syms (void *_sym, void *data)
 	for (exprfunc_t *f = sym->value; f->func; f++) {
 		for (int i = 0; i < f->num_params; i++) {
 			exprenum_t *e = f->param_types[i]->data;
-			if (e && e->symtab->tab) {
+			if (e && e->symtab && e->symtab->tab) {
 				Hash_DelTable (e->symtab->tab);
 				e->symtab->tab = 0;
 			}
@@ -1452,7 +1452,8 @@ QFV_Render_AddTasks (vulkan_ctx_t *ctx, exprsym_t *task_syms)
 		for (exprfunc_t *f = sym->value; f->func; f++) {
 			for (int i = 0; i < f->num_params; i++) {
 				exprenum_t *e = f->param_types[i]->data;
-				if (e && !e->symtab->tab) {
+				// enum only if symtab is not null
+				if (e && e->symtab && !e->symtab->tab) {
 					cexpr_init_symtab (e->symtab, &ectx);
 				}
 			}

@@ -136,8 +136,8 @@ static exprtab_t cl_conmode_symtab = {
 	cl_conmode_symbols,
 };
 static exprenum_t cl_conmode_enum = {
-	&cl_conmode_type,
-	&cl_conmode_symtab,
+	.type = &cl_conmode_type,
+	.symtab = &cl_conmode_symtab,
 };
 static cvar_t cl_conmode_cvar = {
 	.name = "cl_conmode",

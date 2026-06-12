@@ -1228,8 +1228,8 @@ static exprtab_t validation_symtab = {
 	validation_symbols,
 };
 static exprenum_t validation_enum = {
-	&validation_type,
-	&validation_symtab,
+	.type = &validation_type,
+	.symtab = &validation_symtab,
 };
 static cvar_t vulkan_use_validation_cvar = {
 	.name = "vulkan_use_validation",

@@ -1653,8 +1653,8 @@ static exprsym_t bsp_pass_symbols[] = {
 };
 static exprtab_t bsp_pass_symtab = { .symbols = bsp_pass_symbols };
 static exprenum_t bsp_pass_enum = {
-	&bsp_pass_type,
-	&bsp_pass_symtab,
+	.type = &bsp_pass_type,
+	.symtab = &bsp_pass_symtab,
 };
 
 static exprenum_t bsp_queue_enum;
@@ -1681,8 +1681,8 @@ static exprsym_t bsp_queue_symbols[] = {
 };
 static exprtab_t bsp_queue_symtab = { .symbols = bsp_queue_symbols };
 static exprenum_t bsp_queue_enum = {
-	&bsp_queue_type,
-	&bsp_queue_symtab,
+	.type = &bsp_queue_type,
+	.symtab = &bsp_queue_symtab,
 };
 
 static exprtype_t *bsp_visit_world_params[] = {

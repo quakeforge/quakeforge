@@ -705,8 +705,8 @@ static exprsym_t mesh_stage_symbols[] = {
 };
 static exprtab_t mesh_stage_symtab = { .symbols = mesh_stage_symbols };
 static exprenum_t mesh_stage_enum = {
-	&mesh_stage_type,
-	&mesh_stage_symtab,
+	.type = &mesh_stage_type,
+	.symtab = &mesh_stage_symtab,
 };
 
 static exprtype_t *mesh_draw_params[] = {

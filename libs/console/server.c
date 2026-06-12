@@ -137,8 +137,8 @@ static exprtab_t sv_conmode_symtab = {
 	sv_conmode_symbols,
 };
 static exprenum_t sv_conmode_enum = {
-	&sv_conmode_type,
-	&sv_conmode_symtab,
+	.type = &sv_conmode_type,
+	.symtab = &sv_conmode_symtab,
 };
 static cvar_t sv_conmode_cvar = {
 	.name = "sv_conmode",
