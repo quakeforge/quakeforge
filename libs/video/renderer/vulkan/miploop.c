@@ -125,16 +125,16 @@ miploop_init_loop (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		rp[0].name = cmemstrdup (memsuper, vac (ctx->va_ctx, "%s:%d",
 												rpinfo->name, 0 + 1));
 		for (uint32_t j = 0; j < num_subpasses; j++) {
-			viewmasks[j] = ~0u >> (31 - layers);
+			viewmasks[j] = ~0u >> (32 - layers);
 		}
 	}
 
-	auto image = QFV_FindImageInfo (ctx, name);
+	auto image_info = QFV_FindImageInfo (ctx, name);
 	*mctx = (miploopctx_t) {
 		//FIXME multiple instances
 		.miploop_info = (qfv_attachmentinfo_t) {
 			.name = fb_name,
-			.format = image->format,
+			.format = image_info->format,
 			.samples = 1,
 			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
 			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -143,6 +143,9 @@ miploop_init_loop (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 			.finalLayout=VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,//FIXME plist
 		},
+		.image_info = image_info,
+		.name = name,
+		.layers = layers,
 	};
 	qfv_attachmentinfo_t *attachments[] = {
 		&mctx->miploop_info,
@@ -150,15 +153,88 @@ miploop_init_loop (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_Render_AddAttachments (ctx, 1, attachments);
 }
 
+static VkImageView
+create_view (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_info, uint32_t level)
+{
+	auto mctx = ctx->miploop_context;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+
+	VkImageView view;
+	dfunc->vkCreateImageView (device->dev,
+		&(VkImageViewCreateInfo) {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.image = QFV_GetImage (ctx, image_info),
+			.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,	//FIXME
+			.format = image_info->format,
+			.subresourceRange = {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.baseMipLevel = level,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = mctx->layers,
+			},
+		}, nullptr, &view);
+	return view;
+}
+
+static VkFramebuffer
+create_framebuffer (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_info,
+					VkImageView view, VkRenderPass renderpass)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+
+	VkFramebuffer framebuffer;
+	dfunc->vkCreateFramebuffer (device->dev,
+		&(VkFramebufferCreateInfo) {
+			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+			.renderPass = renderpass,
+			.attachmentCount = 1,
+			.pAttachments = &view,
+			.width = image_info->extent.width,
+			.height = image_info->extent.height,
+			.layers = 1,
+		}, 0, &framebuffer);
+	return framebuffer;
+}
+
 static void
 miploop_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
-//	auto taskctx = (qfv_taskctx_t *) ectx;
-//	auto ctx = taskctx->ctx;
-//	auto lctx = ctx->lighting_context;
-//	auto shadow = QFV_GetStep (params[0], taskctx->graph);
-//	auto render = shadow->render;
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto mctx = ctx->miploop_context;
+	auto step = taskctx->step;
+	auto render = step->render;
+	auto ii = mctx->image_info;
+	//FIXME support 3d mips
+	vec3u_t base = {{ii->extent.width, ii->extent.height, 1}};
+	vec3u_t size = base;
+	vec2u_t range = {0, QFV_MipLevels (base.v[0], base.v[1])};
+
+	*mctx->miploop_base = base;
+	*mctx->miploop_size = size;
+	*mctx->miploop_range = range;
+
+	auto renderpass = render->active;
+
+	auto tctx = *taskctx;
+	tctx.data = nullptr;
+	int count = range[1] - range[0];
+	VkFramebuffer fbuffers[count + 1] = {};
+	VkImageView views[count + 1] = {};
+	for (int i = 0; i <= count; i++) {
+		uint32_t level = i + range[0];
+		*mctx->miploop_level = level;
+		views[i] = create_view (ctx, mctx->image_info, level);
+		auto bi = &renderpass->beginInfo;
+		fbuffers[i] = create_framebuffer (ctx, mctx->image_info, views[i],
+										  bi->renderPass);
+		bi->framebuffer = fbuffers[i];
+		QFV_RunRenderPass (&tctx, renderpass, size.v[0], size.v[1]);
+	}
 }
 
 static void
@@ -181,7 +257,7 @@ miploop_startup (exprctx_t *ectx)
 	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	//auto mctx = ctx->lighting_context;
+	//auto mctx = ctx->miploop_context;
 	qfvPushDebug (ctx, "mipmap init");
 	qfvPopDebug (ctx);
 }
@@ -201,24 +277,20 @@ miploop_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	mctx->miploop_size = QFV_GetBlackboardVar (ctx, "miploop_size");
 	mctx->miploop_level = QFV_GetBlackboardVar (ctx, "miploop_level");
 	mctx->miploop_range = QFV_GetBlackboardVar (ctx, "miploop_range");
-	//qfv_attachmentinfo_t *attachments[] = {
-	//	&lctx->shadow_info,
-	//};
-	//QFV_Render_AddAttachments (ctx, 1, attachments);
 }
 
 static exprtype_t *stepref_param[] = {
 	&cexpr_string,
 };
 
-static exprtype_t *miploop_init_loop_param[] = {
+static exprtype_t *miploop_init_loop_params[] = {
 	&cexpr_uint,
 	&cexpr_string,
 };
 
 static exprfunc_t miploop_init_loop_func[] = {
 	{ .func = miploop_init_loop, .num_params = 2,
-		.param_types = miploop_init_loop_param },
+		.param_types = miploop_init_loop_params },
 	{}
 };
 
