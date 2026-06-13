@@ -628,6 +628,18 @@ QFV_QueueImageViewDelete (vulkan_ctx_t *ctx, VkImageView image_view)
 	PQUEUE_INSERT (&rctx->deletion_queue, del);
 }
 
+void
+QFV_QueueFramebufferDelete (vulkan_ctx_t *ctx, VkFramebuffer framebuffer)
+{
+	auto rctx = ctx->render_context;
+	uint32_t frames = rctx->frames.size;
+	qfv_delete_t del = {
+		.framebuffer = framebuffer,
+		.deletion_frame = ctx->frameNumber + frames,
+	};
+	PQUEUE_INSERT (&rctx->deletion_queue, del);
+}
+
 static void
 wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {

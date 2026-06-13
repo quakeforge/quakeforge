@@ -689,6 +689,7 @@ void QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 
 void QFV_QueueResourceDelete (vulkan_ctx_t *ctx, qfv_resource_t *res);
 void QFV_QueueImageViewDelete (vulkan_ctx_t *ctx, VkImageView view);
+void QFV_QueueFramebufferDelete (vulkan_ctx_t *ctx, VkFramebuffer framebuffer);
 
 QFV_REND_INLINE void qfv_resourcearray_next (qfv_resourcearray_t *array);
 
