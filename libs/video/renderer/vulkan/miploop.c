@@ -80,19 +80,22 @@ miploop_init_loop (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	miploopctx_t *mctx = malloc (sizeof (miploopctx_t));
 	ctx->miploop_context = mctx;
 
-	int layers = *(int *) params[0]->value;
-	auto name = *(const char **) params[1]->value;
+	auto set_name = *(const char **) params[0]->value;
+	auto tex_name = *(const char **) params[1]->value;
+	int layers = *(int *) params[2]->value;
+	auto img_name = *(const char **) params[3]->value;
 	auto sinfo = taskctx->stepinfo;
 	auto rt = sinfo->render_template;
-	Sys_Printf ("miploop_init_loop: %s %s %d\n", sinfo->name, name, layers);
+	Sys_Printf ("miploop_init_loop: %s %s %d %s\n",
+				sinfo->name, img_name, layers, tex_name);
 	if (rt->num_renderpasses != 1) {
 		Sys_Error ("%d:%s: need exactly one render pass in render template",
 				   sinfo->line, sinfo->name);
 	}
 	auto memsuper = taskctx->memsuper;
-	char *fb_name = cmemalloc (memsuper, strlen (name) + 2);
+	char *fb_name = cmemalloc (memsuper, strlen (img_name) + 2);
 	fb_name[0] = '$';
-	strcpy (fb_name + 1, name);
+	strcpy (fb_name + 1, img_name);
 	sinfo->render = cmemalloc (memsuper, sizeof (qfv_renderinfo_t));
 	auto render = sinfo->render;
 	*render = (qfv_renderinfo_t) {
@@ -129,7 +132,7 @@ miploop_init_loop (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		}
 	}
 
-	auto image_info = QFV_FindImageInfo (ctx, name);
+	auto image_info = QFV_FindImageInfo (ctx, img_name);
 	*mctx = (miploopctx_t) {
 		//FIXME multiple instances
 		.miploop_info = (qfv_attachmentinfo_t) {
@@ -144,8 +147,10 @@ miploop_init_loop (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			.finalLayout=VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,//FIXME plist
 		},
 		.image_info = image_info,
-		.name = name,
+		.img_name = img_name,
+		.tex_name = tex_name,
 		.layers = layers,
+		.ds_index = QFV_GetDSIndex (ctx, set_name),
 	};
 	qfv_attachmentinfo_t *attachments[] = {
 		&mctx->miploop_info,
@@ -179,7 +184,7 @@ create_view (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_info, uint32_t level)
 }
 
 static VkFramebuffer
-create_framebuffer (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_info,
+create_framebuffer (vulkan_ctx_t *ctx, vec3u_t size,
 					VkImageView view, VkRenderPass renderpass)
 {
 	auto device = ctx->device;
@@ -192,8 +197,8 @@ create_framebuffer (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_info,
 			.renderPass = renderpass,
 			.attachmentCount = 1,
 			.pAttachments = &view,
-			.width = image_info->extent.width,
-			.height = image_info->extent.height,
+			.width = size.v[0],
+			.height = size.v[1],
 			.layers = 1,
 		}, 0, &framebuffer);
 	return framebuffer;
@@ -209,14 +214,21 @@ miploop_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto step = taskctx->step;
 	auto render = step->render;
 	auto ii = mctx->image_info;
+
+	if (mctx->tex_name && !mctx->tex_id) {
+		mctx->tex_id = QFV_GetJobBlackboardVar (taskctx->job, mctx->tex_name);
+	}
+	auto tex = QFV_GetTexture (ctx, *mctx->tex_id);
+	QFV_SetDescriptorSet (ctx, ctx->curFrame, mctx->ds_index, tex);
+
 	//FIXME support 3d mips
 	vec3u_t base = {{ii->extent.width, ii->extent.height, 1}};
 	vec3u_t size = base;
 	vec2u_t range = {0, QFV_MipLevels (base.v[0], base.v[1])};
 
 	*mctx->miploop_base = base;
-	*mctx->miploop_size = size;
 	*mctx->miploop_range = range;
+	(*mctx->miploop_range)[1] -= 1;
 
 	auto renderpass = render->active;
 
@@ -225,15 +237,23 @@ miploop_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	int count = range[1] - range[0];
 	VkFramebuffer fbuffers[count + 1] = {};
 	VkImageView views[count + 1] = {};
-	for (int i = 0; i <= count; i++) {
+	for (int i = 0; i < count; i++) {
 		uint32_t level = i + range[0];
+		*mctx->miploop_size = size;
 		*mctx->miploop_level = level;
 		views[i] = create_view (ctx, mctx->image_info, level);
 		auto bi = &renderpass->beginInfo;
-		fbuffers[i] = create_framebuffer (ctx, mctx->image_info, views[i],
-										  bi->renderPass);
+		fbuffers[i] = create_framebuffer (ctx, size, views[i], bi->renderPass);
 		bi->framebuffer = fbuffers[i];
 		QFV_RunRenderPass (&tctx, renderpass, size.v[0], size.v[1]);
+
+		size.v[0] = max (size.v[0] >> 1, 1);
+		size.v[1] = max (size.v[1] >> 1, 1);
+	}
+	renderpass->beginInfo.framebuffer = 0;
+	for (int i = 0; i < count; i++) {
+		QFV_QueueFramebufferDelete (ctx, fbuffers[i]);
+		QFV_QueueImageViewDelete (ctx, views[i]);
 	}
 }
 
@@ -284,12 +304,15 @@ static exprtype_t *stepref_param[] = {
 };
 
 static exprtype_t *miploop_init_loop_params[] = {
+	&cexpr_string,
+	&cexpr_string,
 	&cexpr_uint,
 	&cexpr_string,
 };
 
 static exprfunc_t miploop_init_loop_func[] = {
-	{ .func = miploop_init_loop, .num_params = 2,
+	{ .func = miploop_init_loop,
+		.num_params = countof (miploop_init_loop_params),
 		.param_types = miploop_init_loop_params },
 	{}
 };

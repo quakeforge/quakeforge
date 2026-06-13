@@ -50,8 +50,11 @@ typedef struct miploopctx_s {
 	// FIXME per-instance
 	qfv_attachmentinfo_t miploop_info;
 	qfv_imageinfo_t *image_info;
-	const char *name;
+	const char *img_name;
+	const char *tex_name;
+	uint32_t   *tex_id;
 	uint32_t    layers;
+	uint32_t    ds_index;
 } miploopctx_t;
 
 typedef struct vulkan_ctx_s vulkan_ctx_t;
