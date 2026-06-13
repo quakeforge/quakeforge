@@ -1949,7 +1949,6 @@ create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, graphptr_t gp,
 				   objstate_t *s)
 {
 	auto rctx = ctx->render_context;
-	//auto graph = rctx->graph;
 	if (!counts->num_pushconstantranges || !counts->num_pushconstants) {
 		return;
 	}
@@ -1961,6 +1960,8 @@ create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, graphptr_t gp,
 	uint32_t cind = 0;
 	uint32_t mind = 0;
 
+	// Collect all the push constants from all of the pipeline
+	// layouts.
 	for (uint32_t i = 0; i < counts->num_layouts; i++) {
 		auto layout = &s->ptr.layouts[i];
 		uint32_t pc_offset = 0;
@@ -1979,6 +1980,7 @@ create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, graphptr_t gp,
 				}
 				stageFlags[cind] = r.stageFlags;
 				bb_constants[cind] = c;
+				// assign a layout-relative offset
 				pc_offset = RUP (pc_offset, pc_type_align[c.type]);
 				c.offset = pc_offset;
 				pc_offset += c.size;
@@ -1989,9 +1991,11 @@ create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, graphptr_t gp,
 		}
 	}
 
+	// merge duplicate push constant symbols by name.
 	uint32_t bb_offset = 0;
 	for (uint32_t i = 0; i < cind; i++) {
 		auto pc = &bb_constants[i];
+		// look for a dup
 		for (uint32_t j = 0; j < i; j++) {
 			if (bb_constants[j].name
 				&& strcmp (bb_constants[j].name, pc->name) == 0) {
@@ -2001,12 +2005,16 @@ create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, graphptr_t gp,
 			}
 		}
 		if (!pc->name) {
+			// it's a dup
 			continue;
 		}
+		// assign a blackboard offset to the push constant
 		bb_offset = RUP (bb_offset, pc_type_align[pc->type]);
 		pc->offset = bb_offset;
 		bb_offset += pc->size;
 	}
+
+	// create the actual blackboard
 	auto bb = &rctx->blackboard;
 	auto memsuper = rctx->graphinfo->memsuper;
 	bb->symbols = Hash_NewTable (253, blackboard_getkey, 0, 0, &rctx->hashctx);
@@ -2018,16 +2026,19 @@ create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, graphptr_t gp,
 	bb->layout_count = cmemalloc (memsuper,
 								  sizeof (uint32_t[counts->num_layouts]));
 	for (uint32_t i = 0; i < cind; i++) {
-		uint32_t ind = map[i];
-		auto pc = &pc_constants[i];
-		auto bc = &bb_constants[ind];
+		auto pc = &pc_constants[i];			// layout push constant
+		auto bc = &bb_constants[map[i]];	// blackboard push constant
+		// initialize the the push constant used for QFV_PushConstants
+		// (vkCmdPushConstants)
 		bb->push_constants[i] = (qfv_push_constants_t) {
 			.stageFlags = stageFlags[i],
-			.offset = pc->offset,
+			.offset = pc->offset,			// layout offset
 			.size = pc->size,
-			.data = bb->data + bc->offset,
+			.data = bb->data + bc->offset,	// blackboard address
 		};
 		if (bc->name) {
+			// blackboard push constant symbols are stored only in the
+			// symbol table
 			qfv_pushconstantinfo_t *c = cmemalloc (memsuper, sizeof (*c));
 			*c = *bc;
 			Hash_Add (bb->symbols, c);
@@ -2035,9 +2046,13 @@ create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, graphptr_t gp,
 				printf ("%3d %d %2d %s\n", c->offset, c->type, c->size,
 						c->name);
 			}
+			// ensure the blackboard constant is added only once (it may
+			// be referenced multilpe times via `map`).
 			bc->name = nullptr;
 		}
 	}
+
+	// initialize the per-layout ranges
 	bb->layout_start[0] = 0;
 	for (uint32_t i = 0; i < counts->num_layouts; i++) {
 		if (i > 0) {
@@ -2053,7 +2068,7 @@ create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, graphptr_t gp,
 				if (c.offset != ~0u) {
 					continue;
 				}
-				bb->layout_count[i] ++;
+				bb->layout_count[i]++;
 			}
 		}
 	}
