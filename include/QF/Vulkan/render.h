@@ -699,6 +699,12 @@ qfv_bufferinfo_t *QFV_FindBufferInfo (vulkan_ctx_t *ctx, const char *name)
 	__attribute__((pure));
 qfv_imageinfo_t *QFV_FindImageInfo (vulkan_ctx_t *ctx, const char *name)
 	__attribute__((pure));
+VkImage QFV_GetImage (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_infO)
+	__attribute__((pure));
+qfv_imageviewinfo_t *QFV_FindImageViewInfo (vulkan_ctx_t *ctx, const char *name)
+	__attribute__((pure));
+VkImageView QFV_GetImageView (vulkan_ctx_t *ctx, qfv_imageviewinfo_t *view_infO)
+	__attribute__((pure));
 VkDeviceAddress QFV_GetBufferAddress (vulkan_ctx_t *ctx,
 									  const char *name, uint32_t frame)
 	__attribute__((pure));

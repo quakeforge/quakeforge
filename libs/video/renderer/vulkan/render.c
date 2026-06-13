@@ -799,16 +799,30 @@ get_buffer_by_name (vulkan_ctx_t *ctx, const char *name)
 	return graph->resources->objects[buffer->object].buffer.buffer;
 }
 
-static VkImage
-get_image_by_name (vulkan_ctx_t *ctx, const char *name)
+VkImage
+QFV_GetImage (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_infO)
 {
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
+	return graph->resources->objects[image_infO->object].image.image;
+}
+
+VkImageView
+QFV_GetImageView (vulkan_ctx_t *ctx, qfv_imageviewinfo_t *view_infO)
+{
+	auto rctx = ctx->render_context;
+	auto graph = rctx->graph;
+	return graph->resources->objects[view_infO->object].image_view.view;
+}
+
+static VkImage
+get_image_by_name (vulkan_ctx_t *ctx, const char *name)
+{
 	auto image = QFV_FindImageInfo (ctx, name);
 	if (!image) {
 		return 0;
 	}
-	return graph->resources->objects[image->object].image.image;
+	return QFV_GetImage (ctx, image);
 }
 
 static void

@@ -500,10 +500,11 @@ find_imageinfo (qfv_imageinfo_t *imageinfo, uint32_t num_images,
 }
 
 static qfv_imageviewinfo_t * __attribute__((pure))
-find_imageviewinfo (qfv_graphinfo_t *graphinfo, const qfv_reference_t *ref)
+find_imageviewinfo (qfv_imageviewinfo_t *viewinfo, uint32_t num_imageviews,
+					const qfv_reference_t *ref)
 {
-	for (uint32_t i = 0; i < graphinfo->num_imageviews; i++) {
-		auto imgview = &graphinfo->imageviews[i];
+	for (uint32_t i = 0; i < num_imageviews; i++) {
+		auto imgview = &viewinfo[i];
 		if (strcmp (ref->name, imgview->name) == 0) {
 			return imgview;
 		}
@@ -574,6 +575,16 @@ QFV_FindImageInfo (vulkan_ctx_t *ctx, const char *name)
 	return find_imageinfo (res->images, res->num_images, &ref);
 }
 
+qfv_imageviewinfo_t *
+QFV_FindImageViewInfo (vulkan_ctx_t *ctx, const char *name)
+{
+	auto rctx = ctx->render_context;
+	auto ginfo = rctx->graphinfo;
+	qfv_reference_t ref = { .name = name };
+	auto res = &ginfo->resources;
+	return find_imageviewinfo (res->imageviews, res->num_imageviews, &ref);
+}
+
 static void
 setup_image_obj (qfv_resobj_t *image, const qfv_imageinfo_t *img)
 {
@@ -642,7 +653,8 @@ setup_framebuffers (vulkan_ctx_t *ctx,
 	bool error = false;
 	for (uint32_t i = 0; i < num_attachments; i++) {
 		auto attach = &fbi->attachments[i];
-		auto imgview = find_imageviewinfo (gi, &attach->view);
+		auto imgview = find_imageviewinfo (gi->imageviews, gi->num_imageviews,
+										   &attach->view);
 		if (!imgview) {
 			error = true;
 			continue;
