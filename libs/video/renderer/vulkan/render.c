@@ -713,16 +713,10 @@ fullscreen_pass (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	auto renderpass = taskctx->renderpass;
 	auto subpass = taskctx->subpass;
 	auto pipeline = taskctx->pipeline;
 	auto cmd = taskctx->cmd;
 
-	if (!subpass->num_inputs) {
-		Sys_Error ("fullscreen_pass with no subpass inputs: %s:%s:%s",
-				   renderpass->label.name, subpass->label.name,
-				   pipeline->label.name);
-	}
 	QFV_BindDescriptors (ctx, cmd, pipeline);
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
