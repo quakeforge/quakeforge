@@ -138,6 +138,10 @@ void Painter_AddBox (vec2 c, vec2 e, float r, vec4 color) = #0;
 void Painter_AddBezier (vec2 p0, vec2 p1, vec2 p2, vec2 p3, float r,
 						vec4 color) = #0;
 
+[no_va_list]
+void Render_SetJobBlackboardVar (string job, string name, ...) = #0;
+[no_va_list]
+void Render_SetBlackboardVar (string name, ...) = #0;
 void Render_RunJob (string name) = #0;
 void Render_UpdateBuffer (string name, ulong offset, void *data,
 						  ulong size) = #0;
@@ -2202,6 +2206,11 @@ main (int argc, string *argv)
 
 	uint pixpal = load_resource ("pixpal.meta");
 	uint skyid = load_resource ("eso0932a.meta");
+
+	Render_SetJobBlackboardVar ("pbr_conv", "pbr_conv_id", skyid);
+	Render_SetBlackboardVar ("sampleCount", 1024);
+	Render_SetBlackboardVar ("conv_size", uvec2(512,512));
+	Render_RunJob ("pbr_conv");
 
 	IN_SendConnectedDevices ();
 	setup_bindings ();

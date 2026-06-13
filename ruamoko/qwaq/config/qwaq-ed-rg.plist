@@ -819,7 +819,6 @@ render_graph = {
 					pushConstants = {
 						fragment = {
 							miploop_base = uvec3;
-							roughness = float;
 							miploop_size = uvec3;
 							miploop_level = uint;
 							miploop_range = uvec2;
@@ -1662,6 +1661,7 @@ render_graph = {
 				};
 				mipLevels = ~0u;
 				arrayLayers = 6;
+				usage = color_attachment|sampled;
 			};
 		};
 		imageviews = {
@@ -3143,14 +3143,20 @@ render_graph = {
 			};
 		};
 		pbr_conv = {
+			vars = {
+				pbr_conv_id = uint;
+			};
 			steps = {
 				conv_process = {
 					color = "[0.6, 0.8, 0.9]";
 					init = { func = miploop_init_loop;
-							 params = ("\"diff_cube\"", 6); };
+							 params = ("\"diff_cube\"", 6,
+									   "\"pbr_conv_id\"",
+									   "\"texture_set\""); };
 					process = {
 						tasks = (
 							{ func = miploop_draw; },
+							{ func = submit_depth; },
 						);
 					};
 					render_template = {
@@ -3207,6 +3213,15 @@ render_graph = {
 								};
 							};
 						};
+					};
+				};
+				conv_transition = {
+					process = {
+						tasks = (
+							{ func = image_barrier;
+							  params = ("\"diff_cube\"",
+										lt_colorattach_to_shaderreadonly); },
+						);
 					};
 				};
 			};

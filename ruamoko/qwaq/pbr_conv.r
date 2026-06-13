@@ -25,7 +25,7 @@ typedef enum [namespace] Dist {
 
 [push_constant] @block constants {
 	uvec3 miploop_base;
-	float roughness;
+	uint FIXME;
 	uvec3 miploop_size;
 	uint miploop_level;
 	uvec2 miploop_range;
@@ -37,12 +37,12 @@ typedef enum [namespace] Dist {
 vec3 uvToXYZ (uint face, vec2 uv)
 {
 	switch (face) {
-	case 0: return vec3 (    1, uv.y, uv.x);
-	case 1: return vec3 (   -1, uv.y,-uv.x);
+	case 0: return vec3 (    1,-uv.y,-uv.x);
+	case 1: return vec3 (   -1,-uv.y, uv.x);
 	case 2: return vec3 ( uv.x,    1, uv.y);
 	case 3: return vec3 ( uv.x,   -1,-uv.y);
-	case 4: return vec3 ( uv.x, uv.y,   -1);
-	case 5: return vec3 (-uv.x, uv.y,    1);
+	case 4: return vec3 ( uv.x,-uv.y,    1);
+	case 5: return vec3 (-uv.x,-uv.y,   -1);
 	}
 	return vec3(0);
 }
@@ -155,7 +155,7 @@ float computeLod (float pdf)
 	return 0.5 * log2 (6 * 2 * h / (sc * pdf));
 }
 
-vec3 filterColor (vec3 N)
+vec3 filterColor (vec3 N, float roughness)
 {
 	vec3 color = vec3(0);
 	float weight = 0;
@@ -191,5 +191,6 @@ void main ()
 	vec2 newUV = uv * 2 - vec2(1);
 	vec3 scan = uvToXYZ (gl_ViewIndex, newUV);
 	vec3 direction = normalize (scan);
-	frag_color = vec4(filterColor(direction), 1);
+	float roughness = float (miploop_level) / float (miploop_range.y);
+	frag_color = vec4(filterColor(direction, roughness), 1);
 }
