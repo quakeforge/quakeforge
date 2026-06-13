@@ -55,6 +55,8 @@ typedef enum qfv_type_t : uint32_t {
 	qfv_ptr,
 } qfv_type_t;
 
+extern const uint32_t qfv_pc_type_sizes[];
+
 typedef struct qfv_pushconstantinfo_s {
 	const char *name;
 	int         line;
@@ -720,6 +722,10 @@ VkDeviceSize QFV_GetBufferSize (vulkan_ctx_t *ctx, const char *name)
 void QFV_UpdateBuffer (vulkan_ctx_t *ctx, const char *name, uint32_t offset,
 					   void *data, uint32_t size);
 
+void QFV_SetJobBlackboardVar (qfv_job_t *job, const char *var_name,
+							  const void *var_data);
+void QFV_SetBlackboardVar (vulkan_ctx_t *ctx, const char *var_name,
+							  const void *var_data);
 void *QFV_GetJobBlackboardVar (qfv_job_t *job, const char *name);
 void *QFV_GetBlackboardVar (vulkan_ctx_t *ctx, const char *name);
 void QFV_PushBlackboard (vulkan_ctx_t *ctx, VkCommandBuffer cmd,

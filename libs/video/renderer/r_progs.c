@@ -612,6 +612,27 @@ bi(Painter_AddBezier)
 	}
 }
 
+bi (Render_SetJobBlackboardVar)
+{
+	qfZoneScoped (true);
+	if (r_funcs->SetJobBlackboardVar) {
+		const char *job_name = P_GSTRING (pr, 0);
+		const char *var_name = P_GSTRING (pr, 1);
+		auto var_data = pr->pr_params[2];
+		r_funcs->SetJobBlackboardVar (job_name, var_name, var_data);
+	}
+}
+
+bi (Render_SetBlackboardVar)
+{
+	qfZoneScoped (true);
+	if (r_funcs->SetBlackboardVar) {
+		const char *var_name = P_GSTRING (pr, 0);
+		auto var_data = pr->pr_params[1];
+		r_funcs->SetBlackboardVar (var_name, var_data);
+	}
+}
+
 bi (Render_RunJob)
 {
 	qfZoneScoped (true);
@@ -747,6 +768,8 @@ static builtin_t builtins[] = {
 	bi(Painter_AddBezier, 6, p(vec2), p(vec2), p(vec2), p(vec2),
 							 p(float), p(vec4)),
 
+	bi(Render_SetJobBlackboardVar, 3, p(string), p(string), p(void)),
+	bi(Render_SetBlackboardVar, 2, p(string), p(void)),
 	bi(Render_RunJob,          1, p(string)),
 	bi(Render_UpdateBuffer,    4, p(string), p(uint), p(ptr), p(uint)),
 	bi(Render_BufferAddress,   1, p(string)),

@@ -187,6 +187,9 @@ typedef struct vid_render_funcs_s {
 
 	void (*debug_ui) (struct imui_ctx_s *imui_ctx);
 
+	void (*SetJobBlackboardVar) (const char *job_name, const char *var_name,
+								 const void *var_data);
+	void (*SetBlackboardVar) (const char *var_name, const void *var_data);
 	void (*RunRenderJob) (const char *name);
 	void (*UpdateBuffer) (const char *name, uint32_t offset,
 						  void *data, uint32_t size);

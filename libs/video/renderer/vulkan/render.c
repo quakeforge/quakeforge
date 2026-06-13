@@ -1626,6 +1626,33 @@ get_blackboard_var (qfv_blackboard_t *bb, const char *name)
 	return bb->data + pc->offset;
 }
 
+void
+QFV_SetJobBlackboardVar (qfv_job_t *job, const char *var_name,
+						 const void *var_data)
+{
+	auto bb = &job->blackboard;
+	auto pc = (qfv_pushconstantinfo_t *) Hash_Find (bb->symbols, var_name);
+	if (!pc) {
+		return;
+	}
+	auto var = bb->data + pc->offset;
+	memcpy (var, var_data, qfv_pc_type_sizes[pc->type]);
+}
+
+void
+QFV_SetBlackboardVar (vulkan_ctx_t *ctx, const char *var_name,
+					  const void *var_data)
+{
+	auto rctx = ctx->render_context;
+	auto bb = &rctx->blackboard;
+	auto pc = (qfv_pushconstantinfo_t *) Hash_Find (bb->symbols, var_name);
+	if (!pc) {
+		return;
+	}
+	auto var = bb->data + pc->offset;
+	memcpy (var, var_data, qfv_pc_type_sizes[pc->type]);
+}
+
 void *
 QFV_GetJobBlackboardVar (qfv_job_t *job, const char *name)
 {

@@ -546,6 +546,21 @@ vulkan_debug_ui (struct imui_ctx_s *imui_ctx)
 }
 
 static void
+vulkan_SetJobBlackboardVar (const char *job_name, const char *var_name,
+							const void *var_data)
+{
+	auto graph = vulkan_ctx->render_context->graph;
+	auto job = QFV_FindJob (job_name, graph);
+	QFV_SetJobBlackboardVar (job, var_name, var_data);
+}
+
+static void
+vulkan_SetBlackboardVar (const char *var_name, const void *var_data)
+{
+	QFV_SetBlackboardVar (vulkan_ctx, var_name, var_data);
+}
+
+static void
 vulkan_RunRenderJob (const char *name)
 {
 	auto graph = vulkan_ctx->render_context->graph;
@@ -863,6 +878,8 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 
 	.debug_ui = vulkan_debug_ui,
 
+	.SetJobBlackboardVar = vulkan_SetJobBlackboardVar,
+	.SetBlackboardVar = vulkan_SetBlackboardVar,
 	.RunRenderJob = vulkan_RunRenderJob,
 	.UpdateBuffer = vulkan_UpdateBuffer,
 	.BufferAddress = vulkan_BufferAddress,

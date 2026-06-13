@@ -57,7 +57,7 @@
 #include "vkparse.h"
 
 #define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
-static uint32_t pc_type_sizes[] = {
+const uint32_t qfv_pc_type_sizes[] = {
 	[qfv_float] = sizeof (float),
 	[qfv_int]   = sizeof (int32_t),
 	[qfv_uint]  = sizeof (uint32_t),
@@ -154,10 +154,8 @@ init_blackboard (qfv_blackboard_t *bb, uint32_t num_vars,
 			qfv_pushconstantinfo_t *c = cmemalloc (memsuper, sizeof (*c));
 			*c = *bc;
 			Hash_Add (bb->symbols, c);
-			if (developer & SYS_vulkan) {
-				printf ("%3d %d %2d %s\n", c->offset, c->type, c->size,
-						c->name);
-			}
+			Sys_MaskPrintf (SYS_vulkan, ONG"%3d:%3d %d %2d %s"DFL"\n",
+							c->offset, pc->offset, c->type, c->size, c->name);
 			// ensure the blackboard constant is added only once (it may
 			// be referenced multilpe times via `map`).
 			bc->name = nullptr;
@@ -1076,12 +1074,12 @@ parse_pushconstantrange (VkPushConstantRange *range,
 		if (pushconstant->size != ~0u) {
 			size = pushconstant->size;
 		} else {
-			if (pushconstant->type > countof (pc_type_sizes)) {
+			if (pushconstant->type > countof (qfv_pc_type_sizes)) {
 				Sys_Error ("%s.%s:%s:%d invalid type: %d",
 						   s->rpi->name, s->spi->name, pushconstant->name,
 						   pushconstant->line, pushconstant->type);
 			}
-			size = pc_type_sizes[pushconstant->type];
+			size = qfv_pc_type_sizes[pushconstant->type];
 			uint32_t align = pc_type_align[pushconstant->type];
 			offset = RUP (offset, align);
 		}
@@ -1712,11 +1710,11 @@ init_job (uint32_t ind, graphptr_t *gp, objstate_t *s)
 	if (jinfo->num_vars) {
 		for (uint32_t i = 0; i < jinfo->num_vars; i++) {
 			auto pc = &jinfo->vars[i];
-			if (pc->type > countof (pc_type_sizes)) {
+			if (pc->type > countof (qfv_pc_type_sizes)) {
 				Sys_Error ("%s:%s:%d invalid type: %d", jinfo->name,
 						   pc->name, pc->line, pc->type);
 			}
-			pc->size = pc_type_sizes[pc->type];
+			pc->size = qfv_pc_type_sizes[pc->type];
 		}
 		init_blackboard (&job->blackboard, jinfo->num_vars,
 						 jinfo->vars, jinfo->vars, s->ctx->render_context);
@@ -2053,7 +2051,7 @@ create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, graphptr_t gp,
 					continue;
 				}
 				if (c.size == ~0u) {
-					c.size = pc_type_sizes[c.type];
+					c.size = qfv_pc_type_sizes[c.type];
 				}
 				stageFlags[cind] = r.stageFlags;
 				bb_constants[cind] = c;
