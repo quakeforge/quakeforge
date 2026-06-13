@@ -284,6 +284,9 @@ typedef struct qfv_jobinfo_s {
 	const char *name;
 	int         line;
 
+	// not actual push constants, but used for job-specific blackboard vars
+	qfv_pushconstantinfo_t *vars;
+	uint32_t     num_vars;
 	uint32_t     num_steps;
 	qfv_stepinfo_t *steps;
 } qfv_jobinfo_t;
@@ -526,12 +529,21 @@ typedef struct qfv_step_s {
 	qfv_stepinfo_t *step_info;
 } qfv_step_t;
 
+typedef struct qfv_blackboard_s {
+	byte       *data;
+	hashtab_t  *symbols;
+	qfv_push_constants_t *push_constants;
+	uint32_t   *layout_start;
+	uint32_t   *layout_count;
+} qfv_blackboard_t;
+
 typedef struct qfv_job_s {
 	qfv_label_t label;
 	uint32_t    num_steps;
 	qfv_step_t *steps;
 	qfv_time_t  time;
 
+	qfv_blackboard_t blackboard;
 	qfv_cmdbufferset_t commands;
 } qfv_job_t;
 
@@ -567,14 +579,6 @@ typedef struct qfv_graph_s {
 	qfv_initfuncset_t shutdown_funcs;
 	qfv_initfuncset_t clearstate_funcs;
 } qfv_graph_t;
-
-typedef struct qfv_blackboard_s {
-	byte       *data;
-	hashtab_t  *symbols;
-	qfv_push_constants_t *push_constants;
-	uint32_t   *layout_start;
-	uint32_t   *layout_count;
-} qfv_blackboard_t;
 
 typedef struct qfv_renderframe_s {
 	VkFence     fence;
@@ -716,6 +720,7 @@ VkDeviceSize QFV_GetBufferSize (vulkan_ctx_t *ctx, const char *name)
 void QFV_UpdateBuffer (vulkan_ctx_t *ctx, const char *name, uint32_t offset,
 					   void *data, uint32_t size);
 
+void *QFV_GetJobBlackboardVar (qfv_job_t *job, const char *name);
 void *QFV_GetBlackboardVar (vulkan_ctx_t *ctx, const char *name);
 void QFV_PushBlackboard (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 						 qfv_pipeline_t *pipeline);

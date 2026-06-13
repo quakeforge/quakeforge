@@ -635,6 +635,11 @@ parse = {
 	};
 	qfv_jobinfo_s = {
 		.name = qfv_jobinfo_t;
+		vars = {
+			type = (labeledarray, qfv_pushconstantinfo_t, name);
+			size = num_vars;
+			values = vars;
+		};
 		steps = {
 			type = (labeledarray, qfv_stepinfo_t, name);
 			size = num_steps;
@@ -783,6 +788,7 @@ parse = {
 			name = $name;
 			line = $item.line;
 		};
+		vars = ignore;
 		steps = {
 			type = (labeledarray, qfv_stepenum_t, name);
 			size = num_steps;

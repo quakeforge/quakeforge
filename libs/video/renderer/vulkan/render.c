@@ -1613,12 +1613,9 @@ QFV_BindDescriptors (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 	}
 }
 
-
-void *
-QFV_GetBlackboardVar (struct vulkan_ctx_s *ctx, const char *name)
+static void *
+get_blackboard_var (qfv_blackboard_t *bb, const char *name)
 {
-	auto rctx = ctx->render_context;
-	auto bb = &rctx->blackboard;
 	if (!bb->symbols) {
 		return nullptr;
 	}
@@ -1627,6 +1624,19 @@ QFV_GetBlackboardVar (struct vulkan_ctx_s *ctx, const char *name)
 		return nullptr;
 	}
 	return bb->data + pc->offset;
+}
+
+void *
+QFV_GetJobBlackboardVar (qfv_job_t *job, const char *name)
+{
+	return get_blackboard_var (&job->blackboard, name);
+}
+
+void *
+QFV_GetBlackboardVar (vulkan_ctx_t *ctx, const char *name)
+{
+	auto rctx = ctx->render_context;
+	return get_blackboard_var (&rctx->blackboard, name);
 }
 
 qfv_step_t *
