@@ -248,6 +248,9 @@ miploop_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		auto bi = &renderpass->beginInfo;
 		fbuffers[i] = create_framebuffer (ctx, size, views[i], bi->renderPass);
 		bi->framebuffer = fbuffers[i];
+		auto name = vac (ctx->va_ctx, "%s:miploop:%d:%d", step->label.name,
+						 layer, level);
+		renderpass->label.name = name;
 		QFV_RunRenderPass (&tctx, renderpass, size.v[0], size.v[1]);
 
 		size.v[0] = max (size.v[0] >> 1, 1);
