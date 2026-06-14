@@ -39,6 +39,7 @@
 #endif
 
 #include "QF/cmem.h"
+#include "QF/hash.h"
 #include "QF/mathlib.h"
 #include "QF/va.h"
 #include "QF/Vulkan/qf_texture.h"
@@ -774,7 +775,8 @@ texture_shutdown (exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto tctx = ctx->texture_context;
 
-	QFV_DestroyResource (ctx->device, tctx->tex_resource);
+	QFV_DestroyResource (device, tctx->tex_resource);
+	dfunc->vkDestroySampler (device->dev, ctx->default_sampler, nullptr);
 
 	auto reg = tctx->reg;
 	auto pools = reg->comp_pools;
@@ -795,6 +797,35 @@ texture_shutdown (exprctx_t *ectx)
 
 	free (tctx->tex_resource);
 	free (ctx->texture_context);
+}
+
+static uint32_t
+create_texture_ent (vulkan_ctx_t *ctx, const char *name,
+					qfv_textureinfo_t *texinfo, qfv_tex_t *tex,
+					VkDescriptorSet texture)
+{
+	auto tctx = ctx->texture_context;
+	auto reg = tctx->reg;
+	uint32_t c_texinfo = tctx->comp_base + qfv_tex_texinfo;
+	uint32_t c_view = tctx->comp_base + qfv_tex_view;
+	uint32_t c_samp = tctx->comp_base + qfv_tex_sampler;
+	uint32_t c_tex = tctx->comp_base + qfv_tex_tex;
+	uint32_t c_texture = tctx->comp_base + qfv_tex_texture;
+
+	uint32_t texid = ECS_NewEntity (reg);
+	Ent_SetComponent (texid, ecs_name, reg, &name);
+	if (texinfo) {
+		Ent_SetComponent (texid, c_texinfo, reg, &texinfo);
+		Ent_SetComponent (texid, c_samp, reg, &texinfo->sampler.sampler);
+	}
+	Ent_SetComponent (texid, c_view, reg, &tex->view);
+	Ent_SetComponent (texid, c_tex, reg, &tex);
+	Ent_SetComponent (texid, c_texture, reg, &texture);
+
+	// nullent -> nullptr
+	Hash_Add (tctx->textures, (void *)(uintptr_t) (texid + 1));
+
+	return texid;
 }
 
 static VkImageViewType qfv_tex_view_types[] = {
@@ -906,6 +937,55 @@ texture_startup (exprctx_t *ectx)
 
 	QFV_PacketSubmit (packet);
 
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto physDev = device->physDev;
+	float maxAnisotropy = physDev->p.properties.limits.maxSamplerAnisotropy;
+	dfunc->vkCreateSampler (device->dev,
+		&(VkSamplerCreateInfo) {
+			.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+			.magFilter = VK_FILTER_LINEAR,
+			.minFilter = VK_FILTER_LINEAR,
+			.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+			.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.mipLodBias = 0,
+			.anisotropyEnable = 1,
+			.maxAnisotropy = maxAnisotropy,
+			.compareEnable = 0,
+			.minLod = 0,
+			.maxLod = VK_LOD_CLAMP_NONE,
+			.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK,
+		}, nullptr, &ctx->default_sampler);
+
+	auto sampler = ctx->default_sampler;
+	QFV_duSetObjectName (device, VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT,
+						 sampler, "default_sampler");
+	for (int i = 0; i < num_deftex; i++) {
+		auto dt = &default_textures[i];
+		for (int j = 0; j < num_defvar; j++) {
+			int vind = i + j * num_deftex;
+			const char *name = dt->names[j];
+			qfv_tex_t *tex = malloc (sizeof (qfv_tex_t));
+			*tex = (qfv_tex_t) {
+				.image = images[i].image.image,
+				.view = views[vind].image_view.view,
+			};
+			auto texture = Vulkan_CreateTextureDescriptor (ctx, tex, sampler);
+			create_texture_ent (ctx, name, nullptr, tex, texture);
+		}
+	}
+	{
+		const char *name = "default_skin";
+		qfv_tex_t *tex = malloc (sizeof (qfv_tex_t));
+		*tex = (qfv_tex_t) {
+			.image = images[skin_img].image.image,
+			.view = views[skin_view].image_view.view,
+		};
+		auto texture = Vulkan_CreateTextureDescriptor (ctx, tex, sampler);
+		create_texture_ent (ctx, name, nullptr, tex, texture);
+	}
 	qfvPopDebug (ctx);
 }
 
@@ -1038,24 +1118,17 @@ QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
 	QFV_CreateSampler (ctx, &texinfo->sampler);
 	auto texture = Vulkan_CreateCombinedImageSampler (ctx, tex->view,
 													  texinfo->sampler.sampler);
+	return create_texture_ent (ctx, name, texinfo, tex, texture);
+}
 
+uint32_t
+QFV_TexFindTexture (vulkan_ctx_t *ctx, const char *name)
+{
 	auto tctx = ctx->texture_context;
-	auto reg = tctx->reg;
-	uint32_t c_texinfo = tctx->comp_base + qfv_tex_texinfo;
-	uint32_t c_view = tctx->comp_base + qfv_tex_view;
-	uint32_t c_samp = tctx->comp_base + qfv_tex_sampler;
-	uint32_t c_tex = tctx->comp_base + qfv_tex_tex;
-	uint32_t c_texture = tctx->comp_base + qfv_tex_texture;
 
-	uint32_t texid = ECS_NewEntity (reg);
-	Ent_SetComponent (texid, ecs_name, reg, &name);
-	Ent_SetComponent (texid, c_texinfo, reg, &texinfo);
-	Ent_SetComponent (texid, c_view, reg, &tex->view);
-	Ent_SetComponent (texid, c_samp, reg, &texinfo->sampler.sampler);
-	Ent_SetComponent (texid, c_tex, reg, &tex);
-	Ent_SetComponent (texid, c_texture, reg, &texture);
-
-	return texid;
+	void *texid = Hash_Find (tctx->textures, name);
+	// null pointer -> nullent
+	return (uintptr_t) texid - 1;
 }
 
 uint32_t
@@ -1099,6 +1172,16 @@ QFV_TexIsCubemap (vulkan_ctx_t *ctx, uint32_t texid)
 	return (flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) != 0;
 }
 
+static const char *
+qfv_tex_get_key (const void *_id, void *data)
+{
+	texturectx_t *tctx = data;
+	auto reg = tctx->reg;
+	// null pointer -> nullent (null pointer shouldn't happen)
+	uint32_t id = (uintptr_t) _id - 1;
+	return *(const char **) Ent_GetComponent (id, ecs_name, reg);
+}
+
 static void
 texture_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
@@ -1118,6 +1201,8 @@ texture_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.comp_base = ECS_RegisterComponents (reg, qfv_tex_components,
 											 qfv_tex_num_components),
 	};
+	tctx->textures = Hash_NewTable (1021, qfv_tex_get_key, nullptr,
+									tctx, &tctx->hashctx),
 	ECS_CreateComponentPools (reg);
 }
 

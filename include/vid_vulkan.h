@@ -113,6 +113,7 @@ typedef struct vulkan_ctx_s {
 	uint32_t    curFrame;
 	uint64_t    frameNumber;
 
+	VkSampler default_sampler;
 	VkImageView default_black[4];	// 2d, 2d array, cube, cube array
 	VkImageView default_white[4];	// 2d, 2d array, cube, cube array
 	VkImageView default_magenta[4];	// 2d, 2d array, cube, cube array

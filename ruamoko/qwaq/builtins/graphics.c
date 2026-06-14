@@ -371,6 +371,12 @@ bi(load_resource)
 	R_UINT (pr) = mod_funcs->load_resource (name, plitem);
 }
 
+bi(find_resource)
+{
+	const char *name = P_GSTRING (pr, 0);
+	R_UINT (pr) = mod_funcs->find_resource (name);
+}
+
 bi(res_is_cubemap)
 {
 	uint32_t id = P_UINT (pr, 0);
@@ -589,6 +595,7 @@ static builtin_t builtins[] = {
 	bi(del_entity,    -1, 1, p(uint)),
 	bi(init_graphics, -1, 1, p(ptr)),
 	bi(load_resource, -1, 1, p(string)),
+	bi(find_resource, -1, 1, p(string)),
 	bi(res_is_cubemap,-1, 1, p(uint)),
 	bi(newscene,      -1, 1, p(long)),
 	bi(set_sky_id,    -1, 1, p(uint)),

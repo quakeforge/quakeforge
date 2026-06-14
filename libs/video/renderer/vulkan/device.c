@@ -198,6 +198,7 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 				.independentBlend = 1,
 				.geometryShader = 1,
 				.multiViewport = 1,
+				.samplerAnisotropy = 1,
 				.fragmentStoresAndAtomics = 1,
 				.fillModeNonSolid = 1,
 			},

@@ -116,6 +116,7 @@ void del_entity (uint ent) = #0;
 void init_graphics (plitem_t *config, int num_components,
 					component_t *components) = #0;
 uint load_resource (string name) = #0;
+uint find_resource (string name) = #0;
 int res_is_cubemap (uint id) = #0;
 float refresh (scene_t scene) = #0;
 void refresh_2d (void (func)(void)) = #0;
@@ -2207,6 +2208,8 @@ main (int argc, string *argv)
 
 	uint pixpal = load_resource ("pixpal.meta");
 	uint skyid = load_resource ("eso0932a.meta");
+	uint defcube = find_resource ("default_magenta_cube");
+	printf ("default_magenta_cube: %x\n", defcube);
 
 	Render_SetJobBlackboardVar ("pbr_conv", "pbr_conv_id", skyid);
 	Render_SetBlackboardVar ("sampleCount", 1024);

@@ -8,6 +8,8 @@
 typedef struct ecs_registry_s ecs_registry_t;
 typedef struct vulkan_ctx_s vulkan_ctx_t;
 typedef struct qfv_textureinfo_s qfv_textureinfo_t;
+typedef struct hashtab_s hashtab_t;
+typedef struct hashctx_s hashctx_t;
 
 typedef struct qfv_tex_s {
 	struct qfv_resource_s *resource;
@@ -20,13 +22,16 @@ typedef struct texturectx_s {
 	struct qfv_resource_s *tex_resource;
 
 	ecs_registry_t *reg;
-	uint32_t comp_base;
+	uint32_t    comp_base;
+	hashtab_t  *textures;
+	hashctx_t  *hashctx;
 } texturectx_t;
 
 VkImageView QFV_Tex_View (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure));
 VkSampler QFV_Tex_Sampler (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure));
 uint32_t QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
 						  const char *name);
+uint32_t QFV_TexFindTexture (vulkan_ctx_t *ctx, const char *name);
 uint32_t QFV_TexGetSkinId (vulkan_ctx_t *ctx, uint32_t id) __attribute__((pure));
 void QFV_TexSetSkinId (vulkan_ctx_t *ctx, uint32_t id, uint32_t skinid);
 VkDescriptorSet QFV_GetTexture (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure));

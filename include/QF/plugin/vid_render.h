@@ -90,6 +90,7 @@ typedef struct vid_model_funcs_s {
 	void (*skin_destroy) (skin_t *skin);
 
 	uint32_t (*load_resource) (const char *name, plitem_t *res);
+	uint32_t (*find_resource) (const char *name);
 	bool (*res_is_cubemap) (uint32_t id);
 	uint32_t (*get_skinid) (uint32_t id);
 	void (*set_skinid) (uint32_t id, uint32_t skinid);
