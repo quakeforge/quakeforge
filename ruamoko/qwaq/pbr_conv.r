@@ -89,7 +89,6 @@ float D_GGX(float NdotH, float roughness)
 
 float D_Charlie(float sheenRoughness, float NdotH)
 {
-	sheenRoughness = max(sheenRoughness, 1e-6);
 	float invR = 1 / sheenRoughness;
 	float cos2h = NdotH * NdotH;
 	float sin2h = 1 - cos2h;
@@ -111,6 +110,7 @@ MDS Charlie (vec2 xi, float roughness)
 {
 	MDS charlie;
 	float a = roughness * roughness;
+	a = max(a, 1e-6);
 	charlie.sinTheta = pow (xi.y, a / (2 * a + 1));
 	charlie.cosTheta = sqrt (1 - charlie.sinTheta * charlie.sinTheta);
 	charlie.phi = 2 * PI * xi.x;
