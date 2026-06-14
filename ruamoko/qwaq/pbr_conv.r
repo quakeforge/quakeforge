@@ -25,7 +25,7 @@ typedef enum [namespace] Dist {
 
 [push_constant] @block constants {
 	uvec3 miploop_base;
-	uint FIXME;
+	uint miploop_layer;
 	uvec3 miploop_size;
 	uint miploop_level;
 	uvec2 miploop_range;

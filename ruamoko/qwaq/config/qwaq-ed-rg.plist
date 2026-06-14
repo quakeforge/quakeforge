@@ -819,6 +819,7 @@ render_graph = {
 					pushConstants = {
 						fragment = {
 							miploop_base = uvec3;
+							miploop_layer = uint;
 							miploop_size = uvec3;
 							miploop_level = uint;
 							miploop_range = uvec2;
@@ -1653,6 +1654,7 @@ render_graph = {
 
 			diff_cube = {
 				@inherit = $cube_image_base;
+				flags = cube_compatible;
 				format = r32g32b32a32_sfloat;
 				extent = {
 					width = 256;
@@ -1660,7 +1662,7 @@ render_graph = {
 					depth = 1;
 				};
 				mipLevels = ~0u;
-				arrayLayers = 6;
+				arrayLayers = 6*3;
 				usage = color_attachment|sampled;
 			};
 		};
@@ -1668,6 +1670,7 @@ render_graph = {
 			diff_cube = {
 				@inherit = $cube_view_base;
 				image = diff_cube;
+				viewType = cube_array;
 				subresourceRange = {
 					aspectMask = color;
 					levelCount = ~0u;
@@ -3155,7 +3158,12 @@ render_graph = {
 									   "\"texture_set\""); };
 					process = {
 						tasks = (
-							{ func = miploop_draw; },
+							{ func = blackboard_set_int; params = ("\"distribution\"", 0); },
+							{ func = miploop_draw; params = (0); },
+							{ func = blackboard_set_int; params = ("\"distribution\"", 1); },
+							{ func = miploop_draw; params = (6); },
+							{ func = blackboard_set_int; params = ("\"distribution\"", 2); },
+							{ func = miploop_draw; params = (12); },
 							{ func = submit_depth; },
 						);
 					};

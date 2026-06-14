@@ -43,6 +43,7 @@
 
 typedef struct miploopctx_s {
 	vec3u_t    *miploop_base;
+	int32_t    *miploop_layer;
 	vec3u_t    *miploop_size;
 	uint32_t   *miploop_level;
 	vec2u_t    *miploop_range;

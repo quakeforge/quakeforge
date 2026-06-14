@@ -159,7 +159,8 @@ miploop_init_loop (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 }
 
 static VkImageView
-create_view (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_info, uint32_t level)
+create_view (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_info,
+			 uint32_t layer, uint32_t level)
 {
 	auto mctx = ctx->miploop_context;
 	auto device = ctx->device;
@@ -176,7 +177,7 @@ create_view (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_info, uint32_t level)
 				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 				.baseMipLevel = level,
 				.levelCount = 1,
-				.baseArrayLayer = 0,
+				.baseArrayLayer = layer,
 				.layerCount = mctx->layers,
 			},
 		}, nullptr, &view);
@@ -214,6 +215,7 @@ miploop_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto step = taskctx->step;
 	auto render = step->render;
 	auto ii = mctx->image_info;
+	auto layer = *(int32_t *) params[0]->value;
 
 	if (mctx->tex_name && !mctx->tex_id) {
 		mctx->tex_id = QFV_GetJobBlackboardVar (taskctx->job, mctx->tex_name);
@@ -227,6 +229,7 @@ miploop_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	vec2u_t range = {0, QFV_MipLevels (base.v[0], base.v[1])};
 
 	*mctx->miploop_base = base;
+	*mctx->miploop_layer = layer;
 	*mctx->miploop_range = range;
 	(*mctx->miploop_range)[1] -= 1;
 
@@ -241,7 +244,7 @@ miploop_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		uint32_t level = i + range[0];
 		*mctx->miploop_size = size;
 		*mctx->miploop_level = level;
-		views[i] = create_view (ctx, mctx->image_info, level);
+		views[i] = create_view (ctx, mctx->image_info, layer, level);
 		auto bi = &renderpass->beginInfo;
 		fbuffers[i] = create_framebuffer (ctx, size, views[i], bi->renderPass);
 		bi->framebuffer = fbuffers[i];
@@ -294,6 +297,7 @@ miploop_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_Render_AddStartup (ctx, miploop_startup);
 
 	mctx->miploop_base = QFV_GetBlackboardVar (ctx, "miploop_base");
+	mctx->miploop_layer = QFV_GetBlackboardVar (ctx, "miploop_layer");
 	mctx->miploop_size = QFV_GetBlackboardVar (ctx, "miploop_size");
 	mctx->miploop_level = QFV_GetBlackboardVar (ctx, "miploop_level");
 	mctx->miploop_range = QFV_GetBlackboardVar (ctx, "miploop_range");
@@ -317,8 +321,14 @@ static exprfunc_t miploop_init_loop_func[] = {
 	{}
 };
 
+static exprtype_t *miploop_draw_params[] = {
+	&cexpr_uint,
+};
+
 static exprfunc_t miploop_draw_func[] = {
-	{ .func = miploop_draw },
+	{ .func = miploop_draw,
+		.num_params = countof (miploop_draw_params),
+		.param_types = miploop_draw_params },
 	{}
 };
 
