@@ -826,6 +826,7 @@ render_graph = {
 							conv_size = uvec2;
 							sampleCount = uint;
 							distribution = int;
+							control = uint;
 						};
 					};
 				};

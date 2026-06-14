@@ -116,6 +116,7 @@ void del_entity (uint ent) = #0;
 void init_graphics (plitem_t *config, int num_components,
 					component_t *components) = #0;
 uint load_resource (string name) = #0;
+int res_is_cubemap (uint id) = #0;
 float refresh (scene_t scene) = #0;
 void refresh_2d (void (func)(void)) = #0;
 void setpalette (void *palette, void *colormap) = #0;
@@ -2210,6 +2211,7 @@ main (int argc, string *argv)
 	Render_SetJobBlackboardVar ("pbr_conv", "pbr_conv_id", skyid);
 	Render_SetBlackboardVar ("sampleCount", 1024);
 	Render_SetBlackboardVar ("conv_size", uvec2(512,512));
+	Render_SetBlackboardVar ("control", res_is_cubemap (skyid));
 	Render_RunJob ("pbr_conv");
 
 	IN_SendConnectedDevices ();

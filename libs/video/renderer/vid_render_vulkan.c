@@ -682,6 +682,12 @@ vulkan_load_resource (const char *name, plitem_t *res)
 	return QFV_LoadTexinfo (vulkan_ctx, texinfo, name);
 }
 
+static bool
+vulkan_res_is_cubemap (uint32_t id)
+{
+	return QFV_TexIsCubemap (vulkan_ctx, id);
+}
+
 static uint32_t
 vulkan_get_skinid (uint32_t id)
 {
@@ -760,6 +766,7 @@ static vid_model_funcs_t model_funcs = {
 	.skin_destroy            = vulkan_Skin_Destroy,
 
 	.load_resource = vulkan_load_resource,
+	.res_is_cubemap = vulkan_res_is_cubemap,
 	.get_skinid = vulkan_get_skinid,
 	.set_skinid = vulkan_set_skinid,
 };

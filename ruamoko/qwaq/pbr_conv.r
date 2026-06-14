@@ -1,20 +1,26 @@
 #include "GLSL/general.h"
 #include "GLSL/texture.h"
+#include "GLSL/fragment.h"
 
 [in(0)] vec2 uv;
 [out(0)] vec4 frag_color;
 [flat, in("ViewIndex")] int gl_ViewIndex;
 
 typedef @sampler(@image(float,Cube)) CubeS;
+typedef @sampler(@image(float,2D)) FlatS;
 typedef @image(float,Cube,Sampled) Cube;
+typedef @image(float,2D,Sampled) Flat;
 
 [uniform, set(0), binding(0)] @sampler samp;
-[uniform, set(0), binding(0)] Cube envMap;
+//[uniform, set(0), binding(0)] Cube envBox;
+[uniform, set(0), binding(0)] Flat envMap;
 
 const float PI = 3.1415926536;
 
 @overload
 vec4 texture(CubeS samp, vec3 dir, float lod)
+	= SPV(OpImageSampleExplicitLod) [samp, dir, =ImageOperands.Lod, lod];
+vec4 texture(FlatS samp, vec2 dir, float lod)
 	= SPV(OpImageSampleExplicitLod) [samp, dir, =ImageOperands.Lod, lod];
 
 typedef enum [namespace] Dist {
@@ -32,6 +38,7 @@ typedef enum [namespace] Dist {
 	uvec2 conv_size;
 	uint sampleCount;
 	dist_t distribution;
+	uint control;
 };
 
 vec3 uvToXYZ (uint face, vec2 uv)
@@ -155,6 +162,27 @@ float computeLod (float pdf)
 	return 0.5 * log2 (6 * 2 * h / (sc * pdf));
 }
 
+vec4 sampleEnv (vec3 dir, float lod)
+{
+	if (control) {
+		return vec4(1,0,1,1);//texture(@sampler(envBox, samp), dir, lod);
+	} else {
+		// equirectangular images go from left to right, top to bottom, but
+		// the computed angles go right to left, bottom to top, so both need
+		// to be flipped for the maps to be the right way round.
+		const vec2 conv = vec2(-1/(2*PI), -1/PI);
+
+		vec3 rid = -dir;
+		float x1 = atan (dir.y, dir.x);
+		float x2 = atan (rid.y, rid.x);
+		float y = atan (dir.z, length(dir.xy));
+		vec2 uv1 = vec2 (x1, y) * conv + vec2(0.5, 0.5);
+		vec2 uv2 = vec2 (x2, y) * conv + vec2(0.0, 0.5);
+		vec2 uv = fwidth(uv1.x) > 0.5 ? uv2 : uv1;
+		return texture(@sampler(envMap, samp), uv, lod);
+	}
+}
+
 vec3 filterColor (vec3 N, float roughness)
 {
 	vec3 color = vec3(0);
@@ -165,8 +193,7 @@ vec3 filterColor (vec3 N, float roughness)
 		float pdf = importanceSample.w;
 		float lod = computeLod (pdf);
 		if (distribution == Dist.Lambertian) {
-			//vec3 lambertian = texture(envMap, H, lod).xyz;
-			vec3 lambertian = texture(@sampler(envMap, samp), H, lod).xyz;
+			vec3 lambertian = sampleEnv (H, lod).xyz;
 			color += lambertian;
 		} else if (distribution == Dist.GGX || distribution == Dist.Charlie) {
 			vec3 V = N;
@@ -174,7 +201,7 @@ vec3 filterColor (vec3 N, float roughness)
 			float NdotL = dot(N, L);
 			if (NdotL > 0) {
 				if (roughness == 0) lod = 0;
-				vec3 sampleColor = texture (@sampler(envMap, samp), L, lod).xyz;
+				vec3 sampleColor = sampleEnv (L, lod).xyz;
 				color += sampleColor * NdotL;
 				weight += NdotL;
 			}
