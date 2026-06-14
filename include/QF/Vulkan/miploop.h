@@ -32,14 +32,18 @@
 
 
 #include "QF/darray.h"
-#include "QF/model.h"
-#include "QF/modelgen.h"
-#include "QF/scene/light.h"
-#include "QF/Vulkan/qf_vid.h"
-#include "QF/Vulkan/command.h"
-#include "QF/Vulkan/image.h"
 #include "QF/Vulkan/render.h"
 #include "QF/simd/types.h"
+
+typedef struct miplooptex_s {
+	const char *var_name;
+	const char *set_name;
+	uint32_t   *tex_id;
+	uint32_t    set_index;
+} miplooptex_t;
+
+typedef struct miplooptexset_s
+	DARRAY_TYPE (miplooptex_t) miplooptexset_t;
 
 typedef struct miploopctx_s {
 	vec3u_t    *miploop_base;
@@ -52,10 +56,8 @@ typedef struct miploopctx_s {
 	qfv_attachmentinfo_t miploop_info;
 	qfv_imageinfo_t *image_info;
 	const char *img_name;
-	const char *tex_name;
-	uint32_t   *tex_id;
 	uint32_t    layers;
-	uint32_t    ds_index;
+	miplooptexset_t textures;
 } miploopctx_t;
 
 typedef struct vulkan_ctx_s vulkan_ctx_t;

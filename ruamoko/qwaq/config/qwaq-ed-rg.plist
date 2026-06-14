@@ -815,7 +815,7 @@ render_graph = {
 			};
 			conv = {
 				layout = {
-					descriptorSets = (texture_set);
+					descriptorSets = (pbr_cube_set, pbr_env_set);
 					pushConstants = {
 						fragment = {
 							miploop_base = uvec3;
@@ -1248,6 +1248,26 @@ render_graph = {
 			);
 		};
 		texture_set = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
+					stageFlags = fragment|vertex;
+				},
+			);
+		};
+		pbr_cube_set = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
+					stageFlags = fragment|vertex;
+				},
+			);
+		};
+		pbr_env_set = {
 			bindings = (
 				{
 					binding = 0;
@@ -3148,15 +3168,16 @@ render_graph = {
 		};
 		pbr_conv = {
 			vars = {
-				pbr_conv_id = uint;
+				pbr_cube_id = uint;
+				pbr_env_id = uint;
 			};
 			steps = {
 				conv_process = {
 					color = "[0.6, 0.8, 0.9]";
 					init = { func = miploop_init_loop;
 							 params = ("\"diff_cube\"", 6,
-									   "\"pbr_conv_id\"",
-									   "\"texture_set\""); };
+										((pbr_cube_id, pbr_cube_set),
+										 (pbr_env_id, pbr_env_set))); };
 					process = {
 						tasks = (
 							{ func = blackboard_set_int; params = ("\"distribution\"", 0); },

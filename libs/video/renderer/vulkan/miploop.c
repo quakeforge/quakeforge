@@ -73,6 +73,36 @@
 #include "vkparse.h"
 
 static void
+miploop_parse_textures (vulkan_ctx_t *ctx, miploopctx_t *mctx,
+						memsuper_t *memsuper, plitem_t *textures)
+{
+	if (PL_Type (textures) != QFArray) {
+		Sys_Error (MAG"%d:miploop textures param not an array"DFL,
+				   PL_Line (textures));
+	}
+	int num_textures = PL_A_NumObjects (textures);
+	DARRAY_RESIZE (&mctx->textures, num_textures);
+	for (int i = 0; i < num_textures; i++) {
+		const char *var_name = nullptr;
+		const char *set_name = nullptr;
+		auto texset = PL_ObjectAtIndex (textures, i);
+		if (PL_A_NumObjects (texset) != 2) {
+		}
+		var_name = PL_String (PL_ObjectAtIndex (texset, 0));
+		set_name = PL_String (PL_ObjectAtIndex (texset, 1));
+		if (!var_name || !set_name) {
+			Sys_Error (MAG"%d:miploop textures param not an array of 2 "
+					   " strings"DFL, PL_Line (texset));
+		}
+		mctx->textures.a[i] = (miplooptex_t) {
+			.var_name = cmemstrdup (memsuper, var_name),
+			.set_name = cmemstrdup (memsuper, set_name),
+			.set_index = QFV_GetDSIndex (ctx, set_name),
+		};
+	}
+}
+
+static void
 miploop_init_loop (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
@@ -80,14 +110,13 @@ miploop_init_loop (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	miploopctx_t *mctx = malloc (sizeof (miploopctx_t));
 	ctx->miploop_context = mctx;
 
-	auto set_name = *(const char **) params[0]->value;
-	auto tex_name = *(const char **) params[1]->value;
-	int layers = *(int *) params[2]->value;
-	auto img_name = *(const char **) params[3]->value;
+	auto textures = *(plitem_t **) params[0]->value;
+	int layers = *(int *) params[1]->value;
+	auto img_name = *(const char **) params[2]->value;
 	auto sinfo = taskctx->stepinfo;
 	auto rt = sinfo->render_template;
-	Sys_Printf ("miploop_init_loop: %s %s %d %s\n",
-				sinfo->name, img_name, layers, tex_name);
+	Sys_Printf ("miploop_init_loop: %s %s %d %p\n",
+				sinfo->name, img_name, layers, textures);
 	if (rt->num_renderpasses != 1) {
 		Sys_Error ("%d:%s: need exactly one render pass in render template",
 				   sinfo->line, sinfo->name);
@@ -148,14 +177,14 @@ miploop_init_loop (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		},
 		.image_info = image_info,
 		.img_name = img_name,
-		.tex_name = tex_name,
 		.layers = layers,
-		.ds_index = QFV_GetDSIndex (ctx, set_name),
+		.textures = DARRAY_STATIC_INIT (4),
 	};
 	qfv_attachmentinfo_t *attachments[] = {
 		&mctx->miploop_info,
 	};
 	QFV_Render_AddAttachments (ctx, 1, attachments);
+	miploop_parse_textures (ctx, mctx, memsuper, textures);
 }
 
 static VkImageView
@@ -217,11 +246,14 @@ miploop_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto ii = mctx->image_info;
 	auto layer = *(int32_t *) params[0]->value;
 
-	if (mctx->tex_name && !mctx->tex_id) {
-		mctx->tex_id = QFV_GetJobBlackboardVar (taskctx->job, mctx->tex_name);
+	for (uint32_t i = 0; i < mctx->textures.size; i++) {
+		auto tex = &mctx->textures.a[i];
+		if (tex->var_name && !tex->tex_id) {
+			tex->tex_id = QFV_GetJobBlackboardVar (taskctx->job, tex->var_name);
+		}
+		auto texture = QFV_GetTexture (ctx, *tex->tex_id);
+		QFV_SetDescriptorSet (ctx, ctx->curFrame, tex->set_index, texture);
 	}
-	auto tex = QFV_GetTexture (ctx, *mctx->tex_id);
-	QFV_SetDescriptorSet (ctx, ctx->curFrame, mctx->ds_index, tex);
 
 	//FIXME support 3d mips
 	vec3u_t base = {{ii->extent.width, ii->extent.height, 1}};
@@ -311,8 +343,7 @@ static exprtype_t *stepref_param[] = {
 };
 
 static exprtype_t *miploop_init_loop_params[] = {
-	&cexpr_string,
-	&cexpr_string,
+	&cexpr_plitem,
 	&cexpr_uint,
 	&cexpr_string,
 };

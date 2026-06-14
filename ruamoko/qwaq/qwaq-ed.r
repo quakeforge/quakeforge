@@ -2208,13 +2208,20 @@ main (int argc, string *argv)
 
 	uint pixpal = load_resource ("pixpal.meta");
 	uint skyid = load_resource ("eso0932a.meta");
-	uint defcube = find_resource ("default_magenta_cube");
-	printf ("default_magenta_cube: %x\n", defcube);
 
-	Render_SetJobBlackboardVar ("pbr_conv", "pbr_conv_id", skyid);
 	Render_SetBlackboardVar ("sampleCount", 1024);
 	Render_SetBlackboardVar ("conv_size", uvec2(512,512));
-	Render_SetBlackboardVar ("control", res_is_cubemap (skyid));
+	if (res_is_cubemap (skyid)) {
+		uint defenv = find_resource ("default_magenta");
+		Render_SetBlackboardVar ("control", 1);
+		Render_SetJobBlackboardVar ("pbr_conv", "pbr_cube_id", skyid);
+		Render_SetJobBlackboardVar ("pbr_conv", "pbr_env_id", defenv);
+	} else {
+		uint defcube = find_resource ("default_magenta_cube");
+		Render_SetBlackboardVar ("control", 0);
+		Render_SetJobBlackboardVar ("pbr_conv", "pbr_cube_id", defcube);
+		Render_SetJobBlackboardVar ("pbr_conv", "pbr_env_id", skyid);
+	}
 	Render_RunJob ("pbr_conv");
 
 	IN_SendConnectedDevices ();

@@ -1024,9 +1024,14 @@ parse_task_params (const plitem_t *item, void **data,
 		return 0;
 	}
 	for (int i = 0; i < func->num_params; i++) {
-		const char *paramstr = PL_String (PL_ObjectAtIndex (item, i));
+		plitem_t   *paramitm = PL_ObjectAtIndex (item, i);
+		const char *paramstr = PL_String (paramitm);
 		exprval_t  *param = params[func->num_params - i - 1];
 		exprctx_t   ectx = *pctx->ectx;
+		if (param->type == &cexpr_plitem) {
+			*(plitem_t **) param->value = paramitm;
+			continue;
+		}
 		if (param->type->data) {
 			ectx.parent = pctx->ectx;
 			ectx.symtab = ((exprenum_t *) param->type->data)->symtab;

@@ -8,12 +8,9 @@
 
 typedef @sampler(@image(float,Cube)) CubeS;
 typedef @sampler(@image(float,2D)) FlatS;
-typedef @image(float,Cube,Sampled) Cube;
-typedef @image(float,2D,Sampled) Flat;
 
-[uniform, set(0), binding(0)] @sampler samp;
-//[uniform, set(0), binding(0)] Cube envBox;
-[uniform, set(0), binding(0)] Flat envMap;
+[uniform, set(0), binding(0)] CubeS envBox;
+[uniform, set(1), binding(0)] FlatS envMap;
 
 const float PI = 3.1415926536;
 
@@ -165,7 +162,7 @@ float computeLod (float pdf)
 vec4 sampleEnv (vec3 dir, float lod)
 {
 	if (control) {
-		return vec4(1,0,1,1);//texture(@sampler(envBox, samp), dir, lod);
+		return texture(envBox, dir, lod);
 	} else {
 		// equirectangular images go from left to right, top to bottom, but
 		// the computed angles go right to left, bottom to top, so both need
@@ -184,7 +181,7 @@ vec4 sampleEnv (vec3 dir, float lod)
 		vec2 uv1 = vec2 (x1, y) * conv + vec2(0.5, 0.5);
 		vec2 uv2 = vec2 (x2, y) * conv + vec2(0.0, 0.5);
 		vec2 uv = fwidth(uv1.x) > 0.5 ? uv2 : uv1;
-		return texture(@sampler(envMap, samp), uv, lod);
+		return texture(envMap, uv, lod);
 	}
 }
 
