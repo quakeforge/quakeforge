@@ -172,6 +172,11 @@ vec4 sampleEnv (vec3 dir, float lod)
 		// to be flipped for the maps to be the right way round.
 		const vec2 conv = vec2(-1/(2*PI), -1/PI);
 
+		// swizzle from quake's x-forward, y-left, z-up to cubemap's
+		// x-right, y-up, z-forward. This puts the cube's right axis pointing
+		// to the center of the equirectangular image.
+		dir = dir.xzy;
+
 		vec3 rid = -dir;
 		float x1 = atan (dir.y, dir.x);
 		float x2 = atan (rid.y, rid.x);
