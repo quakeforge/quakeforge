@@ -714,44 +714,28 @@ Vulkan_UnloadTex (vulkan_ctx_t *ctx, qfv_tex_t *tex)
 	free (tex);
 }
 
-static byte black_data[] = {0, 0, 0, 0};
-static byte white_data[] = {255, 255, 255, 255};
-static byte magenta_data[] = {255, 0, 255, 255};
-static byte normal_data[] = {128, 128, 255, 255};
+static byte default_black_data[] = {0, 0, 0, 0};
+static byte default_white_data[] = {255, 255, 255, 255};
+static byte default_magenta_data[] = {255, 0, 255, 255};
+static byte default_normal_data[] = {128, 128, 255, 255};
 static byte skin_data_main[] = {240, 240, 240, 255};	// main color
 static byte skin_data_glow[] = {  0,   0,   0,   0};	// fullbright
 static byte skin_data_cmap[] = {  0,   0,   0,   0};	// color map
-static tex_t default_black_tex = {
-	.width = 1,
-	.height = 1,
-	.format = tex_rgba,
-	.loaded = true,
-	.palette =0,
-	.data = black_data,
-};
-static tex_t default_white_tex = {
-	.width = 1,
-	.height = 1,
-	.format = tex_rgba,
-	.loaded = true,
-	.palette =0,
-	.data = white_data,
-};
-static tex_t default_magenta_tex = {
-	.width = 1,
-	.height = 1,
-	.format = tex_rgba,
-	.loaded = true,
-	.palette =0,
-	.data = magenta_data,
-};
-static tex_t default_normal_tex = {
-	.width = 1,
-	.height = 1,
-	.format = tex_rgba,
-	.loaded = true,
-	.palette =0,
-	.data = normal_data,
+
+typedef struct {
+	byte *data;
+	const char *names[4];
+} default_tex_t;
+
+#define deftex(name) { \
+	.data = name##_data, \
+	.names = {#name, #name "_array", #name "_cube", #name "_cube_array"} \
+}
+static default_tex_t default_textures[] = {
+	deftex(default_black),
+	deftex(default_white),
+	deftex(default_magenta),
+	deftex(default_normal),
 };
 static tex_t *default_skin_tex[] = {
 	&(tex_t) {
@@ -813,6 +797,14 @@ texture_shutdown (exprctx_t *ectx)
 	free (ctx->texture_context);
 }
 
+static VkImageViewType qfv_tex_view_types[] = {
+	VK_IMAGE_VIEW_TYPE_2D,
+	VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+	VK_IMAGE_VIEW_TYPE_CUBE,
+	VK_IMAGE_VIEW_TYPE_CUBE_ARRAY,
+};
+static_assert (countof (qfv_tex_view_types) == countof (default_textures[0].names));
+
 static void
 texture_startup (exprctx_t *ectx)
 {
@@ -824,8 +816,12 @@ texture_startup (exprctx_t *ectx)
 
 	tctx->dsmanager = QFV_Render_DSManager (ctx, "texture_set");
 
-	const int num_images = 5;
-	const int num_views = 9;
+	const int num_deftex = countof (default_textures);
+	const int num_skin_tex = countof (default_skin_tex);
+	const int num_defvar = countof (default_textures[0].names);
+	// +1 for default_skin
+	const int num_images = num_deftex + 1;
+	const int num_views = num_defvar * num_deftex + 1;
 	size_t size = sizeof (qfv_resource_t)
 				+ sizeof (qfv_resobj_t[num_images])
 				+ sizeof (qfv_resobj_t[num_views]);
@@ -839,44 +835,59 @@ texture_startup (exprctx_t *ectx)
 		.num_objects = num_images + num_views,
 		.objects = images,
 	};
-	QFV_ResourceInitTexImage (&images[0], "default_black", true,
-							  &default_black_tex);
-	QFV_ResourceInitTexImage (&images[1], "default_white", true,
-							  &default_white_tex);
-	QFV_ResourceInitTexImage (&images[2], "default_magenta", true,
-							  &default_magenta_tex);
-	QFV_ResourceInitTexImage (&images[3], "default_normal", true,
-							  &default_normal_tex);
-	QFV_ResourceInitTexImage (&images[4], "default_skin", true,
-							  default_skin_tex[0]);
-	images[4].image.num_layers = 3;
-	for (int i = 0; i < 4; i++) {
-		QFV_ResourceInitImageView (&views[i + 0], i, &images[i]);
-		QFV_ResourceInitImageView (&views[i + 4], i, &images[i]);
-		views[i + 4].name = vac (ctx->va_ctx, "%s_array", images[i].name);
-		views[i + 4].image_view.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+	// three tex_t for default_skin
+	tex_t deftex[num_deftex];
+	for (int i = 0; i < num_deftex; i++) {
+		auto dt = &default_textures[i];
+		deftex[i] = (tex_t) {
+			.width = 1,
+			.height = 1,
+			.format = tex_rgba,
+			.loaded = true,
+			.data = dt->data,
+		};
+		QFV_ResourceInitTexImage (&images[i], dt->names[0], true, &deftex[i]);
+		images[i].image.num_layers = 6;
+		images[i].image.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 	}
-	QFV_ResourceInitImageView (&views[8], 4, &images[4]);
+	const int skin_img = num_deftex;
+	const int skin_view = num_defvar * num_deftex;
+	QFV_ResourceInitTexImage (&images[skin_img], "default_skin", true,
+							  default_skin_tex[0]);
+	images[skin_img].image.num_layers = num_skin_tex;
+	for (int i = 0; i < num_deftex; i++) {
+		auto dt = &default_textures[i];
+		for (int j = 0; j < num_defvar; j++) {
+			int vind = i + j * num_deftex;
+			QFV_ResourceInitImageView (&views[vind], i, &images[i]);
+			views[vind].name = dt->names[j];
+			views[vind].image_view.type = qfv_tex_view_types[j];
+			if (!j) {
+				views[vind].image_view.subresourceRange.layerCount = 1;
+			}
+		}
+	}
+	QFV_ResourceInitImageView (&views[skin_view], 4, &images[skin_img]);
 	QFV_CreateResource (ctx->device, tctx->tex_resource);
-	ctx->default_black[0] = views[0 + 0].image_view.view;
-	ctx->default_black[1] = views[4 + 0].image_view.view;
-	ctx->default_white[0] = views[0 + 1].image_view.view;
-	ctx->default_white[1] = views[4 + 1].image_view.view;
-	ctx->default_magenta[0] = views[0 + 2].image_view.view;
-	ctx->default_magenta[1] = views[4 + 2].image_view.view;
-	ctx->default_normal[0] = views[0 + 3].image_view.view;
-	ctx->default_normal[1] = views[4 + 3].image_view.view;
-	ctx->default_skin = views[8].image_view.view;
 
+	for (int i = 0; i < num_defvar; i++) {
+		ctx->default_black[i]   = views[i + 0].image_view.view;
+		ctx->default_white[i]   = views[i + 1].image_view.view;
+		ctx->default_magenta[i] = views[i + 2].image_view.view;
+		ctx->default_normal[i]  = views[i + 3].image_view.view;
+	}
+	ctx->default_skin = views[skin_view].image_view.view;
+
+	byte *def_bytes[num_deftex];
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.startup");
-	auto black_bytes = stage_tex_data_rows (packet, &default_black_tex,
-											0, 0, 4, 0, 0);
-	auto white_bytes =  stage_tex_data_rows (packet, &default_white_tex,
-											 0, 0, 4, 0, 0);
-	auto magenta_bytes =  stage_tex_data_rows (packet, &default_magenta_tex,
-											   0, 0, 4, 0, 0);
-	auto normal_bytes =  stage_tex_data_rows (packet, &default_normal_tex,
-											  0, 0, 4, 0, 0);
+	for (int i = 0; i < num_deftex; i++) {
+		tex_t *tex[6];
+		for (int j = 0; j < 6; j++) {
+			tex[j] = &deftex[i];
+		}
+		def_bytes[i] = stage_multi_tex_data (packet, tex, 6, 4,
+											 nullptr, nullptr);
+	}
 	auto skin_bytes = stage_multi_tex_data (packet, default_skin_tex, 3, 4,
 											nullptr, nullptr);
 
@@ -884,18 +895,11 @@ texture_startup (exprctx_t *ectx)
 	auto db = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
 
 	qfv_offset_t offset = {};
-	QFV_PacketCopyImage (packet, images[0].image.image,
-						 offset, (qfv_extent_t) { 1, 1, 1, 1 },
-						 QFV_PacketOffset (packet, black_bytes), &sb, &db);
-	QFV_PacketCopyImage (packet, images[1].image.image,
-						 offset, (qfv_extent_t) { 1, 1, 1, 1 },
-						 QFV_PacketOffset (packet, white_bytes), &sb, &db);
-	QFV_PacketCopyImage (packet, images[2].image.image,
-						 offset, (qfv_extent_t) { 1, 1, 1, 1 },
-						 QFV_PacketOffset (packet, magenta_bytes), &sb, &db);
-	QFV_PacketCopyImage (packet, images[3].image.image,
-						 offset, (qfv_extent_t) { 1, 1, 1, 1 },
-						 QFV_PacketOffset (packet, normal_bytes), &sb, &db);
+	for (int i = 0; i < num_deftex; i++) {
+		QFV_PacketCopyImage (packet, images[i].image.image,
+							 offset, (qfv_extent_t) { 1, 1, 1, 6 },
+							 QFV_PacketOffset (packet, def_bytes[i]), &sb, &db);
+	}
 	QFV_PacketCopyImage (packet, images[4].image.image,
 						 offset, (qfv_extent_t) { 1, 1, 1, 3 },
 						 QFV_PacketOffset (packet, skin_bytes), &sb, &db);
