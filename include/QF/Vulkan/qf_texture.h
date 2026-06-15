@@ -25,6 +25,8 @@ typedef struct texturectx_s {
 	uint32_t    comp_base;
 	hashtab_t  *textures;
 	hashctx_t  *hashctx;
+
+	VkSampler   default_sampler;
 } texturectx_t;
 
 VkImageView QFV_Tex_View (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure));

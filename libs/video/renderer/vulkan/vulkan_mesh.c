@@ -653,8 +653,9 @@ mesh_startup (exprctx_t *ectx)
 	};
 	QFV_CreateResource (device, mctx->resource);
 	mctx->null_bone = mctx->resource[0].objects[0].buffer.buffer;
+	uint32_t default_skin = QFV_TexFindTexture (ctx, "default_skin");
 	mctx->default_skin = (qfv_skin_t) {
-		.view = ctx->default_skin,
+		.view = QFV_Tex_View (ctx, default_skin),
 	};
 	Vulkan_MeshAddSkin (ctx, &mctx->default_skin);
 }

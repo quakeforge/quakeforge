@@ -776,7 +776,7 @@ texture_shutdown (exprctx_t *ectx)
 	auto tctx = ctx->texture_context;
 
 	QFV_DestroyResource (device, tctx->tex_resource);
-	dfunc->vkDestroySampler (device->dev, ctx->default_sampler, nullptr);
+	dfunc->vkDestroySampler (device->dev, tctx->default_sampler, nullptr);
 
 	auto reg = tctx->reg;
 	auto pools = reg->comp_pools;
@@ -901,14 +901,6 @@ texture_startup (exprctx_t *ectx)
 	QFV_ResourceInitImageView (&views[skin_view], 4, &images[skin_img]);
 	QFV_CreateResource (ctx->device, tctx->tex_resource);
 
-	for (int i = 0; i < num_defvar; i++) {
-		ctx->default_black[i]   = views[0 + i * num_deftex].image_view.view;
-		ctx->default_white[i]   = views[1 + i * num_deftex].image_view.view;
-		ctx->default_magenta[i] = views[2 + i * num_deftex].image_view.view;
-		ctx->default_normal[i]  = views[3 + i * num_deftex].image_view.view;
-	}
-	ctx->default_skin = views[skin_view].image_view.view;
-
 	byte *def_bytes[num_deftex];
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.startup");
 	for (int i = 0; i < num_deftex; i++) {
@@ -957,9 +949,9 @@ texture_startup (exprctx_t *ectx)
 			.minLod = 0,
 			.maxLod = VK_LOD_CLAMP_NONE,
 			.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK,
-		}, nullptr, &ctx->default_sampler);
+		}, nullptr, &tctx->default_sampler);
 
-	auto sampler = ctx->default_sampler;
+	auto sampler = tctx->default_sampler;
 	QFV_duSetObjectName (device, VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT,
 						 sampler, "default_sampler");
 	for (int i = 0; i < num_deftex; i++) {
@@ -1004,6 +996,9 @@ QFV_Tex_Sampler (vulkan_ctx_t *ctx, uint32_t texid)
 	auto tctx = ctx->texture_context;
 	auto reg = tctx->reg;
 	uint32_t comp = qfv_tex_sampler + tctx->comp_base;
+	if (!Ent_HasComponent (texid, comp, reg)) {
+		return tctx->default_sampler;
+	}
 	return *(VkSampler *) Ent_GetComponent (texid, comp, reg);
 }
 

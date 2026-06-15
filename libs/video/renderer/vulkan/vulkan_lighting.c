@@ -3021,14 +3021,16 @@ update_shadow_descriptors (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 
+	uint32_t tex_ibl = QFV_TexFindTexture (ctx, "default_white_cube_array");
+	uint32_t tex_lut = QFV_TexFindTexture (ctx, "default_white");
 	VkDescriptorImageInfo imageInfoIBL[32];
 	VkDescriptorImageInfo imageInfoLUT[1];
 	VkDescriptorImageInfo imageInfoCube[32];
 	VkDescriptorImageInfo imageInfo2d[32];
 	for (int i = 0; i < 32; i++) {
 		imageInfoIBL[i] = (VkDescriptorImageInfo) {
-			.sampler = lctx->ibl_sampler,
-			.imageView = ctx->default_white[3],
+			.sampler = QFV_Tex_Sampler (ctx, tex_ibl),
+			.imageView = QFV_Tex_View (ctx, tex_ibl),
 			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		};
 		VkImageView viewCube = lctx->default_view_cube;
@@ -3052,8 +3054,8 @@ update_shadow_descriptors (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		};
 	}
 	imageInfoLUT[0] = (VkDescriptorImageInfo) {
-		.sampler = lctx->lut_sampler,
-		.imageView = ctx->default_white[0],
+		.sampler = QFV_Tex_Sampler (ctx, tex_lut),
+		.imageView = QFV_Tex_View (ctx, tex_lut),
 		.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 	};
 
