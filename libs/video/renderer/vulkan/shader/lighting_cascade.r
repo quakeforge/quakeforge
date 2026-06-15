@@ -1,3 +1,4 @@
+#define __GLSL_FRAGMENT__
 #include "GLSL/texture.h"
 #include "GLSL/general.h"
 

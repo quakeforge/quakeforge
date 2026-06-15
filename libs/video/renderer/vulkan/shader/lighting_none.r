@@ -1,3 +1,4 @@
+#define __GLSL_FRAGMENT__
 #include "GLSL/general.h"
 #include "GLSL/texture.h"
 
@@ -85,7 +86,7 @@ main (void)
 		vec3 F0 = mix (vec3 (0.04), albedo, metalic);
 		vec3 kS = fresnelSchlickRoughness (N • V, F0, roughness);
 		vec3 kD = 1 - kS;
-		vec3 irradiance = texture(light_probes[0], vec4(N, 2)).rgb;
+		vec3 irradiance = texture(light_probes[0], vec4(N.xzy, 2)).rgb;
 
 		auto color = l.color;
 		if (rd.no_style == 0) {
