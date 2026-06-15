@@ -688,6 +688,11 @@ properties = {
 				};
 			};
 		};
+		ibl_layout = {
+			@inherit = $lighting.layout;
+			descriptorSets = (shadowmat_set, lighting_lights,
+							  $input, lighting_ibl);
+		};
 	};
 	compose = {
 		shader = {
@@ -995,6 +1000,22 @@ descriptorSetLayouts = {
 				binding = 0;
 				descriptorType = combined_image_sampler;
 				descriptorCount = 32;
+				stageFlags = fragment;
+			},
+		);
+	};
+	lighting_ibl = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = combined_image_sampler;
+				descriptorCount = 32;
+				stageFlags = fragment;
+			},
+			{
+				binding = 1;
+				descriptorType = combined_image_sampler;
+				descriptorCount = 1;
 				stageFlags = fragment;
 			},
 		);

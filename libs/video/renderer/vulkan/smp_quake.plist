@@ -148,7 +148,7 @@ samplers = {
 		compareEnable = false;
 		compareOp = always;
 		minLod = 0;
-		maxLod = 0;
+		maxLod = 1000;
 		borderColor = float_transparent_black;
 		unnormalizedCoordinates = false;
 	};

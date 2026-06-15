@@ -890,6 +890,11 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	auto styles = (vec4f_t *) packet_data;
 	packet_data += style_scatter.length;
 	for (int i = 0; i < NumStyles; i++) {
+		// Quake's light styles are multiples of 22 from 0 to 550, with 264
+		// being the default value, which converts to 1.03125 times the
+		// light's "intensity" (color.w). However, that has a "unit" of 256,
+		// so this puts such lights at ~3% over standard brightness for
+		// the default light style.
 		styles[i] = (vec4f_t) { 1, 1, 1, d_lightstylevalue[i] / 65536.0};
 	}
 	QFV_PacketScatterBuffer (packet, lframe->style_buffer,
@@ -1169,6 +1174,8 @@ lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 				lctx->shadow_cube_set
 			}[shadow_type];
 		QFV_SetDescriptorSet (ctx, ctx->curFrame, lctx->lighting_shadow, set);
+		QFV_SetDescriptorSet (ctx, ctx->curFrame, lctx->lighting_ibl,
+							  lctx->probe_set);
 
 		auto lframe = &lctx->frames.a[ctx->curFrame];
 		vec4f_t fog = Fog_Get ();
@@ -1773,8 +1780,6 @@ lighting_startup (exprctx_t *ectx)
 	auto lctx = ctx->lighting_context;
 	qfvPushDebug (ctx, "lighting init");
 
-	lctx->sampler = QFV_Render_Sampler (ctx, "shadow_sampler");
-
 	Vulkan_Script_SetOutput (ctx,
 			&(qfv_output_t) { .format = VK_FORMAT_D32_SFLOAT });
 
@@ -1991,6 +1996,12 @@ lighting_startup (exprctx_t *ectx)
 	lctx->default_map = default_map[0].image.image;
 	lctx->default_view_cube = default_view_cube[0].image_view.view;
 	lctx->default_view_2d = default_view_2d[0].image_view.view;
+
+	auto probe_mgr = QFV_Render_DSManager (ctx, "lighting_ibl");
+	lctx->lighting_ibl = QFV_GetDSIndex (ctx, "lighting_ibl");
+	lctx->probe_set = QFV_DSManager_AllocSet (probe_mgr);
+	lctx->ibl_sampler = QFV_Render_Sampler (ctx, "linear");
+	lctx->lut_sampler = QFV_Render_Sampler (ctx, "linear");
 
 	auto shadow_mgr = QFV_Render_DSManager (ctx, "lighting_shadow");
 	lctx->lighting_shadow = QFV_GetDSIndex (ctx, "lighting_shadow");
@@ -3006,9 +3017,16 @@ update_shadow_descriptors (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 
+	VkDescriptorImageInfo imageInfoIBL[32];
+	VkDescriptorImageInfo imageInfoLUT[1];
 	VkDescriptorImageInfo imageInfoCube[32];
 	VkDescriptorImageInfo imageInfo2d[32];
 	for (int i = 0; i < 32; i++) {
+		imageInfoIBL[i] = (VkDescriptorImageInfo) {
+			.sampler = lctx->ibl_sampler,
+			.imageView = ctx->default_white[3],
+			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		};
 		VkImageView viewCube = lctx->default_view_cube;
 		VkImageView view2d = lctx->default_view_2d;
 		if (i < lctx->num_maps) {
@@ -3029,12 +3047,18 @@ update_shadow_descriptors (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		};
 	}
-	VkWriteDescriptorSet imageWrite[2] = {
+	imageInfoLUT[0] = (VkDescriptorImageInfo) {
+		.sampler = lctx->lut_sampler,
+		.imageView = ctx->default_white[0],
+		.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+	};
+
+	VkWriteDescriptorSet imageWrite[] = {
 		{
 			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 			.dstSet = lctx->shadow_cube_set,
 			.dstBinding = 0,
-			.descriptorCount = 32,
+			.descriptorCount = countof (imageInfoCube),
 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			.pImageInfo = imageInfoCube,
 		},
@@ -3042,12 +3066,29 @@ update_shadow_descriptors (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 			.dstSet = lctx->shadow_2d_set,
 			.dstBinding = 0,
-			.descriptorCount = 32,
+			.descriptorCount = countof (imageInfo2d),
 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			.pImageInfo = imageInfo2d,
 		},
+		{
+			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = lctx->probe_set,
+			.dstBinding = 0,
+			.descriptorCount = countof (imageInfoIBL),
+			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			.pImageInfo = imageInfoIBL,
+		},
+		{
+			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = lctx->probe_set,
+			.dstBinding = 1,
+			.descriptorCount = countof (imageInfoLUT),
+			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			.pImageInfo = imageInfoLUT,
+		},
 	};
-	dfunc->vkUpdateDescriptorSets (device->dev, 2, imageWrite, 0, 0);
+	dfunc->vkUpdateDescriptorSets (device->dev, countof (imageWrite),
+								   imageWrite, 0, 0);
 }
 
 static void

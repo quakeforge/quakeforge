@@ -45,7 +45,7 @@ typedef struct qfv_lightmatset_s DARRAY_TYPE (mat4f_t) qfv_lightmatset_t;
 #define MaxLights   2048
 
 enum {
-	ST_NONE,		// no shadows
+	ST_NONE,		// no shadows (ibl)
 	ST_PLANE,		// single plane shadow map (small spotlight)
 	ST_CASCADE,		// cascaded shadow maps
 	ST_CUBE,		// cubemap (omni, large spotlight)
@@ -147,7 +147,6 @@ typedef struct light_split_s {
 
 typedef struct lightingctx_s {
 	lightingframeset_t frames;
-	VkSampler    sampler;
 	struct qfv_resource_s *shadow_resources;
 	struct qfv_resource_s *light_resources;
 
@@ -168,6 +167,11 @@ typedef struct lightingctx_s {
 	light_control_set_t light_control;
 
 	qfv_attachmentinfo_t shadow_info;
+
+	VkSampler ibl_sampler;
+	VkSampler lut_sampler;
+	VkDescriptorSet probe_set;
+	uint32_t    lighting_ibl;
 
 	VkSampler shadow_sampler;
 	VkDescriptorSet shadow_cube_set;

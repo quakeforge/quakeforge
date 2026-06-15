@@ -153,7 +153,7 @@ samplers = {
 			compareEnable = false;
 			compareOp = always;
 			minLod = 0;
-			maxLod = 0;
+			maxLod = 1000;
 			borderColor = float_transparent_black;
 			unnormalizedCoordinates = false;
 		};
@@ -946,6 +946,11 @@ render_graph = {
 					};
 				};
 			};
+			ibl_layout = {
+				@inherit = $lighting.layout;
+				descriptorSets = (shadowmat_set, lighting_lights,
+								  $input, lighting_ibl);
+			}
 		};
 		compose = {
 			shader = {
@@ -1391,6 +1396,22 @@ render_graph = {
 					binding = 0;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 32;
+					stageFlags = fragment;
+				},
+			);
+		};
+		lighting_ibl = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = combined_image_sampler;
+					descriptorCount = 32;
+					stageFlags = fragment;
+				},
+				{
+					binding = 1;
+					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
 					stageFlags = fragment;
 				},
 			);
@@ -2377,7 +2398,7 @@ render_graph = {
 								$fstriangle.shader.vertexst,
 								$lighting.shader.fragment_none,
 							);
-							layout = $lighting.layout;
+							layout = $lighting.ibl_layout;
 						};
 						lights_plane = {
 							@inherit = $compose_base;
