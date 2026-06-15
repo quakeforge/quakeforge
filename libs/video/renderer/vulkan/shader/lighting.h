@@ -9,25 +9,26 @@ typedef struct LightData {
 	vec4        attenuation;
 } LightData;
 
-#define ST_NONE     0   // no shadows
-#define ST_PLANE    1   // single plane shadow map (small spotlight)
-#define ST_CASCADE  2   // cascaded shadow maps
-#define ST_CUBE     3   // cubemap (omni, large spotlight)
-
-typedef struct LightRender {
+typedef struct qfv_light_render_s {
 	uint        mat_id:14;
 	uint        map_id:5;
 	uint        layer:11;
 	uint             :1;
 	uint        no_style:1;
 	uint        style;
-} LightRender;
+} qfv_light_render_t;
 
-typedef struct LightMatData {
+typedef struct qfv_light_matdata_s {
 	float cascade_distance;
 	float texel_size;
-} LightMatData;
+} qfv_light_matdata_t;
 
+typedef struct LightQueue {
+	uint        start:16;
+	uint        count:16;
+} LightQueue;
+
+#ifdef __QFCC__
 [buffer, readonly, set(0), binding(0)] @block ShadowMatrices {
 	mat4 shadow_mats[];
 };
@@ -38,13 +39,13 @@ typedef struct LightMatData {
 	LightData   lights[];
 };
 [buffer, readonly, set(1), binding(2)] @block Renderer {
-	LightRender renderer[];
+	qfv_light_render_t renderer[];
 };
 [buffer, readonly, set(1), binding(3)] @block Style {
 	vec4        style[];
 };
 [buffer, readonly, set(1), binding(4)] @block LightMatDataBuffer {
-	LightMatData lightmatdata[];
+	qfv_light_matdata_t lightmatdata[];
 };
 [buffer, readonly, set(1), binding(5)] @block LightEntIds {
 	uint        light_entids[];
@@ -54,11 +55,6 @@ typedef struct LightMatData {
 [uniform, set(3), binding(0)] SHADOW_SAMPLER shadow_map[32];
 #endif
 
-typedef struct LightQueue {
-	uint        start:16;
-	uint        count:16;
-} LightQueue;
-
 [push_constant] @block PushConstants {
 	vec4        fog;
 	float       spec;
@@ -67,5 +63,6 @@ typedef struct LightQueue {
 	LightQueue  queue;
 	uint        num_cascades;
 };
+#endif//__QFCC__
 
 #endif//__lighting_h

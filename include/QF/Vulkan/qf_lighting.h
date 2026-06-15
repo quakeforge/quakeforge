@@ -44,27 +44,20 @@ typedef struct qfv_lightmatset_s DARRAY_TYPE (mat4f_t) qfv_lightmatset_t;
 
 #define MaxLights   2048
 
-enum {
-	ST_NONE,		// no shadows (ibl)
-	ST_PLANE,		// single plane shadow map (small spotlight)
-	ST_CASCADE,		// cascaded shadow maps
-	ST_CUBE,		// cubemap (omni, large spotlight)
+typedef enum ShadowType {
+	st_none,			// no shadows (ibl)
+	st_plane,			// single plane shadow map (small spotlight)
+	st_cascade,			// cascaded shadow maps
+	st_cube,			// cubemap (omni, large spotlight)
 
-	ST_COUNT
-};
+	st_count
+} ShadowType;
 
 enum {
 	lighting_main,
 	lighting_shadow,
 	lighting_hull,
 };
-
-typedef struct qfv_light_render_s {
-	// mat_id (0,14) map_id (14,5) layer (19,11) nostyle (31,1)
-	uint32_t    id_data;
-	// light style (6)
-	uint32_t    style;
-} qfv_light_render_t;
 
 typedef struct qfv_light_matdata_s {
 	float       cascade_distance;
@@ -108,7 +101,7 @@ typedef struct lightingframe_s {
 	VkBuffer    id_buffer;
 	VkBuffer    radius_buffer;
 	VkBuffer    entid_buffer;
-	light_queue_t light_queue[ST_COUNT];
+	light_queue_t light_queue[st_count];
 
 	light_idrad_t *id_radius;
 	vec4f_t    *positions;
