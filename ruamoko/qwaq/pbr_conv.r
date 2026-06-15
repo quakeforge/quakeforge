@@ -156,7 +156,7 @@ float computeLod (float pdf)
 	auto w = float (conv_size.x);
 	auto h = float (conv_size.y);
 	auto sc = float (sampleCount);
-	return 0.5 * log2 (6 * 2 * h / (sc * pdf));
+	return 0.5 * log2 (6 * w * h / (sc * pdf));
 }
 
 vec4 sampleEnv (vec3 dir, float lod)
