@@ -86,6 +86,20 @@ fresnel (vec3 albedo, float metalic, float HdotV)
 	return F;
 }
 
+vec3 BRDF(vec3 V, vec3 L, vec3 N, vec3 albedo, float metalic, float roughness)
+{
+	vec3 H = normalize (V + L);
+	float NdotL = max (N • L, 0);
+	float HdotV = max (H • V, 0);
+	vec3 kS = fresnel (albedo, metalic, HdotV);
+	vec3 kD = (1 - kS);
+	kD *= (1 - metalic);
+
+	vec3 specular = kS * spec_factor (N, V, L, H, roughness) * spec;
+	vec3 diffuse = kD * diff;
+	return diffuse * albedo / PI + specular;
+}
+
 #include "fog.finc"
 
 [shader(Fragment)]
@@ -93,7 +107,7 @@ fresnel (vec3 albedo, float metalic, float HdotV)
 void
 main (void)
 {
-	vec3        alb = subpassLoad (color).rgb;
+	vec3        albedo = subpassLoad (color).rgb;
 	vec3        o_r_m = subpassLoad (orm).rgb;
 	float       roughness = o_r_m.g;
 	float       metalic = o_r_m.b;
@@ -134,11 +148,7 @@ main (void)
 
 		auto rd = renderer[id];
 		I *= shadow (rd.map_id, rd.layer, rd.mat_id, p, n, l.position.xyz);
-
-		float NdotL = max (n • incoming, 0);
-
 		I *= spot_cone (unpackSnorm2x16 (l.cone), l.axis, incoming);
-		I *= NdotL;
 
 		//float       namb = l.axis • l.axis;
 		//I = mix (1, I, namb);
@@ -153,15 +163,10 @@ main (void)
 #ifdef DEBUG_SHADOW
 		col = DEBUG_SHADOW(p, l.position.xyz, rd.mat_id);
 #endif
-		vec3 H = normalize (V + incoming);
-
-		float HdotV = max (H • V, 0);
-		vec3 kS = fresnel (alb, metalic, HdotV);
-		vec3 kD = (1 - kS);
-
-		vec3 specular = kS * spec_factor (n, V, incoming, H, roughness) * spec;
-		vec3 diffuse = kD * (1 - metalic) * diff;
-		light += (diffuse * alb / PI + specular) * I * col.w * col.xyz;
+		vec3 radiance = I * col.w * col.xyz;
+		vec3 brdf = BRDF(V, incoming, n, albedo, metalic, roughness);
+		float NdotL = max (n • incoming, 0);
+		light += brdf * radiance * NdotL;
 	}
 	//light = max (light, minLight);
 
