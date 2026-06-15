@@ -161,8 +161,6 @@ typedef struct lightingctx_s {
 
 	qfv_attachmentinfo_t shadow_info;
 
-	VkSampler ibl_sampler;
-	VkSampler lut_sampler;
 	VkDescriptorSet probe_set;
 	uint32_t    lighting_ibl;
 
@@ -189,6 +187,9 @@ typedef struct lightingctx_s {
 	float      *near_plane;
 	light_queue_t *queue;
 	uint32_t   *num_cascades;
+
+	uint32_t   *pbr_irradiance;
+	uint32_t   *pbr_brdf_lut;
 } lightingctx_t;
 
 struct vulkan_ctx_s;

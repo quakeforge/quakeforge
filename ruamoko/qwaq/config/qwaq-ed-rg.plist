@@ -1709,6 +1709,10 @@ render_graph = {
 			};
 		};
 		imageviews = {
+			brdf = {
+				@inherit = $view_base;
+				image = brdf;
+			};
 			diff_cube = {
 				@inherit = $cube_view_base;
 				image = diff_cube;
@@ -1716,6 +1720,7 @@ render_graph = {
 				subresourceRange = {
 					aspectMask = color;
 					levelCount = ~0u;
+					layerCount = ~0u;
 				};
 			};
 		};
@@ -1728,6 +1733,18 @@ render_graph = {
 			brdf = {
 				size = 256*256*4*2;
 				usage = transfer_dst|transfer_src|shader_device_address|storage_buffer;
+			};
+		};
+		textures = {
+			brdf = {
+				image = brdf;
+				view = brdf;
+				sampler = linear;
+			};
+			diff_cube = {
+				image = diff_cube;
+				view = diff_cube;
+				sampler = linear;
 			};
 		};
 	};
@@ -2929,6 +2946,10 @@ render_graph = {
 	};
 	jobs = {
 		main = {
+			vars = {
+				pbr_irradiance = uint;
+				pbr_brdf_lut = uint;
+			};
 			steps = {
 				start_frame = {
 					color = "[0.6, 0.8, 0.0]";

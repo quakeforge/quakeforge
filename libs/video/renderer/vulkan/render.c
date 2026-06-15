@@ -1264,10 +1264,11 @@ QFV_Render_Run_Startup (vulkan_ctx_t *ctx)
 {
 	auto rctx = ctx->render_context;
 	if (rctx->graph) {
+		auto graph = rctx->graph;
 		qfv_taskctx_t taskctx = {
 			.ctx = ctx,
+			.graph = graph,
 		};
-		auto graph = rctx->graph;
 		for (size_t i = 0; i < graph->startup_funcs.size; i++) {
 			graph->startup_funcs.a[i] ((exprctx_t *) &taskctx);
 		}

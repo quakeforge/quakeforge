@@ -1787,6 +1787,10 @@ lighting_startup (exprctx_t *ectx)
 	auto lctx = ctx->lighting_context;
 	qfvPushDebug (ctx, "lighting init");
 
+	auto job = QFV_FindJob ("main", taskctx->graph);//FIXME
+	lctx->pbr_irradiance = QFV_GetJobBlackboardVar (job, "pbr_irradiance");
+	lctx->pbr_brdf_lut = QFV_GetJobBlackboardVar (job, "pbr_brdf_lut");
+
 	Vulkan_Script_SetOutput (ctx,
 			&(qfv_output_t) { .format = VK_FORMAT_D32_SFLOAT });
 
@@ -2007,8 +2011,6 @@ lighting_startup (exprctx_t *ectx)
 	auto probe_mgr = QFV_Render_DSManager (ctx, "lighting_ibl");
 	lctx->lighting_ibl = QFV_GetDSIndex (ctx, "lighting_ibl");
 	lctx->probe_set = QFV_DSManager_AllocSet (probe_mgr);
-	lctx->ibl_sampler = QFV_Render_Sampler (ctx, "linear");
-	lctx->lut_sampler = QFV_Render_Sampler (ctx, "linear");
 
 	auto shadow_mgr = QFV_Render_DSManager (ctx, "lighting_shadow");
 	lctx->lighting_shadow = QFV_GetDSIndex (ctx, "lighting_shadow");
@@ -3022,7 +3024,15 @@ update_shadow_descriptors (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	auto dfunc = device->funcs;
 
 	uint32_t tex_ibl = QFV_TexFindTexture (ctx, "default_white_cube_array");
-	uint32_t tex_lut = QFV_TexFindTexture (ctx, "default_white");
+	// default to no specular
+	uint32_t tex_lut = QFV_TexFindTexture (ctx, "default_red");
+	if (lctx->pbr_irradiance && *lctx->pbr_irradiance != nullent) {
+		tex_ibl = *lctx->pbr_irradiance;
+	}
+	if (lctx->pbr_brdf_lut && *lctx->pbr_brdf_lut != nullent) {
+		tex_lut = *lctx->pbr_brdf_lut;
+	}
+
 	VkDescriptorImageInfo imageInfoIBL[32];
 	VkDescriptorImageInfo imageInfoLUT[1];
 	VkDescriptorImageInfo imageInfoCube[32];

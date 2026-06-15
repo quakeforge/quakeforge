@@ -331,7 +331,7 @@ MainMenu *main_menu;
 	}, 0);
 	// ambient light
 	Light_AddLight (ldata, {
-		{ 0, 0, 0, 50 },
+		{ 1, 1, 1, 248 },
 		{ 0, 0, 0, 0 },
 		{ 0, 0, 0, -1 },
 		{ 0, 0, 1, 0 },
@@ -2201,6 +2201,9 @@ main (int argc, string *argv)
 	arp_start ();
 
 	plitem_t *config = PL_GetPropertyList (render_graph_cfg);
+	if (!config) {
+		return 1;
+	}
 	init_graphics (config, qent_comp_count, qwaq_components);
 	PL_Release (config);
 
@@ -2223,6 +2226,12 @@ main (int argc, string *argv)
 		Render_SetJobBlackboardVar ("pbr_conv", "pbr_env_id", skyid);
 	}
 	Render_RunJob ("pbr_conv");
+
+	uint tex_ibl = find_resource ("diff_cube");
+	uint tex_lut = find_resource ("brdf");
+	printf ("tex_ibl: %08x tex_lut: %08x\n", tex_ibl, tex_lut);
+	Render_SetJobBlackboardVar ("main", "pbr_irradiance", tex_ibl);
+	Render_SetJobBlackboardVar ("main", "pbr_brdf_lut", tex_lut);
 
 	IN_SendConnectedDevices ();
 	setup_bindings ();
