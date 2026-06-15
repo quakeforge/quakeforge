@@ -739,7 +739,35 @@ decl_expr (specifier_t spec, const expr_t *init, rua_ctx_t *ctx)
 	auto sym = spec.sym;
 	spec.sym = nullptr;
 	auto decl = new_decl_expr (spec);
+	if (current_symtab->type == stab_local && sym) {
+		auto proxy = new_symbol (sym->name);
+		proxy->is_proxy = true;
+		symtab_addsymbol (current_symtab, proxy);
+	}
 	return append_decl (decl, sym, init);
+}
+
+static void
+clear_proxies (symtab_t *symtab)
+{
+	int count = 0;
+	for (auto s = symtab->symbols; s; s = s->next) {
+		if (s->is_proxy) {
+			count++;
+		}
+	}
+	if (count) {
+		symbol_t *proxies[count];
+		count = 0;
+		for (auto s = symtab->symbols; s; s = s->next) {
+			if (s->is_proxy) {
+				proxies[count++] = s;
+			}
+		}
+		for (int i = 0; i < count; i++) {
+			symtab_removesymbol (symtab, proxies[i]);
+		}
+	}
 }
 
 static const expr_t *
@@ -804,6 +832,15 @@ create_namespace_chain (const expr_t *id_chain)
 			current_symtab = ns_tab;
 		}
 	}
+}
+
+static const expr_t *
+id_symbol_expr (symbol_t *id)
+{
+	if (id->table && !id->table->parent) {
+		error (0, "unexpected object name `id` in expression");
+	}
+	return new_nil_expr ();
 }
 
 %}
@@ -1082,6 +1119,8 @@ qc_code_func
 		}[funcstate]
 	  body_statements_ns[body] '}'
 		{
+			clear_proxies (current_func->parameters);
+			clear_proxies (current_func->locals);
 			auto fs = $<funcstate>funcstate;
 			auto state = $state;
 			build_code_function (fs.spec, state, $body, ctx);
@@ -1398,6 +1437,8 @@ function_body
 		}[funcstate]
 	  body_statements_ns[body] '}'
 		{
+			clear_proxies (current_func->parameters);
+			clear_proxies (current_func->locals);
 			auto fs = $<funcstate>funcstate;
 			auto state = fs.spec.sym->metafunc->state_expr;
 			build_code_function (fs.spec, state, $body, ctx);
@@ -2238,6 +2279,7 @@ end_scope
 	: /* empty */
 		{
 			if (!options.traditional) {
+				clear_proxies (current_symtab);
 				current_symtab = pop_scope (current_symtab);
 			}
 		}
@@ -2477,7 +2519,7 @@ opt_expr
 	;
 
 unary_expr
-	: NAME      				{ $$ = new_symbol_expr ($1); }
+	: NAME						{ $$ = new_symbol_expr ($1); }
 	| ARGS						{ $$ = new_name_expr (".args"); }
 	| SELF						{ $$ = new_self_expr (); }
 	| THIS						{ $$ = new_this_expr (); }
@@ -2542,7 +2584,7 @@ hop
 
 index_expr
 	: '[' expr ']'				{ $$ = $expr; }
-	| '[' OBJECT_NAME[id] ']'	{ $$ = new_symbol_expr ($id.sym); }
+	| '[' OBJECT_NAME[id] ']'	{ $$ = id_symbol_expr ($id.sym); }
 	;
 
 vector_expr
@@ -3008,6 +3050,8 @@ method
 		}[funcstate]
 	  body_statements_ns[body] '}'
 		{
+			clear_proxies (current_func->parameters);
+			clear_proxies (current_func->locals);
 			auto fs = $<funcstate>funcstate;
 			fs.spec.sym = fs.sym;
 			build_code_function (fs.spec, $state, $body, ctx);
@@ -3451,6 +3495,9 @@ qc_process_keyword (QC_YYSTYPE *lval, keyword_t *keyword, const char *token,
 		// the global id symbol is always just a name so attempts to redefine
 		// it globally can be caught and treated as an error, but it needs to
 		// be redefinable when in an enclosing scope.
+		if (sym->is_proxy && sym->table != pr.symtab) {
+			return QC_NAME;
+		}
 		if (sym->sy_type == sy_name && sym->table == pr.symtab) {
 			// this is the global id (object)
 			lval->spec = (specifier_t) {
