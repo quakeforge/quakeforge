@@ -129,6 +129,30 @@ float texture(gsamplerCAS sampler, vec4 P, float comp)
 		= SPV(OpImageFetch) [sampler, P, Sample, sample];
 };
 
+@generic(gsampler=[_sampler(1D),   _sampler(1D,Array),
+                   _sampler(2D),   _sampler(2D,Array),
+                   _sampler(Cube), _sampler(Cube,Array),
+                   _sampler(3D)],
+         gsamplerSh=[__sampler(float,1D,Depth),
+                     __sampler(float,1D,Array,Depth),
+                     __sampler(float,2D,Depth),
+                     __sampler(float,2D,Array,Depth),
+                     __sampler(float,Cube,Depth)],
+         gsamplerCAS=[__sampler(float,Cube,Array,Depth)]) {
+
+@vector(gsampler.sample_type, 4)
+	textureLod(gsampler sampler, gsampler.tex_coord P, float lod)
+		= SPV(OpImageSampleExplicitLod)
+		[sampler, P, =ImageOperands.Lod, lod];
+float textureLod(gsamplerSh sampler, gsamplerSh.shadow_coord P, float lod)
+	= SPV(OpImageSampleDrefExplicitLod)
+	[sampler, [gsamplerSh shadow_coord(P)], [gsamplerSh comp(P)],
+	 =ImageOperands.Lod, lod];
+float textureLod(gsamplerCAS sampler, vec4 P, float comp, float lod)
+	= SPV(OpImageSampleDrefExplicitLod) [sampler, P, comp,
+	 =ImageOperands.Lod, lod];
+};
+
 @generic(gtexture=[_texture(1D), _texture(1D,Array),
                    _texture(2D), _texture(2D,Array),
                    _texture(3D)],
@@ -146,17 +170,6 @@ float texture(gsamplerCAS sampler, vec4 P, float comp)
 };
 
 #if 0
-gvec4 textureLod(gsampler1D sampler, float P, float lod)
-gvec4 textureLod(gsampler2D sampler, vec2 P, float lod)
-gvec4 textureLod(gsampler3D sampler, vec3 P, float lod)
-gvec4 textureLod(gsamplerCube sampler, vec3 P, float lod)
-float textureLod(sampler2DShadow sampler, vec3 P, float lod)
-float textureLod(sampler1DShadow sampler, vec3 P, float lod)
-float textureLod(sampler1DArrayShadow sampler, vec3 P, float lod)
-gvec4 textureLod(gsampler1DArray sampler, vec2 P, float lod)
-gvec4 textureLod(gsampler2DArray sampler, vec3 P, float lod)
-gvec4 textureLod(gsamplerCubeArray sampler, vec4 P, float lod)
-
 gvec4 textureOffset(gsampler1D sampler, float P, int offset [, float bias] )
 gvec4 textureOffset(gsampler2D sampler, vec2 P, ivec2 offset [, float bias] )
 gvec4 textureOffset(gsampler3D sampler, vec3 P, ivec3 offset [, float bias] )
