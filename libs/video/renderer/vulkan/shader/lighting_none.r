@@ -70,15 +70,8 @@ main (void)
 	for (uint i = start; i < end; i++) {
 		uint        id = lightIds[i];
 		LightData   l = lights[id];
-		vec3        dir = l.position.xyz - l.position.w * p.xyz;
-		float       r2 = dir • dir;
 		vec4        a = l.attenuation;
 
-		if (l.position.w * a.w * a.w * r2 >= 1) {
-			continue;
-		}
-		vec4        r = vec4 (r2, sqrt(r2), 1, 0);
-		vec3        incoming = dir / r.y;
 
 		auto rd = renderer[id];
 
@@ -88,10 +81,12 @@ main (void)
 		vec3 F0 = mix (vec3 (0.04), albedo, metalic);
 		vec3 kS = fresnelSchlickRoughness (N • V, F0, roughness);
 		vec3 kD = 1 - kS;
-		vec3 irradiance = texture(light_probes[0], vec4(N.xzy, 2)).rgb;
+		vec3 n = vec3(Sky * vec4 (N, 0));
+		vec3 irradiance = texture(light_probes[0], vec4(n.xzy, 2)).rgb;
 
 		vec3 R = reflect (-V, N);
-		vec3 prefilteredColor = textureLod (light_probes[0], vec4(R.xzy, 0),
+		vec3 r = vec3(Sky * vec4 (R, 0));
+		vec3 prefilteredColor = textureLod (light_probes[0], vec4(r.xzy, 0),
 											roughness * max_lod).rgb;
 		vec2 envBRDF = texture (brdf_lut, vec2 (N • V, roughness)).rg;
 		vec3 specular = prefilteredColor * (kS * envBRDF.x + envBRDF.y);
