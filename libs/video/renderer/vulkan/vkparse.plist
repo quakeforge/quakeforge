@@ -47,6 +47,7 @@ search = (
 	qfv_processinfo_t,
 	qfv_stepinfo_t,
 	qfv_jobinfo_t,
+	qfv_texinfo_t,
 	qfv_resourceinfo_t,
 	qfv_graphinfo_t,
 	qfv_samplercreateinfo_t,
@@ -646,6 +647,17 @@ parse = {
 			values = steps;
 		};
 	};
+	qfv_texinfo_s = {
+		.type = (QFDictionary);
+		.dictionary = {
+			.parse = auto;
+			name = $name;
+			line = $item.line;
+		};
+		image = auto;
+		view = auto;
+		sampler = auto;
+	};
 	qfv_resourceinfo_s = {
 		.name = qfv_resourceinfo_t;
 		images = {
@@ -668,6 +680,11 @@ parse = {
 			size = num_bufferviews;
 			values = bufferviews;
 		};
+		textures = {
+			type = (labeledarray, qfv_texinfo_t, name);
+			size = num_textures;
+			values = textures;
+		}
 	};
 	qfv_graphinfo_s = {
 		.name = qfv_graphinfo_t;

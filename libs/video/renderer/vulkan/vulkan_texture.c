@@ -811,8 +811,8 @@ texture_shutdown (exprctx_t *ectx)
 
 static uint32_t
 create_texture_ent (vulkan_ctx_t *ctx, const char *name,
-					qfv_textureinfo_t *texinfo, qfv_tex_t *tex,
-					VkDescriptorSet texture)
+					qfv_textureinfo_t *texinfo, VkSampler sampler,
+					qfv_tex_t *tex, VkDescriptorSet texture)
 {
 	auto tctx = ctx->texture_context;
 	auto reg = tctx->reg;
@@ -826,7 +826,9 @@ create_texture_ent (vulkan_ctx_t *ctx, const char *name,
 	Ent_SetComponent (texid, ecs_name, reg, &name);
 	if (texinfo) {
 		Ent_SetComponent (texid, c_texinfo, reg, &texinfo);
-		Ent_SetComponent (texid, c_samp, reg, &texinfo->sampler.sampler);
+	}
+	if (sampler) {
+		Ent_SetComponent (texid, c_samp, reg, &sampler);
 	}
 	Ent_SetComponent (texid, c_view, reg, &tex->view);
 	Ent_SetComponent (texid, c_tex, reg, &tex);
@@ -975,7 +977,7 @@ texture_startup (exprctx_t *ectx)
 				.view = views[vind].image_view.view,
 			};
 			auto texture = Vulkan_CreateTextureDescriptor (ctx, tex, sampler);
-			create_texture_ent (ctx, name, nullptr, tex, texture);
+			create_texture_ent (ctx, name, nullptr, 0, tex, texture);
 		}
 	}
 	{
@@ -986,7 +988,7 @@ texture_startup (exprctx_t *ectx)
 			.view = views[skin_view].image_view.view,
 		};
 		auto texture = Vulkan_CreateTextureDescriptor (ctx, tex, sampler);
-		create_texture_ent (ctx, name, nullptr, tex, texture);
+		create_texture_ent (ctx, name, nullptr, 0, tex, texture);
 	}
 	qfvPopDebug (ctx);
 }
@@ -1058,6 +1060,23 @@ load_tex (tex_t *tex, void *data)
 }
 
 uint32_t
+QFV_CreateTexture (vulkan_ctx_t *ctx, VkImage image, VkImageView view,
+				   VkSampler sampler, const char *name)
+{
+	auto tctx = ctx->texture_context;
+	if (!sampler) {
+		sampler = tctx->default_sampler;
+	}
+	qfv_tex_t *tex = malloc (sizeof (qfv_tex_t));
+	*tex = (qfv_tex_t) {
+		.image = image,
+		.view = view,
+	};
+	return create_texture_ent (ctx, name, nullptr, sampler, tex, 0);
+}
+
+
+uint32_t
 QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
 				 const char *name)
 {
@@ -1121,9 +1140,9 @@ QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
 		}
 	}
 	QFV_CreateSampler (ctx, &texinfo->sampler);
-	auto texture = Vulkan_CreateCombinedImageSampler (ctx, tex->view,
-													  texinfo->sampler.sampler);
-	return create_texture_ent (ctx, name, texinfo, tex, texture);
+	auto sampler = texinfo->sampler.sampler;
+	auto texture = Vulkan_CreateCombinedImageSampler (ctx, tex->view, sampler);
+	return create_texture_ent (ctx, name, texinfo, sampler, tex, texture);
 }
 
 uint32_t

@@ -31,6 +31,8 @@ typedef struct texturectx_s {
 
 VkImageView QFV_Tex_View (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure));
 VkSampler QFV_Tex_Sampler (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure));
+uint32_t QFV_CreateTexture (vulkan_ctx_t *ctx, VkImage image, VkImageView view,
+							VkSampler sampler, const char *name);
 uint32_t QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
 						  const char *name);
 uint32_t QFV_TexFindTexture (vulkan_ctx_t *ctx, const char *name);

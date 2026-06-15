@@ -52,6 +52,7 @@
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/swapchain.h"
+#include "QF/Vulkan/qf_texture.h"
 #include "vid_vulkan.h"
 
 #include "vkparse.h"
@@ -590,15 +591,17 @@ static qfv_imageinfo_t * __attribute__((pure))
 find_imageinfo (qfv_imageinfo_t *imageinfo, uint32_t num_images,
 				const qfv_reference_t *ref)
 {
-	if (strcmp (ref->name, "$output.image") == 0) {
-		//auto image = ginfo->output.image;
-		//graph->image_views[i].image_view.external_image = image;
-		//graph->image_views[i].image_view.image = -1;
-	} else {
-		for (uint32_t i = 0; i < num_images; i++) {
-			auto img = &imageinfo[i];
-			if (strcmp (ref->name, img->name) == 0) {
-				return img;
+	if (ref->name) {
+		if (strcmp (ref->name, "$output.image") == 0) {
+			//auto image = ginfo->output.image;
+			//graph->image_views[i].image_view.external_image = image;
+			//graph->image_views[i].image_view.image = -1;
+		} else {
+			for (uint32_t i = 0; i < num_images; i++) {
+				auto img = &imageinfo[i];
+				if (strcmp (ref->name, img->name) == 0) {
+					return img;
+				}
 			}
 		}
 	}
@@ -610,10 +613,12 @@ static qfv_imageviewinfo_t * __attribute__((pure))
 find_imageviewinfo (qfv_imageviewinfo_t *viewinfo, uint32_t num_imageviews,
 					const qfv_reference_t *ref)
 {
-	for (uint32_t i = 0; i < num_imageviews; i++) {
-		auto imgview = &viewinfo[i];
-		if (strcmp (ref->name, imgview->name) == 0) {
-			return imgview;
+	if (ref->name) {
+		for (uint32_t i = 0; i < num_imageviews; i++) {
+			auto imgview = &viewinfo[i];
+			if (strcmp (ref->name, imgview->name) == 0) {
+				return imgview;
+			}
 		}
 	}
 	Sys_Printf ("%d: unknown image view reference: %s\n", ref->line, ref->name);
@@ -624,10 +629,12 @@ static qfv_bufferinfo_t * __attribute__((pure))
 find_bufferinfo (qfv_bufferinfo_t *bufferinfo, uint32_t num_buffers,
 				 const qfv_reference_t *ref)
 {
-	for (uint32_t i = 0; i < num_buffers; i++) {
-		auto img = &bufferinfo[i];
-		if (strcmp (ref->name, img->name) == 0) {
-			return img;
+	if (ref->name) {
+		for (uint32_t i = 0; i < num_buffers; i++) {
+			auto img = &bufferinfo[i];
+			if (strcmp (ref->name, img->name) == 0) {
+				return img;
+			}
 		}
 	}
 	Sys_Printf ("%d: unknown buffer reference: %s\n", ref->line, ref->name);
@@ -816,6 +823,10 @@ setup_resources (qfv_resourceinfo_t *ri, vulkan_ctx_t *ctx)
 	for (uint32_t i = 0; i < ri->num_imageviews; i++) {
 		auto imgview = &ri->imageviews[i];
 		auto img = find_imageinfo (ri->images, ri->num_images, &imgview->image);
+		if (!img) {
+			error = true;
+			continue;
+		}
 		setup_imageview_obj (&imageviews[i], &images[img->object],
 							 img, imgview);
 		imgview->object = &imageviews[i] - resources->objects;
@@ -859,6 +870,23 @@ setup_resources (qfv_resourceinfo_t *ri, vulkan_ctx_t *ctx)
 		resources = nullptr;
 	} else {
 		QFV_CreateResource (ctx->device, resources);
+		for (uint32_t i = 0; i < ri->num_textures; i++) {
+			auto ti = &ri->textures[i];
+			auto ii = find_imageinfo (ri->images, ri->num_images, &ti->image);
+			auto vi = find_imageviewinfo (ri->imageviews, ri->num_imageviews,
+										  &ti->view);
+			if (!ii || !vi) {
+				ti->texid = nullent;
+				continue;
+			}
+			auto img = resources->objects[ii->object].image.image;
+			auto view = resources->objects[vi->object].image_view.view;
+			VkSampler samp = 0;
+			if (ti->sampler.name) {
+				samp = QFV_Render_Sampler (ctx, ti->sampler.name);
+			}
+			ti->texid = QFV_CreateTexture (ctx, img, view, samp, ti->name);
+		}
 	}
 	return resources;
 }

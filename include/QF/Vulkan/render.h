@@ -315,6 +315,15 @@ typedef struct qfv_jobstepenum_s {
 	qfv_jobenum_t *jobs;
 } qfv_jobstepenum_t;
 
+typedef struct qfv_texinfo_s {
+	const char *name;
+	int         line;
+	uint32_t    texid;
+	qfv_reference_t image;
+	qfv_reference_t view;
+	qfv_reference_t sampler;
+} qfv_texinfo_t;
+
 typedef struct qfv_resourceinfo_s {
 	uint32_t    num_images;
 	uint32_t    num_imageviews;
@@ -324,6 +333,8 @@ typedef struct qfv_resourceinfo_s {
 	uint32_t    num_bufferviews;
 	qfv_bufferinfo_t *buffers;
 	qfv_bufferviewinfo_t *bufferviews;
+	uint32_t    num_textures;
+	qfv_texinfo_t *textures;
 } qfv_resourceinfo_t;
 
 typedef struct qfv_graphinfo_s {
