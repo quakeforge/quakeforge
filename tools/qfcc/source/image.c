@@ -178,7 +178,7 @@ sampled_image_property (const type_t *type, const attribute_t *property,
 		if (!width) {
 			return new_type_expr (&type_void);
 		}
-		if (image->dim < img_3d) {
+		if (image->dim < img_3d || image->dim == img_cube) {
 			width += image->arrayed;
 		}
 		return new_type_expr (vector_type (&type_float, width));
