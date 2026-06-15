@@ -65,6 +65,8 @@ main (void)
 	uint        start = queue.start;
 	uint        end = start + queue.count;
 
+	int max_lod = 7;//FIXME unhardcode
+
 	for (uint i = start; i < end; i++) {
 		uint        id = lightIds[i];
 		LightData   l = lights[id];
@@ -88,13 +90,19 @@ main (void)
 		vec3 kD = 1 - kS;
 		vec3 irradiance = texture(light_probes[0], vec4(N.xzy, 2)).rgb;
 
+		vec3 R = reflect (-V, N);
+		vec3 prefilteredColor = textureLod (light_probes[0], vec4(R.xzy, 0),
+											roughness * max_lod).rgb;
+		vec2 envBRDF = texture (brdf_lut, vec2 (N • V, roughness)).rg;
+		vec3 specular = prefilteredColor * (kS * envBRDF.x + envBRDF.y);
+
 		auto color = l.color;
 		if (rd.no_style == 0) {
 			color *= style[renderer[id].style];
 		}
 		irradiance *= color.w * color.xyz;
 		vec3 diffuse = irradiance * albedo;
-		vec3 ambient = (kD * diffuse) * o_r_m.r;
+		vec3 ambient = (kD * diffuse + specular) * o_r_m.r;
 		light += ambient;
 	}
 	//light = max (light, minLight);
