@@ -715,9 +715,14 @@ Vulkan_UnloadTex (vulkan_ctx_t *ctx, qfv_tex_t *tex)
 	free (tex);
 }
 
-static byte default_black_data[] = {0, 0, 0, 0};
-static byte default_white_data[] = {255, 255, 255, 255};
-static byte default_magenta_data[] = {255, 0, 255, 255};
+static byte default_black_data[]   = {  0,   0,   0,   0};
+static byte default_red_data[]     = {255,   0,   0, 255};
+static byte default_green_data[]   = {  0, 255,   0, 255};
+static byte default_yellow_data[]  = {255, 255,   0, 255};
+static byte default_blue_data[]    = {  0,   0, 255, 255};
+static byte default_magenta_data[] = {255,   0, 255, 255};
+static byte default_cyan_data[]    = {  0, 255, 255, 255};
+static byte default_white_data[]   = {255, 255, 255, 255};
 static byte default_normal_data[] = {128, 128, 255, 255};
 static byte skin_data_main[] = {240, 240, 240, 255};	// main color
 static byte skin_data_glow[] = {  0,   0,   0,   0};	// fullbright
@@ -734,8 +739,13 @@ typedef struct {
 }
 static default_tex_t default_textures[] = {
 	deftex(default_black),
-	deftex(default_white),
+	deftex(default_red),
+	deftex(default_green),
+	deftex(default_yellow),
+	deftex(default_blue),
 	deftex(default_magenta),
+	deftex(default_cyan),
+	deftex(default_white),
 	deftex(default_normal),
 };
 static tex_t *default_skin_tex[] = {
