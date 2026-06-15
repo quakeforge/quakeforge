@@ -902,10 +902,10 @@ texture_startup (exprctx_t *ectx)
 	QFV_CreateResource (ctx->device, tctx->tex_resource);
 
 	for (int i = 0; i < num_defvar; i++) {
-		ctx->default_black[i]   = views[i + 0].image_view.view;
-		ctx->default_white[i]   = views[i + 1].image_view.view;
-		ctx->default_magenta[i] = views[i + 2].image_view.view;
-		ctx->default_normal[i]  = views[i + 3].image_view.view;
+		ctx->default_black[i]   = views[0 + i * num_deftex].image_view.view;
+		ctx->default_white[i]   = views[1 + i * num_deftex].image_view.view;
+		ctx->default_magenta[i] = views[2 + i * num_deftex].image_view.view;
+		ctx->default_normal[i]  = views[3 + i * num_deftex].image_view.view;
 	}
 	ctx->default_skin = views[skin_view].image_view.view;
 
