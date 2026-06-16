@@ -11,6 +11,7 @@
 #include "armature.h"
 #include "camera.h"
 #include "gizmo.h"
+#include "mainmenu.h"
 #include "physics.h"
 #include "player.h"
 #include "playercam.h"
@@ -764,91 +765,6 @@ color_window (void)
 	}
 }
 
-@interface MainMenu : UI_Object<FileWindow>
-{
-	imui_window_t *main_menu;
-	imui_window_t *file_menu;
-	imui_window_t *window_menu;
-	FileWindow *file_window;
-}
-+(imui_window_t *)create_menu:(string)name;
-+(MainMenu *) menu:(imui_ctx_t)ctx;
--draw;
-@end
-
-@implementation MainMenu
-+(imui_window_t *)create_menu:(string)name
-{
-	auto menu = IMUI_NewWindow (name);
-	IMUI_Window_SetOpen (menu, false);
-	IMUI_Window_SetGroupOffset (menu, 1);
-	IMUI_Window_SetReferenceGravity (menu, grav_northwest);
-	IMUI_Window_SetAnchorGravity (menu, grav_southwest);
-	IMUI_Window_SetAutoFit (menu, true);
-	return menu;
-}
-
-static void
-hs (imui_ctx_t ctx)
-{
-	IMUI_Spacer (ctx, imui_size_pixels, 10, imui_size_expand, 100);
-}
-
--initWithContext:(imui_ctx_t)ctx
-{
-	if (!(self = [super initWithContext:ctx])) {
-		return nil;
-	}
-	main_menu = IMUI_NewWindow ("MainMenu");
-	IMUI_Window_SetOpen (main_menu, true);
-	IMUI_Window_SetNoCollapse (main_menu, true);
-	IMUI_Window_SetAutoFit (main_menu, true);
-
-	file_menu = [MainMenu create_menu:"File"];
-	window_menu = [MainMenu create_menu:"Window"];
-
-	file_window = nil;
-
-	return self;
-}
-
-+(MainMenu *) menu:(imui_ctx_t)ctx
-{
-	return [[[MainMenu alloc] initWithContext:ctx] autorelease];
-}
-
--draw
-{
-	UI_MenuBar (main_menu) {
-		UI_Menu (file_menu) {
-			if (UI_MenuItem (sprintf ("Open##%p", file_menu))) {
-				file_window = [FileWindow openFile:"*.r" at:"."
-									ctx:imui_ctx];
-				[file_window setTarget:self];
-			}
-			if (UI_MenuItem (sprintf ("Quit##%p", file_menu))) {
-				quit_editor = true;
-			}
-		}
-		hs (IMUI_context);
-		UI_Menu (window_menu) {
-			[Window drawMenuItems];
-		}
-	}
-	return self;
-}
-
--(void)openFile:(string)path forSave:(bool)forSave
-{
-	if (forSave) {
-	} else {
-		[EditWindow openFile:path ctx:imui_ctx];
-		[file_window close];
-		file_window = nil;
-	}
-}
-@end
-
 void
 draw_2d (void)
 {
@@ -995,11 +911,6 @@ arp_end (void)
 	autorelease_pool = nil;
 }
 
-msgbuf_t create_ico();
-msgbuf_t create_block(vec3 block_size);
-msgbuf_t create_quadsphere(bool do_colors);
-body_t calc_inertia_tensor (msgbuf_t model_buf, float inv_density);
-void leafnode();
 
 void
 draw_quadsphere_gizmos (int key_devid, int bspace, int subdiv,
@@ -1249,29 +1160,10 @@ load_scene (plitem_t *scene_item, scene_t scene)
 	collider_ents = obj_malloc (sizeof (uint) * max_collider_ents);
 }
 
-int
-main (int argc, string *argv)
+void
+create_pbr_stuff (uint skyid)
 {
-	float early_exit = 0;
-	if (argc > 1) {
-		early_exit = strtof (argv[1], nil);
-	}
-
-	arp_start ();
-
-	plitem_t *config = PL_GetPropertyList (render_graph_cfg);
-	if (!config) {
-		return 1;
-	}
-	init_graphics (config, qent_comp_count, qwaq_components);
-	PL_Release (config);
-
 	Render_RunJob ("pbr_brdf");
-
-	//ImphenziaPixPal
-	uint pixpal = load_resource ("pixpal.meta");
-	uint skyid = load_resource ("eso0932a.meta");
-
 	Render_SetBlackboardVar ("sampleCount", 1024);
 	Render_SetBlackboardVar ("conv_size", uvec2(512,512));
 	if (res_is_cubemap (skyid)) {
@@ -1292,6 +1184,30 @@ main (int argc, string *argv)
 	printf ("tex_ibl: %08x tex_lut: %08x\n", tex_ibl, tex_lut);
 	Render_SetJobBlackboardVar ("main", "pbr_irradiance", tex_ibl);
 	Render_SetJobBlackboardVar ("main", "pbr_brdf_lut", tex_lut);
+}
+
+int
+main (int argc, string *argv)
+{
+	float early_exit = 0;
+	if (argc > 1) {
+		early_exit = strtof (argv[1], nil);
+	}
+
+	arp_start ();
+
+	plitem_t *config = PL_GetPropertyList (render_graph_cfg);
+	if (!config) {
+		return 1;
+	}
+	init_graphics (config, qent_comp_count, qwaq_components);
+	PL_Release (config);
+
+	//ImphenziaPixPal
+	uint pixpal = load_resource ("pixpal.meta");
+	uint skyid = load_resource ("eso0932a.meta");
+
+	create_pbr_stuff (skyid);
 
 	IN_SendConnectedDevices ();
 	setup_bindings ();
@@ -1355,52 +1271,11 @@ main (int argc, string *argv)
 	[player setCamera:playercam];
 	[main_window addCamera:playercam];
 
-	#define SUBDIV 5
-	auto quadsphere = create_quadsphere(false);
 	int planetary_queue = Scene_Entqueue ([main_window scene], "planetary");
 	int pixpal_queue = Scene_Entqueue ([main_window scene], "pixpal");
 
-	entity_t moon_ent = Scene_CreateEntity ([main_window scene]);
-	add_target (moon_ent);
-	Entity_SetModel (moon_ent, Model_LoadMesh ("quadsphere", quadsphere));
-	if (planetary_queue >= 0) {
-		Entity_SetEntqueue (moon_ent, planetary_queue);
-	}
-	Entity_SetSubmeshMask (moon_ent, ~(1<<4));
-	Entity_SetShadowFlags (moon_ent, true, true, false);
-	Transform_SetLocalPosition(Entity_GetTransform (moon_ent), { -171550000.0, -245760020.0, 230400020.0, 1});
-	Transform_SetLocalScale(Entity_GetTransform (moon_ent), { 1738e3, 1738e3, 1738e3, 1});
+	auto earth_ent = create_orrery (planetary_queue, [main_window scene]);
 
-	entity_t QuadSphere_ent = Scene_CreateEntity ([main_window scene]);
-	add_target (QuadSphere_ent);
-	Entity_SetModel (QuadSphere_ent, Model_LoadMesh ("quadsphere", quadsphere));
-	if (planetary_queue >= 0) {
-		Entity_SetEntqueue (QuadSphere_ent, planetary_queue);
-	}
-	Entity_SetSubmeshMask (QuadSphere_ent, ~(1<<5));
-	Entity_SetShadowFlags (QuadSphere_ent, true, true, false);
-	Entity_SetTexture (QuadSphere_ent, "8k_earth_daymap");
-	Transform_SetLocalPosition(Entity_GetTransform (QuadSphere_ent), { 12770e3, -20, 20, 1});
-	Transform_SetLocalScale(Entity_GetTransform (QuadSphere_ent), { 6370e3, 6370e3, 6370e3, 1});
-
-	entity_t Plane_ent = Scene_CreateEntity ([main_window scene]);
-	Entity_SetModel (Plane_ent, Model_Load ("progs/Plane.mdl"));
-	Transform_SetLocalPosition (Entity_GetTransform (Plane_ent), {5, 5, 1, 1});
-	Entity_SetEntqueue (Plane_ent, pixpal_queue);
-	Entity_SetTextureID (Plane_ent, pixpal);
-
-	qf_mesh_t qsmesh;
-	vec4 stuff = {};
-	{
-		qf_model_t model;
-		vec4 stuff = {};
-		MsgBuf_ReadBytes (quadsphere, &model, sizeof (model));
-		int offset = model.meshes.offset + sizeof(qsmesh) * SUBDIV;
-		MsgBuf_ReadSeek (quadsphere, offset, msg_set);
-		MsgBuf_ReadBytes (quadsphere, &qsmesh, sizeof (qsmesh));
-		qsmesh.adjacency.offset += offset;
-		qsmesh.vertices.offset += offset;
-	}
 	//create_cube ();
 	while (true) {
 		num_collider_ents = 0;
@@ -1422,7 +1297,7 @@ main (int argc, string *argv)
 			}
 		}
 
-		update_orrery (QuadSphere_ent, realtime);
+		update_orrery (earth_ent, realtime);
 
 		//update_cube(frametime);
 		//draw_cube();
@@ -1432,12 +1307,12 @@ main (int argc, string *argv)
 		[main_window nextClip:frametime];
 		[main_window updateCamera];
 
-		if (0) {
-			auto xform = Entity_GetTransform (QuadSphere_ent);
-			mat4 mat = Transform_GetWorldMatrix(xform);
-			draw_quadsphere_gizmos (key_devid, bspace, SUBDIV, quadsphere,
-									qsmesh, mat);
-		}
+		//if (0) {
+		//	auto xform = Entity_GetTransform (QuadSphere_ent);
+		//	mat4 mat = Transform_GetWorldMatrix(xform);
+		//	draw_quadsphere_gizmos (key_devid, bspace, SUBDIV, quadsphere,
+		//							qsmesh, mat);
+		//}
 
 		leafnode ();
 

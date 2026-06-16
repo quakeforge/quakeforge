@@ -123,6 +123,7 @@ qwaq_ed_dat_src= \
 	ruamoko/qwaq/camera.r \
 	ruamoko/qwaq/physics.r \
 	ruamoko/qwaq/leafnode.r \
+	ruamoko/qwaq/mainmenu.r \
 	ruamoko/qwaq/mesh.r \
 	ruamoko/qwaq/pga3d.r \
 	ruamoko/qwaq/planetary.r \

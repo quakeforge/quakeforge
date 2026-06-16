@@ -32,6 +32,7 @@ typedef struct PlanetaryData {
 #ifndef VULKAN
 #include <scene.h>
 void update_orrery (entity_t earth, double time);
+entity_t create_orrery (uint planetary_queue, scene_t scene);
 #endif
 
 #endif//__planetary_h
