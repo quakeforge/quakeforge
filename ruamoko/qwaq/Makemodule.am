@@ -10,11 +10,11 @@ noinst_PROGRAMS += @QWAQ_TARGETS@ \
 	ruamoko/qwaq/input-app.dat$(EXEEXT) \
 	ruamoko/qwaq/z-transform.dat$(EXEEXT)
 
-atmosphere_src = ruamoko/qwaq/atmosphere.r
-planetary_src = ruamoko/qwaq/planetary.r
-pixpal_src = ruamoko/qwaq/pixpal.r
-pbr_brdf_src = ruamoko/qwaq/pbr_brdf.r
-pbr_conv_src = ruamoko/qwaq/pbr_conv.r
+atmosphere_src = ruamoko/qwaq/shader/atmosphere.r
+planetary_src = ruamoko/qwaq/shader/planetary.r
+pixpal_src = ruamoko/qwaq/shader/pixpal.r
+pbr_brdf_src = ruamoko/qwaq/shader/pbr_brdf.r
+pbr_conv_src = ruamoko/qwaq/shader/pbr_conv.r
 
 qwaqshader_src = \
 	$(atmosphere_src) \
@@ -121,6 +121,7 @@ qwaq_core_src= \
 qwaq_ed_dat_src= \
 	ruamoko/qwaq/armature.r \
 	ruamoko/qwaq/camera.r \
+	ruamoko/qwaq/physics.r \
 	ruamoko/qwaq/leafnode.r \
 	ruamoko/qwaq/mesh.r \
 	ruamoko/qwaq/pga3d.r \
@@ -348,12 +349,12 @@ EXTRA_DIST += \
 	ruamoko/qwaq/ui/titlebar.h \
 	ruamoko/qwaq/ui/view.h \
 	ruamoko/qwaq/ui/window.h \
-	ruamoko/qwaq/atmosphere.r \
-	ruamoko/qwaq/pixpal.r \
-	ruamoko/qwaq/pbr_brdf.r \
-	ruamoko/qwaq/pbr_conv.r \
-	ruamoko/qwaq/planetary.r \
-	ruamoko/qwaq/planetary.h \
+	ruamoko/qwaq/shader/atmosphere.r \
+	ruamoko/qwaq/shader/pixpal.r \
+	ruamoko/qwaq/shader/pbr_brdf.r \
+	ruamoko/qwaq/shader/pbr_conv.r \
+	ruamoko/qwaq/shader/planetary.r \
+	ruamoko/qwaq/shader/planetary.h \
 	ruamoko/qwaq/armature.h \
 	ruamoko/qwaq/camera.h \
 	ruamoko/qwaq/gizmo.h \

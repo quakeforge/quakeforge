@@ -29,4 +29,9 @@ typedef struct PlanetaryData {
 #endif
 } PlanetaryData;
 
+#ifndef VULKAN
+#include <scene.h>
+void update_orrery (entity_t earth, double time);
+#endif
+
 #endif//__planetary_h
