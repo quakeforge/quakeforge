@@ -125,6 +125,7 @@ qwaq_ed_dat_src= \
 	ruamoko/qwaq/leafnode.r \
 	ruamoko/qwaq/mesh.r \
 	ruamoko/qwaq/pga3d.r \
+	ruamoko/qwaq/planetary.r \
 	ruamoko/qwaq/player.r \
 	ruamoko/qwaq/playercam.r \
 	ruamoko/qwaq/qwaq-ed.r

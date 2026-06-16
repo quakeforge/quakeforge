@@ -2,7 +2,13 @@
 #define __qwaq_ed_h
 
 #include <input.h>
+
 void printf (string fmt, ...);
+
+void Render_UpdateBuffer (string name, ulong offset, void *data, ulong size);
+ulong Render_BufferAddress (string name);
+ulong Render_BufferOffset (string name);
+ulong Render_BufferSize (string name);
 
 extern int in_context;
 extern in_axis_t *cam_move_forward;
