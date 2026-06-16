@@ -237,7 +237,7 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, qfv_taskctx_t *taskctx,
 		auto sp = &rp->subpasses[i];
 		qfv_taskctx_t tctx = {
 			.ctx = taskctx->ctx,
-			.frame = taskctx->frame,
+			.frame = frame,
 			.renderpass = rp,
 			.subpass = sp,
 			.cmd = QFV_GetCmdBuffer (ctx, true),
@@ -376,7 +376,7 @@ run_process (qfv_step_t *step, qfv_taskctx_t *taskctx)
 }
 
 static void
-run_collect (vulkan_ctx_t *ctx)
+run_collect (vulkan_ctx_t *ctx, qfv_job_t *job)
 {
 #ifdef TRACY_ENABLE
 	auto device = ctx->device;
@@ -394,7 +394,7 @@ run_collect (vulkan_ctx_t *ctx)
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 	qftCVkCollect (frame->qftVkCtx, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
-	QFV_AppendCmdBuffer (ctx, cmd);
+	QFV_AppendCmdBuffer (job, cmd);
 #endif
 }
 
@@ -445,6 +445,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job)
 	qfZoneNamed (zone, true);
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
+	auto frame = &rctx->frames.a[ctx->curFrame];
 	int64_t start = Sys_LongTime ();
 
 	run_deletion_queue (ctx);
@@ -453,6 +454,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job)
 		.ctx = ctx,
 		.graph = graph,
 		.job = job,
+		.frame = frame,
 	};
 
 	for (uint32_t i = 0; i < job->num_steps; i++) {
@@ -660,7 +662,7 @@ wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	QFV_CmdPoolManager_Reset (&frame->render_cmdpool);
 	frame->active_pool = &frame->render_cmdpool;
-	run_collect (ctx);
+	run_collect (ctx, taskctx->job);
 }
 
 static void
