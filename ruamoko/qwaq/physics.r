@@ -67,6 +67,7 @@ update_grav_state(state_t state, body_t body, transform_t xform)
 		float h = frametime / 100;
 		for (int i = 0; i < 100; i++) {
 			bivector_t grav = ⋆((~state.M * (-0.0981f * e03) * state.M));
+			grav = grav @hadamard body.I;
 
 			auto ds = dState (state, grav, &body);
 			state.M += h * ds.M;
