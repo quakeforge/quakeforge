@@ -46,6 +46,7 @@ int Scene_Entqueue (scene_t scene, string entqueue_name);
 
 transform_t Entity_GetTransform (entity_t ent);
 void Entity_SetModel (entity_t ent, model_t model);
+model_t Entity_GetModel (entity_t ent);
 void Entity_SetEntqueue (entity_t ent, int entqueue);
 // bits in submesh_mask disable that submic
 void Entity_SetSubmeshMask (entity_t ent, uint submesh_mask);

@@ -361,6 +361,21 @@ bi (Entity_SetModel)
 	R_AddEfrags (scene->scene, ent);
 }
 
+bi (Entity_GetModel)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	entity_t    ent = rua_entity_get (res, ent_id);
+
+	auto renderer = Entity_GetRenderer (ent);
+	auto model = renderer->model;
+	R_UINT (pr) = 0;
+	if (model) {
+		R_UINT (pr) = model->model_id;
+	}
+}
+
 bi (Entity_SetEntqueue)
 {
 	qfZoneScoped (true);
@@ -819,6 +834,7 @@ static builtin_t builtins[] = {
 
 	bi(Entity_GetTransform,         1, p(ulong)),
 	bi(Entity_SetModel,             2, p(ulong), p(int)),
+	bi(Entity_GetModel,             1, p(ulong)),
 	bi(Entity_SetEntqueue,          2, p(ulong), p(int)),
 	bi(Entity_SetSubmeshMask,       2, p(ulong), p(uint)),
 	bi(Entity_SetShadowFlags,       4, p(ulong), p(int), p(int), p(int)),
