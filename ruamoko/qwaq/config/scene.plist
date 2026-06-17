@@ -175,4 +175,30 @@
 			axis = (0, 0, 0.25);
 		};
 	},
+	{
+		name = "Capsule4";
+		position = (-20, 0, 5, 1);
+		target = true;
+		from_shape = true;
+		invDensity = 26;
+		collider = {
+			type = col_capsule;
+			radius = 0.5;
+			axis = (0, 2.5, 0);
+		};
+	},
+	{
+		name = "Sphere3";
+		grav_flag = true;
+		position = (-15, 2.5, 5, 1);
+		vel = (-1, 0, 0);
+		grav_flag = false;
+		target = true;
+		from_shape = true;
+		invDensity = 26;
+		collider = {
+			type = col_ball;
+			radius = 1;
+		};
+	},
 )
