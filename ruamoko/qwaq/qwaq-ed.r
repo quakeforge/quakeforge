@@ -1003,6 +1003,8 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 	string name;
 	string model;
 	string mesh;
+	string entqueue;
+	string texture;
 	bool mesh_flag;
 	bool grav_flag;
 	uint submesh_mask;
@@ -1057,6 +1059,8 @@ load_scene (plitem_t *scene_item, scene_t scene)
 									 ent_init.rotation, ent_init.position);
 		msgbuf_t mesh = nil;
 		model_t model = nil;
+		uint entqueue = Scene_Entqueue (scene, ent_init.entqueue);
+		uint texture = find_resource (ent_init.texture);
 		switch (ent_init.mesh) {
 		case "create_quadsphere":
 			mesh = create_quadsphere (ent_init.mesh_flag);
@@ -1138,7 +1142,7 @@ load_scene (plitem_t *scene_item, scene_t scene)
 			set_component (e, qent_state, &state);
 			set_update (e, update_physics);
 		}
-		if (ent_init.grav_flag) {
+		if (e != ~0u && ent_init.grav_flag) {
 			set_component (e, qent_grav, &ent_init.grav_flag);
 		}
 		if (mesh) {
@@ -1148,6 +1152,12 @@ load_scene (plitem_t *scene_item, scene_t scene)
 		if (model) {
 			Entity_SetModel (ent, model);
 			Entity_SetSubmeshMask (ent, ent_init.submesh_mask);
+			if (entqueue != ~0u) {
+				Entity_SetEntqueue (ent, entqueue);
+			}
+			if (texture != ~0u) {
+				Entity_SetTextureID (ent, texture);
+			}
 		}
 		if (ent_init.target) {
 			add_target (ent);
