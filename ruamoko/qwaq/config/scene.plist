@@ -201,4 +201,12 @@
 			radius = 1;
 		};
 	},
+	{
+		name = "Girl";
+		model = progs/girl14.iqm;
+		position = (0.5, 0.5, 0, 1);
+		entqueue = pixpal;
+		texture = pixpal.meta;
+		target = true;
+	},
 )

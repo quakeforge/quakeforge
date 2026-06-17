@@ -499,13 +499,6 @@ static gizmo_node_t covered_step[] = {
 	qfa_extract_root_motion (model);
 
 	printf ("model: %p %d\n", model, Model_NumClips (model));
-	if (!ent) {
-		ent = Scene_CreateEntity (scene);
-		trans = Entity_GetTransform (ent);
-		Transform_SetLocalPosition (trans, {0.5, 0.5, 0, 1});
-		add_target (ent);
-	}
-	Entity_SetModel (ent, model);
 	free_armature (arm);
 	arm = make_armature (model);
 	//Transform_SetLocalRotation (trans, { 0, 0, 1, 0});
@@ -1272,8 +1265,6 @@ main (int argc, string *argv)
 	auto main_window = [[MainWindow window:imui_ctx] retain];
 	set_sky_id (skyid);
 
-	[main_window setModel:Model_Load ("progs/girl11a.iqm")];
-
 	load_scene (PL_GetPropertyList (scene_plist), [main_window scene]);
 
 	id player = [[Player player:[main_window scene]] retain];
@@ -1283,6 +1274,8 @@ main (int argc, string *argv)
 
 	int planetary_queue = Scene_Entqueue ([main_window scene], "planetary");
 	int pixpal_queue = Scene_Entqueue ([main_window scene], "pixpal");
+
+	//[main_window setModel:Model_Load ("progs/girl14.iqm")];
 
 	auto earth_ent = create_orrery (planetary_queue, [main_window scene]);
 
