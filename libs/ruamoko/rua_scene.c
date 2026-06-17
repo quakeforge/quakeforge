@@ -322,7 +322,7 @@ bi (Scene_Entqueue)
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
 	const char *entqueue_name = P_GSTRING (pr, 1);
 	R_INT(pr) = -1;
-	if (scene->scene->entqueue_enum) {
+	if (entqueue_name && entqueue_name[0] && scene->scene->entqueue_enum) {
 		if (!res->memsuper) {
 			res->memsuper = new_memsuper ();
 		}
