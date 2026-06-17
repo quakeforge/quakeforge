@@ -310,22 +310,24 @@ vulkan_iqm_init_bones (mod_iqm_ctx_t *iqm_ctx, qfv_resource_t *bones,
 	auto model = iqm_ctx->qf_model;
 	auto iqm = iqm_ctx->hdr;
 
-	vec4f_t    *bone_data;
-	dfunc->vkMapMemory (device->dev, bones->memory, 0, VK_WHOLE_SIZE,
-						0, (void **)&bone_data);
-	for (size_t i = 0; i < rctx->frames.size * iqm->num_joints; i++) {
-		vec4f_t    *bone = bone_data + i * 3;
-		bone[0] = (vec4f_t) {1, 0, 0, 0};
-		bone[1] = (vec4f_t) {0, 1, 0, 0};
-		bone[2] = (vec4f_t) {0, 0, 1, 0};
-	}
-	VkMappedMemoryRange range = {
-		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		bones->memory, 0, VK_WHOLE_SIZE,
-	};
-	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
+	if (bones->objects[0].buffer.size) {
+		vec4f_t    *bone_data;
+		dfunc->vkMapMemory (device->dev, bones->memory, 0, VK_WHOLE_SIZE,
+							0, (void **)&bone_data);
+		for (size_t i = 0; i < rctx->frames.size * iqm->num_joints; i++) {
+			vec4f_t    *bone = bone_data + i * 3;
+			bone[0] = (vec4f_t) {1, 0, 0, 0};
+			bone[1] = (vec4f_t) {0, 1, 0, 0};
+			bone[2] = (vec4f_t) {0, 0, 1, 0};
+		}
+		VkMappedMemoryRange range = {
+			VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
+			bones->memory, 0, VK_WHOLE_SIZE,
+		};
+		dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
 
-	dfunc->vkUnmapMemory (device->dev, bones->memory);
+		dfunc->vkUnmapMemory (device->dev, bones->memory);
+	}
 
 	Vulkan_MeshAddBones (ctx, model);//FIXME doesn't belong here (per-instance)
 }
@@ -493,7 +495,9 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 						  iqm->num_vertexes, iqm->num_triangles * 3,
 						  rctx->frames.size, ctx, iqm_ctx);
 	QFV_CreateResource (device, mesh);
-	QFV_CreateResource (device, bones);
+	if (bones->objects[0].buffer.size) {
+		QFV_CreateResource (device, bones);
+	}
 
 	model->render_data = (byte *) rmesh - (byte *) model;
 	*rmesh = (qfv_mesh_t) {
