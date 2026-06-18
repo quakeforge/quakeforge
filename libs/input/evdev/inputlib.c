@@ -24,6 +24,7 @@
 #include "evdev/inputlib.h"
 
 static const char *devinput_path = "/dev/input";
+static hotplug_t *hotplug;
 static device_t *devices;
 void (*device_add) (device_t *);
 void (*device_remove) (device_t *);
@@ -324,7 +325,7 @@ read_device_input (device_t *dev)
 void
 inputlib_add_select (fd_set *fdset, int *maxfd)
 {
-	inputlib_hotplug_add_select (fdset, maxfd);
+	inputlib_hotplug_add_select (hotplug, fdset, maxfd);
 
 	for (device_t *dev = devices; dev; dev = dev->next) {
 		if (dev->fd < 0) {
@@ -340,7 +341,7 @@ inputlib_add_select (fd_set *fdset, int *maxfd)
 void
 inputlib_check_select (fd_set *fdset)
 {
-	inputlib_hotplug_check_select (fdset);
+	inputlib_hotplug_check_select (hotplug, fdset);
 
 	for (device_t *dev = devices; dev; dev = dev->next) {
 		if (dev->fd < 0) {
@@ -502,7 +503,8 @@ inputlib_init (void (*dev_add) (device_t *), void (*dev_rem) (device_t *))
 	device_add = dev_add;
 	device_remove = dev_rem;
 	if (scan_devices () != -1) {
-		inputlib_hotplug_init (devinput_path, device_created, device_deleted);
+		hotplug = inputlib_hotplug_init (devinput_path, "event",
+										 device_created, device_deleted);
 		return 0;
 	}
 	return -1;
@@ -511,7 +513,8 @@ inputlib_init (void (*dev_add) (device_t *), void (*dev_rem) (device_t *))
 void
 inputlib_close (void)
 {
-	inputlib_hotplug_close ();
+	inputlib_hotplug_close (hotplug);
+	hotplug = nullptr;
 	while (devices) {
 		close_device (devices);
 	}
