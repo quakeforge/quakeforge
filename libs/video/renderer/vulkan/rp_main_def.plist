@@ -1816,7 +1816,7 @@ renderpasses = {
 							$fstriangle.shader.vertexst,
 							$lighting.shader.fragment_none,
 						);
-						layout = $lighting.layout;
+						layout = $lighting.ibl_layout;
 					};
 					lights_plane = {
 						@inherit = $compose_base;
