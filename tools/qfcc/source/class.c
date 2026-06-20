@@ -1352,7 +1352,7 @@ category_get_hash (const void *_c, void *unused)
 	return Hash_String (c->name) ^ Hash_String (c->class->name);
 }
 
-static int
+static bool
 category_compare (const void *_c1, const void *_c2, void *unused)
 {
 	category_t *c1 = (category_t *) _c1;

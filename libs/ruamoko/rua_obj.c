@@ -467,7 +467,7 @@ load_methods_get_hash (const void *m, void *_probj)
 	return (uintptr_t) m;
 }
 
-static int
+static bool
 load_methods_compare (const void *m1, const void *m2, void *_probj)
 {
 	qfZoneScoped (true);

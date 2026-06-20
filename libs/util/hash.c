@@ -65,7 +65,7 @@ struct hashtab_s {
 	unsigned int size_bits;
 	size_t num_ele;
 	void *user_data;
-	int (*compare)(const void*,const void*,void*);
+	bool (*compare)(const void*,const void*,void*);
 	uintptr_t (*get_hash)(const void*,void*);
 	const char *(*get_key)(const void*,void*);
 	void (*free_ele)(void*,void*);
@@ -190,7 +190,7 @@ get_hash (const void *ele, void *data)
 	return (uintptr_t)ele;
 }
 
-static int
+static bool
 compare (const void *a, const void *b, void *data)
 {
 	return a == b;
@@ -274,7 +274,7 @@ Hash_NewTable (int tsize, const char *(*gk)(const void*,void*),
 
 VISIBLE void
 Hash_SetHashCompare (hashtab_t *tab, uintptr_t (*gh)(const void*,void*),
-					 int (*cmp)(const void*,const void*,void*))
+					 bool (*cmp)(const void*,const void*,void*))
 {
 	tab->get_hash = gh;
 	tab->compare = cmp;

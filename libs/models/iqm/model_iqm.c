@@ -514,7 +514,7 @@ blend_get_hash (const void *e, void *unused)
 	return CRC_Block ((byte *) e, sizeof (qfm_blend_t));
 }
 
-static int
+static bool
 blend_compare (const void *e1, const void *e2, void *unused)
 {
 	return !memcmp (e1, e2, sizeof (qfm_blend_t));

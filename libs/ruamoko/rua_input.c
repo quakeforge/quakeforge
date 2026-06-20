@@ -716,7 +716,7 @@ rua_in_hash_cookie (const void *_cookie, void *_res)
 	return cookie->func + cookie->data;
 }
 
-static int
+static bool
 rua_in_cmp_cookies (const void *_a, const void *_b, void *_res)
 {
 	qfZoneScoped (true);

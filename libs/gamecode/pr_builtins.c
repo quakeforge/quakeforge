@@ -69,7 +69,7 @@ builtin_get_hash (const void *_bi, void *unused)
 	return bi->binum;
 }
 
-static int
+static bool
 builtin_compare (const void *_bia, const void *_bib, void *unused)
 {
 	builtin_t *bia = (builtin_t *)_bia;

@@ -73,8 +73,8 @@ hashtab_t *Hash_NewTable (int tsize, const char *(*gk)(const void*,void*),
 
 /** change the hash and compare functions used by the Hash_*Element functions.
 	the default hash function just returns the address of the element, and the
-	default compare just compares the addresses. compare is to return 0 for not
-	equal and non-0 otherwise.
+	default compare just compares the addresses. compare is to return false
+	for not equal and true for equal.
 
 	With suitably crafted gh and cmp functions, Hash_*Element functions can
 	be mixed with the non-element functions, but by default the results will
@@ -85,7 +85,7 @@ hashtab_t *Hash_NewTable (int tsize, const char *(*gk)(const void*,void*),
 	\param cmp is element 1, element 2, userdata
 */
 void Hash_SetHashCompare (hashtab_t *tab, uintptr_t (*gh)(const void*,void*),
-						  int (*cmp)(const void*,const void*,void*));
+						  bool (*cmp)(const void*,const void*,void*));
 
 
 /** delete a hash table.

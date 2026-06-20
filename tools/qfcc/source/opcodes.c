@@ -98,7 +98,7 @@ v6p_get_hash (const void *_op, void *_tab)
 	return hash + Hash_String (op->name);
 }
 
-static int
+static bool
 v6p_compare (const void *_opa, const void *_opb, void *unused)
 {
 	v6p_opcode_t *opa = (v6p_opcode_t *) _opa;
@@ -124,7 +124,7 @@ v6p_uint_get_hash (const void *_op, void *_tab)
 	return v6p_get_hash (&uint_op->opcode, _tab);
 }
 
-static int
+static bool
 v6p_uint_compare (const void *_opa, const void *_opb, void *data)
 {
 	__auto_type uint_opa = (v6p_uint_opcode_t *) _opa;
@@ -147,7 +147,7 @@ rua_get_hash (const void *_op, void *_tab)
 	return hash + Hash_String (op->opname);
 }
 
-static int
+static bool
 rua_compare (const void *_opa, const void *_opb, void *unused)
 {
 	opcode_t   *opa = (opcode_t *) _opa;

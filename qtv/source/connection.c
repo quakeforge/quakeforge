@@ -67,7 +67,7 @@ connection_get_hash (const void *_c, void *unused)
 	return hash;
 }
 
-static int
+static bool
 connection_compare (const void *_c1, const void *_c2, void *unused)
 {
 	connection_t *c1 = (connection_t *) _c1;
