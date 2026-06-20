@@ -60,6 +60,88 @@ static int evdev_have_focus;
 static PR_RESMAP (devmap_t) devmap;
 static devmap_t *devmap_list;
 
+static const char *rel_axis_names[] = {
+	"rel_x",
+	"rel_y",
+	"rel_z",
+	"rel_rx",
+	"rel_ry",
+	"rel_rz",
+	"rel_hwheel",
+	"rel_dial",
+	"rel_wheel",
+	"rel_misc",
+	nullptr,//rel_reserved
+	"rel_wheel_hi_res",
+	"rel_hwheel_hi_res",
+	"rel_max",
+};
+
+static const char *abs_axis_names[] = {
+	"abs_x",
+	"abs_y",
+	"abs_z",
+	"abs_rx",
+	"abs_ry",
+	"abs_rz",
+	"abs_throttle",
+	"abs_rudder",
+	"abs_wheel",
+	"abs_gas",
+	"abs_brake",
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	"abs_hat0x",
+	"abs_hat0y",
+	"abs_hat1x",
+	"abs_hat1y",
+	"abs_hat2x",
+	"abs_hat2y",
+	"abs_hat3x",
+	"abs_hat3y",
+	"abs_pressure",
+	"abs_distance",
+	"abs_tilt_x",
+	"abs_tilt_y",
+	"abs_tool_width",
+	nullptr,
+	nullptr,
+	nullptr,
+	"abs_volume",
+	"abs_profile",
+	"abs_snd_profile",
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	"abs_misc",
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,//abs_reserved,
+	"abs_mt_slot",
+	"abs_mt_touch_major",
+	"abs_mt_touch_minor",
+	"abs_mt_width_major",
+	"abs_mt_width_minor",
+	"abs_mt_orientation",
+	"abs_mt_position_x",
+	"abs_mt_position_y",
+	"abs_mt_tool_type",
+	"abs_mt_blob_id",
+	"abs_mt_tracking_id",
+	"abs_mt_pressure",
+	"abs_mt_distance",
+	"abs_mt_tool_x",
+	"abs_mt_tool_y",
+};
+
 static void
 in_evdev_add_select (qf_fd_set *fdset, int *maxfd, void *data)
 {
@@ -254,6 +336,53 @@ in_evdev_button_info (void *data, void *device, in_buttoninfo_t *buttons,
 	}
 }
 
+static const char *
+in_evdev_get_axis_name (void *data, void *device, int axis_num)
+{
+	device_t   *dev = device;
+	if (axis_num < 0 || axis_num > dev->num_axes) {
+		return nullptr;
+	}
+	auto axis = &dev->axes[axis_num];
+	if (!axis->min && !axis->max) {
+		if (axis->evnum >= (int) countof (rel_axis_names)) {
+			return nullptr;
+		}
+		return rel_axis_names[axis->evnum];
+	}
+	if (axis->evnum >= (int) countof (abs_axis_names)) {
+		return nullptr;
+	}
+	return abs_axis_names[axis->evnum];
+}
+
+static int
+in_evdev_get_axis_num (void *data, void *device, const char *axis_name)
+{
+	device_t   *dev = device;
+	int         count;
+	int         map_count;
+	int        *map;
+	const char **names;
+	if ((axis_name[0] | 0x20) == 'r') {
+		count = countof (rel_axis_names);
+		names = rel_axis_names;
+		map = dev->rel_axis_map;
+		map_count = dev->max_rel_axis + 1;
+	} else {
+		count = countof (abs_axis_names);
+		names = abs_axis_names;
+		map = dev->abs_axis_map;
+		map_count = dev->max_abs_axis + 1;
+	}
+	for (int i = 0; i < count && i < map_count; i++) {
+		if (names[i] && strcasecmp (axis_name, names[i]) == 0) {
+			return map[i];
+		}
+	}
+	return -1;
+}
+
 static int
 in_evdev_get_axis_info (void *data, void *device, int axis_num,
 						in_axisinfo_t *info)
@@ -293,6 +422,9 @@ static in_driver_t in_evdev_driver = {
 
 	.axis_info = in_evdev_axis_info,
 	.button_info = in_evdev_button_info,
+
+	.get_axis_name = in_evdev_get_axis_name,
+	.get_axis_num = in_evdev_get_axis_num,
 
 	.get_axis_info = in_evdev_get_axis_info,
 	.get_button_info = in_evdev_get_button_info,
