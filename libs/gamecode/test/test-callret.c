@@ -3,6 +3,8 @@
 #include "QF/mathlib.h"
 
 #define sq(x) ((float)(x)*(float)(x))
+//values take from python using:
+// hex(unpack("I", pack("f", x))[0])
 #define pi_6 0x3f060a92		// pi/6
 #define r3_2 0x3f5db3d7		// sqrt(3)/2
 #define f1_2 0x3f000000		// 1/2
