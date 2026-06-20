@@ -187,6 +187,8 @@ plitem_t *PL_ParseJSON (const char *string, struct hashctx_s **hashctx);
 	\note You are responsible for freeing the returned object.
 */
 plitem_t *PL_ParseCSV (const char *string, struct hashctx_s **hashctx);
+plitem_t *PL_ParseCSV_len (const char *string, size_t len,
+						   struct hashctx_s **hashctx);
 
 /** Create a property list from a bare dictionary list.
 

@@ -1284,7 +1284,7 @@ pl_parsecsv (pldata_t *pl)
 }
 
 static plitem_t *
-pl_parseitem (const char *string, hashctx_t **hashctx,
+pl_parseitem (const char *string, size_t len, hashctx_t **hashctx,
 			  plitem_t *(*parse) (pldata_t *), bool json, bool no_comments)
 {
 	plitem_t	*newpl = nullptr;
@@ -1294,7 +1294,7 @@ pl_parseitem (const char *string, hashctx_t **hashctx,
 
 	pldata_t	 pl = {
 		.ptr = string,
-		.end = strlen (string),
+		.end = len,
 		.line = 1,
 		.json = json,
 		.no_comments = no_comments,
@@ -1303,8 +1303,8 @@ pl_parseitem (const char *string, hashctx_t **hashctx,
 
 	if (!(newpl = parse (&pl))) {
 		if (pl.errmsg) {
-			Sys_Printf (RED"plist"DFL": %d,%d: %s\n", pl.line, pl.pos - pl.line_start,
-						pl.errmsg->str);
+			Sys_Printf (RED"plist"DFL": %d,%d: %s\n", pl.line,
+						pl.pos - pl.line_start, pl.errmsg->str);
 			dstring_delete (pl.errmsg);
 		}
 		return nullptr;
@@ -1315,20 +1315,28 @@ pl_parseitem (const char *string, hashctx_t **hashctx,
 VISIBLE plitem_t *
 PL_GetPropertyList (const char *string, hashctx_t **hashctx)
 {
-	return pl_parseitem (string, hashctx, pl_parsepropertylistitem,
-						 false, false);
+	return pl_parseitem (string, strlen (string), hashctx,
+						 pl_parsepropertylistitem, false, false);
 }
 
 VISIBLE plitem_t *
 PL_ParseJSON (const char *string, hashctx_t **hashctx)
 {
-	return pl_parseitem (string, hashctx, pl_parsejson_element, true, true);
+	return pl_parseitem (string, strlen (string), hashctx,
+						 pl_parsejson_element, true, true);
 }
 
 VISIBLE plitem_t *
 PL_ParseCSV (const char *string, hashctx_t **hashctx)
 {
-	return pl_parseitem (string, hashctx, pl_parsecsv, false, true);
+	return pl_parseitem (string, strlen (string), hashctx,
+						 pl_parsecsv, false, true);
+}
+
+VISIBLE plitem_t *
+PL_ParseCSV_len (const char *string, size_t len, hashctx_t **hashctx)
+{
+	return pl_parseitem (string, len, hashctx, pl_parsecsv, false, true);
 }
 
 static plitem_t *
@@ -1350,7 +1358,8 @@ pl_getdictionary (pldata_t *pl)
 VISIBLE plitem_t *
 PL_GetDictionary (const char *string, hashctx_t **hashctx)
 {
-	return pl_parseitem (string, hashctx, pl_getdictionary, false, false);
+	return pl_parseitem (string, strlen (string), hashctx,
+						 pl_getdictionary, false, false);
 }
 
 static plitem_t *
@@ -1372,7 +1381,8 @@ pl_getarray (pldata_t *pl)
 VISIBLE plitem_t *
 PL_GetArray (const char *string, hashctx_t **hashctx)
 {
-	return pl_parseitem (string, hashctx, pl_getarray, false, false);
+	return pl_parseitem (string, strlen (string), hashctx,
+						 pl_getarray, false, false);
 }
 
 static void
