@@ -1326,9 +1326,9 @@ PL_ParseJSON (const char *string, hashctx_t **hashctx)
 }
 
 VISIBLE plitem_t *
-PL_ParseCSV (const char *string)
+PL_ParseCSV (const char *string, hashctx_t **hashctx)
 {
-	return pl_parseitem (string, nullptr, pl_parsecsv, false, true);
+	return pl_parseitem (string, hashctx, pl_parsecsv, false, true);
 }
 
 static plitem_t *

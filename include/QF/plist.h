@@ -178,13 +178,15 @@ plitem_t *PL_ParseJSON (const char *string, struct hashctx_s **hashctx);
 	is highly context-dependent.
 
 	\param string	The single-line string to be parsed as an array
+	\param hashctx	Hashlink chain to use when creating dictionaries (see
+					Hash_NewTable()). May be null.
 
 	\return Returns an array object with one string element per
 			comma-separated element in the string. The array may be empty.
 			Individual elements in the array may be empty strings.
 	\note You are responsible for freeing the returned object.
 */
-plitem_t *PL_ParseCSV (const char *string);
+plitem_t *PL_ParseCSV (const char *string, struct hashctx_s **hashctx);
 
 /** Create a property list from a bare dictionary list.
 
