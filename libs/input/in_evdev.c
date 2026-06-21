@@ -485,6 +485,10 @@ in_evdev_gamepad_mapping (void *data, void *device, const char *name)
 {
 	device_t   *dev = device;
 	in_mapping_t mapping = {};
+	if (name[0] == '+' || name[0] == '-') {
+		mapping.sign = name[0] == '-' ? -1 : 1;
+		name++;
+	}
 	int         index = strtoul (name + 1, nullptr, 0);
 	switch (name[0]) {
 		case 'a':
