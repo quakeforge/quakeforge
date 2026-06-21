@@ -634,13 +634,15 @@ IN_Gamepad_Add (in_devid_t devid, int deviceid)
 		.name = nva ("gamepad:%d", ctrlid),
 		.ctrlid = ctrlid,
 		.parent = deviceid,
-		.axis_binding = calloc (num_axes, sizeof (in_ctrlbind_t)),
-		.button_binding = calloc (num_buttons, sizeof (in_ctrlbind_t)),
-		.hat_binding = calloc (num_hats, sizeof (in_ctrlbind_t)),
+		.axis_binding = malloc (num_axes * sizeof (in_ctrlbind_t)),
+		.button_binding = malloc (num_buttons * sizeof (in_ctrlbind_t)),
+		.hat_binding = malloc (num_hats * sizeof (in_ctrlbind_t)),
 		.num_axes = num_axes,
 		.num_buttons = num_buttons,
 		.num_hats = num_hats,
 	};
+	memset (gamepad->axis_binding, -1, num_axes * sizeof (in_ctrlbind_t));
+	memset (gamepad->button_binding, -1, num_buttons * sizeof (in_ctrlbind_t));
 	gamepad->devid = IN_AddDevice (gamepad_driver_handle, gamepad,
 								   gamepad->name, gamepad->name);
 	for (uint32_t i = 0; i < countof (mapping_fields); i++) {
