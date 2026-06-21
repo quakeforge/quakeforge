@@ -28,13 +28,21 @@ typedef struct in_ctrlbind_s {
 	int         sign;
 } in_ctrlbind_t;
 
+typedef struct in_ctrlmap_s {
+	inm_type_t  type;	// is index for axis, button or hat?
+	int         index;
+} in_ctrlmap_t;
+
 typedef struct in_gamepad_s {
 	const char *name;
 	void       *event_data;
 	int         devid;
+	int         parent;
 	in_ctrlbind_t *axis_binding;
 	in_ctrlbind_t *button_binding;
 	in_ctrlbind_t *hat_binding;
+	in_ctrlmap_t  axis_map[8];
+	in_ctrlmap_t  button_map[15];
 	int           num_hats;
 	int           num_buttons;
 	int           num_axes;
@@ -222,6 +230,14 @@ in_gamepad_init (void *data)
 }
 
 static void
+in_gamepad_shutdown (void *data)
+{
+	free (mapping_strings.str);
+	Hash_DelTable (mapping_strings_tab);
+	Hash_DelTable (mapping_devices_tab);
+}
+
+static void
 in_gamepad_set_device_event_data (void *device, void *event_data, void *data)
 {
 	in_gamepad_t *gamepad = device;
@@ -235,16 +251,114 @@ in_gamepad_get_device_event_data (void *device, void *data)
 	return gamepad->event_data;
 }
 
+static in_axisinfo_t
+calc_axis_info (in_gamepad_t *gamepad, in_ctrlmap_t map, int num)
+{
+	in_axisinfo_t info = { .axis = -1 };
+	in_ctrlbind_t bind;
+	switch (map.type) {
+		case inm_none:
+			break;
+		case inm_abs_axis:
+		case inm_rel_axis:
+			bind = gamepad->axis_binding[map.index];
+			in_axisinfo_t axis;
+			IN_GetAxisInfo (gamepad->parent, map.index, &axis);
+			info = (in_axisinfo_t) {
+				.deviceid = gamepad->devid,
+				.axis = num,
+				.value = axis.value,
+				.min = axis.min,
+				.max = axis.max,
+			};
+			break;
+		case inm_button:
+			bind = gamepad->button_binding[map.index];
+			in_buttoninfo_t button;
+			IN_GetButtonInfo (gamepad->parent, map.index, &button);
+			info = (in_axisinfo_t) {
+				.deviceid = gamepad->devid,
+				.axis = num,
+				.value = button.state * bind.sign,
+				.min = bind.sign < 0 ? -1 : 0,
+				.max = bind.sign > 0 ?  1 : 0,
+			};
+			break;
+		case inm_hat:
+			//FIXME
+			break;
+	}
+	return info;
+}
+
+static in_buttoninfo_t
+calc_button_info (in_gamepad_t *gamepad, in_ctrlmap_t map, int num)
+{
+	in_buttoninfo_t info = { .button = -1 };
+	in_ctrlbind_t bind;
+	switch (map.type) {
+		case inm_none:
+			break;
+		case inm_abs_axis:
+		case inm_rel_axis:
+			bind = gamepad->axis_binding[map.index];
+			in_axisinfo_t axis;
+			IN_GetAxisInfo (gamepad->parent, map.index, &axis);
+			info = (in_buttoninfo_t) {
+				.deviceid = gamepad->devid,
+				.button = num,
+				// FIXME works only for dpad axes
+				.state = bind.sign * axis.value > 0,
+			};
+			break;
+		case inm_button:
+			in_buttoninfo_t button;
+			IN_GetButtonInfo (gamepad->parent, map.index, &button);
+			info = (in_buttoninfo_t) {
+				.deviceid = gamepad->devid,
+				.button = num,
+				.state = button.state,
+			};
+			break;
+		case inm_hat:
+			//FIXME
+			break;
+	}
+	return info;
+}
+
 static void
 in_gamepad_axis_info (void *data, void *device, in_axisinfo_t *axes,
 					  int *numaxes)
 {
+	in_gamepad_t *gamepad = device;
+	if (!axes) {
+		*numaxes = countof (gamepad->axis_map);
+		return;
+	}
+	if ((unsigned) *numaxes > countof (gamepad->axis_map)) {
+		*numaxes = countof (gamepad->axis_map);
+	}
+	for (int i = 0; i < *numaxes; i++) {
+		axes[i] = calc_axis_info (gamepad, gamepad->axis_map[i], i);
+	}
 }
 
 static void
 in_gamepad_button_info (void *data, void *device, in_buttoninfo_t *buttons,
 						int *numbuttons)
 {
+	in_gamepad_t *gamepad = device;
+	if (!buttons) {
+		*numbuttons = countof (gamepad->button_map);
+		return;
+	}
+	if ((unsigned) *numbuttons > countof (gamepad->button_map)) {
+		*numbuttons = countof (gamepad->button_map);
+	}
+	for (int i = 0; i < *numbuttons; i++) {
+		*buttons = calc_button_info (gamepad, gamepad->button_map[i], i);
+	}
 }
 
 static const char *in_gampad_axis_names[] = {
@@ -257,6 +371,9 @@ static const char *in_gampad_axis_names[] = {
 	"dpad_horizontal",
 	"dpad_vertical",
 };
+static_assert (countof (in_gampad_axis_names)
+			   == countof (((in_gamepad_t *)0)->axis_map));
+
 static const char *in_gampad_button_names[] = {
 	"a",
 	"b",
@@ -274,6 +391,8 @@ static const char *in_gampad_button_names[] = {
 	"dpad_left",
 	"dpad_right",
 };
+static_assert (countof (in_gampad_button_names)
+			   == countof (((in_gamepad_t *)0)->button_map));
 
 static const char *
 in_gamepad_get_axis_name (void *data, void *device, int axis_num)
@@ -319,9 +438,11 @@ static int
 in_gamepad_get_axis_info (void *data, void *device, int axis_num,
 						  in_axisinfo_t *info)
 {
-	if ((unsigned) axis_num >= countof (in_gampad_axis_names)) {
+	in_gamepad_t *gamepad = device;
+	if ((unsigned) axis_num >= countof (gamepad->axis_map)) {
 		return 0;
 	}
+	*info = calc_axis_info (gamepad, gamepad->axis_map[axis_num], axis_num);
 	return 1;
 }
 
@@ -329,15 +450,18 @@ static int
 in_gamepad_get_button_info (void *data, void *device, int button_num,
 							in_buttoninfo_t *info)
 {
-	if ((unsigned) button_num >= countof (in_gampad_button_names)) {
+	in_gamepad_t *gamepad = device;
+	if ((unsigned) button_num >= countof (gamepad->button_map)) {
 		return 0;
 	}
+	*info = calc_button_info (gamepad, gamepad->button_map[button_num],
+							  button_num);
 	return 1;
 }
 
 static in_driver_t in_gamepad_driver = {
 	.init = in_gamepad_init,
-	//.shutdown = in_gamepad_shutdown,
+	.shutdown = in_gamepad_shutdown,
 	.set_device_event_data = in_gamepad_set_device_event_data,
 	.get_device_event_data = in_gamepad_get_device_event_data,
 
@@ -457,6 +581,7 @@ IN_Gamepad_Add (in_devid_t devid, int deviceid)
 	in_gamepad_t *gamepad = malloc (sizeof (in_gamepad_t));
 	*gamepad = (in_gamepad_t) {
 		.name = strdup ("controller"),
+		.parent = deviceid,
 		.axis_binding = calloc (num_axes, sizeof (in_ctrlbind_t)),
 		.button_binding = calloc (num_buttons, sizeof (in_ctrlbind_t)),
 		.hat_binding = calloc (num_hats, sizeof (in_ctrlbind_t)),
@@ -497,6 +622,18 @@ IN_Gamepad_Add (in_devid_t devid, int deviceid)
 			.button = field->button,
 			.sign = inp.sign,
 		};
+		if (field->axis >= 0) {
+			gamepad->axis_map[field->axis] = (in_ctrlmap_t) {
+				.type = inp.type,
+				.index = inp.index,
+			};
+		}
+		if (field->button >= 0) {
+			gamepad->button_map[field->button] = (in_ctrlmap_t) {
+				.type = inp.type,
+				.index = inp.index,
+			};
+		}
 	}
 	return gamepad;
 }
@@ -536,6 +673,7 @@ IN_Gamepad_Event (in_gamepad_t *gamepad, IE_event_t *ie_event)
 				.data = ie_event->axis.data,
 				.devid = gamepad->devid,
 				.button = binding.button,
+				// FIXME works only for dpad axes
 				.state = ie_event->axis.value * binding.sign > 0,
 			};
 			IE_Send_Event (&event);
