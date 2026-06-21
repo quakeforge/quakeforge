@@ -589,7 +589,6 @@ IN_Gamepad_Init (void)
 		}
 		PL_Release (item);
 	}
-	printf ("%zd\n", mapping_strings.size);
 }
 
 in_gamepad_t *
