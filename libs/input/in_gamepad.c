@@ -117,8 +117,8 @@ static mapping_field_t mapping_fields[] = {
 	MAPPING (rightx,        3, -1),
 	MAPPING (righty,        4, -1),
 	MAPPING (start,        -1,  9),
-	MAPPING (x,            -1,  2),
-	MAPPING (y,            -1,  3),
+	MAPPING (x,            -1,  3),
+	MAPPING (y,            -1,  2),
 };
 
 static dstring_t mapping_strings = { .mem = &dstring_default_mem };
@@ -389,10 +389,10 @@ static_assert (countof (in_gampad_axis_names)
 			   == countof (((in_gamepad_t *)0)->axis_map));
 
 static const char *in_gampad_button_names[] = {
-	"a",
-	"b",
-	"x",
-	"y",
+	"south",
+	"east",
+	"north",
+	"west",
 	"left_shoulder",
 	"right_shoulder",
 	"left_stick",
