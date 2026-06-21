@@ -24,9 +24,13 @@
 
 typedef struct in_ctrlbind_s {
 	inm_type_t  type;
-	int         axis;
-	int         button;
-	int         sign;
+	int16_t     axis;
+	int16_t     button;
+	int8_t      sign;
+	int16_t     in_min;
+	int16_t     in_max;
+	int16_t     out_min;
+	int16_t     out_max;
 } in_ctrlbind_t;
 
 typedef struct in_ctrlmap_s {
@@ -126,6 +130,9 @@ static hashctx_t *hashctx;
 static hashtab_t *mapping_strings_tab;
 static hashtab_t *mapping_devices_tab;
 static int gamepad_driver_handle = -1;
+
+#define in_gamepad_min 0
+#define in_gamepad_max 255
 
 static int
 gamepad_ctrlid_compare (const int *a, const int *b, void *data)
@@ -265,6 +272,31 @@ in_gamepad_get_device_event_data (void *device, void *data)
 	return gamepad->event_data;
 }
 
+static int
+convert_axis (int value, in_ctrlbind_t bind)
+{
+	int64_t domain = abs (bind.in_max - bind.in_min);
+	int64_t range = bind.out_max - bind.out_min;
+	if (domain == 0 || range == 0) {
+		return value;
+	}
+	value = ((value - bind.in_min) * range) / domain;
+	int base = bind.sign < 0 ? bind.out_max : bind.out_min;
+	return value + base;
+}
+
+static int
+button_to_axis (int state, in_ctrlbind_t bind)
+{
+	return state ? bind.out_max : bind.out_min;
+}
+
+static int
+axis_to_button (int value, in_ctrlbind_t bind)
+{
+	return value > (bind.in_max + bind.in_min) / 2;
+}
+
 static in_axisinfo_t
 calc_axis_info (in_gamepad_t *gamepad, in_ctrlmap_t map, int num)
 {
@@ -281,9 +313,9 @@ calc_axis_info (in_gamepad_t *gamepad, in_ctrlmap_t map, int num)
 			info = (in_axisinfo_t) {
 				.deviceid = gamepad->devid,
 				.axis = num,
-				.value = axis.value,
-				.min = axis.min,
-				.max = axis.max,
+				.value = convert_axis (axis.value, bind),
+				.min = bind.sign ? 0 : in_gamepad_min,
+				.max = bind.sign >= 0 ? in_gamepad_max : in_gamepad_min,
 			};
 			break;
 		case inm_button:
@@ -293,9 +325,9 @@ calc_axis_info (in_gamepad_t *gamepad, in_ctrlmap_t map, int num)
 			info = (in_axisinfo_t) {
 				.deviceid = gamepad->devid,
 				.axis = num,
-				.value = button.state * bind.sign,
-				.min = bind.sign < 0 ? -1 : 0,
-				.max = bind.sign > 0 ?  1 : 0,
+				.value = button_to_axis (button.state, bind),
+				.min = bind.out_min,
+				.max = bind.out_max,
 			};
 			break;
 		case inm_hat:
@@ -321,8 +353,7 @@ calc_button_info (in_gamepad_t *gamepad, in_ctrlmap_t map, int num)
 			info = (in_buttoninfo_t) {
 				.deviceid = gamepad->devid,
 				.button = num,
-				// FIXME works only for dpad axes
-				.state = bind.sign * axis.value > 0,
+				.state = axis_to_button (axis.value, bind),
 			};
 			break;
 		case inm_button:
@@ -644,6 +675,43 @@ IN_Gamepad_Add (in_devid_t devid, int deviceid)
 			.button = field->button,
 			.sign = inp.sign,
 		};
+		if (inp.sign) {
+			if (inp.type == inm_button) {
+				binding->out_min = 0;
+				binding->out_max = inp.sign > 0
+								 ? in_gamepad_max
+								 : in_gamepad_min;
+			} else {
+				in_axisinfo_t axis;
+				IN_GetAxisInfo (gamepad->parent, inp.index, &axis);
+				binding->in_min = inp.sign >= 0 ? axis.min : axis.max;
+				binding->in_max = inp.sign >= 0 ? axis.max : axis.min;
+				if (strncmp (field->name, "dp", 2) == 0) {
+					binding->out_min = -1;
+					binding->out_max =  1;
+				} else {
+					binding->out_min = in_gamepad_min;
+					binding->out_max = in_gamepad_max;
+				}
+			}
+		} else {
+			if (inp.type == inm_button) {
+				binding->out_min = 0;
+				binding->out_max = in_gamepad_max;
+			} else {
+				in_axisinfo_t axis;
+				IN_GetAxisInfo (gamepad->parent, inp.index, &axis);
+				binding->in_min = axis.min;
+				binding->in_max = axis.max;
+				if (strncmp (field->name, "dp", 2) == 0) {
+					binding->out_min = -1;
+					binding->out_max =  1;
+				} else {
+					binding->out_min = in_gamepad_min;
+					binding->out_max = in_gamepad_max;
+				}
+			}
+		}
 		if (field->axis >= 0) {
 			gamepad->axis_map[field->axis] = (in_ctrlmap_t) {
 				.type = inp.type,
@@ -686,7 +754,7 @@ IN_Gamepad_Event (in_gamepad_t *gamepad, IE_event_t *ie_event)
 				.data = gamepad->event_data,
 				.devid = gamepad->devid,
 				.axis = binding.axis,
-				.value = ie_event->axis.value,
+				.value = convert_axis (ie_event->axis.value, binding),
 			};
 			IE_Send_Event (&event);
 		}
@@ -696,8 +764,7 @@ IN_Gamepad_Event (in_gamepad_t *gamepad, IE_event_t *ie_event)
 				.data = gamepad->event_data,
 				.devid = gamepad->devid,
 				.button = binding.button,
-				// FIXME works only for dpad axes
-				.state = ie_event->axis.value * binding.sign > 0,
+				.state = axis_to_button (ie_event->axis.value, binding),
 			};
 			IE_Send_Event (&event);
 		}
@@ -712,7 +779,7 @@ IN_Gamepad_Event (in_gamepad_t *gamepad, IE_event_t *ie_event)
 				.data = gamepad->event_data,
 				.devid = gamepad->devid,
 				.axis = binding.axis,
-				.value = ie_event->button.state * binding.sign,
+				.value = button_to_axis (ie_event->button.state, binding),
 			};
 			IE_Send_Event (&event);
 		}
