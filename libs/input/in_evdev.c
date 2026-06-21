@@ -36,12 +36,15 @@
 # include <strings.h>
 #endif
 
+#include <linux/input-event-codes.h>
+
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/progs.h"   // for PR_RESMAP
 #include "QF/sys.h"
 
 #include "QF/input/event.h"
+#include "QF/input/gamepad.h"
 
 #include "compat.h"
 #include "qfselect.h"
@@ -51,6 +54,7 @@ typedef struct devmap_s {
 	struct devmap_s *next;
 	struct devmap_s **prev;
 	device_t   *device;
+	in_gamepad_t *gamepad;
 	void       *event_data;
 	int         devid;
 } devmap_t;
@@ -229,6 +233,56 @@ in_evdev_button_event (button_t *button, void *_dm)
 }
 
 static void
+in_evdev_gamepad_axis_event (axis_t *axis, void *_dm)
+{
+	if (!evdev_have_focus) {
+		return;
+	}
+
+	devmap_t   *dm = _dm;
+	//Sys_Printf ("in_evdev_gamepad_axis_event: %d %d\n",
+	//			axis->num, axis->value);
+
+	IE_event_t  event = {
+		.type = ie_axis,
+		.when = Sys_LongTime (),
+		.axis = {
+			.data = dm->event_data,
+			.devid = dm->devid,
+			.axis = axis->num,
+			.value = axis->value,
+		},
+	};
+	IN_Gamepad_Event (dm->gamepad, &event);
+	IE_Send_Event (&event);
+}
+
+static void
+in_evdev_gamepad_button_event (button_t *button, void *_dm)
+{
+	if (!evdev_have_focus) {
+		return;
+	}
+
+	devmap_t   *dm = _dm;
+	//Sys_Printf ("in_evdev_gamepad_button_event: %d %d\n",
+	//			button->num, button->state);
+
+	IE_event_t  event = {
+		.type = ie_button,
+		.when = Sys_LongTime (),
+		.button = {
+			.data = dm->event_data,
+			.devid = dm->devid,
+			.button = button->num,
+			.state = button->state,
+		},
+	};
+	IN_Gamepad_Event (dm->gamepad, &event);
+	IE_Send_Event (&event);
+}
+
+static void
 device_add (device_t *dev)
 {
 	const char *name = dev->name;
@@ -248,11 +302,23 @@ device_add (device_t *dev)
 	devmap_list = dm;
 
 	dev->data = dm;
-	dev->axis_event = in_evdev_axis_event;
-	dev->button_event = in_evdev_button_event;
 
 	dm->device = dev;
 	dm->devid = IN_AddDevice (evdev_driver_handle, dev, name, id);
+
+	dm->gamepad = IN_Gamepad_Add ((in_devid_t) {
+			.bustype = dev->bustype,
+			.vendor = dev->vendor,
+			.product = dev->product,
+			.version = dev->version,
+		}, dm->devid);
+	if (dm->gamepad) {
+		dev->axis_event = in_evdev_gamepad_axis_event;
+		dev->button_event = in_evdev_gamepad_button_event;
+	} else {
+		dev->axis_event = in_evdev_axis_event;
+		dev->button_event = in_evdev_button_event;
+	}
 
 #if 0
 	Sys_Printf ("in_evdev: add %s\n", dev->path);
@@ -274,6 +340,9 @@ device_remove (device_t *dev)
 {
 	for (devmap_t *dm = devmap_list; dm; dm = dm->next) {
 		if (dm->device == dev) {
+			if (dm->gamepad) {
+				IN_Gamepad_Remove (dm->gamepad);
+			}
 			IN_RemoveDevice (dm->devid);
 
 			if (dm->next) {
@@ -411,6 +480,56 @@ in_evdev_get_button_info (void *data, void *device, int button_num,
 	return 1;
 }
 
+static in_mapping_t
+in_evdev_gamepad_mapping (void *data, void *device, const char *name)
+{
+	device_t   *dev = device;
+	in_mapping_t mapping = {};
+	int         index = strtoul (name + 1, nullptr, 0);
+	switch (name[0]) {
+		case 'a':
+			if (index < dev->num_abs_axes) {
+				mapping.type = inm_abs_axis;
+				mapping.index = index;
+			} else if (index < dev->num_axes) {
+				mapping.type = inm_rel_axis;
+				mapping.index = index;
+			}
+			break;
+		case 'b':
+			if (index < dev->num_buttons) {
+				mapping.type = inm_button;
+				mapping.index = index;
+			}
+			break;
+		case 'h':
+			// evdev maps hats to hat x and y axes
+			// and supports only 4 hats
+			if (index > 3) {
+				break;
+			}
+			int         mask = strtoul (name + 3, nullptr, 0);
+			int         axis = 0;
+			switch (mask) {
+				case 1: axis = -(ABS_HAT0Y + 2 * index); break;
+				case 2: axis =  (ABS_HAT0X + 2 * index); break;
+				case 4: axis =  (ABS_HAT0Y + 2 * index); break;
+				case 8: axis = -(ABS_HAT0X + 2 * index); break;
+			}
+			if (!axis || abs (axis) > dev->max_abs_axis
+				|| dev->abs_axis_map[abs(axis)] < 0) {
+				break;
+			}
+			mapping.type = inm_abs_axis;
+			mapping.index = dev->abs_axis_map[abs(axis)];
+			mapping.sign = axis < 0 ? -1 : 1;
+			break;
+		default:
+			break;
+	}
+	return mapping;
+}
+
 static in_driver_t in_evdev_driver = {
 	.init = in_evdev_init,
 	.shutdown = in_evdev_shutdown,
@@ -428,6 +547,8 @@ static in_driver_t in_evdev_driver = {
 
 	.get_axis_info = in_evdev_get_axis_info,
 	.get_button_info = in_evdev_get_button_info,
+
+	.gamepad_mapping = in_evdev_gamepad_mapping,
 };
 
 static int

@@ -1,6 +1,8 @@
 #ifndef evdev_inputlib_h
 #define evdev_inputlib_h
 
+#include <stdint.h>
+
 typedef struct {
 	int         num;	///< The high-level index of the button. Always 0-N
 	int         evnum;	///< The low-level index of the button. May be sparse
@@ -23,6 +25,10 @@ typedef struct device_s {
 	char       *name;
 	char       *phys;
 	char       *uniq;
+	uint16_t    bustype;
+	uint16_t    vendor;
+	uint16_t    product;
+	uint16_t    version;
 	int         fd;
 	int         max_button;
 	int        *button_map;

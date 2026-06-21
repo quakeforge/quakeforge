@@ -193,6 +193,7 @@ check_device (const char *path)
 {
 	device_t   *dev;
 	int         fd;
+	struct input_id id;
 
 	fd = open (path, O_RDWR | O_NONBLOCK);
 	if (fd == -1)
@@ -215,6 +216,12 @@ check_device (const char *path)
 	dev->uniq = strdup (get_string (fd, EVIOCGUNIQ, buff));
 	dstring_delete (buff);
 
+	ioctl (fd, EVIOCGID, &id);
+	dev->bustype = id.bustype;
+	dev->vendor = id.vendor;
+	dev->product = id.product;
+	dev->version = id.version;
+
 	setup_buttons(dev);
 	setup_axes(dev);
 
@@ -224,11 +231,14 @@ check_device (const char *path)
 	dev->axis_event = 0;
 	dev->button_event = 0;
 
-
-	//Sys_Printf ("%s:\n", path);
-	//Sys_Printf ("\tname: %s\n", dev->name);
-	//Sys_Printf ("\tbuttons: %d\n", dev->num_buttons);
-	//Sys_Printf ("\taxes: %d\n", dev->num_axes);
+	Sys_MaskPrintf (SYS_input, "%s:\n", path);
+	Sys_MaskPrintf (SYS_input, "\tname: %s\n", dev->name);
+	Sys_MaskPrintf (SYS_input, "\tphys: %s\n", dev->phys);
+	Sys_MaskPrintf (SYS_input, "\tuniq: %s\n", dev->uniq);
+	Sys_MaskPrintf (SYS_input, "\tid: %04x:%04x:%04x:%04x\n",
+					dev->bustype, dev->vendor, dev->product, dev->version);
+	Sys_MaskPrintf (SYS_input, "\tbuttons: %d\n", dev->num_buttons);
+	Sys_MaskPrintf (SYS_input, "\taxes: %d\n", dev->num_axes);
 
 	if (device_add) {
 		device_add (dev);

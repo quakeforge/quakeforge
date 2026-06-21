@@ -1,0 +1,473 @@
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#include <stdio.h>
+#include <string.h>
+
+#include "QF/dstring.h"
+#include "QF/hash.h"
+#include "QF/plist.h"
+#include "QF/sys.h"
+#include "QF/va.h"
+
+#include "QF/input.h"
+#include "QF/input/event.h"
+#include "QF/input/gamepad.h"
+
+#ifdef __linux__
+#define PLATFORM "Linux"
+#elifdef _WIN32
+#define PLATFORM "Windows"
+#endif
+
+typedef struct in_ctrlbind_s {
+	inm_type_t  type;
+	int         axis;
+	int         button;
+	int         sign;
+} in_ctrlbind_t;
+
+typedef struct in_gamepad_s {
+	const char *name;
+	void       *event_data;
+	int         devid;
+	//          leftx, lefty, lefttrigger, rightx, righty, righttrigger
+	//          dphoriz, dpvert
+	in_ctrlbind_t *axis_map;
+	//          a, b, x, y,
+	//          leftshoulder, rightshoulder
+	//          leftstick, rightstick
+	//          back, start, guide
+	//          dpup, dpdown, dpleft, dpright
+	in_ctrlbind_t *button_map;
+	in_ctrlbind_t *hat_map;
+	int           num_hats;
+	int           num_buttons;
+	int           num_axes;
+} in_gamepad_t;
+
+static const char gamecontrollerdb[] = {
+#embed "gamecontrollerdb.txt" suffix(,)
+	0
+};
+
+typedef struct mapping_s {
+	uint16_t    guid[8];
+	uint32_t    name;
+	// horrible naming because they match the gamecontrollerdb.txt names
+	uint32_t    a;
+	uint32_t    b;
+	uint32_t    x;
+	uint32_t    y;
+	uint32_t    leftstick;
+	uint32_t    leftshoulder;
+	uint32_t    lefttrigger;
+	uint32_t    leftx;
+	uint32_t    lefty;
+	uint32_t    rightstick;
+	uint32_t    rightshoulder;
+	uint32_t    righttrigger;
+	uint32_t    rightx;
+	uint32_t    righty;
+	uint32_t    back;
+	uint32_t    guide;
+	uint32_t    start;
+	uint32_t    dpleft;
+	uint32_t    dpright;
+	uint32_t    dpup;
+	uint32_t    dpdown;
+	uint32_t    platform;
+} mapping_t;
+
+typedef struct mapping_field_s {
+	const char *name;
+	int         offset;
+	int         axis;
+	int         button;
+} mapping_field_t;
+
+#define MAPPING(n, a, b) { \
+	.name = #n, \
+	.offset = offsetof (mapping_t, n), \
+	.axis = a, \
+	.button = b, \
+}
+static mapping_field_t mapping_fields[] = {
+	MAPPING (a,            -1,  0),
+	MAPPING (b,            -1,  1),
+	MAPPING (back,         -1,  8),
+	MAPPING (dpdown,        7, 12),
+	MAPPING (dpleft,        6, 13),
+	MAPPING (dpright,       6, 14),
+	MAPPING (dpup,          7, 11),
+	MAPPING (guide,        -1, 10),
+	MAPPING (leftshoulder, -1,  4),
+	MAPPING (leftstick,    -1,  6),
+	MAPPING (lefttrigger,   2, -1),
+	MAPPING (leftx,         0, -1),
+	MAPPING (lefty,         1, -1),
+	MAPPING (platform,     -1, -1),
+	MAPPING (rightshoulder,-1,  5),
+	MAPPING (rightstick,   -1,  7),
+	MAPPING (righttrigger,  5, -1),
+	MAPPING (rightx,        3, -1),
+	MAPPING (righty,        4, -1),
+	MAPPING (start,        -1,  9),
+	MAPPING (x,            -1,  2),
+	MAPPING (y,            -1,  3),
+};
+
+static dstring_t mapping_strings = { .mem = &dstring_default_mem };
+static hashctx_t *hashctx;
+static hashtab_t *mapping_strings_tab;
+static hashtab_t *mapping_devices_tab;
+static int gamepad_driver_handle = -1;
+
+static const char *
+mapping_strings_get_key (const void *_offset, void *data)
+{
+	uint32_t offset = (uintptr_t) _offset;
+	return mapping_strings.str + offset;
+}
+
+static uintptr_t
+mapping_devices_get_hash (const void *_mapping, void *data)
+{
+	const mapping_t *mapping = _mapping;
+	uintptr_t   bustype = mapping->guid[0];
+	uintptr_t   vendor = mapping->guid[2];
+	uintptr_t   product = mapping->guid[4];
+	uintptr_t   version = mapping->guid[6];
+	return (bustype << 48) | (vendor << 32) | (product << 16) | version;
+}
+
+static bool
+mapping_devices_compare (const void *_mapa, const void *_mapb, void *data)
+{
+	const mapping_t *mapa = _mapa;
+	const mapping_t *mapb = _mapb;
+	if (mapa->guid[0] != mapb->guid[0]) {//bustype
+		return false;
+	}
+	if (mapa->guid[2] != mapb->guid[2]) {//vendor id
+		return false;
+	}
+	if (mapa->guid[4] != mapb->guid[4]) {//product id
+		return false;
+	}
+	if (mapa->guid[6] != mapb->guid[6]) {//version
+		return false;
+	}
+	return true;
+}
+
+
+static uint32_t
+add_string (const char *str)
+{
+	uint32_t offset = (uintptr_t) Hash_Find (mapping_strings_tab, str);
+	if (offset) {
+		return offset;
+	}
+	size_t len = strlen (str) + 1;	// include terminating 0
+	offset = mapping_strings.size;
+	dstring_append (&mapping_strings, str, len);
+	Hash_Add (mapping_strings_tab, (void *) (uintptr_t) offset);
+	return offset;
+}
+
+static inline byte
+tohex (char c)
+{
+	// assumes valid hex
+	return (c & 0xf) + ((c > '9') ? 9 : 0);
+}
+
+static int
+mapping_field_cmp (const void *_key, const void *_fld)
+{
+	const char *key = _key;
+	const mapping_field_t *fld = _fld;
+	return strcmp (key, fld->name);
+}
+
+static mapping_field_t *
+find_field (const char *name)
+{
+	return bsearch (name, mapping_fields, countof (mapping_fields),
+					sizeof (mapping_fields[0]), mapping_field_cmp);
+}
+
+static bool
+parse_field (const char *str, byte *mapping)
+{
+	int         len = strlen (str) + 1;
+	char        buf[len];
+	strcpy (buf, str);
+	if (char *inp = strchr (buf, ':')) {
+		*inp++ = 0;
+		char *ctrl = buf;
+		if (strcmp (ctrl, "platform") == 0) {
+			return strcmp (inp, PLATFORM) == 0;
+		}
+		if (ctrl[0] == '+' || ctrl[0] == '-') {
+			ctrl++;
+		}
+		mapping_field_t *field = find_field (ctrl);
+		if (field) {
+			uint32_t inp_offs = add_string (inp);
+			*(uint32_t *)(mapping + field->offset) = inp_offs;
+		}
+	}
+	return true;
+}
+
+static void
+in_gamepad_init (void *data)
+{
+}
+
+static void
+in_gamepad_set_device_event_data (void *device, void *event_data, void *data)
+{
+	in_gamepad_t *gamepad = device;
+	gamepad->event_data = event_data;
+}
+
+static void *
+in_gamepad_get_device_event_data (void *device, void *data)
+{
+	in_gamepad_t *gamepad = device;
+	return gamepad->event_data;
+}
+
+static in_driver_t in_gamepad_driver = {
+	.init = in_gamepad_init,
+	//.shutdown = in_gamepad_shutdown,
+	.set_device_event_data = in_gamepad_set_device_event_data,
+	.get_device_event_data = in_gamepad_get_device_event_data,
+
+	//.axis_info = in_gamepad_axis_info,
+	//.button_info = in_gamepad_button_info,
+
+	//.get_axis_name = in_gamepad_get_axis_name,
+	//.get_axis_num = in_gamepad_get_axis_num,
+
+	//.get_axis_info = in_gamepad_get_axis_info,
+	//.get_button_info = in_gamepad_get_button_info,
+};
+
+void
+IN_Gamepad_Init (void)
+{
+	gamepad_driver_handle = IN_RegisterDriver (&in_gamepad_driver, 0);
+	mapping_strings_tab = Hash_NewTable (251, mapping_strings_get_key,
+										 nullptr, nullptr, &hashctx);
+	dstring_append (&mapping_strings, "", 1);
+
+	mapping_devices_tab = Hash_NewTable (251, nullptr, nullptr, nullptr,
+										 &hashctx);
+	Hash_SetHashCompare (mapping_devices_tab, mapping_devices_get_hash,
+						 mapping_devices_compare);
+
+	for (int i = 0; i < 8; i++) {
+		add_string (va ("a%d", i));
+	}
+	for (int i = 0; i < 16; i++) {
+		add_string (va ("b%d", i));
+	}
+	for (int i = 0; i < 4; i++) {
+		add_string (va ("h0.%d", 1 << i));
+	}
+	for (const char *s = gamecontrollerdb, *e; *s; s = e + (*e != 0)) {
+		bool is_comment = false;
+		bool is_blank = true;
+		for (e = s; *e && *e != '\n'; e++) {
+			if (is_blank && *e == '#') {
+				is_comment = true;
+			}
+			if (*e > ' ') {
+				is_blank = false;
+			}
+		}
+		if (is_comment || is_blank) {
+			continue;
+		}
+		auto item = PL_ParseCSV_len (s, e - s, &hashctx);
+		if (PL_A_NumObjects (item) < 2) {
+			continue;
+		}
+		byte guid_bytes[16] = {};
+		const char *guid_str = PL_String (PL_ObjectAtIndex (item, 0));
+		size_t len = strlen (guid_str);
+		for (size_t i = 0; i < len && i/2 < countof (guid_bytes); i++) {
+			guid_bytes[i / 2] = (guid_bytes[i / 2] << 4) + tohex(guid_str[i]);
+		}
+		mapping_t mapping = {};
+		for (int i = 0; i < 8; i++) {
+			mapping.guid[i] = guid_bytes[i * 2] + (guid_bytes[i * 2 + 1] << 8);
+		}
+		bool save = true;
+		for (int i = 2; i < PL_A_NumObjects (item); i++) {
+			auto str = PL_String (PL_ObjectAtIndex (item, i));
+			if (!parse_field (str, (byte *) &mapping)) {
+				save = false;
+				break;
+			}
+		}
+		if (save) {
+			mapping.name = add_string (PL_String (PL_ObjectAtIndex (item, 1)));
+			mapping_t *map = malloc (sizeof (mapping_t));
+			*map = mapping;
+			Hash_AddElement (mapping_devices_tab, map);
+		}
+		PL_Release (item);
+	}
+	printf ("%zd\n", mapping_strings.size);
+}
+
+in_gamepad_t *
+IN_Gamepad_Add (in_devid_t devid, int deviceid)
+{
+	auto device = IN_GetDevice (deviceid);
+	auto driver = IN_GetDriver (device->driverid);
+	if (!driver->gamepad_mapping) {
+		return nullptr;
+	}
+
+	mapping_t key = {
+		.guid[0] = devid.bustype,
+		.guid[2] = devid.vendor,
+		.guid[4] = devid.product,
+		.guid[6] = devid.version,
+	};
+	mapping_t *mapping = Hash_FindElement (mapping_devices_tab, &key);
+	if (!mapping) {
+		Sys_MaskPrintf (SYS_input, "no mapping for: %04x %04x %04x %04x\n",
+						key.guid[0], key.guid[2], key.guid[4], key.guid[6]);
+		return nullptr;
+	}
+	Sys_MaskPrintf (SYS_input, "found mapping %p\n", mapping);
+	Sys_MaskPrintf (SYS_input, "    %04x %04x %04x %04x %s\n",
+					key.guid[0], key.guid[2], key.guid[4], key.guid[6],
+					mapping_strings.str + mapping->name);
+
+	void *driver_data = IN_GetDriverData (device->driverid);
+
+	int num_axes, num_buttons, num_hats = 0;
+	IN_AxisInfo (deviceid, nullptr, &num_axes);
+	IN_ButtonInfo (deviceid, nullptr, &num_buttons);
+	in_gamepad_t *gamepad = malloc (sizeof (in_gamepad_t));
+	*gamepad = (in_gamepad_t) {
+		.name = strdup ("controller"),
+		.axis_map = calloc (num_axes, sizeof (in_ctrlbind_t)),
+		.button_map = calloc (num_buttons, sizeof (in_ctrlbind_t)),
+		.hat_map = calloc (num_hats, sizeof (in_ctrlbind_t)),
+		.num_axes = num_axes,
+		.num_buttons = num_buttons,
+		.num_hats = num_hats,
+	};
+	gamepad->devid = IN_AddDevice (gamepad_driver_handle, gamepad,
+								   gamepad->name, gamepad->name);
+	for (uint32_t i = 0; i < countof (mapping_fields); i++) {
+		auto field = &mapping_fields[i];
+		if (field->axis < 0 && field->button < 0) {
+			continue;
+		}
+		uint32_t offset = field->offset;
+		auto stroffs = *((byte *)mapping + offset);
+		const char *inp_name = mapping_strings.str + stroffs;
+		auto inp = driver->gamepad_mapping (driver_data, device->device,
+											inp_name);
+		in_ctrlbind_t *binding = nullptr;
+		switch (inp.type) {
+			case inm_none:
+				continue;
+			case inm_abs_axis:
+			case inm_rel_axis:
+				binding = &gamepad->axis_map[inp.index];
+				break;
+			case inm_button:
+				binding = &gamepad->button_map[inp.index];
+				break;
+			case inm_hat:
+				binding = &gamepad->hat_map[inp.index];
+				break;
+		}
+		*binding = (in_ctrlbind_t) {
+			.type = inp.type,
+			.axis = field->axis,
+			.button = field->button,
+			.sign = inp.sign,
+		};
+	}
+	return gamepad;
+}
+
+void
+IN_Gamepad_Remove (in_gamepad_t *gamepad)
+{
+	IN_RemoveDevice (gamepad->devid);
+	free (gamepad->axis_map);
+	free (gamepad->button_map);
+	free (gamepad->hat_map);
+	free ((char *) gamepad->name);
+	free (gamepad);
+}
+
+void
+IN_Gamepad_Event (in_gamepad_t *gamepad, IE_event_t *ie_event)
+{
+	if (ie_event->type == ie_axis) {
+		auto binding = gamepad->axis_map[ie_event->axis.axis];
+		IE_event_t event = {
+			.when = ie_event->when,
+		};
+		if (binding.axis >= 0) {
+			event.type = ie_axis;
+			event.axis = (IE_axis_event_t) {
+				.data = ie_event->axis.data,
+				.devid = gamepad->devid,
+				.axis = binding.axis,
+				.value = ie_event->axis.value,
+			};
+			IE_Send_Event (&event);
+		}
+		if (binding.button >= 0) {
+			event.type = ie_button;
+			event.button = (IE_button_event_t) {
+				.data = ie_event->axis.data,
+				.devid = gamepad->devid,
+				.button = binding.button,
+				.state = ie_event->axis.value * binding.sign > 0,
+			};
+			IE_Send_Event (&event);
+		}
+	} else if (ie_event->type == ie_button) {
+		auto binding = gamepad->button_map[ie_event->button.button];
+		IE_event_t event = {
+			.when = ie_event->when,
+		};
+		if (binding.axis >= 0) {
+			event.type = ie_axis;
+			event.axis = (IE_axis_event_t) {
+				.data = ie_event->button.data,
+				.devid = gamepad->devid,
+				.axis = binding.axis,
+				.value = ie_event->button.state * binding.sign,
+			};
+			IE_Send_Event (&event);
+		}
+		if (binding.button >= 0) {
+			event.type = ie_button;
+			event.button = (IE_button_event_t) {
+				.data = ie_event->button.data,
+				.devid = gamepad->devid,
+				.button = binding.button,
+				.state = ie_event->button.state,
+			};
+			IE_Send_Event (&event);
+		}
+	}
+}

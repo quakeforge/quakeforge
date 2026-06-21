@@ -47,6 +47,20 @@ typedef struct in_buttoninfo_s {
 	int         state;
 } in_buttoninfo_t;
 
+typedef enum {
+	inm_none,
+	inm_abs_axis,
+	inm_rel_axis,
+	inm_button,
+	inm_hat,
+} inm_type_t;
+
+typedef struct in_mapping_s {
+	inm_type_t  type;
+	int         index;
+	int         sign;
+} in_mapping_t;
+
 #include "QF/input/binding.h"
 #include "QF/input/imt.h"
 
@@ -81,6 +95,8 @@ typedef struct in_driver_s {
 					   int *numaxes);
 	void (*button_info) (void *data, void *device, in_buttoninfo_t *buttons,
 						 int *numbuttons);
+	in_mapping_t (*gamepad_mapping) (void *data, void *device,
+									 const char *name);
 	// null means either invalid number or the name is not known
 	const char *(*get_axis_name) (void *data, void *device, int axis_num);
 	const char *(*get_button_name) (void *data, void *device, int button_num);
@@ -105,6 +121,8 @@ typedef struct in_device_s {
 
 int IN_RegisterDriver (in_driver_t *driver, void *data);
 void IN_DriverData (int handlle, void *data);
+void *IN_GetDriverData (int handlle);
+
 typedef struct memhunk_s memhunk_t;
 void IN_Init (memhunk_t *hunk);
 void IN_Init_Cvars (void);
@@ -114,6 +132,9 @@ void IN_LoadConfig (struct plitem_s *config);
 
 int IN_AddDevice (int driver, void *device, const char *name, const char *id);
 void IN_RemoveDevice (int devid);
+//XXX these are not pointer-stable
+in_driver_t *IN_GetDriver (int driverid);
+in_device_t *IN_GetDevice (int deviceid);
 
 void IN_SendConnectedDevices (void);
 int IN_FindDeviceId (const char *id) __attribute__((pure));
