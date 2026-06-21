@@ -8,6 +8,7 @@
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/plist.h"
+#include "QF/pqueue.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -36,6 +37,7 @@ typedef struct in_ctrlmap_s {
 typedef struct in_gamepad_s {
 	const char *name;
 	void       *event_data;
+	int         ctrlid;
 	int         devid;
 	int         parent;
 	in_ctrlbind_t *axis_binding;
@@ -124,6 +126,18 @@ static hashctx_t *hashctx;
 static hashtab_t *mapping_strings_tab;
 static hashtab_t *mapping_devices_tab;
 static int gamepad_driver_handle = -1;
+
+static int
+gamepad_ctrlid_compare (const int *a, const int *b, void *data)
+{
+	return *b - *a;
+}
+
+static struct PQUEUE_TYPE(int) gamepad_freed_ctrlids = {
+	.q = DARRAY_STATIC_INIT (8),
+	.compare = gamepad_ctrlid_compare,
+};
+static int gamepad_next_ctrlid;
 
 static const char *
 mapping_strings_get_key (const void *_offset, void *data)
@@ -578,9 +592,17 @@ IN_Gamepad_Add (in_devid_t devid, int deviceid)
 	int num_axes, num_buttons, num_hats = 0;
 	IN_AxisInfo (deviceid, nullptr, &num_axes);
 	IN_ButtonInfo (deviceid, nullptr, &num_buttons);
+
+	int ctrlid;
+	if (PQUEUE_IS_EMPTY (&gamepad_freed_ctrlids)) {
+		ctrlid = gamepad_next_ctrlid++;
+	} else {
+		ctrlid = PQUEUE_REMOVE (&gamepad_freed_ctrlids);
+	}
 	in_gamepad_t *gamepad = malloc (sizeof (in_gamepad_t));
 	*gamepad = (in_gamepad_t) {
-		.name = strdup ("controller"),
+		.name = nva ("controller:%d", ctrlid),
+		.ctrlid = ctrlid,
 		.parent = deviceid,
 		.axis_binding = calloc (num_axes, sizeof (in_ctrlbind_t)),
 		.button_binding = calloc (num_buttons, sizeof (in_ctrlbind_t)),
@@ -641,6 +663,7 @@ IN_Gamepad_Add (in_devid_t devid, int deviceid)
 void
 IN_Gamepad_Remove (in_gamepad_t *gamepad)
 {
+	PQUEUE_INSERT (&gamepad_freed_ctrlids, gamepad->ctrlid);
 	IN_RemoveDevice (gamepad->devid);
 	free (gamepad->axis_binding);
 	free (gamepad->button_binding);
