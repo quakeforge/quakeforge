@@ -683,7 +683,7 @@ IN_Gamepad_Event (in_gamepad_t *gamepad, IE_event_t *ie_event)
 		if (binding.axis >= 0) {
 			event.type = ie_axis;
 			event.axis = (IE_axis_event_t) {
-				.data = ie_event->axis.data,
+				.data = gamepad->event_data,
 				.devid = gamepad->devid,
 				.axis = binding.axis,
 				.value = ie_event->axis.value,
@@ -693,7 +693,7 @@ IN_Gamepad_Event (in_gamepad_t *gamepad, IE_event_t *ie_event)
 		if (binding.button >= 0) {
 			event.type = ie_button;
 			event.button = (IE_button_event_t) {
-				.data = ie_event->axis.data,
+				.data = gamepad->event_data,
 				.devid = gamepad->devid,
 				.button = binding.button,
 				// FIXME works only for dpad axes
@@ -709,7 +709,7 @@ IN_Gamepad_Event (in_gamepad_t *gamepad, IE_event_t *ie_event)
 		if (binding.axis >= 0) {
 			event.type = ie_axis;
 			event.axis = (IE_axis_event_t) {
-				.data = ie_event->button.data,
+				.data = gamepad->event_data,
 				.devid = gamepad->devid,
 				.axis = binding.axis,
 				.value = ie_event->button.state * binding.sign,
@@ -719,7 +719,7 @@ IN_Gamepad_Event (in_gamepad_t *gamepad, IE_event_t *ie_event)
 		if (binding.button >= 0) {
 			event.type = ie_button;
 			event.button = (IE_button_event_t) {
-				.data = ie_event->button.data,
+				.data = gamepad->event_data,
 				.devid = gamepad->devid,
 				.button = binding.button,
 				.state = ie_event->button.state,
