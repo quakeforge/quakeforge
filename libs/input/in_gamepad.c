@@ -601,7 +601,7 @@ IN_Gamepad_Add (in_devid_t devid, int deviceid)
 	}
 	in_gamepad_t *gamepad = malloc (sizeof (in_gamepad_t));
 	*gamepad = (in_gamepad_t) {
-		.name = nva ("controller:%d", ctrlid),
+		.name = nva ("gamepad:%d", ctrlid),
 		.ctrlid = ctrlid,
 		.parent = deviceid,
 		.axis_binding = calloc (num_axes, sizeof (in_ctrlbind_t)),
