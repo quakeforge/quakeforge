@@ -32,14 +32,7 @@ typedef struct in_gamepad_s {
 	const char *name;
 	void       *event_data;
 	int         devid;
-	//          leftx, lefty, lefttrigger, rightx, righty, righttrigger
-	//          dphoriz, dpvert
 	in_ctrlbind_t *axis_map;
-	//          a, b, x, y,
-	//          leftshoulder, rightshoulder
-	//          leftstick, rightstick
-	//          back, start, guide
-	//          dpup, dpdown, dpleft, dpright
 	in_ctrlbind_t *button_map;
 	in_ctrlbind_t *hat_map;
 	int           num_hats;
@@ -242,20 +235,123 @@ in_gamepad_get_device_event_data (void *device, void *data)
 	return gamepad->event_data;
 }
 
+static void
+in_gamepad_axis_info (void *data, void *device, in_axisinfo_t *axes,
+					  int *numaxes)
+{
+}
+
+static void
+in_gamepad_button_info (void *data, void *device, in_buttoninfo_t *buttons,
+						int *numbuttons)
+{
+}
+
+static const char *in_gampad_axis_names[] = {
+	"left_x",
+	"left_y",
+	"left_trigger",
+	"right_x",
+	"right_y",
+	"right_trigger",
+	"dpad_horizontal",
+	"dpad_vertical",
+};
+static const char *in_gampad_button_names[] = {
+	"a",
+	"b",
+	"x",
+	"y",
+	"left_shoulder",
+	"right_shoulder",
+	"left_stick",
+	"right_stick",
+	"back",
+	"start",
+	"guide",
+	"dpad_up",
+	"dpad_down",
+	"dpad_left",
+	"dpad_right",
+};
+
+static const char *
+in_gamepad_get_axis_name (void *data, void *device, int axis_num)
+{
+	if ((unsigned) axis_num >= countof (in_gampad_axis_names)) {
+		return nullptr;
+	}
+	return in_gampad_axis_names[axis_num];
+}
+
+static const char *
+in_gamepad_get_button_name (void *data, void *device, int button_num)
+{
+	if ((unsigned) button_num >= countof (in_gampad_button_names)) {
+		return nullptr;
+	}
+	return in_gampad_button_names[button_num];
+}
+
+static int
+in_gamepad_get_axis_num (void *data, void *device, const char *axis_name)
+{
+	for (unsigned i = 0; i < countof (in_gampad_axis_names); i++) {
+		if (strcasecmp (in_gampad_axis_names[i], axis_name) == 0) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+static int
+in_gamepad_get_button_num (void *data, void *device, const char *button_name)
+{
+	for (unsigned i = 0; i < countof (in_gampad_button_names); i++) {
+		if (strcasecmp (in_gampad_button_names[i], button_name) == 0) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+static int
+in_gamepad_get_axis_info (void *data, void *device, int axis_num,
+						  in_axisinfo_t *info)
+{
+	if ((unsigned) axis_num >= countof (in_gampad_axis_names)) {
+		return 0;
+	}
+	return 1;
+}
+
+static int
+in_gamepad_get_button_info (void *data, void *device, int button_num,
+							in_buttoninfo_t *info)
+{
+	if ((unsigned) button_num >= countof (in_gampad_button_names)) {
+		return 0;
+	}
+	return 1;
+}
+
 static in_driver_t in_gamepad_driver = {
 	.init = in_gamepad_init,
 	//.shutdown = in_gamepad_shutdown,
 	.set_device_event_data = in_gamepad_set_device_event_data,
 	.get_device_event_data = in_gamepad_get_device_event_data,
 
-	//.axis_info = in_gamepad_axis_info,
-	//.button_info = in_gamepad_button_info,
+	.axis_info = in_gamepad_axis_info,
+	.button_info = in_gamepad_button_info,
 
-	//.get_axis_name = in_gamepad_get_axis_name,
-	//.get_axis_num = in_gamepad_get_axis_num,
+	.get_axis_name = in_gamepad_get_axis_name,
+	.get_button_name = in_gamepad_get_button_name,
 
-	//.get_axis_info = in_gamepad_get_axis_info,
-	//.get_button_info = in_gamepad_get_button_info,
+	.get_axis_num = in_gamepad_get_axis_num,
+	.get_button_num = in_gamepad_get_button_num,
+
+	.get_axis_info = in_gamepad_get_axis_info,
+	.get_button_info = in_gamepad_get_button_info,
 };
 
 void
