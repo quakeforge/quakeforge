@@ -219,7 +219,6 @@ build_job_step_enum (vulkan_ctx_t *ctx, qfv_renderctx_t *rctx,
 			Hash_Add (symtab->tab, &symtab->symbols[ind]);
 
 			num_steps += job->num_steps;
-			printf ("%s = %d\n", symtab->symbols[ind].name, ind);
 		}
 	}
 	{
@@ -255,9 +254,6 @@ build_job_step_enum (vulkan_ctx_t *ctx, qfv_renderctx_t *rctx,
 				};
 				*(int *) symtab->symbols[ind].value = ind;
 				Hash_Add (symtab->tab, &symtab->symbols[ind]);
-
-				printf ("%s = %d\n", symtab->symbols[ind].name,
-						*(int *) symtab->symbols[ind].value);
 			}
 		}
 		{
@@ -268,9 +264,6 @@ build_job_step_enum (vulkan_ctx_t *ctx, qfv_renderctx_t *rctx,
 			};
 			*(int *) symtab->symbols[ind].value = -1;
 			Hash_Add (symtab->tab, &symtab->symbols[ind]);
-
-			printf ("%s = %d\n", symtab->symbols[ind].name,
-					*(int *) symtab->symbols[ind].value);
 		}
 	}
 }
