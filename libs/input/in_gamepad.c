@@ -32,9 +32,9 @@ typedef struct in_gamepad_s {
 	const char *name;
 	void       *event_data;
 	int         devid;
-	in_ctrlbind_t *axis_map;
-	in_ctrlbind_t *button_map;
-	in_ctrlbind_t *hat_map;
+	in_ctrlbind_t *axis_binding;
+	in_ctrlbind_t *button_binding;
+	in_ctrlbind_t *hat_binding;
 	int           num_hats;
 	int           num_buttons;
 	int           num_axes;
@@ -457,9 +457,9 @@ IN_Gamepad_Add (in_devid_t devid, int deviceid)
 	in_gamepad_t *gamepad = malloc (sizeof (in_gamepad_t));
 	*gamepad = (in_gamepad_t) {
 		.name = strdup ("controller"),
-		.axis_map = calloc (num_axes, sizeof (in_ctrlbind_t)),
-		.button_map = calloc (num_buttons, sizeof (in_ctrlbind_t)),
-		.hat_map = calloc (num_hats, sizeof (in_ctrlbind_t)),
+		.axis_binding = calloc (num_axes, sizeof (in_ctrlbind_t)),
+		.button_binding = calloc (num_buttons, sizeof (in_ctrlbind_t)),
+		.hat_binding = calloc (num_hats, sizeof (in_ctrlbind_t)),
 		.num_axes = num_axes,
 		.num_buttons = num_buttons,
 		.num_hats = num_hats,
@@ -482,13 +482,13 @@ IN_Gamepad_Add (in_devid_t devid, int deviceid)
 				continue;
 			case inm_abs_axis:
 			case inm_rel_axis:
-				binding = &gamepad->axis_map[inp.index];
+				binding = &gamepad->axis_binding[inp.index];
 				break;
 			case inm_button:
-				binding = &gamepad->button_map[inp.index];
+				binding = &gamepad->button_binding[inp.index];
 				break;
 			case inm_hat:
-				binding = &gamepad->hat_map[inp.index];
+				binding = &gamepad->hat_binding[inp.index];
 				break;
 		}
 		*binding = (in_ctrlbind_t) {
@@ -505,9 +505,9 @@ void
 IN_Gamepad_Remove (in_gamepad_t *gamepad)
 {
 	IN_RemoveDevice (gamepad->devid);
-	free (gamepad->axis_map);
-	free (gamepad->button_map);
-	free (gamepad->hat_map);
+	free (gamepad->axis_binding);
+	free (gamepad->button_binding);
+	free (gamepad->hat_binding);
 	free ((char *) gamepad->name);
 	free (gamepad);
 }
@@ -516,7 +516,7 @@ void
 IN_Gamepad_Event (in_gamepad_t *gamepad, IE_event_t *ie_event)
 {
 	if (ie_event->type == ie_axis) {
-		auto binding = gamepad->axis_map[ie_event->axis.axis];
+		auto binding = gamepad->axis_binding[ie_event->axis.axis];
 		IE_event_t event = {
 			.when = ie_event->when,
 		};
@@ -541,7 +541,7 @@ IN_Gamepad_Event (in_gamepad_t *gamepad, IE_event_t *ie_event)
 			IE_Send_Event (&event);
 		}
 	} else if (ie_event->type == ie_button) {
-		auto binding = gamepad->button_map[ie_event->button.button];
+		auto binding = gamepad->button_binding[ie_event->button.button];
 		IE_event_t event = {
 			.when = ie_event->when,
 		};
