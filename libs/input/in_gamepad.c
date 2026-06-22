@@ -56,6 +56,7 @@ typedef struct in_gamepad_s {
 
 static const char gamecontrollerdb[] = {
 #embed "gamecontrollerdb.txt" suffix(,)
+#embed "gamecontrollerdb_qf.txt" suffix(,)
 	0
 };
 
