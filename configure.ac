@@ -168,7 +168,7 @@ AC_SUBST(TOPSRC)
 
 case "${host}" in
 	i?86-*-mingw32*|x86_64-w64-mingw32*|x86_64-pc-cygwin*)
-		QF_REQUIRES([
+		QF_REQUIRED([
 			[libsamplerate, HAVE_SAMPLERATE],
 			[flac, HAVE_FLAC],
 			[ogg, HAVE_OGG],
@@ -185,9 +185,7 @@ case "${host}" in
 		])
 	;;
 	*linux*)
-		QF_REQUIRES([
-			[libasound2-dev, HAVE_ALSA],
-			[libjack-jackd2-dev, HAVE_JACK],
+		QF_REQUIRED([
 			[libsamplerate0-dev, HAVE_SAMPLERATE],
 			[libflac-dev, HAVE_FLAC],
 			[libogg-dev, HAVE_OGG],
@@ -196,15 +194,19 @@ case "${host}" in
 			[zlib1g-dev, HAVE_ZLIB],
 			[libcurl4-openssl-dev, HAVE_LIBCURL],
 			[libncurses5-dev, HAVE_NCURSES],
+			[libvulkan-dev, HAVE_VULKAN, https://vulkan.lunarg.com/sdk/home],
+			[libfontconfig-dev, HAVE_FONTCONFIG],
+			[libfreetype-dev, HAVE_FREETYPE],
+			[libharfbuzz-dev, HAVE_HARFBUZZ],
+		])
+		QF_OPTIONAL([
+			[libasound2-dev, HAVE_ALSA],
+			[libjack-jackd2-dev, HAVE_JACK],
 			[libxext-dev, HAVE_X],
 			[libxxf86dga-dev, HAVE_DGA],
 			[libxxf86vm-dev, HAVE_VIDMODE],
 			[libxi-dev, HAVE_XI2],
 			[libxfixes-dev, HAVE_XFIXES],
-			[libvulkan-dev, HAVE_VULKAN, https://vulkan.lunarg.com/sdk/home],
-			[libfontconfig-dev, HAVE_FONTCONFIG],
-			[libfreetype-dev, HAVE_FREETYPE],
-			[libharfbuzz-dev, HAVE_HARFBUZZ],
 			[backtrace, HAVE_BACKTRACE],
 		])
 	;;
