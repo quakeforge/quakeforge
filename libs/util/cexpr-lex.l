@@ -138,6 +138,12 @@ save_text (cex_tok_t *tok, const char *text, size_t textlen, int state,
 	tok->textlen = textlen;
 }
 
+// for debian flex
+#ifndef yystart
+#define yystart() YY_START
+#define yybuffer YY_BUFFER_STATE
+#endif
+
 #define YY_USER_ACTION save_text (yylval, yytext, yyleng, yystart(), context);
 
 %}
