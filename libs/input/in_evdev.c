@@ -556,7 +556,7 @@ static in_driver_t in_evdev_driver = {
 };
 
 static int
-in_evdev_evend_handler (const IE_event_t *event, void *data)
+in_evdev_event_handler (const IE_event_t *event, void *data)
 {
 	if (event->type == ie_app_gain_focus) {
 		evdev_have_focus = 1;
@@ -573,7 +573,7 @@ in_evdev_register_driver (void)
 {
 	evdev_driver_handle = IN_RegisterDriver (&in_evdev_driver, 0);
 	//FIXME probably shouldn't be here
-	IE_Add_Handler (in_evdev_evend_handler, 0);
+	IE_Add_Handler (in_evdev_event_handler, 0);
 }
 
 int in_evdev_force_link;
