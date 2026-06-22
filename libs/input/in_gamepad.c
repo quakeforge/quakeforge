@@ -698,7 +698,12 @@ IN_Gamepad_Add (in_devid_t devid, int deviceid)
 		} else {
 			if (inp.type == inm_button) {
 				binding->out_min = 0;
-				binding->out_max = in_gamepad_max;
+				if (strncmp (field->name, "dp", 2) == 0) {
+					int c = field->name[2];
+					binding->out_max = c == 'u' || c == 'l' ? -1 : 1;
+				} else {
+					binding->out_max = in_gamepad_max;
+				}
 			} else {
 				in_axisinfo_t axis;
 				IN_GetAxisInfo (gamepad->parent, inp.index, &axis);
