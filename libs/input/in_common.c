@@ -650,3 +650,8 @@ IN_ClearStates (void)
 extern int in_evdev_force_link;
 static __attribute__((used)) int *evdev_force_link = &in_evdev_force_link;
 #endif
+
+#ifdef HAVE_XINPUT
+extern int in_xinput_force_link;
+static __attribute__((used)) int *xinput_force_link = &in_xinput_force_link;
+#endif
