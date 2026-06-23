@@ -1,3 +1,8 @@
+#include <GLSL/general.h>
+
+void printf (string fmt, ...)
+	= @intrinsic(OpExtInst, "NonSemantic.DebugPrintf", DebugPrintf);
+
 const uint MaxParticles = 2048;
 
 typedef struct Particle {
@@ -84,7 +89,9 @@ typedef struct Parameters {
 } particleSystem;
 
 [push_constant] @block PhysPushConstants {
-	vec4        gravity;
+	vec4        center;
+	float       gravity;
+	float       min_dist;
 	float       dT;
 } phys;
 
@@ -149,7 +156,10 @@ main ()
 	Parameters  parm = particleParameters.parameters[ind];
 
 	part.pos += phys.dT * part.vel;
-	part.vel += phys.dT * (part.vel * parm.drag + phys.gravity * parm.drag.w);
+	vec3 d = phys.center.w * part.pos.xyz - phys.center.xyz;
+	float d2 = d • d;
+	auto acc = vec4 (-d * phys.gravity * parm.drag.w / (d2 * sqrt (d2)), 0);
+	part.vel += phys.dT * (acc + part.vel * parm.drag);
 
 	part.ramp += phys.dT * parm.ramp.x;
 	part.scale += phys.dT * parm.ramp.z;
@@ -160,13 +170,15 @@ main ()
 		uint ind = part.ramp_base + (int) part.ramp;
 		part.color = particleSystem.part_ramps[ind];
 	}
+	if (d2 < phys.min_dist * phys.min_dist) {
+		part.live = 0;
+	}
 
 	particleStates.particles[ind] = part;
 }
 
 }
 
-#include <GLSL/general.h>
 #include <GLSL/fragment.h>
 #include <GLSL/atomic.h>
 #include <GLSL/image.h>

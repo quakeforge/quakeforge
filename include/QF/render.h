@@ -86,7 +86,9 @@ static_assert (sizeof (partparm_t) == 2 * sizeof(vec4f_t),
 			   "partparm_t wrong size");
 
 typedef struct psystem_s {
-	vec4f_t     gravity;
+	vec4f_t     center;
+	float       gravity;
+	float       min_dist;
 	uint32_t    maxparticles;
 	uint32_t    numparticles;
 	particle_t *particles;

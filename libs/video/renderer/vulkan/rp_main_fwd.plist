@@ -496,7 +496,12 @@ properties = {
 			physics = {
 				descriptorSets = (particle_set);
 				pushConstants = {
-					compute = { gravity = vec4; dT = float; };
+					compute = {
+						center = vec4;
+						gravity = float;
+						min_dist = float;
+						dT = float;
+					};
 				};
 			};
 			update = {

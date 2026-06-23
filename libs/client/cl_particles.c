@@ -160,7 +160,7 @@ particle_new (ptype_t type, int texnum, vec4f_t pos, float scale,
 
 	*parm = particle_params (type);
 	if (p->ramp_base >= 0 && (int) p->ramp < parm->ramp_max) {
-		p->color = rampptr [p->ramp_base + (int) p->ramp];
+		p->color = rampptr[p->ramp_base + (int) p->ramp];
 	}
 	return 1;
 }
@@ -1304,5 +1304,7 @@ CL_Particles_Init (void)
 void
 CL_ParticlesGravity (float gravity)
 {
-	cl_psystem->gravity = (vec4f_t) { 0, 0, -gravity, 0 };
+	cl_psystem->center = (vec4f_t) { 0, 0, -1, 0 };
+	cl_psystem->gravity = -gravity;
+	cl_psystem->min_dist = 0;
 }

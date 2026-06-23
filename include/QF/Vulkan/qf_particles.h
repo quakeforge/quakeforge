@@ -57,7 +57,9 @@ typedef struct particlectx_s {
 
 	mat4f_t    *mat;
 	vec4f_t    *fog;
-	vec4f_t    *gravity;
+	vec4f_t    *center;
+	float      *gravity;
+	float      *min_dist;
 	float      *dT;
 } particlectx_t;
 

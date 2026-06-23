@@ -112,7 +112,9 @@ void
 R_RunParticles (float dT)
 {
 	psystem_t  *ps = &r_psystem;//FIXME
-	vec4f_t     gravity = ps->gravity;
+	vec4f_t     center = ps->center;
+	float       gravity = ps->gravity;
+	float       min_dist = ps->min_dist * ps->min_dist;
 
 	unsigned    j = 0;
 	const int  *ramp = ps->partramps;
@@ -127,16 +129,24 @@ R_RunParticles (float dT)
 			ps->particles[j] = *p;
 			ps->partparams[j] = *parm;
 		}
-		j += 1;
 
 		p->pos += dT * p->vel;
-		p->vel += dT * (p->vel * parm->drag + gravity * parm->drag[3]);
+		vec4f_t d = loadxyzf (center[3] * p->pos - center);
+		float d2 = dotf(d, d)[0];
+		if (d2 < min_dist) {
+			p->live = 0;
+			continue;
+		}
+		vec4f_t acc = -d * gravity * parm->drag[3] / (d2 * sqrtf (d2));
+		p->vel += dT * (acc + p->vel * parm->drag);
 		p->ramp += dT * parm->ramp;
 		p->scale += dT * parm->scale_rate;
 		p->live -= dT;
 		if (p->ramp_base >= 0) {
 			p->color = ramp[p->ramp_base + (int)p->ramp];
 		}
+
+		j += 1;
 	}
 	ps->numparticles = j;
 }

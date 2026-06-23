@@ -353,7 +353,9 @@ particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
 									layout, 0, 1, set, 0, 0);
 
+	*pctx->center = pctx->psystem->center;
 	*pctx->gravity = pctx->psystem->gravity;
+	*pctx->min_dist = pctx->psystem->min_dist;
 	*pctx->dT = vr_data.frametime;
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 
@@ -469,10 +471,12 @@ particle_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	ctx->particle_context = pctx;
 
 	*pctx = (particlectx_t) {
-		.mat     = QFV_GetBlackboardVar (ctx, "Model"),
-		.fog     = QFV_GetBlackboardVar (ctx, "fog"),
-		.gravity = QFV_GetBlackboardVar (ctx, "gravity"),
-		.dT      = QFV_GetBlackboardVar (ctx, "dT"),
+		.mat      = QFV_GetBlackboardVar (ctx, "Model"),
+		.fog      = QFV_GetBlackboardVar (ctx, "fog"),
+		.center   = QFV_GetBlackboardVar (ctx, "center"),
+		.gravity  = QFV_GetBlackboardVar (ctx, "gravity"),
+		.min_dist = QFV_GetBlackboardVar (ctx, "min_dist"),
+		.dT       = QFV_GetBlackboardVar (ctx, "dT"),
 	};
 }
 
