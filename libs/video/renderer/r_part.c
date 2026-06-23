@@ -30,9 +30,7 @@
 
 #include "QF/cvar.h"
 #include "QF/render.h"
-#include "QF/sys.h"
 
-#include "compat.h"
 #include "r_internal.h"
 
 psystem_t   r_psystem;	//FIXME singleton

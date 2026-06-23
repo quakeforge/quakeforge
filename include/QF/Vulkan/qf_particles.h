@@ -2,10 +2,8 @@
 #define __QF_Vulkan_qf_particles_h
 
 #include "QF/darray.h"
-#include "QF/image.h"
-#include "QF/render.h"
 
-#include "QF/Vulkan/command.h"
+typedef struct psystem_s psystem_t;
 
 typedef struct qfv_particle_s {
 	vec4f_t     pos;
@@ -65,7 +63,7 @@ typedef struct particlectx_s {
 
 struct vulkan_ctx_s;
 
-struct psystem_s *Vulkan_ParticleSystem (struct vulkan_ctx_s *ctx);
+psystem_t *Vulkan_ParticleSystem (struct vulkan_ctx_s *ctx);
 void Vulkan_Particles_Init (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_particles_h

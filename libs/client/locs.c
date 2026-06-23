@@ -42,21 +42,13 @@
 #include <limits.h>
 
 #include "QF/dstring.h"
-#include "QF/mathlib.h"
 #include "QF/render.h"
-#include "QF/qtypes.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
 #include "QF/simd/vec4f.h"
 
-#include "QF/plugin/vid_render.h"	//FIXME
-
-#include "compat.h"
-#include "d_iface.h"	//FIXME part_tex_smoke and part_tex_dot
-
-#include "client/effects.h"
 #include "client/locs.h"
 #include "client/particles.h"
 

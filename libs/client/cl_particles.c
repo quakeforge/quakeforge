@@ -37,19 +37,13 @@
 
 #include <stdlib.h>
 
-#include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/mersenne.h"
-#include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
-#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "QF/plugin/vid_render.h"	//FIXME
-#include "QF/scene/entity.h"
-
-#include "compat.h"
 
 #include "client/particles.h"
 #include "client/world.h"

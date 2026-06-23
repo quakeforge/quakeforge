@@ -37,24 +37,14 @@
 
 #include <stdlib.h>
 
-#include "QF/cmd.h"
 #include "QF/cvar.h"
-#include "QF/mersenne.h"
-#include "QF/qargs.h"
-#include "QF/quakefs.h"
 #include "QF/render.h"
-#include "QF/sys.h"
-#include "QF/va.h"
-
-#include "QF/scene/entity.h"
 
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_particles.h"
 #include "QF/GL/qf_textures.h"
-#include "QF/GL/qf_vid.h"
 
-#include "compat.h"
 #include "r_internal.h"
 #include "varrays.h"
 
