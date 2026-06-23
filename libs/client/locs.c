@@ -42,7 +42,7 @@
 #include <limits.h>
 
 #include "QF/dstring.h"
-#include "QF/render.h"
+#include "QF/particle.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"

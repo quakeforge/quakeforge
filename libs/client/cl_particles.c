@@ -39,8 +39,8 @@
 
 #include "QF/cvar.h"
 #include "QF/mersenne.h"
+#include "QF/particle.h"
 #include "QF/quakefs.h"
-#include "QF/render.h"
 #include "QF/va.h"
 
 #include "QF/plugin/vid_render.h"	//FIXME

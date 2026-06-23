@@ -38,6 +38,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/particle.h"
 #include "QF/render.h"
 #include "QF/va.h"
 

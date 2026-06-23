@@ -38,7 +38,7 @@
 #include <stdlib.h>
 
 #include "QF/cvar.h"
-#include "QF/render.h"
+#include "QF/particle.h"
 
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"

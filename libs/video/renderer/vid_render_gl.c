@@ -29,6 +29,7 @@
 #endif
 
 #include "QF/image.h"
+#include "QF/particle.h"
 
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"

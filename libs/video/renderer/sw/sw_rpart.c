@@ -36,7 +36,7 @@
 # include <strings.h>
 #endif
 
-#include "QF/render.h"
+#include "QF/particle.h"
 
 #include "r_internal.h"
 

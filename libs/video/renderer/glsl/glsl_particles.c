@@ -39,7 +39,7 @@
 
 #include "QF/cvar.h"
 #include "QF/image.h"
-#include "QF/render.h"
+#include "QF/particle.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"

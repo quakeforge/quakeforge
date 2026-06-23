@@ -37,7 +37,7 @@
 
 #include <stdlib.h>
 
-#include "QF/render.h"
+#include "QF/particle.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"

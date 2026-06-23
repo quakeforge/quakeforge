@@ -29,7 +29,7 @@
 #endif
 
 #include "QF/cvar.h"
-#include "QF/render.h"
+#include "QF/particle.h"
 
 #include "r_internal.h"
 
