@@ -169,11 +169,7 @@ is_lvalue (const expr_t *expr)
 		case ex_array:
 			return true;
 		case ex_xvalue:
-			bug (expr, "should xvalue happen here?");
-			if (expr->xvalue.lvalue) {
-				return is_lvalue (expr->xvalue.expr);
-			}
-			return false;
+			return expr->xvalue.lvalue;
 		case ex_count:
 			internal_error (expr, "invalid expression");
 	}
