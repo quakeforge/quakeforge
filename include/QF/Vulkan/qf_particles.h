@@ -32,8 +32,6 @@ typedef struct qfv_particle_system_s {
 static_assert (sizeof (qfv_particle_system_t) == 4 * sizeof (uint32_t));
 
 typedef struct particleframe_s {
-	VkEvent     physicsEvent;
-	VkEvent     updateEvent;
 	VkBuffer    states;
 	VkBuffer    params;
 	VkBuffer    system;
