@@ -29,9 +29,24 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/ecs.h"
+#include "QF/mersenne.h"
 #include "QF/particle.h"
 
 #include "r_internal.h"
+
+typedef bool (*pemitter_func_f) (ecs_system_t *sys, ecs_pool_t *pool,
+								 uint32_t ind, float dT);
+
+static const component_t pemitter_components[pemitter_comp_count] = {
+	[pemitter_plane] = {
+		.size = sizeof (pe_plane_t),
+		.name = "plane",
+	},
+};
+static ecs_system_t pemitter_sys;
+static ecs_system_t scene_sys;
+static mtstate_t pemitter_mt;
 
 psystem_t   r_psystem;	//FIXME singleton
 int r_particles;
@@ -99,6 +114,57 @@ R_MaxParticlesCheck (void)
 	R_ClearParticles ();
 }
 
+static void
+r_particles_nearclip_f (void *data, const cvar_t *cvar)
+{
+	r_particles_nearclip = bound (r_nearclip, r_particles_nearclip, r_farclip);
+}
+
+static void
+r_particles_f (void *data, const cvar_t *cvar)
+{
+	R_MaxParticlesCheck ();
+}
+
+static void
+r_particles_max_f (void *data, const cvar_t *cvar)
+{
+	R_MaxParticlesCheck ();
+}
+
+void
+R_Particles_Init_Cvars (void)
+{
+	Cvar_Register (&r_particles_cvar, r_particles_f, 0);
+	Cvar_Register (&r_particles_max_cvar, r_particles_max_f, 0);
+	Cvar_Register (&r_particles_nearclip_cvar, r_particles_nearclip_f, 0);
+}
+
+void
+R_Particles_Init (ecs_registry_t *reg)
+{
+	pemitter_sys = (ecs_system_t) {
+		.reg = reg,
+		.base = ECS_RegisterComponents (reg, pemitter_components,
+										pemitter_comp_count),
+	};
+	mtwist_seed (&pemitter_mt, 0xdeadbeef);
+}
+
+void
+R_Particles_NewScene (scene_t *scene)
+{
+	if (scene) {
+		scene_sys = (ecs_system_t) {
+			.reg = scene->reg,
+			.base = scene->base,
+		};
+		scene->psys_base = pemitter_sys.base;
+	} else {
+		scene_sys = (ecs_system_t) {};
+	}
+}
+
 void
 R_ClearParticles (void)
 {
@@ -106,10 +172,9 @@ R_ClearParticles (void)
 	ps->numparticles = 0;
 }
 
-void
-R_RunParticles (float dT)
+static void
+psystem_run (psystem_t *ps, float dT)
 {
-	psystem_t  *ps = &r_psystem;//FIXME
 	vec4f_t     center = ps->center;
 	float       gravity = ps->gravity;
 	float       min_dist = ps->min_dist * ps->min_dist;
@@ -150,28 +215,124 @@ R_RunParticles (float dT)
 	ps->numparticles = j;
 }
 
-static void
-r_particles_nearclip_f (void *data, const cvar_t *cvar)
+static inline int psystem_new (psystem_t *ps)
 {
-	r_particles_nearclip = bound (r_nearclip, r_particles_nearclip, r_farclip);
+	if (ps->numparticles >= ps->maxparticles) {
+		return -1;
+	}
+	return ps->numparticles++;
 }
 
-static void
-r_particles_f (void *data, const cvar_t *cvar)
+static inline bool
+pemitter_update (pemitter_t *emitter, float dT)
 {
-	R_MaxParticlesCheck ();
+	if (emitter->rate <= 0) {
+		return false;
+	}
+	return true;
 }
 
-static void
-r_particles_max_f (void *data, const cvar_t *cvar)
+static inline uint32_t
+pemitter_count (pemitter_t *emitter, float dT)
 {
-	R_MaxParticlesCheck ();
+	if (emitter->rate <= 0) {
+		return -emitter->rate;
+	}
+	uint32_t count = 0;
+	emitter->timer += dT;
+	if (emitter->timer > 0) {
+		count = emitter->timer * emitter->rate;
+		emitter->timer -= count / emitter->rate;
+	}
+	return count;
+}
+
+static bool
+pemit_plane (ecs_system_t *sys, ecs_pool_t *pool, uint32_t ind, float dT)
+{
+	auto plane = &((pe_plane_t *) pool->data) [ind];
+	psystem_t  *ps = &r_psystem;//FIXME
+	uint32_t count = pemitter_count (&plane->base, dT);
+
+	entity_t ent = {
+		.reg = scene_sys.reg,
+		.id = pool->dense[ind],
+		.base = scene_sys.base,
+	};
+	auto xform = Entity_Transform (ent);
+	auto mat = Transform_GetWorldMatrixPtr (xform);
+
+	while (count-- > 0) {
+		int pind = psystem_new (ps);
+		if (pind < 0) {
+			break;
+		}
+		auto p = &ps->particles[pind];
+		auto param = &ps->partparams[pind];
+
+		vec4f_t pos;
+		if (plane->square) {
+			float u = mtwist_rand_m1_1 (&pemitter_mt);
+			float v = mtwist_rand_m1_1 (&pemitter_mt);
+			pos = u * loadvec3f (plane->u) + v * loadvec3f (plane->v);
+		} else {
+			float a = M_PI * mtwist_rand_m1_1 (&pemitter_mt);
+			float r = mtwist_rand_0_1 (&pemitter_mt);
+			r = sqrtf (r);
+			float x = r * cos(a);
+			float y = r * sin(a);
+			pos = x * loadvec3f (plane->u) + y * loadvec3f (plane->v);
+		}
+		pos[3] = 1;
+		vec4f_t vel = {};
+		for (int i = 0; i < 3; i++) {
+			if (plane->vel[i]) {
+				vel[i] = mtwist_rand_0_1 (&pemitter_mt) * plane->vel[i];
+			}
+		}
+
+		*p = (particle_t) {
+			.pos = mvmulf (mat, pos),
+			.vel = mvmulf (mat, vel),
+			.color = 0xfe,
+			.ramp_base = plane->base.ramp_base,
+			.alpha = 1,
+			.tex = part_tex_dot,
+			.ramp = mtwist_rand_0_1 (&pemitter_mt) * plane->base.ramp_range,
+			.scale = 0.02,
+			.live = 60,
+		};
+		*param = (partparm_t) {
+			.drag = { -0.05, -0.05, -0.05, 1 },
+			.ramp_max = plane->base.ramp_range,
+		};
+	}
+
+	return pemitter_update (&plane->base, dT);
 }
 
 void
-R_Particles_Init_Cvars (void)
+R_Particles_RunEmitters (float dT)
 {
-	Cvar_Register (&r_particles_cvar, r_particles_f, 0);
-	Cvar_Register (&r_particles_max_cvar, r_particles_max_f, 0);
-	Cvar_Register (&r_particles_nearclip_cvar, r_particles_nearclip_f, 0);
+	static pemitter_func_f emit_func[pemitter_comp_count] = {
+		[pemitter_plane] = pemit_plane,
+	};
+	auto reg = pemitter_sys.reg;
+	for (int i = 0; i < pemitter_comp_count; i++) {
+		uint32_t c = pemitter_sys.base + i;
+		auto pool = &reg->comp_pools[c];
+		for (uint32_t j = 0; j < pool->count; j++) {
+			while (!emit_func[i] (&pemitter_sys, pool, j, dT)) {
+				uint32_t ent = pool->dense[j];
+				Ent_RemoveComponent (ent, c, reg);
+			}
+		}
+	}
+}
+
+void
+R_RunParticles (float dT)
+{
+	psystem_t  *ps = &r_psystem;//FIXME
+	psystem_run (ps, dT);
 }

@@ -299,6 +299,7 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs,
 	if (scr_skipupdate || !scr_initialized) {
 		return;
 	}
+	R_Particles_RunEmitters (r_data->frametime);
 
 	if (r_timegraph || r_speeds || r_dspeeds) {
 		r_time1 = Sys_DoubleTime ();
@@ -503,6 +504,7 @@ void
 SCR_NewScene (scene_t *scene)
 {
 	qfZoneScoped (true);
+	R_Particles_NewScene (scene);
 	r_refdef.scene = scene;
 	auto hunk = r_refdef.hunk;
 	if (scene) {

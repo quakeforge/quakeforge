@@ -96,6 +96,33 @@ typedef struct psystem_s {
 	int         points_only;
 } psystem_t;
 
+// base for particle emitters
+typedef struct pemitter_s {
+	uint32_t    psystem;	// FIXME currently always 0
+	int16_t     ramp_base;	// index into psystem_t.partramps
+	int16_t     ramp_range;	// number of elements on ramp
+	float       rate;		// emission rate (particles/s).
+	float       timer;		// state for emission rate
+} pemitter_t;
+
+typedef struct pe_plane_s {
+	pemitter_t  base;
+	vec3_t      u;
+	vec3_t      v;
+	vec3_t      vel;
+	bool        square;		// false = circular
+	int8_t      dist;		// exponent for pdf
+} pe_plane_t;
+
+enum {
+	pemitter_plane,
+
+	pemitter_comp_count,
+};
+
+typedef struct ecs_registry_s ecs_registry_t;
+typedef struct scene_s scene_t;
+
 bool R_Trail_Valid (psystem_t *system, uint32_t trailid) __attribute__((pure));
 uint32_t R_Trail_Create (psystem_t *system, int num_points, vec4f_t start);
 void R_Trail_Update (psystem_t *system, uint32_t trailid, vec4f_t pos);
@@ -105,7 +132,11 @@ void R_Trails_Init_Cvars (void);
 void R_ClearTrails (void);
 void R_RunTrails (float dT);
 
+void R_Particles_NewScene (scene_t *scene);
 void R_RunParticles (float dT);
+void R_Particles_RunEmitters (float dT);
+void R_Particles_Init (ecs_registry_t *reg);
 void R_Particles_Init_Cvars (void);
 void R_ClearParticles (void);
+
 #endif//__QF_particle_h

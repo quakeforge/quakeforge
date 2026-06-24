@@ -41,6 +41,7 @@
 #include "QF/cmem.h"
 #include "QF/hash.h"
 #include "QF/model.h"
+#include "QF/particle.h"
 #include "QF/progs.h"
 #include "QF/render.h"
 
@@ -59,6 +60,8 @@ typedef struct rua_scene_s {
 	struct rua_scene_s *next;
 	struct rua_scene_s **prev;
 	scene_t    *scene;
+	psystem_t  *psystem;
+	int         partramps[8];
 } rua_scene_t;
 
 typedef struct rua_lighting_s {
@@ -222,6 +225,16 @@ bi (Scene_NewScene)
 	rua_scene_t *scene = rua_scene_new (res);
 
 	scene->scene = Scene_NewScene (0);
+	scene->psystem = r_funcs->ParticleSystem ();
+	scene->psystem->center = (vec4f_t) { 0, 0, -1, 0 };
+	scene->psystem->gravity = 800;	// default for quake
+	scene->psystem->min_dist = 0;
+	scene->psystem->partramps = scene->partramps;
+	scene->psystem->partramps_count = countof (scene->partramps);
+	for (int i = 0; i < 8; i++) {
+		scene->partramps[i] = (int[]){0xef, 0xed, 0xeb, 0xe9,
+									  0xe7, 0xe5, 0xe3, 0xe1}[i];
+	}
 
 	scene->next = res->scenes;
 	if (res->scenes) {
@@ -819,6 +832,40 @@ bi (Light_EnableSun)
 	Light_EnableSun (ldata->ldata);
 }
 
+bi (Particles_SetGravitry)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	rua_scene_t *scene = rua_scene_get (res, P_ULONG (pr, 0));
+	scene->psystem->center = P_PACKED (pr, pr_vec4_t, 1);
+	scene->psystem->gravity = P_FLOAT (pr, 2);
+	scene->psystem->min_dist = P_FLOAT (pr, 3);
+}
+
+bi (Entity_AttachPlane)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	entity_t    ent = rua_entity_get (res, ent_id);
+	pr_ulong_t  scene_id = ent_id & 0xffffffff;
+	// bad scene caught above
+	rua_scene_t *scene = rua_scene_get (res, scene_id);
+
+	pe_plane_t plane = {
+		.base = {
+			.ramp_base = 0,
+			.ramp_range = 8,
+			.rate = 5000,
+		},
+		.u = { 1, 0, 0 },
+		.v = { 0, 1, 0 },
+		.vel = { 0.5, 0.5, 0.5 },
+	};
+	uint32_t c_plane = scene->scene->psys_base + pemitter_plane;
+	Ent_SetComponent (ent.id, c_plane, ent.reg, &plane);
+}
+
 #undef bi
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
@@ -883,6 +930,9 @@ static builtin_t builtins[] = {
 	bi(Light_AddLight,              5, p(ulong),// really, 3
 				p(vec4), p(vec4), p(vec4), p(vec4), p(int)),
 	bi(Light_EnableSun,             1, p(ulong)),
+
+	bi(Particles_SetGravitry,       4, p(ulong), p(vec4), p(float), p(float)),
+	bi(Entity_AttachPlane,          1, p(ulong)),
 
 	{0}
 };

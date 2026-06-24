@@ -113,6 +113,10 @@ void setevents (int (func)(struct IE_event_s *, void *), void *data) = #0;
 void setctxcbuf (int ctx) = #0;
 void addcbuftxt (string txt) = #0;
 
+void Particles_SetGravitry (scene_t scene, vec4 center, float gravity,
+							float min_dist) = #0;
+void Entity_AttachPlane (entity_t ent) = #0;
+
 void Gizmo_AddSphere (vec4 c, float r, vec4 color) = #0;
 void Gizmo_AddCapsule (vec4 p1, vec4 p2, float r, vec4 color) = #0;
 void Gizmo_AddBrush (vec4 orig, vec4 mins, vec4 maxs,
@@ -1279,6 +1283,13 @@ main (int argc, string *argv)
 
 	auto earth_ent = create_orrery (planetary_queue, [main_window scene]);
 
+	Particles_SetGravitry ([main_window scene], { 0, 0, 3, 1}, 3, 0.25);
+	auto emitter = Scene_CreateEntity ([main_window scene]);
+	Transform_SetLocalTransform (Entity_GetTransform (emitter),
+								 {1, 1, 1, 1},
+									 {0, 0.707, 0, 0.707}, { 3, 0, 3, 1});
+	Entity_AttachPlane (emitter);
+
 	//create_cube ();
 	while (true) {
 		num_collider_ents = 0;
@@ -1299,6 +1310,8 @@ main (int argc, string *argv)
 				fish = true;
 			}
 		}
+
+		Gizmo_AddSphere ({0,0,3,1}, 0.25, vec4(0,1,0,0.2));
 
 		update_orrery (earth_ent, realtime);
 
