@@ -45,14 +45,6 @@ typedef enum {
 
 struct entity_s;
 
-void R_Trails_Init (void);
-void R_Trails_Init_Cvars (void);
-void R_ClearTrails (void);
-void R_RunTrails (float dT);
-
-void R_RunParticles (float dT);
-void R_Particles_Init_Cvars (void);
-void R_ClearParticles (void);
 void R_InitSprites (void);
 
 #endif // _R_DYNAMIC_H

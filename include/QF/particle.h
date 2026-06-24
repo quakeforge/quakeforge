@@ -100,5 +100,12 @@ bool R_Trail_Valid (psystem_t *system, uint32_t trailid) __attribute__((pure));
 uint32_t R_Trail_Create (psystem_t *system, int num_points, vec4f_t start);
 void R_Trail_Update (psystem_t *system, uint32_t trailid, vec4f_t pos);
 void R_Trail_Destroy (psystem_t *system, uint32_t trailid);
+void R_Trails_Init (void);
+void R_Trails_Init_Cvars (void);
+void R_ClearTrails (void);
+void R_RunTrails (float dT);
 
+void R_RunParticles (float dT);
+void R_Particles_Init_Cvars (void);
+void R_ClearParticles (void);
 #endif//__QF_particle_h

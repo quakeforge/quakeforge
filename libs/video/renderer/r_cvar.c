@@ -35,8 +35,8 @@
 
 #include "QF/cvar.h"
 #include "QF/model.h"
+#include "QF/particle.h"
 #include "QF/qendian.h"
-#include "QF/render.h"
 
 #include "compat.h"
 #include "r_internal.h"

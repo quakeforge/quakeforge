@@ -39,8 +39,8 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/particle.h"
 #include "QF/qtypes.h"
-#include "QF/render.h"
 #include "QF/sys.h"
 
 #include "QF/plugin/general.h"
