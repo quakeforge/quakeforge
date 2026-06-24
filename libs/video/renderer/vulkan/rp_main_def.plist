@@ -545,7 +545,7 @@ properties = {
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
 				{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
-				{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 32; },
+				{ location = 2; binding = 0; format = r32g32b32a32_uint; offset = 32; },
 				{ location = 3; binding = 0; format = r32g32b32a32_sfloat; offset = 48; },
 			);
 		};

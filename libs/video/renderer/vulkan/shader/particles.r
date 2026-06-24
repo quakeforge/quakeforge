@@ -291,7 +291,7 @@ main (void)
 @namespace in {
 	[in(0)] vec4 position;
 	[in(1)] vec4 velocity;
-	[in(2)] vec4 color;
+	[in(2)] uvec4 color;
 	[in(3)] vec4 ramp;
 	[in("ViewIndex")] int gl_ViewIndex;
 }
@@ -309,13 +309,13 @@ main (void)
 void
 main (void)
 {
-	uint        c = floatBitsToInt (in.color.x);
+	uint        c = in.color.x;
 	uint        x = c & 0x0f;
 	uint        y = (c >> 4) & 0x0f;
 	// geometry shader will take care of Projection
 	out.position = View[in.gl_ViewIndex] * (Model * in.position);
 	out.velocity = View[in.gl_ViewIndex] * (Model * in.velocity);
-	out.color = texture (Palette, vec2 (x, y) / 15.0);
+	out.color = texture (Palette, (vec2 (x, y) + 0.5) / 16.0);
 	out.ramp = in.ramp;
 }
 
