@@ -1582,7 +1582,13 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 			internal_error (a, "no arg def for %d", i);
 		}
 		const expr_t *out_expr = new_def_expr (out);
-		const expr_t *assign = assign_expr (dst_expr, out_expr);
+		const expr_t *assign = nullptr;
+		if (dst_expr->type == ex_xvalue && dst_expr->xvalue.assign) {
+			auto xvalue = dst_expr->xvalue;
+			assign = xvalue.assign (xvalue.expr, out_expr);
+		} else {
+			assign = assign_expr (dst_expr, out_expr);
+		}
 		sblock = statement_single (sblock, assign);
 	}
 	return sblock;
