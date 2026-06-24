@@ -223,61 +223,6 @@ main (void)
 #include "matrices.h"
 ;
 
-@namespace geom {
-
-#include <GLSL/geometry.h>
-
-[in("ViewIndex")] int gl_ViewIndex;
-
-@namespace in {
-	[in("Position")] vec4 position[];// does this work for other primitives?
-	[in(0)] vec4 velocity[];
-	[in(1)] vec4 color[];
-	[in(2)] vec4 ramp[];
-}
-
-@namespace out {
-	[out("Position")] vec4 position;
-	[out(0)] vec4 uv_tr;
-	[out(1)] vec4 color;
-}
-
-void
-emit_point (const vec4 pos, const float s,
-			const vec4 d, const vec4 tr, const vec4 c)
-{
-	vec4 p = pos + s * d;
-	out.position = Projection3d * p;
-	out.uv_tr = d + tr;
-	out.color = c;
-	EmitVertex ();
-}
-
-[shader(Geometry,
-		InputPoints,
-		OutputTriangleStrip,
-		OutputVertices=4,
-		Invocations=1)]
-[capability(MultiView)]
-[capability(Geometry)]
-void
-main (void)
-{
-	vec4        pos = in.position[0];
-	vec4        tr = vec4 (0, 0, in.ramp[0].xy);
-	float       s = in.ramp[0].z;
-	vec4        c = in.color[0];
-
-	emit_point (pos, s, vec4 (-1,  1, 0, 0), tr, c);
-	emit_point (pos, s, vec4 (-1, -1, 0, 0), tr, c);
-	emit_point (pos, s, vec4 ( 1,  1, 0, 0), tr, c);
-	emit_point (pos, s, vec4 ( 1, -1, 0, 0), tr, c);
-
-	EndPrimitive ();
-}
-
-}
-
 @namespace vert {
 
 #include <GLSL/texture.h>
@@ -294,12 +239,12 @@ main (void)
 	[in(2)] uvec4 color;
 	[in(3)] vec4 ramp;
 	[in("ViewIndex")] int gl_ViewIndex;
+	[in("VertexIndex")] int gl_VertexIndex;
 }
 
 @namespace out {
-	[out(0)] vec4 velocity;
+	[out(0)] vec4 uv_tr;
 	[out(1)] vec4 color;
-	[out(2)] vec4 ramp;
 
 	[out("Position")] vec4 position;
 }
@@ -312,11 +257,30 @@ main (void)
 	uint        c = in.color.x;
 	uint        x = c & 0x0f;
 	uint        y = (c >> 4) & 0x0f;
-	// geometry shader will take care of Projection
-	out.position = View[in.gl_ViewIndex] * (Model * in.position);
-	out.velocity = View[in.gl_ViewIndex] * (Model * in.velocity);
+
+	float vx = (in.gl_VertexIndex & 2);
+	float vy = (in.gl_VertexIndex & 1);
+	float s = in.ramp.z;
+
+	vec2 v = (View[in.gl_ViewIndex] * (Model * in.velocity)).xy;
+	float k = length(v);
+	mat2 vs;
+	if (k > 0.01) {
+		v /= k;
+		k = sqrt(sqrt(k));
+		vs = mat2 (1 + k * v.x * v.x, k * v.x * v.y,
+				   k * v.x * v.y, 1 + k * v.y * v.y);
+	} else {
+		vs = mat2 (1);
+	}
+
+	auto d = vec2 (2, 4) * vec2 (vx, vy) - vec2 (1, 1);
+	vec4 pos = View[in.gl_ViewIndex] * (Model * in.position);
+	auto p = vec4(s * (vs * d), 0, 0) + pos;
+
+	out.position = Projection3d * p;
+	out.uv_tr = vec4 (d, in.ramp.xy);
 	out.color = texture (Palette, (vec2 (x, y) + 0.5) / 16.0);
-	out.ramp = in.ramp;
 }
 
 }

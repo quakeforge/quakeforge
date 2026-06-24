@@ -242,7 +242,7 @@ update_particles (const exprval_t **p, exprval_t *result, exprctx_t *ectx)
 
 	qfv_particle_system_t *system = QFV_PacketExtend (packet, size);
 	*system = (qfv_particle_system_t) {
-		.vertexCount = 1,
+		.vertexCount = 4,
 		.particleCount = numParticles,
 	};
 	auto particles = (qfv_particle_t *) ((byte *) system + partoffs);

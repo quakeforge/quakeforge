@@ -622,11 +622,6 @@ render_graph = {
 					name = vert.main;
 					module = $builtin/particles.r;
 				};
-				geometry = {
-					stage = geometry;
-					name = geom.main;
-					module = $builtin/particles.r;
-				};
 				fragment = {
 					stage = fragment;
 					name = frag.main;
@@ -645,7 +640,7 @@ render_graph = {
 				);
 			};
 			inputAssembly = {
-				topology = point_list;
+				topology = triangle_fan;
 				primitiveRestartEnable = false;
 			};
 			layout = {
@@ -868,7 +863,7 @@ render_graph = {
 					binding = 0;
 					descriptorType = uniform_buffer;
 					descriptorCount = 1;
-					stageFlags = vertex|geometry|fragment;
+					stageFlags = vertex|fragment;
 				},
 			);
 		};
@@ -1417,7 +1412,6 @@ render_graph = {
 							);
 							stages = (
 								$particle.shader.vertex,
-								$particle.shader.geometry,
 								$particle.shader.fragment,
 							);
 							vertexInput = $particle.vertexInput;
