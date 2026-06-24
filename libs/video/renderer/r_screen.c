@@ -240,6 +240,7 @@ render_side (int side)
 void
 SCR_UpdateScreen_legacy (SCR_Func *scr_funcs, void *scrf_data)
 {
+	R_RunParticles (r_data->frametime);
 	if (scr_fisheye && !fisheye_cube_map) {
 		fisheye_cube_map = r_funcs->create_cube_map (r_data->vid->height);
 	}
@@ -294,7 +295,6 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs,
 				  void *scrf_data)
 {
 	qfZoneNamed (zone, true);
-	R_RunParticles (r_data->frametime);
 
 	if (scr_skipupdate || !scr_initialized) {
 		return;
