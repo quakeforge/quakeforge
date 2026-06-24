@@ -2346,6 +2346,13 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 			align = type_align (ptr_type) * sizeof (pr_type_t);
 		}
 		dst = spirv_emit_expr (ptr, ctx);
+	} else if (dst_expr->type == ex_xvalue && dst_expr->xvalue.lvalue) {
+		auto xvalue = dst_expr->xvalue;
+		if (xvalue.assign) {
+			auto expr = xvalue.assign (xvalue.expr, src_expr);
+			return spirv_emit_expr (expr, ctx);
+		}
+		dst = spirv_emit_expr (xvalue.expr, ctx);
 	}
 
 	if (!dst) {
