@@ -335,7 +335,7 @@ particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	*pctx->dT = vr_data.frametime;
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 
-	dfunc->vkCmdDispatch (cmd, MaxParticles, 1, 1);
+	dfunc->vkCmdDispatch (cmd, (MaxParticles + 63) / 64, 1, 1);
 	memory_barrier (ctx, cmd);
 }
 

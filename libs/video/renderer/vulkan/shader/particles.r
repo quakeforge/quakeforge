@@ -144,7 +144,7 @@ main ()
 
 @namespace physics {
 
-[shader(GLCompute, LocalSize=[1,1,1])]
+[shader(GLCompute, LocalSize=[64,1,1])]
 void
 main ()
 {
