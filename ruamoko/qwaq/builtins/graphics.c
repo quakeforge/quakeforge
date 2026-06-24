@@ -473,6 +473,7 @@ bi(refresh)
 	graphics_resources_t *res = _res;
 	res->con_realtime = Sys_DoubleTime () - res->basetime;
 	res->con_frametime = res->con_realtime - res->old_conrealtime;
+	r_data->frametime = res->con_realtime - res->old_conrealtime;
 	res->old_conrealtime = res->con_realtime;
 	IN_ProcessEvents ();
 	if (!res->debug) {
