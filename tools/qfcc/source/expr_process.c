@@ -467,9 +467,11 @@ undefined_symbol (const expr_t *expr, rua_ctx_t *ctx)
 			break;
 		}
 	}
-	sym->sy_type = sy_expr;
-	sym->expr = new_nil_expr ();
-	symtab_addsymbol (symtab, sym);
+	if (!sym->table) {
+		sym->sy_type = sy_expr;
+		sym->expr = new_nil_expr ();
+		symtab_addsymbol (symtab, sym);
+	}
 	return error (expr, "undefined symbol `%s`", sym->name);
 }
 
