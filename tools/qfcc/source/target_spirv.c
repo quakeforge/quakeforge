@@ -2825,13 +2825,16 @@ spirv_intrinsic (const expr_t *e, spirvctx_t *ctx)
 			start = 2;
 		}
 	}
-	unsigned tid = spirv_Type (intr.res_type, ctx);
-	unsigned id = spirv_id (ctx);
 
+	unsigned id = 0;
 	auto insn = spirv_new_insn (op, 1 + start + count, ctx->code_space, ctx);
-	INSN (insn, 1) = tid;
-	INSN (insn, 2) = id;
-	memcpy (&INSN (insn, 3), op_ids, count * sizeof (op_ids[0]));
+	if (!is_void (intr.res_type)) {
+		unsigned tid = spirv_Type (intr.res_type, ctx);
+		id = spirv_id (ctx);
+		INSN (insn, 1) = tid;
+		INSN (insn, 2) = id;
+	}
+	memcpy (&INSN (insn, 1 + start), op_ids, count * sizeof (op_ids[0]));
 	return id;
 }
 
