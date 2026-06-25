@@ -1,0 +1,85 @@
+{
+	properties = {
+		layout = {
+			pushConstants = {
+				compute = {
+					in_data = ptr;
+					out_data = ptr;
+					sum_data = ptr;
+					count = uint;
+				};
+			};
+		};
+	};
+	resources = {
+		buffers = {
+			base_data = {
+				size = 4*1048576;// 1M uints
+				usage = transfer_dst|transfer_src|shader_device_address|storage_buffer;
+			};
+			out_data = {
+				size = 4*1048576;// 1M uints
+				usage = transfer_dst|transfer_src|shader_device_address|storage_buffer;
+			};
+			sum_data = {
+				size = 4*1024;// 1k uints
+				usage = transfer_dst|transfer_src|shader_device_address|storage_buffer;
+			};
+		};
+	};
+	jobs = {
+		prefixsum = {
+			steps = {
+				init_data = {
+					process = {
+						tasks = (
+							{ func = initialize_base_data;
+							  params = ("\"base_data\"", 1048576); },
+						);
+					};
+				};
+				prefixsum = {
+					dependencies = (init_data);
+					compute = {
+						pipelines = {
+							main = {
+								tasks = (
+									{ func = blackboard_set_bufferptr;
+									  params = ("\"in_data\"",
+												"\"base_data\""); },
+									{ func = blackboard_set_bufferptr;
+									  params = ("\"out_data\"",
+												"\"out_data\""); },
+									{ func = blackboard_set_bufferptr;
+									  params = ("\"sum_data\"",
+												"\"sum_data\""); },
+									{ func = blackboard_set_uint;
+									  params = ("\"count\"", 1048576); },
+									{ func = set_dispatch;
+									  params = (1024, 1, 1); },
+								);
+								stage = {
+									name = main;
+									module = $builtin/prefixsum.r;
+								};
+								layout = $layout;
+							};
+						};
+					};
+				};
+				submit = {
+					dependencies = (prefixsum);
+					process = {
+						tasks = (
+							{ func = submit_render; },
+							{ func = wait_on_fence; },
+							{ func = readback_prefixsum;
+							  params = ("\"out_data\"", "\"sum_data\"",
+										1048576); },
+						);
+					};
+				};
+			};
+		};
+	};
+};
