@@ -3699,7 +3699,7 @@ spirv_shift_op (int op, const expr_t *e1, const expr_t *e2)
 		return error (e1, "invalid operands for %s", get_op_string (op));
 	}
 	if (is_uint (t1)) {
-		t2 = vector_type (&type_int, type_width (t1));
+		t2 = vector_type (&type_uint, type_width (t1));
 	}
 	if (is_ulong (t1)) {
 		t2 = vector_type (&type_long, type_width (t1));
