@@ -1235,9 +1235,7 @@ static exprsym_t validation_symbols[] = {
 	{"all", &validation_type, validation_values + 1},
 	{}
 };
-static exprtab_t validation_symtab = {
-	validation_symbols,
-};
+static exprtab_t validation_symtab;
 static exprenum_t validation_enum = {
 	.type = &validation_type,
 	.symtab = &validation_symtab,
