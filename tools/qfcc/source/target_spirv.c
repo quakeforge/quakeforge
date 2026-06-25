@@ -2804,7 +2804,9 @@ spirv_intrinsic (const expr_t *e, spirvctx_t *ctx)
 	const expr_t *operands[count + 1] = {};
 	unsigned op_ids[count + 1] = {};
 	list_scatter (&intr.operands, operands);
+	bool is_ext = false;
 	if (op == SpvOpExtInst) {
+		is_ext = true;
 		auto set = expr_string (operands[0]);
 		auto extset = spirv_grammar (set);
 		if (!extset) {
@@ -2828,7 +2830,7 @@ spirv_intrinsic (const expr_t *e, spirvctx_t *ctx)
 
 	unsigned id = 0;
 	auto insn = spirv_new_insn (op, 1 + start + count, ctx->code_space, ctx);
-	if (!is_void (intr.res_type)) {
+	if (is_ext || !is_void (intr.res_type)) {
 		unsigned tid = spirv_Type (intr.res_type, ctx);
 		id = spirv_id (ctx);
 		INSN (insn, 1) = tid;
