@@ -990,7 +990,7 @@ parse_task_function (const plitem_t *item, void **data,
 	exprval_t **param_ptrs = vkparse_alloc (pctx, size);
 	exprval_t  *params = (exprval_t *) &param_ptrs[func->num_params];
 	byte       *param_data = (byte *) param_ptrs + base;
-	memset (params, 0, size);
+	memset (param_ptrs, 0, size);
 	size_t      offs = 0;
 	for (int i = 0; i < func->num_params; i++) {
 		exprtype_t *type = func->param_types[i];
