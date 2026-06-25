@@ -716,6 +716,8 @@ qfv_framebufferinfo_t *QFV_FindFramebufferInfo (vulkan_ctx_t *ctx,
 	__attribute__((pure));
 qfv_bufferinfo_t *QFV_FindBufferInfo (vulkan_ctx_t *ctx, const char *name)
 	__attribute__((pure));
+VkBuffer QFV_GetBuffer (vulkan_ctx_t *ctx, qfv_bufferinfo_t *buffer_info)
+	__attribute__((pure));
 qfv_imageinfo_t *QFV_FindImageInfo (vulkan_ctx_t *ctx, const char *name)
 	__attribute__((pure));
 VkImage QFV_GetImage (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_info)

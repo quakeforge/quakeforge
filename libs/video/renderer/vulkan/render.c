@@ -807,6 +807,14 @@ get_buffer_by_name (vulkan_ctx_t *ctx, const char *name)
 	return graph->resources->objects[buffer->object].buffer.buffer;
 }
 
+VkBuffer
+QFV_GetBuffer (vulkan_ctx_t *ctx, qfv_bufferinfo_t *buffer_info)
+{
+	auto rctx = ctx->render_context;
+	auto graph = rctx->graph;
+	return graph->resources->objects[buffer_info->object].buffer.buffer;
+}
+
 VkImage
 QFV_GetImage (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_info)
 {
