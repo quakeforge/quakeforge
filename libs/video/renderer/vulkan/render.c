@@ -808,19 +808,19 @@ get_buffer_by_name (vulkan_ctx_t *ctx, const char *name)
 }
 
 VkImage
-QFV_GetImage (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_infO)
+QFV_GetImage (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_info)
 {
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
-	return graph->resources->objects[image_infO->object].image.image;
+	return graph->resources->objects[image_info->object].image.image;
 }
 
 VkImageView
-QFV_GetImageView (vulkan_ctx_t *ctx, qfv_imageviewinfo_t *view_infO)
+QFV_GetImageView (vulkan_ctx_t *ctx, qfv_imageviewinfo_t *view_info)
 {
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
-	return graph->resources->objects[view_infO->object].image_view.view;
+	return graph->resources->objects[view_info->object].image_view.view;
 }
 
 static VkImage
