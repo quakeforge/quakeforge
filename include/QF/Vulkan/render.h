@@ -186,6 +186,7 @@ typedef struct qfv_attachmentsetinfo_s {
 typedef struct qfv_pipelineinfo_s {
 	vec4f_t     color;
 	const char *name;
+	int         line;
 	bool        disabled;
 	uint32_t    num_tasks;
 	qfv_taskinfo_t *tasks;
