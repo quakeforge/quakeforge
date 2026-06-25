@@ -905,6 +905,7 @@ spirv_storage_class (unsigned storage, const type_t *type)
 			[iface_in] = SpvStorageClassInput,
 			[iface_out] = SpvStorageClassOutput,
 			[iface_uniform] = SpvStorageClassUniform,
+			[iface_shared] = SpvStorageClassWorkgroup,
 			[iface_buffer] = SpvStorageClassStorageBuffer,
 			[iface_push_constant] = SpvStorageClassPushConstant,
 		};
