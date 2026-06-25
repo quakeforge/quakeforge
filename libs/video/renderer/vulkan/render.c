@@ -460,6 +460,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job)
 	for (uint32_t i = 0; i < job->num_steps; i++) {
 		int64_t step_start = Sys_LongTime ();
 		__auto_type step = &job->steps[i];
+		taskctx.step = step;
 		if (!step->process) {
 			// run render and compute steps automatically only if there's no
 			// process for the step (the idea is the process uses the compute
@@ -1039,6 +1040,28 @@ blackboard_set_bufferptr (const exprval_t **params, exprval_t *result,
 	*ptr = addr;
 }
 
+static void
+blackboard_set_bufferptr_offset (const exprval_t **params, exprval_t *result,
+								 exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto rctx = ctx->render_context;
+	auto offset = *(uint64_t *) params[0]->value;
+	auto bufname = *(const char **) params[1]->value;
+	auto varname = *(const char **) params[2]->value;
+
+
+	auto ptr = (VkDeviceAddress *) blackboard_get_var (rctx, varname, qfv_ptr);
+	auto addr = QFV_GetBufferAddress (ctx, bufname, ctx->curFrame);
+	if (!addr) {
+		Sys_Error ("invalid buffer %s\n", bufname);
+	}
+
+	*ptr = addr + offset;
+}
+
 static exprfunc_t wait_on_fence_func[] = {
 	{ .func = wait_on_fence },
 	{}
@@ -1133,13 +1156,27 @@ bbfunc(uvec4);
 bbfunc(vec2);
 bbfunc(vec3);
 bbfunc(vec4);
+
 static exprtype_t *blackboard_set_bufferptr_params[] = {
 	&cexpr_string,
 	&cexpr_string,
 };
 static exprfunc_t blackboard_set_bufferptr_func[] = {
-	{ .func = blackboard_set_bufferptr, .num_params = 2,
-		blackboard_set_bufferptr_params },
+	{ .func = blackboard_set_bufferptr,
+		.num_params = countof (blackboard_set_bufferptr_params),
+		.param_types = blackboard_set_bufferptr_params },
+	{}
+};
+
+static exprtype_t *blackboard_set_bufferptr_offset_params[] = {
+	&cexpr_ulong,
+	&cexpr_string,
+	&cexpr_string,
+};
+static exprfunc_t blackboard_set_bufferptr_offset_func[] = {
+	{ .func = blackboard_set_bufferptr_offset,
+		.num_params = countof (blackboard_set_bufferptr_offset_params),
+		.param_types = blackboard_set_bufferptr_offset_params },
 	{}
 };
 
@@ -1175,6 +1212,8 @@ static exprsym_t render_task_syms[] = {
 	bbfunc(uvec4),
 	{ "blackboard_set_bufferptr", &cexpr_function,
 	  blackboard_set_bufferptr_func },
+	{ "blackboard_set_bufferptr_offset", &cexpr_function,
+	  blackboard_set_bufferptr_offset_func },
 	{}
 };
 
