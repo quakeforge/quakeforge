@@ -1184,17 +1184,18 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 	qfv_renderctx_t *rctx = malloc (sizeof (qfv_renderctx_t));
 	ctx->render_context = rctx;
 
+	uint32_t num_frames = max (1, vulkan_frame_count);
 	*rctx = (qfv_renderctx_t) {
 		.task_functions = { .symbols = &(exprsym_t) {} },
 		.external_attachments = DARRAY_STATIC_INIT (4),
-		.frames = DARRAY_STATIC_INIT (vulkan_frame_count),
+		.frames = DARRAY_STATIC_INIT (num_frames),
 		.deletion_queue = {
 			.q = DARRAY_STATIC_INIT (8),
 			.compare = qfv_deletion_compare,
 		},
 		.size_time = -1,
 	};
-	DARRAY_RESIZE (&rctx->frames, vulkan_frame_count);
+	DARRAY_RESIZE (&rctx->frames, num_frames);
 
 	update_framebuffer_params[0] = &rctx->step_type;
 
