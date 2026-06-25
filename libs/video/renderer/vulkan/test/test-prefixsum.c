@@ -314,8 +314,7 @@ main ()
 	va_destroy_context (ctx->va_ctx);
 	free (ctx);
 
-	// for now, check only the first block
-	for (uint32_t i = 0; i < 1024; i++) {
+	for (uint32_t i = 0; i < 1024*1024; i++) {
 		if (expect_prefixsum[i] != prefixsum[i]) {
 			printf ("prefixsum differs at %u: %u %u\n", i,
 					expect_prefixsum[i], prefixsum[i]);

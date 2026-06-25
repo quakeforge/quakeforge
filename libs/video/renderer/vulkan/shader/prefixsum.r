@@ -38,17 +38,13 @@ main ()
 	local_data[loc_ind1] = (ext_ind1 < count) ? in_data[ext_ind1] : 0;
 	barrier ();
 
-	if (id < 16 && ext_ind0 < 1024) {
-		printf ("%u %u %u\n", id, local_data[loc_ind0], local_data[loc_ind1]);
-	}
-
 	// inclusive prefix sum using Blelloch
 	for (uint step = 0; step < num_steps; step++) {
 		uint mask = (1 << step) - 1;
 		uint rd_ind = ((id >> step) << (step + 1)) + mask;
 		uint wr_ind = rd_ind + 1 + (id & mask);
 
-		local_data[wr_ind] += local_data[wr_ind];
+		local_data[wr_ind] += local_data[rd_ind];
 
 		barrier ();
 	}
@@ -60,6 +56,7 @@ main ()
 			out_data[ext_ind1 + 1] = local_data[loc_ind1];
 		} else {
 			out_data[ext_ind0 & ~(block_size - 1)] = 0;
+			out_data[ext_ind1] = local_data[loc_ind0];
 			sum_data[ext_ind0 / block_size] = local_data[loc_ind1];
 		}
 	}
