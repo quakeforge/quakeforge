@@ -17,12 +17,20 @@
 				size = 4*1048576;// 1M uints
 				usage = transfer_dst|transfer_src|shader_device_address|storage_buffer;
 			};
-			out_data = {
+			block_prefix = {
 				size = 4*1048576;// 1M uints
 				usage = transfer_dst|transfer_src|shader_device_address|storage_buffer;
 			};
-			sum_data = {
-				size = 4*1024;// 1k uints
+			block_sum = {
+				size = "4*(1024+1)";// 1k uints
+				usage = transfer_dst|transfer_src|shader_device_address|storage_buffer;
+			};
+			block_prefix_sum = {
+				size = "4*(1024+1)";// 1k uints
+				usage = transfer_dst|transfer_src|shader_device_address|storage_buffer;
+			};
+			prefixsum = {
+				size = 4*1048576;// 1M uints
 				usage = transfer_dst|transfer_src|shader_device_address|storage_buffer;
 			};
 		};
@@ -38,7 +46,7 @@
 						);
 					};
 				};
-				prefixsum = {
+				prefixsum1 = {
 					dependencies = (init_data);
 					compute = {
 						pipelines = {
@@ -49,10 +57,10 @@
 												"\"base_data\""); },
 									{ func = blackboard_set_bufferptr;
 									  params = ("\"out_data\"",
-												"\"out_data\""); },
+												"\"block_prefix\""); },
 									{ func = blackboard_set_bufferptr;
 									  params = ("\"sum_data\"",
-												"\"sum_data\""); },
+												"\"block_sum\""); },
 									{ func = blackboard_set_uint;
 									  params = ("\"count\"", 1048576); },
 									{ func = set_dispatch;
@@ -67,14 +75,87 @@
 						};
 					};
 				};
+				prefixsum2 = {
+					dependencies = (prefixsum1);
+					compute = {
+						pipelines = {
+							main = {
+								tasks = (
+									{ func = buffer_barrier;
+									  params = ("\"block_sum\"",
+											qfv_BB_ShaderWrite_to_ShaderRW); },
+									{ func = blackboard_set_bufferptr;
+									  params = ("\"in_data\"",
+												"\"block_sum\""); },
+									{ func = blackboard_set_bufferptr;
+									  params = ("\"out_data\"",
+												"\"block_prefix_sum\""); },
+									{ func = blackboard_set_bufferptr_offset;
+									  params = ("\"sum_data\"",
+												"\"block_prefix_sum\"", 4*1024); },
+									{ func = blackboard_set_uint;
+									  params = ("\"count\"", 1024); },
+									{ func = set_dispatch;
+									  params = (1, 1, 1); },
+								);
+								stage = {
+									name = main;
+									module = $builtin/prefixsum.r;
+								};
+								layout = $layout;
+							};
+						};
+					};
+				};
+				prefixsum3 = {
+					dependencies = (prefixsum2);
+					compute = {
+						pipelines = {
+							main = {
+								tasks = (
+									{ func = buffer_barrier;
+									  params = ("\"block_prefix\"",
+											qfv_BB_ShaderWrite_to_ShaderRW); },
+									{ func = buffer_barrier;
+									  params = ("\"block_prefix_sum\"",
+											qfv_BB_ShaderWrite_to_ShaderRW); },
+									{ func = blackboard_set_bufferptr;
+									  params = ("\"in_data\"",
+												"\"block_prefix\""); },
+									{ func = blackboard_set_bufferptr;
+									  params = ("\"out_data\"",
+												"\"prefixsum\""); },
+									{ func = blackboard_set_bufferptr;
+									  params = ("\"sum_data\"",
+												"\"block_prefix_sum\""); },
+									{ func = blackboard_set_uint;
+									  params = ("\"count\"", 1048576); },
+									{ func = set_dispatch;
+									  params = (1024, 1, 1); },
+								);
+								stage = {
+									name = offset;
+									module = $builtin/prefixsum.r;
+								};
+								layout = $layout;
+							};
+						};
+					};
+				};
 				submit = {
-					dependencies = (prefixsum);
+					dependencies = (prefixsum3);
 					process = {
 						tasks = (
+							{ func = buffer_barrier;
+							  params = ("\"prefixsum\"",
+									qfv_BB_ShaderWrite_to_TransferRead); },
 							{ func = submit_render; },
 							{ func = wait_on_fence; },
 							{ func = readback_prefixsum;
-							  params = ("\"out_data\"", "\"sum_data\"",
+							  params = ("\"block_prefix\"",
+										"\"prefixsum\"",
+										"\"block_sum\"",
+										"\"block_prefix_sum\"",
 										1048576); },
 						);
 					};

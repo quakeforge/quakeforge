@@ -76,10 +76,10 @@ static const char graph_plist[] = {
 	0
 };
 
-static uint32_t *prefixsum;
-static uint32_t *sums;
-static uint32_t *expect_prefixsum;
-static uint32_t *expect_sums;
+static uint32_t *prefixsum[2];
+static uint32_t *sums[2];
+static uint32_t *expect_prefixsum[2];
+static uint32_t *expect_sums[2];
 
 static void
 initialize_base_data (const exprval_t **params, exprval_t *result,
@@ -96,25 +96,37 @@ initialize_base_data (const exprval_t **params, exprval_t *result,
 	size_t packet_size = count * sizeof (uint32_t);
 	auto packet = QFV_PacketAcquire (ctx->staging, "prefixsum.init");
 	uint32_t *packet_start = QFV_PacketExtend (packet, packet_size);
-	prefixsum = malloc (packet_size);
-	expect_prefixsum = malloc (packet_size);
-	sums = malloc (packet_size / 1024);
-	expect_sums = malloc (packet_size / 1024);
+	prefixsum[0] = malloc (packet_size);
+	prefixsum[1] = malloc (packet_size);
+	expect_prefixsum[0] = malloc (packet_size);
+	expect_prefixsum[1] = malloc (packet_size);
+	sums[0] = malloc (packet_size / 1024);
+	sums[1] = malloc (packet_size / 1024);
+	expect_sums[0] = malloc (packet_size / 1024);
+	expect_sums[1] = malloc (packet_size / 1024);
 
 	for (uint32_t i = 0; i < count; i++) {
-		uint32_t val = i ^ (i >> 1);	// gray scale
-		expect_prefixsum[i] = val;
+		uint32_t val = i & 3;
+		expect_prefixsum[0][i] = val;
 		packet_start[i] = val;
 	}
+	uint32_t sumsum = 0;
 	for (uint32_t i = 0; i < count / 1024; i++) {
 		uint32_t sum = 0;
 		for (uint32_t j = 0; j < 1024; j++) {
 			uint32_t ind = i * 1024 + j;
-			uint32_t val = expect_prefixsum[ind];
-			expect_prefixsum[ind] = sum;
+			uint32_t val = expect_prefixsum[0][ind];
+			expect_prefixsum[0][ind] = sum;
 			sum += val;
 		}
-		expect_sums[i] = sum;
+		expect_sums[0][i] = sum;
+		expect_sums[1][i] = sumsum;
+		sumsum += sum;
+		for (uint32_t j = 0; j < 1024; j++) {
+			uint32_t ind = i * 1024 + j;
+			uint32_t val = expect_prefixsum[0][ind] ;
+			expect_prefixsum[1][ind] = val + expect_sums[1][i];
+		}
 	}
 
 	auto srcBarrier = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
@@ -178,12 +190,23 @@ readback_prefixsum (const exprval_t **params, exprval_t *result,
 	auto dfunc = device->funcs;
 
 	auto count = *(uint32_t *) params[0]->value;
-	auto sum_buff_name = *(const char **) params[1]->value;
-	auto out_buff_name = *(const char **) params[2]->value;
-	auto out_info = QFV_FindBufferInfo (ctx, out_buff_name);
-	auto sum_info = QFV_FindBufferInfo (ctx, sum_buff_name);
-	auto out_buffer = QFV_GetBuffer (ctx, out_info);
-	auto sum_buffer = QFV_GetBuffer (ctx, sum_info);
+	const char *sums_names[] = {
+		*(const char **) params[2]->value,
+		*(const char **) params[1]->value,
+	};
+	const char *prefix_names[] = {
+		*(const char **) params[4]->value,
+		*(const char **) params[3]->value,
+	};
+	VkBuffer prefix_buffers[2];
+	VkBuffer sums_buffers[2];
+	for (int i = 0; i < 2; i++) {
+		qfv_bufferinfo_t *info;
+		info = QFV_FindBufferInfo (ctx, prefix_names[i]);
+		prefix_buffers[i] = QFV_GetBuffer (ctx, info);
+		info = QFV_FindBufferInfo (ctx, sums_names[i]);
+		sums_buffers[i] = QFV_GetBuffer (ctx, info);
+	};
 
 	size_t packet_size = count * sizeof (uint32_t);
 	qfv_resobj_t buffer_obj = {
@@ -207,10 +230,14 @@ readback_prefixsum (const exprval_t **params, exprval_t *result,
 	dfunc->vkMapMemory (device->dev, resource.memory, 0, resource.size, 0,
 						&readback);
 
-	copy_data (ctx, readback_buffer, out_buffer, packet_size);
-	memcpy (prefixsum, readback, packet_size);
-	copy_data (ctx, readback_buffer, sum_buffer, packet_size / 1024);
-	memcpy (sums, readback, packet_size / 1024);
+	size_t sums_size = packet_size / 1024 + sizeof (uint32_t);
+	for (int i = 0; i < 2; i++) {
+		copy_data (ctx, readback_buffer, prefix_buffers[i], packet_size);
+		memcpy (prefixsum[i], readback, packet_size);
+
+		copy_data (ctx, readback_buffer, sums_buffers[i], sums_size);
+		memcpy (sums[i], readback, sums_size);
+	}
 
 	QFV_DestroyResource (device, &resource);
 }
@@ -228,6 +255,8 @@ static exprfunc_t initialize_base_data_func[] = {
 
 static exprtype_t *readback_prefixsum_params[] = {
 	&cexpr_uint,
+	&cexpr_string,
+	&cexpr_string,
 	&cexpr_string,
 	&cexpr_string,
 };
@@ -249,6 +278,8 @@ print_time (const char *prefix, const char *name, qfv_time_t time)
 {
 	printf ("%s%s: %7"PRIu64"\u03bcs\n", prefix, name, time.cur_time);
 }
+
+static void breakpoint () {};
 
 int
 main ()
@@ -311,22 +342,28 @@ main ()
 		QFV_DestroyInstance (ctx->instance);
 	}
 
+	breakpoint();
+
 	va_destroy_context (ctx->va_ctx);
 	free (ctx);
 
-	for (uint32_t i = 0; i < 1024*1024; i++) {
-		if (expect_prefixsum[i] != prefixsum[i]) {
-			printf ("prefixsum differs at %u: %u %u\n", i,
-					expect_prefixsum[i], prefixsum[i]);
-			return 1;
-		};
+	for (int j = 0; j < 2; j++) {
+		for (uint32_t i = 0; i < 1024*1024; i++) {
+			if (expect_prefixsum[j][i] != prefixsum[j][i]) {
+				printf ("prefixsum[%d] differs at %u: %u %u\n", j, i,
+						expect_prefixsum[j][i], prefixsum[j][i]);
+				return 1;
+			};
+		}
 	}
-	for (uint32_t i = 0; i < 1024; i++) {
-		if (expect_sums[i] != sums[i]) {
-			printf ("sums differs at %u: %u %u\n", i,
-					expect_sums[i], sums[i]);
-			return 1;
-		};
+	for (int j = 0; j < 2; j++) {
+		for (uint32_t i = 0; i < 1024; i++) {
+			if (expect_sums[j][i] != sums[j][i]) {
+				printf ("sums[%d] differs at %u: %u %u\n", j, i,
+						expect_sums[j][i], sums[j][i]);
+				return 1;
+			};
+		}
 	}
 	return 0;
 }
