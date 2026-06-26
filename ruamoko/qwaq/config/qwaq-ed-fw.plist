@@ -640,7 +640,7 @@ render_graph = {
 				);
 			};
 			inputAssembly = {
-				topology = triangle_fan;
+				topology = triangle_strip;
 				primitiveRestartEnable = false;
 			};
 			layout = {
@@ -1416,6 +1416,7 @@ render_graph = {
 							);
 							vertexInput = $particle.vertexInput;
 							inputAssembly = $particle.inputAssembly;
+							rasterization = $counter_cw_cull_back;
 							layout = $particle.layout.draw;
 						};
 					};

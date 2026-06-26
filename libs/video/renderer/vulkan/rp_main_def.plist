@@ -545,7 +545,7 @@ properties = {
 			);
 		};
 		inputAssembly = {
-			topology = triangle_fan;
+			topology = triangle_strip;
 			primitiveRestartEnable = false;
 		};
 		layout = {
@@ -1514,6 +1514,7 @@ renderpasses = {
 						);
 						vertexInput = $particle.vertexInput;
 						inputAssembly = $particle.inputAssembly;
+						rasterization = $counter_cw_cull_back;
 						layout = $particle.layout.draw;
 					};
 					debug_lights = {

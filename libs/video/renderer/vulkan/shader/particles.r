@@ -274,7 +274,7 @@ main (void)
 		vs = mat2 (1);
 	}
 
-	auto d = vec2 (2, 4) * vec2 (vx, vy) - vec2 (1, 1);
+	auto d = vec2 (1, 2) * vec2 (vx, vy) - vec2 (1, 1);
 	vec4 pos = View[in.gl_ViewIndex] * (Model * in.position);
 	auto p = vec4(s * (vs * d), 0, 0) + pos;
 
