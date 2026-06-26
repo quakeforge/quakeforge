@@ -141,7 +141,7 @@ I_CDAudio_GetAudioDiskInfo (void)
 	return 0;
 }
 
-LONG
+LRESULT
 static CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (lParam != wDeviceID)
