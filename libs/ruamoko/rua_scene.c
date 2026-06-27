@@ -62,6 +62,7 @@ typedef struct rua_scene_s {
 	scene_t    *scene;
 	psystem_t  *psystem;
 	int         partramps[8];
+	peparticle_t def_particle;
 } rua_scene_t;
 
 typedef struct rua_lighting_s {
@@ -231,6 +232,16 @@ bi (Scene_NewScene)
 	scene->psystem->min_dist = 0;
 	scene->psystem->partramps = scene->partramps;
 	scene->psystem->partramps_count = countof (scene->partramps);
+	scene->def_particle = (peparticle_t) {
+		.color = 0xfe,
+		.scale = 0.02,
+		.alpha = 1,
+		.live = 60,
+		.tex = part_tex_dot,
+		.ramp_max = 8,
+		.drag = {-0.05, -0.05, -0.05},
+		.grav_scale = 1,
+	};
 	for (int i = 0; i < 8; i++) {
 		scene->partramps[i] = (int[]){0xef, 0xed, 0xeb, 0xe9,
 									  0xe7, 0xe5, 0xe3, 0xe1}[i];
@@ -858,9 +869,11 @@ bi (Entity_AttachPlane)
 			.ramp_range = 8,
 			.rate = 5000,
 		},
+		.particle = scene->def_particle,
 		.u = { 1, 0, 0 },
 		.v = { 0, 1, 0 },
 		.vel = { 0.5, 0.5, 0.5 },
+		.square = false,
 	};
 	uint32_t c_plane = scene->scene->psys_base + pemitter_plane;
 	Ent_SetComponent (ent.id, c_plane, ent.reg, &plane);

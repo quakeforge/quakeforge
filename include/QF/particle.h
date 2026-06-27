@@ -105,8 +105,24 @@ typedef struct pemitter_s {
 	float       timer;		// state for emission rate
 } pemitter_t;
 
+// common particle settings for emitters
+typedef struct peparticle_s {
+	uint32_t    color;
+	float       scale;
+	float       alpha;
+	float       live;
+	ptextype_t  tex;
+	float       ramp_rate;
+	float       ramp_max;
+	float       scale_rate;
+	float       alpha_rate;
+	vec3_t      drag;		// additive, so use -ve for actual drag
+	float       grav_scale;
+} peparticle_t;
+
 typedef struct pe_plane_s {
 	pemitter_t  base;
+	peparticle_t particle;
 	vec3_t      u;
 	vec3_t      v;
 	vec3_t      vel;

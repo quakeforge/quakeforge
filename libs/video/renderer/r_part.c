@@ -247,6 +247,46 @@ pemitter_count (pemitter_t *emitter, float dT)
 	return count;
 }
 
+static inline particle_t *
+spawn_particle (psystem_t *ps, peparticle_t *particle,
+				int ramp_base, int ramp_range)
+{
+	int pind = psystem_new (ps);
+	if (pind < 0) {
+		return nullptr;
+	}
+
+	auto p = &ps->particles[pind];
+	auto param = &ps->partparams[pind];
+
+	*p = (particle_t) {
+		.color = particle->color,
+		.ramp_base = ramp_base,
+		.alpha = particle->alpha,
+		.tex = particle->tex,
+		.ramp = mtwist_rand_0_1 (&pemitter_mt) * ramp_range,
+		.scale = particle->scale,
+		.live = particle->live,
+	};
+	*param = (partparm_t) {
+		.drag = { VectorExpand (particle->drag), particle->grav_scale },
+		.ramp_max = particle->ramp_max,
+	};
+	return p;
+}
+
+static vec4f_t
+part_vel (vec3_t vel_scale)
+{
+	vec4f_t vel = {};
+	for (int i = 0; i < 3; i++) {
+		if (vel[i]) {
+			vel[i] = mtwist_rand_0_1 (&pemitter_mt) * vel_scale[i];
+		}
+	}
+	return vel;
+}
+
 static bool
 pemit_plane (ecs_system_t *sys, ecs_pool_t *pool, uint32_t ind, float dT)
 {
@@ -263,12 +303,11 @@ pemit_plane (ecs_system_t *sys, ecs_pool_t *pool, uint32_t ind, float dT)
 	auto mat = Transform_GetWorldMatrixPtr (xform);
 
 	while (count-- > 0) {
-		int pind = psystem_new (ps);
-		if (pind < 0) {
+		auto p = spawn_particle (ps, &plane->particle, plane->base.ramp_base,
+								 plane->base.ramp_range);
+		if (!p) {
 			break;
 		}
-		auto p = &ps->particles[pind];
-		auto param = &ps->partparams[pind];
 
 		vec4f_t pos;
 		if (plane->square) {
@@ -284,28 +323,9 @@ pemit_plane (ecs_system_t *sys, ecs_pool_t *pool, uint32_t ind, float dT)
 			pos = x * loadvec3f (plane->u) + y * loadvec3f (plane->v);
 		}
 		pos[3] = 1;
-		vec4f_t vel = {};
-		for (int i = 0; i < 3; i++) {
-			if (plane->vel[i]) {
-				vel[i] = mtwist_rand_0_1 (&pemitter_mt) * plane->vel[i];
-			}
-		}
-
-		*p = (particle_t) {
-			.pos = mvmulf (mat, pos),
-			.vel = mvmulf (mat, vel),
-			.color = 0xfe,
-			.ramp_base = plane->base.ramp_base,
-			.alpha = 1,
-			.tex = part_tex_dot,
-			.ramp = mtwist_rand_0_1 (&pemitter_mt) * plane->base.ramp_range,
-			.scale = 0.02,
-			.live = 60,
-		};
-		*param = (partparm_t) {
-			.drag = { -0.05, -0.05, -0.05, 1 },
-			.ramp_max = plane->base.ramp_range,
-		};
+		vec4f_t vel = part_vel (plane->vel);
+		p->pos = mvmulf (mat, pos);
+		p->vel = mvmulf (mat, vel);
 	}
 
 	return pemitter_update (&plane->base, dT);
