@@ -202,7 +202,7 @@ psystem_run (psystem_t *ps, float dT)
 		}
 		vec4f_t acc = -d * gravity * parm->drag[3] / (d2 * sqrtf (d2));
 		p->vel += dT * (acc + p->vel * parm->drag);
-		p->ramp += dT * parm->ramp;
+		p->ramp += dT * parm->ramp_rate;
 		p->scale += dT * parm->scale_rate;
 		p->alpha -= dT * parm->alpha_rate;
 		p->live -= dT;

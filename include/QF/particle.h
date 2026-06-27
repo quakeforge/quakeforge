@@ -73,7 +73,7 @@ static_assert (sizeof (trailpnt_t) == 4 * sizeof(vec4f_t),
 
 typedef struct partparm_s {
 	vec4f_t     drag;	// drag[3] is grav scale
-	float       ramp;
+	float       ramp_rate;
 	float       ramp_max;
 	float       scale_rate;
 	float       alpha_rate;
