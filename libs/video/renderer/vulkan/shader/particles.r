@@ -167,8 +167,13 @@ main ()
 	part.live -= phys.dT;
 
 	if (part.ramp_base != ~0) {
-		uint ind = part.ramp_base + (int) part.ramp;
-		part.color = particleSystem.part_ramps[ind];
+		int r0 = (int) part.ramp;
+		int r1 = r0 + 1;
+		r1 = min (r1, (int) ceil (parm.ramp.y) - 1);
+		uint ind0 = part.ramp_base + r0;
+		uint ind1 = part.ramp_base + r1;
+		part.color = particleSystem.part_ramps[ind0];
+		part.pad = particleSystem.part_ramps[ind1];
 	}
 	if (d2 < phys.min_dist * phys.min_dist) {
 		part.live = 0;
@@ -249,14 +254,18 @@ main (void)
 	[out("Position")] vec4 position;
 }
 
+vec4
+calc_color (uint c)
+{
+	uvec2 xy = uvec2 (c & 0x0f, (c >> 4) & 0x0f);
+	return texture (Palette, (vec2 (xy) + 0.5) / 16.0);
+}
+
 [shader(Vertex)]
 [capability(MultiView)]
 void
 main (void)
 {
-	uint        c = in.color.x;
-	uint        x = c & 0x0f;
-	uint        y = (c >> 4) & 0x0f;
 
 	float vx = (in.gl_VertexIndex & 2);
 	float vy = (in.gl_VertexIndex & 1);
@@ -278,9 +287,20 @@ main (void)
 	vec4 pos = View[in.gl_ViewIndex] * (Model * in.position);
 	auto p = vec4(s * (vs * d), 0, 0) + pos;
 
+	vec4 color;
+	if ((int)in.color.y >= 0) {
+		float r = in.ramp.y;
+		auto c0 = calc_color (in.color.x);
+		auto c1 = calc_color (in.color.z);
+		color = mix (c0, c1, r - floor(r));
+	} else {
+		color = calc_color (in.color.x);
+	}
+	uint        c = in.color.x;
+
 	out.position = Projection3d * p;
 	out.uv_tr = vec4 (d, in.ramp.xy);
-	out.color = texture (Palette, (vec2 (x, y) + 0.5) / 16.0);
+	out.color = color;
 }
 
 }
