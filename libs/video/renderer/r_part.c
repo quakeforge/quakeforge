@@ -311,13 +311,25 @@ pemit_plane (ecs_system_t *sys, ecs_pool_t *pool, uint32_t ind, float dT)
 
 		vec4f_t pos;
 		if (plane->square) {
-			float u = mtwist_rand_m1_1 (&pemitter_mt);
-			float v = mtwist_rand_m1_1 (&pemitter_mt);
+			float u, v;
+			// FIXME figure out how to do in between 0 and 1
+			if (plane->solid) {
+				u = mtwist_rand_m1_1 (&pemitter_mt);
+				v = mtwist_rand_m1_1 (&pemitter_mt);
+			} else {
+				float a = 2 * mtwist_rand_m1_1 (&pemitter_mt);
+				u = a < 0 ? max (-a - 1, 0) : min (a, 1);
+				v = a < 0 ? min (-a, 1) : max (a - 1, 0);
+			}
 			pos = u * loadvec3f (plane->u) + v * loadvec3f (plane->v);
 		} else {
 			float a = M_PI * mtwist_rand_m1_1 (&pemitter_mt);
-			float r = mtwist_rand_0_1 (&pemitter_mt);
-			r = sqrtf (r);
+			float s = plane->solid;
+			float r = 1;
+			if (s) {
+				r = mtwist_rand_0_1 (&pemitter_mt);
+				r = (1 - s) + sqrtf (r) * s;
+			}
 			float x = r * cos(a);
 			float y = r * sin(a);
 			pos = x * loadvec3f (plane->u) + y * loadvec3f (plane->v);

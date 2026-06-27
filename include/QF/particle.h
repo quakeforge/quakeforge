@@ -126,8 +126,8 @@ typedef struct pe_plane_s {
 	vec3_t      u;
 	vec3_t      v;
 	vec3_t      vel;
+	float       solid;		// 0 = shell, 1 = uniform to center
 	bool        square;		// false = circular
-	int8_t      dist;		// exponent for pdf
 } pe_plane_t;
 
 enum {

@@ -873,6 +873,7 @@ bi (Entity_AttachPlane)
 		.u = { 1, 0, 0 },
 		.v = { 0, 1, 0 },
 		.vel = { 0.5, 0.5, 0.5 },
+		.solid = 0.1,
 		.square = false,
 	};
 	uint32_t c_plane = scene->scene->psys_base + pemitter_plane;
