@@ -93,7 +93,7 @@ typedef struct psystem_s {
 	const int  *partramps;
 	int         partramps_count;// number of ints total
 
-	int         points_only;
+	bool        points_only;
 } psystem_t;
 
 // base for particle emitters
