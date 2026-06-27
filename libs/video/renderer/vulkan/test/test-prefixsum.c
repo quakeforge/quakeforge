@@ -106,7 +106,7 @@ initialize_base_data (const exprval_t **params, exprval_t *result,
 	expect_sums[1] = malloc (packet_size / 1024);
 
 	for (uint32_t i = 0; i < count; i++) {
-		uint32_t val = i & 3;
+		uint32_t val = i ^ (i >> 1);
 		expect_prefixsum[0][i] = val;
 		packet_start[i] = val;
 	}
