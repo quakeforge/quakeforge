@@ -1290,6 +1290,7 @@ CL_Particles_Init (void)
 	cl_psystem = r_funcs->ParticleSystem ();
 	cl_psystem->partramps = cl_partramps;
 	cl_psystem->partramps_count = countof (cl_partramps);
+	cl_psystem->palette_size = 16;
 	Cvar_Register (&easter_eggs_cvar, easter_eggs_f, 0);
 	Cvar_Register (&particles_style_cvar, particles_style_f, 0);
 	set_particle_funcs ();

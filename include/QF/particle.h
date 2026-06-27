@@ -92,6 +92,7 @@ typedef struct psystem_s {
 	partparm_t *partparams;
 	const int  *partramps;
 	int         partramps_count;// number of ints total
+	uint32_t    palette_size;	// width of square image
 
 	bool        points_only;
 } psystem_t;

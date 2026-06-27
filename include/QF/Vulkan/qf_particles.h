@@ -52,6 +52,7 @@ typedef struct particlectx_s {
 	psystem_t  *psystem;
 
 	mat4f_t    *mat;
+	uint32_t   *palette_size;
 	vec4f_t    *fog;
 	vec4f_t    *center;
 	float      *gravity;

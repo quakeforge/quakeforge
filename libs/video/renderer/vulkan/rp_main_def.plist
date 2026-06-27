@@ -553,7 +553,10 @@ properties = {
 				//                            palette
 				descriptorSets = (matrix_set, texture_set, oit_set);
 				pushConstants = {
-					vertex = { Model = mat4; };
+					vertex = {
+						Model = mat4;
+						palette_size = uint;
+					};
 					fragment = { fog = vec4; };
 				};
 			};

@@ -197,7 +197,7 @@ main ()
 #include "oit_store.finc"
 
 [push_constant] @block PushConstants {
-	[offset(64)]
+	[offset(68)]
 	vec4        fog;
 };
 
@@ -234,6 +234,7 @@ main (void)
 
 [push_constant] @block PushConstants {
 	mat4 Model;
+	uint palette_size;
 };
 
 [uniform, set(1), binding(0)] @sampler(@image(float,2D)) Palette;
@@ -257,8 +258,9 @@ main (void)
 vec4
 calc_color (uint c)
 {
-	uvec2 xy = uvec2 (c & 0x0f, (c >> 4) & 0x0f);
-	return texture (Palette, (vec2 (xy) + 0.5) / 16.0);
+	uvec2 xy = uvec2 (((c >> 0) & 0x0f) | ((c >>  8) & 0x0f),
+					  ((c >> 4) & 0x0f) | ((c >> 12) & 0x0f));
+	return texture (Palette, (vec2 (xy) + 0.5) / palette_size);
 }
 
 [shader(Vertex)]

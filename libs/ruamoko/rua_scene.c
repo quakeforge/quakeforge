@@ -232,6 +232,7 @@ bi (Scene_NewScene)
 	scene->psystem->min_dist = 0;
 	scene->psystem->partramps = scene->partramps;
 	scene->psystem->partramps_count = countof (scene->partramps);
+	scene->psystem->palette_size = 16;
 	scene->def_particle = (peparticle_t) {
 		.color = 0xfe,
 		.scale = 0.02,
