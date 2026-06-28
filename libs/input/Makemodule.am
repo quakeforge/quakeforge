@@ -27,6 +27,7 @@ libs_input_libQFinput_la_LIBADD=		$(input_deps)
 libs_input_libQFinput_la_DEPENDENCIES=	$(input_deps)
 libs_input_libQFinput_la_SOURCES= \
 	libs/input/in_axis.c \
+	libs/input/in_axis_button.c \
 	libs/input/in_binding.c \
 	libs/input/in_button.c \
 	libs/input/in_common.c \
