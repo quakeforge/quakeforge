@@ -113,9 +113,22 @@ void setevents (int (func)(struct IE_event_s *, void *), void *data) = #0;
 void setctxcbuf (int ctx) = #0;
 void addcbuftxt (string txt) = #0;
 
+void Particles_SetRamps (scene_t scene, uint count, uint *ramps) = #0;
+void Particles_SetPalette (scene_t scene, uint texid, uint size) = #0;
 void Particles_SetGravitry (scene_t scene, vec4 center, float gravity,
 							float min_dist) = #0;
 void Entity_AttachPlane (entity_t ent) = #0;
+void Emitter_SetRamp (entity_t ent, uint base, uint range) = #0;
+void Emitter_SetEmitRate (entity_t ent, float rate) = #0;
+void Emitter_SetColor (entity_t ent, uint color) = #0;
+void Emitter_SetScale (entity_t ent, float scale) = #0;
+void Emitter_SetLive (entity_t ent, float live) = #0;
+void Emitter_SetRates (entity_t ent, vec4 ramp_max_scale_alpha) = #0;
+void Emitter_SetDrag (entity_t ent, vector drag) = #0;
+void Emitter_SetGravScale (entity_t ent, float rate) = #0;
+void Emitter_SetVelocity (entity_t ent, vector drag) = #0;
+void Emitter_SetSolid (entity_t ent, float solid) = #0;
+void Emitter_SetSquare (entity_t ent, bool square) = #0;
 
 void Gizmo_AddSphere (vec4 c, float r, vec4 color) = #0;
 void Gizmo_AddCapsule (vec4 p1, vec4 p2, float r, vec4 color) = #0;
@@ -226,6 +239,16 @@ MainMenu *main_menu;
 -(scene_t) scene;
 @end
 
+uint
+pixpal_colorid (uint x, uint y)
+{
+	uint xl = x & 0xf;
+	uint xh = (x >> 4) & 0x7;
+	uint yl = y & 0xf;
+	uint yh = (y >> 4) & 0x7;
+	return xl | (yl << 4) | (xh << 8) | (yh << 12);
+}
+
 @implementation MainWindow
 
 -initWithContext:(imui_ctx_t)ctx
@@ -292,6 +315,21 @@ MainMenu *main_menu;
 	IN_ButtonAddListener (cam_prev, imp, self);
 
 	Scene_SetCamera (scene, [active_camera entity]);
+
+	Particles_SetGravitry (scene, { 0, 0, 3, 1}, 3, 0.25);
+	//need to fix palette array/non-array in vulkan
+	//uint pixpal_ramps[] = {
+	//	pixpal_colorid (1,103),
+	//	pixpal_colorid (1,107),
+	//	pixpal_colorid (1,111),
+	//	pixpal_colorid (1,115),
+	//	pixpal_colorid (1,119),
+	//	pixpal_colorid (1,123),
+	//	pixpal_colorid (38,62),
+	//	pixpal_colorid (41,62),
+	//};
+	//Particles_SetRamps (scene, countof (pixpal_ramps), pixpal_ramps);
+
 	newscene (scene);
 
 	show_armature = 1;
@@ -1283,12 +1321,17 @@ main (int argc, string *argv)
 
 	auto earth_ent = create_orrery (planetary_queue, [main_window scene]);
 
-	Particles_SetGravitry ([main_window scene], { 0, 0, 3, 1}, 3, 0.25);
 	auto emitter = Scene_CreateEntity ([main_window scene]);
 	Transform_SetLocalTransform (Entity_GetTransform (emitter),
 								 {1, 1, 1, 1},
 									 {0, 0.707, 0, 0.707}, { 3, 0, 3, 1});
 	Entity_AttachPlane (emitter);
+	Emitter_SetSolid (emitter, 0.05);
+	Emitter_SetSquare (emitter, false);
+	Emitter_SetVelocity (emitter, '0.5 0.5 0.5');
+	Emitter_SetLive (emitter, 1000);
+	//need to fix palette array/non-array in vulkan
+	//Particles_SetPalette ([main_window scene], pixpal, 128);
 
 	//create_cube ();
 	while (true) {

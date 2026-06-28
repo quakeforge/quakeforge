@@ -910,6 +910,103 @@ bi (Entity_AttachPlane)
 	Ent_SetComponent (ent.id, c_plane, ent.reg, &plane);
 }
 
+static pe_plane_t *
+bi_get_plane (progs_t *pr, rua_scene_resources_t *res)
+{
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	entity_t    ent = rua_entity_get (res, ent_id);
+	pr_ulong_t  scene_id = ent_id & 0xffffffff;
+	// bad scene caught above
+	rua_scene_t *scene = rua_scene_get (res, scene_id);
+
+	uint32_t c_plane = scene->scene->psys_base + pemitter_plane;
+	return Ent_GetComponent (ent.id, c_plane, ent.reg);
+}
+
+bi(Emitter_SetRamp)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->base.ramp_base = P_UINT (pr, 1);
+	plane->base.ramp_range = P_UINT (pr, 2);
+}
+
+bi(Emitter_SetEmitRate)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->base.rate = P_FLOAT (pr, 1);
+}
+
+bi(Emitter_SetColor)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->particle.color = P_UINT (pr, 1);
+}
+
+bi(Emitter_SetScale)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->particle.scale = P_FLOAT (pr, 1);
+}
+
+bi(Emitter_SetLive)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->particle.live = P_FLOAT (pr, 1);
+}
+
+bi(Emitter_SetRates)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	auto rates = P_PACKED (pr, pr_vec4_t, 1);
+	plane->particle.ramp_rate = rates[0];
+	plane->particle.ramp_max = rates[1];
+	plane->particle.scale_rate = rates[2];
+	plane->particle.alpha_rate = rates[3];
+}
+
+bi(Emitter_SetDrag)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	auto drag = P_VECTOR (pr, 1);
+	VectorCopy (drag, plane->particle.drag);
+}
+
+bi(Emitter_SetGravScale)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->particle.grav_scale = P_FLOAT (pr, 1);
+}
+
+bi(Emitter_SetVelocity)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	auto vel = P_VECTOR (pr, 1);
+	VectorCopy (vel, plane->vel);
+}
+
+bi(Emitter_SetSolid)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->solid = P_FLOAT (pr, 1);
+}
+
+bi(Emitter_SetSquare)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->square = P_INT (pr, 1);
+}
+
 #undef bi
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
@@ -979,6 +1076,17 @@ static builtin_t builtins[] = {
 	bi(Particles_SetPalette,        3, p(ulong), p(uint), p(uint)),
 	bi(Particles_SetGravitry,       4, p(ulong), p(vec4), p(float), p(float)),
 	bi(Entity_AttachPlane,          1, p(ulong)),
+	bi(Emitter_SetRamp,             3, p(ulong), p(uint), p(uint)),
+	bi(Emitter_SetEmitRate,         2, p(ulong), p(float)),
+	bi(Emitter_SetColor,            2, p(ulong), p(uint)),
+	bi(Emitter_SetScale,            2, p(ulong), p(float)),
+	bi(Emitter_SetLive,             2, p(ulong), p(float)),
+	bi(Emitter_SetRates,            2, p(ulong), p(vec4)),
+	bi(Emitter_SetDrag,             2, p(ulong), p(vector)),
+	bi(Emitter_SetGravScale,        2, p(ulong), p(float)),
+	bi(Emitter_SetVelocity,         2, p(ulong), p(vector)),
+	bi(Emitter_SetSolid,            2, p(ulong), p(float)),
+	bi(Emitter_SetSquare,           2, p(ulong), p(int)),
 
 	{0}
 };
