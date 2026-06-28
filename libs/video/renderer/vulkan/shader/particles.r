@@ -258,8 +258,8 @@ main (void)
 vec4
 calc_color (uint c)
 {
-	uvec2 xy = uvec2 (((c >> 0) & 0x0f) | ((c >>  8) & 0x0f),
-					  ((c >> 4) & 0x0f) | ((c >> 12) & 0x0f));
+	uvec2 xy = uvec2 (((c >> 0) & 0x0f) | (((c >>  8) & 0x0f) << 4),
+					  ((c >> 4) & 0x0f) | (((c >> 12) & 0x0f) << 4));
 	return texture (Palette, (vec2 (xy) + 0.5) / palette_size);
 }
 
