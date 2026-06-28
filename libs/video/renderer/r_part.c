@@ -317,9 +317,9 @@ pemit_plane (ecs_system_t *sys, ecs_pool_t *pool, uint32_t ind, float dT)
 				u = mtwist_rand_m1_1 (&pemitter_mt);
 				v = mtwist_rand_m1_1 (&pemitter_mt);
 			} else {
-				float a = 2 * mtwist_rand_m1_1 (&pemitter_mt);
-				u = a < 0 ? max (-a - 1, 0) : min (a, 1);
-				v = a < 0 ? min (-a, 1) : max (a - 1, 0);
+				float a = 4 * mtwist_rand_m1_1 (&pemitter_mt);
+				u = (a < 0 ? max (-a - 2, 0) : min (a, 2)) - 1;
+				v = (a < 0 ? min (-a, 2) : max (a - 2, 0)) - 1;
 			}
 			pos = u * loadvec3f (plane->u) + v * loadvec3f (plane->v);
 		} else {
