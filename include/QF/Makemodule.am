@@ -28,7 +28,6 @@ include_qf = \
 	include/QF/info.h \
 	include/QF/input.h \
 	include/QF/iqm.h \
-	include/QF/joystick.h \
 	include/QF/keys.h \
 	include/QF/link.h \
 	include/QF/listener.h \
@@ -122,6 +121,7 @@ include_qf_glsl = \
 	include/QF/GLSL/types.h
 
 include_qf_input = \
+	include/QF/input/axis_button.h \
 	include/QF/input/binding.h \
 	include/QF/input/event.h \
 	include/QF/input/event_names.h \
