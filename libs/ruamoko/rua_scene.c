@@ -845,6 +845,25 @@ bi (Light_EnableSun)
 	Light_EnableSun (ldata->ldata);
 }
 
+bi (Particles_SetRamps)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	rua_scene_t *scene = rua_scene_get (res, P_ULONG (pr, 0));
+	auto count = P_UINT (pr, 1);
+	auto ramps = (int *) P_GPOINTER (pr, 2);
+	if (scene->psystem->partramps != scene->partramps) {
+		free ((int *) scene->psystem->partramps);
+	}
+	if (count > countof (scene->partramps)) {
+		scene->psystem->partramps = malloc (sizeof (int[count]));;
+	} else {
+		scene->psystem->partramps = scene->partramps;
+	}
+	memcpy ((int *) scene->psystem->partramps, ramps, sizeof (int[count]));
+	scene->psystem->partramps_count = count;
+}
+
 bi (Particles_SetPalette)
 {
 	qfZoneScoped (true);
@@ -956,6 +975,7 @@ static builtin_t builtins[] = {
 				p(vec4), p(vec4), p(vec4), p(vec4), p(int)),
 	bi(Light_EnableSun,             1, p(ulong)),
 
+	bi(Particles_SetRamps,          3, p(ulong), p(uint), p(ptr)),
 	bi(Particles_SetPalette,        3, p(ulong), p(uint), p(uint)),
 	bi(Particles_SetGravitry,       4, p(ulong), p(vec4), p(float), p(float)),
 	bi(Entity_AttachPlane,          1, p(ulong)),
