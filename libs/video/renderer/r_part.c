@@ -280,8 +280,8 @@ part_vel (vec3_t vel_scale)
 {
 	vec4f_t vel = {};
 	for (int i = 0; i < 3; i++) {
-		if (vel[i]) {
-			vel[i] = mtwist_rand_0_1 (&pemitter_mt) * vel_scale[i];
+		if (vel_scale[i]) {
+			vel[i] = mtwist_rand_m1_1 (&pemitter_mt) * vel_scale[i];
 		}
 	}
 	return vel;
