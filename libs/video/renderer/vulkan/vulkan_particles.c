@@ -54,6 +54,7 @@
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_particles.h"
+#include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/qf_translucent.h"
 
 #include "r_internal.h"
@@ -171,9 +172,15 @@ particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto layout = pipeline->layout;
 	auto cmd = taskctx->cmd;
 
+	VkDescriptorSet palette;
+	if (pctx->psystem->palette_id == nullent) {
+		palette = Vulkan_Palette_Descriptor (ctx);
+	} else {
+		palette = QFV_GetTexture (ctx, pctx->psystem->palette_id);
+	}
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-		Vulkan_Palette_Descriptor (ctx),
+		palette,
 		Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,

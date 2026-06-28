@@ -233,6 +233,7 @@ bi (Scene_NewScene)
 	scene->psystem->partramps = scene->partramps;
 	scene->psystem->partramps_count = countof (scene->partramps);
 	scene->psystem->palette_size = 16;
+	scene->psystem->palette_id = nullent;
 	scene->def_particle = (peparticle_t) {
 		.color = 0xfe,
 		.scale = 0.02,
@@ -844,6 +845,15 @@ bi (Light_EnableSun)
 	Light_EnableSun (ldata->ldata);
 }
 
+bi (Particles_SetPalette)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	rua_scene_t *scene = rua_scene_get (res, P_ULONG (pr, 0));
+	scene->psystem->palette_id = P_UINT (pr, 1);
+	scene->psystem->palette_size = P_UINT (pr, 2);
+}
+
 bi (Particles_SetGravitry)
 {
 	qfZoneScoped (true);
@@ -946,6 +956,7 @@ static builtin_t builtins[] = {
 				p(vec4), p(vec4), p(vec4), p(vec4), p(int)),
 	bi(Light_EnableSun,             1, p(ulong)),
 
+	bi(Particles_SetPalette,        3, p(ulong), p(uint), p(uint)),
 	bi(Particles_SetGravitry,       4, p(ulong), p(vec4), p(float), p(float)),
 	bi(Entity_AttachPlane,          1, p(ulong)),
 
