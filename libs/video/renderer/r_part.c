@@ -270,7 +270,10 @@ spawn_particle (psystem_t *ps, peparticle_t *particle,
 	};
 	*param = (partparm_t) {
 		.drag = { VectorExpand (particle->drag), particle->grav_scale },
+		.ramp_rate = particle->ramp_rate,
 		.ramp_max = particle->ramp_max,
+		.scale_rate = particle->scale_rate,
+		.alpha_rate = particle->alpha_rate,
 	};
 	return p;
 }
