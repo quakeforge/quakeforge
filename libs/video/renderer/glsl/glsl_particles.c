@@ -91,6 +91,7 @@ static struct {
 	int         program;
 	shaderparam_t mvp_matrix;
 	shaderparam_t vertex;
+	shaderparam_t scale;
 	shaderparam_t palette;
 	shaderparam_t color;
 	shaderparam_t fog;
@@ -98,6 +99,7 @@ static struct {
 	0,
 	{"mvp_mat", 1},
 	{"vertex", 0},
+	{"scale", 0},
 	{"palette", 1},
 	{"vcolor", 0},
 	{"fog", 1},
@@ -187,6 +189,7 @@ glsl_R_InitParticles (void)
 	quake_point.program = GLSL_LinkProgram ("quakepoint", vert, frag);
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.mvp_matrix);
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.vertex);
+	GLSL_ResolveShaderParam (quake_point.program, &quake_point.scale);
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.palette);
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.color);
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.fog);
@@ -372,6 +375,7 @@ draw_id_particles (psystem_t *psystem)
 	qfeglDepthMask (GL_FALSE);
 	qfeglUseProgram (quake_point.program);
 	qfeglEnableVertexAttribArray (quake_point.vertex.location);
+	qfeglEnableVertexAttribArray (quake_point.scale.location);
 	qfeglEnableVertexAttribArray (quake_point.color.location);
 
 	qfeglUniformMatrix4fv (quake_point.mvp_matrix.location, 1, false,
@@ -400,6 +404,7 @@ draw_id_particles (psystem_t *psystem)
 		if (!(DotProduct (p->pos, r_refdef.frame.forward) < minparticledist)) {
 			VA[0].color[0] = (byte) p->color;
 			VectorCopy (p->pos, VA[0].vertex);
+			VA[0].scale = p->scale;
 			VA++;
 			vacount++;
 		}
@@ -408,6 +413,9 @@ draw_id_particles (psystem_t *psystem)
 	qfeglVertexAttribPointer (quake_point.vertex.location, 3, GL_FLOAT,
 							 0, sizeof (partvert_t),
 							 &particleVertexArray[0].vertex);
+	qfeglVertexAttribPointer (quake_point.scale.location, 1, GL_FLOAT,
+							 0, sizeof (partvert_t),
+							 &particleVertexArray[0].scale);
 	qfeglVertexAttribPointer (quake_point.color.location, 1, GL_UNSIGNED_BYTE,
 							 1, sizeof (partvert_t),
 							 &particleVertexArray[0].color);
@@ -415,6 +423,7 @@ draw_id_particles (psystem_t *psystem)
 
 	qfeglDepthMask (GL_TRUE);
 	qfeglDisableVertexAttribArray (quake_point.vertex.location);
+	qfeglDisableVertexAttribArray (quake_point.scale.location);
 	qfeglDisableVertexAttribArray (quake_point.color.location);
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
 	qfeglDisable (GL_TEXTURE_2D);
