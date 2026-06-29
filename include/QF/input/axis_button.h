@@ -32,7 +32,7 @@
 #include <QF/qtypes.h>
 
 typedef struct in_ab_state_s {
-	float       threshold;
+	int         threshold;
 	int         button;
 	int         state;
 } in_ab_state_t;
@@ -43,7 +43,11 @@ typedef struct in_axis_button_s {
 	in_ab_state_t *buttons;
 } in_axis_button_t;
 
-void IN_AxisButton_Check (in_axis_button_t *axis_button, float value);
+int IN_AxisButton_Check (in_axis_button_t *axis_button, int value)
+	__attribute__((pure));
+int IN_AxisButton_Test (in_axis_button_t *axis_button, int value, int button)
+	__attribute__((pure));
+void IN_AxisButton_Event (in_axis_button_t *axis_button, int value);
 in_axis_button_t *IN_AxisButton_Create (int devid, int num_buttons,
 										in_ab_state_t *buttons);
 

@@ -13,6 +13,7 @@
 #include "QF/va.h"
 
 #include "QF/input.h"
+#include "QF/input/axis_button.h"
 #include "QF/input/event.h"
 #include "QF/input/gamepad.h"
 
@@ -47,11 +48,13 @@ typedef struct in_gamepad_s {
 	in_ctrlbind_t *axis_binding;
 	in_ctrlbind_t *button_binding;
 	in_ctrlbind_t *hat_binding;
+	in_axis_button_t **axis_buttons;
 	in_ctrlmap_t  axis_map[8];
 	in_ctrlmap_t  button_map[15];
 	int           num_hats;
 	int           num_buttons;
 	int           num_axes;
+	int           num_axis_buttons;
 } in_gamepad_t;
 
 static const char gamecontrollerdb[] = {
@@ -292,12 +295,6 @@ button_to_axis (int state, in_ctrlbind_t bind)
 	return state ? bind.out_max : bind.out_min;
 }
 
-static int
-axis_to_button (int value, in_ctrlbind_t bind)
-{
-	return value > (bind.in_max + bind.in_min) / 2;
-}
-
 static in_axisinfo_t
 calc_axis_info (in_gamepad_t *gamepad, in_ctrlmap_t map, int num)
 {
@@ -351,10 +348,11 @@ calc_button_info (in_gamepad_t *gamepad, in_ctrlmap_t map, int num)
 			bind = gamepad->axis_binding[map.index];
 			in_axisinfo_t axis;
 			IN_GetAxisInfo (gamepad->parent, map.index, &axis);
+			auto ab = gamepad->axis_buttons[bind.button];
 			info = (in_buttoninfo_t) {
 				.deviceid = gamepad->devid,
 				.button = num,
-				.state = axis_to_button (axis.value, bind),
+				.state = IN_AxisButton_Test (ab, axis.value, num),
 			};
 			break;
 		case inm_button:
@@ -403,7 +401,7 @@ in_gamepad_button_info (void *data, void *device, in_buttoninfo_t *buttons,
 		*numbuttons = countof (gamepad->button_map);
 	}
 	for (int i = 0; i < *numbuttons; i++) {
-		*buttons = calc_button_info (gamepad, gamepad->button_map[i], i);
+		buttons[i] = calc_button_info (gamepad, gamepad->button_map[i], i);
 	}
 }
 
@@ -592,6 +590,132 @@ IN_Gamepad_Init (void)
 	}
 }
 
+static const char *
+get_field_name (const mapping_field_t *field, const mapping_t *mapping)
+{
+	uint32_t offset = field->offset;
+	auto stroffs = *(uint32_t *) ((const byte *) mapping + offset);
+	return mapping_strings.str + stroffs;
+}
+
+static int
+calc_threshold (in_gamepad_t *gamepad, in_mapping_t inp)
+{
+	in_axisinfo_t axis;
+	IN_GetAxisInfo (gamepad->parent, inp.index, &axis);
+
+	int threshold = 0;
+	if (inp.sign < 0) {
+		int mid = (axis.min + axis.max) / 2;
+		threshold = (axis.min - (mid + 1)) / 2;
+	} else if (inp.sign > 0) {
+		int mid = (axis.min + axis.max) / 2;
+		threshold = (axis.max - (mid - 1)) / 2;
+	} else {
+		threshold = (axis.max - axis.min) / 2;
+	}
+	return threshold;
+}
+
+static void
+create_axis_bindings (in_gamepad_t *gamepad, mapping_t *mapping, in_device_t *device)
+{
+	auto driver = IN_GetDriver (device->driverid);
+	void *driver_data = IN_GetDriverData (device->driverid);
+	int  num_axes = gamepad->num_axes;
+
+	int axis_button_counts[num_axes + 1] = {};
+	for (uint32_t i = 0; i < countof (mapping_fields); i++) {
+		auto field = &mapping_fields[i];
+		if (field->button < 0) {
+			continue;
+		}
+		auto inp_name = get_field_name (field, mapping);
+		auto inp = driver->gamepad_mapping (driver_data, device->device,
+											inp_name);
+		if (inp.type == inm_abs_axis) {
+			axis_button_counts[inp.index]++;
+		}
+	}
+	int max_buttons = 0;
+	int num_axis_buttons = 0;
+	int axis_button_inds[num_axes + 1] = {};
+	for (int i = 0; i < num_axes; i++) {
+		axis_button_inds[i] = -1;
+		if (axis_button_counts[i] > max_buttons) {
+			max_buttons = axis_button_counts[i];
+		}
+		if (axis_button_counts[i]) {
+			axis_button_inds[i] = num_axis_buttons++;
+		}
+		axis_button_counts[i] = 0;
+	}
+
+	if (max_buttons && num_axis_buttons) {
+		in_ab_state_t ab_buttons[max_buttons * num_axis_buttons] = {};
+		int axis_inds[num_axis_buttons];
+
+		for (uint32_t i = 0; i < countof (mapping_fields); i++) {
+			auto field = &mapping_fields[i];
+			if (field->button < 0) {
+				continue;
+			}
+			auto inp_name = get_field_name (field, mapping);
+			auto inp = driver->gamepad_mapping (driver_data, device->device,
+												inp_name);
+			if (inp.type == inm_abs_axis && axis_button_inds[inp.index] >= 0) {
+				int count = axis_button_counts[inp.index];
+				int ind = axis_button_inds[inp.index] * max_buttons;
+				auto buttons = &ab_buttons[ind];
+				axis_inds[axis_button_inds[inp.index]] = inp.index;
+				buttons[count++] = (in_ab_state_t) {
+					.threshold = calc_threshold (gamepad, inp),
+					.button = field->button,
+				};
+				axis_button_counts[inp.index] = count;
+			}
+		}
+		size_t size = sizeof (in_axis_button_t *[num_axis_buttons]);
+		gamepad->axis_buttons = malloc (size);
+		gamepad->num_axis_buttons = num_axis_buttons;
+		for (int i = 0; i < num_axis_buttons; i++) {
+			auto buttons = &ab_buttons[i * max_buttons];
+			int count = axis_button_counts[axis_inds[i]];
+			auto ab = IN_AxisButton_Create (gamepad->devid, count, buttons);
+			gamepad->axis_buttons[i] = ab;
+		}
+	}
+
+	for (uint32_t i = 0; i < countof (mapping_fields); i++) {
+		auto field = &mapping_fields[i];
+		auto inp_name = get_field_name (field, mapping);
+		auto inp = driver->gamepad_mapping (driver_data, device->device,
+											inp_name);
+		if (inp.type == inm_abs_axis || inp.type == inm_rel_axis) {
+			in_axisinfo_t axis;
+			IN_GetAxisInfo (gamepad->parent, inp.index, &axis);
+			auto binding = &gamepad->axis_binding[inp.index];
+			bool dp = strncmp (field->name, "dp", 2) == 0;
+			bool but = field->button >= 0;
+			*binding = (in_ctrlbind_t) {
+				.type = inp.type,
+				.axis = field->axis,
+				.button = but ? axis_button_inds[inp.index] : -1,
+				.in_min = axis.min,
+				.in_max = axis.max,
+				.out_min = dp ? -1 : in_gamepad_min,
+				.out_max = dp ?  1 : in_gamepad_max,
+			};
+			if (but) {
+				gamepad->button_map[field->button] = (in_ctrlmap_t) {
+					.type = inp.type,
+					.index = inp.index,
+				};
+			}
+		}
+	}
+}
+
 in_gamepad_t *
 IN_Gamepad_Add (in_devid_t devid, int deviceid)
 {
@@ -646,14 +770,15 @@ IN_Gamepad_Add (in_devid_t devid, int deviceid)
 	memset (gamepad->button_binding, -1, num_buttons * sizeof (in_ctrlbind_t));
 	gamepad->devid = IN_AddDevice (gamepad_driver_handle, gamepad,
 								   gamepad->name, gamepad->name);
+
+	create_axis_bindings (gamepad, mapping, device);
+
 	for (uint32_t i = 0; i < countof (mapping_fields); i++) {
 		auto field = &mapping_fields[i];
 		if (field->axis < 0 && field->button < 0) {
 			continue;
 		}
-		uint32_t offset = field->offset;
-		auto stroffs = *((byte *)mapping + offset);
-		const char *inp_name = mapping_strings.str + stroffs;
+		auto inp_name = get_field_name (field, mapping);
 		auto inp = driver->gamepad_mapping (driver_data, device->device,
 											inp_name);
 		in_ctrlbind_t *binding = nullptr;
@@ -662,8 +787,8 @@ IN_Gamepad_Add (in_devid_t devid, int deviceid)
 				continue;
 			case inm_abs_axis:
 			case inm_rel_axis:
-				binding = &gamepad->axis_binding[inp.index];
-				break;
+				// already done
+				continue;
 			case inm_button:
 				binding = &gamepad->button_binding[inp.index];
 				break;
@@ -751,6 +876,7 @@ void
 IN_Gamepad_Event (in_gamepad_t *gamepad, IE_event_t *ie_event)
 {
 	if (ie_event->type == ie_axis) {
+		int value = ie_event->axis.value;
 		auto binding = gamepad->axis_binding[ie_event->axis.axis];
 		IE_event_t event = {
 			.when = ie_event->when,
@@ -761,19 +887,13 @@ IN_Gamepad_Event (in_gamepad_t *gamepad, IE_event_t *ie_event)
 				.data = gamepad->event_data,
 				.devid = gamepad->devid,
 				.axis = binding.axis,
-				.value = convert_axis (ie_event->axis.value, binding),
+				.value = convert_axis (value, binding),
 			};
 			IE_Send_Event (&event);
 		}
 		if (binding.button >= 0) {
-			event.type = ie_button;
-			event.button = (IE_button_event_t) {
-				.data = gamepad->event_data,
-				.devid = gamepad->devid,
-				.button = binding.button,
-				.state = axis_to_button (ie_event->axis.value, binding),
-			};
-			IE_Send_Event (&event);
+			auto ab = gamepad->axis_buttons[binding.button];
+			IN_AxisButton_Event (ab, value);
 		}
 	} else if (ie_event->type == ie_button) {
 		auto binding = gamepad->button_binding[ie_event->button.button];

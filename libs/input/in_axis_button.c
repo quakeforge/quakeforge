@@ -53,8 +53,8 @@ ab_send_event (uint64_t when, int devid, in_ab_state_t *state)
 	IE_Send_Event (&event);
 }
 
-void
-IN_AxisButton_Check (in_axis_button_t *axis_button, float value)
+int
+IN_AxisButton_Check (in_axis_button_t *axis_button, int value)
 {
 	int         pressed = -1;
 
@@ -62,12 +62,19 @@ IN_AxisButton_Check (in_axis_button_t *axis_button, float value)
 	for (int i = 0; i < axis_button->num_buttons; i++) {
 		auto ab = &axis_button->buttons[i];
 		if ((value < 0) == (ab->threshold < 0)
-			&& fabsf (value) >= fabsf (ab->threshold)) {
+			&& abs (value) >= abs (ab->threshold)) {
 			pressed = i;
 			break;
 
 		}
 	}
+	return pressed;
+}
+
+void
+IN_AxisButton_Event (in_axis_button_t *axis_button, int value)
+{
+	int pressed = IN_AxisButton_Check (axis_button, value);
 	// make sure any buttons that are no longer active are "released"
 	for (int i = 0; i < axis_button->num_buttons; i++) {
 		if (i == pressed)
@@ -89,6 +96,18 @@ IN_AxisButton_Check (in_axis_button_t *axis_button, float value)
 	}
 }
 
+int
+IN_AxisButton_Test (in_axis_button_t *axis_button, int value, int button)
+{
+	for (int i = 0; i < axis_button->num_buttons; i++) {
+		auto ab = &axis_button->buttons[i];
+		if (ab->button == button) {
+			return ab->state;
+		}
+	}
+	return 0;
+}
+
 in_axis_button_t *
 IN_AxisButton_Create (int devid, int num_buttons, in_ab_state_t *buttons)
 {
@@ -106,7 +125,7 @@ IN_AxisButton_Create (int devid, int num_buttons, in_ab_state_t *buttons)
 	auto ab = axis_button->buttons;
 	for (int i = 0; i < num_buttons - 1; i++) {
 		for (int j = i + 1; j < num_buttons; j++) {
-			if (fabs (ab[i].threshold) < fabs (ab[j].threshold)) {
+			if (abs (ab[i].threshold) < abs (ab[j].threshold)) {
 				auto t = ab[i];
 				ab[i] = ab[j];
 				ab[j] = t;
