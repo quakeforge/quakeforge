@@ -93,6 +93,11 @@ typedef struct qio_gzsub_s {
 } qio_gzsub_t;
 #endif
 
+typedef struct qio_mem_s {
+	const byte *start;
+	size_t      pos;
+} qio_mem_t;
+
 typedef struct qio_sub_s {
 	int         fd;
 	size_t      start;
@@ -158,6 +163,79 @@ static qio_funcs_t qio_FILE_funcs = {
 	.eof   = qio_FILE_eof,
 
 	.close = qio_FILE_close,
+};
+
+static size_t
+qio_mem_read (QFile *file, void *buf, size_t count)
+{
+	qio_mem_t  *mem = file->file;
+	if (mem->pos > file->size) {
+		// shouldn't happen, but...
+		return 0;
+	}
+	if (count > file->size - mem->pos) {
+		count = file->size - mem->pos;
+	}
+
+	memcpy (buf, mem->start + mem->pos, count);
+	mem->pos += count;
+	return count;
+}
+
+static off_t
+qio_mem_seek (QFile *file, off_t offset, int whence)
+{
+	qio_mem_t  *mem = file->file;
+	switch (whence) {
+		case SEEK_SET:
+			mem->pos = offset;
+			break;
+		case SEEK_CUR:
+			mem->pos += offset;
+			break;
+		case SEEK_END:
+			mem->pos = file->size + offset;
+			break;
+	}
+	if (mem->pos > file->size) {
+		mem->pos = file->size;
+	}
+	return mem->pos;
+}
+
+static long
+qio_mem_tell (QFile *file)
+{
+	qio_mem_t  *mem = file->file;
+	return mem->pos;
+}
+
+static int
+qio_mem_flush (QFile *file)
+{
+	return 0;
+}
+
+static int
+qio_mem_eof (QFile *file)
+{
+	qio_mem_t  *mem = file->file;
+	return mem->pos >= file->size;
+}
+
+static void
+qio_mem_close (QFile *file)
+{
+}
+
+static qio_funcs_t qio_mem_funcs = {
+	.read  = qio_mem_read,
+	.seek  = qio_mem_seek,
+	.tell  = qio_mem_tell,
+	.flush = qio_mem_flush,
+	.eof   = qio_mem_eof,
+
+	.close = qio_mem_close,
 };
 
 static size_t
@@ -581,6 +659,40 @@ Qfopen (FILE *file, const char *mode)
 }
 
 static QFile *
+qio_mem_open (const void *data, int len)
+{
+	QFile *file = malloc (sizeof (QFile) + sizeof (qio_mem_t));
+	auto mem = (qio_mem_t *) &file[1];
+	*file = (QFile) {
+		.file = mem,
+		.funcs = qio_mem_funcs,
+		.size = len,
+		.c = -1,
+	};
+	*mem = (qio_mem_t) {
+		.start = data,
+		.pos = 0,
+	};
+	return file;
+}
+
+VISIBLE QFile *
+Qmemopen (const void *data, int len, int zip)
+{
+	if (!data) {
+		return nullptr;
+	}
+
+	//len = check_file (fd, offs, len, &zip);
+
+	//if (zip) {
+	//	return qio_sub_gzip_open (fd, offs, len);
+	//} else {
+		return qio_mem_open (data, len);
+	//}
+}
+
+static QFile *
 qio_sub_gzip_open (int fd, int offs, int len)
 {
 	QFile *file = malloc (sizeof (QFile) + sizeof (qio_sub_t));
@@ -623,7 +735,7 @@ Qsubopen (const char *path, int offs, int len, int zip)
 	int         fd = open (path, O_RDONLY);
 
 	if (fd == -1)
-		return 0;
+		return nullptr;
 #ifdef _WIN32
 	setmode (fd, O_BINARY);
 #endif
@@ -724,7 +836,7 @@ Qgets (QFile *file, char *buf, int count)
 			break;
 	}
 	if (buf == ret)
-		return 0;
+		return nullptr;
 
 	*buf++ = 0;
 	return ret;
@@ -811,7 +923,7 @@ Qgetline (QFile *file)
 	dstring_adjust (buf);
 
 	if (!Qgets (file, buf->str, buf->size)) {
-		return 0;
+		return nullptr;
 	}
 
 	len = strlen (buf->str);

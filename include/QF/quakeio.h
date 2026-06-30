@@ -44,6 +44,7 @@ size_t Qfilesize (QFile *file) __attribute__((pure));
 QFile *Qopen(const char *path, const char *mode);
 QFile *Qdopen(int fd, const char *mode);
 QFile *Qfopen (FILE *file, const char *mode);
+QFile *Qmemopen (const void *data, int len, int zip);
 QFile *Qsubopen (const char *path, int offs, int len, int zip);
 void Qclose(QFile *file);
 size_t Qread(QFile *file, void *buf, size_t count);
