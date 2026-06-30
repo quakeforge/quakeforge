@@ -137,7 +137,6 @@ locs_load (const char *filename)
 	const char *line;
 	vec4f_t     loc = { 0, 0, 0, 1 };
 	QFile      *file;
-	dstring_t  *buffer = dstring_new ();
 
 	tmp = va ("maps/%s", filename);
 	file = QFS_FOpenFile (tmp);
@@ -145,7 +144,7 @@ locs_load (const char *filename)
 		Sys_Printf ("Couldn't load %s\n", tmp);
 		return;
 	}
-	while ((line = Qgetline (file, buffer))) {
+	while ((line = Qgetline (file))) {
 		if (line[0] == '#')
 			continue;
 
@@ -172,7 +171,6 @@ locs_load (const char *filename)
 		locs_add (loc, t1);
 	}
 	Qclose (file);
-	dstring_delete (buffer);
 }
 
 void

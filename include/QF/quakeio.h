@@ -58,8 +58,7 @@ int Qseek(QFile *file, long offset, int whence);
 long Qtell(QFile *file);
 int Qflush(QFile *file);
 int Qeof(QFile *file);
-struct dstring_s;
-char *Qgetline(QFile *file, struct dstring_s *str);
+char *Qgetline(QFile *file);
 
 ///@}
 

@@ -86,6 +86,7 @@ struct QFile_s {
 	off_t pos;
 	int   c;
 	int   sub;
+	dstring_t  *buf;
 };
 
 
@@ -301,6 +302,9 @@ Qsubopen (const char *path, int offs, int len, int zip)
 VISIBLE void
 Qclose (QFile *file)
 {
+	if (file->buf) {
+		dstring_delete (file->buf);
+	}
 	if (file->file)
 		fclose (file->file);
 #ifdef HAVE_ZLIB
@@ -368,29 +372,23 @@ Qwrite (QFile *file, const void *buf, int count)
 VISIBLE int
 Qprintf (QFile *file, const char *fmt, ...)
 {
-	va_list     args;
-	int         ret = -1;
-
-	if (file->sub)		// can't write to a sub-file
+	if (file->sub) {		// can't write to a sub-file
 		return -1;
-	va_start (args, fmt);
-	if (file->file)
-		ret = vfprintf (file->file, fmt, args);
-#ifdef HAVE_ZLIB
-	else {
-		static dstring_t *buf;
-
-		if (!buf)
-			buf = dstring_new ();
-
-		dvsprintf (buf, fmt, args);
-		ret = strlen (buf->str);
-		if (ret > 0)
-			ret = gzwrite (file->gzfile, buf, (unsigned) ret);
 	}
-#endif
+
+	if (!file->buf) {
+		file->buf = dstring_new ();
+	}
+
+	va_list     args;
+	va_start (args, fmt);
+	dvsprintf (file->buf, fmt, args);
 	va_end (args);
-	return ret;
+
+	if (file->buf->size > 1) {
+		return Qwrite (file, file->buf->str, file->buf->size - 1);
+	}
+	return 0;
 }
 
 VISIBLE int
@@ -576,12 +574,17 @@ Qeof (QFile *file)
 /*
 	Qgetline
 
-	Dynamic length version of Qgets. Do NOT free the buffer.
+	Dynamic length version of Qgets.
 */
 VISIBLE char *
-Qgetline (QFile *file, dstring_t *buf)
+Qgetline (QFile *file)
 {
 	int         len;
+
+	if (!file->buf) {
+		file->buf = dstring_new ();
+	}
+	dstring_t  *buf = file->buf;
 
 	buf->size = 256 < buf->truesize ? buf->truesize : 256;
 	dstring_adjust (buf);
