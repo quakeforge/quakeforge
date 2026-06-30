@@ -48,7 +48,8 @@ QFile *Qsubopen (const char *path, int offs, int len, int zip);
 void Qclose(QFile *file);
 size_t Qread(QFile *file, void *buf, size_t count);
 size_t Qwrite(QFile *file, const void *buf, size_t count);
-int Qprintf(QFile *file, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
+int Qprintf(QFile *file, const char *fmt, ...)
+	__attribute__((format(PRINTF,2,3)));
 int Qputs(QFile *file, const char *buf);
 char *Qgets(QFile *file, char *buf, int count);
 int Qgetc(QFile *file);

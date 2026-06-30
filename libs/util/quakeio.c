@@ -397,16 +397,12 @@ Qprintf (QFile *file, const char *fmt, ...)
 VISIBLE int
 Qputs (QFile *file, const char *buf)
 {
-	if (file->sub)		// can't write to a sub-file
+	if (file->sub) {		// can't write to a sub-file
 		return -1;
-	if (file->file)
-		return fputs (buf, file->file);
-#ifdef HAVE_ZLIB
-	else
-		return gzputs (file->gzfile, buf);
-#else
-	return 0;
-#endif
+	}
+
+	size_t len = strlen (buf);
+	return Qwrite (file, buf, len);
 }
 
 VISIBLE char *
@@ -438,34 +434,19 @@ Qgetc (QFile *file)
 		file->c = -1;
 		return c;
 	}
-	if (file->sub) {
-		if (file->pos >= file->size)
-			return EOF;
-		file->pos++;
+	byte        c;
+	size_t ret = Qread (file, &c, 1);
+	if (ret < 1) {
+		return EOF;
 	}
-	if (file->file)
-		return fgetc (file->file);
-#ifdef HAVE_ZLIB
-	else
-		return gzgetc (file->gzfile);
-#else
-	return -1;
-#endif
+	return c;
 }
 
 VISIBLE int
 Qputc (QFile *file, int c)
 {
-	if (file->sub)		// can't write to a sub-file
-		return -1;
-	if (file->file)
-		return fputc (c, file->file);
-#ifdef HAVE_ZLIB
-	else
-		return gzputc (file->gzfile, c);
-#else
-	return -1;
-#endif
+	byte        b = c;
+	return Qwrite (file, &b, 1);
 }
 
 VISIBLE int
