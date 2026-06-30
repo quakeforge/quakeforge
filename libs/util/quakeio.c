@@ -75,20 +75,317 @@
 
 #define QF_ZIP	1
 #define QF_READ	2
+typedef struct qio_funcs_s {
+	size_t    (*read)  (QFile *file, void *buf, size_t count);
+	size_t    (*write) (QFile *file, const void *buf, size_t count);
+	off_t     (*seek)  (QFile *file, off_t offset, int whence);
+	long      (*tell)  (QFile *file);
+	int       (*flush) (QFile *file);
+	int       (*eof)   (QFile *file);
 
-struct QFile_s {
-	FILE       *file;
+	void      (*close) (QFile *file);
+} qio_funcs_t;
+
 #ifdef HAVE_ZLIB
+typedef struct qio_gzsub_s {
 	gzFile      gzfile;
+	size_t      pos;
+} qio_gzsub_t;
 #endif
-	size_t      size;
+
+typedef struct qio_sub_s {
+	int         fd;
 	size_t      start;
 	size_t      pos;
-	int         c;
-	int         sub;
+} qio_sub_t;
+
+struct QFile_s {
+	void       *file;
+	qio_funcs_t funcs;
 	dstring_t  *buf;
+	size_t      size;
+	int         c;
 };
 
+static size_t
+qio_FILE_read (QFile *file, void *buf, size_t count)
+{
+	return fread (buf, 1, count, file->file);
+}
+
+static size_t
+qio_FILE_write (QFile *file, const void *buf, size_t count)
+{
+	return fwrite (buf, 1, count, file->file);
+}
+
+static off_t
+qio_FILE_seek (QFile *file, off_t offset, int whence)
+{
+	return fseek (file->file, offset, whence);
+}
+
+static long
+qio_FILE_tell (QFile *file)
+{
+	return ftell (file->file);
+}
+
+static int
+qio_FILE_flush (QFile *file)
+{
+	return fflush (file->file);
+}
+
+static int
+qio_FILE_eof (QFile *file)
+{
+	return feof (file->file);
+}
+
+static void
+qio_FILE_close (QFile *file)
+{
+	fclose (file->file);
+}
+
+static qio_funcs_t qio_FILE_funcs = {
+	.read  = qio_FILE_read,
+	.write = qio_FILE_write,
+	.seek  = qio_FILE_seek,
+	.tell  = qio_FILE_tell,
+	.flush = qio_FILE_flush,
+	.eof   = qio_FILE_eof,
+
+	.close = qio_FILE_close,
+};
+
+static size_t
+qio_sub_FILE_read (QFile *file, void *buf, size_t count)
+{
+	qio_sub_t  *sub = file->file;
+	if (sub->pos > file->size) {
+		// shouldn't happen, but...
+		return 0;
+	}
+	if (count > file->size - sub->pos) {
+		count = file->size - sub->pos;
+	}
+
+	// sub-files are always opened in binary mode, so we don't need to
+	// worry about character translation messing up count/pos. Normal
+	// files can be left to the operating system to take care of EOF.
+	ssize_t ret = read (sub->fd, buf, count);
+	if (ret >= 0) {
+		sub->pos += ret;
+	}
+	return ret;
+}
+
+static off_t
+qio_sub_FILE_seek (QFile *file, off_t offset, int whence)
+{
+	qio_sub_t  *sub = file->file;
+	switch (whence) {
+		case SEEK_SET:
+			sub->pos = offset;
+			break;
+		case SEEK_CUR:
+			sub->pos += offset;
+			break;
+		case SEEK_END:
+			sub->pos = file->size + offset;
+			break;
+	}
+	if (sub->pos > file->size) {
+		sub->pos = file->size;
+	}
+	off_t pos = lseek (sub->fd, sub->start + sub->pos, SEEK_SET);
+	if (pos >= 0) {
+		return pos - sub->start;
+	}
+	return pos;
+}
+
+static long
+qio_sub_FILE_tell (QFile *file)
+{
+	qio_sub_t  *sub = file->file;
+	return sub->pos;
+}
+
+static int
+qio_sub_FILE_flush (QFile *file)
+{
+	return 0;
+}
+
+static int
+qio_sub_FILE_eof (QFile *file)
+{
+	qio_sub_t  *sub = file->file;
+	return sub->pos >= file->size;
+}
+
+static void
+qio_sub_FILE_close (QFile *file)
+{
+	qio_sub_t  *sub = file->file;
+	close (sub->fd);
+}
+
+static qio_funcs_t qio_sub_FILE_funcs = {
+	.read  = qio_sub_FILE_read,
+	.seek  = qio_sub_FILE_seek,
+	.tell  = qio_sub_FILE_tell,
+	.flush = qio_sub_FILE_flush,
+	.eof   = qio_sub_FILE_eof,
+
+	.close = qio_sub_FILE_close,
+};
+
+#ifdef HAVE_ZLIB
+static size_t
+qio_gzip_read (QFile *file, void *buf, size_t count)
+{
+	return gzread (file->file, buf, count);
+}
+
+static size_t
+qio_gzip_write (QFile *file, const void *buf, size_t count)
+{
+	return gzwrite (file->file, (const voidp) buf, count);
+}
+
+static off_t
+qio_gzip_seek (QFile *file, off_t offset, int whence)
+{
+	if (whence == SEEK_END) {
+		// libz does not support SEEK_END
+		return EINVAL;
+	}
+	return gzseek (file->file, offset, whence);
+}
+
+static long
+qio_gzip_tell (QFile *file)
+{
+	return ftell (file->file);
+}
+
+static int
+qio_gzip_flush (QFile *file)
+{
+	return fflush (file->file);
+}
+
+static int
+qio_gzip_eof (QFile *file)
+{
+	return feof (file->file);
+}
+
+static void
+qio_gzip_close (QFile *file)
+{
+	gzclose (file->file);
+}
+
+static qio_funcs_t qio_gzip_funcs = {
+	.read  = qio_gzip_read,
+	.write = qio_gzip_write,
+	.seek  = qio_gzip_seek,
+	.tell  = qio_gzip_tell,
+	.flush = qio_gzip_flush,
+	.eof   = qio_gzip_eof,
+
+	.close = qio_gzip_close,
+};
+
+static size_t
+qio_gzsub_FILE_read (QFile *file, void *buf, size_t count)
+{
+	qio_gzsub_t *sub = file->file;
+	if (sub->pos > file->size) {
+		// shouldn't happen, but...
+		return 0;
+	}
+	if (count > file->size - sub->pos) {
+		count = file->size - sub->pos;
+	}
+
+	// sub-files are always opened in binary mode, so we don't need to
+	// worry about character translation messing up count/pos. Normal
+	// files can be left to the operating system to take care of EOF.
+	ssize_t ret = gzread (sub->gzfile, buf, count);
+	if (ret >= 0) {
+		sub->pos += ret;
+	}
+	return ret;
+}
+
+static off_t
+qio_gzsub_FILE_seek (QFile *file, off_t offset, int whence)
+{
+	qio_gzsub_t *sub = file->file;
+	switch (whence) {
+		case SEEK_SET:
+			sub->pos = offset;
+			break;
+		case SEEK_CUR:
+			sub->pos += offset;
+			break;
+		case SEEK_END:
+			sub->pos = file->size + offset;
+			break;
+	}
+	if (sub->pos > file->size) {
+		sub->pos = file->size;
+	}
+	off_t pos = gzseek (sub->gzfile, sub->pos, SEEK_SET);
+	if (pos >= 0) {
+		return pos;
+	}
+	return pos;
+}
+
+static long
+qio_gzsub_FILE_tell (QFile *file)
+{
+	qio_gzsub_t *sub = file->file;
+	return sub->pos;
+}
+
+static int
+qio_gzsub_FILE_flush (QFile *file)
+{
+	return 0;
+}
+
+static int
+qio_gzsub_FILE_eof (QFile *file)
+{
+	qio_gzsub_t *sub = file->file;
+	return sub->pos >= file->size;
+}
+
+static void
+qio_gzsub_FILE_close (QFile *file)
+{
+	qio_gzsub_t *sub = file->file;
+	gzclose (sub->gzfile);
+}
+
+static qio_funcs_t qio_gzsub_FILE_funcs = {
+	.read  = qio_gzsub_FILE_read,
+	.seek  = qio_gzsub_FILE_seek,
+	.tell  = qio_gzsub_FILE_tell,
+	.flush = qio_gzsub_FILE_flush,
+	.eof   = qio_gzsub_FILE_eof,
+
+	.close = qio_gzsub_FILE_close,
+};
+#endif
 
 VISIBLE int
 Qrename (const char *old_path, const char *new_path)
@@ -190,23 +487,25 @@ Qopen (const char *path, const char *mode)
 
 	file = calloc (sizeof (*file), 1);
 	if (!file)
-		return 0;
+		return nullptr;
 	file->size = size;
 #ifdef HAVE_ZLIB
 	if (zip) {
-		file->gzfile = gzopen (path, m);
-		if (!file->gzfile) {
+		file->file = gzopen (path, m);
+		if (!file->file) {
 			free (file);
-			return 0;
+			return nullptr;
 		}
+		file->funcs = qio_gzip_funcs;
 	} else
 #endif
 	{
 		file->file = fopen (path, m);
 		if (!file->file) {
 			free (file);
-			return 0;
+			return nullptr;
 		}
+		file->funcs = qio_FILE_funcs;
 	}
 	file->c = -1;
 	return file;
@@ -243,11 +542,12 @@ Qdopen (int fd, const char *mode)
 		return 0;
 #ifdef HAVE_ZLIB
 	if (zip) {
-		file->gzfile = gzdopen (fd, m);
-		if (!file->gzfile) {
+		file->file = gzdopen (fd, m);
+		if (!file->file) {
 			free (file);
 			return 0;
 		}
+		file->funcs = qio_gzip_funcs;
 	} else
 #endif
 	{
@@ -256,6 +556,7 @@ Qdopen (int fd, const char *mode)
 			free (file);
 			return 0;
 		}
+		file->funcs = qio_FILE_funcs;
 	}
 	file->c = -1;
 	return file;
@@ -279,11 +580,47 @@ Qfopen (FILE *file, const char *mode)
 	return qfile;
 }
 
+static QFile *
+qio_sub_gzip_open (int fd, int offs, int len)
+{
+	QFile *file = malloc (sizeof (QFile) + sizeof (qio_sub_t));
+	auto sub = (qio_gzsub_t *) &file[1];
+	*file = (QFile) {
+		.file = sub,
+		.funcs = qio_gzsub_FILE_funcs,
+		.size = len,
+		.c = -1,
+	};
+	*sub = (qio_gzsub_t) {
+		.gzfile = gzdopen (fd, "rb"),
+		.pos = 0,
+	};
+	return file;
+}
+
+static QFile *
+qio_sub_FILE_open (int fd, int offs, int len)
+{
+	QFile *file = malloc (sizeof (QFile) + sizeof (qio_sub_t));
+	auto sub = (qio_sub_t *) &file[1];
+	*file = (QFile) {
+		.file = sub,
+		.funcs = qio_sub_FILE_funcs,
+		.size = len,
+		.c = -1,
+	};
+	*sub = (qio_sub_t) {
+		.fd = fd,
+		.start = offs,
+		.pos = 0,
+	};
+	return file;
+}
+
 VISIBLE QFile *
 Qsubopen (const char *path, int offs, int len, int zip)
 {
 	int         fd = open (path, O_RDONLY);
-	QFile      *file;
 
 	if (fd == -1)
 		return 0;
@@ -292,11 +629,12 @@ Qsubopen (const char *path, int offs, int len, int zip)
 #endif
 
 	len = check_file (fd, offs, len, &zip);
-	file = Qdopen (fd, zip ? "rbz" : "rb");
-	file->size = len;
-	file->start = offs;
-	file->sub = 1;
-	return file;
+
+	if (zip) {
+		return qio_sub_gzip_open (fd, offs, len);
+	} else {
+		return qio_sub_FILE_open (fd, offs, len);
+	}
 }
 
 VISIBLE void
@@ -305,12 +643,7 @@ Qclose (QFile *file)
 	if (file->buf) {
 		dstring_delete (file->buf);
 	}
-	if (file->file)
-		fclose (file->file);
-#ifdef HAVE_ZLIB
-	else
-		gzclose (file->gzfile);
-#endif
+	file->funcs.close (file);
 	free (file);
 }
 
@@ -318,8 +651,6 @@ VISIBLE size_t
 Qread (QFile *file, void *buf, size_t count)
 {
 	int         offs = 0;
-	int         ret;
-
 	if (file->c != -1) {
 		char       *b = buf;
 		*b++ = file->c;
@@ -327,55 +658,28 @@ Qread (QFile *file, void *buf, size_t count)
 		offs = 1;
 		file->c = -1;
 		count--;
-		if (!count)
-			return 1;
-	}
-	if (file->sub) {
-		// sub-files are always opened in binary mode, so we don't need to
-		// worry about character translation messing up count/pos. Normal
-		// files can be left to the operating system to take care of EOF.
-		if (file->pos > file->size) {
-			return -1;
-		}
-		if (file->pos + count > file->size) {
-			count = file->size - file->pos;
-		}
 		if (!count) {
-			return 0;
+			return 1;
 		}
 	}
-	if (file->file)
-		ret = fread (buf, 1, count, file->file);
-	else
-#ifdef HAVE_ZLIB
-		ret = gzread (file->gzfile, buf, count);
-#else
-		return -1;
-#endif
-	if (file->sub)
-		file->pos += ret;
-	return ret == -1 ? ret : ret + offs;
+
+	int         ret = file->funcs.read (file, buf, count);
+	return ret < 0 ? ret : ret + offs;
 }
 
 VISIBLE size_t
 Qwrite (QFile *file, const void *buf, size_t count)
 {
-	if (file->sub)		// can't write to a sub-file
-		return -1;
-	if (file->file)
-		return fwrite (buf, 1, count, file->file);
-#ifdef HAVE_ZLIB
-	else
-		return gzwrite (file->gzfile, (const voidp)buf, count);
-#else
-	return -1;
-#endif
+	if (!file->funcs.write) {
+		return 0;
+	}
+	return file->funcs.write (file, buf, count);
 }
 
 VISIBLE int
 Qprintf (QFile *file, const char *fmt, ...)
 {
-	if (file->sub) {		// can't write to a sub-file
+	if (!file->funcs.write) {
 		return -1;
 	}
 
@@ -397,7 +701,7 @@ Qprintf (QFile *file, const char *fmt, ...)
 VISIBLE int
 Qputs (QFile *file, const char *buf)
 {
-	if (file->sub) {		// can't write to a sub-file
+	if (!file->funcs.write) {
 		return -1;
 	}
 
@@ -460,99 +764,32 @@ Qungetc (QFile *file, int c)
 VISIBLE int
 Qseek (QFile *file, long offset, int whence)
 {
-	int         res;
-
 	file->c = -1;
-	if (file->file) {
-		switch (whence) {
-			case SEEK_SET:
-				res = fseek (file->file, file->start + offset, whence);
-				break;
-			case SEEK_CUR:
-				res = fseek (file->file, offset, whence);
-				break;
-			case SEEK_END:
-				if (file->size == (size_t) -1) {
-					// we don't know the size (due to writing) so punt and
-					// pass on the request as-is
-					res = fseek (file->file, offset, SEEK_END);
-				} else {
-					res = fseek (file->file,
-								 file->start + file->size - offset, SEEK_SET);
-				}
-				break;
-			default:
-				errno = EINVAL;
-				return -1;
-		}
-		if (res != -1)
-			res = ftell (file->file) - file->start;
-		if (file->sub)
-			file->pos = res;
-		return res;
-	}
-#ifdef HAVE_ZLIB
-	else {
-		// libz seems to keep track of the true start position itself
-		// doesn't support SEEK_END, though
-		res = gzseek (file->gzfile, offset, whence);
-		if (file->sub)
-			file->pos = res;
-		return res;
-	}
-#else
-	return -1;
-#endif
+	return file->funcs.seek (file, offset, whence);
 }
 
 VISIBLE long
 Qtell (QFile *file)
 {
-	int         offs;
-	int         ret;
-
-	offs =  (file->c != -1) ? 1 : 0;
-	if (file->file)
-		ret = ftell (file->file) - file->start;
-	else
-#ifdef HAVE_ZLIB
-		ret = gztell (file->gzfile);	//FIXME does gztell do the right thing?
-#else
-		return -1;
-#endif
-	if (file->sub)
-		file->pos = ret;
+	int offs = (file->c != -1) ? 1 : 0;
+	long ret = file->funcs.tell (file);
 	return ret == -1 ? ret : ret - offs;
 }
 
 VISIBLE int
 Qflush (QFile *file)
 {
-	if (file->file)
-		return fflush (file->file);
-#ifdef HAVE_ZLIB
-	else
-		return gzflush (file->gzfile, Z_SYNC_FLUSH);
-#else
-	return -1;
-#endif
+	file->c = -1;
+	return file->funcs.flush (file);
 }
 
 VISIBLE int
 Qeof (QFile *file)
 {
-	if (file->c != -1)
+	if (file->c != -1) {
 		return 0;
-	if (file->sub)
-		return file->pos >= file->size;
-	if (file->file)
-		return feof (file->file);
-#ifdef HAVE_ZLIB
-	else
-		return gzeof (file->gzfile);
-#else
-	return -1;
-#endif
+	}
+	return file->funcs.eof (file);
 }
 
 /*
