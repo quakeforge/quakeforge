@@ -77,15 +77,15 @@
 #define QF_READ	2
 
 struct QFile_s {
-	FILE *file;
+	FILE       *file;
 #ifdef HAVE_ZLIB
-	gzFile gzfile;
+	gzFile      gzfile;
 #endif
-	off_t size;
-	off_t start;
-	off_t pos;
-	int   c;
-	int   sub;
+	size_t      size;
+	size_t      start;
+	size_t      pos;
+	int         c;
+	int         sub;
 	dstring_t  *buf;
 };
 
@@ -314,8 +314,8 @@ Qclose (QFile *file)
 	free (file);
 }
 
-VISIBLE int
-Qread (QFile *file, void *buf, int count)
+VISIBLE size_t
+Qread (QFile *file, void *buf, size_t count)
 {
 	int         offs = 0;
 	int         ret;
@@ -334,12 +334,15 @@ Qread (QFile *file, void *buf, int count)
 		// sub-files are always opened in binary mode, so we don't need to
 		// worry about character translation messing up count/pos. Normal
 		// files can be left to the operating system to take care of EOF.
-		if (file->pos + count > file->size)
-			count = file->size - file->pos;
-		if (count < 0)
+		if (file->pos > file->size) {
 			return -1;
-		if (!count)
+		}
+		if (file->pos + count > file->size) {
+			count = file->size - file->pos;
+		}
+		if (!count) {
 			return 0;
+		}
 	}
 	if (file->file)
 		ret = fread (buf, 1, count, file->file);
@@ -354,8 +357,8 @@ Qread (QFile *file, void *buf, int count)
 	return ret == -1 ? ret : ret + offs;
 }
 
-VISIBLE int
-Qwrite (QFile *file, const void *buf, int count)
+VISIBLE size_t
+Qwrite (QFile *file, const void *buf, size_t count)
 {
 	if (file->sub)		// can't write to a sub-file
 		return -1;
@@ -488,7 +491,7 @@ Qseek (QFile *file, long offset, int whence)
 				res = fseek (file->file, offset, whence);
 				break;
 			case SEEK_END:
-				if (file->size == -1) {
+				if (file->size == (size_t) -1) {
 					// we don't know the size (due to writing) so punt and
 					// pass on the request as-is
 					res = fseek (file->file, offset, SEEK_END);

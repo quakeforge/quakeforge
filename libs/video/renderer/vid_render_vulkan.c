@@ -192,7 +192,7 @@ vulkan_R_Init (memhunk_t *hunk, struct plitem_s *config)
 		}
 		cache_data->size = head.size;
 		dstring_adjust (cache_data);
-		if (Qread (f, cache_data->str, head.size) != (int) head.size
+		if (Qread (f, cache_data->str, head.size) != head.size
 			|| Hash_Buffer (cache_data->str, cache_data->size) != head.hash) {
 			dstring_clear (cache_data);
 			goto cache_bail;
