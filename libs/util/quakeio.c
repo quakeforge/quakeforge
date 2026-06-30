@@ -399,7 +399,7 @@ Qremove (const char *path)
 	return remove (path);
 }
 
-VISIBLE int
+VISIBLE size_t
 Qfilesize (QFile *file)
 {
 	return file->size;
