@@ -41,6 +41,33 @@ main (int argc, const char **argv)
 		printf ("memfile read corrupt: '%s'\n", buf);
 		res = 1;
 	}
+	Qclose (file);
+
+	char tmpname[] = "tmpXXXXXX";
+	int fd = mkstemp (tmpname);
+	if (fd < 0) {
+		printf ("could not create tmp file\n");
+		return 1;
+	}
+	file = Qdopen (fd, "wbz9");
+	Qputs (file, test_text);
+	Qclose (file);
+
+	file = Qopen (tmpname, "rb");
+	unsigned char gzbuf[Qfilesize (file)];
+	Qread (file, gzbuf, sizeof (gzbuf));
+	Qclose (file);
+
+	file = Qmemopen (gzbuf, sizeof (gzbuf), 1);
+	char debuf[sizeof (test_text)] = {};
+	Qread (file, debuf, sizeof (debuf));
+	if (strcmp (buf, test_text) != 0) {
+		printf ("memfile read corrupt: '%.*s'\n", (int) sizeof (debuf), debuf);
+		res = 1;
+	}
+	Qclose (file);
+
+	remove (tmpname);
 
 	return res;
 }

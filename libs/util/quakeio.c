@@ -91,6 +91,13 @@ typedef struct qio_gzsub_s {
 	gzFile      gzfile;
 	size_t      pos;
 } qio_gzsub_t;
+
+typedef struct qio_gzmem_s {
+	z_stream    stream;
+	const byte *start;
+	size_t      size;
+	size_t      pos;
+} qio_gzmem_t;
 #endif
 
 typedef struct qio_mem_s {
@@ -381,6 +388,79 @@ static qio_funcs_t qio_gzip_funcs = {
 };
 
 static size_t
+qio_gzmem_read (QFile *file, void *buf, size_t count)
+{
+	qio_gzmem_t *mem = file->file;
+	if (mem->pos > file->size) {
+		// shouldn't happen, but...
+		return 0;
+	}
+	if (count > file->size - mem->pos) {
+		count = file->size - mem->pos;
+	}
+	mem->stream.next_out = buf;
+	mem->stream.avail_out = count;
+
+	do {
+		int ret = inflate (&mem->stream, Z_NO_FLUSH);
+		if (ret == Z_STREAM_END) {
+			return count - mem->stream.avail_out;
+		}
+		if (ret == Z_NEED_DICT || ret < 0) {
+			mem->pos = file->size;
+			return 0;
+		}
+		// ret should be Z_OK
+	} while (mem->stream.avail_out);
+
+	return count;
+}
+
+static off_t
+qio_gzmem_seek (QFile *file, off_t offset, int whence)
+{
+	// not impelmented for now
+	return -1;
+}
+
+static long
+qio_gzmem_tell (QFile *file)
+{
+	qio_gzmem_t *mem = file->file;
+	return mem->pos;
+}
+
+static int
+qio_gzmem_flush (QFile *file)
+{
+	return 0;
+}
+
+static int
+qio_gzmem_eof (QFile *file)
+{
+	qio_gzmem_t *mem = file->file;
+	return mem->pos >= file->size;
+}
+
+static void
+qio_gzmem_close (QFile *file)
+{
+	qio_gzmem_t *mem = file->file;
+	inflateEnd (&mem->stream);
+}
+
+static qio_funcs_t qio_gzmem_funcs = {
+	.read  = qio_gzmem_read,
+	.seek  = qio_gzmem_seek,
+	.tell  = qio_gzmem_tell,
+	.flush = qio_gzmem_flush,
+	.eof   = qio_gzmem_eof,
+
+	.close = qio_gzmem_close,
+};
+
+static size_t
 qio_gzsub_FILE_read (QFile *file, void *buf, size_t count)
 {
 	qio_gzsub_t *sub = file->file;
@@ -483,8 +563,8 @@ Qfilesize (QFile *file)
 	return file->size;
 }
 
-static int
-check_file (int fd, int offs, int len, int *zip)
+static size_t
+check_file (int fd, ssize_t offs, ssize_t len, int *zip)
 {
 	unsigned char id[2], len_bytes[4];
 
@@ -511,6 +591,25 @@ check_file (int fd, int offs, int len, int *zip)
 		}
 	}
 	lseek (fd, offs, SEEK_SET);
+	return len;
+}
+
+static size_t
+check_mem (const void *data, size_t len, int *zip)
+{
+	const byte *id = data;
+	const byte *len_bytes = id + len - 4;
+
+	if (zip && *zip) {
+		if (len >= 6 && id[0] == 0x1f && id[1] == 0x8b) {
+			len = ((len_bytes[3] << 24)
+				   | (len_bytes[2] << 16)
+				   | (len_bytes[1] << 8)
+				   | (len_bytes[0]));
+		} else {
+			*zip = 0;
+		}
+	}
 	return len;
 }
 
@@ -659,7 +758,30 @@ Qfopen (FILE *file, const char *mode)
 }
 
 static QFile *
-qio_mem_open (const void *data, int len)
+qio_gzmem_open (const void *data, size_t len, size_t size)
+{
+	QFile *file = malloc (sizeof (QFile) + sizeof (qio_gzmem_t));
+	auto mem = (qio_gzmem_t *) &file[1];
+	*file = (QFile) {
+		.file = mem,
+		.funcs = qio_gzmem_funcs,
+		.size = size,
+		.c = -1,
+	};
+	*mem = (qio_gzmem_t) {
+		.stream = {
+			.next_in = (Bytef *) data,
+			.avail_in = len,
+		},
+		.start = data,
+		.pos = 0,
+	};
+	inflateInit2 (&mem->stream, 16 + 15);
+	return file;
+}
+
+static QFile *
+qio_mem_open (const void *data, size_t len)
 {
 	QFile *file = malloc (sizeof (QFile) + sizeof (qio_mem_t));
 	auto mem = (qio_mem_t *) &file[1];
@@ -677,19 +799,19 @@ qio_mem_open (const void *data, int len)
 }
 
 VISIBLE QFile *
-Qmemopen (const void *data, int len, int zip)
+Qmemopen (const void *data, size_t len, int zip)
 {
 	if (!data) {
 		return nullptr;
 	}
 
-	//len = check_file (fd, offs, len, &zip);
+	size_t size = check_mem (data, len, &zip);
 
-	//if (zip) {
-	//	return qio_sub_gzip_open (fd, offs, len);
-	//} else {
+	if (zip) {
+		return qio_gzmem_open (data, len, size);
+	} else {
 		return qio_mem_open (data, len);
-	//}
+	}
 }
 
 static QFile *
@@ -730,7 +852,7 @@ qio_sub_FILE_open (int fd, int offs, int len)
 }
 
 VISIBLE QFile *
-Qsubopen (const char *path, int offs, int len, int zip)
+Qsubopen (const char *path, size_t offs, size_t len, int zip)
 {
 	int         fd = open (path, O_RDONLY);
 
