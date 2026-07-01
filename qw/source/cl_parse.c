@@ -1153,8 +1153,7 @@ CL_SetStat (int stat, int value)
 			break;
 		case STAT_HEALTH:
 			if (cl_player_health_e->func)
-				GIB_Event_Callback (cl_player_health_e, 1,
-									va ("%i", value));
+				GIB_Event_Callback (cl_player_health_e, 1, va ("%i", value));
 			if (value <= 0)
 				Team_Dead ();
 			break;
