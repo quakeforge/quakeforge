@@ -40,7 +40,6 @@
 #include "QF/quakeio.h"
 
 typedef struct pack_s {
-	char       *filename;
 	QFile      *handle;
 	int         numfiles;
 	int         files_size;

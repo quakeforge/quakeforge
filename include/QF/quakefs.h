@@ -135,6 +135,10 @@ void QFS_Init (const char *game);
 */
 void QFS_SetConfig (struct plitem_s *config);
 
+// NOTE: ownership of dir and data remain with the caller, do not free
+// mempak files will be searched LAST
+void QFS_AddMemPak (const char *name, const void *data, size_t size);
+
 /** Change the current game directory.
 
 	The configuration for the game directory is taken from \ref dirconf.

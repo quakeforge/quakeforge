@@ -62,14 +62,8 @@ pack_new (const char *name)
 	if (!pack) {
 		return nullptr;
 	}
-	pack->filename = strdup (name);
-	if (!pack->filename) {
-		free (pack);
-		return nullptr;
-	}
 	pack->file_hash = Hash_NewTable (1021, pack_get_key, 0, 0, 0);
 	if (!pack->file_hash) {
-		free (pack->filename);
 		free (pack);
 		return nullptr;
 	}
@@ -83,8 +77,6 @@ pack_del (pack_t *pack)
 		free (pack->files);
 	if (pack->handle)
 		Qclose (pack->handle);
-	if (pack->filename)
-		free (pack->filename);
 	if (pack->file_hash)
 		free (pack->file_hash);
 	free (pack);
