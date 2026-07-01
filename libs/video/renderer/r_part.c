@@ -102,14 +102,12 @@ R_MaxParticlesCheck (void)
 		Sys_Free (ps->particles, ps->maxparticles * size);
 		ps->particles = nullptr;
 		ps->partparams = nullptr;
-		ps->partramps = nullptr;
 	}
 	ps->maxparticles = maxparticles;
 
 	if (ps->maxparticles) {
 		ps->particles = Sys_Alloc (ps->maxparticles * size);
 		ps->partparams = (partparm_t *) &ps->particles[ps->maxparticles];
-		ps->partramps = nullptr;
 	}
 	R_ClearParticles ();
 }
