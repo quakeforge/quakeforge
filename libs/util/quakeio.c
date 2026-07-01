@@ -404,7 +404,8 @@ qio_gzmem_read (QFile *file, void *buf, size_t count)
 	do {
 		int ret = inflate (&mem->stream, Z_NO_FLUSH);
 		if (ret == Z_STREAM_END) {
-			return count - mem->stream.avail_out;
+			count -= mem->stream.avail_out;
+			break;
 		}
 		if (ret == Z_NEED_DICT || ret < 0) {
 			mem->pos = file->size;
@@ -412,6 +413,8 @@ qio_gzmem_read (QFile *file, void *buf, size_t count)
 		}
 		// ret should be Z_OK
 	} while (mem->stream.avail_out);
+
+	mem->pos += count;
 
 	return count;
 }
