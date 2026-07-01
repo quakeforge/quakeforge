@@ -259,7 +259,7 @@ typedef struct qfs_allocator_s {
 
 /**	Load a file into memory.
 
-	The file will be loaded into memory allocated via \alloc.
+	The file will be loaded into memory allocated via \a alloc.
 
 	\param file		The handle of the file to load.
 	\param alloc	The allocator to use for allocating memory for the file.
@@ -343,7 +343,7 @@ void QFS_SetExtension (struct dstring_s *path, const char *extension);
 	\param in		The path from which to strip the extension.
 	\param out		The destination of the stripped path. May be the same
 					as \a in.
-	\note			No size checking is done on \a out. It use the
+	\note			No size checking is done on \a out. It is the
 					caller's responsibility to ensure out is large enough
 					to hold the stripped path. However, the stripped path
 					will never be longer than the original path.
@@ -364,7 +364,7 @@ char *QFS_CompressPath (const char *pth);
 
 /**	Return a pointer to the start of the filename part of the path.
 
-	\param pathname	The path withing which to find the filename.
+	\param pathname	The path within which to find the filename.
 	\return			Pointer to the beginning of the filename. This points
 					inside \a pathname.
 */
@@ -372,7 +372,7 @@ const char *QFS_SkipPath (const char *pathname) __attribute__((pure));
 
 /**	Return a pointer to the start of the extention part of the path.
 
-	\param in		The path withing which to find the extention.
+	\param in		The path within which to find the extention.
 	\return			Pointer to the beginning of the extention. This points
 					inside \a in at all times. If the path has no extension,
 					the returned pointer will point to the terminating nul
@@ -416,7 +416,7 @@ void QFS_FilelistAdd (filelist_t *filelist, const char *fname,
 	will be added to the list after possibly stripping their extension.
 
 	\param list		The list to which the files are to be added.
-	\param path		The path withing the gamedir from which files are to be
+	\param path		The path within the gamedir from which files are to be
 					added to the list.
 	\param ext		The extension of the files to be added.
 	\param strip	If true, the extension of the files will be stripped.
