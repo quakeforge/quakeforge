@@ -222,10 +222,10 @@ read_samples (sfxbuffer_t *buffer, int count)
 
 static void
 fill_buffer (const sfx_t *sfx, sfxstream_t *stream, sfxbuffer_t *buffer,
-			 wavinfo_t *info, unsigned int headpos)
+			 wavinfo_t *info, unsigned headpos)
 {
-	unsigned int samples;
-	unsigned int loop_samples = 0;
+	unsigned    samples;
+	unsigned    loop_samples = 0;
 
 	// find out how many samples can be read into the buffer
 	samples = buffer->tail - buffer->head - SAMPLE_GAP;
@@ -233,7 +233,7 @@ fill_buffer (const sfx_t *sfx, sfxstream_t *stream, sfxbuffer_t *buffer,
 		samples += buffer->size;
 
 	if (headpos + samples > buffer->sfx_length) {
-		if (sfx->loopstart == (unsigned int)-1) {
+		if (sfx->loopstart == (unsigned)-1) {
 			samples = buffer->sfx_length - headpos;
 		} else {
 			loop_samples = headpos + samples - buffer->sfx_length;
@@ -249,7 +249,7 @@ fill_buffer (const sfx_t *sfx, sfxstream_t *stream, sfxbuffer_t *buffer,
 }
 
 void
-SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos)
+SND_StreamSetPos (sfxbuffer_t *buffer, unsigned pos)
 {
 	float       stepscale;
 	sfxstream_t *stream = buffer->stream;
@@ -266,10 +266,10 @@ SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos)
 }
 
 int
-SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
+SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count)
 {
 	float       stepscale;
-	unsigned int headpos, samples;
+	unsigned    headpos, samples;
 	sfxstream_t *stream = buffer->stream;
 	const sfx_t *sfx = stream->sfx;
 	wavinfo_t  *info = &stream->wavinfo;
@@ -289,7 +289,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 	// find out where head points to in the stream
 	headpos = buffer->pos + samples;
 	if (headpos >= buffer->sfx_length) {
-		if (sfx->loopstart == (unsigned int)-1)
+		if (sfx->loopstart == (unsigned)-1)
 			headpos = buffer->sfx_length;
 		else
 			headpos -= buffer->sfx_length - sfx->loopstart;
@@ -299,7 +299,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 		buffer->head = buffer->tail = 0;
 		buffer->pos += count;
 		if (buffer->pos > buffer->sfx_length) {
-			if (sfx->loopstart == (unsigned int)-1) {
+			if (sfx->loopstart == (unsigned)-1) {
 				// reset the buffer and fill it incase it's needed again
 				buffer->pos = 0;
 			} else {
@@ -314,7 +314,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 	} else {
 		buffer->pos += count;
 		if (buffer->pos >= buffer->sfx_length) {
-			if (sfx->loopstart == (unsigned int)-1) {
+			if (sfx->loopstart == (unsigned)-1) {
 				// reset the buffer and fill it in case it's needed again
 				headpos = buffer->pos = 0;
 				buffer->head = buffer->tail = 0;
