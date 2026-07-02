@@ -45,7 +45,7 @@
 #define VOLSCALE 0.5				// so mixing is less likely to overflow
 
 portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
-static int  max_overpaint;				// number of extra samples painted
+static unsigned max_overpaint;			// number of extra samples painted
 										// due to phase shift
 
 /* CHANNEL MIXING */
@@ -144,13 +144,11 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 				if (count > 0) {
 					if (ch->leftvol || ch->rightvol) {
 						snd_paint_channel (ch, sb, count);
-						if (sb->advance) {
-							if (!sb->advance (sb, count)) {
-								// this channel can no longer be used as its
-								// source has died.
-								ch->done = 1;
-								break;
-							}
+						if (sb->advance && !sb->advance (sb, count)) {
+							// this channel can no longer be used as its
+							// source has died.
+							ch->done = 1;
+							break;
 						}
 					}
 					ltime += count;
@@ -162,13 +160,16 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 		}
 
 		// transfer out according to DMA format
-		snd->xfer (snd, snd_paintbuffer, end - snd->paintedtime,
-				   snd_volume);
+		snd->xfer (snd, snd_paintbuffer, end - snd->paintedtime, snd_volume);
 
-		memmove (snd_paintbuffer, snd_paintbuffer + end - snd->paintedtime,
-				 max_overpaint * sizeof (snd_paintbuffer[0]));
-		memset (snd_paintbuffer + max_overpaint, 0, sizeof (snd_paintbuffer)
-				- max_overpaint * sizeof (snd_paintbuffer[0]));
+		auto dst = snd_paintbuffer;
+		auto src = snd_paintbuffer + end - snd->paintedtime;
+		for (unsigned i = 0; i < max_overpaint; i++) {
+			*dst++ = *src++;
+		}
+		for (unsigned i = max_overpaint; i < countof (snd_paintbuffer); i++) {
+			*dst++ = (portable_samplepair_t) {};
+		}
 
 		snd->paintedtime = end;
 	}
