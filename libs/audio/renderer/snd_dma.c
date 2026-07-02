@@ -63,7 +63,7 @@ float snd_volume;
 static cvar_t snd_volume_cvar = {
 	.name = "volume",
 	.description =
-		"Set the volume for sound playback",
+		"Set the volume for sound playback.",
 	.default_value = "0.7",
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_float, .value = &snd_volume },
@@ -72,7 +72,7 @@ static int nosound;
 static cvar_t nosound_cvar = {
 	.name = "nosound",
 	.description =
-		"Set to turn sound off",
+		"Set to turn sound off.",
 	.default_value = "0",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &nosound },
@@ -81,7 +81,7 @@ static float snd_mixahead;
 static cvar_t snd_mixahead_cvar = {
 	.name = "snd_mixahead",
 	.description =
-		"Delay time for sounds",
+		"Delay time for sounds.",
 	.default_value = "0.1",
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_float, .value = &snd_mixahead },
@@ -91,7 +91,7 @@ static cvar_t snd_noextraupdate_cvar = {
 	.name = "snd_noextraupdate",
 	.description =
 		"Toggles the correct value display in host_speeds. Usually messes up "
-		"sound playback when in effect",
+		"sound playback when in effect.",
 	.default_value = "0",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &snd_noextraupdate },
@@ -100,7 +100,7 @@ static int snd_show;
 static cvar_t snd_show_cvar = {
 	.name = "snd_show",
 	.description =
-		"Toggles display of sounds currently being played",
+		"Toggles display of sounds currently being played.",
 	.default_value = "0",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &snd_show },
