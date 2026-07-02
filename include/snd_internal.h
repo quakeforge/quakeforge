@@ -45,7 +45,7 @@
 #include "QF/sound.h"
 #include "QF/zone.h"
 
-struct transform_s;
+typedef struct transform_s transform_t;
 typedef struct portable_samplepair_s portable_samplepair_t;
 typedef struct snd_s snd_t;
 typedef struct wavinfo_s wavinfo_t;
@@ -53,7 +53,7 @@ typedef struct sfxbuffer_s sfxbuffer_t;
 typedef struct sfxblock_s sfxblock_t;
 typedef struct sfxstream_s sfxstream_t;
 
-struct sfx_s
+typedef struct sfx_s
 {
 	struct snd_s *snd;			//!< ownding snd_t instance
 	const char *name;
@@ -69,7 +69,7 @@ struct sfx_s
 	struct wavinfo_s *(*wavinfo) (const sfx_t *sfx);
 
 	sfxbuffer_t *(*open) (sfx_t *sfx);
-};
+} sfx_t;
 
 /** paint samples into the mix buffer
 
@@ -86,14 +86,14 @@ typedef void sfxpaint_t (int offset, channel_t *ch, float *buffer,
 
 /** Represent a single output frame in the mixer.
 */
-struct portable_samplepair_s {
+typedef struct portable_samplepair_s {
 	float       left;						//!< left sample
 	float       right;						//!< right sample
-};
+} portable_samplepair_t;
 
 /** Sound system state
 */
-struct snd_s {
+typedef struct snd_s {
 	int         speed;				//!< sample rate
 	int         samplebits;			//!< bits per sample
 	int         channels;			//!< number of output channels
@@ -117,14 +117,14 @@ struct snd_s {
 
 	void      (*finish_channels) (void);
 	void      (*paint_channels) (struct snd_s *snd, unsigned endtime);
-};
+} snd_t;
 
 /** Describes the sound data.
 	For looped data (loopstart >= 0), play starts at sample 0, goes to the end,
 	then loops back to loopstart. This allows an optional lead in section
 	followed by a continuously looped (until the sound is stopped) section.
 */
-struct wavinfo_s {
+typedef struct wavinfo_s {
 	unsigned    rate;			//!< sample rate
 	unsigned    width;			//!< bytes per sample
 	unsigned    channels;		//!< number of channels
@@ -132,12 +132,12 @@ struct wavinfo_s {
 	unsigned    frames;			//!< size of sound in frames
 	unsigned    dataofs;		//!< chunk starts this many bytes from BOF
 	unsigned    datalen;		//!< chunk bytes
-};
+} wavinfo_t;
 
 /** Buffer for storing sound samples in memory. For block-loaded sounds, acts
 	as an ordinary buffer. For streamed sounds, acts as a ring buffer.
 */
-struct sfxbuffer_s {
+typedef struct sfxbuffer_s {
 	_Atomic unsigned head;		//!< ring buffer head position in sampels
 	_Atomic unsigned tail;		//!< ring buffer tail position in sampels
 	// FIXME should pos be atomic? it's primary use is in the mixer but can
@@ -172,11 +172,11 @@ struct sfxbuffer_s {
 		sample size)
 	*/
 	float       data[];
-};
+} sfxbuffer_t;
 
 /** Representation of sound loaded that is streamed in as needed.
 */
-struct sfxstream_s {
+typedef struct sfxstream_s {
 	const sfx_t *sfx;			//!< owning sfx_t instance
 	void       *file;			//!< handle for "file" representing the stream
 	wavinfo_t   wavinfo;		//!< description of sound data
@@ -215,20 +215,20 @@ struct sfxstream_s {
 	*/
 	int       (*seek)(sfxstream_t *stream, int pos);
 	sfxbuffer_t *buffer;		//<! stream's ring buffer
-};
+} sfxstream_t;
 
 /** Representation of sound loaded into memory as a full block.
 */
-struct sfxblock_s {
+typedef struct sfxblock_s {
 	const sfx_t *sfx;			//!< owning sfx_t instance
 	void       *file;			//!< handle for "file" representing the block
 	wavinfo_t   wavinfo;		//!< description of sound data
 	sfxbuffer_t *buffer;		//!< pointer to block-loaded buffer
-};
+} sfxblock_t;
 
 /** Representation of a sound being played.
 */
-struct channel_s {
+typedef struct channel_s {
 	/** If null, the channel is inactive
 	 */
 	sfxbuffer_t *_Atomic buffer;//!< sound played by this channel
@@ -254,7 +254,7 @@ struct channel_s {
 	_Atomic byte stop;
 	_Atomic byte done;
 	//@}
-};
+} channel_t;
 
 extern float snd_volume;
 
@@ -399,7 +399,7 @@ void SND_SetAmbient (snd_t *snd, int amb_channel, sfx_t *sfx);
 	\param ambient_sound_level Pointer to 4 bytes indicating the levels at
 					which to play the ambient sounds.
 */
-void SND_SetListener (snd_t *snd, struct transform_s ear,
+void SND_SetListener (snd_t *snd, transform_t ear,
 					  const byte *ambient_sound_level);
 
 /** Stop all sounds from playing.
