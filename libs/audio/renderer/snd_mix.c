@@ -73,9 +73,12 @@ snd_paint_channel (channel_t *ch, sfxbuffer_t *sb, int count)
 	float      *samps;
 
 	if ((int) ch->pos < 0) {
+		// the channel's start time is in the future
 		ch->pos += count;
 		if ((int) ch->pos <= 0)
 			return;
+		// mix in silence until the channel's actual start time (by not
+		// mixing anything)
 		offs = count - ch->pos;
 		count -= offs;
 		ch->pos = 0;

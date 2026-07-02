@@ -154,7 +154,7 @@ struct sfxbuffer_s {
 		sfxblock_t *block;
 	};
 	sfxpaint_t *paint;			//!< channel count specific paint function
-	/** Advance the position with the stream, updating the ring buffer as
+	/** Advance the position within the stream, updating the ring buffer as
 		necessary. Null for chached sounds.
 		\param buffer	"this"
 		\param count	number of frames to advance
@@ -229,6 +229,8 @@ struct sfxblock_s {
 /** Representation of a sound being played.
 */
 struct channel_s {
+	/** If null, the channel is inactive
+	 */
 	sfxbuffer_t *_Atomic buffer;//!< sound played by this channel
 	float       leftvol;		//!< 0-1 volume
 	float       rightvol;		//!< 0-1 volume
@@ -570,8 +572,8 @@ wavinfo_t *SND_BlockWavinfo (const sfx_t *sfx) __attribute__((pure));
 */
 wavinfo_t *SND_StreamWavinfo (const sfx_t *sfx) __attribute__((pure));
 
-/** Advance the position with the stream, updating the ring buffer as
-	necessary. Null for chached sounds.
+/** Advance the position within the stream, updating the ring buffer as
+	necessary.
 	\param buffer	"this"
 	\param count	number of samples to advance
 */
