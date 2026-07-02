@@ -383,24 +383,24 @@ static channel_t *
 s_pick_channel (snd_t *snd, int entnum, int entchannel, int looped)
 {
 	// check for finished non-looped sounds
-	for (int i = 0; i < MAX_CHANNELS; i++) {
-		channel_t  *ch = &snd_channels[i];
-		if (set_is_member (&dynamic_channels, i)) {
-			if (ch->done) {
-				// mixer is done with the channel, it can be freed
-				snd_free_channel (ch);
-				set_remove (&dynamic_channels, i);
-			}
-		} else if (set_is_member (&looped_channels, i)) {
-			// non-looped sounds are used to stop looped sounds on an entity
-			// channel also clean out any caught by SND_ScanChannels
-			entchan_t  *entchan = &snd_entity_channels[i];
-			if (entchan->id == entnum
-				&& (entchan->channel == entchannel || entchannel == -1)) {
-				// the mixer is still using the channel, so send a request
-				// for it to stopp
-				SND_ChannelStop (snd, ch);
-			}
+	for (auto c = set_first (&dynamic_channels); c; c = set_next (c)) {
+		channel_t  *ch = &snd_channels[c->element];
+		if (ch->done) {
+			// mixer is done with the channel, it can be freed
+			snd_free_channel (ch);
+			set_remove (&dynamic_channels, c->element);
+		}
+	}
+	for (auto c = set_first (&looped_channels); c; c = set_next (c)) {
+		channel_t  *ch = &snd_channels[c->element];
+		// non-looped sounds are used to stop looped sounds on an entity
+		// channel also clean out any caught by SND_ScanChannels
+		entchan_t  *entchan = &snd_entity_channels[c->element];
+		if (entchan->id == entnum
+			&& (entchan->channel == entchannel || entchannel == -1)) {
+			// the mixer is still using the channel, so send a request
+			// for it to stopp
+			SND_ChannelStop (snd, ch);
 		}
 	}
 
