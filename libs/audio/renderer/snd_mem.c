@@ -47,6 +47,8 @@
 #include "snd_internal.h"
 
 #define SAMPLE_GAP	4
+//must be a power of 2
+#define STREAM_CHUNK 256
 
 static uint32_t snd_mem_size;
 static cvar_t snd_mem_size_cvar = {
@@ -275,9 +277,11 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count)
 	wavinfo_t  *info = &stream->wavinfo;
 
 	stream->pos += count;
-	count = (stream->pos - buffer->pos) & ~255;
-	if (!count)
+	// update the stream buffers in chunks
+	count = (stream->pos - buffer->pos) & ~(STREAM_CHUNK - 1);
+	if (!count) {
 		return 1;
+	}
 
 	stepscale = (float) info->rate / sfx->snd->speed;
 
