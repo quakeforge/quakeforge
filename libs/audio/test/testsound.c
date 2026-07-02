@@ -62,10 +62,14 @@ cbuf_args_t *testsound_args;
 static void
 init (void)
 {
+	size_t      memsize = 128 * 1024 * 1024;
+	memhunk_t  *hunk = Hunk_Init (Sys_Alloc (memsize), memsize);
+
 	testsound_cbuf = Cbuf_New (&id_interp);
 	testsound_args = Cbuf_ArgsNew ();
 
 	Sys_Init ();
+	Cache_Init (hunk);
 	COM_ParseConfig (testsound_cbuf);
 	cmd_warncmd = 1;
 
