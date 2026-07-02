@@ -103,7 +103,7 @@ static float snd_phasesep;
 static cvar_t snd_phasesep_cvar = {
 	.name = "snd_phasesep",
 	.description =
-		"max stereo phase separation in ms. 0.6 is for 20cm head",
+		"Max stereo phase separation in ms. 0.6 is for 20cm head.",
 	.default_value = "0.0",
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_float, .value = &snd_phasesep },
@@ -112,7 +112,7 @@ static float snd_volumesep;
 static cvar_t snd_volumesep_cvar = {
 	.name = "snd_volumesep",
 	.description =
-		"max stereo volume separation. 1.0 is max",
+		"Max stereo volume separation. 1.0 is max.",
 	.default_value = "1.0",
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_float, .value = &snd_volumesep },
@@ -121,7 +121,7 @@ static int snd_swapchannelside;
 static cvar_t snd_swapchannelside_cvar = {
 	.name = "snd_swapchannelside",
 	.description =
-		"Toggle swapping of left and right channels",
+		"Swap left and right channels.",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_int, .value = &snd_swapchannelside },
@@ -130,7 +130,7 @@ static float ambient_fade;
 static cvar_t ambient_fade_cvar = {
 	.name = "ambient_fade",
 	.description =
-		"How quickly ambient sounds fade in or out",
+		"How quickly ambient sounds fade in or out.",
 	.default_value = "100",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_float, .value = &ambient_fade },
@@ -139,7 +139,7 @@ static float ambient_level;
 static cvar_t ambient_level_cvar = {
 	.name = "ambient_level",
 	.description =
-		"Ambient sounds' volume",
+		"Ambient sounds' volume.",
 	.default_value = "0.3",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_float, .value = &ambient_level },
