@@ -184,18 +184,6 @@ snd_open_fail (sfx_t *sfx)
 	return 0;
 }
 
-wavinfo_t *
-SND_BlockWavinfo (const sfx_t *sfx)
-{
-	return &sfx->block->wavinfo;
-}
-
-wavinfo_t *
-SND_StreamWavinfo (const sfx_t *sfx)
-{
-	return &sfx->stream->wavinfo;
-}
-
 static void
 read_samples (sfxbuffer_t *buffer, int count)
 {
@@ -206,8 +194,8 @@ read_samples (sfxbuffer_t *buffer, int count)
 		read_samples (buffer, count);
 	} else {
 		sfxstream_t *stream = buffer->stream;
-		const sfx_t *sfx = stream->sfx;
-		wavinfo_t  *info = &stream->wavinfo;
+		const sfx_t *sfx = stream->base.sfx;
+		wavinfo_t  *info = &stream->base.wavinfo;
 		float      *data = buffer->data + buffer->head * info->channels;
 		int         c;
 
@@ -255,8 +243,8 @@ SND_StreamSetPos (sfxbuffer_t *buffer, unsigned pos)
 {
 	float       stepscale;
 	sfxstream_t *stream = buffer->stream;
-	const sfx_t *sfx = stream->sfx;
-	wavinfo_t  *info = &stream->wavinfo;
+	const sfx_t *sfx = stream->base.sfx;
+	wavinfo_t  *info = &stream->base.wavinfo;
 
 	stepscale = (float) info->rate / sfx->snd->speed;
 
@@ -273,8 +261,8 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count)
 	float       stepscale;
 	unsigned    headpos, samples;
 	sfxstream_t *stream = buffer->stream;
-	const sfx_t *sfx = stream->sfx;
-	wavinfo_t  *info = &stream->wavinfo;
+	const sfx_t *sfx = stream->base.sfx;
+	wavinfo_t  *info = &stream->base.wavinfo;
 
 	stream->pos += count;
 	// update the stream buffers in chunks

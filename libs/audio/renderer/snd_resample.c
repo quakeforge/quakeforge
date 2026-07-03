@@ -69,7 +69,7 @@ SND_ResamplerFrames (const sfx_t *sfx, unsigned frames)
 	if (frames == ~0u) {
 		return frames;
 	}
-	wavinfo_t  *info = sfx->wavinfo (sfx);
+	wavinfo_t  *info = &sfx->base->wavinfo;
 	snd_t      *snd = sfx->snd;
 	int         inrate = info->rate;
 	double      stepscale = (double) snd->speed / inrate;
@@ -81,7 +81,7 @@ SND_Resample (sfxbuffer_t *sb, float *data, int length)
 {
 	int			outcount;
 	double		stepscale;
-	wavinfo_t  *info = (*sb->sfx)->wavinfo (*sb->sfx);
+	wavinfo_t  *info = &sb->base->wavinfo;
 	snd_t      *snd = (*sb->sfx)->snd;
 	int         inrate = info->rate;
 	int         outwidth;
@@ -133,8 +133,8 @@ snd_read (sfxstream_t *stream, float *data, int frames)
 static int
 snd_resample_read (sfxstream_t *stream, float *data, int frames)
 {
-	int         inrate = stream->wavinfo.rate;
-	double ratio = (double) stream->sfx->snd->speed / inrate;
+	int         inrate = stream->base.wavinfo.rate;
+	double ratio = (double) stream->base.sfx->snd->speed / inrate;
 
 	return src_callback_read (stream->state, ratio, frames, data);
 }
@@ -157,7 +157,7 @@ void
 SND_SetupResampler (sfxbuffer_t *sb, int streamed)
 {
 	double		stepscale;
-	wavinfo_t  *info = (*sb->sfx)->wavinfo (*sb->sfx);
+	wavinfo_t  *info = &sb->base->wavinfo;
 	snd_t      *snd = (*sb->sfx)->snd;
 	int         inrate = info->rate;
 

@@ -164,8 +164,8 @@ vorbis_load (OggVorbis_File *vf, sfxblock_t *block)
 {
 	float      *data;
 	sfxbuffer_t *sb = 0;
-	const sfx_t *sfx = block->sfx;
-	wavinfo_t  *info = &block->wavinfo;
+	const sfx_t *sfx = block->base.sfx;
+	wavinfo_t  *info = &block->base.wavinfo;
 
 	data = malloc (info->datalen);
 	if (!data)
@@ -221,11 +221,12 @@ vorbis_stream_read (void *file, float **buf)
 {
 	sfxstream_t *stream = (sfxstream_t *) file;
 	vorbis_file_t *vf = (vorbis_file_t *) stream->file;
+	wavinfo_t  *wavinfo = &stream->base.wavinfo;
 	int         res;
 
 	if (!vf->data)
-		vf->data = malloc (FRAMES * stream->wavinfo.channels * sizeof (float));
-	res = vorbis_read (vf->vf, vf->data, FRAMES, &stream->wavinfo);
+		vf->data = malloc (FRAMES * wavinfo->channels * sizeof (float));
+	res = vorbis_read (vf->vf, vf->data, FRAMES, wavinfo);
 	if (res <= 0) {
 		stream->error = 1;
 		return 0;

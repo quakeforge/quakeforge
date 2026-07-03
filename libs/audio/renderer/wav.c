@@ -57,14 +57,14 @@ typedef struct {
 static sfxbuffer_t *
 wav_callback_load (sfxblock_t *block)
 {
-	const sfx_t *sfx = block->sfx;
+	const sfx_t *sfx = block->base.sfx;
 	const char *name = (const char *) block->file;
 	QFile      *file;
 	int         len, fdata_ofs;
 	byte       *data;
 	float      *fdata;
 	sfxbuffer_t *buffer = 0;
-	wavinfo_t  *info = &block->wavinfo;
+	wavinfo_t  *info = &block->base.wavinfo;
 
 	file = QFS_FOpenFile (name);
 	if (!file)
@@ -110,7 +110,7 @@ static long
 wav_stream_read (void *file, float **buf)
 {
 	sfxstream_t *stream = (sfxstream_t *) file;
-	wavinfo_t  *info = &stream->wavinfo;
+	wavinfo_t  *info = &stream->base.wavinfo;
 	wav_file_t *wf = (wav_file_t *) stream->file;
 	int         res;
 	int         len = FRAMES * info->channels * info->width;
@@ -133,7 +133,7 @@ wav_stream_read (void *file, float **buf)
 static int
 wav_stream_seek (sfxstream_t *stream, int pos)
 {
-	wavinfo_t  *info = &stream->wavinfo;
+	wavinfo_t  *info = &stream->base.wavinfo;
 	wav_file_t *wf = (wav_file_t *) stream->file;
 	pos *= info->width * info->channels;
 	pos += info->dataofs;

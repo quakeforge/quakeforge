@@ -50,6 +50,7 @@ typedef struct portable_samplepair_s portable_samplepair_t;
 typedef struct snd_s snd_t;
 typedef struct wavinfo_s wavinfo_t;
 typedef struct sfxbuffer_s sfxbuffer_t;
+typedef struct sfxbase_s sfxbase_t;
 typedef struct sfxblock_s sfxblock_t;
 typedef struct sfxstream_s sfxstream_t;
 
@@ -62,11 +63,10 @@ typedef struct sfx_s
 	unsigned    loopstart;
 
 	union {
+		sfxbase_t  *base;
 		sfxstream_t *stream;
 		sfxblock_t *block;
 	};
-
-	struct wavinfo_s *(*wavinfo) (const sfx_t *sfx);
 
 	sfxbuffer_t *(*open) (sfx_t *sfx);
 } sfx_t;
@@ -146,10 +146,11 @@ typedef struct sfxbuffer_s {
 	unsigned    size;			//!< size of buffer in frames
 	unsigned    channels;		//!< number of channels per frame
 	unsigned    sfx_length;		//!< total length of sfx
-	union {		// owning instance
+	union {
 		// the first field of both sfxstream_t and sfxblock_t is a pointer
 		// to sfx_t
-		sfx_t const * const * const sfx;
+		sfx_t const * const * const sfx;	// owning instance
+		sfxbase_t  *base;
 		sfxstream_t *stream;
 		sfxblock_t *block;
 	};
@@ -174,12 +175,16 @@ typedef struct sfxbuffer_s {
 	float       data[];
 } sfxbuffer_t;
 
+typedef struct sfxbase_s {
+	const sfx_t *sfx;			//!< owning sfx_t instance
+	wavinfo_t   wavinfo;		//!< description of sound data
+} sfxbase_t;
+
 /** Representation of sound loaded that is streamed in as needed.
 */
 typedef struct sfxstream_s {
-	const sfx_t *sfx;			//!< owning sfx_t instance
+	sfxbase_t   base;
 	void       *file;			//!< handle for "file" representing the stream
-	wavinfo_t   wavinfo;		//!< description of sound data
 	unsigned    pos;			//!< position of next frame full stream
 	int         error;			//!< an error occured while reading
 
@@ -220,9 +225,8 @@ typedef struct sfxstream_s {
 /** Representation of sound loaded into memory as a full block.
 */
 typedef struct sfxblock_s {
-	const sfx_t *sfx;			//!< owning sfx_t instance
-	void       *file;			//!< handle for "file" representing the block
-	wavinfo_t   wavinfo;		//!< description of sound data
+	sfxbase_t   base;
+	char       *file;			//!< handle for "file" representing the stream
 	sfxbuffer_t *buffer;		//!< pointer to block-loaded buffer
 } sfxblock_t;
 
@@ -560,17 +564,6 @@ int SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
 	\ingroup sound_render
 */
 ///@{
-/** Retrieve wavinfo from a block-loaded sound.
-	\param sfx		sound reference
-	\return			pointer to sound's wavinfo
-*/
-wavinfo_t *SND_BlockWavinfo (const sfx_t *sfx) __attribute__((pure));
-
-/** Retrieve wavinfo from a streamed sound.
-	\param sfx		sound reference
-	\return			pointer to sound's wavinfo
-*/
-wavinfo_t *SND_StreamWavinfo (const sfx_t *sfx) __attribute__((pure));
 
 /** Advance the position within the stream, updating the ring buffer as
 	necessary.

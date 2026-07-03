@@ -79,13 +79,14 @@ SND_SFX_Block (sfx_t *sfx, char *realname, wavinfo_t info,
 {
 	sfxblock_t *block = malloc (sizeof (sfxblock_t));
 	*block = (sfxblock_t) {
-		.sfx = sfx,
+		.base = {
+			.sfx = sfx,
+			.wavinfo = info,
+		},
 		.file = realname,
-		.wavinfo = info,
 	};
 
 	sfx->block = block;
-	sfx->wavinfo = SND_BlockWavinfo;
 	sfx->loopstart = SND_ResamplerFrames (sfx, info.loopstart);
 	sfx->length = SND_ResamplerFrames (sfx, info.frames);
 
@@ -101,13 +102,12 @@ SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
 {
 	sfxstream_t *stream = calloc (1, sizeof (sfxstream_t));
 	sfx->open = open;
-	sfx->wavinfo = SND_StreamWavinfo;
 	sfx->stream = stream;
 	sfx->loopstart = SND_ResamplerFrames (sfx, info.loopstart);
 	sfx->length = SND_ResamplerFrames (sfx, info.frames);
 
 	stream->file = realname;
-	stream->wavinfo = info;
+	stream->base.wavinfo = info;
 }
 
 sfxbuffer_t *
@@ -118,7 +118,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 {
 	snd_t      *snd = sfx->snd;
 	sfxstream_t *stream = sfx->stream;
-	wavinfo_t  *info = &stream->wavinfo;
+	wavinfo_t  *info = &stream->base.wavinfo;
 	int         frames;
 
 	// if the speed is 0, there is no sound driver (probably failed to connect
@@ -137,11 +137,11 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	}
 
 	stream->file = file;
-	stream->sfx = sfx;
+	stream->base.sfx = sfx;
 	stream->ll_read = read;
 	stream->ll_seek = seek;
 
-	stream->wavinfo = *sfx->wavinfo (sfx);
+	stream->base.wavinfo = sfx->base->wavinfo;
 
 	stream->buffer->stream = stream;
 	stream->buffer->size = frames;

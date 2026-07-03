@@ -284,8 +284,8 @@ flac_load (flacfile_t *ff, sfxblock_t *block)
 {
 	float      *data;
 	sfxbuffer_t *sb = 0;
-	const sfx_t *sfx = block->sfx;
-	wavinfo_t  *info = &block->wavinfo;
+	const sfx_t *sfx = block->base.sfx;
+	wavinfo_t  *info = &block->base.wavinfo;
 
 	data = malloc (info->datalen);
 	if (!data)
