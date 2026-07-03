@@ -171,7 +171,7 @@ SND_Memory_GetRetainCount (void *ptr)
 }
 
 static sfxbuffer_t *
-snd_open (sfx_t *sfx)
+snd_block_open (sfx_t *sfx)
 {
 	sfxbuffer_t *buffer = sfx->block->buffer;
 	SND_Memory_Retain (buffer);
@@ -340,7 +340,7 @@ SND_Load (sfx_t *sfx)
 		Sys_Printf ("Couldn't load %s\n", sfx->name);
 		return -1;
 	}
-	sfx->open = snd_open;
+	sfx->open = snd_block_open;
 	if (!strequal (qfs_foundfile.realname, sfx->name)) {
 		realname = strdup (qfs_foundfile.realname);
 	} else {
