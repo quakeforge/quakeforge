@@ -211,7 +211,7 @@ MainMenu *main_menu;
 {
 	float camera_speed_exp;
 	float start_exp;
-	vec2  drag_start;
+	ivec2 drag_start;
 }
 +(CamWindow *) camWindow:(imui_ctx_t)ctx;
 -draw;
@@ -245,7 +245,7 @@ MainMenu *main_menu;
 		UI_Vertical {
 			UI_SetFill (current_style.background.normal);
 			uint dent = IMUI_ActiveItem (IMUI_context,
-										 imui_size_pixels, 25,
+										 imui_size_percent, 100,
 										 imui_size_pixels, 25,
 										 sprintf ("source_%p", self));
 			IMUI_SetViewPos (IMUI_context, {0, 0});
@@ -257,18 +257,16 @@ MainMenu *main_menu;
 			UI_SetFill (current_style.foreground.color[mode]);
 
 			auto io = IMUI_GetIO (IMUI_context);
-			auto start = vec2(io.mouse - io.mouse_active);
-			auto end = vec2(io.mouse);
 			if (io.active == dent) {
 				IMUI_SetDragId (IMUI_context, io.active);
 			}
 			io = IMUI_GetIO (IMUI_context);
 			if (io.drag_id == dent) {
 				if (io.pressed == 1) {
-					drag_start = start;
+					drag_start = io.mouse_active;
 					start_exp = camera_speed_exp;
 				}
-				float delta = (end.x - drag_start.x) * 0.05;
+				float delta = (io.mouse_active.x - drag_start.x) * 0.05f;
 				camera_speed_exp = start_exp + delta;
 				if (camera_speed_exp > 6) {
 					camera_speed_exp = 6;
