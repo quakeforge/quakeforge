@@ -19,6 +19,8 @@ msgbuf_t create_quadsphere(bool do_colors);
 body_t calc_inertia_tensor (msgbuf_t model_buf, float inv_density);
 void leafnode();
 
+extern float camera_speed;
+
 extern int in_context;
 extern in_axis_t *cam_move_forward;
 extern in_axis_t *cam_move_side;

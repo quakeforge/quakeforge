@@ -78,7 +78,7 @@ camera_first_person (state_t *state)
 	drot.y -= IN_UpdateAxis (cam_move_pitch);
 	drot.z -= IN_UpdateAxis (cam_move_yaw);
 
-	dpos *= 0.01;
+	dpos *= 0.01 * camera_speed;
 	drot *= ((float)M_PI / 360);
 	state.B = {
 		.bvect = (PGA.bvect) drot,

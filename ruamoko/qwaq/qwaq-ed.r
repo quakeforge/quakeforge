@@ -54,6 +54,8 @@ static string pbr_conv_shader =
 #embed "ruamoko/qwaq/shader/pbr_conv.r.spv"
 ;
 
+float camera_speed = 1;
+
 int in_context;
 in_axis_t *cam_move_forward;
 in_axis_t *cam_move_side;
@@ -204,6 +206,84 @@ float frametime;
 
 @class MainMenu;
 MainMenu *main_menu;
+
+@interface CamWindow : Window
+{
+	float camera_speed_exp;
+	float start_exp;
+	vec2  drag_start;
+}
++(CamWindow *) camWindow:(imui_ctx_t)ctx;
+-draw;
+@end
+
+@implementation CamWindow
+-initWithContext:(imui_ctx_t)ctx
+{
+	if (!(self = [super initWithContext:ctx name:"CamWindow"])) {
+		return nil;
+	}
+	IMUI_Window_SetSize (window, {300, 80});
+	camera_speed_exp = 0;
+	return self;
+}
+
++(CamWindow *) camWindow:(imui_ctx_t)ctx
+{
+	return [[[CamWindow alloc] initWithContext:ctx] autorelease];
+}
+
+-draw
+{
+	if (![super draw]) {
+		return nil;
+	}
+	UI_Window (window) {
+		if (IMUI_Window_IsCollapsed (window)) {
+			continue;
+		}
+		UI_Vertical {
+			UI_SetFill (current_style.background.normal);
+			uint dent = IMUI_ActiveItem (IMUI_context,
+										 imui_size_pixels, 25,
+										 imui_size_pixels, 25,
+										 sprintf ("source_%p", self));
+			IMUI_SetViewPos (IMUI_context, {0, 0});
+			IMUI_SetViewFree (IMUI_context, {true, true});
+			IMUI_SetViewGravity (IMUI_context, grav_northwest);
+
+			int mode = IMUI_UpdateHotActive (IMUI_context);
+			IMUI_CheckButtonState (IMUI_context);
+			UI_SetFill (current_style.foreground.color[mode]);
+
+			auto io = IMUI_GetIO (IMUI_context);
+			auto start = vec2(io.mouse - io.mouse_active);
+			auto end = vec2(io.mouse);
+			if (io.active == dent) {
+				IMUI_SetDragId (IMUI_context, io.active);
+			}
+			io = IMUI_GetIO (IMUI_context);
+			if (io.drag_id == dent) {
+				if (io.pressed == 1) {
+					drag_start = start;
+					start_exp = camera_speed_exp;
+				}
+				float delta = (end.x - drag_start.x) * 0.05;
+				camera_speed_exp = start_exp + delta;
+				if (camera_speed_exp > 6) {
+					camera_speed_exp = 6;
+				}
+				if (camera_speed_exp < 0) {
+					camera_speed_exp = 0;
+				}
+				camera_speed = pow (10, camera_speed_exp);
+			}
+			IMUI_Labelf (IMUI_context, "%4.1f##camWindow", camera_speed_exp);
+		}
+	}
+	return self;
+}
+@end
 
 @interface MainWindow : Window <ListView>
 {
@@ -1305,6 +1385,7 @@ main (int argc, string *argv)
 	arp_start ();
 
 	auto main_window = [[MainWindow window:imui_ctx] retain];
+	auto cam_window = [[CamWindow camWindow:imui_ctx] retain];
 	set_sky_id (skyid);
 
 	load_scene (PL_GetPropertyList (scene_plist), [main_window scene]);
