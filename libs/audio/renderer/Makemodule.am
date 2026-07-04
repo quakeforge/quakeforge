@@ -48,7 +48,7 @@ snd_libs = \
 
 libs_audio_renderer_snd_render_default_la_LDFLAGS =		$(plugin_ldflags)
 libs_audio_renderer_snd_render_default_la_SOURCES = \
-	libs/audio/renderer/snd_dma.c \
+	libs/audio/renderer/snd_core.c \
 	$(snd_common) \
 	$(format_src)
 libs_audio_renderer_snd_render_default_la_LIBADD = \
