@@ -47,8 +47,6 @@
 #include "snd_internal.h"
 
 #define SAMPLE_GAP	4
-//must be a power of 2
-#define STREAM_CHUNK 256
 
 static uint32_t snd_mem_size;
 static cvar_t snd_mem_size_cvar = {

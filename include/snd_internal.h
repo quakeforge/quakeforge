@@ -54,6 +54,9 @@ typedef struct sfxbase_s sfxbase_t;
 typedef struct sfxblock_s sfxblock_t;
 typedef struct sfxstream_s sfxstream_t;
 
+//must be a power of 2
+#define STREAM_CHUNK 256
+
 typedef struct sfx_s
 {
 	struct snd_s *snd;			//!< ownding snd_t instance
@@ -64,8 +67,11 @@ typedef struct sfx_s
 
 	union {
 		sfxbase_t  *base;
-		sfxstream_t *stream;
+		// Only one block is created: its buffer is reference counted
 		sfxblock_t *block;
+		// Many streams may be opened for an sfx, but this points to the
+		// reference stream, which never gets a buffer.
+		sfxstream_t *stream;
 	};
 
 	sfxbuffer_t *(*open) (sfx_t *sfx);
@@ -149,7 +155,7 @@ typedef struct sfxbuffer_s {
 	union {
 		// the first field of both sfxstream_t and sfxblock_t is a pointer
 		// to sfx_t
-		sfx_t const * const * const sfx;	// owning instance
+		sfx_t const * const * sfx;	// owning instance
 		sfxbase_t  *base;
 		sfxstream_t *stream;
 		sfxblock_t *block;

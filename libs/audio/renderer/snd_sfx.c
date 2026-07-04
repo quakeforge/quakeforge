@@ -117,39 +117,42 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 					void (*close) (sfxbuffer_t *))
 {
 	snd_t      *snd = sfx->snd;
-	sfxstream_t *stream = sfx->stream;
-	wavinfo_t  *info = &stream->base.wavinfo;
-	int         frames;
+	// reference stream's wavinfo
+	wavinfo_t  *wavinfo = &sfx->stream->base.wavinfo;
 
 	// if the speed is 0, there is no sound driver (probably failed to connect
 	// to jackd)
-	if (!snd->speed)
+	if (!snd->speed) {
 		return nullptr;
+	}
 
-	frames = snd->speed * 0.3;
-	frames = (frames + 255) & ~255;
+	int         frames = RUP ((int) (snd->speed * 0.3), STREAM_CHUNK);
 
-	stream = calloc (1, sizeof (sfxstream_t));
-	stream->buffer = SND_Memory_AllocBuffer (frames * info->channels);
+	sfxstream_t *stream = malloc (sizeof (sfxstream_t));
+	*stream = (sfxstream_t) {
+		.base = {
+			.sfx = sfx,
+			.wavinfo = *wavinfo,
+		},
+		.file = file,
+		.ll_read = read,
+		.ll_seek = seek,
+		.buffer = SND_Memory_AllocBuffer (frames * wavinfo->channels),
+	};
 	if (!stream->buffer) {
 		free (stream);
 		return nullptr;
 	}
 
-	stream->file = file;
-	stream->base.sfx = sfx;
-	stream->ll_read = read;
-	stream->ll_seek = seek;
-
-	stream->base.wavinfo = sfx->base->wavinfo;
-
-	stream->buffer->stream = stream;
-	stream->buffer->size = frames;
-	stream->buffer->advance = SND_StreamAdvance;
-	stream->buffer->setpos = SND_StreamSetPos;
-	stream->buffer->sfx_length = info->frames;
-	stream->buffer->channels = info->channels;
-	stream->buffer->close = close;
+	*stream->buffer = (sfxbuffer_t) {
+		.stream = stream,
+		.size = frames,
+		.advance = SND_StreamAdvance,
+		.setpos = SND_StreamSetPos,
+		.sfx_length = wavinfo->frames,
+		.channels = wavinfo->channels,
+		.close = close,
+	};
 	SND_SetPaint (stream->buffer);
 
 	SND_SetupResampler (stream->buffer, true);		// get sfx setup properly
