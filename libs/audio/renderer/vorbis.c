@@ -287,7 +287,7 @@ vorbis_stream (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 	SND_SFX_Stream (sfx, realname, info, vorbis_stream_open);
 }
 
-int
+bool
 SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 {
 	OggVorbis_File vf;
@@ -295,12 +295,12 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 
 	if (ov_open_callbacks (file, &vf, 0, 0, callbacks) < 0) {
 		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
-		return -1;
+		return false;
 	}
 	info = vorbis_get_info (&vf);
 	if (info.channels < 1 || info.channels > 8) {
 		Sys_Printf ("unsupported number of channels");
-		return -1;
+		return false;
 	}
 	if (info.frames / info.rate < 3) {
 		Sys_MaskPrintf (SYS_snd, "block %s\n", realname);
@@ -309,5 +309,5 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 		Sys_MaskPrintf (SYS_snd, "stream %s\n", realname);
 		vorbis_stream (sfx, realname, &vf, info);
 	}
-	return 0;
+	return true;
 }

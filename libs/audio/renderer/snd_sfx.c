@@ -182,7 +182,8 @@ SND_LoadSound (snd_t *snd, const char *name)
 	sfx = &snd_sfx[snd_num_sfx++];
 	sfx->snd = snd;
 	sfx->name = strdup (name);
-	if (SND_Load (sfx) == -1) {
+
+	if (!SND_Load (sfx)) {
 		snd_num_sfx--;
 		return nullptr;
 	}

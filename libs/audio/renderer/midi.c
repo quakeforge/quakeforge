@@ -76,16 +76,16 @@ static cvar_t wildmidi_config_cvar = {
 	.value = { .type = 0, .value = &wildmidi_config },
 };
 
-static int
+static bool
 midi_init (snd_t *snd)
 {
 	Cvar_Register (&wildmidi_volume_cvar, 0, 0);
 	Cvar_Register (&wildmidi_config_cvar, 0, 0);
 
 	if (WildMidi_Init (wildmidi_config, snd->speed, 0) == -1)
-		return 1;
+		return false;
 	midi_intiialized = 1;
-	return 0;
+	return true;
 }
 
 static wavinfo_t
@@ -183,7 +183,7 @@ midi_stream_open (sfx_t *sfx)
 							   midi_stream_close);
 }
 
-int
+bool
 SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 {
 	snd_t      *snd = sfx->snd;
@@ -193,8 +193,8 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 	unsigned long int local_buffer_size = Qfilesize (file);
 
 	if (!midi_intiialized) {
-		if (midi_init (snd)) {
-			return -1;
+		if (!midi_init (snd)) {
+			return false;
 		}
 	}
 
@@ -207,7 +207,7 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 	handle = WildMidi_OpenBuffer (local_buffer, local_buffer_size);
 
 	if (handle == NULL)
-		return -1;
+		return false;
 
 	info = midi_get_info (snd, handle);
 
@@ -217,5 +217,5 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 
 	// we init stream here cause we will only ever stream
 	SND_SFX_Stream (sfx, realname, info, midi_stream_open);
-	return 0;
+	return true;
 }

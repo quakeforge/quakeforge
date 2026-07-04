@@ -523,41 +523,41 @@ void SND_Convert (byte *idata, float *fdata, int frames,
 ///@{
 /** Load the referenced sound.
 	\param sfx		sound reference
-	\return			0 if ok, -1 on error
+	\return			true if ok, false on error
 */
-int SND_Load (sfx_t *sfx);
+bool SND_Load (sfx_t *sfx);
 
 /** Load the referenced sound from the specified Ogg file.
 	\param file		pre-opened Ogg file
 	\param sfx		sound reference
 	\param realname	path of sound file should it need to be re-opened
-	\return			0 if ok, -1 on error
+	\return			true if ok, false on error
 */
-int SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname);
+bool SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname);
 
 /** Load the referenced sound from the specified FLAC file.
 	\param file		pre-opened FLAC file
 	\param sfx		sound reference
 	\param realname	path of sound file should it need to be re-opened
-	\return			0 if ok, -1 on error
+	\return			true if ok, false on error
 */
-int SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname);
+bool SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname);
 
 /** Load the referenced sound from the specified WAV file.
 	\param file		pre-opened WAV file
 	\param sfx		sound reference
 	\param realname	path of sound file should it need to be re-opened
-	\return			0 if ok, -1 on error
+	\return			true if ok, false on error
 */
-int SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
+bool SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
 
 /** Load the referenced sound from the specified MIDI file.
 	\param file		pre-opened MIDI file
 	\param sfx		sound reference
 	\param realname	path of sound file should it need to be re-opened
-	\return			0 if ok, -1 on error
+	\return			true if ok, false on error
 */
-int SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
+bool SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
 ///@}
 
 /** \defgroup sound_render_block_stream Block/Stream Functions.

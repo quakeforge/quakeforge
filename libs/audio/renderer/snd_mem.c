@@ -326,7 +326,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count)
 	return !stream->error;
 }
 
-int
+bool
 SND_Load (sfx_t *sfx)
 {
 	char       *realname;
@@ -338,7 +338,7 @@ SND_Load (sfx_t *sfx)
 	file = QFS_FOpenFile (sfx->name);
 	if (!file) {
 		Sys_Printf ("Couldn't load %s\n", sfx->name);
-		return -1;
+		return false;
 	}
 	sfx->open = snd_block_open;
 	if (!strequal (qfs_foundfile.realname, sfx->name)) {
@@ -351,36 +351,36 @@ SND_Load (sfx_t *sfx)
 #ifdef HAVE_VORBIS
 	if (strnequal ("OggS", buf, 4)) {
 		Sys_MaskPrintf (SYS_snd, "SND_Load: ogg file\n");
-		if (SND_LoadOgg (file, sfx, realname) == -1)
+		if (!SND_LoadOgg (file, sfx, realname))
 			goto bail;
-		return 0;
+		return true;
 	}
 #endif
 #ifdef HAVE_FLAC
 	if (strnequal ("fLaC", buf, 4)) {
 		Sys_MaskPrintf (SYS_snd, "SND_Load: flac file\n");
-		if (SND_LoadFLAC (file, sfx, realname) == -1)
+		if (!SND_LoadFLAC (file, sfx, realname))
 			goto bail;
-		return 0;
+		return true;
 	}
 #endif
 #ifdef HAVE_WILDMIDI
 	if (strnequal ("MThd", buf, 4)) {
 		Sys_MaskPrintf (SYS_snd, "SND_Load: midi file\n");
-		if (SND_LoadMidi (file, sfx, realname) == -1)
+		if (!SND_LoadMidi (file, sfx, realname))
 			goto bail;
-		return 0;
+		return true;
 	}
 #endif
 	if (strnequal ("RIFF", buf, 4)) {
 		Sys_MaskPrintf (SYS_snd, "SND_Load: wav file\n");
-		if (SND_LoadWav (file, sfx, realname) == -1)
+		if (!SND_LoadWav (file, sfx, realname))
 			goto bail;
-		return 0;
+		return true;
 	}
 bail:
 	Qclose (file);
 	if (realname != sfx->name)
 		free (realname);
-	return -1;
+	return false;
 }
