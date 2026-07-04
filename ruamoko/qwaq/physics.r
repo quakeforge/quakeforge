@@ -610,7 +610,7 @@ vec3 best_axis(vec3 dir, @out int ind)
 		'0 0 1',
 	};
 	vec3 adir = abs (dir);
-	vec3 mdir = max (adir.yxz, adir.zxy);
+	vec3 mdir = max (adir.yzx, adir.zxy);
 	uvec3 m = adir >= mdir;
 	ind = indices[@horiz(| '1 2 4' & m)];
 	vec3 a = axes[ind];
