@@ -52,11 +52,11 @@
 
 #include "snd_internal.h"
 
-static int      snd_blocked = 0;
+static int      snd_blocked = 0;			// counter!
 
 static unsigned soundtime;					// sample PAIRS
 
-static int      sound_started = 0;
+static bool     sound_started = false;
 
 
 float snd_volume;
@@ -115,7 +115,7 @@ static snd_t    snd = {
 	.finish_channels = SND_FinishChannels,
 	.paint_channels  = SND_PaintChannels,
 };
-static int      snd_shutdown = 0;
+static bool     snd_shutdown = false;
 
 static void
 s_xfer_paint_buffer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
@@ -166,20 +166,17 @@ s_xfer_paint_buffer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
 static void
 s_clear_buffer (snd_t *snd)
 {
-	int			clear, i;
-	int         count;
-
 	if (!sound_started || !snd || !snd->buffer)
 		return;
 
-	if (snd->samplebits == 8)
-		clear = 0x80;
-	else
-		clear = 0;
+	int zero = 0;
+	if (snd->samplebits == 8) {
+		zero = 0x80;
+	}
 
-	count = snd->frames * snd->channels * snd->samplebits / 8;
-	for (i = 0; i < count; i++)
-		snd->buffer[i] = clear;
+	int count = snd->frames * snd->channels * snd->samplebits / 8;
+	for (int i = 0; i < count; i++)
+		snd->buffer[i] = zero;
 }
 
 static void
@@ -266,7 +263,7 @@ s_update (transform_t ear, const byte *ambient_sound_level)
 	if (snd_output_data->model == som_push) {
 		// mix some sound
 		s_update_ ();
-		SND_ScanChannels (&snd, 0);
+		SND_ScanChannels (&snd, false);
 	}
 }
 
@@ -342,7 +339,7 @@ s_startup (void)
 	if (!snd.xfer)
 		snd.xfer = s_xfer_paint_buffer;
 
-	sound_started = 1;
+	sound_started = true;
 }
 
 static void
@@ -355,11 +352,11 @@ s_snd_force_unblock (void)
 static void
 s_init_cvars (void)
 {
-	Cvar_Register (&nosound_cvar, 0, 0);
-	Cvar_Register (&snd_volume_cvar, 0, 0);
-	Cvar_Register (&snd_mixahead_cvar, 0, 0);
-	Cvar_Register (&snd_noextraupdate_cvar, 0, 0);
-	Cvar_Register (&snd_show_cvar, 0, 0);
+	Cvar_Register (&nosound_cvar, nullptr, nullptr);
+	Cvar_Register (&snd_volume_cvar, nullptr, nullptr);
+	Cvar_Register (&snd_mixahead_cvar, nullptr, nullptr);
+	Cvar_Register (&snd_noextraupdate_cvar, nullptr, nullptr);
+	Cvar_Register (&snd_show_cvar, nullptr, nullptr);
 
 	SND_Memory_Init_Cvars ();
 }
@@ -381,8 +378,9 @@ s_init (void)
 
 	s_startup ();
 
-	if (sound_started == 0)				// sound startup failed? Bail out.
+	if (!sound_started) {				// sound startup failed? Bail out.
 		return;
+	}
 
 	SND_SFX_Init (&snd);
 	SND_Channels_Init (&snd);
@@ -396,8 +394,8 @@ s_shutdown (void)
 	if (!sound_started)
 		return;
 
-	sound_started = 0;
-	snd_shutdown = 1;
+	sound_started = false;
+	snd_shutdown = true;
 
 	SND_SFX_Shutdown (&snd);
 	snd_output_funcs->shutdown (&snd);
@@ -459,7 +457,7 @@ static sfx_t *
 s_precache_sound (const char *name)
 {
 	if (!sound_started)
-		return 0;
+		return nullptr;
 	return SND_PrecacheSound (&snd, name);
 }
 
@@ -467,7 +465,7 @@ static sfx_t *
 s_load_sound (const char *name)
 {
 	if (!sound_started)
-		return 0;
+		return nullptr;
 	return SND_LoadSound (&snd, name);
 }
 
@@ -479,25 +477,25 @@ s_channel_free (channel_t *chan)
 	SND_ChannelStop (&snd, chan);
 }
 
-static int
+static bool
 s_channel_set_sfx (channel_t *chan, sfx_t *sfx)
 {
 	sfxbuffer_t *buffer = sfx->open (sfx);
 	if (!buffer) {
-		return 0;
+		return false;
 	}
 	chan->buffer = buffer;
-	return 1;
+	return true;
 }
 
 static void
-s_channel_set_paused (channel_t *chan, int paused)
+s_channel_set_paused (channel_t *chan, bool paused)
 {
-	chan->pause = paused != 0;
+	chan->pause = paused;
 }
 
 static void
-s_channel_set_looping (channel_t *chan, int looping)
+s_channel_set_looping (channel_t *chan, bool looping)
 {
 	// FIXME implement
 }
@@ -545,10 +543,10 @@ static channel_t *
 s_alloc_channel (void)
 {
 	if (!sound_started)
-		return 0;
+		return nullptr;
 	if (!snd_shutdown)
 		return SND_AllocChannel (&snd);
-	return 0;
+	return nullptr;
 }
 
 static general_funcs_t plugin_info_general_funcs = {
@@ -599,17 +597,16 @@ static plugin_data_t plugin_info_data = {
 };
 
 static plugin_t plugin_info = {
-	qfp_snd_render,
-	0,
-	QFPLUGIN_VERSION,
-	"0.1",
-	"Sound Renderer",
-	"Copyright (C) 1996-1997 id Software, Inc.\n"
-		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
-		"project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors",
-	&plugin_info_funcs,
-	&plugin_info_data,
+	.type = qfp_snd_render,
+	.api_version = QFPLUGIN_VERSION,
+	.plugin_version = "0.1",
+	.description = "Sound Renderer",
+	.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
+				 "Copyright (C) 1999,2000,2001  contributors of the "
+				 "QuakeForge project\n"
+				 "Please see the file \"AUTHORS\" for a list of contributors",
+	.functions = &plugin_info_funcs,
+	.data = &plugin_info_data,
 };
 
 PLUGIN_INFO(snd_render, default)

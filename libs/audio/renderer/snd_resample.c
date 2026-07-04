@@ -154,7 +154,7 @@ snd_seek (sfxstream_t *stream, int pos)
 }
 
 void
-SND_SetupResampler (sfxbuffer_t *sb, int streamed)
+SND_SetupResampler (sfxbuffer_t *sb, bool streamed)
 {
 	double		stepscale;
 	wavinfo_t  *info = &sb->base->wavinfo;

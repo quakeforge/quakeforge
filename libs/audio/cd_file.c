@@ -78,7 +78,7 @@ static bool	ogglistvalid = false;
 
 /* sound resources */
 static channel_t *cd_channel;
-static plitem_t	 *tracklist = NULL;	// parsed tracklist, dictionary format
+static plitem_t	 *tracklist = nullptr;	// parsed tracklist, dictionary format
 static plitem_t  *play_list;		// string or array of strings
 static int        play_pos = -1;	// position in play_list (0 for string)
 									// -1 = invalid (both)
@@ -99,7 +99,7 @@ static cvar_t mus_ogglist_cvar = {
 		"filename of track to music file map",
 	.default_value = "tracklist.cfg",
 	.flags = CVAR_NONE,
-	.value = { .type = 0, .value = &mus_ogglist },
+	.value = { .type = nullptr, .value = &mus_ogglist },
 };
 
 
@@ -133,7 +133,7 @@ I_OGGMus_Stop (void)
 
 	if (cd_channel) {
 		S_ChannelFree (cd_channel);
-		cd_channel = NULL;
+		cd_channel = nullptr;
 	}
 }
 
@@ -143,7 +143,7 @@ I_OGGMus_Shutdown (void)
 	if (tracklist) {
 		I_OGGMus_Stop ();
 		PL_Release (tracklist);
-		tracklist = NULL;
+		tracklist = nullptr;
 	}
 	mus_enabled = false;
 }
@@ -153,8 +153,8 @@ I_OGGMus_Shutdown (void)
 static int
 Load_Tracklist (void)
 {
-	QFile	*oggfile = NULL;
-	char	*buffile = NULL;
+	QFile	*oggfile = nullptr;
+	char	*buffile = nullptr;
 	int		 size;
 
 	/* kill off the old tracklist, and make sure we're not playing anything */
@@ -185,7 +185,7 @@ Load_Tracklist (void)
 	Qread (oggfile, buffile, size);
 
 	PL_Release (tracklist);
-	tracklist = PL_GetPropertyList (buffile, 0);
+	tracklist = PL_GetPropertyList (buffile, nullptr);
 	if (!tracklist || PL_Type (tracklist) != QFDictionary) {
 		Sys_Printf ("Malformed or empty tracklist file. check mus_ogglist\n");
 		return -1;
@@ -214,21 +214,21 @@ I_OGGMus_SetPlayList (int track)
 		return;
 	if (PL_Type (play_list) != QFArray) {
 		Sys_Printf ("Track entry for track #%d not string or array.\n", track);
-		play_list = 0;
+		play_list = nullptr;
 		return;
 	}
 	for (i = 0; i < PL_A_NumObjects (play_list); i++) {
 		plitem_t   *item = PL_ObjectAtIndex (play_list, i);
 		if (!item || PL_Type (item) != QFString) {
 			Sys_Printf ("Bad subtract %d in track %d.\n", i, track);
-			play_list = 0;
+			play_list = nullptr;
 			return;
 		}
 	}
 }
 
 static void
-I_OGGMus_PlayNext (int looping)
+I_OGGMus_PlayNext (bool looping)
 {
 	const char *track;
 	sfx_t      *sfx;
@@ -243,12 +243,12 @@ I_OGGMus_PlayNext (int looping)
 		if (play_pos >= PL_A_NumObjects (play_list))
 			play_pos = 0;
 		track = PL_String (PL_ObjectAtIndex (play_list, play_pos));
-		looping = 0;
+		looping = false;
 	}
 
 	if (cd_channel) {
 		S_ChannelFree (cd_channel);
-		cd_channel = 0;
+		cd_channel = nullptr;
 	}
 
 	if (!(cd_channel = S_AllocChannel ()))
@@ -256,10 +256,10 @@ I_OGGMus_PlayNext (int looping)
 
 	if (!(sfx = S_LoadSound (track)) || !S_ChannelSetSfx (cd_channel, sfx)) {
 		S_ChannelFree (cd_channel);
-		cd_channel = 0;
+		cd_channel = nullptr;
 		return;
 	}
-	S_ChannelSetLooping (cd_channel, looping ? 1 : -1);
+	S_ChannelSetLooping (cd_channel, looping);
 	set_volume ();
 	Sys_Printf ("Playing: %s.\n", track);
 
@@ -286,7 +286,7 @@ I_OGGMus_Resume (void)
 		return;
 
 	set_volume ();
-	S_ChannelSetPaused (cd_channel, 0);
+	S_ChannelSetPaused (cd_channel, false);
 	wasPlaying = false;
 	playing = true;
 }
@@ -317,7 +317,7 @@ I_OGGMus_Info (void)
 {
 	int			 count = 0, iter = 0, keycount = 0;
 	const char	*trackstring;
-	plitem_t	*currenttrack = NULL;
+	plitem_t	*currenttrack = nullptr;
 
 	if (!tracklist) {
 		Sys_Printf ("\n" "No Tracklist\n" "------------\n");
@@ -437,7 +437,7 @@ I_OGGMus_Update (void)
 		return;
 	// will get here only when multi-tracked
 	I_OGGMus_Stop ();
-	I_OGGMus_PlayNext (0);
+	I_OGGMus_PlayNext (false);
 }
 
 /* called when the mus_ogglist cvar is changed */
@@ -465,9 +465,9 @@ static void
 I_OGGMus_Init (void)
 {
 	/* check list file cvar, open list file, create map, close file. */
-	Cvar_Register (&mus_ogglist_cvar, Mus_OggChange, 0);
-	Cvar_Register (&bgmvolume_cvar, Mus_VolChange, 0);
-	QFS_GamedirCallback (Mus_gamedir, 0);
+	Cvar_Register (&mus_ogglist_cvar, Mus_OggChange, nullptr);
+	Cvar_Register (&bgmvolume_cvar, Mus_VolChange, nullptr);
+	QFS_GamedirCallback (Mus_gamedir, nullptr);
 }
 
 static general_funcs_t plugin_info_general_funcs = {
@@ -476,43 +476,32 @@ static general_funcs_t plugin_info_general_funcs = {
 };
 
 static cd_funcs_t plugin_info_cd_funcs = {
-	0,
-	I_OGG_f,
-	I_OGGMus_Pause,
-	I_OGGMus_Play,
-	I_OGGMus_Resume,
-	I_OGGMus_Update,
+	.cd_f = I_OGG_f,
+	.pause = I_OGGMus_Pause,
+	.play = I_OGGMus_Play,
+	.resume = I_OGGMus_Resume,
+	.update = I_OGGMus_Update,
 };
 
 static plugin_funcs_t plugin_info_funcs = {
-	&plugin_info_general_funcs,
-	0,
-	&plugin_info_cd_funcs,
-	0,
-	0,
-	0,
+	.general = &plugin_info_general_funcs,
+	.cd = &plugin_info_cd_funcs,
 };
 
 static plugin_data_t plugin_info_data = {
-	&plugin_info_general_data,
-	0,
-	0,
-	0,
-	0,
-	0,
+	.general = &plugin_info_general_data,
 };
 
 static plugin_t plugin_info = {
-	qfp_cd,
-	0,
-	QFPLUGIN_VERSION,
-	"0.1",
-	"OGG Music output\n",
-	"Copyright (C) 2004 Andrew Pilley\n"
-	"Copyright (C) 2004 Members of the QuakeForge Project\n"
-	"See the file \"AUTHORS\" for more information.\n",
-	&plugin_info_funcs,
-	&plugin_info_data,
+	.type = qfp_cd,
+	.api_version = QFPLUGIN_VERSION,
+	.plugin_version = "0.1",
+	.description = "OGG Music output\n",
+	.copyright = "Copyright (C) 2004 Andrew Pilley\n"
+				 "Copyright (C) 2004 Members of the QuakeForge Project\n"
+				 "See the file \"AUTHORS\" for more information.\n",
+	.functions = &plugin_info_funcs,
+	.data = &plugin_info_data,
 };
 
 PLUGIN_INFO (cd, file)

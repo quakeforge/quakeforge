@@ -50,7 +50,7 @@ static unsigned max_overpaint;			// number of extra samples painted
 
 /* CHANNEL MIXING */
 
-static inline int
+static inline bool
 check_channel_end (channel_t *ch, sfxbuffer_t *sb, int count, unsigned ltime)
 {
 	if (count <= 0 || ltime >= ch->end) {
@@ -58,11 +58,11 @@ check_channel_end (channel_t *ch, sfxbuffer_t *sb, int count, unsigned ltime)
 			ch->pos = ch->loopstart;
 			ch->end = ltime + sb->sfx_length - ch->pos;
 		} else {			// channel just stopped
-			ch->done = 1;
-			return 1;
+			ch->done = true;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
 static inline void
@@ -128,7 +128,7 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 				continue;
 			}
 			if (ch->stop) {
-				ch->done = 1;		// acknowledge stopped signal
+				ch->done = true;	// acknowledge stopped signal
 				continue;
 			}
 			if (ch->pause)
@@ -147,7 +147,7 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 						if (sb->advance && !sb->advance (sb, count)) {
 							// this channel can no longer be used as its
 							// source has died.
-							ch->done = 1;
+							ch->done = true;
 							break;
 						}
 					}
@@ -458,7 +458,7 @@ void
 SND_SetPaint (sfxbuffer_t *sb)
 {
 	static sfxpaint_t *painters[] = {
-		0,
+		nullptr,
 		snd_paint_mono,
 		snd_paint_stereo,
 		snd_paint_3,

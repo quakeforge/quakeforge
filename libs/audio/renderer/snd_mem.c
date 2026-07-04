@@ -66,7 +66,7 @@ static memzone_t *snd_zone;
 void
 SND_Memory_Init_Cvars (void)
 {
-	Cvar_Register (&snd_mem_size_cvar, 0, 0);
+	Cvar_Register (&snd_mem_size_cvar, nullptr, nullptr);
 }
 
 static void __attribute__((format(PRINTF,2,3)))
@@ -89,7 +89,7 @@ snd_memory_shutdown (void *data)
 	}
 }
 
-int
+bool
 SND_Memory_Init (void)
 {
 	size_t      size = snd_mem_size * 1024 * 1024;
@@ -98,22 +98,22 @@ SND_Memory_Init (void)
 	if (!snd_zone) {
 		Sys_Printf (RED"Sound: Unable to allocate %uMB buffer"DFL"\n",
 					snd_mem_size);
-		return 0;
+		return false;
 	}
 	if (!Sys_LockMemory (snd_zone, size)) {
 		Sys_Printf (RED"Sound: Unable to lock %uMB buffer"DFL"\n",
 					snd_mem_size);
 		//FIXME Permission issue?
 		//Sys_Free (snd_zone, size);
-		//return 0;
+		//return false;
 	}
 	Z_ClearZone (snd_zone, size, 0, 1);
-	Z_SetError (snd_zone, snd_zone_error, 0);
+	Z_SetError (snd_zone, snd_zone_error, nullptr);
 
 	Sys_MaskPrintf (SYS_snd, "Sound: Initialized %uMB buffer\n", snd_mem_size);
 
-	Sys_RegisterShutdown (snd_memory_shutdown, 0);
-	return 1;
+	Sys_RegisterShutdown (snd_memory_shutdown, nullptr);
+	return true;
 }
 
 sfxbuffer_t *
@@ -181,7 +181,7 @@ snd_block_open (sfx_t *sfx)
 static sfxbuffer_t *
 snd_open_fail (sfx_t *sfx)
 {
-	return 0;
+	return nullptr;
 }
 
 static void
@@ -255,7 +255,7 @@ SND_StreamSetPos (sfxbuffer_t *buffer, unsigned pos)
 	fill_buffer (sfx, stream, buffer, info, pos);
 }
 
-int
+bool
 SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count)
 {
 	float       stepscale;
@@ -268,7 +268,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count)
 	// update the stream buffers in chunks
 	count = (stream->pos - buffer->pos) & ~(STREAM_CHUNK - 1);
 	if (!count) {
-		return 1;
+		return true;
 	}
 
 	stepscale = (float) info->rate / sfx->snd->speed;

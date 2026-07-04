@@ -161,7 +161,7 @@ typedef struct sfxbuffer_s {
 		\param count	number of frames to advance
 		\return			true for success, false if an error occured
 	*/
-	int       (*advance) (sfxbuffer_t *buffer, unsigned int count);
+	bool      (*advance) (sfxbuffer_t *buffer, unsigned int count);
 	/** Seek to an absolute position within the stream, resetting the ring
 		buffer.
 		\param buffer	"this"
@@ -243,7 +243,7 @@ typedef struct channel_s {
 	unsigned    loopstart;		//!< where to loop, -1 = no looping
 	int         phase;			//!< phase shift between l-r in samples
 	int         oldphase;		//!< phase shift between l-r in samples
-	_Atomic byte pause;			//!< don't update the channel at all
+	_Atomic bool pause;			//!< don't update the channel at all
 	/** signal between main program and mixer thread that the channel is to be
 		stopped.
 		- both \c stop and \c done are zero: normal operation
@@ -255,8 +255,8 @@ typedef struct channel_s {
 		  can be reused at any time.
 	*/
 	//@{
-	_Atomic byte stop;
-	_Atomic byte done;
+	_Atomic bool stop;
+	_Atomic bool done;
 	//@}
 } channel_t;
 
@@ -269,7 +269,7 @@ extern portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 ///@}
 
 void SND_Memory_Init_Cvars (void);
-int SND_Memory_Init (void);
+bool SND_Memory_Init (void);
 sfxbuffer_t *SND_Memory_AllocBuffer (unsigned samples);
 void SND_Memory_Free (void *ptr);
 void SND_Memory_SetTag (void *ptr, int tag);
@@ -379,7 +379,7 @@ void SND_FinishChannels (void);
 				channels to be done. true is for threaded, false for
 				non-threaded.
 */
-void SND_ScanChannels (snd_t *snd, int wait);
+void SND_ScanChannels (snd_t *snd, bool wait);
 
 /** Disable ambient sounds.
 	\param snd		sound system state
@@ -489,9 +489,9 @@ unsigned SND_ResamplerFrames (const sfx_t *sfx, unsigned frames);
 
 /** Set up the various parameters that depend on the actual sample rate.
 	\param sb		buffer to setup
-	\param streamed	non-zero if this is for a stream.
+	\param streamed	true if this is for a stream.
 */
-void SND_SetupResampler (sfxbuffer_t *sb, int streamed);
+void SND_SetupResampler (sfxbuffer_t *sb, bool streamed);
 
 /** Free memory allocated for the resampler.
 	\param stream	stream to pulldown
@@ -570,14 +570,14 @@ int SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
 	\param buffer	"this"
 	\param count	number of samples to advance
 */
-int SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count);
+bool SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count);
 
 /** Seek to an absolute position within the stream, resetting the ring
 	buffer.
 	\param buffer	"this"
 	\param pos		sample position with the stream
 */
-void SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos);
+void SND_StreamSetPos (sfxbuffer_t *buffer, unsigned pos);
 ///@}
 
 #endif//__snd_internal_h

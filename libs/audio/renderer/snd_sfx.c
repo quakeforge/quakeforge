@@ -64,7 +64,7 @@ snd_sfx_free (void *_sfx, void *unused)
 {
 	sfx_t      *sfx = (sfx_t *) _sfx;
 	free ((char *) sfx->name);
-	sfx->name = 0;
+	sfx->name = nullptr;
 }
 
 static void
@@ -124,7 +124,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	// if the speed is 0, there is no sound driver (probably failed to connect
 	// to jackd)
 	if (!snd->speed)
-		return 0;
+		return nullptr;
 
 	frames = snd->speed * 0.3;
 	frames = (frames + 255) & ~255;
@@ -133,7 +133,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	stream->buffer = SND_Memory_AllocBuffer (frames * info->channels);
 	if (!stream->buffer) {
 		free (stream);
-		return 0;
+		return nullptr;
 	}
 
 	stream->file = file;
@@ -152,7 +152,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	stream->buffer->close = close;
 	SND_SetPaint (stream->buffer);
 
-	SND_SetupResampler (stream->buffer, 1);			// get sfx setup properly
+	SND_SetupResampler (stream->buffer, true);		// get sfx setup properly
 	stream->buffer->setpos (stream->buffer, 0);		// pre-fill the buffer
 
 	return stream->buffer;
@@ -172,7 +172,7 @@ SND_LoadSound (snd_t *snd, const char *name)
 	sfx_t      *sfx;
 
 	if (!snd_sfx_hash)
-		return 0;
+		return nullptr;
 	if ((sfx = (sfx_t *) Hash_Find (snd_sfx_hash, name)))
 		return sfx;
 
@@ -184,7 +184,7 @@ SND_LoadSound (snd_t *snd, const char *name)
 	sfx->name = strdup (name);
 	if (SND_Load (sfx) == -1) {
 		snd_num_sfx--;
-		return 0;
+		return nullptr;
 	}
 	Hash_Add (snd_sfx_hash, sfx);
 	return sfx;
@@ -226,9 +226,10 @@ s_soundlist_f (void)
 void
 SND_SFX_Init (snd_t *snd)
 {
-	snd_sfx_hash = Hash_NewTable (511, snd_sfx_getkey, snd_sfx_free, 0, 0);
+	snd_sfx_hash = Hash_NewTable (511, snd_sfx_getkey, snd_sfx_free,
+								  nullptr, nullptr);
 
-	QFS_GamedirCallback (s_gamedir, 0);
+	QFS_GamedirCallback (s_gamedir, nullptr);
 
 	Cmd_AddCommand ("soundlist", s_soundlist_f,
 					"Reports a list of loaded sounds");

@@ -264,7 +264,7 @@ S_ChannelSetSfx (channel_t *chan, sfx_t *sfx)
 }
 
 VISIBLE void
-S_ChannelSetPaused (channel_t *chan, int paused)
+S_ChannelSetPaused (channel_t *chan, bool paused)
 {
 	if (snd_render_funcs) {
 		snd_render_funcs->channel_set_paused (chan, paused);
@@ -272,7 +272,7 @@ S_ChannelSetPaused (channel_t *chan, int paused)
 }
 
 VISIBLE void
-S_ChannelSetLooping (channel_t *chan, int looping)
+S_ChannelSetLooping (channel_t *chan, bool looping)
 {
 	if (snd_render_funcs) {
 		snd_render_funcs->channel_set_looping (chan, looping);
