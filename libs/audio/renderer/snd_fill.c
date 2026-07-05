@@ -59,6 +59,11 @@ typedef struct sfx_fill_s {
 	unsigned    headpos;
 } sfx_fill_t;
 
+typedef struct sfx_seek_s {
+	sfxstream_t *stream;
+	unsigned    pos;
+} sfx_seek_t;
+
 typedef struct sfx_load_s {
 	sfxblock_t *block;
 	sfxbuffer_t *(*load) (sfxblock_t *block);
@@ -67,6 +72,8 @@ typedef struct sfx_load_s {
 static RING_BUFFER_ATOMIC(sfx_bind_t, 512) bind_queue;
 
 static RING_BUFFER_ATOMIC(sfx_fill_t, 512) fill_queue;
+
+static RING_BUFFER_ATOMIC(sfx_seek_t, 512) seek_queue;
 
 static RING_BUFFER_ATOMIC(sfx_load_t, 512) load_queue;
 
@@ -137,6 +144,17 @@ queue_fill (sfxbuffer_t *buffer, unsigned headpos)
 	RB_WRITE_DATA (fill_queue, &fill, 1);
 }
 
+static void
+queue_seek (sfxstream_t *stream, unsigned pos)
+{
+	sfx_seek_t  seek = {
+		.stream = stream,
+		.pos = pos,
+	};
+	while (!RB_SPACE_AVAILABLE (seek_queue)) continue;
+	RB_WRITE_DATA (seek_queue, &seek, 1);
+}
+
 static bool
 run_fill_queue (void)
 {
@@ -145,6 +163,20 @@ run_fill_queue (void)
 		RB_READ_DATA (fill_queue, &fill, 1);
 
 		fill_buffer (fill.buffer, fill.headpos);
+		return true;
+	}
+	return false;
+}
+
+static bool
+run_seek_queue (void)
+{
+	if (RB_DATA_AVAILABLE (seek_queue)) {
+		sfx_seek_t  seek;
+		RB_READ_DATA (seek_queue, &seek, 1);
+
+		seek.stream->seek (seek.stream, seek.pos);
+		fill_buffer (seek.stream->buffer, seek.pos);
 		return true;
 	}
 	return false;
@@ -216,8 +248,7 @@ SND_StreamSetPos (sfxbuffer_t *buffer, unsigned pos)
 	buffer->head = buffer->tail = 0;
 	buffer->pos = pos;
 	stream->pos = pos;
-	stream->seek (stream, buffer->pos * stepscale);
-	queue_fill (buffer, pos);
+	queue_seek (stream, buffer->pos * stepscale);
 }
 
 void
@@ -252,6 +283,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count)
 			headpos -= buffer->sfx_length - sfx->loopstart;
 	}
 
+	bool seek = false;
 	if (samples < count) {
 		buffer->head = buffer->tail = 0;
 		buffer->pos += count;
@@ -267,7 +299,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count)
 			stream->pos = buffer->pos;
 		}
 		headpos = buffer->pos;
-		stream->seek (stream, buffer->pos * stepscale);
+		seek = true;
 	} else {
 		buffer->pos += count;
 		if (buffer->pos >= buffer->sfx_length) {
@@ -276,7 +308,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count)
 				headpos = buffer->pos = 0;
 				buffer->head = buffer->tail = 0;
 				count = 0;
-				stream->seek (stream, buffer->pos * stepscale);
+				seek = true;
 			} else {
 				buffer->pos -= buffer->sfx_length - sfx->loopstart;
 			}
@@ -287,7 +319,12 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count)
 		if (buffer->tail >= buffer->size)
 			buffer->tail -= buffer->size;
 	}
-	queue_fill (buffer, headpos);
+	if (seek) {
+		// seek will fill the buffer
+		queue_seek (stream, buffer->pos * stepscale);
+	} else {
+		queue_fill (buffer, headpos);
+	}
 }
 
 void
@@ -320,6 +357,7 @@ fill_thread (void *data)
 	while (!snd_fill_stop) {
 		bool did_something = false;
 		did_something |= run_fill_queue ();
+		did_something |= run_seek_queue ();
 		did_something |= run_bind_queue ();
 		did_something |= run_load_queue ();
 		if (!did_something) {
