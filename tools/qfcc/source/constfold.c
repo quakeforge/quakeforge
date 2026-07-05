@@ -886,8 +886,7 @@ fold_constants (const expr_t *e)
 		if (!e1) {
 			return e;
 		}
-		if (options.code.progsversion == PROG_VERSION
-			&& is_math (get_type (e1))) {
+		if (is_math (get_type (e1))) {
 			return evaluate_constexpr (e);
 		}
 		op = e->expr.op;
@@ -904,8 +903,7 @@ fold_constants (const expr_t *e)
 			return e;
 		}
 
-		if (options.code.progsversion == PROG_VERSION
-			&& is_math_val (e1) && is_math_val (e2)) {
+		if (is_math_val (e1) && is_math_val (e2)) {
 			return evaluate_constexpr (e);
 		}
 
@@ -922,9 +920,7 @@ fold_constants (const expr_t *e)
 	} else if (e->type == ex_alias
 			   || e->type == ex_field
 			   || e->type == ex_swizzle) {
-		if (options.code.progsversion == PROG_VERSION) {
-			return evaluate_constexpr (e);
-		}
+		return evaluate_constexpr (e);
 	}
 	return e;
 }
