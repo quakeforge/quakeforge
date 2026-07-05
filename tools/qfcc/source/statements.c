@@ -1258,7 +1258,7 @@ dereference_dst:
 	if (op) {
 		*op = src;
 	}
-	if (op_aliases_op (src, dst)) {
+	if (!ofs && op_aliases_op (src, dst)) {
 		return sblock;
 	}
 
