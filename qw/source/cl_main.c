@@ -70,7 +70,6 @@
 #include "QF/dstring.h"
 #include "QF/image.h"
 #include "QF/input.h"
-#include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/model.h"
 #include "QF/msg.h"

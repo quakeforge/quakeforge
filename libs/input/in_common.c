@@ -51,7 +51,6 @@
 #include "QF/darray.h"
 #define IMPLEMENT_INPUT_Funcs
 #include "QF/input.h"
-#include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/mathlib.h"
 #include "QF/plist.h"
