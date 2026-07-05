@@ -24,6 +24,7 @@
 #include "evdev/inputlib.h"
 
 static const char *devinput_path = "/dev/input";
+static hotplug_t *hotplug;
 static device_t *devices;
 void (*device_add) (device_t *);
 void (*device_remove) (device_t *);
@@ -192,6 +193,7 @@ check_device (const char *path)
 {
 	device_t   *dev;
 	int         fd;
+	struct input_id id;
 
 	fd = open (path, O_RDWR | O_NONBLOCK);
 	if (fd == -1)
@@ -214,6 +216,12 @@ check_device (const char *path)
 	dev->uniq = strdup (get_string (fd, EVIOCGUNIQ, buff));
 	dstring_delete (buff);
 
+	ioctl (fd, EVIOCGID, &id);
+	dev->bustype = id.bustype;
+	dev->vendor = id.vendor;
+	dev->product = id.product;
+	dev->version = id.version;
+
 	setup_buttons(dev);
 	setup_axes(dev);
 
@@ -223,11 +231,14 @@ check_device (const char *path)
 	dev->axis_event = 0;
 	dev->button_event = 0;
 
-
-	//Sys_Printf ("%s:\n", path);
-	//Sys_Printf ("\tname: %s\n", dev->name);
-	//Sys_Printf ("\tbuttons: %d\n", dev->num_buttons);
-	//Sys_Printf ("\taxes: %d\n", dev->num_axes);
+	Sys_MaskPrintf (SYS_input, "%s:\n", path);
+	Sys_MaskPrintf (SYS_input, "\tname: %s\n", dev->name);
+	Sys_MaskPrintf (SYS_input, "\tphys: %s\n", dev->phys);
+	Sys_MaskPrintf (SYS_input, "\tuniq: %s\n", dev->uniq);
+	Sys_MaskPrintf (SYS_input, "\tid: %04x:%04x:%04x:%04x\n",
+					dev->bustype, dev->vendor, dev->product, dev->version);
+	Sys_MaskPrintf (SYS_input, "\tbuttons: %d\n", dev->num_buttons);
+	Sys_MaskPrintf (SYS_input, "\taxes: %d\n", dev->num_axes);
 
 	if (device_add) {
 		device_add (dev);
@@ -324,7 +335,7 @@ read_device_input (device_t *dev)
 void
 inputlib_add_select (fd_set *fdset, int *maxfd)
 {
-	inputlib_hotplug_add_select (fdset, maxfd);
+	inputlib_hotplug_add_select (hotplug, fdset, maxfd);
 
 	for (device_t *dev = devices; dev; dev = dev->next) {
 		if (dev->fd < 0) {
@@ -340,7 +351,7 @@ inputlib_add_select (fd_set *fdset, int *maxfd)
 void
 inputlib_check_select (fd_set *fdset)
 {
-	inputlib_hotplug_check_select (fdset);
+	inputlib_hotplug_check_select (hotplug, fdset);
 
 	for (device_t *dev = devices; dev; dev = dev->next) {
 		if (dev->fd < 0) {
@@ -502,7 +513,8 @@ inputlib_init (void (*dev_add) (device_t *), void (*dev_rem) (device_t *))
 	device_add = dev_add;
 	device_remove = dev_rem;
 	if (scan_devices () != -1) {
-		inputlib_hotplug_init (devinput_path, device_created, device_deleted);
+		hotplug = inputlib_hotplug_init (devinput_path, "event",
+										 device_created, device_deleted);
 		return 0;
 	}
 	return -1;
@@ -511,7 +523,8 @@ inputlib_init (void (*dev_add) (device_t *), void (*dev_rem) (device_t *))
 void
 inputlib_close (void)
 {
-	inputlib_hotplug_close ();
+	inputlib_hotplug_close (hotplug);
+	hotplug = nullptr;
 	while (devices) {
 		close_device (devices);
 	}

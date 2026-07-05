@@ -28,8 +28,8 @@
 # include "config.h"
 #endif
 
-#include "QF/cvar.h"
 #include "QF/image.h"
+#include "QF/particle.h"
 
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
@@ -43,7 +43,6 @@
 #include "QF/GL/qf_vid.h"
 
 #include "mod_internal.h"
-#include "r_cvar.h"
 #include "r_internal.h"
 #include "vid_internal.h"
 #include "vid_gl.h"

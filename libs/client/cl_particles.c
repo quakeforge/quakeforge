@@ -37,19 +37,13 @@
 
 #include <stdlib.h>
 
-#include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/mersenne.h"
-#include "QF/qargs.h"
+#include "QF/particle.h"
 #include "QF/quakefs.h"
-#include "QF/render.h"
-#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "QF/plugin/vid_render.h"	//FIXME
-#include "QF/scene/entity.h"
-
-#include "compat.h"
 
 #include "client/particles.h"
 #include "client/world.h"
@@ -160,7 +154,7 @@ particle_new (ptype_t type, int texnum, vec4f_t pos, float scale,
 
 	*parm = particle_params (type);
 	if (p->ramp_base >= 0 && (int) p->ramp < parm->ramp_max) {
-		p->color = rampptr [p->ramp_base + (int) p->ramp];
+		p->color = rampptr[p->ramp_base + (int) p->ramp];
 	}
 	return 1;
 }
@@ -1296,6 +1290,8 @@ CL_Particles_Init (void)
 	cl_psystem = r_funcs->ParticleSystem ();
 	cl_psystem->partramps = cl_partramps;
 	cl_psystem->partramps_count = countof (cl_partramps);
+	cl_psystem->palette_size = 16;
+	cl_psystem->palette_id = nullent;
 	Cvar_Register (&easter_eggs_cvar, easter_eggs_f, 0);
 	Cvar_Register (&particles_style_cvar, particles_style_f, 0);
 	set_particle_funcs ();
@@ -1304,5 +1300,7 @@ CL_Particles_Init (void)
 void
 CL_ParticlesGravity (float gravity)
 {
-	cl_psystem->gravity = (vec4f_t) { 0, 0, -gravity, 0 };
+	cl_psystem->center = (vec4f_t) { 0, 0, -1, 0 };
+	cl_psystem->gravity = -gravity;
+	cl_psystem->min_dist = 0;
 }

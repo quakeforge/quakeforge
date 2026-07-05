@@ -1149,12 +1149,11 @@ CL_SetStat (int stat, int value)
 	switch (stat) {
 		case STAT_ITEMS:
 #define IT_POWER (IT_QUAD | IT_SUIT | IT_INVULNERABILITY | IT_INVISIBILITY)
-			cl.viewstate.powerup_index = (cl.stats[STAT_ITEMS]&IT_POWER) >> 19;
+			cl.viewstate.powerup_index = (value & IT_POWER) >> 19;
 			break;
 		case STAT_HEALTH:
 			if (cl_player_health_e->func)
-				GIB_Event_Callback (cl_player_health_e, 1,
-									va ("%i", value));
+				GIB_Event_Callback (cl_player_health_e, 1, va ("%i", value));
 			if (value <= 0)
 				Team_Dead ();
 			break;

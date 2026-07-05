@@ -59,18 +59,13 @@ pack_new (const char *name)
 {
 	pack_t *pack = calloc (sizeof (*pack), 1);
 
-	if (!pack)
-		return 0;
-	pack->filename = strdup (name);
-	if (!pack->filename) {
-		free (pack);
-		return 0;
+	if (!pack) {
+		return nullptr;
 	}
 	pack->file_hash = Hash_NewTable (1021, pack_get_key, 0, 0, 0);
 	if (!pack->file_hash) {
-		free (pack->filename);
 		free (pack);
-		return 0;
+		return nullptr;
 	}
 	return pack;
 }
@@ -82,8 +77,6 @@ pack_del (pack_t *pack)
 		free (pack->files);
 	if (pack->handle)
 		Qclose (pack->handle);
-	if (pack->filename)
-		free (pack->filename);
 	if (pack->file_hash)
 		free (pack->file_hash);
 	free (pack);
@@ -100,18 +93,15 @@ pack_rehash (pack_t *pack)
 }
 
 VISIBLE pack_t *
-pack_open (const char *name)
+pack_build (QFile *file, const char *name)
 {
 	pack_t     *pack = pack_new (name);
-	int         i;
 
-	if (!pack)
-		return 0;
-	pack->handle = Qopen (name, "rb");
-	if (!pack->handle) {
-		goto error;
+	if (!pack) {
+		return nullptr;
 	}
-	if (Qread (pack->handle, &pack->header, sizeof (pack->header))
+
+	if (Qread (file, &pack->header, sizeof (pack->header))
 		!= sizeof (pack->header)) {
 		fprintf (stderr, "%s: not a pack file\n", name);
 		errno = 0;
@@ -134,10 +124,10 @@ pack_open (const char *name)
 		//fprintf (stderr, "out of memory\n");
 		goto error;
 	}
-	Qseek (pack->handle, pack->header.dirofs, SEEK_SET);
-	Qread (pack->handle, pack->files, pack->numfiles * sizeof (pack->files[0]));
+	Qseek (file, pack->header.dirofs, SEEK_SET);
+	Qread (file, pack->files, pack->numfiles * sizeof (pack->files[0]));
 
-	for (i = 0; i < pack->numfiles; i++) {
+	for (int i = 0; i < pack->numfiles; i++) {
 		pack->files[i].filepos = LittleLong (pack->files[i].filepos);
 		pack->files[i].filelen = LittleLong (pack->files[i].filelen);
 		Hash_Add (pack->file_hash, &pack->files[i]);
@@ -145,7 +135,23 @@ pack_open (const char *name)
 	return pack;
 error:
 	pack_del (pack);
-	return 0;
+	return nullptr;
+}
+
+VISIBLE pack_t *
+pack_open (const char *name)
+{
+	pack_t     *pack = nullptr;
+	QFile      *file = Qopen (name, "rb");
+	if (file) {
+		pack = pack_build (file, name);
+		if (pack) {
+			pack->handle = file;
+		} else {
+			Qclose (file);
+		}
+	}
+	return pack;
 }
 
 VISIBLE pack_t *
@@ -153,13 +159,14 @@ pack_create (const char *name)
 {
 	pack_t     *pack = pack_new (name);
 
-	if (!pack)
-		return 0;
+	if (!pack) {
+		return nullptr;
+	}
 
 	pack->handle = Qopen (name, "wb");
 	if (!pack->handle) {
 		pack_del (pack);
-		return 0;
+		return nullptr;
 	}
 	memcpy (pack->header.id, "PACK", sizeof (pack->header.id));
 

@@ -76,21 +76,23 @@ static cvar_t wildmidi_config_cvar = {
 	.value = { .type = 0, .value = &wildmidi_config },
 };
 
-static int
+static bool
 midi_init (snd_t *snd)
 {
+	qfZoneScoped (true);
 	Cvar_Register (&wildmidi_volume_cvar, 0, 0);
 	Cvar_Register (&wildmidi_config_cvar, 0, 0);
 
 	if (WildMidi_Init (wildmidi_config, snd->speed, 0) == -1)
-		return 1;
+		return false;
 	midi_intiialized = 1;
-	return 0;
+	return true;
 }
 
 static wavinfo_t
 midi_get_info (snd_t *snd, void *handle)
 {
+	qfZoneScoped (true);
 	wavinfo_t   info;
 	struct _WM_Info *wm_info;
 
@@ -114,6 +116,7 @@ midi_get_info (snd_t *snd, void *handle)
 static long
 midi_stream_read (void *file, float **buf)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = (sfxstream_t *) file;
 	midi_file_t *mf = (midi_file_t *) stream->file;
 	int         size = FRAMES * CHANNELS * WIDTH;
@@ -122,7 +125,7 @@ midi_stream_read (void *file, float **buf)
 
 	res = WildMidi_GetOutput (mf->handle, (int8_t *)data, size);
 	if (res <= 0) {
-		stream->error = 1;
+		stream->base.error = true;
 		return 0;
 	}
 	res /= CHANNELS * WIDTH;
@@ -134,9 +137,10 @@ midi_stream_read (void *file, float **buf)
 static int
 midi_stream_seek (sfxstream_t *stream, int pos)
 {
+	qfZoneScoped (true);
 	unsigned long int new_pos;
-	pos *= stream->wavinfo.width * stream->wavinfo.channels;
-	pos += stream->wavinfo.dataofs;
+	pos *= stream->base.wavinfo.width * stream->base.wavinfo.channels;
+	pos += stream->base.wavinfo.dataofs;
 	new_pos = pos;
 
 	return WildMidi_FastSeek(stream->file, &new_pos);
@@ -145,6 +149,7 @@ midi_stream_seek (sfxstream_t *stream, int pos)
 static void
 midi_stream_close (sfxbuffer_t *buffer)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = buffer->stream;
 	midi_file_t *mf = (midi_file_t *) stream->file;
 
@@ -156,6 +161,7 @@ midi_stream_close (sfxbuffer_t *buffer)
 static sfxbuffer_t *
 midi_stream_open (sfx_t *sfx)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = sfx->stream;
 	QFile	   *file;
 	midi	   *handle;
@@ -183,9 +189,10 @@ midi_stream_open (sfx_t *sfx)
 							   midi_stream_close);
 }
 
-int
+bool
 SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 {
+	qfZoneScoped (true);
 	snd_t      *snd = sfx->snd;
 	wavinfo_t   info;
 	midi *handle;
@@ -193,8 +200,8 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 	unsigned long int local_buffer_size = Qfilesize (file);
 
 	if (!midi_intiialized) {
-		if (midi_init (snd)) {
-			return -1;
+		if (!midi_init (snd)) {
+			return false;
 		}
 	}
 
@@ -207,7 +214,7 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 	handle = WildMidi_OpenBuffer (local_buffer, local_buffer_size);
 
 	if (handle == NULL)
-		return -1;
+		return false;
 
 	info = midi_get_info (snd, handle);
 
@@ -217,5 +224,5 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 
 	// we init stream here cause we will only ever stream
 	SND_SFX_Stream (sfx, realname, info, midi_stream_open);
-	return 0;
+	return true;
 }

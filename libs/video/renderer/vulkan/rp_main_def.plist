@@ -527,11 +527,6 @@ properties = {
 				name = vert.main;
 				module = $builtin/particles.r;
 			};
-			geometry = {
-				stage = geometry;
-				name = geom.main;
-				module = $builtin/particles.r;
-			};
 			fragment = {
 				stage = fragment;
 				name = frag.main;
@@ -545,12 +540,12 @@ properties = {
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
 				{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
-				{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 32; },
+				{ location = 2; binding = 0; format = r32g32b32a32_uint; offset = 32; },
 				{ location = 3; binding = 0; format = r32g32b32a32_sfloat; offset = 48; },
 			);
 		};
 		inputAssembly = {
-			topology = point_list;
+			topology = triangle_strip;
 			primitiveRestartEnable = false;
 		};
 		layout = {
@@ -558,14 +553,22 @@ properties = {
 				//                            palette
 				descriptorSets = (matrix_set, texture_set, oit_set);
 				pushConstants = {
-					vertex = { Model = mat4; };
+					vertex = {
+						Model = mat4;
+						palette_size = uint;
+					};
 					fragment = { fog = vec4; };
 				};
 			};
 			physics = {
 				descriptorSets = (particle_set);
 				pushConstants = {
-					compute = { gravity = vec4; dT = float; };
+					compute = {
+						center = vec4;
+						gravity = float;
+						min_dist = float;
+						dT = float;
+					};
 				};
 			};
 			update = {
@@ -832,7 +835,7 @@ descriptorSetLayouts = {
 				binding = 0;
 				descriptorType = uniform_buffer;
 				descriptorCount = 1;
-				stageFlags = vertex|geometry|fragment;
+				stageFlags = vertex|fragment;
 			},
 		);
 	};
@@ -1510,11 +1513,11 @@ renderpasses = {
 
 						stages = (
 							$particle.shader.vertex,
-							$particle.shader.geometry,
 							$particle.shader.fragment,
 						);
 						vertexInput = $particle.vertexInput;
 						inputAssembly = $particle.inputAssembly;
+						rasterization = $counter_cw_cull_back;
 						layout = $particle.layout.draw;
 					};
 					debug_lights = {

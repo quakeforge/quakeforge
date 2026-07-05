@@ -150,13 +150,22 @@ static cvar_t fs_dirconf_cvar = {
 	.value = { .type = 0, .value = &fs_dirconf },
 };
 
+typedef struct qfs_mempak_s {
+	const char *name;
+	const void *data;
+	size_t      size;
+} qfs_mempak_t;
+
+static struct DARRAY_TYPE (qfs_mempak_t) mempaks = DARRAY_STATIC_INIT (4);
+
 VISIBLE const char *qfs_userpath;
 
 VISIBLE int __thread qfs_filesize;
 
 typedef struct searchpath_s {
-	char       *filename;
-	struct pack_s *pack;	// only one of filename / pack will be used
+	char       *pathname;
+	pack_t     *pack;
+	byte       *pack_data;	// if non-null, pak file is in memory
 	struct searchpath_s *next;
 } searchpath_t;
 
@@ -179,7 +188,8 @@ struct vpath_s {			// typedef to vpath_t is in quakefs.h
 
 typedef struct int_findfile_s {
 	findfile_t ff;
-	struct pack_s *pack;
+	pack_t    *pack;
+	byte      *pack_data;
 	dpackfile_t *packfile;
 	const char *path;
 	int         fname_index;
@@ -282,8 +292,8 @@ delete_searchpath (searchpath_t *searchpath)
 	if (searchpath->pack) {
 		pack_del (searchpath->pack);
 	}
-	if (searchpath->filename) {
-		free (searchpath->filename);
+	if (searchpath->pathname) {
+		free (searchpath->pathname);
 	}
 	FREE (searchpaths, searchpath);
 }
@@ -725,6 +735,16 @@ QFS_SetConfig (plitem_t *config)
 	qfs_gd_plist = config;
 }
 
+void
+QFS_AddMemPak (const char *name, const void *data, size_t size)
+{
+	DARRAY_APPEND (&mempaks, ((qfs_mempak_t) {
+		.name = name,
+		.data = data,
+		.size = size,
+	}));
+}
+
 /*
 	qfs_contains_updir
 
@@ -798,9 +818,9 @@ static void
 qfs_path_print (searchpath_t *sp)
 {
 	if (sp->pack) {
-		Sys_Printf ("%s (%i files)\n", sp->pack->filename, sp->pack->numfiles);
+		Sys_Printf ("%s (%i files)\n", sp->pathname, sp->pack->numfiles);
 	} else {
-		Sys_Printf ("%s\n", sp->filename);
+		Sys_Printf ("%s\n", sp->pathname);
 	}
 }
 
@@ -840,18 +860,19 @@ static __thread int_findfile_t found;
 static void
 clear_findfile (void)
 {
-	found.ff.vpath = 0;
+	found.ff.vpath = nullptr;
 	found.ff.in_pak = false;
-	found.pack = 0;
-	found.packfile = 0;
+	found.pack = nullptr;
+	found.pack_data = nullptr;
+	found.packfile = nullptr;
 	found.fname_index = 0;
 	if (found.ff.realname) {
 		free ((char *) found.ff.realname);
-		found.ff.realname = 0;
+		found.ff.realname = nullptr;
 	}
 	if (found.path) {
 		free ((char *) found.path);
-		found.path = 0;
+		found.path = nullptr;
 	}
 }
 
@@ -874,14 +895,17 @@ qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
 		}
 		if (packfile) {
 			Sys_MaskPrintf (SYS_fs_f, "PackFile: %s : %s\n",
-							sp->pack->filename, packfile->name);
-			found.ff.vpath = vpath;
-			found.ff.in_pak = true;
-			found.ff.realname = strdup (*fn);
-			found.pack = sp->pack;
-			found.packfile = packfile;
-			found.fname_index = fn - fnames;
-			found.path = strdup (sp->pack->filename);
+							sp->pathname, packfile->name);
+			found = (int_findfile_t) {
+				.ff.vpath = vpath,
+				.ff.in_pak = true,
+				.ff.realname = strdup (*fn),
+				.pack = sp->pack,
+				.pack_data = sp->pack_data,
+				.packfile = packfile,
+				.fname_index = fn - fnames,
+				.path = strdup (sp->pathname),
+			};
 			return &found;
 		}
 	} else {
@@ -889,18 +913,20 @@ qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
 		dstring_t  *path = dstring_new ();
 
 		for (fn = fnames; *fn; fn++) {
-			if (qfs_expand_path (path, sp->filename, *fn, 1) == 0) {
+			if (qfs_expand_path (path, sp->pathname, *fn, 1) == 0) {
 				if (Sys_FileExists (path->str) == -1) {
 					continue;
 				}
 
 				Sys_MaskPrintf (SYS_fs_f, "FindFile: %s\n", path->str);
 
-				found.ff.vpath = vpath;
-				found.ff.in_pak = false;
-				found.ff.realname = strdup (*fn);
-				found.path = strdup (path->str);
-				found.fname_index = fn - fnames;
+				found = (int_findfile_t) {
+					.ff.vpath = vpath,
+					.ff.in_pak = false,
+					.ff.realname = strdup (*fn),
+					.path = strdup (path->str),
+					.fname_index = fn - fnames,
+				};
 				dstring_delete (path);
 				return &found;
 			}
@@ -963,26 +989,6 @@ QFS_FindFile (const char *fname, const vpath_t *start, const vpath_t *end)
 		return &found->ff;
 	}
 	return 0;
-}
-
-static QFile *
-qfs_openread (const char *path, int offs, int len, int zip)
-{
-	QFile      *file;
-
-	if (offs < 0 || len < 0)
-		file = Qopen (path, zip ? "rbz" : "rb");
-	else
-		file = Qsubopen (path, offs, len, zip);
-
-	if (!file) {
-		Sys_Error ("Couldn't open %s", path);
-		return 0;
-	}
-
-	qfs_filesize = Qfilesize (file);
-
-	return file;
 }
 
 VISIBLE char *
@@ -1066,12 +1072,22 @@ open_file (int_findfile_t *found, QFile **gzfile, int zip)
 {
 	qfs_foundfile = found->ff;
 	if (found->ff.in_pak) {
-		*gzfile = qfs_openread (found->pack->filename,
-								found->packfile->filepos,
+		if (found->pack_data) {
+			*gzfile = Qmemopen (found->pack_data + found->packfile->filepos,
 								found->packfile->filelen, zip);
+		} else {
+			*gzfile = Qsubopen (found->path, found->packfile->filepos,
+								found->packfile->filelen, zip);
+		}
 	} else {
-		*gzfile = qfs_openread (found->path, -1, -1, zip);
+		*gzfile = Qopen (found->path, zip ? "rbz" : "rb");
 	}
+
+	if (!*gzfile) {
+		Sys_Error ("Couldn't open %s", found->path);
+	}
+
+	qfs_filesize = Qfilesize (*gzfile);
 }
 
 VISIBLE QFile *
@@ -1304,6 +1320,7 @@ qfs_load_gamedir (searchpath_t **searchpath, const char *dir)
 			Sys_Printf (ONG "Skipping bad pakfile %s" DFL "\n", pakfiles[i]);
 		} else {
 			sp = new_searchpath ();
+			sp->pathname = strdup (pakfiles[i]);
 			sp->pack = pak;
 			sp->next = *searchpath;
 			*searchpath = sp;
@@ -1329,7 +1346,7 @@ qfs_add_dir (searchpath_t **searchpath, const char *dir)
 
 	// add the directory to the search path
 	sp = new_searchpath ();
-	sp->filename = strdup (dir);
+	sp->pathname = strdup (dir);
 	sp->next = *searchpath;
 	*searchpath = sp;
 
@@ -1717,7 +1734,7 @@ qfs_filelistfill_do (filelist_t *list, const searchpath_t *search, const char *c
 		DIR        *dir_ptr;
 		struct dirent *dirent;
 
-		dir_ptr = opendir (va ("%s/%s", search->filename, cp));
+		dir_ptr = opendir (va ("%s/%s", search->pathname, cp));
 		if (!dir_ptr)
 			return;
 		while ((dirent = readdir (dir_ptr)))

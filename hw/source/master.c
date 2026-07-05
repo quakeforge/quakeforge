@@ -246,16 +246,14 @@ SV_InitNet (void)
 	NET_Init (port);
 
 	// Add filters
-	dstring_t  *buffer = dstring_new ();
 	if ((filters = Qopen ("filters.ini", "rt"))) {
-		while ((str = Qgetline (filters, buffer))) {
+		while ((str = Qgetline (filters))) {
 			Cbuf_AddText (mst_cbuf, "filter add ");
 			Cbuf_AddText (mst_cbuf, str);
 			Cbuf_AddText (mst_cbuf, "\n");
 		}
 		Qclose (filters);
 	}
-	dstring_delete (buffer);
 }
 
 static void

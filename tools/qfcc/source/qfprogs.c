@@ -216,7 +216,7 @@ func_hash (const void *func, void *unused)
 	return ((dfunction_t *) func)->first_statement;
 }
 
-static int
+static bool
 func_compare (const void *f1, const void *f2, void *unused)
 {
 	return ((dfunction_t *) f1)->first_statement

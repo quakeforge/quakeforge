@@ -40,15 +40,17 @@ typedef struct QFile_s QFile;
 
 int Qrename(const char *old_path, const char *new_path);
 int Qremove(const char *path);
-int Qfilesize (QFile *file) __attribute__((pure));
+size_t Qfilesize (QFile *file) __attribute__((pure));
 QFile *Qopen(const char *path, const char *mode);
 QFile *Qdopen(int fd, const char *mode);
 QFile *Qfopen (FILE *file, const char *mode);
-QFile *Qsubopen (const char *path, int offs, int len, int zip);
+QFile *Qmemopen (const void *data, size_t len, int zip);
+QFile *Qsubopen (const char *path, size_t offs, size_t len, int zip);
 void Qclose(QFile *file);
-int Qread(QFile *file, void *buf, int count);
-int Qwrite(QFile *file, const void *buf, int count);
-int Qprintf(QFile *file, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
+size_t Qread(QFile *file, void *buf, size_t count);
+size_t Qwrite(QFile *file, const void *buf, size_t count);
+int Qprintf(QFile *file, const char *fmt, ...)
+	__attribute__((format(PRINTF,2,3)));
 int Qputs(QFile *file, const char *buf);
 char *Qgets(QFile *file, char *buf, int count);
 int Qgetc(QFile *file);
@@ -58,8 +60,7 @@ int Qseek(QFile *file, long offset, int whence);
 long Qtell(QFile *file);
 int Qflush(QFile *file);
 int Qeof(QFile *file);
-struct dstring_s;
-char *Qgetline(QFile *file, struct dstring_s *str);
+char *Qgetline(QFile *file);
 
 ///@}
 

@@ -5,6 +5,8 @@
 #include <ctype.h>
 #include "QF/plist.h"
 
+static struct hashctx_s *hashctx;
+
 static const char *test_strings[] = {
 	//NOTE: this is one long line
 	"030000004c050000e60c000011810000,PS5 Controller,a:b0,b:b1,back:b8,"
@@ -38,7 +40,7 @@ free_item (plitem_t **item)
 static int
 test_string_io (const char *str)
 {
-	pldeferred plitem_t *item = PL_ParseCSV (str);
+	pldeferred plitem_t *item = PL_ParseCSV (str, &hashctx);
 	if (!item) {
 		printf ("failed to parse\n");
 		return 0;

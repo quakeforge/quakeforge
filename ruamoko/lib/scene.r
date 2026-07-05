@@ -10,6 +10,7 @@ int Scene_Entqueue (scene_t scene, string entqueue_name) = #0;
 
 transform_t Entity_GetTransform (entity_t ent) = #0;
 void Entity_SetModel (entity_t ent, model_t model) = #0;
+model_t Entity_GetModel (entity_t ent) = #0;
 void Entity_SetEntqueue (entity_t ent, int entqueue) = #0;
 void Entity_SetSubmeshMask (entity_t ent, uint submesh_mask) = #0;
 void Entity_SetShadowFlags (entity_t ent, bool noshadowcast,

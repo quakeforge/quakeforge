@@ -242,10 +242,10 @@ int         aPage;						// Current active display page
 int         vPage;						// Current visible display page
 int         waitVRT = true;				// True to wait for retrace on flip
 
-static LONG (*event_handlers[WM_USER])(HWND, UINT, WPARAM, LPARAM);
+static LRESULT (*event_handlers[WM_USER])(HWND, UINT, WPARAM, LPARAM);
 
 bool
-Win_AddEvent (UINT event, LONG (*event_handler)(HWND, UINT, WPARAM, LPARAM))
+Win_AddEvent (UINT event, LRESULT (*event_handler)(HWND, UINT, WPARAM, LPARAM))
 {
 	if (event >= WM_USER) {
 		Sys_MaskPrintf (SYS_vid, "event: %d, WM_USER: %d\n", event, WM_USER);
@@ -271,7 +271,7 @@ Win_RemoveEvent (UINT event)
 	return true;
 }
 
-static LONG WINAPI
+static LRESULT WINAPI
 Win_EventHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (uMsg < WM_USER && event_handlers[uMsg]) {
@@ -298,7 +298,7 @@ VID_InitModes (HINSTANCE hInstance)
 {
 	WNDCLASS    wc = {
 		.style = CS_OWNDC,
-		.lpfnWndProc = (WNDPROC) Win_EventHandler,
+		.lpfnWndProc = Win_EventHandler,
 		.hInstance = hInstance,
 		.lpszClassName = WINDOW_CLASS,
 	};
@@ -364,13 +364,13 @@ Win_UpdateFullscreen (int fullscreen)
 	}
 }
 
-static long
+static LRESULT
 notify_create (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	return 1;
 }
 
-static long
+static LRESULT
 notify_destroy (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (win_mainwindow) {
@@ -381,7 +381,7 @@ notify_destroy (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 1;
 }
 
-static long
+static LRESULT
 notify_move (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	win_pos_x = (short) LOWORD (lParam);
@@ -391,7 +391,7 @@ notify_move (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 1;
 }
 
-static long
+static LRESULT
 notify_size (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	win_len_x = (short) LOWORD (lParam);

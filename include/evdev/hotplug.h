@@ -1,14 +1,17 @@
 #ifndef evdev_hotplug_h
 #define evdev_hotplug_h
 
-int inputlib_hotplug_init(const char *path,
-						  void (*created) (const char*),
-						  void (*deleted) (const char *));
+typedef void (*hotplugfunc_t) (const char *);
 
-void inputlib_hotplug_close (void);
+typedef struct hotplug_s hotplug_t;
 
-int inputlib_hotplug_add_select (fd_set *fdset, int *maxfd);
+hotplug_t *inputlib_hotplug_init(const char *path, const char *prefix,
+								 hotplugfunc_t created, hotplugfunc_t deleted);
 
-int inputlib_hotplug_check_select (fd_set *fdset);
+void inputlib_hotplug_close (hotplug_t *hp);
+
+int inputlib_hotplug_add_select (hotplug_t *hp, fd_set *fdset, int *maxfd);
+
+int inputlib_hotplug_check_select (hotplug_t *hp, fd_set *fdset);
 
 #endif//evdev_hotplug_h

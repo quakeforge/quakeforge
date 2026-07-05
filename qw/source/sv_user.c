@@ -1541,7 +1541,7 @@ ucmd_get_hash (const void *_a, void *data)
 	return Hash_String (a->name);
 }
 
-static int
+static bool
 ucmd_compare (const void *a, const void *b, void *data)
 {
 	return a == b;

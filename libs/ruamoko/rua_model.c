@@ -176,6 +176,7 @@ bi (Model_Load)
 		return;
 	if (!(R_INT (pr) = alloc_handle (res, model)))
 		Mod_UnloadModel (model);
+	model->model_id = R_INT (pr);
 }
 
 bi (Model_LoadMesh)
@@ -197,6 +198,7 @@ bi (Model_LoadMesh)
 	if (!(R_INT (pr) = alloc_handle (res, model))) {
 		Mod_UnloadModel (model);
 	}
+	model->model_id = R_INT (pr);
 }
 
 model_t *

@@ -237,7 +237,7 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, qfv_taskctx_t *taskctx,
 		auto sp = &rp->subpasses[i];
 		qfv_taskctx_t tctx = {
 			.ctx = taskctx->ctx,
-			.frame = taskctx->frame,
+			.frame = frame,
 			.renderpass = rp,
 			.subpass = sp,
 			.cmd = QFV_GetCmdBuffer (ctx, true),
@@ -376,7 +376,7 @@ run_process (qfv_step_t *step, qfv_taskctx_t *taskctx)
 }
 
 static void
-run_collect (vulkan_ctx_t *ctx)
+run_collect (vulkan_ctx_t *ctx, qfv_job_t *job)
 {
 #ifdef TRACY_ENABLE
 	auto device = ctx->device;
@@ -394,7 +394,7 @@ run_collect (vulkan_ctx_t *ctx)
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 	qftCVkCollect (frame->qftVkCtx, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
-	QFV_AppendCmdBuffer (ctx, cmd);
+	QFV_AppendCmdBuffer (job, cmd);
 #endif
 }
 
@@ -445,6 +445,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job)
 	qfZoneNamed (zone, true);
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
+	auto frame = &rctx->frames.a[ctx->curFrame];
 	int64_t start = Sys_LongTime ();
 
 	run_deletion_queue (ctx);
@@ -453,11 +454,13 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job)
 		.ctx = ctx,
 		.graph = graph,
 		.job = job,
+		.frame = frame,
 	};
 
 	for (uint32_t i = 0; i < job->num_steps; i++) {
 		int64_t step_start = Sys_LongTime ();
 		__auto_type step = &job->steps[i];
+		taskctx.step = step;
 		if (!step->process) {
 			// run render and compute steps automatically only if there's no
 			// process for the step (the idea is the process uses the compute
@@ -660,7 +663,7 @@ wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	QFV_CmdPoolManager_Reset (&frame->render_cmdpool);
 	frame->active_pool = &frame->render_cmdpool;
-	run_collect (ctx);
+	run_collect (ctx, taskctx->job);
 }
 
 static void
@@ -805,20 +808,28 @@ get_buffer_by_name (vulkan_ctx_t *ctx, const char *name)
 	return graph->resources->objects[buffer->object].buffer.buffer;
 }
 
-VkImage
-QFV_GetImage (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_infO)
+VkBuffer
+QFV_GetBuffer (vulkan_ctx_t *ctx, qfv_bufferinfo_t *buffer_info)
 {
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
-	return graph->resources->objects[image_infO->object].image.image;
+	return graph->resources->objects[buffer_info->object].buffer.buffer;
+}
+
+VkImage
+QFV_GetImage (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_info)
+{
+	auto rctx = ctx->render_context;
+	auto graph = rctx->graph;
+	return graph->resources->objects[image_info->object].image.image;
 }
 
 VkImageView
-QFV_GetImageView (vulkan_ctx_t *ctx, qfv_imageviewinfo_t *view_infO)
+QFV_GetImageView (vulkan_ctx_t *ctx, qfv_imageviewinfo_t *view_info)
 {
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
-	return graph->resources->objects[view_infO->object].image_view.view;
+	return graph->resources->objects[view_info->object].image_view.view;
 }
 
 static VkImage
@@ -1029,6 +1040,28 @@ blackboard_set_bufferptr (const exprval_t **params, exprval_t *result,
 	*ptr = addr;
 }
 
+static void
+blackboard_set_bufferptr_offset (const exprval_t **params, exprval_t *result,
+								 exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto rctx = ctx->render_context;
+	auto offset = *(uint64_t *) params[0]->value;
+	auto bufname = *(const char **) params[1]->value;
+	auto varname = *(const char **) params[2]->value;
+
+
+	auto ptr = (VkDeviceAddress *) blackboard_get_var (rctx, varname, qfv_ptr);
+	auto addr = QFV_GetBufferAddress (ctx, bufname, ctx->curFrame);
+	if (!addr) {
+		Sys_Error ("invalid buffer %s\n", bufname);
+	}
+
+	*ptr = addr + offset;
+}
+
 static exprfunc_t wait_on_fence_func[] = {
 	{ .func = wait_on_fence },
 	{}
@@ -1123,13 +1156,27 @@ bbfunc(uvec4);
 bbfunc(vec2);
 bbfunc(vec3);
 bbfunc(vec4);
+
 static exprtype_t *blackboard_set_bufferptr_params[] = {
 	&cexpr_string,
 	&cexpr_string,
 };
 static exprfunc_t blackboard_set_bufferptr_func[] = {
-	{ .func = blackboard_set_bufferptr, .num_params = 2,
-		blackboard_set_bufferptr_params },
+	{ .func = blackboard_set_bufferptr,
+		.num_params = countof (blackboard_set_bufferptr_params),
+		.param_types = blackboard_set_bufferptr_params },
+	{}
+};
+
+static exprtype_t *blackboard_set_bufferptr_offset_params[] = {
+	&cexpr_ulong,
+	&cexpr_string,
+	&cexpr_string,
+};
+static exprfunc_t blackboard_set_bufferptr_offset_func[] = {
+	{ .func = blackboard_set_bufferptr_offset,
+		.num_params = countof (blackboard_set_bufferptr_offset_params),
+		.param_types = blackboard_set_bufferptr_offset_params },
 	{}
 };
 
@@ -1165,6 +1212,8 @@ static exprsym_t render_task_syms[] = {
 	bbfunc(uvec4),
 	{ "blackboard_set_bufferptr", &cexpr_function,
 	  blackboard_set_bufferptr_func },
+	{ "blackboard_set_bufferptr_offset", &cexpr_function,
+	  blackboard_set_bufferptr_offset_func },
 	{}
 };
 
@@ -1182,17 +1231,18 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 	qfv_renderctx_t *rctx = malloc (sizeof (qfv_renderctx_t));
 	ctx->render_context = rctx;
 
+	uint32_t num_frames = max (1, vulkan_frame_count);
 	*rctx = (qfv_renderctx_t) {
 		.task_functions = { .symbols = &(exprsym_t) {} },
 		.external_attachments = DARRAY_STATIC_INIT (4),
-		.frames = DARRAY_STATIC_INIT (vulkan_frame_count),
+		.frames = DARRAY_STATIC_INIT (num_frames),
 		.deletion_queue = {
 			.q = DARRAY_STATIC_INIT (8),
 			.compare = qfv_deletion_compare,
 		},
 		.size_time = -1,
 	};
-	DARRAY_RESIZE (&rctx->frames, vulkan_frame_count);
+	DARRAY_RESIZE (&rctx->frames, num_frames);
 
 	update_framebuffer_params[0] = &rctx->step_type;
 

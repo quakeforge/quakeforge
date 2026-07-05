@@ -46,9 +46,9 @@ typedef struct snd_render_funcs_s {
 
 	struct channel_s *(*alloc_channel) (void);
 	void      (*channel_free) (struct channel_s *chan);
-	int       (*channel_set_sfx) (struct channel_s *chan, struct sfx_s *sfx);
-	void      (*channel_set_paused) (struct channel_s *chan, int paused);
-	void      (*channel_set_looping) (struct channel_s *chan, int looping);
+	bool      (*channel_set_sfx) (struct channel_s *chan, struct sfx_s *sfx);
+	void      (*channel_set_paused) (struct channel_s *chan, bool paused);
+	void      (*channel_set_looping) (struct channel_s *chan, bool looping);
 	enum chan_state_e (*channel_get_state) (struct channel_s *chan);
 	void      (*channel_set_volume) (struct channel_s *chan, float volume);
 

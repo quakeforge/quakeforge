@@ -94,7 +94,7 @@ shaper_get_hash (const void *obj, void *data)
 	return script + features + font + text;
 }
 
-static int
+static bool
 shaper_compare (const void *a, const void *b, void *data)
 {
 	const shaper_cache_t *cachea = a;

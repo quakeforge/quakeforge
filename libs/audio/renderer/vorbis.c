@@ -59,18 +59,21 @@ typedef struct {
 static size_t
 vorbis_read_func (void *ptr, size_t size, size_t nmemb, void *datasource)
 {
+	qfZoneScoped (true);
 	return Qread (datasource, ptr, size * nmemb);
 }
 
 static int
 vorbis_seek_func (void *datasource, ogg_int64_t offset, int whence)
 {
+	qfZoneScoped (true);
 	return Qseek (datasource, offset, whence);
 }
 
 static int
 vorbis_close_func (void *datasource)
 {
+	qfZoneScoped (true);
 	Qclose (datasource);
 	return 0;
 }
@@ -78,6 +81,7 @@ vorbis_close_func (void *datasource)
 static long
 vorbis_tell_func (void *datasource)
 {
+	qfZoneScoped (true);
 	return Qtell (datasource);
 }
 
@@ -91,6 +95,7 @@ static ov_callbacks callbacks = {
 static wavinfo_t
 vorbis_get_info (OggVorbis_File *vf)
 {
+	qfZoneScoped (true);
 	vorbis_info *vi;
 	int         sample_start = -1, sample_count = 0;
 	int         samples;
@@ -131,6 +136,7 @@ vorbis_get_info (OggVorbis_File *vf)
 static int
 vorbis_read (OggVorbis_File *vf, float *buf, int len, wavinfo_t *info)
 {
+	qfZoneScoped (true);
 	unsigned    i;
 	int         j;
 	int         count = 0;
@@ -162,10 +168,11 @@ vorbis_read (OggVorbis_File *vf, float *buf, int len, wavinfo_t *info)
 static sfxbuffer_t *
 vorbis_load (OggVorbis_File *vf, sfxblock_t *block)
 {
+	qfZoneScoped (true);
 	float      *data;
 	sfxbuffer_t *sb = 0;
-	const sfx_t *sfx = block->sfx;
-	wavinfo_t  *info = &block->wavinfo;
+	const sfx_t *sfx = block->base.sfx;
+	wavinfo_t  *info = &block->base.wavinfo;
 
 	data = malloc (info->datalen);
 	if (!data)
@@ -194,6 +201,7 @@ vorbis_load (OggVorbis_File *vf, sfxblock_t *block)
 static sfxbuffer_t *
 vorbis_callback_load (sfxblock_t *block)
 {
+	qfZoneScoped (true);
 	QFile      *file;
 	OggVorbis_File vf;
 
@@ -212,6 +220,7 @@ vorbis_callback_load (sfxblock_t *block)
 static void//extra _ in name because vorbis_block is a vorbis type
 vorbis__block (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 {
+	qfZoneScoped (true);
 	ov_clear (vf);
 	SND_SFX_Block (sfx, realname, info, vorbis_callback_load);
 }
@@ -219,15 +228,17 @@ vorbis__block (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 static long
 vorbis_stream_read (void *file, float **buf)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = (sfxstream_t *) file;
 	vorbis_file_t *vf = (vorbis_file_t *) stream->file;
+	wavinfo_t  *wavinfo = &stream->base.wavinfo;
 	int         res;
 
 	if (!vf->data)
-		vf->data = malloc (FRAMES * stream->wavinfo.channels * sizeof (float));
-	res = vorbis_read (vf->vf, vf->data, FRAMES, &stream->wavinfo);
+		vf->data = malloc (FRAMES * wavinfo->channels * sizeof (float));
+	res = vorbis_read (vf->vf, vf->data, FRAMES, wavinfo);
 	if (res <= 0) {
-		stream->error = 1;
+		stream->base.error = true;
 		return 0;
 	}
 	*buf = vf->data;
@@ -237,6 +248,7 @@ vorbis_stream_read (void *file, float **buf)
 static int
 vorbis_stream_seek (sfxstream_t *stream, int pos)
 {
+	qfZoneScoped (true);
 	vorbis_file_t *vf = (vorbis_file_t *) stream->file;
 	return ov_pcm_seek (vf->vf, pos);
 }
@@ -244,6 +256,7 @@ vorbis_stream_seek (sfxstream_t *stream, int pos)
 static void
 vorbis_stream_close (sfxbuffer_t *buffer)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = buffer->stream;
 	vorbis_file_t *vf = (vorbis_file_t *) stream->file;
 
@@ -258,6 +271,7 @@ vorbis_stream_close (sfxbuffer_t *buffer)
 static sfxbuffer_t *
 vorbis_stream_open (sfx_t *sfx)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = sfx->stream;
 	QFile      *file;
 	vorbis_file_t *f;
@@ -282,24 +296,26 @@ vorbis_stream_open (sfx_t *sfx)
 static void
 vorbis_stream (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 {
+	qfZoneScoped (true);
 	ov_clear (vf);
 	SND_SFX_Stream (sfx, realname, info, vorbis_stream_open);
 }
 
-int
+bool
 SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 {
+	qfZoneScoped (true);
 	OggVorbis_File vf;
 	wavinfo_t   info;
 
 	if (ov_open_callbacks (file, &vf, 0, 0, callbacks) < 0) {
 		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
-		return -1;
+		return false;
 	}
 	info = vorbis_get_info (&vf);
 	if (info.channels < 1 || info.channels > 8) {
 		Sys_Printf ("unsupported number of channels");
-		return -1;
+		return false;
 	}
 	if (info.frames / info.rate < 3) {
 		Sys_MaskPrintf (SYS_snd, "block %s\n", realname);
@@ -308,5 +324,5 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 		Sys_MaskPrintf (SYS_snd, "stream %s\n", realname);
 		vorbis_stream (sfx, realname, &vf, info);
 	}
-	return 0;
+	return true;
 }

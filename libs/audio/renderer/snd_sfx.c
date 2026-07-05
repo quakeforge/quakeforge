@@ -56,58 +56,53 @@ static hashtab_t *snd_sfx_hash;
 static const char *
 snd_sfx_getkey (const void *sfx, void *unused)
 {
+	qfZoneScoped (true);
 	return ((sfx_t *) sfx)->name;
 }
 
 static void
 snd_sfx_free (void *_sfx, void *unused)
 {
+	qfZoneScoped (true);
 	sfx_t      *sfx = (sfx_t *) _sfx;
 	free ((char *) sfx->name);
-	sfx->name = 0;
-}
-
-static void
-snd_block_close (sfxbuffer_t *buffer)
-{
-	SND_Memory_Release (buffer);
+	sfx->name = nullptr;
 }
 
 void
 SND_SFX_Block (sfx_t *sfx, char *realname, wavinfo_t info,
 			   sfxbuffer_t *(*load) (sfxblock_t *block))
 {
+	qfZoneScoped (true);
 	sfxblock_t *block = malloc (sizeof (sfxblock_t));
 	*block = (sfxblock_t) {
-		.sfx = sfx,
+		.base = {
+			.sfx = sfx,
+			.wavinfo = info,
+		},
 		.file = realname,
-		.wavinfo = info,
 	};
 
 	sfx->block = block;
-	sfx->wavinfo = SND_BlockWavinfo;
 	sfx->loopstart = SND_ResamplerFrames (sfx, info.loopstart);
 	sfx->length = SND_ResamplerFrames (sfx, info.frames);
 
-	block->buffer = load (block);
-
-	SND_Memory_Retain (block->buffer);
-	block->buffer->close = snd_block_close;
+	SND_Queue_Load (block, load);
 }
 
 void
 SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
 				sfxbuffer_t *(*open) (sfx_t *sfx))
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = calloc (1, sizeof (sfxstream_t));
 	sfx->open = open;
-	sfx->wavinfo = SND_StreamWavinfo;
 	sfx->stream = stream;
 	sfx->loopstart = SND_ResamplerFrames (sfx, info.loopstart);
 	sfx->length = SND_ResamplerFrames (sfx, info.frames);
 
 	stream->file = realname;
-	stream->wavinfo = info;
+	stream->base.wavinfo = info;
 }
 
 sfxbuffer_t *
@@ -116,43 +111,47 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 					int (*seek)(sfxstream_t *, int),
 					void (*close) (sfxbuffer_t *))
 {
+	qfZoneScoped (true);
 	snd_t      *snd = sfx->snd;
-	sfxstream_t *stream = sfx->stream;
-	wavinfo_t  *info = &stream->wavinfo;
-	int         frames;
+	// reference stream's wavinfo
+	wavinfo_t  *wavinfo = &sfx->stream->base.wavinfo;
 
 	// if the speed is 0, there is no sound driver (probably failed to connect
 	// to jackd)
-	if (!snd->speed)
-		return 0;
-
-	frames = snd->speed * 0.3;
-	frames = (frames + 255) & ~255;
-
-	stream = calloc (1, sizeof (sfxstream_t));
-	stream->buffer = SND_Memory_AllocBuffer (frames * info->channels);
-	if (!stream->buffer) {
-		free (stream);
-		return 0;
+	if (!snd->speed) {
+		return nullptr;
 	}
 
-	stream->file = file;
-	stream->sfx = sfx;
-	stream->ll_read = read;
-	stream->ll_seek = seek;
+	int         frames = RUP ((int) (snd->speed * 0.3), STREAM_CHUNK);
 
-	stream->wavinfo = *sfx->wavinfo (sfx);
+	sfxstream_t *stream = malloc (sizeof (sfxstream_t));
+	*stream = (sfxstream_t) {
+		.base = {
+			.sfx = sfx,
+			.wavinfo = *wavinfo,
+		},
+		.file = file,
+		.ll_read = read,
+		.ll_seek = seek,
+		.buffer = SND_Memory_AllocBuffer (frames * wavinfo->channels),
+	};
+	if (!stream->buffer) {
+		free (stream);
+		return nullptr;
+	}
 
-	stream->buffer->stream = stream;
-	stream->buffer->size = frames;
-	stream->buffer->advance = SND_StreamAdvance;
-	stream->buffer->setpos = SND_StreamSetPos;
-	stream->buffer->sfx_length = info->frames;
-	stream->buffer->channels = info->channels;
-	stream->buffer->close = close;
+	*stream->buffer = (sfxbuffer_t) {
+		.stream = stream,
+		.size = frames,
+		.advance = SND_StreamAdvance,
+		.setpos = SND_StreamSetPos,
+		.sfx_length = wavinfo->frames,
+		.channels = wavinfo->channels,
+		.close = close,
+	};
 	SND_SetPaint (stream->buffer);
 
-	SND_SetupResampler (stream->buffer, 1);			// get sfx setup properly
+	SND_SetupResampler (stream->buffer, true);		// get sfx setup properly
 	stream->buffer->setpos (stream->buffer, 0);		// pre-fill the buffer
 
 	return stream->buffer;
@@ -161,6 +160,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 void
 SND_SFX_StreamClose (sfxstream_t *stream)
 {
+	qfZoneScoped (true);
 	SND_PulldownResampler (stream);
 	SND_Memory_Free (stream->buffer);
 	free (stream);
@@ -169,10 +169,11 @@ SND_SFX_StreamClose (sfxstream_t *stream)
 sfx_t *
 SND_LoadSound (snd_t *snd, const char *name)
 {
+	qfZoneScoped (true);
 	sfx_t      *sfx;
 
 	if (!snd_sfx_hash)
-		return 0;
+		return nullptr;
 	if ((sfx = (sfx_t *) Hash_Find (snd_sfx_hash, name)))
 		return sfx;
 
@@ -182,9 +183,10 @@ SND_LoadSound (snd_t *snd, const char *name)
 	sfx = &snd_sfx[snd_num_sfx++];
 	sfx->snd = snd;
 	sfx->name = strdup (name);
-	if (SND_Load (sfx) == -1) {
+
+	if (!SND_Load (sfx)) {
 		snd_num_sfx--;
-		return 0;
+		return nullptr;
 	}
 	Hash_Add (snd_sfx_hash, sfx);
 	return sfx;
@@ -193,6 +195,7 @@ SND_LoadSound (snd_t *snd, const char *name)
 sfx_t *
 SND_PrecacheSound (snd_t *snd, const char *name)
 {
+	qfZoneScoped (true);
 	sfx_t      *sfx;
 
 	if (!name)
@@ -205,6 +208,7 @@ SND_PrecacheSound (snd_t *snd, const char *name)
 static void
 s_gamedir (int phase, void *data)
 {
+	qfZoneScoped (true);
 	snd_num_sfx = 0;
 	Hash_FlushTable (snd_sfx_hash);
 }
@@ -212,6 +216,7 @@ s_gamedir (int phase, void *data)
 static void
 s_soundlist_f (void)
 {
+	qfZoneScoped (true);
 	int			total, i;
 	sfx_t	   *sfx;
 
@@ -226,9 +231,11 @@ s_soundlist_f (void)
 void
 SND_SFX_Init (snd_t *snd)
 {
-	snd_sfx_hash = Hash_NewTable (511, snd_sfx_getkey, snd_sfx_free, 0, 0);
+	qfZoneScoped (true);
+	snd_sfx_hash = Hash_NewTable (511, snd_sfx_getkey, snd_sfx_free,
+								  nullptr, nullptr);
 
-	QFS_GamedirCallback (s_gamedir, 0);
+	QFS_GamedirCallback (s_gamedir, nullptr);
 
 	Cmd_AddCommand ("soundlist", s_soundlist_f,
 					"Reports a list of loaded sounds");
@@ -237,5 +244,6 @@ SND_SFX_Init (snd_t *snd)
 void
 SND_SFX_Shutdown (snd_t *snd)
 {
+	qfZoneScoped (true);
 	Hash_DelTable (snd_sfx_hash);
 }

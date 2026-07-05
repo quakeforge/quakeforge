@@ -697,6 +697,10 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 		init_elements (sym->def, init, block);
 		sym->def->initialized = 1;
 	} else {
+		if (init->type == ex_compound) {
+			error (init, "compound initializer for simple type");
+			init = new_nil_expr ();
+		}
 		if (is_nil (init)) {
 			init = convert_nil (init, sym->type);
 		}

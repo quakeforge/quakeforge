@@ -493,3 +493,7 @@ main (void)
 
 	return 0;
 }
+
+//FIXME this should not be here
+void R_Particles_Init (ecs_registry_t *reg);
+void R_Particles_Init (ecs_registry_t *reg) {};

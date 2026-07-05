@@ -287,7 +287,7 @@ cmemalloc (memsuper_t *super, size_t size)
 				 * line indistinguishable from a large block.
 				 */
 				mem = Sys_Alloc (super->page_size);
-				// sets super->free_lines, the block is guarnateed to be big
+				// sets super->free_lines, the block is guaranteed to be big
 				// enough to hold the requested allocation as otherwise a full
 				// block allocation would have been used
 				memblock_t *block = init_block (super, mem, super->page_size);
@@ -409,7 +409,7 @@ new_memsuper (void)
 	super->memblocks->prev = &super->memblocks;
 
 	// Any free cache line block chains will also point to the bootstrap
-	// block instead of the resl superblock, so fix them up too (there should
+	// block instead of the real superblock, so fix them up too (there should
 	// be only one, but no harm in being paranoid)
 	for (int i = 0; i < MAX_CACHE_LINES; i++) {
 		if (super->free_lines[i]) {

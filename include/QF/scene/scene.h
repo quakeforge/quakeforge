@@ -84,6 +84,7 @@ enum scene_components {
 typedef struct scene_s {
 	struct ecs_registry_s *reg;
 	uint32_t base;
+	uint32_t    psys_base;
 
 	struct exprenum_s *entqueue_enum;
 	entqueue_t *ent_queue;

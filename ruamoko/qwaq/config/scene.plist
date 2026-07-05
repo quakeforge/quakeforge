@@ -1,5 +1,53 @@
 (
 	{
+		name = "Player Ship";
+		model = progs/pship.iqm;
+		entqueue = pixpal;
+		texture = pixpal.meta;
+		position = (-20, 0, 0, 1);
+		target = true;
+	},
+	{
+		name = "Player Missil";
+		model = progs/pmissile.iqm;
+		entqueue = pixpal;
+		texture = pixpal.meta;
+		position = (-15, 5, 0, 1);
+		target = true;
+	},
+	{
+		name = "Enemy Ship";
+		model = progs/enship.iqm;
+		entqueue = pixpal;
+		texture = pixpal.meta;
+		position = (-20, -20, 0, 1);
+		target = true;
+	},
+	{
+		name = "Enemy Missil";
+		model = progs/enmissile.iqm;
+		entqueue = pixpal;
+		texture = pixpal.meta;
+		position = (-15, -15, 0, 1);
+		target = true;
+	},
+	{
+		name = "Asteroid";
+		model = progs/asteroid.iqm;
+		entqueue = pixpal;
+		texture = pixpal.meta;
+		grav_flag = true;
+		position = (-40, 0, 10, 1);
+		avel = (20, 9, 12);
+		target = true;
+		invDensity = 1;
+		from_shape = true;
+		collider = {
+			type = col_ball;
+			radius = 5;
+		};
+	},
+	{
 		name = "Night Heron";
 		model = night_heron.iqm;
 		position = (15, 0, 10, 1);
@@ -126,5 +174,39 @@
 			radius = 0.25;
 			axis = (0, 0, 0.25);
 		};
+	},
+	{
+		name = "Capsule4";
+		position = (-20, 0, 5, 1);
+		target = true;
+		from_shape = true;
+		invDensity = 26;
+		collider = {
+			type = col_capsule;
+			radius = 0.5;
+			axis = (0, 2.5, 0);
+		};
+	},
+	{
+		name = "Sphere3";
+		grav_flag = true;
+		position = (-15, 2.5, 5, 1);
+		vel = (-1, 0, 0);
+		grav_flag = false;
+		target = true;
+		from_shape = true;
+		invDensity = 26;
+		collider = {
+			type = col_ball;
+			radius = 1;
+		};
+	},
+	{
+		name = "Girl";
+		model = progs/girl14.iqm;
+		position = (0.5, 0.5, 0, 1);
+		entqueue = pixpal;
+		texture = pixpal.meta;
+		target = true;
 	},
 )

@@ -66,7 +66,7 @@ SafeOpenWrite (const char *filename)
 }
 
 static void
-SafeWrite (QFile *f, void *buffer, int count)
+SafeWrite (QFile *f, void *buffer, size_t count)
 {
 	if (Qwrite (f, buffer, count) != count)
 		Sys_Error ("File read failure");

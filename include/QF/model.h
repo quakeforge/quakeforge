@@ -350,6 +350,7 @@ typedef struct model_s {
 	void       *data;
 
 	int         render_id;
+	uint32_t    model_id;
 } model_t;
 
 // ============================================================================

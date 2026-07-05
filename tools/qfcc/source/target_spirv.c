@@ -905,6 +905,7 @@ spirv_storage_class (unsigned storage, const type_t *type)
 			[iface_in] = SpvStorageClassInput,
 			[iface_out] = SpvStorageClassOutput,
 			[iface_uniform] = SpvStorageClassUniform,
+			[iface_shared] = SpvStorageClassWorkgroup,
 			[iface_buffer] = SpvStorageClassStorageBuffer,
 			[iface_push_constant] = SpvStorageClassPushConstant,
 		};
@@ -2346,6 +2347,13 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 			align = type_align (ptr_type) * sizeof (pr_type_t);
 		}
 		dst = spirv_emit_expr (ptr, ctx);
+	} else if (dst_expr->type == ex_xvalue && dst_expr->xvalue.lvalue) {
+		auto xvalue = dst_expr->xvalue;
+		if (xvalue.assign) {
+			auto expr = xvalue.assign (xvalue.expr, src_expr);
+			return spirv_emit_expr (expr, ctx);
+		}
+		dst = spirv_emit_expr (xvalue.expr, ctx);
 	}
 
 	if (!dst) {
@@ -2796,7 +2804,9 @@ spirv_intrinsic (const expr_t *e, spirvctx_t *ctx)
 	const expr_t *operands[count + 1] = {};
 	unsigned op_ids[count + 1] = {};
 	list_scatter (&intr.operands, operands);
+	bool is_ext = false;
 	if (op == SpvOpExtInst) {
+		is_ext = true;
 		auto set = expr_string (operands[0]);
 		auto extset = spirv_grammar (set);
 		if (!extset) {
@@ -2817,13 +2827,16 @@ spirv_intrinsic (const expr_t *e, spirvctx_t *ctx)
 			start = 2;
 		}
 	}
-	unsigned tid = spirv_Type (intr.res_type, ctx);
-	unsigned id = spirv_id (ctx);
 
+	unsigned id = 0;
 	auto insn = spirv_new_insn (op, 1 + start + count, ctx->code_space, ctx);
-	INSN (insn, 1) = tid;
-	INSN (insn, 2) = id;
-	memcpy (&INSN (insn, 3), op_ids, count * sizeof (op_ids[0]));
+	if (is_ext || !is_void (intr.res_type)) {
+		unsigned tid = spirv_Type (intr.res_type, ctx);
+		id = spirv_id (ctx);
+		INSN (insn, 1) = tid;
+		INSN (insn, 2) = id;
+	}
+	memcpy (&INSN (insn, 1 + start), op_ids, count * sizeof (op_ids[0]));
 	return id;
 }
 
@@ -3688,7 +3701,7 @@ spirv_shift_op (int op, const expr_t *e1, const expr_t *e2)
 		return error (e1, "invalid operands for %s", get_op_string (op));
 	}
 	if (is_uint (t1)) {
-		t2 = vector_type (&type_int, type_width (t1));
+		t2 = vector_type (&type_uint, type_width (t1));
 	}
 	if (is_ulong (t1)) {
 		t2 = vector_type (&type_long, type_width (t1));

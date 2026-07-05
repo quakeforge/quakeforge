@@ -45,16 +45,22 @@
 #include "QF/sound.h"
 #include "QF/zone.h"
 
-struct transform_s;
+typedef struct transform_s transform_t;
 typedef struct portable_samplepair_s portable_samplepair_t;
 typedef struct snd_s snd_t;
 typedef struct wavinfo_s wavinfo_t;
 typedef struct sfxbuffer_s sfxbuffer_t;
+typedef struct sfxbase_s sfxbase_t;
 typedef struct sfxblock_s sfxblock_t;
 typedef struct sfxstream_s sfxstream_t;
 
-struct sfx_s
-{
+//must be a power of 2
+#define STREAM_CHUNK 256
+
+typedef sfxbuffer_t *(*sfx_open_f) (sfx_t *sfx);
+typedef sfxbuffer_t *(*sfx_load_f) (sfxblock_t *block);
+
+typedef struct sfx_s {
 	struct snd_s *snd;			//!< ownding snd_t instance
 	const char *name;
 
@@ -62,14 +68,16 @@ struct sfx_s
 	unsigned    loopstart;
 
 	union {
-		sfxstream_t *stream;
+		sfxbase_t  *base;
+		// Only one block is created: its buffer is reference counted
 		sfxblock_t *block;
+		// Many streams may be opened for an sfx, but this points to the
+		// reference stream, which never gets a buffer.
+		sfxstream_t *stream;
 	};
 
-	struct wavinfo_s *(*wavinfo) (const sfx_t *sfx);
-
-	sfxbuffer_t *(*open) (sfx_t *sfx);
-};
+	_Atomic sfx_open_f open;
+} sfx_t;
 
 /** paint samples into the mix buffer
 
@@ -86,14 +94,14 @@ typedef void sfxpaint_t (int offset, channel_t *ch, float *buffer,
 
 /** Represent a single output frame in the mixer.
 */
-struct portable_samplepair_s {
+typedef struct portable_samplepair_s {
 	float       left;						//!< left sample
 	float       right;						//!< right sample
-};
+} portable_samplepair_t;
 
 /** Sound system state
 */
-struct snd_s {
+typedef struct snd_s {
 	int         speed;				//!< sample rate
 	int         samplebits;			//!< bits per sample
 	int         channels;			//!< number of output channels
@@ -117,14 +125,14 @@ struct snd_s {
 
 	void      (*finish_channels) (void);
 	void      (*paint_channels) (struct snd_s *snd, unsigned endtime);
-};
+} snd_t;
 
 /** Describes the sound data.
 	For looped data (loopstart >= 0), play starts at sample 0, goes to the end,
 	then loops back to loopstart. This allows an optional lead in section
 	followed by a continuously looped (until the sound is stopped) section.
 */
-struct wavinfo_s {
+typedef struct wavinfo_s {
 	unsigned    rate;			//!< sample rate
 	unsigned    width;			//!< bytes per sample
 	unsigned    channels;		//!< number of channels
@@ -132,12 +140,12 @@ struct wavinfo_s {
 	unsigned    frames;			//!< size of sound in frames
 	unsigned    dataofs;		//!< chunk starts this many bytes from BOF
 	unsigned    datalen;		//!< chunk bytes
-};
+} wavinfo_t;
 
 /** Buffer for storing sound samples in memory. For block-loaded sounds, acts
 	as an ordinary buffer. For streamed sounds, acts as a ring buffer.
 */
-struct sfxbuffer_s {
+typedef struct sfxbuffer_s {
 	_Atomic unsigned head;		//!< ring buffer head position in sampels
 	_Atomic unsigned tail;		//!< ring buffer tail position in sampels
 	// FIXME should pos be atomic? it's primary use is in the mixer but can
@@ -146,21 +154,22 @@ struct sfxbuffer_s {
 	unsigned    size;			//!< size of buffer in frames
 	unsigned    channels;		//!< number of channels per frame
 	unsigned    sfx_length;		//!< total length of sfx
-	union {		// owning instance
+	union {
 		// the first field of both sfxstream_t and sfxblock_t is a pointer
 		// to sfx_t
-		sfx_t const * const * const sfx;
+		sfx_t const * const * sfx;	// owning instance
+		sfxbase_t  *base;
 		sfxstream_t *stream;
 		sfxblock_t *block;
 	};
 	sfxpaint_t *paint;			//!< channel count specific paint function
-	/** Advance the position with the stream, updating the ring buffer as
+	/** Advance the position within the stream, updating the ring buffer as
 		necessary. Null for chached sounds.
 		\param buffer	"this"
 		\param count	number of frames to advance
 		\return			true for success, false if an error occured
 	*/
-	int       (*advance) (sfxbuffer_t *buffer, unsigned int count);
+	void      (*advance) (sfxbuffer_t *buffer, unsigned count);
 	/** Seek to an absolute position within the stream, resetting the ring
 		buffer.
 		\param buffer	"this"
@@ -172,16 +181,20 @@ struct sfxbuffer_s {
 		sample size)
 	*/
 	float       data[];
-};
+} sfxbuffer_t;
+
+typedef struct sfxbase_s {
+	sfx_t *sfx;					//!< owning sfx_t instance
+	wavinfo_t   wavinfo;		//!< description of sound data
+	_Atomic bool error;			//!< an error occured while reading
+} sfxbase_t;
 
 /** Representation of sound loaded that is streamed in as needed.
 */
-struct sfxstream_s {
-	const sfx_t *sfx;			//!< owning sfx_t instance
+typedef struct sfxstream_s {
+	sfxbase_t   base;
 	void       *file;			//!< handle for "file" representing the stream
-	wavinfo_t   wavinfo;		//!< description of sound data
 	unsigned    pos;			//!< position of next frame full stream
-	int         error;			//!< an error occured while reading
 
 	void       *state;			//!< resampler state information
 	/** Read data from the stream.
@@ -215,20 +228,21 @@ struct sfxstream_s {
 	*/
 	int       (*seek)(sfxstream_t *stream, int pos);
 	sfxbuffer_t *buffer;		//<! stream's ring buffer
-};
+} sfxstream_t;
 
 /** Representation of sound loaded into memory as a full block.
 */
-struct sfxblock_s {
-	const sfx_t *sfx;			//!< owning sfx_t instance
-	void       *file;			//!< handle for "file" representing the block
-	wavinfo_t   wavinfo;		//!< description of sound data
+typedef struct sfxblock_s {
+	sfxbase_t   base;
+	char       *file;			//!< handle for "file" representing the stream
 	sfxbuffer_t *buffer;		//!< pointer to block-loaded buffer
-};
+} sfxblock_t;
 
 /** Representation of a sound being played.
 */
-struct channel_s {
+typedef struct channel_s {
+	/** If null, the channel is inactive
+	 */
 	sfxbuffer_t *_Atomic buffer;//!< sound played by this channel
 	float       leftvol;		//!< 0-1 volume
 	float       rightvol;		//!< 0-1 volume
@@ -237,7 +251,7 @@ struct channel_s {
 	unsigned    loopstart;		//!< where to loop, -1 = no looping
 	int         phase;			//!< phase shift between l-r in samples
 	int         oldphase;		//!< phase shift between l-r in samples
-	_Atomic byte pause;			//!< don't update the channel at all
+	_Atomic bool pause;			//!< don't update the channel at all
 	/** signal between main program and mixer thread that the channel is to be
 		stopped.
 		- both \c stop and \c done are zero: normal operation
@@ -249,10 +263,10 @@ struct channel_s {
 		  can be reused at any time.
 	*/
 	//@{
-	_Atomic byte stop;
-	_Atomic byte done;
+	_Atomic bool stop;
+	_Atomic bool done;
 	//@}
-};
+} channel_t;
 
 extern float snd_volume;
 
@@ -262,8 +276,14 @@ extern portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 
 ///@}
 
+bool SND_Fill_Init (void);
+void SND_Fill_Shutdown (void);
+void SND_Queue_Bind (sfx_t *sfx, channel_t *channel);
+void SND_Queue_Load (sfxblock_t *block, sfx_load_f load);
+
+
 void SND_Memory_Init_Cvars (void);
-int SND_Memory_Init (void);
+bool SND_Memory_Init (void);
 sfxbuffer_t *SND_Memory_AllocBuffer (unsigned samples);
 void SND_Memory_Free (void *ptr);
 void SND_Memory_SetTag (void *ptr, int tag);
@@ -282,7 +302,7 @@ int SND_Memory_GetRetainCount (void *ptr) __attribute__((pure));
 	\param load
 */
 void SND_SFX_Block (sfx_t *sfx, char *realname, wavinfo_t info,
-		            sfxbuffer_t *(*load) (sfxblock_t *block));
+					sfx_load_f load);
 
 /** Stream sound data. Initializes streaming fields of sfx.
 	\param sfx
@@ -373,7 +393,7 @@ void SND_FinishChannels (void);
 				channels to be done. true is for threaded, false for
 				non-threaded.
 */
-void SND_ScanChannels (snd_t *snd, int wait);
+void SND_ScanChannels (snd_t *snd, bool wait);
 
 /** Disable ambient sounds.
 	\param snd		sound system state
@@ -397,7 +417,7 @@ void SND_SetAmbient (snd_t *snd, int amb_channel, sfx_t *sfx);
 	\param ambient_sound_level Pointer to 4 bytes indicating the levels at
 					which to play the ambient sounds.
 */
-void SND_SetListener (snd_t *snd, struct transform_s ear,
+void SND_SetListener (snd_t *snd, transform_t ear,
 					  const byte *ambient_sound_level);
 
 /** Stop all sounds from playing.
@@ -479,13 +499,14 @@ void SND_SetPaint (sfxbuffer_t *sb);
 */
 ///@{
 
-unsigned SND_ResamplerFrames (const sfx_t *sfx, unsigned frames);
+unsigned SND_ResamplerFrames (const sfx_t *sfx, unsigned frames)
+	__attribute__((pure));
 
 /** Set up the various parameters that depend on the actual sample rate.
 	\param sb		buffer to setup
-	\param streamed	non-zero if this is for a stream.
+	\param streamed	true if this is for a stream.
 */
-void SND_SetupResampler (sfxbuffer_t *sb, int streamed);
+void SND_SetupResampler (sfxbuffer_t *sb, bool streamed);
 
 /** Free memory allocated for the resampler.
 	\param stream	stream to pulldown
@@ -517,72 +538,61 @@ void SND_Convert (byte *idata, float *fdata, int frames,
 ///@{
 /** Load the referenced sound.
 	\param sfx		sound reference
-	\return			0 if ok, -1 on error
+	\return			true if ok, false on error
 */
-int SND_Load (sfx_t *sfx);
+bool SND_Load (sfx_t *sfx);
 
 /** Load the referenced sound from the specified Ogg file.
 	\param file		pre-opened Ogg file
 	\param sfx		sound reference
 	\param realname	path of sound file should it need to be re-opened
-	\return			0 if ok, -1 on error
+	\return			true if ok, false on error
 */
-int SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname);
+bool SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname);
 
 /** Load the referenced sound from the specified FLAC file.
 	\param file		pre-opened FLAC file
 	\param sfx		sound reference
 	\param realname	path of sound file should it need to be re-opened
-	\return			0 if ok, -1 on error
+	\return			true if ok, false on error
 */
-int SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname);
+bool SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname);
 
 /** Load the referenced sound from the specified WAV file.
 	\param file		pre-opened WAV file
 	\param sfx		sound reference
 	\param realname	path of sound file should it need to be re-opened
-	\return			0 if ok, -1 on error
+	\return			true if ok, false on error
 */
-int SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
+bool SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
 
 /** Load the referenced sound from the specified MIDI file.
 	\param file		pre-opened MIDI file
 	\param sfx		sound reference
 	\param realname	path of sound file should it need to be re-opened
-	\return			0 if ok, -1 on error
+	\return			true if ok, false on error
 */
-int SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
+bool SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
 ///@}
 
 /** \defgroup sound_render_block_stream Block/Stream Functions.
 	\ingroup sound_render
 */
 ///@{
-/** Retrieve wavinfo from a block-loaded sound.
-	\param sfx		sound reference
-	\return			pointer to sound's wavinfo
-*/
-wavinfo_t *SND_BlockWavinfo (const sfx_t *sfx) __attribute__((pure));
 
-/** Retrieve wavinfo from a streamed sound.
-	\param sfx		sound reference
-	\return			pointer to sound's wavinfo
-*/
-wavinfo_t *SND_StreamWavinfo (const sfx_t *sfx) __attribute__((pure));
-
-/** Advance the position with the stream, updating the ring buffer as
-	necessary. Null for chached sounds.
+/** Advance the position within the stream, updating the ring buffer as
+	necessary.
 	\param buffer	"this"
 	\param count	number of samples to advance
 */
-int SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count);
+void SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count);
 
 /** Seek to an absolute position within the stream, resetting the ring
 	buffer.
 	\param buffer	"this"
 	\param pos		sample position with the stream
 */
-void SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos);
+void SND_StreamSetPos (sfxbuffer_t *buffer, unsigned pos);
 ///@}
 
 #endif//__snd_internal_h

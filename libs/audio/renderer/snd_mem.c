@@ -46,8 +46,6 @@
 #include "compat.h"
 #include "snd_internal.h"
 
-#define SAMPLE_GAP	4
-
 static uint32_t snd_mem_size;
 static cvar_t snd_mem_size_cvar = {
 	.name = "snd_mem_size",
@@ -64,12 +62,14 @@ static memzone_t *snd_zone;
 void
 SND_Memory_Init_Cvars (void)
 {
-	Cvar_Register (&snd_mem_size_cvar, 0, 0);
+	qfZoneScoped (true);
+	Cvar_Register (&snd_mem_size_cvar, nullptr, nullptr);
 }
 
 static void __attribute__((format(PRINTF,2,3)))
 snd_zone_error (void *data, const char *fmt, ...)
 {
+	qfZoneScoped (true);
 	va_list     args;
 	dstring_t  *msg = dstring_new ();
 
@@ -81,53 +81,58 @@ snd_zone_error (void *data, const char *fmt, ...)
 static void
 snd_memory_shutdown (void *data)
 {
+	qfZoneScoped (true);
 	if (snd_zone) {
 		size_t      size = snd_mem_size * 1024 * 1024;
 		Sys_Free (snd_zone, size);
 	}
 }
 
-int
+bool
 SND_Memory_Init (void)
 {
+	qfZoneScoped (true);
 	size_t      size = snd_mem_size * 1024 * 1024;
 
 	snd_zone = Sys_Alloc (size);
 	if (!snd_zone) {
-		Sys_Printf ("Sound: Unable to allocate %uMB buffer\n", snd_mem_size);
-		return 0;
+		Sys_Printf (RED"Sound: Unable to allocate %uMB buffer"DFL"\n",
+					snd_mem_size);
+		return false;
 	}
 	if (!Sys_LockMemory (snd_zone, size)) {
 		Sys_Printf (RED"Sound: Unable to lock %uMB buffer"DFL"\n",
 					snd_mem_size);
 		//FIXME Permission issue?
 		//Sys_Free (snd_zone, size);
-		//return 0;
+		//return false;
 	}
 	Z_ClearZone (snd_zone, size, 0, 1);
-	Z_SetError (snd_zone, snd_zone_error, 0);
+	Z_SetError (snd_zone, snd_zone_error, nullptr);
 
 	Sys_MaskPrintf (SYS_snd, "Sound: Initialized %uMB buffer\n", snd_mem_size);
 
-	Sys_RegisterShutdown (snd_memory_shutdown, 0);
-	return 1;
+	Sys_RegisterShutdown (snd_memory_shutdown, nullptr);
+	return true;
 }
 
 sfxbuffer_t *
 SND_Memory_AllocBuffer (unsigned samples)
 {
+	qfZoneScoped (true);
 	size_t      size = offsetof (sfxbuffer_t, data[samples]);
 	// Z_Malloc (currently) clears memory, don't need that for the whole
 	// buffer (just the header), but Z_TagMalloc does not
 	// +4 for sentinel
 	sfxbuffer_t *buffer = Z_TagMalloc (snd_zone, size + 4, 1);
 	if (buffer) {
-		// place a sentinel at the end of the buffer for added safety
-		memcpy (&buffer->data[samples], "\xde\xad\xbe\xef", 4);
 		// clear buffer header
 		memset (buffer, 0, sizeof (sfxbuffer_t));
+		// place a sentinel at the end of the buffer for added safety
+		memcpy (&buffer->data[samples], "\xde\xad\xbe\xef", 4);
 	} else {
-		Sys_Printf ("Sound: out of memory: %uMB exhausted\n", snd_mem_size);
+		Sys_Printf (RED"Sound: out of memory: %uMB exhausted"DFL"\n",
+					snd_mem_size);
 	}
 	return buffer;
 }
@@ -135,24 +140,28 @@ SND_Memory_AllocBuffer (unsigned samples)
 void
 SND_Memory_Free (void *ptr)
 {
+	qfZoneScoped (true);
 	Z_Free (snd_zone, ptr);
 }
 
 void
 SND_Memory_SetTag (void *ptr, int tag)
 {
+	qfZoneScoped (true);
 	Z_SetTag (snd_zone, ptr, tag);
 }
 
 int
 SND_Memory_Retain (void *ptr)
 {
+	qfZoneScoped (true);
 	return Z_IncRetainCount (snd_zone, ptr);
 }
 
 int
 SND_Memory_Release (void *ptr)
 {
+	qfZoneScoped (true);
 	int         retain =  Z_DecRetainCount (snd_zone, ptr);
 	if (!retain) {
 		Z_Free (snd_zone, ptr);
@@ -163,178 +172,21 @@ SND_Memory_Release (void *ptr)
 int
 SND_Memory_GetRetainCount (void *ptr)
 {
+	qfZoneScoped (true);
 	return Z_GetRetainCount (snd_zone, ptr);
-}
-
-static sfxbuffer_t *
-snd_open (sfx_t *sfx)
-{
-	sfxbuffer_t *buffer = sfx->block->buffer;
-	SND_Memory_Retain (buffer);
-	return buffer;
 }
 
 static sfxbuffer_t *
 snd_open_fail (sfx_t *sfx)
 {
-	return 0;
+	qfZoneScoped (true);
+	return nullptr;
 }
 
-wavinfo_t *
-SND_BlockWavinfo (const sfx_t *sfx)
-{
-	return &sfx->block->wavinfo;
-}
-
-wavinfo_t *
-SND_StreamWavinfo (const sfx_t *sfx)
-{
-	return &sfx->stream->wavinfo;
-}
-
-static void
-read_samples (sfxbuffer_t *buffer, int count)
-{
-
-	if (buffer->head + count > buffer->size) {
-		count -= buffer->size - buffer->head;
-		read_samples (buffer, buffer->size - buffer->head);
-		read_samples (buffer, count);
-	} else {
-		sfxstream_t *stream = buffer->stream;
-		const sfx_t *sfx = stream->sfx;
-		wavinfo_t  *info = &stream->wavinfo;
-		float      *data = buffer->data + buffer->head * info->channels;
-		int         c;
-
-		if ((c = stream->read (stream, data, count)) != count)
-			Sys_Printf ("%s nr %d %d\n", sfx->name, count, c);
-
-		if (c > 0) {
-			buffer->head += count;
-			if (buffer->head >= buffer->size)
-				buffer->head -= buffer->size;
-		}
-	}
-}
-
-static void
-fill_buffer (const sfx_t *sfx, sfxstream_t *stream, sfxbuffer_t *buffer,
-			 wavinfo_t *info, unsigned int headpos)
-{
-	unsigned int samples;
-	unsigned int loop_samples = 0;
-
-	// find out how many samples can be read into the buffer
-	samples = buffer->tail - buffer->head - SAMPLE_GAP;
-	if (buffer->tail <= buffer->head)
-		samples += buffer->size;
-
-	if (headpos + samples > buffer->sfx_length) {
-		if (sfx->loopstart == (unsigned int)-1) {
-			samples = buffer->sfx_length - headpos;
-		} else {
-			loop_samples = headpos + samples - buffer->sfx_length;
-			samples -= loop_samples;
-		}
-	}
-	if (samples)
-		read_samples (buffer, samples);
-	if (loop_samples) {
-		stream->seek (stream, info->loopstart);
-		read_samples (buffer, loop_samples);
-	}
-}
-
-void
-SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos)
-{
-	float       stepscale;
-	sfxstream_t *stream = buffer->stream;
-	const sfx_t *sfx = stream->sfx;
-	wavinfo_t  *info = &stream->wavinfo;
-
-	stepscale = (float) info->rate / sfx->snd->speed;
-
-	buffer->head = buffer->tail = 0;
-	buffer->pos = pos;
-	stream->pos = pos;
-	stream->seek (stream, buffer->pos * stepscale);
-	fill_buffer (sfx, stream, buffer, info, pos);
-}
-
-int
-SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
-{
-	float       stepscale;
-	unsigned int headpos, samples;
-	sfxstream_t *stream = buffer->stream;
-	const sfx_t *sfx = stream->sfx;
-	wavinfo_t  *info = &stream->wavinfo;
-
-	stream->pos += count;
-	count = (stream->pos - buffer->pos) & ~255;
-	if (!count)
-		return 1;
-
-	stepscale = (float) info->rate / sfx->snd->speed;
-
-	// find out how many samples the buffer currently holds
-	samples = buffer->head - buffer->tail;
-	if (buffer->head < buffer->tail)
-		samples += buffer->size;
-
-	// find out where head points to in the stream
-	headpos = buffer->pos + samples;
-	if (headpos >= buffer->sfx_length) {
-		if (sfx->loopstart == (unsigned int)-1)
-			headpos = buffer->sfx_length;
-		else
-			headpos -= buffer->sfx_length - sfx->loopstart;
-	}
-
-	if (samples < count) {
-		buffer->head = buffer->tail = 0;
-		buffer->pos += count;
-		if (buffer->pos > buffer->sfx_length) {
-			if (sfx->loopstart == (unsigned int)-1) {
-				// reset the buffer and fill it incase it's needed again
-				buffer->pos = 0;
-			} else {
-				buffer->pos -= sfx->loopstart;
-				buffer->pos %= buffer->sfx_length - sfx->loopstart;
-				buffer->pos += sfx->loopstart;
-			}
-			stream->pos = buffer->pos;
-		}
-		headpos = buffer->pos;
-		stream->seek (stream, buffer->pos * stepscale);
-	} else {
-		buffer->pos += count;
-		if (buffer->pos >= buffer->sfx_length) {
-			if (sfx->loopstart == (unsigned int)-1) {
-				// reset the buffer and fill it in case it's needed again
-				headpos = buffer->pos = 0;
-				buffer->head = buffer->tail = 0;
-				count = 0;
-				stream->seek (stream, buffer->pos * stepscale);
-			} else {
-				buffer->pos -= buffer->sfx_length - sfx->loopstart;
-			}
-			stream->pos = buffer->pos;
-		}
-
-		buffer->tail += count;
-		if (buffer->tail >= buffer->size)
-			buffer->tail -= buffer->size;
-	}
-	fill_buffer (sfx, stream, buffer, info, headpos);
-	return !stream->error;
-}
-
-int
+bool
 SND_Load (sfx_t *sfx)
 {
+	qfZoneScoped (true);
 	char       *realname;
 	char        buf[4];
 	QFile      *file;
@@ -344,9 +196,8 @@ SND_Load (sfx_t *sfx)
 	file = QFS_FOpenFile (sfx->name);
 	if (!file) {
 		Sys_Printf ("Couldn't load %s\n", sfx->name);
-		return -1;
+		return false;
 	}
-	sfx->open = snd_open;
 	if (!strequal (qfs_foundfile.realname, sfx->name)) {
 		realname = strdup (qfs_foundfile.realname);
 	} else {
@@ -357,36 +208,36 @@ SND_Load (sfx_t *sfx)
 #ifdef HAVE_VORBIS
 	if (strnequal ("OggS", buf, 4)) {
 		Sys_MaskPrintf (SYS_snd, "SND_Load: ogg file\n");
-		if (SND_LoadOgg (file, sfx, realname) == -1)
+		if (!SND_LoadOgg (file, sfx, realname))
 			goto bail;
-		return 0;
+		return true;
 	}
 #endif
 #ifdef HAVE_FLAC
 	if (strnequal ("fLaC", buf, 4)) {
 		Sys_MaskPrintf (SYS_snd, "SND_Load: flac file\n");
-		if (SND_LoadFLAC (file, sfx, realname) == -1)
+		if (!SND_LoadFLAC (file, sfx, realname))
 			goto bail;
-		return 0;
+		return true;
 	}
 #endif
 #ifdef HAVE_WILDMIDI
 	if (strnequal ("MThd", buf, 4)) {
 		Sys_MaskPrintf (SYS_snd, "SND_Load: midi file\n");
-		if (SND_LoadMidi (file, sfx, realname) == -1)
+		if (!SND_LoadMidi (file, sfx, realname))
 			goto bail;
-		return 0;
+		return true;
 	}
 #endif
 	if (strnequal ("RIFF", buf, 4)) {
 		Sys_MaskPrintf (SYS_snd, "SND_Load: wav file\n");
-		if (SND_LoadWav (file, sfx, realname) == -1)
+		if (!SND_LoadWav (file, sfx, realname))
 			goto bail;
-		return 0;
+		return true;
 	}
 bail:
 	Qclose (file);
 	if (realname != sfx->name)
 		free (realname);
-	return -1;
+	return false;
 }

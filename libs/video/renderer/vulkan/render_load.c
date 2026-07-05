@@ -219,7 +219,6 @@ build_job_step_enum (vulkan_ctx_t *ctx, qfv_renderctx_t *rctx,
 			Hash_Add (symtab->tab, &symtab->symbols[ind]);
 
 			num_steps += job->num_steps;
-			printf ("%s = %d\n", symtab->symbols[ind].name, ind);
 		}
 	}
 	{
@@ -255,9 +254,6 @@ build_job_step_enum (vulkan_ctx_t *ctx, qfv_renderctx_t *rctx,
 				};
 				*(int *) symtab->symbols[ind].value = ind;
 				Hash_Add (symtab->tab, &symtab->symbols[ind]);
-
-				printf ("%s = %d\n", symtab->symbols[ind].name,
-						*(int *) symtab->symbols[ind].value);
 			}
 		}
 		{
@@ -268,9 +264,6 @@ build_job_step_enum (vulkan_ctx_t *ctx, qfv_renderctx_t *rctx,
 			};
 			*(int *) symtab->symbols[ind].value = -1;
 			Hash_Add (symtab->tab, &symtab->symbols[ind]);
-
-			printf ("%s = %d\n", symtab->symbols[ind].name,
-					*(int *) symtab->symbols[ind].value);
 		}
 	}
 }
@@ -2024,6 +2017,9 @@ create_step_compute_layouts (uint32_t index, const qfv_stepinfo_t *step,
 	for (uint32_t i = 0; i < cinfo->num_pipelines; i++) {
 		auto pli = &cinfo->pipelines[i];
 		s->pipeline = pli;
+		if (!pli->layout.name) {
+			Sys_Error ("%d:%s: no layout", pli->line, pli->name);
+		}
 		auto li = find_layout (&pli->layout, s);
 		s->ptr.plName[base + s->inds.num_comp_pipelines] = pli->name;
 		s->inds.num_ds_indices += li->num_sets;

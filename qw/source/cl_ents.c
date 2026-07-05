@@ -440,6 +440,7 @@ CL_LinkPlayers (void)
 		if (j == cl.playernum) {
 			org = cl.viewstate.player_origin;
 			cl.viewstate.player_entity = ent;
+			cl.viewstate.weaponframe = state->pls.es.weaponframe;
 			clientplayer = true;
 		} else {
 			org = state->pls.es.origin;

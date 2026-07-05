@@ -22,4 +22,8 @@ typedef @handle(long) transform_h transform_t;
 -drawExcept:(Camera *) skip;
 @end
 
+void camera_first_person (state_t *camera_state);
+void camera_mouse_trackball (state_t *camera_state);
+void camera_mouse_first_person (state_t *camera_state);
+
 #endif//__camera_h

@@ -184,7 +184,7 @@ AC_DEFUN([QF_CC_OPTION], [
 QF_CC_OPTION_TEST([$1], [CFLAGS="$CFLAGS $1"])
 ])
 
-AC_DEFUN([QF_REQUIRES], [
+AC_DEFUN([QF_REQUIRED], [
 qf_req=ok
 m4_foreach([pkgvar], [$1], [
 m4_ifnblank(m4_argn(1, pkgvar), [
@@ -200,5 +200,23 @@ if test "x[$]m4_argn(2, pkgvar)" != "xyes"; then
 fi])])
 if test "x$qf_req" != "xok"; then
 	AC_MSG_ERROR(The above required packages are missing)
+fi
+])
+AC_DEFUN([QF_OPTIONAL], [
+qf_opt=ok
+m4_foreach([pkgvar], [$1], [
+m4_ifnblank(m4_argn(1, pkgvar), [
+if test "x[$]m4_argn(2, pkgvar)" != "xyes"; then
+	if test "x$qf_opt" = "xok"; then
+		echo
+	fi
+	qf_opt=missing
+	m4_ifnblank(m4_argn(3, pkgvar),
+		[echo m4_argn(1, pkgvar) or m4_argn(3, pkgvar)],
+		[echo m4_argn(1, pkgvar)]
+	)
+fi])])
+if test "x$qf_opt" != "xok"; then
+	AC_MSG_WARN(The above optional packages are missing)
 fi
 ])

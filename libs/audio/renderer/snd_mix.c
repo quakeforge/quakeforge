@@ -45,37 +45,42 @@
 #define VOLSCALE 0.5				// so mixing is less likely to overflow
 
 portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
-static int  max_overpaint;				// number of extra samples painted
+static unsigned max_overpaint;			// number of extra samples painted
 										// due to phase shift
 
 /* CHANNEL MIXING */
 
-static inline int
+static inline bool
 check_channel_end (channel_t *ch, sfxbuffer_t *sb, int count, unsigned ltime)
 {
+	qfZoneScoped (true);
 	if (count <= 0 || ltime >= ch->end) {
 		if (ch->loopstart != (unsigned) -1) {
 			ch->pos = ch->loopstart;
 			ch->end = ltime + sb->sfx_length - ch->pos;
 		} else {			// channel just stopped
-			ch->done = 1;
-			return 1;
+			ch->done = true;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
 static inline void
 snd_paint_channel (channel_t *ch, sfxbuffer_t *sb, int count)
 {
+	qfZoneScoped (true);
 	unsigned    pos;
 	int         offs = 0;
 	float      *samps;
 
 	if ((int) ch->pos < 0) {
+		// the channel's start time is in the future
 		ch->pos += count;
 		if ((int) ch->pos <= 0)
 			return;
+		// mix in silence until the channel's actual start time (by not
+		// mixing anything)
 		offs = count - ch->pos;
 		count -= offs;
 		ch->pos = 0;
@@ -98,6 +103,7 @@ snd_paint_channel (channel_t *ch, sfxbuffer_t *sb, int count)
 void
 SND_PaintChannels (snd_t *snd, unsigned endtime)
 {
+	qfZoneScoped (true);
 	unsigned    end, ltime;
 	int         i, count;
 	channel_t  *ch;
@@ -125,7 +131,13 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 				continue;
 			}
 			if (ch->stop) {
-				ch->done = 1;		// acknowledge stopped signal
+				ch->done = true;	// acknowledge stopped signal
+				continue;
+			}
+			if (sb->base->error) {
+				// this channel can no longer be used as its
+				// source has died.
+				ch->done = true;
 				continue;
 			}
 			if (ch->pause)
@@ -142,12 +154,7 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 					if (ch->leftvol || ch->rightvol) {
 						snd_paint_channel (ch, sb, count);
 						if (sb->advance) {
-							if (!sb->advance (sb, count)) {
-								// this channel can no longer be used as its
-								// source has died.
-								ch->done = 1;
-								break;
-							}
+							sb->advance (sb, count);
 						}
 					}
 					ltime += count;
@@ -159,13 +166,16 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 		}
 
 		// transfer out according to DMA format
-		snd->xfer (snd, snd_paintbuffer, end - snd->paintedtime,
-				   snd_volume);
+		snd->xfer (snd, snd_paintbuffer, end - snd->paintedtime, snd_volume);
 
-		memmove (snd_paintbuffer, snd_paintbuffer + end - snd->paintedtime,
-				 max_overpaint * sizeof (snd_paintbuffer[0]));
-		memset (snd_paintbuffer + max_overpaint, 0, sizeof (snd_paintbuffer)
-				- max_overpaint * sizeof (snd_paintbuffer[0]));
+		auto dst = snd_paintbuffer;
+		auto src = snd_paintbuffer + end - snd->paintedtime;
+		for (unsigned i = 0; i < max_overpaint; i++) {
+			*dst++ = *src++;
+		}
+		for (unsigned i = max_overpaint; i < countof (snd_paintbuffer); i++) {
+			*dst++ = (portable_samplepair_t) {};
+		}
 
 		snd->paintedtime = end;
 	}
@@ -175,6 +185,7 @@ static inline void
 snd_mix_single (portable_samplepair_t *pair, float **samp,
 				float lvol, float rvol)
 {
+	qfZoneScoped (true);
 	float       single = *(*samp)++;
 
 	pair->left += single * lvol;
@@ -185,6 +196,7 @@ static inline void
 snd_mix_pair (portable_samplepair_t *pair, float **samp,
 			  float lvol, float rvol)
 {
+	qfZoneScoped (true);
 	float       left = *(*samp)++;
 	float       right = *(*samp)++;
 
@@ -196,6 +208,7 @@ static inline void
 snd_mix_triple (portable_samplepair_t *pair, float **samp,
 				 float lvol, float rvol)
 {
+	qfZoneScoped (true);
 	float       left = *(*samp)++;
 	float       center = *(*samp)++;
 	float       right = *(*samp)++;
@@ -213,6 +226,7 @@ snd_mix_triple (portable_samplepair_t *pair, float **samp,
 static void
 snd_paint_mono (int offs, channel_t *ch, float *sfx, unsigned count)
 {
+	qfZoneScoped (true);
 	float       leftvol, rightvol;
 	unsigned    left_phase, right_phase;	// Never allowed < 0 anyway
 	unsigned    i = 0;
@@ -311,6 +325,7 @@ snd_paint_mono (int offs, channel_t *ch, float *sfx, unsigned count)
 static void
 snd_paint_stereo (int offs, channel_t *ch, float *samp, unsigned count)
 {
+	qfZoneScoped (true);
 	portable_samplepair_t *pair;
 	float       leftvol = ch->leftvol * VOLSCALE;
 	float       rightvol = ch->rightvol * VOLSCALE;
@@ -329,6 +344,7 @@ snd_paint_stereo (int offs, channel_t *ch, float *samp, unsigned count)
 static void
 snd_paint_3 (int offs, channel_t *ch, float *samp, unsigned count)
 {
+	qfZoneScoped (true);
 	portable_samplepair_t *pair;
 	float       leftvol = ch->leftvol * VOLSCALE;
 	float       rightvol = ch->rightvol * VOLSCALE;
@@ -348,6 +364,7 @@ snd_paint_3 (int offs, channel_t *ch, float *samp, unsigned count)
 static void
 snd_paint_4 (int offs, channel_t *ch, float *samp, unsigned count)
 {
+	qfZoneScoped (true);
 	portable_samplepair_t *pair;
 	float       leftvol = ch->leftvol * VOLSCALE;
 	float       rightvol = ch->rightvol * VOLSCALE;
@@ -368,6 +385,7 @@ snd_paint_4 (int offs, channel_t *ch, float *samp, unsigned count)
 static void
 snd_paint_5 (int offs, channel_t *ch, float *samp, unsigned count)
 {
+	qfZoneScoped (true);
 	portable_samplepair_t *pair;
 	float       leftvol = ch->leftvol * VOLSCALE;
 	float       rightvol = ch->rightvol * VOLSCALE;
@@ -389,6 +407,7 @@ snd_paint_5 (int offs, channel_t *ch, float *samp, unsigned count)
 static void
 snd_paint_6 (int offs, channel_t *ch, float *samp, unsigned count)
 {
+	qfZoneScoped (true);
 	portable_samplepair_t *pair;
 	float       leftvol = ch->leftvol * VOLSCALE;
 	float       rightvol = ch->rightvol * VOLSCALE;
@@ -412,6 +431,7 @@ snd_paint_6 (int offs, channel_t *ch, float *samp, unsigned count)
 static void
 snd_paint_7 (int offs, channel_t *ch, float *samp, unsigned count)
 {
+	qfZoneScoped (true);
 	portable_samplepair_t *pair;
 	float       leftvol = ch->leftvol * VOLSCALE;
 	float       rightvol = ch->rightvol * VOLSCALE;
@@ -436,6 +456,7 @@ snd_paint_7 (int offs, channel_t *ch, float *samp, unsigned count)
 static void
 snd_paint_8 (int offs, channel_t *ch, float *samp, unsigned count)
 {
+	qfZoneScoped (true);
 	portable_samplepair_t *pair;
 	float       leftvol = ch->leftvol * VOLSCALE;
 	float       rightvol = ch->rightvol * VOLSCALE;
@@ -453,8 +474,9 @@ snd_paint_8 (int offs, channel_t *ch, float *samp, unsigned count)
 void
 SND_SetPaint (sfxbuffer_t *sb)
 {
+	qfZoneScoped (true);
 	static sfxpaint_t *painters[] = {
-		0,
+		nullptr,
 		snd_paint_mono,
 		snd_paint_stereo,
 		snd_paint_3,

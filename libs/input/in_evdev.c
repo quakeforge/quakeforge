@@ -36,12 +36,15 @@
 # include <strings.h>
 #endif
 
+#include <linux/input-event-codes.h>
+
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/progs.h"   // for PR_RESMAP
 #include "QF/sys.h"
 
 #include "QF/input/event.h"
+#include "QF/input/gamepad.h"
 
 #include "compat.h"
 #include "qfselect.h"
@@ -51,6 +54,7 @@ typedef struct devmap_s {
 	struct devmap_s *next;
 	struct devmap_s **prev;
 	device_t   *device;
+	in_gamepad_t *gamepad;
 	void       *event_data;
 	int         devid;
 } devmap_t;
@@ -59,6 +63,88 @@ static int evdev_driver_handle = -1;
 static int evdev_have_focus;
 static PR_RESMAP (devmap_t) devmap;
 static devmap_t *devmap_list;
+
+static const char *rel_axis_names[] = {
+	"rel_x",
+	"rel_y",
+	"rel_z",
+	"rel_rx",
+	"rel_ry",
+	"rel_rz",
+	"rel_hwheel",
+	"rel_dial",
+	"rel_wheel",
+	"rel_misc",
+	nullptr,//rel_reserved
+	"rel_wheel_hi_res",
+	"rel_hwheel_hi_res",
+	"rel_max",
+};
+
+static const char *abs_axis_names[] = {
+	"abs_x",
+	"abs_y",
+	"abs_z",
+	"abs_rx",
+	"abs_ry",
+	"abs_rz",
+	"abs_throttle",
+	"abs_rudder",
+	"abs_wheel",
+	"abs_gas",
+	"abs_brake",
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	"abs_hat0x",
+	"abs_hat0y",
+	"abs_hat1x",
+	"abs_hat1y",
+	"abs_hat2x",
+	"abs_hat2y",
+	"abs_hat3x",
+	"abs_hat3y",
+	"abs_pressure",
+	"abs_distance",
+	"abs_tilt_x",
+	"abs_tilt_y",
+	"abs_tool_width",
+	nullptr,
+	nullptr,
+	nullptr,
+	"abs_volume",
+	"abs_profile",
+	"abs_snd_profile",
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	"abs_misc",
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,//abs_reserved,
+	"abs_mt_slot",
+	"abs_mt_touch_major",
+	"abs_mt_touch_minor",
+	"abs_mt_width_major",
+	"abs_mt_width_minor",
+	"abs_mt_orientation",
+	"abs_mt_position_x",
+	"abs_mt_position_y",
+	"abs_mt_tool_type",
+	"abs_mt_blob_id",
+	"abs_mt_tracking_id",
+	"abs_mt_pressure",
+	"abs_mt_distance",
+	"abs_mt_tool_x",
+	"abs_mt_tool_y",
+};
 
 static void
 in_evdev_add_select (qf_fd_set *fdset, int *maxfd, void *data)
@@ -147,6 +233,56 @@ in_evdev_button_event (button_t *button, void *_dm)
 }
 
 static void
+in_evdev_gamepad_axis_event (axis_t *axis, void *_dm)
+{
+	if (!evdev_have_focus) {
+		return;
+	}
+
+	devmap_t   *dm = _dm;
+	//Sys_Printf ("in_evdev_gamepad_axis_event: %d %d\n",
+	//			axis->num, axis->value);
+
+	IE_event_t  event = {
+		.type = ie_axis,
+		.when = Sys_LongTime (),
+		.axis = {
+			.data = dm->event_data,
+			.devid = dm->devid,
+			.axis = axis->num,
+			.value = axis->value,
+		},
+	};
+	IN_Gamepad_Event (dm->gamepad, &event);
+	IE_Send_Event (&event);
+}
+
+static void
+in_evdev_gamepad_button_event (button_t *button, void *_dm)
+{
+	if (!evdev_have_focus) {
+		return;
+	}
+
+	devmap_t   *dm = _dm;
+	//Sys_Printf ("in_evdev_gamepad_button_event: %d %d\n",
+	//			button->num, button->state);
+
+	IE_event_t  event = {
+		.type = ie_button,
+		.when = Sys_LongTime (),
+		.button = {
+			.data = dm->event_data,
+			.devid = dm->devid,
+			.button = button->num,
+			.state = button->state,
+		},
+	};
+	IN_Gamepad_Event (dm->gamepad, &event);
+	IE_Send_Event (&event);
+}
+
+static void
 device_add (device_t *dev)
 {
 	const char *name = dev->name;
@@ -166,11 +302,23 @@ device_add (device_t *dev)
 	devmap_list = dm;
 
 	dev->data = dm;
-	dev->axis_event = in_evdev_axis_event;
-	dev->button_event = in_evdev_button_event;
 
 	dm->device = dev;
 	dm->devid = IN_AddDevice (evdev_driver_handle, dev, name, id);
+
+	dm->gamepad = IN_Gamepad_Add ((in_devid_t) {
+			.bustype = dev->bustype,
+			.vendor = dev->vendor,
+			.product = dev->product,
+			.version = dev->version,
+		}, dm->devid);
+	if (dm->gamepad) {
+		dev->axis_event = in_evdev_gamepad_axis_event;
+		dev->button_event = in_evdev_gamepad_button_event;
+	} else {
+		dev->axis_event = in_evdev_axis_event;
+		dev->button_event = in_evdev_button_event;
+	}
 
 #if 0
 	Sys_Printf ("in_evdev: add %s\n", dev->path);
@@ -192,6 +340,9 @@ device_remove (device_t *dev)
 {
 	for (devmap_t *dm = devmap_list; dm; dm = dm->next) {
 		if (dm->device == dev) {
+			if (dm->gamepad) {
+				IN_Gamepad_Remove (dm->gamepad);
+			}
 			IN_RemoveDevice (dm->devid);
 
 			if (dm->next) {
@@ -254,6 +405,53 @@ in_evdev_button_info (void *data, void *device, in_buttoninfo_t *buttons,
 	}
 }
 
+static const char *
+in_evdev_get_axis_name (void *data, void *device, int axis_num)
+{
+	device_t   *dev = device;
+	if (axis_num < 0 || axis_num > dev->num_axes) {
+		return nullptr;
+	}
+	auto axis = &dev->axes[axis_num];
+	if (!axis->min && !axis->max) {
+		if (axis->evnum >= (int) countof (rel_axis_names)) {
+			return nullptr;
+		}
+		return rel_axis_names[axis->evnum];
+	}
+	if (axis->evnum >= (int) countof (abs_axis_names)) {
+		return nullptr;
+	}
+	return abs_axis_names[axis->evnum];
+}
+
+static int
+in_evdev_get_axis_num (void *data, void *device, const char *axis_name)
+{
+	device_t   *dev = device;
+	int         count;
+	int         map_count;
+	int        *map;
+	const char **names;
+	if ((axis_name[0] | 0x20) == 'r') {
+		count = countof (rel_axis_names);
+		names = rel_axis_names;
+		map = dev->rel_axis_map;
+		map_count = dev->max_rel_axis + 1;
+	} else {
+		count = countof (abs_axis_names);
+		names = abs_axis_names;
+		map = dev->abs_axis_map;
+		map_count = dev->max_abs_axis + 1;
+	}
+	for (int i = 0; i < count && i < map_count; i++) {
+		if (names[i] && strcasecmp (axis_name, names[i]) == 0) {
+			return map[i];
+		}
+	}
+	return -1;
+}
+
 static int
 in_evdev_get_axis_info (void *data, void *device, int axis_num,
 						in_axisinfo_t *info)
@@ -282,6 +480,60 @@ in_evdev_get_button_info (void *data, void *device, int button_num,
 	return 1;
 }
 
+static in_mapping_t
+in_evdev_gamepad_mapping (void *data, void *device, const char *name)
+{
+	device_t   *dev = device;
+	in_mapping_t mapping = {};
+	if (name[0] == '+' || name[0] == '-') {
+		mapping.sign = name[0] == '-' ? -1 : 1;
+		name++;
+	}
+	int         index = strtoul (name + 1, nullptr, 0);
+	switch (name[0]) {
+		case 'a':
+			if (index < dev->num_abs_axes) {
+				mapping.type = inm_abs_axis;
+				mapping.index = index;
+			} else if (index < dev->num_axes) {
+				mapping.type = inm_rel_axis;
+				mapping.index = index;
+			}
+			break;
+		case 'b':
+			if (index < dev->num_buttons) {
+				mapping.type = inm_button;
+				mapping.index = index;
+			}
+			break;
+		case 'h':
+			// evdev maps hats to hat x and y axes
+			// and supports only 4 hats
+			if (index > 3) {
+				break;
+			}
+			int         mask = strtoul (name + 3, nullptr, 0);
+			int         axis = 0;
+			switch (mask) {
+				case 1: axis = -(ABS_HAT0Y + 2 * index); break;
+				case 2: axis =  (ABS_HAT0X + 2 * index); break;
+				case 4: axis =  (ABS_HAT0Y + 2 * index); break;
+				case 8: axis = -(ABS_HAT0X + 2 * index); break;
+			}
+			if (!axis || abs (axis) > dev->max_abs_axis
+				|| dev->abs_axis_map[abs(axis)] < 0) {
+				break;
+			}
+			mapping.type = inm_abs_axis;
+			mapping.index = dev->abs_axis_map[abs(axis)];
+			mapping.sign = axis < 0 ? -1 : 1;
+			break;
+		default:
+			break;
+	}
+	return mapping;
+}
+
 static in_driver_t in_evdev_driver = {
 	.init = in_evdev_init,
 	.shutdown = in_evdev_shutdown,
@@ -294,12 +546,17 @@ static in_driver_t in_evdev_driver = {
 	.axis_info = in_evdev_axis_info,
 	.button_info = in_evdev_button_info,
 
+	.get_axis_name = in_evdev_get_axis_name,
+	.get_axis_num = in_evdev_get_axis_num,
+
 	.get_axis_info = in_evdev_get_axis_info,
 	.get_button_info = in_evdev_get_button_info,
+
+	.gamepad_mapping = in_evdev_gamepad_mapping,
 };
 
 static int
-in_evdev_evend_handler (const IE_event_t *event, void *data)
+in_evdev_event_handler (const IE_event_t *event, void *data)
 {
 	if (event->type == ie_app_gain_focus) {
 		evdev_have_focus = 1;
@@ -316,7 +573,7 @@ in_evdev_register_driver (void)
 {
 	evdev_driver_handle = IN_RegisterDriver (&in_evdev_driver, 0);
 	//FIXME probably shouldn't be here
-	IE_Add_Handler (in_evdev_evend_handler, 0);
+	IE_Add_Handler (in_evdev_event_handler, 0);
 }
 
 int in_evdev_force_link;

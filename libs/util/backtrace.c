@@ -39,6 +39,7 @@
 #include "QF/dstring.h"
 #include "QF/sys.h"
 
+#ifdef HAVE_BACKTRACE
 static struct backtrace_state *bt_state;
 
 static void bt_error (void *data, const char *msg, int errnum)
@@ -85,3 +86,21 @@ BT_backtrace (dstring_t *str, int skip)
 		dasprintf (str, "***no backtrace***");
 	}
 }
+#else
+void
+BT_Init (const char *filename)
+{
+}
+
+void
+BT_pcInfo (dstring_t *str, uintptr_t pc)
+{
+	dasprintf (str, "(%"PRIxPTR")", pc);
+}
+
+void
+BT_backtrace (dstring_t *str, int skip)
+{
+	dasprintf (str, "***no backtrace***");
+}
+#endif

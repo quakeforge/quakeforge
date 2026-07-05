@@ -82,9 +82,9 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	rframe->active_pool = &rframe->output_cmdpool;
 	//dfunc->vkResetFences (device->dev, 1, &oframe->fence);
 	uint32_t imageIndex = 0;
-	while (octx->recreate_swapchain ||
-			!QFV_AcquireNextImage (sc, oframe->imageAvailableSemaphore,
-								  0/*oframe->fence*/, &imageIndex)) {
+	while (octx->recreate_swapchain
+		   || !QFV_AcquireNextImage (sc, oframe->imageAvailableSemaphore,
+								     0/*oframe->fence*/, &imageIndex)) {
 		if (octx->framebuffers) {
 			uint32_t frames = rctx->frames.size;
 			for (uint32_t i = 0; i < sc->imageViews->size; i++) {
@@ -347,10 +347,12 @@ present_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto queue = &device->queue;
 
 	VkPresentInfoKHR presentInfo = {
-		VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, 0,
-		1, &octx->outputSemaphores[ctx->swapImageIndex],
-		1, &ctx->swapchain->swapchain, &ctx->swapImageIndex,
-		0
+		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+		.waitSemaphoreCount = 1,
+		.pWaitSemaphores = &octx->outputSemaphores[ctx->swapImageIndex],
+		.swapchainCount = 1,
+		.pSwapchains = &ctx->swapchain->swapchain,
+		.pImageIndices = &ctx->swapImageIndex,
 	};
 	dfunc->vkQueuePresentKHR (queue->queue, &presentInfo);
 }

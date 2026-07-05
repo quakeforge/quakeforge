@@ -67,7 +67,7 @@ wad_get_hash (const void *l, void *unused)
 	return Hash_String (name);
 }
 
-static int
+static bool
 wad_compare (const void *la, const void *lb, void *unused)
 {
 	return strncasecmp (((lumpinfo_t *) la)->name,

@@ -80,7 +80,7 @@ colcache_get_hash (const void *_col, void *unused)
 	return (r << 8) ^ (g << 4) ^ b;
 }
 
-static int
+static bool
 colcache_compare (const void *_cola, const void *_colb, void *unused)
 {
 	colcache_color_t *cola = (colcache_color_t *) _cola;

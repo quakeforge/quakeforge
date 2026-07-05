@@ -28,6 +28,8 @@
 # include "config.h"
 #endif
 
+#include "QF/particle.h"
+
 #include "d_local.h"
 #include "r_internal.h"
 

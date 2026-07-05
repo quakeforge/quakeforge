@@ -942,7 +942,7 @@ write_pcx (image_t *image)
 
 	pcx = EncodePCX (image->image, image->width, image->height,
 					 image->width, palette, false, &pcx_len, hunk);
-	if (Qwrite (outfile, pcx, pcx_len) != pcx_len) {
+	if (Qwrite (outfile, pcx, pcx_len) != (size_t) pcx_len) {
 		fprintf (stderr, "Error writing to %s\n", options.outf_name);
 		exit (1);
 	}

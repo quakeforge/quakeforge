@@ -353,6 +353,7 @@ parse = {
 		.dictionary = {
 			.parse = auto;
 			name = $name;
+			line = $item.line;
 		};
 		color = auto;
 		disabled = auto;

@@ -1,28 +1,23 @@
-#include <Array.h>
 #include <AutoreleasePool.h>
-#include <plist.h>
 #include <PropertyList.h>
-#include <string.h>
 #include <msgbuf.h>
-#include <math.h>
-#include <imui.h>
-#include <qfs.h>
-#include <draw.h>
-#include <scene.h>
-#include <input.h>
 #include <QF/keys.h>
 
 #include "gui/editwindow.h"
 #include "gui/filewindow.h"
 #include "gui/listview.h"
-#include "gui/virtinput.h"
+#include "gui/nodepanel.h"
 #include "gui/window.h"
 #include "armature.h"
 #include "camera.h"
 #include "gizmo.h"
-#include "pga3d.h"
+#include "mainmenu.h"
+#include "physics.h"
 #include "player.h"
 #include "playercam.h"
+#include "qwaq-ed.h"
+
+#include "shader/planetary.h"
 
 void traceon() = #0;
 void traceoff() = #0;
@@ -40,24 +35,26 @@ static string input_cfg =
 ;
 
 static string atmosphere_shader =
-#embed "ruamoko/qwaq/atmosphere.r.spv"
+#embed "ruamoko/qwaq/shader/atmosphere.r.spv"
 ;
 
 static string pixpal_shader =
-#embed "ruamoko/qwaq/pixpal.r.spv"
+#embed "ruamoko/qwaq/shader/pixpal.r.spv"
 ;
 
 static string planetary_shader =
-#embed "ruamoko/qwaq/planetary.r.spv"
+#embed "ruamoko/qwaq/shader/planetary.r.spv"
 ;
 
 static string pbr_brdf_shader =
-#embed "ruamoko/qwaq/pbr_brdf.r.spv"
+#embed "ruamoko/qwaq/shader/pbr_brdf.r.spv"
 ;
 
 static string pbr_conv_shader =
-#embed "ruamoko/qwaq/pbr_conv.r.spv"
+#embed "ruamoko/qwaq/shader/pbr_conv.r.spv"
 ;
+
+float camera_speed = 1;
 
 int in_context;
 in_axis_t *cam_move_forward;
@@ -91,10 +88,6 @@ bool mouse_dragging_rmb;
 bool draw_editor_overlay = true;
 bool quit_editor = false;
 
-void camera_first_person (state_t *camera_state);
-void camera_mouse_trackball (state_t *camera_state);
-void camera_mouse_first_person (state_t *camera_state);
-
 void printf (string fmt, ...) = #0;
 
 typedef struct component_s {
@@ -107,12 +100,6 @@ typedef struct component_s {
 	void (*ui) (void *comp, uint ent);
 } component_t;
 
-void set_update (uint ent, void (*update) (uint ent)) = #0;
-bool has_component (uint ent, uint comp) = #0;
-void get_component (uint ent, uint comp, void *data) = #0;
-void set_component (uint ent, uint comp, void *data) = #0;
-uint new_entity () = #0;
-void del_entity (uint ent) = #0;
 void init_graphics (plitem_t *config, int num_components,
 					component_t *components) = #0;
 uint load_resource (string name) = #0;
@@ -123,9 +110,27 @@ void refresh_2d (void (func)(void)) = #0;
 void setpalette (void *palette, void *colormap) = #0;
 void newscene (scene_t scene) = #0;
 void set_sky_id (uint texid) = #0;
+
 void setevents (int (func)(struct IE_event_s *, void *), void *data) = #0;
 void setctxcbuf (int ctx) = #0;
 void addcbuftxt (string txt) = #0;
+
+void Particles_SetRamps (scene_t scene, uint count, uint *ramps) = #0;
+void Particles_SetPalette (scene_t scene, uint texid, uint size) = #0;
+void Particles_SetGravitry (scene_t scene, vec4 center, float gravity,
+							float min_dist) = #0;
+void Entity_AttachPlane (entity_t ent) = #0;
+void Emitter_SetRamp (entity_t ent, uint base, uint range) = #0;
+void Emitter_SetEmitRate (entity_t ent, float rate) = #0;
+void Emitter_SetColor (entity_t ent, uint color) = #0;
+void Emitter_SetScale (entity_t ent, float scale) = #0;
+void Emitter_SetLive (entity_t ent, float live) = #0;
+void Emitter_SetRates (entity_t ent, vec4 ramp_max_scale_alpha) = #0;
+void Emitter_SetDrag (entity_t ent, vector drag) = #0;
+void Emitter_SetGravScale (entity_t ent, float rate) = #0;
+void Emitter_SetVelocity (entity_t ent, vector drag) = #0;
+void Emitter_SetSolid (entity_t ent, float solid) = #0;
+void Emitter_SetSquare (entity_t ent, bool square) = #0;
 
 void Gizmo_AddSphere (vec4 c, float r, vec4 color) = #0;
 void Gizmo_AddCapsule (vec4 p1, vec4 p2, float r, vec4 color) = #0;
@@ -151,16 +156,6 @@ ulong Render_BufferAddress (string name) = #0;
 ulong Render_BufferOffset (string name) = #0;
 ulong Render_BufferSize (string name) = #0;
 
-enum {
-	qent_state,
-	qent_body,
-	qent_transform,
-	qent_collider,
-	qent_grav,
-
-	qent_comp_count
-};
-
 static component_t qwaq_components[] = {
 	[qent_state] = {
 		.size = sizeof (state_t),
@@ -183,61 +178,6 @@ static component_t qwaq_components[] = {
 		.name = "grav",
 	},
 };
-
-#include "planetary.h"
-
-void
-update_orrery (entity_t earth, double time)
-{
-	float ph = float(0.05 * (time - double (1ul<<32)));
-	quaternion trot = { 0, 0, sin(ph), cos(ph) };
-	quaternion vrot = '0 0 0 1';//{ 0, -sqrt(0.5f), 0, sqrt(0.5f) };
-
-	auto xform = Entity_GetTransform (earth);
-	Transform_SetLocalRotation(xform, vrot * trot);
-	vec4 pos = Transform_GetWorldPosition (xform);
-
-	ulong addr = Render_BufferAddress ("planetary");
-	PlanetaryData planetary = {
-		.numOpticalDepthPoints = 10,
-		.numInScatteringPoints = 10,
-		.scaleFactor = 1e-6,
-		.bodies = addr + sizeof (PlanetaryData),
-		.atmospheres = addr + sizeof (PlanetaryData) + sizeof (BodyParams) * 3,
-	};
-	BodyParams bodies[] = {
-		{// sun
-		.planetCenter = '-71987230000.0 -96000000020.0 90000000020.0',
-		.planetRadius = 695700e3,
-		},
-		{// earth
-		.planetCenter = pos.xyz,
-		.planetRadius = 6370e3,
-		},
-		{// moon
-		.planetCenter = '-171550000.0 -245760020.0 230400020.0',
-		.planetRadius = 1738e3,
-		},
-	};
-	AtmosphereParams atmospheres[] = {
-		{// sun
-		.atmosphereRadius = 13655700e3,
-		.oceanRadius = 695700e3,
-		.densityFalloff = 4e2,
-		//.scatteringCoefficients = '0.10662224073302788 0.32444156446229333 0.6830134553650706',
-		.scatteringCoefficients = '0.6830134553650706 0.5830134553650706 0.32444156446229333',
-		},
-		{// earth
-		.atmosphereRadius = 6470e3,
-		.oceanRadius = 6370e3,
-		.densityFalloff = 4,
-		.scatteringCoefficients = '0.10662224073302788 0.32444156446229333 0.6830134553650706',
-		}
-	};
-	Render_UpdateBuffer ("planetary", 0, &planetary, sizeof (planetary));
-	Render_UpdateBuffer ("planetary", sizeof(planetary), &bodies, sizeof (bodies));
-	Render_UpdateBuffer ("planetary", sizeof(planetary)+sizeof(bodies), &atmospheres, sizeof (atmospheres));
-}
 
 imui_ctx_t imui_ctx;
 #define IMUI_context imui_ctx
@@ -266,6 +206,82 @@ float frametime;
 
 @class MainMenu;
 MainMenu *main_menu;
+
+@interface CamWindow : Window
+{
+	float camera_speed_exp;
+	float start_exp;
+	ivec2 drag_start;
+}
++(CamWindow *) camWindow:(imui_ctx_t)ctx;
+-draw;
+@end
+
+@implementation CamWindow
+-initWithContext:(imui_ctx_t)ctx
+{
+	if (!(self = [super initWithContext:ctx name:"CamWindow"])) {
+		return nil;
+	}
+	IMUI_Window_SetSize (window, {300, 80});
+	camera_speed_exp = 0;
+	return self;
+}
+
++(CamWindow *) camWindow:(imui_ctx_t)ctx
+{
+	return [[[CamWindow alloc] initWithContext:ctx] autorelease];
+}
+
+-draw
+{
+	if (![super draw]) {
+		return nil;
+	}
+	UI_Window (window) {
+		if (IMUI_Window_IsCollapsed (window)) {
+			continue;
+		}
+		UI_Vertical {
+			UI_SetFill (current_style.background.normal);
+			uint dent = IMUI_ActiveItem (IMUI_context,
+										 imui_size_percent, 100,
+										 imui_size_pixels, 25,
+										 sprintf ("source_%p", self));
+			IMUI_SetViewPos (IMUI_context, {0, 0});
+			IMUI_SetViewFree (IMUI_context, {true, true});
+			IMUI_SetViewGravity (IMUI_context, grav_northwest);
+
+			int mode = IMUI_UpdateHotActive (IMUI_context);
+			IMUI_CheckButtonState (IMUI_context);
+			UI_SetFill (current_style.foreground.color[mode]);
+
+			auto io = IMUI_GetIO (IMUI_context);
+			if (io.active == dent) {
+				IMUI_SetDragId (IMUI_context, io.active);
+			}
+			io = IMUI_GetIO (IMUI_context);
+			if (io.drag_id == dent) {
+				if (io.pressed == 1) {
+					drag_start = io.mouse_active;
+					start_exp = camera_speed_exp;
+				}
+				float delta = (io.mouse_active.x - drag_start.x) * 0.05f;
+				camera_speed_exp = start_exp + delta;
+				if (camera_speed_exp > 6) {
+					camera_speed_exp = 6;
+				}
+				if (camera_speed_exp < 0) {
+					camera_speed_exp = 0;
+				}
+				camera_speed = pow (10, camera_speed_exp);
+			}
+			IMUI_Labelf (IMUI_context, "%4.1f##camWindow", camera_speed_exp);
+		}
+	}
+	return self;
+}
+@end
 
 @interface MainWindow : Window <ListView>
 {
@@ -300,6 +316,16 @@ MainMenu *main_menu;
 -nextClip:(float)frametime;
 -(scene_t) scene;
 @end
+
+uint
+pixpal_colorid (uint x, uint y)
+{
+	uint xl = x & 0xf;
+	uint xh = (x >> 4) & 0x7;
+	uint yl = y & 0xf;
+	uint yh = (y >> 4) & 0x7;
+	return xl | (yl << 4) | (xh << 8) | (yh << 12);
+}
 
 @implementation MainWindow
 
@@ -367,6 +393,21 @@ MainMenu *main_menu;
 	IN_ButtonAddListener (cam_prev, imp, self);
 
 	Scene_SetCamera (scene, [active_camera entity]);
+
+	Particles_SetGravitry (scene, { 0, 0, 3, 1}, 3, 0.25);
+	//need to fix palette array/non-array in vulkan
+	//uint pixpal_ramps[] = {
+	//	pixpal_colorid (1,103),
+	//	pixpal_colorid (1,107),
+	//	pixpal_colorid (1,111),
+	//	pixpal_colorid (1,115),
+	//	pixpal_colorid (1,119),
+	//	pixpal_colorid (1,123),
+	//	pixpal_colorid (38,62),
+	//	pixpal_colorid (41,62),
+	//};
+	//Particles_SetRamps (scene, countof (pixpal_ramps), pixpal_ramps);
+
 	newscene (scene);
 
 	show_armature = 1;
@@ -484,20 +525,22 @@ static gizmo_node_t covered_step[] = {
 	}
 	if (ent && anim && arm && show_armature) {
 		qfa_update_anim (anim, frametime);
-		qfa_update_anim (root_anim, frametime);
-		qfa_get_pose_motors (anim, arm.pose);
+		if (root_anim) {
+			qfa_update_anim (root_anim, frametime);
+			qfa_get_pose_motors (anim, arm.pose);
 
-		auto E = make_motor (Transform_GetWorldPosition (trans),
-							 Transform_GetWorldRotation (trans));
-		arm_motor_t M;
-		qfa_get_pose_motors (root_anim, &M);
-		M.m = E * M.m;
-		auto cam = Entity_GetTransform ([active_camera entity]);
-		draw_armature (cam, arm, M);
-		for (int i = 0; i < 3; i++) {
-			auto p1 = E * (point_t) axis_points[i][0] * ~E;
-			auto p2 = E * (point_t) axis_points[i][1] * ~E;
-			draw_3dline (cam, (vec4) p1, (vec4) p2, axis_colors[i]);
+			auto E = make_motor (Transform_GetWorldPosition (trans),
+								 Transform_GetWorldRotation (trans));
+			arm_motor_t M;
+			qfa_get_pose_motors (root_anim, &M);
+			M.m = E * M.m;
+			auto cam = Entity_GetTransform ([active_camera entity]);
+			draw_armature (cam, arm, M);
+			for (int i = 0; i < 3; i++) {
+				auto p1 = E * (point_t) axis_points[i][0] * ~E;
+				auto p2 = E * (point_t) axis_points[i][1] * ~E;
+				draw_3dline (cam, (vec4) p1, (vec4) p2, axis_colors[i]);
+			}
 		}
 	}
 
@@ -576,13 +619,6 @@ static gizmo_node_t covered_step[] = {
 	qfa_extract_root_motion (model);
 
 	printf ("model: %p %d\n", model, Model_NumClips (model));
-	if (!ent) {
-		ent = Scene_CreateEntity (scene);
-		trans = Entity_GetTransform (ent);
-		Transform_SetLocalPosition (trans, {0.5, 0.5, 0, 1});
-		add_target (ent);
-	}
-	Entity_SetModel (ent, model);
 	free_armature (arm);
 	arm = make_armature (model);
 	//Transform_SetLocalRotation (trans, { 0, 0, 1, 0});
@@ -606,10 +642,10 @@ static gizmo_node_t covered_step[] = {
 
 	auto clipinfo = Model_GetClipInfo (model, 0);
 	cliphandle_t clips[] = {
-		qfa_find_clip ("girl14:" + clipinfo.name),
+		qfa_find_clip ("girl11a:" + clipinfo.name),
 	};
 	int num_clips = countof (clips);
-	armhandle_t arma = qfa_find_armature ("girl14");
+	armhandle_t arma = qfa_find_armature ("girl11a");
 	animstate_t anim = qfa_create_animation (clips, num_clips, arma, nil);
 	for (int i = 0; i < num_clips; i++) {
 		qfa_set_clip_loop (anim, i, true);
@@ -618,16 +654,18 @@ static gizmo_node_t covered_step[] = {
 	[self setAnim:anim];
 
 	cliphandle_t root_clips[] = {
-		qfa_find_clip ("rm|girl14:" + clipinfo.name),
+		qfa_find_clip ("rm|girl11a:" + clipinfo.name),
 	};
-	armhandle_t root_arma = qfa_find_armature ("rm|girl14");
-	animstate_t root_anim = qfa_create_animation (root_clips, num_clips,
-												  root_arma, nil);
-	for (int i = 0; i < num_clips; i++) {
-		qfa_set_clip_loop (root_anim, i, true);
+	armhandle_t root_arma = qfa_find_armature ("rm|girl11a");
+	if (root_arma) {
+		animstate_t root_anim = qfa_create_animation (root_clips, num_clips,
+													  root_arma, nil);
+		for (int i = 0; i < num_clips; i++) {
+			qfa_set_clip_loop (root_anim, i, true);
+		}
+		qfa_reset_anim (root_anim);
+		[self setRootAnim:root_anim];
 	}
-	qfa_reset_anim (root_anim);
-	[self setRootAnim:root_anim];
 
 	return self;
 }
@@ -769,126 +807,6 @@ camera_lookat (point_t eye, point_t target, point_t up)
 	}
 }
 
-void
-camera_first_person (state_t *state)
-{
-	vector dpos = {};
-	dpos.x -= IN_UpdateAxis (cam_move_forward);
-	dpos.y -= IN_UpdateAxis (cam_move_side);
-	dpos.z -= IN_UpdateAxis (cam_move_up);
-
-	vector drot = {};
-	drot.x -= IN_UpdateAxis (cam_move_roll);
-	drot.y -= IN_UpdateAxis (cam_move_pitch);
-	drot.z -= IN_UpdateAxis (cam_move_yaw);
-
-	dpos *= 0.01;
-	drot *= ((float)M_PI / 360);
-	state.B = {
-		.bvect = (PGA.bvect) drot,
-		.bvecp = (PGA.bvecp) dpos,
-	};
-	//use a constant dt instead of actual frame time because the input
-	//values accumulate over time and thus already include frame time.
-	float h = 0.02f;
-	auto ds = dState (*state);
-	state.M += h * ds.M;
-	state.B += h * ds.B;
-	state.M = normalize (state.M);
-}
-
-void
-camera_mouse_first_person (state_t *state)
-{
-	vector dpos = {};
-	vector drot = {};
-	drot.y -= IN_UpdateAxis (mouse_y);
-	drot.z -= IN_UpdateAxis (mouse_x);
-
-	dpos *= 0.1;
-	drot *= ((float)M_PI / 36);
-	state.B = {
-		.bvect = (PGA.bvect) drot,
-		.bvecp = (PGA.bvecp) dpos,
-	};
-	//use a constant dt instead of actual frame time because the input
-	//values accumulate over time and thus already include frame time.
-	float h = 0.02f;
-	auto ds = dState (*state);
-	state.M += h * ds.M;
-	state.B += h * ds.B;
-	state.M = normalize (state.M);
-}
-
-static PGA.vec
-trackball_vector (vec2 xy)
-{
-	// xy is already in -1..1 order of magnitude range (ie, might be a bit
-	// over due to screen aspect)
-	// This is very similar to blender's trackball calculation (based on it,
-	// really)
-	float r = 1;
-	float t = r * r / 2;
-	float d = xy • xy;
-	vec3 vec = vec3 (xy, 0);
-	if (d < t) {
-		// less than 45 degrees around the sphere from the viewer facing
-		// pole, so map the mouse point to the sphere
-		vec.z = sqrt (r * r - d);
-	} else {
-		// beyond 45 degrees around the sphere from the veiwer facing
-		// pole, so the slope is rapidly approaching infinity or the mouse
-		// point may miss the sphere entirely, so instead map the mouse
-		// point to the hyperbolic cone pointed towards the viewer. The
-		// cone and sphere are tangential at the 45 degree latitude
-		vec.z = t / sqrt (d);
-	}
-	auto v = vec4(vec.zxy, 0);
-	auto p = (PGA.vec) v;
-	return p;
-}
-
-@overload float
-min (float x, float y)
-{
-	return (x) < (y) ? (x) : (y);
-}
-
-@overload float
-max (float x, float y)
-{
-	return (x) > (y) ? (x) : (y);
-}
-
-static float trackball_sensitivity = 10.0f;
-#define sphere_scale 1.0f
-void
-camera_mouse_trackball (state_t *state)
-{
-	vec2 delta = {
-		IN_UpdateAxis (mouse_x),
-		IN_UpdateAxis (mouse_y),
-	};
-	int         width = Draw_Width ();
-	int         height = Draw_Height ();
-
-	float       size = min (width, height) / 2;
-	vec2        center = vec2 (width, height) / 2;
-	vec2        m_start = mouse_start - center;
-	vec2        m_end = m_start + delta;
-	auto        start = trackball_vector (m_start / (size * sphere_scale));
-	auto        end = trackball_vector (m_end / (size * sphere_scale));
-	bivector_t  drot = (start ∧ end) * 0.5f;
-	@algebra(PGA) {
-		auto p = e123 + 5 * e032;
-		state.B = (drot • p) * p;
-	}
-	auto ds = dState (*state);
-	state.M += ds.M;
-	state.B += ds.B;
-	state.M = normalize (state.M);
-}
-
 static void
 color_window (void)
 {
@@ -959,91 +877,6 @@ color_window (void)
 		}
 	}
 }
-
-@interface MainMenu : UI_Object<FileWindow>
-{
-	imui_window_t *main_menu;
-	imui_window_t *file_menu;
-	imui_window_t *window_menu;
-	FileWindow *file_window;
-}
-+(imui_window_t *)create_menu:(string)name;
-+(MainMenu *) menu:(imui_ctx_t)ctx;
--draw;
-@end
-
-@implementation MainMenu
-+(imui_window_t *)create_menu:(string)name
-{
-	auto menu = IMUI_NewWindow (name);
-	IMUI_Window_SetOpen (menu, false);
-	IMUI_Window_SetGroupOffset (menu, 1);
-	IMUI_Window_SetReferenceGravity (menu, grav_northwest);
-	IMUI_Window_SetAnchorGravity (menu, grav_southwest);
-	IMUI_Window_SetAutoFit (menu, true);
-	return menu;
-}
-
-static void
-hs (imui_ctx_t ctx)
-{
-	IMUI_Spacer (ctx, imui_size_pixels, 10, imui_size_expand, 100);
-}
-
--initWithContext:(imui_ctx_t)ctx
-{
-	if (!(self = [super initWithContext:ctx])) {
-		return nil;
-	}
-	main_menu = IMUI_NewWindow ("MainMenu");
-	IMUI_Window_SetOpen (main_menu, true);
-	IMUI_Window_SetNoCollapse (main_menu, true);
-	IMUI_Window_SetAutoFit (main_menu, true);
-
-	file_menu = [MainMenu create_menu:"File"];
-	window_menu = [MainMenu create_menu:"Window"];
-
-	file_window = nil;
-
-	return self;
-}
-
-+(MainMenu *) menu:(imui_ctx_t)ctx
-{
-	return [[[MainMenu alloc] initWithContext:ctx] autorelease];
-}
-
--draw
-{
-	UI_MenuBar (main_menu) {
-		UI_Menu (file_menu) {
-			if (UI_MenuItem (sprintf ("Open##%p", file_menu))) {
-				file_window = [FileWindow openFile:"*.r" at:"."
-									ctx:imui_ctx];
-				[file_window setTarget:self];
-			}
-			if (UI_MenuItem (sprintf ("Quit##%p", file_menu))) {
-				quit_editor = true;
-			}
-		}
-		hs (IMUI_context);
-		UI_Menu (window_menu) {
-			[Window drawMenuItems];
-		}
-	}
-	return self;
-}
-
--(void)openFile:(string)path forSave:(bool)forSave
-{
-	if (forSave) {
-	} else {
-		[EditWindow openFile:path ctx:imui_ctx];
-		[file_window close];
-		file_window = nil;
-	}
-}
-@end
 
 void
 draw_2d (void)
@@ -1191,536 +1024,6 @@ arp_end (void)
 	autorelease_pool = nil;
 }
 
-msgbuf_t create_ico();
-msgbuf_t create_block(vec3 block_size);
-msgbuf_t create_quadsphere(bool do_colors);
-body_t calc_inertia_tensor (msgbuf_t model_buf, float inv_density);
-void leafnode();
-
-static void
-draw_principle_axes (motor_t M, bivector_t I)
-{
-	@algebra(PGA) {
-		auto o = M * e123 * ~M;
-		auto p1 = M * (e123 + e032 * I.bvecp[0]) * ~M;
-		auto p2 = M * (e123 + e013 * I.bvecp[1]) * ~M;
-		auto p3 = M * (e123 + e021 * I.bvecp[2]) * ~M;
-		Gizmo_AddCapsule ((vec4) o, (vec4) p1, 0.25, {1, 0, 0, 0.5});
-		Gizmo_AddCapsule ((vec4) o, (vec4) p2, 0.25, {0, 1, 0, 0.5});
-		Gizmo_AddCapsule ((vec4) o, (vec4) p3, 0.25, {0, 0, 1, 0.5});
-	}
-}
-
-state_t
-update_block_state(state_t state, body_t body, transform_t xform)
-{
-	float h = frametime / 100;
-	for (int i = 0; i < 100; i++) {
-		auto ds = dState (state, &body);
-		state.M += h * ds.M;
-		state.B += h * ds.B;
-		state.M = normalize (state.M);
-	}
-	return state;
-}
-
-state_t
-update_grav_state(state_t state, body_t body, transform_t xform)
-{
-	@algebra(PGA) {
-		float h = frametime / 100;
-		for (int i = 0; i < 100; i++) {
-			bivector_t grav = ⋆((~state.M * (-0.0981f * e03) * state.M));
-
-			auto ds = dState (state, grav, &body);
-			state.M += h * ds.M;
-			state.B += h * ds.B;
-			state.M = normalize (state.M);
-		}
-	}
-	return state;
-}
-
-void
-draw_axes (transform_t xform)
-{
-	//draw_principle_axes (state.M, body.I);
-	auto mat = Transform_GetWorldMatrix (xform);
-	vec4 x = mat[0];
-	vec4 y = mat[1];
-	vec4 z = mat[2];
-	vec4 p = mat[3];
-	Gizmo_AddCapsule (p, p + x, 0.025, vec4(1, 0, 0, 0.2));
-	Gizmo_AddCapsule (p, p + y, 0.025, vec4(0, 1, 0, 0.2));
-	Gizmo_AddCapsule (p, p + z, 0.025, vec4(0, 0, 1, 0.2));
-}
-
-void
-draw_collider (collider_t col, transform_t xform)
-{
-	mat4 mat = Transform_GetWorldMatrix(xform);
-	switch (col.type) {
-	case col_plane:
-	{
-		@algebra (PGA) {
-			auto plane = col.plane;
-			// Gizmo_AddPlane expects a point and two spanning vectors
-			// so it knows where the plane's origin is (for the grid)
-			auto P = (plane • e123) * plane;
-			auto p = mat * (vec4)(P / ⋆(e0 * P));
-			quaternion q;
-			if (plane[3] < 0) {
-				auto r = sqrt (plane * (plane_t)'0 0 -1 0');
-				q = [r.scalar, r.bvect];
-			} else {
-				auto r = sqrt (plane * (plane_t)'0 0 1 0');
-				q = [r.scalar, r.bvect];
-			}
-			auto s = vec4(q * mat[0].xyz, 0);
-			auto t = vec4(q * mat[1].xyz, 0);
-			auto c1= vec4(0.8, 1, 0.8, 0.5);
-			auto c2= vec4(0.8, 0, 0, 0.5);
-			auto c3= vec4(0, 0.8, 0, 0.5);
-			Gizmo_AddPlane (p, s, t, c1, c2, c3);
-		}
-		break;
-	}
-	case col_ball:
-		Gizmo_AddSphere (mat * vec4(col.ball.offset, 1), col.ball.radius,
-						 vec4(0.8, 0.4, 0.2, 0.9));
-		break;
-	case col_capsule:
-	{
-		vec4 p1 = vec4 (col.capsule.offset + col.capsule.axis, 1);
-		vec4 p2 = vec4 (col.capsule.offset - col.capsule.axis, 1);
-		Gizmo_AddCapsule (mat * p1, mat * p2, col.capsule.radius,
-						 vec4(0.2, 0.8, 0.9, 0.9));
-		break;
-	}
-	}
-}
-
-uint max_collider_ents = 0;
-uint num_collider_ents = 0;
-uint *collider_ents;
-
-typedef struct contact_s {
-	point_t world_a, world_b;
-	point_t local_a, local_b;
-	plane_t normal;
-	float separation;
-	float time;
-	uint a, b;
-} contact_t;
-
-typedef bool (*get_contact_t) (uint a, collider_t acol,
-							   uint b, collider_t bcol,
-							   contact_t *contact);
-
-bool get_contact_plane_ball (uint a, collider_t acol,
-							 uint b, collider_t bcol,
-							 contact_t *contact)
-{
-	state_t aS, bS;
-	body_t aB, bB;
-	get_component (a, qent_state, &aS);
-	get_component (b, qent_state, &bS);
-	get_component (a, qent_body, &aB);
-	get_component (b, qent_body, &bB);
-	auto aM = aS.M * aB.R;
-	auto bM = bS.M * bB.R;
-
-	auto p = aM * acol.plane * ~aM;
-	//FIXME bug in qfcc
-	//auto P = bM * (point_t) vec4(bcol.ball.offset, 1) * ~bM;
-	auto P = (point_t) vec4(bcol.ball.offset, 1);
-	P = bM * P * ~bM;
-	float r = bcol.ball.radius;
-	float d = p ∨ P;
-	if (d <= r) {
-		@algebra (PGA) {
-			auto n = p * e0123;
-			auto world_a = (P • p) * p;
-			auto world_b = P - r * n;
-			*contact = {
-				.world_a = world_a,
-				.world_b = world_b,
-				.local_a = ~aM * world_a * aM,
-				.local_b = ~bM * world_b * bM,
-				.normal = @undual (n),
-				.separation = d - r,
-				.a = a,
-				.b = b,
-			};
-			return true;
-		}
-	}
-	return false;
-}
-
-bool get_contact_plane_capsule (uint a, collider_t acol,
-								uint b, collider_t bcol,
-								contact_t *contact)
-{
-	state_t aS, bS;
-	body_t aB, bB;
-	get_component (a, qent_state, &aS);
-	get_component (b, qent_state, &bS);
-	get_component (a, qent_body, &aB);
-	get_component (b, qent_body, &bB);
-	auto aM = aS.M * aB.R;
-	auto bM = bS.M * bB.R;
-
-	auto p = aM * acol.plane * ~aM;
-	auto P = bM * (point_t) [bcol.capsule.offset, 1] * ~bM;
-	auto A = bM * (point_t) [bcol.capsule.axis, 0] * ~bM;
-	float r = bcol.capsule.radius;
-	float end = A ∨ p;
-	if (end < 0) {
-		P = P - A;
-	} else if (end > 0) {
-		P = P + A;
-	}
-	// If end == 0 (unlikely, but...) then P is the center
-	float d = p ∨ P;
-	if (d <= r) {
-		@algebra (PGA) {
-			auto n = p * e0123;
-			auto world_a = (P • p) * p;
-			auto world_b = P - r * n;
-			*contact = {
-				.world_a = world_a,
-				.world_b = world_b,
-				.local_a = ~aM * world_a * aM,
-				.local_b = ~bM * world_b * bM,
-				.normal = @undual (n),
-				.separation = d - r,
-				.a = a,
-				.b = b,
-			};
-			return true;
-		}
-	}
-	return false;
-}
-
-bool get_contact_ball_ball (uint a, collider_t acol,
-							uint b, collider_t bcol,
-							contact_t *contact)
-{
-	state_t aS, bS;
-	body_t aB, bB;
-	get_component (a, qent_state, &aS);
-	get_component (b, qent_state, &bS);
-	get_component (a, qent_body, &aB);
-	get_component (b, qent_body, &bB);
-	auto aM = aS.M * aB.R;
-	auto bM = bS.M * bB.R;
-
-	auto p = aM * acol.plane * ~aM;
-	//FIXME bug in qfcc
-	//auto P = bM * (point_t) vec4(acol.ball.offset, 1) * ~bM;
-	auto P = (point_t) vec4(acol.ball.offset, 1);
-	P = aM * P * ~aM;
-	auto Q = (point_t) vec4(bcol.ball.offset, 1);
-	Q = bM * Q * ~bM;
-	float r = acol.ball.radius + bcol.ball.radius;
-	auto d = P ∨ Q;
-	if (d • ~d <= r * r) {
-		@algebra (PGA) {
-			auto n = -(e0 * d) / sqrt (d • ~d);
-			auto world_a = P + n * acol.ball.radius;
-			auto world_b = Q - n * bcol.ball.radius;
-			*contact = {
-				.world_a = world_a,
-				.world_b = world_b,
-				.local_a = ~aM * world_a * aM,
-				.local_b = ~bM * world_b * bM,
-				.normal = @undual (n),
-				.separation = sqrt (d • ~d) - r,
-				.a = a,
-				.b = b,
-			};
-			return true;
-		}
-	}
-	return false;
-}
-
-bool get_contact_ball_capsule (uint aent, collider_t acol,
-							   uint bent, collider_t bcol,
-							   contact_t *contact)
-{
-	state_t aS, bS;
-	body_t aB, bB;
-	get_component (aent, qent_state, &aS);
-	get_component (bent, qent_state, &bS);
-	get_component (aent, qent_body, &aB);
-	get_component (bent, qent_body, &bB);
-	auto aM = aS.M * aB.R;
-	auto bM = bS.M * bB.R;
-
-	auto p = aM * (point_t) [acol.ball.offset,    1] * ~aM;
-	auto X = bM * (point_t) [bcol.capsule.offset, 1] * ~bM;
-	auto A = bM * (point_t) [bcol.capsule.axis,   0] * ~bM;
-
-	auto a = X - A;
-	auto b = X + A;
-
-	auto ap = (a∨p);
-	auto ab = (a∨b);
-	float h = (ap•ab)/(ab•ab);
-	h = h < 0 ? 0 : h > 1 ? 1 : h;
-	auto d = ap - h * ab;
-	float r = acol.ball.radius + bcol.capsule.radius;
-
-	if (d • ~d < r * r) {
-		@algebra (PGA) {
-			auto n = (e0 * d) / sqrt (d • ~d);
-			auto x = a + h * (b - a);
-			auto world_a = p + n * acol.ball.radius;
-			auto world_b = x - n * bcol.capsule.radius;
-			*contact = {
-				.world_a = world_a,
-				.world_b = world_b,
-				.local_a = ~aM * world_a * aM,
-				.local_b = ~bM * world_b * bM,
-				.normal = @undual (n),
-				.separation = sqrt (d • ~d) - r,
-				.a = aent,
-				.b = bent,
-			};
-			return true;
-		}
-	}
-
-	return false;
-}
-
-float
-clamp (float x, float a, float b)
-{
-	return max (a, min(x, b));
-}
-
-bool get_contact_capsule_capsule (uint aent, collider_t acol,
-								  uint bent, collider_t bcol,
-								  contact_t *contact)
-{
-	state_t aS, bS;
-	body_t aB, bB;
-	get_component (aent, qent_state, &aS);
-	get_component (bent, qent_state, &bS);
-	get_component (aent, qent_body, &aB);
-	get_component (bent, qent_body, &bB);
-	auto aM = aS.M * aB.R;
-	auto bM = bS.M * bB.R;
-
-	auto C1 = aM * (point_t) [acol.capsule.offset, 1] * ~aM;
-	auto A1 = aM * (point_t) [acol.capsule.axis,   0] * ~aM;
-	auto C2 = bM * (point_t) [bcol.capsule.offset, 1] * ~bM;
-	auto A2 = bM * (point_t) [bcol.capsule.axis,   0] * ~bM;
-
-	auto p1 = C1 - A1;
-	auto q1 = C1 + A1;
-	auto p2 = C2 - A2;
-	auto q2 = C2 + A2;
-
-	auto d1 = p1 ∨ q1;
-	auto d2 = p2 ∨ q2;
-	auto r  = p2 ∨ p1;
-	float a = d1 • ~d1;
-	float e = d2 • ~d2;
-	float f = d2 • ~r;
-
-	float s, t;
-
-	if (a <= 1e-6 && e <= 1e-6) {
-		// both segments are degenerate
-		s = t = 0;
-		printf ("both degenerate: %g %g %g %g\n", a, e, s, t);
-	} else if (a <= 1e-6) {
-		// first segment is degenerate
-		s = 0;
-		t = clamp (f / e, 0, 1);
-		printf ("first degenerate: %g %g %g\n", a, s, t);
-	} else {
-		float c = d1 • ~r;
-		if (e < 1e-3) {
-			// second segment is degenerate
-			t = 0;
-			s = clamp (-c / a, 0, 1);
-			printf ("second degenerate: %g %g %g\n", e, s, t);
-		} else {
-			float b = d1 • ~d2;
-			float den = a * e - b * b;
-			if (den) {
-				s = clamp ((b * f - c * e) / den, 0, 1);
-			} else {
-				s = 0;
-			}
-			t = (b * s + f) / e;
-			if (t < 0) {
-				t = 0;
-				s = clamp (-c / a, 0, 1);
-			} else {
-				t = 1;
-				s = clamp ((b - c) / a, 0, 1);
-			}
-		}
-	}
-
-	@algebra (PGA) {
-		auto c1 = p1 - e0 * d1 * s;
-		auto c2 = p2 - e0 * d2 * t;
-		//printf ("p1:%q q1:%q\n", p1, q1);
-		//printf ("p2:%q q2:%q\n", p2, q2);
-		//printf ("c1:%q c2:%q\n", c1, c2);
-		//printf ("[%v %v] [%v %v] %g %g\n",
-		//		d1.bvect, d1.bvecp, d2.bvect, d2.bvecp, s, t);
-
-		auto d = c1 ∨ c2;
-		float R = acol.capsule.radius + bcol.capsule.radius;
-
-		if (d • ~d < R * R) {
-			auto n = -(e0 * d) / sqrt (d • ~d);
-			auto world_a = c1 + n * acol.capsule.radius;
-			auto world_b = c2 - n * bcol.capsule.radius;
-			*contact = {
-				.world_a = world_a,
-				.world_b = world_b,
-				.local_a = ~aM * world_a * aM,
-				.local_b = ~bM * world_b * bM,
-				.normal = @undual (n),
-				.separation = sqrt (d • ~d) - R,
-				.a = aent,
-				.b = bent,
-			};
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool get_contact_ball_plane (uint a, collider_t acol,
-							 uint b, collider_t bcol,
-							 contact_t *contact)
-{
-	return get_contact_plane_ball (b, bcol, a, acol, contact);
-}
-
-bool get_contact_capsule_plane (uint a, collider_t acol,
-								uint b, collider_t bcol,
-								contact_t *contact)
-{
-	return get_contact_plane_capsule (b, bcol, a, acol, contact);
-}
-
-bool get_contact_capsule_ball (uint a, collider_t acol,
-							   uint b, collider_t bcol,
-							   contact_t *contact)
-{
-	return get_contact_ball_capsule (b, bcol, a, acol, contact);
-}
-
-get_contact_t get_contact[3][3] = {
-	//col_plane
-	{
-		nil,	// two infinite planes almost always collide, so ignore
-		get_contact_plane_ball,
-		get_contact_plane_capsule,
-	},
-	{
-		get_contact_ball_plane,
-		get_contact_ball_ball,
-		get_contact_ball_capsule,
-	},
-	{
-		get_contact_capsule_plane,
-		get_contact_capsule_ball,
-		get_contact_capsule_capsule,
-	},
-};
-
-void
-resolve_contact (contact_t *contact)
-{
-	state_t aS, bS;
-	body_t aB, bB;
-	get_component (contact.a, qent_state, &aS);
-	get_component (contact.a, qent_body, &aB);
-	get_component (contact.b, qent_state, &bS);
-	get_component (contact.b, qent_body, &bB);
-	float aM = aB.Ii.bvect[0];
-	float bM = bB.Ii.bvect[0];
-	float ad = contact.separation * aM / (aM + bM);
-	float bd = contact.separation * bM / (aM + bM);
-	@algebra (PGA) {
-		// separation is negative
-		auto aD = 1 - e0 * ad * contact.normal * 0.5;
-		auto bD = 1 + e0 * bd * contact.normal * 0.5;
-		aS.M = aD * aS.M;
-		bS.M = bD * bS.M;
-
-		auto Q = aD * contact.world_a * ~aD;
-		impact2(&aS, &bS, &aB, &bB, Q, contact.normal, 0.5, 0.8);
-	};
-	set_component (contact.a, qent_state, &aS);
-	set_component (contact.b, qent_state, &bS);
-}
-
-void
-update_physics (uint ent)
-{
-	state_t state;
-	body_t  body;
-	transform_t xform;
-
-	get_component (ent, qent_state, &state);
-	get_component (ent, qent_body, &body);
-	get_component (ent, qent_transform, &xform);
-
-	if (has_component (ent, qent_grav)) {
-		state = update_grav_state (state, body, xform);
-	} else {
-		state = update_block_state (state, body, xform);
-	}
-	set_component (ent, qent_state, &state);
-
-	auto M = state.M * body.R;
-	set_transform (M, xform);
-	draw_axes (xform);
-
-	if (has_component (ent, qent_collider)) {
-		//FIXME O(N^2)
-		collider_t col;
-		get_component (ent, qent_collider, &col);
-		draw_collider (col, xform);
-		for (uint i = 0; i < num_collider_ents; i++) {
-			uint        oent = collider_ents[i];
-			collider_t  ocol;
-			get_component (oent, qent_collider, &ocol);
-
-			auto gc = get_contact[col.type][ocol.type];
-			if (!gc) {
-				continue;
-			}
-			contact_t contact;
-			if (!gc (ent, col, oent, ocol, &contact)) {
-				continue;
-			}
-			state_t ostate;
-			body_t obody;
-			//printf ("%x %x %q %q %q %q %q %f\n", contact.a, contact.b,
-			//		contact.world_a, contact.world_b,
-			//		contact.local_a, contact.local_b,
-			//		contact.normal, contact.separation);
-			resolve_contact (&contact);
-		}
-		collider_ents[num_collider_ents++] = ent;
-	}
-}
 
 void
 draw_quadsphere_gizmos (int key_devid, int bspace, int subdiv,
@@ -1807,113 +1110,14 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 	return false;
 }
 
-@interface NodePanel : Window
-{
-	Array *buttons;
-	Array *axes;
-
-	ListView *virtView;
-}
-+panel:(imui_ctx_t)ctx buttons:(Array*)buttons axes:(Array*)axes;
-@end
-@implementation NodePanel
--initWithContext:(imui_ctx_t)ctx buttons:(Array*)buttons axes:(Array*)axes
-{
-	if (!(self = [super initWithContext:ctx name:"NodePanel"])) {
-		return nil;
-	}
-	self.buttons = [buttons retain];
-	self.axes = [axes retain];
-	//IMUI_Window_SetAutoFit (window, false);
-	int         width = Draw_Width ();
-	int         height = Draw_Height ();
-	IMUI_Window_SetPos (window, {50, 50});
-	IMUI_Window_SetSize (window, {width-100, height-100});
-
-	virtView = [[ListView list:"NodePanel:virt" ctx:ctx] retain];
-	[virtView setItems:buttons];
-	return self;
-}
-
--(void)dealloc
-{
-	[buttons release];
-	[axes release];
-	[super dealloc];
-}
-
-+panel:(imui_ctx_t)ctx buttons:(Array*)buttons axes:(Array*)axes
-{
-	return [[[self alloc] initWithContext:ctx buttons:buttons axes:axes] autorelease];
-}
-
--draw
-{
-	if (![super draw]) {
-		return nil;
-	}
-	int         width = Draw_Width ();
-	int         height = Draw_Height ();
-	UI_Panel(window) {
-		UI_Horizontal {
-			IMUI_Layout_SetYSize (IMUI_context, imui_size_expand, 100);
-			UI_SetFill (current_style.background.normal);
-			UI_Vertical {
-				IMUI_Layout_SetXSize (IMUI_context, imui_size_expand, 100);
-				UI_Label ("hi there");
-			}
-			[virtView draw];
-		};
-
-		uint dent = IMUI_ActiveItem (IMUI_context,
-									 imui_size_pixels, 25,
-									 imui_size_pixels, 25,
-									 sprintf ("source_%p", self));
-		IMUI_SetDropTarget (IMUI_context, true);
-		IMUI_SetViewPos (IMUI_context, {50, 50});
-		IMUI_SetViewFree (IMUI_context, {true, true});
-		IMUI_SetViewGravity (IMUI_context, grav_northwest);
-
-		int mode = IMUI_UpdateHotActive (IMUI_context);
-		IMUI_CheckButtonState (IMUI_context);
-		UI_SetFill (current_style.foreground.color[mode]);
-
-		uint tent = IMUI_ActiveItem (IMUI_context,
-									 imui_size_pixels, 25,
-									 imui_size_pixels, 25,
-									 sprintf ("target_%p", self));
-		IMUI_SetDropTarget (IMUI_context, true);
-		IMUI_SetViewPos (IMUI_context, {50, 50});
-		IMUI_SetViewFree (IMUI_context, {true, true});
-		IMUI_SetViewGravity (IMUI_context, grav_southeast);
-
-		mode = IMUI_UpdateHotActive (IMUI_context);
-		IMUI_CheckButtonState (IMUI_context);
-		UI_SetFill (current_style.foreground.color[mode]);
-
-		auto io = IMUI_GetIO (IMUI_context);
-		vec2 start = vec2(io.mouse - io.mouse_active) + 13;
-		vec2 end = vec2(io.mouse);
-		if (io.active == dent || io.active == tent) {
-			IMUI_SetDragId (IMUI_context, io.active);
-		}
-		io = IMUI_GetIO (IMUI_context);
-		if (!io.pressed && io.drag_id != ~0u) {
-			Painter_AddBezier (start, {(start.x + end.x)/2, start.y},
-							   {(start.x + end.x)/2, end.y}, end,
-							   3, {0.85, 0.5, 0.77, 1});
-		}
-	}
-	return self;
-}
-@end
-
 @interface EntityInit : Object
 {
 @public
 	string name;
 	string model;
 	string mesh;
+	string entqueue;
+	string texture;
 	bool mesh_flag;
 	bool grav_flag;
 	uint submesh_mask;
@@ -1946,125 +1150,6 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 }
 @end
 
-body_t
-calc_inertia_plane (collider_t collider, float invDensity)
-{
-	body_t body = {};//infinite mass
-	body.R = 1;
-	return body;
-}
-
-body_t
-calc_inertia_ball (collider_t collider, float invDensity)
-{
-	body_t body = {};//infinite mass
-	body.R = 1;
-	float r = collider.ball.radius;
-	if (!invDensity || !r) {
-		return body;
-	}
-	float vol = (4 * (float)M_PI * r * r * r / 3);
-	float I = 2 * r * r / 5;
-	invDensity /= vol;
-	body.Ii.bvect = '1 1 1';
-	body.Ii.bvecp = '1 1 1';
-	body.I.bvect = body.Ii.bvect / invDensity;
-	body.I.bvecp = body.Ii.bvecp * I / invDensity;
-	body.Ii.bvect *= invDensity;
-	body.Ii.bvecp *= invDensity / I;
-	return body;
-}
-
-vec3 abs(vec3 x)
-{
-	uvec3 m = x < '0 0 0';
-	return (vec3) ((uvec3) x & ~m) - (vec3) ((uvec3) x & m);
-}
-
-@overload
-vec3 max(vec3 a, vec3 b)
-{
-	uvec3 m = a < b;
-	return (vec3) ((uvec3) a & ~m) + (vec3) ((uvec3) b & m);
-}
-
-vec3 best_axis(vec3 dir, @out int ind)
-{
-	static const int indices[] = { 0, 0, 1, 0, 2, 2, 2, 2 };
-	static const vec3 axes[] = {
-		'1 0 0',
-		'0 1 0',
-		'0 0 1',
-	};
-	vec3 adir = abs (dir);
-	vec3 mdir = max (adir.yxz, adir.zxy);
-	uvec3 m = adir >= mdir;
-	ind = indices[@horiz(| '1 2 4' & m)];
-	vec3 a = axes[ind];
-	return a • dir < 0 ? -a : a;
-}
-
-body_t
-calc_inertia_capsule (collider_t collider, float invDensity)
-{
-	body_t body = {};//infinite mass
-	body.R = 1;
-	vec3 offset = collider.capsule.offset;
-	float r = collider.capsule.radius;
-	vec3 a = collider.capsule.axis;
-	if (!a) {
-		return calc_inertia_ball (collider, invDensity);
-	}
-	if (!invDensity || !r) {
-		return body;
-	}
-	// the centers of bases of the two end caps are at +/- a
-	float l = sqrt (a • a);
-	// hemisphere volume
-	float h_vol = (2 * (float)M_PI * r * r * r / 3);
-	// half cylinder volume
-	float c_vol = ((float)M_PI * r * r * l);
-	// half total volume
-	float vol = h_vol + c_vol;
-
-	// The moment of inertia of a solid hemisphere is the same about either
-	// the axis of symmetry or an axis through the diameter of its base (and
-	// also the same as that of a solid sphere of half the density).
-	float Iah = r * r * h_vol * 2 / 5;
-	// The moment of inertia of the cylinder about its axis of rotational
-	// symmetry.
-	float Iac = r * r * c_vol;
-	// The moment of inertia of the cylinder about its axis cross the diameter
-	// of its base (same as for one through the center but half the density).
-	float Itc = (r * r * 3 + l * l * 2) * c_vol / 6;
-	// The center of mass of the hemisphere is at 3/8*r, but applying
-	// the parallel axis theorem cancels things out.
-	float Ith = Iah + l * (l + 3 * r / 4) * h_vol;
-	float Ia = 2 * (Iah + Iac);
-	float It = 2 * (Ith + Itc);
-	int ind;
-	vec3 axis = best_axis (a, ind);
-	vec3 Ivec;
-	Ivec[ind] = Ia / invDensity;
-	Ivec[(ind + 1) % 3] = It / invDensity;
-	Ivec[(ind + 2) % 3] = It / invDensity;
-	body.I.bvect = (PGA.bvect)'2 2 2' * vol / invDensity;
-	body.Ii.bvect = (PGA.bvect)'0.5 0.5 0.5' * invDensity / vol;
-	body.I.bvecp = (PGA.bvecp)Ivec;
-	body.Ii.bvecp = (PGA.bvecp)(1/Ivec);
-
-	auto R = sqrt ((plane_t)[a, 0] * (plane_t)[axis, 0]);
-	auto T = 1 + (PGA.bvecp)offset / 2;
-
-	body.R = R * T;
-
-	printf ("%v %v\n", body.I.bvect, body.I.bvecp);
-	printf ("%v %v\n", body.Ii.bvect, body.Ii.bvecp);
-	printf ("%g %v %v %g\n", body.R.scalar, body.R.bvect, body.R.bvecp, body.R.qvec);
-
-	return body;
-}
-
 void
 load_scene (plitem_t *scene_item, scene_t scene)
 {
@@ -2087,6 +1172,8 @@ load_scene (plitem_t *scene_item, scene_t scene)
 									 ent_init.rotation, ent_init.position);
 		msgbuf_t mesh = nil;
 		model_t model = nil;
+		uint entqueue = Scene_Entqueue (scene, ent_init.entqueue);
+		uint texture = find_resource (ent_init.texture);
 		switch (ent_init.mesh) {
 		case "create_quadsphere":
 			mesh = create_quadsphere (ent_init.mesh_flag);
@@ -2168,7 +1255,7 @@ load_scene (plitem_t *scene_item, scene_t scene)
 			set_component (e, qent_state, &state);
 			set_update (e, update_physics);
 		}
-		if (ent_init.grav_flag) {
+		if (e != ~0u && ent_init.grav_flag) {
 			set_component (e, qent_grav, &ent_init.grav_flag);
 		}
 		if (mesh) {
@@ -2178,6 +1265,12 @@ load_scene (plitem_t *scene_item, scene_t scene)
 		if (model) {
 			Entity_SetModel (ent, model);
 			Entity_SetSubmeshMask (ent, ent_init.submesh_mask);
+			if (entqueue != ~0u) {
+				Entity_SetEntqueue (ent, entqueue);
+			}
+			if (texture != ~0u) {
+				Entity_SetTextureID (ent, texture);
+			}
 		}
 		if (ent_init.target) {
 			add_target (ent);
@@ -2190,28 +1283,10 @@ load_scene (plitem_t *scene_item, scene_t scene)
 	collider_ents = obj_malloc (sizeof (uint) * max_collider_ents);
 }
 
-int
-main (int argc, string *argv)
+void
+create_pbr_stuff (uint skyid)
 {
-	float early_exit = 0;
-	if (argc > 1) {
-		early_exit = strtof (argv[1], nil);
-	}
-
-	arp_start ();
-
-	plitem_t *config = PL_GetPropertyList (render_graph_cfg);
-	if (!config) {
-		return 1;
-	}
-	init_graphics (config, qent_comp_count, qwaq_components);
-	PL_Release (config);
-
 	Render_RunJob ("pbr_brdf");
-
-	uint pixpal = load_resource ("pixpal.meta");
-	uint skyid = load_resource ("eso0932a.meta");
-
 	Render_SetBlackboardVar ("sampleCount", 1024);
 	Render_SetBlackboardVar ("conv_size", uvec2(512,512));
 	if (res_is_cubemap (skyid)) {
@@ -2232,6 +1307,30 @@ main (int argc, string *argv)
 	printf ("tex_ibl: %08x tex_lut: %08x\n", tex_ibl, tex_lut);
 	Render_SetJobBlackboardVar ("main", "pbr_irradiance", tex_ibl);
 	Render_SetJobBlackboardVar ("main", "pbr_brdf_lut", tex_lut);
+}
+
+int
+main (int argc, string *argv)
+{
+	float early_exit = 0;
+	if (argc > 1) {
+		early_exit = strtof (argv[1], nil);
+	}
+
+	arp_start ();
+
+	plitem_t *config = PL_GetPropertyList (render_graph_cfg);
+	if (!config) {
+		return 1;
+	}
+	init_graphics (config, qent_comp_count, qwaq_components);
+	PL_Release (config);
+
+	//ImphenziaPixPal
+	uint pixpal = load_resource ("pixpal.meta");
+	uint skyid = load_resource ("eso0932a.meta");
+
+	create_pbr_stuff (skyid);
 
 	IN_SendConnectedDevices ();
 	setup_bindings ();
@@ -2280,26 +1379,12 @@ main (int argc, string *argv)
 
 	main_menu = [[MainMenu menu:imui_ctx] retain];
 
-	//arp_end ();
-	//arp_start ();
-	//auto buttons = IN_ListButtons ();
-	//auto button_set = [Array array];
-	//for (auto b = buttons; *b; b++) {
-	//	[button_set addObject:[VirtualInput button:*b ctx:imui_ctx]];
-	//}
-	//auto axes = IN_ListAxes ();
-	//auto axis_set = [Array array];
-	//for (auto a = axes; *a; a++) {
-	//	[axis_set addObject:[VirtualInput axis:*a ctx:imui_ctx]];
-	//}
-	//auto node_panel = [[NodePanel panel:imui_ctx buttons:button_set axes:axis_set] retain];
 	arp_end ();
 	arp_start ();
 
 	auto main_window = [[MainWindow window:imui_ctx] retain];
+	auto cam_window = [[CamWindow camWindow:imui_ctx] retain];
 	set_sky_id (skyid);
-
-	[main_window setModel:Model_Load ("progs/girl14.iqm")];
 
 	load_scene (PL_GetPropertyList (scene_plist), [main_window scene]);
 
@@ -2308,52 +1393,25 @@ main (int argc, string *argv)
 	[player setCamera:playercam];
 	[main_window addCamera:playercam];
 
-	#define SUBDIV 5
-	auto quadsphere = create_quadsphere(false);
 	int planetary_queue = Scene_Entqueue ([main_window scene], "planetary");
 	int pixpal_queue = Scene_Entqueue ([main_window scene], "pixpal");
 
-	entity_t moon_ent = Scene_CreateEntity ([main_window scene]);
-	add_target (moon_ent);
-	Entity_SetModel (moon_ent, Model_LoadMesh ("quadsphere", quadsphere));
-	if (planetary_queue >= 0) {
-		Entity_SetEntqueue (moon_ent, planetary_queue);
-	}
-	Entity_SetSubmeshMask (moon_ent, ~(1<<4));
-	Entity_SetShadowFlags (moon_ent, true, true, false);
-	Transform_SetLocalPosition(Entity_GetTransform (moon_ent), { -171550000.0, -245760020.0, 230400020.0, 1});
-	Transform_SetLocalScale(Entity_GetTransform (moon_ent), { 1738e3, 1738e3, 1738e3, 1});
+	//[main_window setModel:Model_Load ("progs/girl14.iqm")];
 
-	entity_t QuadSphere_ent = Scene_CreateEntity ([main_window scene]);
-	add_target (QuadSphere_ent);
-	Entity_SetModel (QuadSphere_ent, Model_LoadMesh ("quadsphere", quadsphere));
-	if (planetary_queue >= 0) {
-		Entity_SetEntqueue (QuadSphere_ent, planetary_queue);
-	}
-	Entity_SetSubmeshMask (QuadSphere_ent, ~(1<<5));
-	Entity_SetShadowFlags (QuadSphere_ent, true, true, false);
-	Entity_SetTexture (QuadSphere_ent, "8k_earth_daymap");
-	Transform_SetLocalPosition(Entity_GetTransform (QuadSphere_ent), { 12770e3, -20, 20, 1});
-	Transform_SetLocalScale(Entity_GetTransform (QuadSphere_ent), { 6370e3, 6370e3, 6370e3, 1});
+	auto earth_ent = create_orrery (planetary_queue, [main_window scene]);
 
-	entity_t Plane_ent = Scene_CreateEntity ([main_window scene]);
-	Entity_SetModel (Plane_ent, Model_Load ("progs/Plane.mdl"));
-	Transform_SetLocalPosition (Entity_GetTransform (Plane_ent), {5, 5, 1, 1});
-	Entity_SetEntqueue (Plane_ent, pixpal_queue);
-	Entity_SetTextureID (Plane_ent, pixpal);
+	auto emitter = Scene_CreateEntity ([main_window scene]);
+	Transform_SetLocalTransform (Entity_GetTransform (emitter),
+								 {1, 1, 1, 1},
+									 {0, 0.707, 0, 0.707}, { 3, 0, 3, 1});
+	Entity_AttachPlane (emitter);
+	Emitter_SetSolid (emitter, 0.05);
+	Emitter_SetSquare (emitter, false);
+	Emitter_SetVelocity (emitter, '0.5 0.5 0.5');
+	Emitter_SetLive (emitter, 1000);
+	//need to fix palette array/non-array in vulkan
+	//Particles_SetPalette ([main_window scene], pixpal, 128);
 
-	qf_mesh_t qsmesh;
-	vec4 stuff = {};
-	{
-		qf_model_t model;
-		vec4 stuff = {};
-		MsgBuf_ReadBytes (quadsphere, &model, sizeof (model));
-		int offset = model.meshes.offset + sizeof(qsmesh) * SUBDIV;
-		MsgBuf_ReadSeek (quadsphere, offset, msg_set);
-		MsgBuf_ReadBytes (quadsphere, &qsmesh, sizeof (qsmesh));
-		qsmesh.adjacency.offset += offset;
-		qsmesh.vertices.offset += offset;
-	}
 	//create_cube ();
 	while (true) {
 		num_collider_ents = 0;
@@ -2375,7 +1433,9 @@ main (int argc, string *argv)
 			}
 		}
 
-		update_orrery (QuadSphere_ent, realtime);
+		Gizmo_AddSphere ({0,0,3,1}, 0.25, vec4(0,1,0,0.2));
+
+		update_orrery (earth_ent, realtime);
 
 		//update_cube(frametime);
 		//draw_cube();
@@ -2385,12 +1445,12 @@ main (int argc, string *argv)
 		[main_window nextClip:frametime];
 		[main_window updateCamera];
 
-		if (0) {
-			auto xform = Entity_GetTransform (QuadSphere_ent);
-			mat4 mat = Transform_GetWorldMatrix(xform);
-			draw_quadsphere_gizmos (key_devid, bspace, SUBDIV, quadsphere,
-									qsmesh, mat);
-		}
+		//if (0) {
+		//	auto xform = Entity_GetTransform (QuadSphere_ent);
+		//	mat4 mat = Transform_GetWorldMatrix(xform);
+		//	draw_quadsphere_gizmos (key_devid, bspace, SUBDIV, quadsphere,
+		//							qsmesh, mat);
+		//}
 
 		leafnode ();
 

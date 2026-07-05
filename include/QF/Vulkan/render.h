@@ -186,6 +186,7 @@ typedef struct qfv_attachmentsetinfo_s {
 typedef struct qfv_pipelineinfo_s {
 	vec4f_t     color;
 	const char *name;
+	int         line;
 	bool        disabled;
 	uint32_t    num_tasks;
 	qfv_taskinfo_t *tasks;
@@ -715,13 +716,15 @@ qfv_framebufferinfo_t *QFV_FindFramebufferInfo (vulkan_ctx_t *ctx,
 	__attribute__((pure));
 qfv_bufferinfo_t *QFV_FindBufferInfo (vulkan_ctx_t *ctx, const char *name)
 	__attribute__((pure));
+VkBuffer QFV_GetBuffer (vulkan_ctx_t *ctx, qfv_bufferinfo_t *buffer_info)
+	__attribute__((pure));
 qfv_imageinfo_t *QFV_FindImageInfo (vulkan_ctx_t *ctx, const char *name)
 	__attribute__((pure));
-VkImage QFV_GetImage (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_infO)
+VkImage QFV_GetImage (vulkan_ctx_t *ctx, qfv_imageinfo_t *image_info)
 	__attribute__((pure));
 qfv_imageviewinfo_t *QFV_FindImageViewInfo (vulkan_ctx_t *ctx, const char *name)
 	__attribute__((pure));
-VkImageView QFV_GetImageView (vulkan_ctx_t *ctx, qfv_imageviewinfo_t *view_infO)
+VkImageView QFV_GetImageView (vulkan_ctx_t *ctx, qfv_imageviewinfo_t *view_info)
 	__attribute__((pure));
 VkDeviceAddress QFV_GetBufferAddress (vulkan_ctx_t *ctx,
 									  const char *name, uint32_t frame)

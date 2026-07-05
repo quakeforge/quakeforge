@@ -421,7 +421,7 @@ bi (Qgetline)
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 	const char *s;
 
-	s = Qgetline (h->file, res->buffer);
+	s = Qgetline (h->file);
 	if (s)
 		RETURN_STRING (pr, s);
 	else

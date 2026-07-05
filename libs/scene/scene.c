@@ -38,6 +38,7 @@
 #include "QF/animation.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
+#include "QF/particle.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
 
@@ -381,6 +382,7 @@ Scene_NewScene (scene_system_t *extra_systems)
 		extra->system->reg = scene->reg;
 		extra->system->base = base;
 	}
+	R_Particles_Init (scene->reg);//FIXME
 	ECS_CreateComponentPools (scene->reg);
 
 	scene->worldmodel = &empty_world;

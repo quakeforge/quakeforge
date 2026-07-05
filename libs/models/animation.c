@@ -142,13 +142,13 @@ qfa_item_get_hash (const void *_item, void *data)
 	return hash;
 }
 
-static int
+static bool
 qfa_item_cmp (const void *_a, const void *_b, void *data)
 {
 	qfZoneScoped (true);
 	const qfa_item_t *a = _a;
 	const qfa_item_t *b = _b;
-	int cmp = strcmp (a->mod->name, b->mod_name) == 0;
+	bool cmp = strcmp (a->mod->name, b->mod_name) == 0;
 	if (cmp && a->name && b->name) {
 		cmp = strcmp (a->name, b->name) == 0;
 	}

@@ -11,5 +11,8 @@ if test "x$HAVE_BACKTRACE" != "xyes"; then
 		 BACKTRACE_LIBS=-lbacktrace],
 		[HAVE_BACKTRACE=no])
 fi
+if test "x$HAVE_BACKTRACE" = "xyes"; then
+	AC_DEFINE([HAVE_BACKTRACE], [1], [Define if you have backtrace])
+fi
 AC_SUBST(BACKTRACE_LIBS)
 AC_SUBST(BACKTRACE_CFLAGS)

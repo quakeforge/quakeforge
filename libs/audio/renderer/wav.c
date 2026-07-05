@@ -57,14 +57,15 @@ typedef struct {
 static sfxbuffer_t *
 wav_callback_load (sfxblock_t *block)
 {
-	const sfx_t *sfx = block->sfx;
+	qfZoneScoped (true);
+	const sfx_t *sfx = block->base.sfx;
 	const char *name = (const char *) block->file;
 	QFile      *file;
 	int         len, fdata_ofs;
 	byte       *data;
 	float      *fdata;
 	sfxbuffer_t *buffer = 0;
-	wavinfo_t  *info = &block->wavinfo;
+	wavinfo_t  *info = &block->base.wavinfo;
 
 	file = QFS_FOpenFile (name);
 	if (!file)
@@ -102,6 +103,7 @@ bail:
 static void
 wav_block (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 {
+	qfZoneScoped (true);
 	Qclose (file);
 	SND_SFX_Block (sfx, realname, info, wav_callback_load);
 }
@@ -109,8 +111,9 @@ wav_block (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 static long
 wav_stream_read (void *file, float **buf)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = (sfxstream_t *) file;
-	wavinfo_t  *info = &stream->wavinfo;
+	wavinfo_t  *info = &stream->base.wavinfo;
 	wav_file_t *wf = (wav_file_t *) stream->file;
 	int         res;
 	int         len = FRAMES * info->channels * info->width;
@@ -121,7 +124,7 @@ wav_stream_read (void *file, float **buf)
 
 	res = Qread (wf->file, data, len);
 	if (res <= 0) {
-		stream->error = 1;
+		stream->base.error = true;
 		return 0;
 	}
 	res /= (info->channels * info->width);
@@ -133,7 +136,8 @@ wav_stream_read (void *file, float **buf)
 static int
 wav_stream_seek (sfxstream_t *stream, int pos)
 {
-	wavinfo_t  *info = &stream->wavinfo;
+	qfZoneScoped (true);
+	wavinfo_t  *info = &stream->base.wavinfo;
 	wav_file_t *wf = (wav_file_t *) stream->file;
 	pos *= info->width * info->channels;
 	pos += info->dataofs;
@@ -143,6 +147,7 @@ wav_stream_seek (sfxstream_t *stream, int pos)
 static void
 wav_stream_close (sfxbuffer_t *buffer)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = buffer->stream;
 	wav_file_t *wf = (wav_file_t *) stream->file;
 
@@ -156,6 +161,7 @@ wav_stream_close (sfxbuffer_t *buffer)
 static sfxbuffer_t *
 wav_stream_open (sfx_t *sfx)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = sfx->stream;
 	QFile      *file;
 	wav_file_t *wf;
@@ -173,6 +179,7 @@ wav_stream_open (sfx_t *sfx)
 static void
 wav_stream (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 {
+	qfZoneScoped (true);
 	Qclose (file);
 	SND_SFX_Stream (sfx, realname, info, wav_stream_open);
 }
@@ -180,6 +187,7 @@ wav_stream (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 static wavinfo_t
 wav_get_info (QFile *file)
 {
+	qfZoneScoped (true);
 	riff_t     *riff;
 	riff_d_chunk_t **ck;
 
@@ -278,14 +286,15 @@ bail:
 	return info;
 }
 
-int
+bool
 SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 {
+	qfZoneScoped (true);
 	wavinfo_t   info;
 
 	info = wav_get_info (file);
 	if (!info.rate) {
-		return -1;
+		return false;
 	}
 
 	if (info.frames / info.rate < 3) {
@@ -295,5 +304,5 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 		Sys_MaskPrintf (SYS_snd, "stream %s\n", realname);
 		wav_stream (sfx, realname, file, info);
 	}
-	return 0;
+	return true;
 }

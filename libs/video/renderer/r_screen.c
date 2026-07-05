@@ -40,10 +40,10 @@
 #include "QF/draw.h"
 #include "QF/dstring.h"
 #include "QF/image.h"
+#include "QF/particle.h"
 #include "QF/png.h"
 #include "QF/pcx.h"
 #include "QF/quakefs.h"
-#include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -240,6 +240,7 @@ render_side (int side)
 void
 SCR_UpdateScreen_legacy (SCR_Func *scr_funcs, void *scrf_data)
 {
+	R_RunParticles (r_data->frametime);
 	if (scr_fisheye && !fisheye_cube_map) {
 		fisheye_cube_map = r_funcs->create_cube_map (r_data->vid->height);
 	}
@@ -294,11 +295,11 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs,
 				  void *scrf_data)
 {
 	qfZoneNamed (zone, true);
-	R_RunParticles (r_data->frametime);
 
 	if (scr_skipupdate || !scr_initialized) {
 		return;
 	}
+	R_Particles_RunEmitters (r_data->frametime);
 
 	if (r_timegraph || r_speeds || r_dspeeds) {
 		r_time1 = Sys_DoubleTime ();
@@ -503,6 +504,7 @@ void
 SCR_NewScene (scene_t *scene)
 {
 	qfZoneScoped (true);
+	R_Particles_NewScene (scene);
 	r_refdef.scene = scene;
 	auto hunk = r_refdef.hunk;
 	if (scene) {

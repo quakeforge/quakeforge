@@ -51,7 +51,6 @@
 #include "QF/darray.h"
 #define IMPLEMENT_INPUT_Funcs
 #include "QF/input.h"
-#include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/mathlib.h"
 #include "QF/plist.h"
@@ -59,6 +58,7 @@
 #include "QF/vid.h"
 
 #include "QF/input/event.h"
+#include "QF/input/gamepad.h"
 
 #include "qfselect.h"
 
@@ -219,6 +219,36 @@ IN_RemoveDevice (int devid)
 	IE_Send_Event (&event);
 
 	in_devices.a[devid].device = 0;
+}
+
+in_driver_t *
+IN_GetDriver (int driverid)
+{
+	if ((size_t) driverid >= in_drivers.size) {
+		Sys_Error ("IN_RemoveDevice: invalid driverid: %d", driverid);
+	}
+
+	return &in_drivers.a[driverid].driver;
+}
+
+void *
+IN_GetDriverData (int driverid)
+{
+	if ((size_t) driverid >= in_drivers.size) {
+		Sys_Error ("IN_RemoveDevice: invalid driverid: %d", driverid);
+	}
+
+	return in_drivers.a[driverid].data;
+}
+
+in_device_t *
+IN_GetDevice (int deviceid)
+{
+	if ((size_t) deviceid >= in_devices.size) {
+		Sys_Error ("IN_RemoveDevice: invalid deviceid: %d", deviceid);
+	}
+
+	return &in_devices.a[deviceid];
 }
 
 void
@@ -570,6 +600,7 @@ IN_Init (memhunk_t *hunk)
 {
 	qfZoneScoped (true);
 	Sys_RegisterShutdown (IN_shutdown, 0);
+	IN_Gamepad_Init ();
 	IN_Event_Init ();
 	IN_ButtonInit ();
 	IN_AxisInit ();
@@ -617,4 +648,9 @@ IN_ClearStates (void)
 #ifdef HAVE_EVDEV
 extern int in_evdev_force_link;
 static __attribute__((used)) int *evdev_force_link = &in_evdev_force_link;
+#endif
+
+#ifdef HAVE_XINPUT
+extern int in_xinput_force_link;
+static __attribute__((used)) int *xinput_force_link = &in_xinput_force_link;
 #endif

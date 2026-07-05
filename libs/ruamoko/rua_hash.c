@@ -132,7 +132,7 @@ bi_get_hash (const void *key, void *_ht)
 	return hash;
 }
 
-static int
+static bool
 bi_compare (const void *key1, const void *key2, void *_ht)
 {
 	qfZoneScoped (true);
@@ -213,7 +213,7 @@ bi_Hash_SetHashCompare (progs_t *pr, void *_res)
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 	uintptr_t   (*gh)(const void*,void*);
-	int         (*cmp)(const void*,const void*,void*);
+	bool        (*cmp)(const void*,const void*,void*);
 
 	ht->gh = P_FUNCTION (pr, 1);
 	ht->cmp = P_FUNCTION (pr, 2);

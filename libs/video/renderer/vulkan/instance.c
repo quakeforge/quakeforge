@@ -29,7 +29,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "QF/backtrace.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/mathlib.h"
 #include "QF/va.h"
 
@@ -126,6 +128,10 @@ static void
 debug_breakpoint (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity)
 {
 	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+		dstring_t *msg = dstring_newstr ();
+		BT_backtrace (msg, 0);
+		fprintf (stderr, "%s\n", msg->str);
+
 		_exit(1);
 	}
 }

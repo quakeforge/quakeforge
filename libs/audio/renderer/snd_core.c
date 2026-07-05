@@ -52,18 +52,18 @@
 
 #include "snd_internal.h"
 
-static int      snd_blocked = 0;
+static int      snd_blocked = 0;			// counter!
 
 static unsigned soundtime;					// sample PAIRS
 
-static int      sound_started = 0;
+static bool     sound_started = false;
 
 
 float snd_volume;
 static cvar_t snd_volume_cvar = {
 	.name = "volume",
 	.description =
-		"Set the volume for sound playback",
+		"Set the volume for sound playback.",
 	.default_value = "0.7",
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_float, .value = &snd_volume },
@@ -72,7 +72,7 @@ static int nosound;
 static cvar_t nosound_cvar = {
 	.name = "nosound",
 	.description =
-		"Set to turn sound off",
+		"Set to turn sound off.",
 	.default_value = "0",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &nosound },
@@ -81,7 +81,7 @@ static float snd_mixahead;
 static cvar_t snd_mixahead_cvar = {
 	.name = "snd_mixahead",
 	.description =
-		"Delay time for sounds",
+		"Delay time for sounds.",
 	.default_value = "0.1",
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_float, .value = &snd_mixahead },
@@ -91,7 +91,7 @@ static cvar_t snd_noextraupdate_cvar = {
 	.name = "snd_noextraupdate",
 	.description =
 		"Toggles the correct value display in host_speeds. Usually messes up "
-		"sound playback when in effect",
+		"sound playback when in effect.",
 	.default_value = "0",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &snd_noextraupdate },
@@ -100,7 +100,7 @@ static int snd_show;
 static cvar_t snd_show_cvar = {
 	.name = "snd_show",
 	.description =
-		"Toggles display of sounds currently being played",
+		"Toggles display of sounds currently being played.",
 	.default_value = "0",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &snd_show },
@@ -115,12 +115,13 @@ static snd_t    snd = {
 	.finish_channels = SND_FinishChannels,
 	.paint_channels  = SND_PaintChannels,
 };
-static int      snd_shutdown = 0;
+static bool     snd_shutdown = false;
 
 static void
 s_xfer_paint_buffer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
 					 float volume)
 {
+	qfZoneScoped (true);
 	int			out_idx, out_max, step, val;
 	float	   *p;
 
@@ -166,25 +167,24 @@ s_xfer_paint_buffer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
 static void
 s_clear_buffer (snd_t *snd)
 {
-	int			clear, i;
-	int         count;
-
+	qfZoneScoped (true);
 	if (!sound_started || !snd || !snd->buffer)
 		return;
 
-	if (snd->samplebits == 8)
-		clear = 0x80;
-	else
-		clear = 0;
+	int zero = 0;
+	if (snd->samplebits == 8) {
+		zero = 0x80;
+	}
 
-	count = snd->frames * snd->channels * snd->samplebits / 8;
-	for (i = 0; i < count; i++)
-		snd->buffer[i] = clear;
+	int count = snd->frames * snd->channels * snd->samplebits / 8;
+	for (int i = 0; i < count; i++)
+		snd->buffer[i] = zero;
 }
 
 static void
 s_stop_all_sounds (void)
 {
+	qfZoneScoped (true);
 	SND_StopAllSounds (&snd);
 	SND_ScanChannels (&snd, snd.threaded);
 	s_clear_buffer (&snd);
@@ -195,6 +195,7 @@ s_stop_all_sounds (void)
 static void
 s_get_soundtime (void)
 {
+	qfZoneScoped (true);
 	int			frames, framepos;
 	static int	buffers, oldframepos;
 
@@ -223,6 +224,7 @@ s_get_soundtime (void)
 static void
 s_update_ (void)
 {
+	qfZoneScoped (true);
 	unsigned int	endtime, samps;
 
 	if (!sound_started || (snd_blocked > 0))
@@ -254,6 +256,7 @@ s_update_ (void)
 static void
 s_update (transform_t ear, const byte *ambient_sound_level)
 {
+	qfZoneScoped (true);
 	if (!sound_started || (snd_blocked > 0))
 		return;
 
@@ -266,13 +269,14 @@ s_update (transform_t ear, const byte *ambient_sound_level)
 	if (snd_output_data->model == som_push) {
 		// mix some sound
 		s_update_ ();
-		SND_ScanChannels (&snd, 0);
+		SND_ScanChannels (&snd, false);
 	}
 }
 
 static void
 s_extra_update (void)
 {
+	qfZoneScoped (true);
 	if (snd_output_data->model == som_push) {
 		if (!sound_started || snd_noextraupdate)
 			return;							// don't pollute timings
@@ -283,6 +287,7 @@ s_extra_update (void)
 static void
 s_block_sound (void)
 {
+	qfZoneScoped (true);
 	if (++snd_blocked == 1) {
 		snd_output_funcs->block_sound (&snd);
 		s_clear_buffer (&snd);
@@ -292,6 +297,7 @@ s_block_sound (void)
 static void
 s_unblock_sound (void)
 {
+	qfZoneScoped (true);
 	if (!snd_blocked)
 		return;
 
@@ -306,6 +312,7 @@ s_unblock_sound (void)
 static void
 s_soundinfo_f (void)
 {
+	qfZoneScoped (true);
 	if (!sound_started) {
 		Sys_Printf ("sound system not started\n");
 		return;
@@ -326,13 +333,18 @@ s_soundinfo_f (void)
 static void
 s_stop_all_sounds_f (void)
 {
+	qfZoneScoped (true);
 	s_stop_all_sounds ();
 }
 
 static void
 s_startup (void)
 {
+	qfZoneScoped (true);
 	if (!SND_Memory_Init ()) {
+		return;
+	}
+	if (!SND_Fill_Init ()) {
 		return;
 	}
 	if (!snd_output_funcs->init (&snd)) {
@@ -342,12 +354,13 @@ s_startup (void)
 	if (!snd.xfer)
 		snd.xfer = s_xfer_paint_buffer;
 
-	sound_started = 1;
+	sound_started = true;
 }
 
 static void
 s_snd_force_unblock (void)
 {
+	qfZoneScoped (true);
 	snd_blocked = 1;
 	s_unblock_sound ();
 }
@@ -355,11 +368,12 @@ s_snd_force_unblock (void)
 static void
 s_init_cvars (void)
 {
-	Cvar_Register (&nosound_cvar, 0, 0);
-	Cvar_Register (&snd_volume_cvar, 0, 0);
-	Cvar_Register (&snd_mixahead_cvar, 0, 0);
-	Cvar_Register (&snd_noextraupdate_cvar, 0, 0);
-	Cvar_Register (&snd_show_cvar, 0, 0);
+	qfZoneScoped (true);
+	Cvar_Register (&nosound_cvar, nullptr, nullptr);
+	Cvar_Register (&snd_volume_cvar, nullptr, nullptr);
+	Cvar_Register (&snd_mixahead_cvar, nullptr, nullptr);
+	Cvar_Register (&snd_noextraupdate_cvar, nullptr, nullptr);
+	Cvar_Register (&snd_show_cvar, nullptr, nullptr);
 
 	SND_Memory_Init_Cvars ();
 }
@@ -367,6 +381,7 @@ s_init_cvars (void)
 static void
 s_init (void)
 {
+	qfZoneScoped (true);
 	snd_output_funcs = snd_render_data.output->functions->snd_output;
 	snd_output_data = snd_render_data.output->data->snd_output;
 	snd_render_data.soundtime = &soundtime;
@@ -381,8 +396,9 @@ s_init (void)
 
 	s_startup ();
 
-	if (sound_started == 0)				// sound startup failed? Bail out.
+	if (!sound_started) {				// sound startup failed? Bail out.
 		return;
+	}
 
 	SND_SFX_Init (&snd);
 	SND_Channels_Init (&snd);
@@ -393,19 +409,22 @@ s_init (void)
 static void
 s_shutdown (void)
 {
+	qfZoneScoped (true);
 	if (!sound_started)
 		return;
 
-	sound_started = 0;
-	snd_shutdown = 1;
+	sound_started = false;
+	snd_shutdown = true;
 
 	SND_SFX_Shutdown (&snd);
+	SND_Fill_Shutdown ();
 	snd_output_funcs->shutdown (&snd);
 }
 
 static void
 s_ambient_off (void)
 {
+	qfZoneScoped (true);
 	if (!sound_started)
 		return;
 	SND_AmbientOff (&snd);
@@ -414,6 +433,7 @@ s_ambient_off (void)
 static void
 s_ambient_on (void)
 {
+	qfZoneScoped (true);
 	if (!sound_started)
 		return;
 	SND_AmbientOn (&snd);
@@ -422,6 +442,7 @@ s_ambient_on (void)
 static void
 s_set_ambient (int amb_channel, sfx_t *sfx)
 {
+	qfZoneScoped (true);
 	if (!sound_started)
 		return;
 	SND_SetAmbient (&snd, amb_channel, sfx);
@@ -431,6 +452,7 @@ static void
 s_static_sound (sfx_t *sfx, vec4f_t origin, float vol,
 				float attenuation)
 {
+	qfZoneScoped (true);
 	if (!sound_started)
 		return;
 	SND_StaticSound (&snd, sfx, origin, vol, attenuation);
@@ -440,6 +462,7 @@ static void
 s_start_sound (int entnum, int entchannel, sfx_t *sfx, vec4f_t origin,
 			   float vol, float attenuation)
 {
+	qfZoneScoped (true);
 	if (!sound_started)
 		return;
 	if (!snd_shutdown)
@@ -450,6 +473,7 @@ s_start_sound (int entnum, int entchannel, sfx_t *sfx, vec4f_t origin,
 static void
 s_stop_sound (int entnum, int entchannel)
 {
+	qfZoneScoped (true);
 	if (!sound_started)
 		return;
 	SND_StopSound (&snd, entnum, entchannel);
@@ -458,53 +482,60 @@ s_stop_sound (int entnum, int entchannel)
 static sfx_t *
 s_precache_sound (const char *name)
 {
+	qfZoneScoped (true);
 	if (!sound_started)
-		return 0;
+		return nullptr;
 	return SND_PrecacheSound (&snd, name);
 }
 
 static sfx_t *
 s_load_sound (const char *name)
 {
+	qfZoneScoped (true);
 	if (!sound_started)
-		return 0;
+		return nullptr;
 	return SND_LoadSound (&snd, name);
 }
 
 static void
 s_channel_free (channel_t *chan)
 {
+	qfZoneScoped (true);
 	if (!sound_started)
 		return;
 	SND_ChannelStop (&snd, chan);
 }
 
-static int
+static bool
 s_channel_set_sfx (channel_t *chan, sfx_t *sfx)
 {
+	qfZoneScoped (true);
 	sfxbuffer_t *buffer = sfx->open (sfx);
 	if (!buffer) {
-		return 0;
+		return false;
 	}
 	chan->buffer = buffer;
-	return 1;
+	return true;
 }
 
 static void
-s_channel_set_paused (channel_t *chan, int paused)
+s_channel_set_paused (channel_t *chan, bool paused)
 {
-	chan->pause = paused != 0;
+	qfZoneScoped (true);
+	chan->pause = paused;
 }
 
 static void
-s_channel_set_looping (channel_t *chan, int looping)
+s_channel_set_looping (channel_t *chan, bool looping)
 {
+	qfZoneScoped (true);
 	// FIXME implement
 }
 
 static chan_state
 s_channel_get_state (channel_t *chan)
 {
+	qfZoneScoped (true);
 	// stop means the channel has been "freed" and is waiting for the mixer
 	// thread to be done with it, thus putting the channel in an invalid state
 	// from the user's point of view. ie, don't touch (user should set channel
@@ -529,12 +560,14 @@ s_channel_get_state (channel_t *chan)
 static void
 s_channel_set_volume (channel_t *chan, float volume)
 {
+	qfZoneScoped (true);
 	SND_ChannelSetVolume (chan, volume);
 }
 
 static void
 s_local_sound (const char *sound)
 {
+	qfZoneScoped (true);
 	if (!sound_started)
 		return;
 	if (!snd_shutdown)
@@ -544,11 +577,12 @@ s_local_sound (const char *sound)
 static channel_t *
 s_alloc_channel (void)
 {
+	qfZoneScoped (true);
 	if (!sound_started)
-		return 0;
+		return nullptr;
 	if (!snd_shutdown)
 		return SND_AllocChannel (&snd);
-	return 0;
+	return nullptr;
 }
 
 static general_funcs_t plugin_info_general_funcs = {
@@ -599,20 +633,20 @@ static plugin_data_t plugin_info_data = {
 };
 
 static plugin_t plugin_info = {
-	qfp_snd_render,
-	0,
-	QFPLUGIN_VERSION,
-	"0.1",
-	"Sound Renderer",
-	"Copyright (C) 1996-1997 id Software, Inc.\n"
-		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
-		"project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors",
-	&plugin_info_funcs,
-	&plugin_info_data,
+	.type = qfp_snd_render,
+	.api_version = QFPLUGIN_VERSION,
+	.plugin_version = "0.1",
+	.description = "Sound Renderer",
+	.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
+				 "Copyright (C) 1999,2000,2001  contributors of the "
+				 "QuakeForge project\n"
+				 "Please see the file \"AUTHORS\" for a list of contributors",
+	.functions = &plugin_info_funcs,
+	.data = &plugin_info_data,
 };
 
 PLUGIN_INFO(snd_render, default)
 {
+	qfZoneScoped (true);
 	return &plugin_info;
 }

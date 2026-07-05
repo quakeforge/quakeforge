@@ -38,7 +38,7 @@
 # include <strings.h>
 #endif
 
-#include "QF/cvar.h"
+#include "QF/particle.h"
 #include "QF/render.h"
 #include "QF/va.h"
 
@@ -54,6 +54,7 @@
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_particles.h"
+#include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/qf_translucent.h"
 
 #include "r_internal.h"
@@ -171,9 +172,15 @@ particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto layout = pipeline->layout;
 	auto cmd = taskctx->cmd;
 
+	VkDescriptorSet palette;
+	if (pctx->psystem->palette_id == nullent) {
+		palette = Vulkan_Palette_Descriptor (ctx);
+	} else {
+		palette = QFV_GetTexture (ctx, pctx->psystem->palette_id);
+	}
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-		Vulkan_Palette_Descriptor (ctx),
+		palette,
 		Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -191,6 +198,27 @@ particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdDrawIndirect (cmd, pframe->system, 0, 1,
 							  sizeof (qfv_particle_system_t));
 	taskctx->subpass->call_count++;
+}
+
+static void
+memory_barrier (vulkan_ctx_t *ctx, VkCommandBuffer cmd)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto bb = bufferBarriers[qfv_BB_ShaderWrite_to_ShaderRW];
+	VkMemoryBarrier2 mb = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+		.srcStageMask = bb.srcStageMask,
+		.srcAccessMask = bb.srcAccessMask,
+		.dstStageMask = bb.dstStageMask,
+		.dstAccessMask = bb.dstAccessMask,
+	};
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.memoryBarrierCount = 1,
+		.pMemoryBarriers = &mb,
+	};
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 }
 
 static void
@@ -221,7 +249,7 @@ update_particles (const exprval_t **p, exprval_t *result, exprctx_t *ectx)
 
 	qfv_particle_system_t *system = QFV_PacketExtend (packet, size);
 	*system = (qfv_particle_system_t) {
-		.vertexCount = 1,
+		.vertexCount = 4,
 		.particleCount = numParticles,
 	};
 	auto particles = (qfv_particle_t *) ((byte *) system + partoffs);
@@ -256,8 +284,6 @@ update_particles (const exprval_t **p, exprval_t *result, exprctx_t *ectx)
 	};
 	dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
 
-	dfunc->vkResetEvent (device->dev, pframe->updateEvent);
-
 	VkBufferMemoryBarrier2 pl_barrier = {
 		.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT,
 		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
@@ -284,49 +310,10 @@ update_particles (const exprval_t **p, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdBindDescriptorSets (packet->cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
 									layout, 0, 3, set, 0, 0);
 	dfunc->vkCmdDispatch (packet->cmd, 1, 1, 1);
-	dfunc->vkCmdSetEvent (packet->cmd, pframe->updateEvent,
-						  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+	memory_barrier (ctx, packet->cmd);
 	QFV_PacketSubmit (packet);
 
 	pctx->psystem->numparticles = 0;
-}
-
-static void
-wait_on_event (VkBuffer states, VkBuffer params, VkBuffer system,
-			   VkEvent event, bool draw, VkCommandBuffer cmd,
-			   qfv_devfuncs_t *dfunc)
-{
-	VkStructureType type = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-	VkAccessFlags srcAccess = draw
-		? VK_ACCESS_SHADER_READ_BIT
-			| VK_ACCESS_SHADER_WRITE_BIT
-		: VK_ACCESS_SHADER_WRITE_BIT;
-	VkAccessFlags dstAccess = draw
-		? VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT
-		: VK_ACCESS_SHADER_READ_BIT
-			| VK_ACCESS_INDIRECT_COMMAND_READ_BIT
-			| VK_ACCESS_SHADER_WRITE_BIT;
-	VkBufferMemoryBarrier barrier[] = {
-		{ .sType = type,
-			.srcAccessMask = srcAccess, .dstAccessMask = dstAccess,
-			.buffer = states, .offset = 0, .size = VK_WHOLE_SIZE },
-		{ .sType = type,
-			.srcAccessMask = srcAccess, .dstAccessMask = dstAccess,
-			.buffer = params, .offset = 0, .size = VK_WHOLE_SIZE },
-		{ .sType = type,
-			.srcAccessMask = srcAccess, .dstAccessMask = dstAccess,
-			.buffer = system, .offset = 0, .size = VK_WHOLE_SIZE },
-	};
-	VkAccessFlags srcStage = draw
-		? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-		: VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	VkAccessFlags dstStage = draw
-		? VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
-			| VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
-		: VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-			| VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
-	dfunc->vkCmdWaitEvents (cmd, 1, &event, srcStage, dstStage,
-							0, 0, 3, barrier, 0, 0);
 }
 
 static void
@@ -343,52 +330,50 @@ particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto layout = pipeline->layout;
 	auto cmd = taskctx->cmd;
 
-	dfunc->vkResetEvent (device->dev, pframe->physicsEvent);
-	wait_on_event (pframe->states, pframe->params, pframe->system,
-				   pframe->updateEvent, false, cmd, dfunc);
-
 	VkDescriptorSet set[] = {
 		pframe->curDescriptors,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
 									layout, 0, 1, set, 0, 0);
 
+	*pctx->palette_size = pctx->psystem->palette_size;
+	*pctx->center = pctx->psystem->center;
 	*pctx->gravity = pctx->psystem->gravity;
+	*pctx->min_dist = pctx->psystem->min_dist;
 	*pctx->dT = vr_data.frametime;
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 
-	dfunc->vkCmdDispatch (cmd, MaxParticles, 1, 1);
-	dfunc->vkCmdSetEvent (cmd, pframe->physicsEvent,
-						  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+	dfunc->vkCmdDispatch (cmd, (MaxParticles + 63) / 64, 1, 1);
+	memory_barrier (ctx, cmd);
 }
 
 static void
 particle_wait_physics (const exprval_t **params, exprval_t *result,
 					   exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto pctx = ctx->particle_context;
-	auto pframe = &pctx->frames.a[ctx->curFrame];
-
-	auto cmd = QFV_GetCmdBuffer (ctx, false);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
-						 vac (ctx->va_ctx, "cmd:particle_wait_physics:%d",
-							  ctx->curFrame));
-	QFV_AppendCmdBuffer (taskctx->job, cmd);
-	VkCommandBufferBeginInfo beginInfo = {
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-	};
-	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-
-	wait_on_event (pframe->states, pframe->params, pframe->system,
-				   pframe->physicsEvent, true, cmd, dfunc);
-
-	dfunc->vkEndCommandBuffer (cmd);
+//	qfZoneNamed (zone, true);
+//	auto taskctx = (qfv_taskctx_t *) ectx;
+//	auto ctx = taskctx->ctx;
+//	auto device = ctx->device;
+//	auto dfunc = device->funcs;
+//	auto pctx = ctx->particle_context;
+//	auto pframe = &pctx->frames.a[ctx->curFrame];
+//
+//	auto cmd = QFV_GetCmdBuffer (ctx, false);
+//	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+//						 vac (ctx->va_ctx, "cmd:particle_wait_physics:%d",
+//							  ctx->curFrame));
+//	QFV_AppendCmdBuffer (taskctx->job, cmd);
+//	VkCommandBufferBeginInfo beginInfo = {
+//		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+//		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+//	};
+//	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+//
+//	wait_on_event (pframe->states, pframe->params, pframe->system,
+//				   pframe->physicsEvent, true, cmd, dfunc);
+//
+//	dfunc->vkEndCommandBuffer (cmd);
 }
 
 static void
@@ -398,15 +383,7 @@ particle_shutdown (exprctx_t *ectx)
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	particlectx_t *pctx = ctx->particle_context;
-	size_t      frames = pctx->frames.size;
-
-	for (size_t i = 0; i < frames; i++) {
-		__auto_type pframe = &pctx->frames.a[i];
-		dfunc->vkDestroyEvent (device->dev, pframe->updateEvent, 0);
-		dfunc->vkDestroyEvent (device->dev, pframe->physicsEvent, 0);
-	}
 
 	QFV_DestroyResource (device, pctx->resources);
 	free (pctx->resources);
@@ -424,8 +401,6 @@ particle_startup (exprctx_t *ectx)
 	qfvPushDebug (ctx, "particles init");
 	auto pctx = ctx->particle_context;
 	pctx->psystem = &r_psystem;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
 
 	size_t      frames = ctx->render_context->frames.size;
 	DARRAY_INIT (&pctx->frames, frames);
@@ -440,16 +415,6 @@ particle_startup (exprctx_t *ectx)
 		pframe->curDescriptors = QFV_DSManager_AllocSet (dsmanager);
 		pframe->inDescriptors  = QFV_DSManager_AllocSet (dsmanager);
 		pframe->newDescriptors = QFV_DSManager_AllocSet (dsmanager);
-
-		VkEventCreateInfo event = { VK_STRUCTURE_TYPE_EVENT_CREATE_INFO };
-		dfunc->vkCreateEvent (device->dev, &event, 0, &pframe->physicsEvent);
-		dfunc->vkCreateEvent (device->dev, &event, 0, &pframe->updateEvent);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_EVENT,
-							 pframe->physicsEvent,
-							 vac (ctx->va_ctx, "event:particle:physics:%zd",i));
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_EVENT,
-							 pframe->updateEvent,
-							 vac (ctx->va_ctx, "event:particle:update:%zd", i));
 	}
 	create_buffers (ctx);
 	qfvPopDebug (ctx);
@@ -469,10 +434,13 @@ particle_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	ctx->particle_context = pctx;
 
 	*pctx = (particlectx_t) {
-		.mat     = QFV_GetBlackboardVar (ctx, "Model"),
-		.fog     = QFV_GetBlackboardVar (ctx, "fog"),
-		.gravity = QFV_GetBlackboardVar (ctx, "gravity"),
-		.dT      = QFV_GetBlackboardVar (ctx, "dT"),
+		.mat          = QFV_GetBlackboardVar (ctx, "Model"),
+		.palette_size = QFV_GetBlackboardVar (ctx, "palette_size"),
+		.fog          = QFV_GetBlackboardVar (ctx, "fog"),
+		.center       = QFV_GetBlackboardVar (ctx, "center"),
+		.gravity      = QFV_GetBlackboardVar (ctx, "gravity"),
+		.min_dist     = QFV_GetBlackboardVar (ctx, "min_dist"),
+		.dT           = QFV_GetBlackboardVar (ctx, "dT"),
 	};
 }
 

@@ -109,7 +109,7 @@ recipe_get_hash (const void *recipe, void *data)
 	return Hash_Buffer (recipe, sizeof (in_recipe_t));
 }
 
-static int
+static bool
 recipe_compare (const void *a, const void *b, void *data)
 {
 	return !memcmp (a, b, sizeof (in_recipe_t));

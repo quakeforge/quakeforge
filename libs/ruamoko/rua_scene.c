@@ -41,6 +41,7 @@
 #include "QF/cmem.h"
 #include "QF/hash.h"
 #include "QF/model.h"
+#include "QF/particle.h"
 #include "QF/progs.h"
 #include "QF/render.h"
 
@@ -59,6 +60,9 @@ typedef struct rua_scene_s {
 	struct rua_scene_s *next;
 	struct rua_scene_s **prev;
 	scene_t    *scene;
+	psystem_t  *psystem;
+	int         partramps[8];
+	peparticle_t def_particle;
 } rua_scene_t;
 
 typedef struct rua_lighting_s {
@@ -222,6 +226,28 @@ bi (Scene_NewScene)
 	rua_scene_t *scene = rua_scene_new (res);
 
 	scene->scene = Scene_NewScene (0);
+	scene->psystem = r_funcs->ParticleSystem ();
+	scene->psystem->center = (vec4f_t) { 0, 0, -1, 0 };
+	scene->psystem->gravity = 800;	// default for quake
+	scene->psystem->min_dist = 0;
+	scene->psystem->partramps = scene->partramps;
+	scene->psystem->partramps_count = countof (scene->partramps);
+	scene->psystem->palette_size = 16;
+	scene->psystem->palette_id = nullent;
+	scene->def_particle = (peparticle_t) {
+		.color = 0xfe,
+		.scale = 0.02,
+		.alpha = 1,
+		.live = 60,
+		.tex = part_tex_dot,
+		.ramp_max = 8,
+		.drag = {-0.05, -0.05, -0.05},
+		.grav_scale = 1,
+	};
+	for (int i = 0; i < 8; i++) {
+		scene->partramps[i] = (int[]){0xef, 0xed, 0xeb, 0xe9,
+									  0xe7, 0xe5, 0xe3, 0xe1}[i];
+	}
 
 	scene->next = res->scenes;
 	if (res->scenes) {
@@ -322,7 +348,7 @@ bi (Scene_Entqueue)
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
 	const char *entqueue_name = P_GSTRING (pr, 1);
 	R_INT(pr) = -1;
-	if (scene->scene->entqueue_enum) {
+	if (entqueue_name && entqueue_name[0] && scene->scene->entqueue_enum) {
 		if (!res->memsuper) {
 			res->memsuper = new_memsuper ();
 		}
@@ -359,6 +385,21 @@ bi (Entity_SetModel)
 	auto renderer = Entity_GetRenderer (ent);
 	renderer->model = model;
 	R_AddEfrags (scene->scene, ent);
+}
+
+bi (Entity_GetModel)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	entity_t    ent = rua_entity_get (res, ent_id);
+
+	auto renderer = Entity_GetRenderer (ent);
+	auto model = renderer->model;
+	R_UINT (pr) = 0;
+	if (model) {
+		R_UINT (pr) = model->model_id;
+	}
 }
 
 bi (Entity_SetEntqueue)
@@ -804,6 +845,168 @@ bi (Light_EnableSun)
 	Light_EnableSun (ldata->ldata);
 }
 
+bi (Particles_SetRamps)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	rua_scene_t *scene = rua_scene_get (res, P_ULONG (pr, 0));
+	auto count = P_UINT (pr, 1);
+	auto ramps = (int *) P_GPOINTER (pr, 2);
+	if (scene->psystem->partramps != scene->partramps) {
+		free ((int *) scene->psystem->partramps);
+	}
+	if (count > countof (scene->partramps)) {
+		scene->psystem->partramps = malloc (sizeof (int[count]));;
+	} else {
+		scene->psystem->partramps = scene->partramps;
+	}
+	memcpy ((int *) scene->psystem->partramps, ramps, sizeof (int[count]));
+	scene->psystem->partramps_count = count;
+}
+
+bi (Particles_SetPalette)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	rua_scene_t *scene = rua_scene_get (res, P_ULONG (pr, 0));
+	scene->psystem->palette_id = P_UINT (pr, 1);
+	scene->psystem->palette_size = P_UINT (pr, 2);
+}
+
+bi (Particles_SetGravitry)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	rua_scene_t *scene = rua_scene_get (res, P_ULONG (pr, 0));
+	scene->psystem->center = P_PACKED (pr, pr_vec4_t, 1);
+	scene->psystem->gravity = P_FLOAT (pr, 2);
+	scene->psystem->min_dist = P_FLOAT (pr, 3);
+}
+
+bi (Entity_AttachPlane)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	entity_t    ent = rua_entity_get (res, ent_id);
+	pr_ulong_t  scene_id = ent_id & 0xffffffff;
+	// bad scene caught above
+	rua_scene_t *scene = rua_scene_get (res, scene_id);
+
+	pe_plane_t plane = {
+		.base = {
+			.ramp_base = 0,
+			.ramp_range = 8,
+			.rate = 5000,
+		},
+		.particle = scene->def_particle,
+		.u = { 1, 0, 0 },
+		.v = { 0, 1, 0 },
+		.vel = { 0.5, 0.5, 0.5 },
+		.solid = 0.1,
+		.square = false,
+	};
+	uint32_t c_plane = scene->scene->psys_base + pemitter_plane;
+	Ent_SetComponent (ent.id, c_plane, ent.reg, &plane);
+}
+
+static pe_plane_t *
+bi_get_plane (progs_t *pr, rua_scene_resources_t *res)
+{
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	entity_t    ent = rua_entity_get (res, ent_id);
+	pr_ulong_t  scene_id = ent_id & 0xffffffff;
+	// bad scene caught above
+	rua_scene_t *scene = rua_scene_get (res, scene_id);
+
+	uint32_t c_plane = scene->scene->psys_base + pemitter_plane;
+	return Ent_GetComponent (ent.id, c_plane, ent.reg);
+}
+
+bi(Emitter_SetRamp)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->base.ramp_base = P_UINT (pr, 1);
+	plane->base.ramp_range = P_UINT (pr, 2);
+}
+
+bi(Emitter_SetEmitRate)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->base.rate = P_FLOAT (pr, 1);
+}
+
+bi(Emitter_SetColor)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->particle.color = P_UINT (pr, 1);
+}
+
+bi(Emitter_SetScale)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->particle.scale = P_FLOAT (pr, 1);
+}
+
+bi(Emitter_SetLive)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->particle.live = P_FLOAT (pr, 1);
+}
+
+bi(Emitter_SetRates)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	auto rates = P_PACKED (pr, pr_vec4_t, 1);
+	plane->particle.ramp_rate = rates[0];
+	plane->particle.ramp_max = rates[1];
+	plane->particle.scale_rate = rates[2];
+	plane->particle.alpha_rate = rates[3];
+}
+
+bi(Emitter_SetDrag)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	auto drag = P_VECTOR (pr, 1);
+	VectorCopy (drag, plane->particle.drag);
+}
+
+bi(Emitter_SetGravScale)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->particle.grav_scale = P_FLOAT (pr, 1);
+}
+
+bi(Emitter_SetVelocity)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	auto vel = P_VECTOR (pr, 1);
+	VectorCopy (vel, plane->vel);
+}
+
+bi(Emitter_SetSolid)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->solid = P_FLOAT (pr, 1);
+}
+
+bi(Emitter_SetSquare)
+{
+	qfZoneScoped (true);
+	auto plane = bi_get_plane (pr, _res);
+	plane->square = P_INT (pr, 1);
+}
+
 #undef bi
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
@@ -819,6 +1022,7 @@ static builtin_t builtins[] = {
 
 	bi(Entity_GetTransform,         1, p(ulong)),
 	bi(Entity_SetModel,             2, p(ulong), p(int)),
+	bi(Entity_GetModel,             1, p(ulong)),
 	bi(Entity_SetEntqueue,          2, p(ulong), p(int)),
 	bi(Entity_SetSubmeshMask,       2, p(ulong), p(uint)),
 	bi(Entity_SetShadowFlags,       4, p(ulong), p(int), p(int), p(int)),
@@ -867,6 +1071,22 @@ static builtin_t builtins[] = {
 	bi(Light_AddLight,              5, p(ulong),// really, 3
 				p(vec4), p(vec4), p(vec4), p(vec4), p(int)),
 	bi(Light_EnableSun,             1, p(ulong)),
+
+	bi(Particles_SetRamps,          3, p(ulong), p(uint), p(ptr)),
+	bi(Particles_SetPalette,        3, p(ulong), p(uint), p(uint)),
+	bi(Particles_SetGravitry,       4, p(ulong), p(vec4), p(float), p(float)),
+	bi(Entity_AttachPlane,          1, p(ulong)),
+	bi(Emitter_SetRamp,             3, p(ulong), p(uint), p(uint)),
+	bi(Emitter_SetEmitRate,         2, p(ulong), p(float)),
+	bi(Emitter_SetColor,            2, p(ulong), p(uint)),
+	bi(Emitter_SetScale,            2, p(ulong), p(float)),
+	bi(Emitter_SetLive,             2, p(ulong), p(float)),
+	bi(Emitter_SetRates,            2, p(ulong), p(vec4)),
+	bi(Emitter_SetDrag,             2, p(ulong), p(vector)),
+	bi(Emitter_SetGravScale,        2, p(ulong), p(float)),
+	bi(Emitter_SetVelocity,         2, p(ulong), p(vector)),
+	bi(Emitter_SetSolid,            2, p(ulong), p(float)),
+	bi(Emitter_SetSquare,           2, p(ulong), p(int)),
 
 	{0}
 };

@@ -2,10 +2,8 @@
 #define __QF_Vulkan_qf_particles_h
 
 #include "QF/darray.h"
-#include "QF/image.h"
-#include "QF/render.h"
 
-#include "QF/Vulkan/command.h"
+typedef struct psystem_s psystem_t;
 
 typedef struct qfv_particle_s {
 	vec4f_t     pos;
@@ -34,8 +32,6 @@ typedef struct qfv_particle_system_s {
 static_assert (sizeof (qfv_particle_system_t) == 4 * sizeof (uint32_t));
 
 typedef struct particleframe_s {
-	VkEvent     physicsEvent;
-	VkEvent     updateEvent;
 	VkBuffer    states;
 	VkBuffer    params;
 	VkBuffer    system;
@@ -56,14 +52,17 @@ typedef struct particlectx_s {
 	psystem_t  *psystem;
 
 	mat4f_t    *mat;
+	uint32_t   *palette_size;
 	vec4f_t    *fog;
-	vec4f_t    *gravity;
+	vec4f_t    *center;
+	float      *gravity;
+	float      *min_dist;
 	float      *dT;
 } particlectx_t;
 
 struct vulkan_ctx_s;
 
-struct psystem_s *Vulkan_ParticleSystem (struct vulkan_ctx_s *ctx);
+psystem_t *Vulkan_ParticleSystem (struct vulkan_ctx_s *ctx);
 void Vulkan_Particles_Init (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_particles_h

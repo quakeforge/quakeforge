@@ -224,7 +224,7 @@ methodset_get_hash (const void *_method, void *unused)
 	return hash ^ (method->instance << 3);
 }
 
-static int
+static bool
 methodset_compare (const void *_m1, const void *_m2, void *unused)
 {
 	method_t   *m1 = (method_t *) _m1;
@@ -440,7 +440,7 @@ sel_get_hash (const void *_sel, void *unused)
 	return hash;
 }
 
-static int
+static bool
 sel_compare (const void *_s1, const void *_s2, void *unused)
 {
 	selector_t *s1 = (selector_t *) _s1;
@@ -458,7 +458,7 @@ sel_index_get_hash (const void *_sel, void *unused)
 	return sel->index;
 }
 
-static int
+static bool
 sel_index_compare (const void *_s1, const void *_s2, void *unused)
 {
 	selector_t *s1 = (selector_t *) _s1;

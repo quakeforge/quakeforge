@@ -38,7 +38,6 @@
 #include "QF/gib.h"
 #include "QF/input.h"
 #include "QF/image.h"
-#include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
 #include "QF/png.h"

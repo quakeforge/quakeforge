@@ -30,7 +30,7 @@
 
 #include "QF/cvar.h"
 #include "QF/ecs.h"
-#include "QF/render.h"
+#include "QF/particle.h"
 #include "QF/sys.h"
 
 #include "QF/simd/vec4f.h"

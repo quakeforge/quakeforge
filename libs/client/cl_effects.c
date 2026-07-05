@@ -39,6 +39,7 @@
 #endif
 
 #include "QF/ecs.h"
+#include "QF/particle.h"
 #include "QF/render.h"
 
 #include "QF/plugin/vid_render.h"	//FIXME

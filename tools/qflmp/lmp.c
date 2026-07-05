@@ -186,7 +186,7 @@ exportFile (const char *inpath)
 	if (options.verbosity > 1)
 		Sys_Printf ("PCX data size: %d\n", pcx_size);
 
-	if (Qwrite (outfile, pcx, pcx_size) != pcx_size) {
+	if (Qwrite (outfile, pcx, pcx_size) != (size_t) pcx_size) {
 		Sys_Printf ("%s: Error writing to %s\n", this_program, outpath);
 		goto die;
 	}
@@ -230,10 +230,10 @@ importFile (const char *inpath)
 	} else {	// got a paletted image
 		int32_t		width = lmp->width;
 		int32_t		height = lmp->height;
-		int			lmp_size = width * height;
+		size_t      lmp_size = width * height;
 
 		if (options.verbosity > 1)
-			Sys_Printf ("geometry: %dx%d\ndata size: %d\n",
+			Sys_Printf ("geometry: %dx%d\ndata size: %zd\n",
 						width, height, lmp_size);
 
 		if (!options.raw) {	// write lump header

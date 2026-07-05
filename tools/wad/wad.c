@@ -281,7 +281,7 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 			Qread (wad->handle, buffer, count);
 			pcx = EncodePCX (buffer + 768, 16, 16, 16, buffer, false, &len,
 							 wad_hunk);
-			if (Qwrite (file, pcx, len) != len) {
+			if (Qwrite (file, pcx, len) != (size_t ) len) {
 				fprintf (stderr, "Error writing to %s\n", name.str);
 				return -1;
 			}
@@ -297,7 +297,7 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 							 qpic->width, default_palette, false, &len,
 							 wad_hunk);
 			free (qpic);
-			if (Qwrite (file, pcx, len) != len) {
+			if (Qwrite (file, pcx, len) != (size_t ) len) {
 				fprintf (stderr, "Error writing to %s\n", name.str);
 				return -1;
 			}
@@ -314,7 +314,7 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 					+ sizeof (miptex_t)) > (unsigned) pf->size) {
 				if (options.verbosity)
 					fprintf (stderr, "bogus MIPTEX. treating as raw data\n");
-				if (Qwrite (file, buffer, pf->size) != pf->size) {
+				if (Qwrite (file, buffer, pf->size) != (size_t ) pf->size) {
 					fprintf (stderr, "Error writing to %s\n", name.str);
 					return -1;
 				}
@@ -360,7 +360,7 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 			}
 			free (image);
 			free (buffer);
-			if (Qwrite (file, pcx, len) != len) {
+			if (Qwrite (file, pcx, len) != (size_t ) len) {
 				fprintf (stderr, "Error writing to %s\n", name.str);
 				return -1;
 			}

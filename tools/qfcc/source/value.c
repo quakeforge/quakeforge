@@ -87,7 +87,7 @@ value_get_hash (const void *_val, void *unused)
 	return Hash_Buffer (&val->raw_value, value_size) ^ (uintptr_t) val->type;
 }
 
-static int
+static bool
 value_compare (const void *_val1, const void *_val2, void *unused)
 {
 	const ex_value_t *val1 = (const ex_value_t *) _val1;
@@ -599,7 +599,7 @@ imm_get_hash (const void *_imm, void *_tab)
 	}
 }
 
-static __attribute__((pure)) int
+static __attribute__((pure)) bool
 imm_compare (const void *_imm1, const void *_imm2, void *_tab)
 {
 	immediate_t *imm1 = (immediate_t *) _imm1;

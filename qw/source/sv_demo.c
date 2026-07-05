@@ -199,12 +199,12 @@ static cvar_t serverdemo_cvar = {
 	.value = { .type = 0, .value = &serverdemo },
 };
 
-static int    (*dwrite) (QFile * file, const void *buf, int count);
+static size_t (*dwrite) (QFile * file, const void *buf, size_t count);
 
 #define HEADER  ((int) &((header_t *) 0)->data)
 
-static int
-memwrite (QFile *_mem, const void *buffer, int size)
+static size_t
+memwrite (QFile *_mem, const void *buffer, size_t size)
 {
 	byte      **mem = (byte **) _mem;
 

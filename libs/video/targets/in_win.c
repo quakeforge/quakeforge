@@ -519,7 +519,7 @@ in_win_get_device_event_data (void *device, void *data)
 	return dev->event_data;
 }
 
-static LONG
+static LRESULT
 event_key (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	bool        pressed = !(HIWORD(lParam) & KF_UP);
@@ -558,7 +558,7 @@ event_key (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static LONG
+static LRESULT
 event_char (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	win_key.unicode = wParam;
@@ -733,14 +733,14 @@ in_win_send_focus_event (int gain)
 	IE_Send_Event (&event);
 }
 
-static LONG
+static LRESULT
 event_leave (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	win_mouse_enter = true;
 	return 0;
 }
 
-static LONG
+static LRESULT
 event_focusin (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	win_focused = true;
@@ -748,7 +748,7 @@ event_focusin (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static LONG
+static LRESULT
 event_focusout (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	win_focused = false;
@@ -756,7 +756,7 @@ event_focusout (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static LONG
+static LRESULT
 event_syschar (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	// absorb Alt-Space
@@ -783,7 +783,7 @@ event_button (bool press, int but, int x, int y)
 	}
 }
 
-static LONG
+static LRESULT
 event_button_left (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	int         x = LOWORD (lParam);
@@ -792,7 +792,7 @@ event_button_left (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static LONG
+static LRESULT
 event_button_right (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	int         x = LOWORD (lParam);
@@ -801,7 +801,7 @@ event_button_right (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static LONG
+static LRESULT
 event_button_mid (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	int         x = LOWORD (lParam);
@@ -810,7 +810,7 @@ event_button_mid (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static LONG
+static LRESULT
 event_button_X (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	int         x = LOWORD (lParam);
@@ -820,7 +820,7 @@ event_button_X (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static LONG
+static LRESULT
 event_mouse (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	// this is complicated because Win32 seems to pack multiple mouse
@@ -876,7 +876,7 @@ event_mouse (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static LONG
+static LRESULT
 event_mousewheel (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	int         x = LOWORD (lParam);
@@ -889,7 +889,7 @@ event_mousewheel (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static long
+static LRESULT
 event_activate (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	// fix leftover Alt from any Alt-Tab or the like that switched us away

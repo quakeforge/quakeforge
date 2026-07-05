@@ -155,8 +155,8 @@ channel_t *S_AllocChannel (void);
 void S_ChannelFree (channel_t *chan);
 
 int S_ChannelSetSfx (channel_t *chan, sfx_t *sfx);
-void S_ChannelSetPaused (channel_t *chan, int paused);
-void S_ChannelSetLooping (channel_t *chan, int looping);
+void S_ChannelSetPaused (channel_t *chan, bool paused);
+void S_ChannelSetLooping (channel_t *chan, bool looping);
 chan_state S_ChannelGetState (channel_t *chan);
 
 /** Set a channel's volume.
@@ -172,12 +172,10 @@ void S_ChannelSetVolume (channel_t *chan, float volume);
 void S_LocalSound (const char *s);
 
 /** Disable ambient sounds.
-	\todo not used, remove?
 */
 void S_AmbientOff (void);
 
 /** Enable ambient sounds.
-	\todo not used, remove?
 */
 void S_AmbientOn (void);
 

@@ -57,6 +57,7 @@ typedef struct {
 static void
 check_buffer_integrity (sfxbuffer_t *sb, int width, const char *func)
 {
+	qfZoneScoped (true);
 	byte       *x = (byte *) sb->data + sb->size * width;
 	if (memcmp (x, "\xde\xad\xbe\xef", 4))
 		Sys_Error ("%s screwed the pooch %02x%02x%02x%02x", func,
@@ -66,10 +67,11 @@ check_buffer_integrity (sfxbuffer_t *sb, int width, const char *func)
 unsigned
 SND_ResamplerFrames (const sfx_t *sfx, unsigned frames)
 {
+	qfZoneScoped (true);
 	if (frames == ~0u) {
 		return frames;
 	}
-	wavinfo_t  *info = sfx->wavinfo (sfx);
+	wavinfo_t  *info = &sfx->base->wavinfo;
 	snd_t      *snd = sfx->snd;
 	int         inrate = info->rate;
 	double      stepscale = (double) snd->speed / inrate;
@@ -79,9 +81,10 @@ SND_ResamplerFrames (const sfx_t *sfx, unsigned frames)
 void
 SND_Resample (sfxbuffer_t *sb, float *data, int length)
 {
+	qfZoneScoped (true);
 	int			outcount;
 	double		stepscale;
-	wavinfo_t  *info = (*sb->sfx)->wavinfo (*sb->sfx);
+	wavinfo_t  *info = &sb->base->wavinfo;
 	snd_t      *snd = (*sb->sfx)->snd;
 	int         inrate = info->rate;
 	int         outwidth;
@@ -105,6 +108,7 @@ SND_Resample (sfxbuffer_t *sb, float *data, int length)
 static int
 snd_read (sfxstream_t *stream, float *data, int frames)
 {
+	qfZoneScoped (true);
 	snd_null_state_t *state = (snd_null_state_t *) stream->state;
 	int         channels = stream->buffer->channels;
 	int         framesize = channels * sizeof (float);
@@ -133,8 +137,9 @@ snd_read (sfxstream_t *stream, float *data, int frames)
 static int
 snd_resample_read (sfxstream_t *stream, float *data, int frames)
 {
-	int         inrate = stream->wavinfo.rate;
-	double ratio = (double) stream->sfx->snd->speed / inrate;
+	qfZoneScoped (true);
+	int         inrate = stream->base.wavinfo.rate;
+	double ratio = (double) stream->base.sfx->snd->speed / inrate;
 
 	return src_callback_read (stream->state, ratio, frames, data);
 }
@@ -142,6 +147,7 @@ snd_resample_read (sfxstream_t *stream, float *data, int frames)
 static int
 snd_seek (sfxstream_t *stream, int pos)
 {
+	qfZoneScoped (true);
 	int res = stream->ll_seek (stream, pos);
 	if (stream->read == snd_resample_read) {
 		src_reset (stream->state);
@@ -154,10 +160,11 @@ snd_seek (sfxstream_t *stream, int pos)
 }
 
 void
-SND_SetupResampler (sfxbuffer_t *sb, int streamed)
+SND_SetupResampler (sfxbuffer_t *sb, bool streamed)
 {
+	qfZoneScoped (true);
 	double		stepscale;
-	wavinfo_t  *info = (*sb->sfx)->wavinfo (*sb->sfx);
+	wavinfo_t  *info = &sb->base->wavinfo;
 	snd_t      *snd = (*sb->sfx)->snd;
 	int         inrate = info->rate;
 
@@ -187,6 +194,7 @@ SND_SetupResampler (sfxbuffer_t *sb, int streamed)
 void
 SND_PulldownResampler (sfxstream_t *stream)
 {
+	qfZoneScoped (true);
 	if (stream->read == snd_resample_read) {
 		src_delete (stream->state);
 	} else {
@@ -197,6 +205,7 @@ SND_PulldownResampler (sfxstream_t *stream)
 void
 SND_Convert (byte *idata, float *fdata, int frames, int channels, int width)
 {
+	qfZoneScoped (true);
 	int         i;
 
 	if (width == 1) {

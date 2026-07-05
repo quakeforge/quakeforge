@@ -34,6 +34,7 @@
 
 typedef struct {
 	float       texcoord[2];
+	float       scale;
 	float       vertex[3];
 	byte        color[4];
 } partvert_t;

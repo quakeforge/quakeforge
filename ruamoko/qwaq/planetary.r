@@ -1,102 +1,97 @@
-#include "GLSL/general.h"
-#include "GLSL/texture.h"
-#include "GLSL/fragment.h"
+#include <math.h>
 
-#include "planetary.h"
+#include "qwaq-ed.h"
 
-[uniform, set(1), binding(0)] @sampler(@image(float,2D)) Palette;
-[uniform, set(3), binding(0)] @sampler(@image(float,2D,Array)) SurfMap;
+#include "shader/planetary.h"
 
-[push_constant] @block PushConstants {
-	mat4  Model;
-	uint  enabled_mask;
-	float blend;
-	uint  debug_bone;
-	uint  colors;
-	vec4  base_color;
-	vec4  fog;
-	PlanetaryData *planetary;
-	float near_plane;
-};
-
-vec4
-surf_map (vec3 dir, int layer)
+void
+update_orrery (entity_t earth, double time)
 {
-	const float pi = 3.14159265358979;
-	// equirectangular images go from left to right, top to bottom, but
-	// the computed angles go right to left, bottom to top, so need to flip
-	// vertical for the maps to be the right way round.
-	const vec2 conv = vec2(1/(2*pi), -1/pi);
+	float ph = float(0.05 * (time - double (1ul<<32)));
+	quaternion trot = { 0, 0, sin(ph), cos(ph) };
+	quaternion vrot = '0 0 0 1';//{ 0, -sqrt(0.5f), 0, sqrt(0.5f) };
 
-	vec3 rid = -dir;
-	float x1 = atan (dir.y, dir.x);
-	float x2 = atan (rid.y, rid.x);
-	float y = atan (dir.z, length(dir.xy));
-	vec2 uv1 = vec2 (x1, y) * conv + vec2(0.5, 0.5);
-	vec2 uv2 = vec2 (x2, y) * conv + vec2(0.0, 0.5);
-	//FIXME mipmaps mess this up
-	vec2 uv = fwidth(uv1.x) > 0.5 ? uv2: uv1;
-	return texture (SurfMap, vec3(uv, layer));
+	auto xform = Entity_GetTransform (earth);
+	Transform_SetLocalRotation(xform, vrot * trot);
+	vec4 pos = Transform_GetWorldPosition (xform);
+
+	ulong addr = Render_BufferAddress ("planetary");
+	PlanetaryData planetary = {
+		.numOpticalDepthPoints = 10,
+		.numInScatteringPoints = 10,
+		.scaleFactor = 1e-6,
+		.bodies = addr + sizeof (PlanetaryData),
+		.atmospheres = addr + sizeof (PlanetaryData) + sizeof (BodyParams) * 3,
+	};
+	BodyParams bodies[] = {
+		{// sun
+		.planetCenter = '-71987230000.0 -96000000020.0 90000000020.0',
+		.planetRadius = 695700e3,
+		},
+		{// earth
+		.planetCenter = pos.xyz,
+		.planetRadius = 6370e3,
+		},
+		{// moon
+		.planetCenter = '-171550000.0 -245760020.0 230400020.0',
+		.planetRadius = 1738e3,
+		},
+	};
+	AtmosphereParams atmospheres[] = {
+		{// sun
+		.atmosphereRadius = 13655700e3,
+		.oceanRadius = 695700e3,
+		.densityFalloff = 4e2,
+		//.scatteringCoefficients = '0.10662224073302788 0.32444156446229333 0.6830134553650706',
+		.scatteringCoefficients = '0.6830134553650706 0.5830134553650706 0.32444156446229333',
+		},
+		{// earth
+		.atmosphereRadius = 6470e3,
+		.oceanRadius = 6370e3,
+		.densityFalloff = 4,
+		.scatteringCoefficients = '0.10662224073302788 0.32444156446229333 0.6830134553650706',
+		}
+	};
+	Render_UpdateBuffer ("planetary", 0, &planetary, sizeof (planetary));
+	Render_UpdateBuffer ("planetary", sizeof(planetary), &bodies, sizeof (bodies));
+	Render_UpdateBuffer ("planetary", sizeof(planetary)+sizeof(bodies), &atmospheres, sizeof (atmospheres));
 }
 
-[in(0)] vec2 uv;
-[in(1)] vec4 position;
-[in(2)] vec3 normal;
-[in(3)] vec4 color;
-
-[out(0)] vec4 frag_color;
-//[out(1)] vec4 frag_emission;
-//[out(2)] vec4 frag_normal;
-
-[shader(Fragment)]
-[capability(MultiView)]
-void
-main ()
+entity_t
+create_orrery (uint planetary_queue, scene_t scene)
 {
-	auto dir = (position - Model[3]).xyz;
-	auto local_dir = vec3 (
-		dir • normalize(Model[0].xyz),
-		dir • normalize(Model[1].xyz),
-		dir • normalize(Model[2].xyz)
-	);
-	auto sun = planetary.bodies;
-	float l = 1;
-	if (sun) {
-		auto moon = planetary.bodies + 2;
-		auto p = position.xyz;
-		auto s = sun.planetCenter;
-		auto R = sun.planetRadius;
-		auto b = moon.planetCenter;
-		auto r = moon.planetRadius;
+	#define SUBDIV 5
+	auto quadsphere = create_quadsphere(false);
 
-		float x = (p - b) • normalize(b - s);
-		if (x > 0) {
-			float y = length ((p - b) - x * normalize (b - s));
-			float D = length (b - s);
-			float mo = (R + r) / D;
-			float mi = (R - r) / D;
-			float ho = r / mo;
-			float hi = r / mi;
-			float yo = mo * (x + ho);
-			float yi = mi * (x - hi);
-			float lo = (y - abs(yi))/(yo - abs(yi));
-			float R1 = r*(D + x)/(R * x);
-			float li = yi > 0 ? 1 - R1 * R1 : 0;
-			l = mix (li, 1, clamp(lo, 0, 1));
-		}
-
-		auto d = position.xyz - sun.planetCenter;
-		l *= max(0, normalize(dir) • -normalize(d));
+	entity_t moon_ent = Scene_CreateEntity (scene);
+	Entity_SetModel (moon_ent, Model_LoadMesh ("quadsphere", quadsphere));
+	if (planetary_queue >= 0) {
+		Entity_SetEntqueue (moon_ent, planetary_queue);
 	}
+	Entity_SetSubmeshMask (moon_ent, ~(1<<4));
+	Entity_SetShadowFlags (moon_ent, true, true, false);
+	Transform_SetLocalPosition(Entity_GetTransform (moon_ent), { -171550000.0, -245760020.0, 230400020.0, 1});
+	Transform_SetLocalScale(Entity_GetTransform (moon_ent), { 1738e3, 1738e3, 1738e3, 1});
 
-	vec4 c, e;
-	c = surf_map(local_dir, 0);
-	e = surf_map(local_dir, 1) * 2;
-	//vec4 rows = unpackUnorm4x8(colors);
-	//vec4        cmap = surf_map (dir, 2);
-	//c += texture (Palette, vec2 (cmap.x, rows.x)) * cmap.y;
-	//c += texture (Palette, vec2 (cmap.z, rows.y)) * cmap.w;
-	frag_color = l * c * color + e * 2;
-	//frag_emission = e;
-	//frag_normal = vec4(normalize(dir), 1);
+	entity_t earth_ent = Scene_CreateEntity (scene);
+	Entity_SetModel (earth_ent, Model_LoadMesh ("quadsphere", quadsphere));
+	if (planetary_queue >= 0) {
+		Entity_SetEntqueue (earth_ent, planetary_queue);
+	}
+	Entity_SetSubmeshMask (earth_ent, ~(1<<5));
+	Entity_SetShadowFlags (earth_ent, true, true, false);
+	Entity_SetTexture (earth_ent, "8k_earth_daymap");
+	Transform_SetLocalPosition(Entity_GetTransform (earth_ent), { 12770e3, -20, 20, 1});
+	Transform_SetLocalScale(Entity_GetTransform (earth_ent), { 6370e3, 6370e3, 6370e3, 1});
+
+	return earth_ent;
+	//qf_mesh_t qsmesh;
+	//qf_model_t model;
+	//MsgBuf_ReadBytes (quadsphere, &model, sizeof (model));
+	//int offset = model.meshes.offset + sizeof(qsmesh) * SUBDIV;
+	//MsgBuf_ReadSeek (quadsphere, offset, msg_set);
+	//MsgBuf_ReadBytes (quadsphere, &qsmesh, sizeof (qsmesh));
+	//qsmesh.adjacency.offset += offset;
+	//qsmesh.vertices.offset += offset;
+	//return qsmesh;
 }
