@@ -122,7 +122,7 @@ midi_stream_read (void *file, float **buf)
 
 	res = WildMidi_GetOutput (mf->handle, (int8_t *)data, size);
 	if (res <= 0) {
-		stream->error = 1;
+		stream->base.error = true;
 		return 0;
 	}
 	res /= CHANNELS * WIDTH;

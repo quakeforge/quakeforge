@@ -131,6 +131,12 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 				ch->done = true;	// acknowledge stopped signal
 				continue;
 			}
+			if (sb->base->error) {
+				// this channel can no longer be used as its
+				// source has died.
+				ch->done = true;
+				continue;
+			}
 			if (ch->pause)
 				continue;
 
@@ -144,11 +150,8 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 				if (count > 0) {
 					if (ch->leftvol || ch->rightvol) {
 						snd_paint_channel (ch, sb, count);
-						if (sb->advance && !sb->advance (sb, count)) {
-							// this channel can no longer be used as its
-							// source has died.
-							ch->done = true;
-							break;
+						if (sb->advance) {
+							sb->advance (sb, count);
 						}
 					}
 					ltime += count;

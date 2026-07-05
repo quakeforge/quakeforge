@@ -675,12 +675,6 @@ SND_StartSound (snd_t *snd, int entnum, int entchannel, sfx_t *sfx,
 	};
 	s_spatialize (snd, target_chan);
 
-	sfxbuffer_t *buffer;
-	if (!(buffer = sfx->open (sfx))) {
-		// because the channel was never started, it's safe to directly free it
-		snd_free_channel (target_chan);
-		return;
-	}
 	target_chan->pos = 0;
 	target_chan->end = 0;
 
@@ -697,8 +691,9 @@ SND_StartSound (snd_t *snd, int entnum, int entchannel, sfx_t *sfx,
 	set_add (looped ? &looped_channels : &dynamic_channels, chan_ind);
 
 	target_chan->loopstart = sfx->loopstart;
+
 	// start the channel
-	target_chan->buffer = buffer;
+	SND_Queue_Bind (sfx, target_chan);
 }
 
 static bool

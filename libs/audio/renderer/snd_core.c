@@ -332,6 +332,9 @@ s_startup (void)
 	if (!SND_Memory_Init ()) {
 		return;
 	}
+	if (!SND_Fill_Init ()) {
+		return;
+	}
 	if (!snd_output_funcs->init (&snd)) {
 		Sys_Printf ("S_Startup: output init failed.\n");
 		return;
@@ -398,6 +401,7 @@ s_shutdown (void)
 	snd_shutdown = true;
 
 	SND_SFX_Shutdown (&snd);
+	SND_Fill_Shutdown ();
 	snd_output_funcs->shutdown (&snd);
 }
 

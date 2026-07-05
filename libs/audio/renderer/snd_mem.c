@@ -46,8 +46,6 @@
 #include "compat.h"
 #include "snd_internal.h"
 
-#define SAMPLE_GAP	4
-
 static uint32_t snd_mem_size;
 static cvar_t snd_mem_size_cvar = {
 	.name = "snd_mem_size",
@@ -169,159 +167,9 @@ SND_Memory_GetRetainCount (void *ptr)
 }
 
 static sfxbuffer_t *
-snd_block_open (sfx_t *sfx)
-{
-	sfxbuffer_t *buffer = sfx->block->buffer;
-	SND_Memory_Retain (buffer);
-	return buffer;
-}
-
-static sfxbuffer_t *
 snd_open_fail (sfx_t *sfx)
 {
 	return nullptr;
-}
-
-static void
-read_samples (sfxbuffer_t *buffer, int count)
-{
-
-	if (buffer->head + count > buffer->size) {
-		count -= buffer->size - buffer->head;
-		read_samples (buffer, buffer->size - buffer->head);
-		read_samples (buffer, count);
-	} else {
-		sfxstream_t *stream = buffer->stream;
-		const sfx_t *sfx = stream->base.sfx;
-		wavinfo_t  *info = &stream->base.wavinfo;
-		float      *data = buffer->data + buffer->head * info->channels;
-		int         c;
-
-		if ((c = stream->read (stream, data, count)) != count)
-			Sys_Printf ("%s nr %d %d\n", sfx->name, count, c);
-
-		if (c > 0) {
-			buffer->head += count;
-			if (buffer->head >= buffer->size)
-				buffer->head -= buffer->size;
-		}
-	}
-}
-
-static void
-fill_buffer (const sfx_t *sfx, sfxstream_t *stream, sfxbuffer_t *buffer,
-			 wavinfo_t *info, unsigned headpos)
-{
-	unsigned    samples;
-	unsigned    loop_samples = 0;
-
-	// find out how many samples can be read into the buffer
-	samples = buffer->tail - buffer->head - SAMPLE_GAP;
-	if (buffer->tail <= buffer->head)
-		samples += buffer->size;
-
-	if (headpos + samples > buffer->sfx_length) {
-		if (sfx->loopstart == (unsigned)-1) {
-			samples = buffer->sfx_length - headpos;
-		} else {
-			loop_samples = headpos + samples - buffer->sfx_length;
-			samples -= loop_samples;
-		}
-	}
-	if (samples)
-		read_samples (buffer, samples);
-	if (loop_samples) {
-		stream->seek (stream, info->loopstart);
-		read_samples (buffer, loop_samples);
-	}
-}
-
-void
-SND_StreamSetPos (sfxbuffer_t *buffer, unsigned pos)
-{
-	float       stepscale;
-	sfxstream_t *stream = buffer->stream;
-	const sfx_t *sfx = stream->base.sfx;
-	wavinfo_t  *info = &stream->base.wavinfo;
-
-	stepscale = (float) info->rate / sfx->snd->speed;
-
-	buffer->head = buffer->tail = 0;
-	buffer->pos = pos;
-	stream->pos = pos;
-	stream->seek (stream, buffer->pos * stepscale);
-	fill_buffer (sfx, stream, buffer, info, pos);
-}
-
-bool
-SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count)
-{
-	float       stepscale;
-	unsigned    headpos, samples;
-	sfxstream_t *stream = buffer->stream;
-	const sfx_t *sfx = stream->base.sfx;
-	wavinfo_t  *info = &stream->base.wavinfo;
-
-	stream->pos += count;
-	// update the stream buffers in chunks
-	count = (stream->pos - buffer->pos) & ~(STREAM_CHUNK - 1);
-	if (!count) {
-		return true;
-	}
-
-	stepscale = (float) info->rate / sfx->snd->speed;
-
-	// find out how many samples the buffer currently holds
-	samples = buffer->head - buffer->tail;
-	if (buffer->head < buffer->tail)
-		samples += buffer->size;
-
-	// find out where head points to in the stream
-	headpos = buffer->pos + samples;
-	if (headpos >= buffer->sfx_length) {
-		if (sfx->loopstart == (unsigned)-1)
-			headpos = buffer->sfx_length;
-		else
-			headpos -= buffer->sfx_length - sfx->loopstart;
-	}
-
-	if (samples < count) {
-		buffer->head = buffer->tail = 0;
-		buffer->pos += count;
-		if (buffer->pos > buffer->sfx_length) {
-			if (sfx->loopstart == (unsigned)-1) {
-				// reset the buffer and fill it incase it's needed again
-				buffer->pos = 0;
-			} else {
-				buffer->pos -= sfx->loopstart;
-				buffer->pos %= buffer->sfx_length - sfx->loopstart;
-				buffer->pos += sfx->loopstart;
-			}
-			stream->pos = buffer->pos;
-		}
-		headpos = buffer->pos;
-		stream->seek (stream, buffer->pos * stepscale);
-	} else {
-		buffer->pos += count;
-		if (buffer->pos >= buffer->sfx_length) {
-			if (sfx->loopstart == (unsigned)-1) {
-				// reset the buffer and fill it in case it's needed again
-				headpos = buffer->pos = 0;
-				buffer->head = buffer->tail = 0;
-				count = 0;
-				stream->seek (stream, buffer->pos * stepscale);
-			} else {
-				buffer->pos -= buffer->sfx_length - sfx->loopstart;
-			}
-			stream->pos = buffer->pos;
-		}
-
-		buffer->tail += count;
-		if (buffer->tail >= buffer->size)
-			buffer->tail -= buffer->size;
-	}
-	fill_buffer (sfx, stream, buffer, info, headpos);
-	return !stream->error;
 }
 
 bool
@@ -338,7 +186,6 @@ SND_Load (sfx_t *sfx)
 		Sys_Printf ("Couldn't load %s\n", sfx->name);
 		return false;
 	}
-	sfx->open = snd_block_open;
 	if (!strequal (qfs_foundfile.realname, sfx->name)) {
 		realname = strdup (qfs_foundfile.realname);
 	} else {

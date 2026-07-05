@@ -39,6 +39,7 @@ extra_format_src = \
 	libs/audio/renderer/wav.c
 snd_common = \
 	libs/audio/renderer/snd_channels.c \
+	libs/audio/renderer/snd_fill.c \
 	libs/audio/renderer/snd_mem.c \
 	libs/audio/renderer/snd_mix.c \
 	libs/audio/renderer/snd_resample.c \

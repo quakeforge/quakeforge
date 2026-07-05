@@ -67,12 +67,6 @@ snd_sfx_free (void *_sfx, void *unused)
 	sfx->name = nullptr;
 }
 
-static void
-snd_block_close (sfxbuffer_t *buffer)
-{
-	SND_Memory_Release (buffer);
-}
-
 void
 SND_SFX_Block (sfx_t *sfx, char *realname, wavinfo_t info,
 			   sfxbuffer_t *(*load) (sfxblock_t *block))
@@ -90,10 +84,7 @@ SND_SFX_Block (sfx_t *sfx, char *realname, wavinfo_t info,
 	sfx->loopstart = SND_ResamplerFrames (sfx, info.loopstart);
 	sfx->length = SND_ResamplerFrames (sfx, info.frames);
 
-	block->buffer = load (block);
-
-	SND_Memory_Retain (block->buffer);
-	block->buffer->close = snd_block_close;
+	SND_Queue_Load (block, load);
 }
 
 void

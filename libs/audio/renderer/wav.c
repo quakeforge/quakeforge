@@ -121,7 +121,7 @@ wav_stream_read (void *file, float **buf)
 
 	res = Qread (wf->file, data, len);
 	if (res <= 0) {
-		stream->error = 1;
+		stream->base.error = true;
 		return 0;
 	}
 	res /= (info->channels * info->width);

@@ -57,8 +57,10 @@ typedef struct sfxstream_s sfxstream_t;
 //must be a power of 2
 #define STREAM_CHUNK 256
 
-typedef struct sfx_s
-{
+typedef sfxbuffer_t *(*sfx_open_f) (sfx_t *sfx);
+typedef sfxbuffer_t *(*sfx_load_f) (sfxblock_t *block);
+
+typedef struct sfx_s {
 	struct snd_s *snd;			//!< ownding snd_t instance
 	const char *name;
 
@@ -74,7 +76,7 @@ typedef struct sfx_s
 		sfxstream_t *stream;
 	};
 
-	sfxbuffer_t *(*open) (sfx_t *sfx);
+	_Atomic sfx_open_f open;
 } sfx_t;
 
 /** paint samples into the mix buffer
@@ -167,7 +169,7 @@ typedef struct sfxbuffer_s {
 		\param count	number of frames to advance
 		\return			true for success, false if an error occured
 	*/
-	bool      (*advance) (sfxbuffer_t *buffer, unsigned int count);
+	void      (*advance) (sfxbuffer_t *buffer, unsigned count);
 	/** Seek to an absolute position within the stream, resetting the ring
 		buffer.
 		\param buffer	"this"
@@ -182,8 +184,9 @@ typedef struct sfxbuffer_s {
 } sfxbuffer_t;
 
 typedef struct sfxbase_s {
-	const sfx_t *sfx;			//!< owning sfx_t instance
+	sfx_t *sfx;					//!< owning sfx_t instance
 	wavinfo_t   wavinfo;		//!< description of sound data
+	_Atomic bool error;			//!< an error occured while reading
 } sfxbase_t;
 
 /** Representation of sound loaded that is streamed in as needed.
@@ -192,7 +195,6 @@ typedef struct sfxstream_s {
 	sfxbase_t   base;
 	void       *file;			//!< handle for "file" representing the stream
 	unsigned    pos;			//!< position of next frame full stream
-	int         error;			//!< an error occured while reading
 
 	void       *state;			//!< resampler state information
 	/** Read data from the stream.
@@ -274,6 +276,12 @@ extern portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 
 ///@}
 
+bool SND_Fill_Init (void);
+void SND_Fill_Shutdown (void);
+void SND_Queue_Bind (sfx_t *sfx, channel_t *channel);
+void SND_Queue_Load (sfxblock_t *block, sfx_load_f load);
+
+
 void SND_Memory_Init_Cvars (void);
 bool SND_Memory_Init (void);
 sfxbuffer_t *SND_Memory_AllocBuffer (unsigned samples);
@@ -294,7 +302,7 @@ int SND_Memory_GetRetainCount (void *ptr) __attribute__((pure));
 	\param load
 */
 void SND_SFX_Block (sfx_t *sfx, char *realname, wavinfo_t info,
-		            sfxbuffer_t *(*load) (sfxblock_t *block));
+					sfx_load_f load);
 
 /** Stream sound data. Initializes streaming fields of sfx.
 	\param sfx
@@ -576,7 +584,7 @@ bool SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
 	\param buffer	"this"
 	\param count	number of samples to advance
 */
-bool SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count);
+void SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count);
 
 /** Seek to an absolute position within the stream, resetting the ring
 	buffer.

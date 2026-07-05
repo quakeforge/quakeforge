@@ -344,7 +344,7 @@ flac_stream_read (void *file, float **buf)
 	int res = FLAC__stream_decoder_process_single (ff->decoder);
 
 	if (!res) {
-		stream->error = 1;
+		stream->base.error = true;
 		return 0;
 	}
 	*buf = ff->buffer;
