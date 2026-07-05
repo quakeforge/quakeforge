@@ -312,7 +312,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 		}
 		int tex_ind = tex_map[i];
 		QFV_ResourceInitTexImage (&images[tex_ind], tx->name, true, &tex);
-		images[i].image.num_layers = layers;
+		images[tex_ind].image.num_layers = layers;
 		QFV_ResourceInitImageView (&views[tex_ind], tex_ind, &images[tex_ind]);
 		// all bsp images need to be arrays, even if they have only one layer
 		views[tex_ind].image_view.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
