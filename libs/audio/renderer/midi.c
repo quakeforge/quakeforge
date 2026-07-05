@@ -79,6 +79,7 @@ static cvar_t wildmidi_config_cvar = {
 static bool
 midi_init (snd_t *snd)
 {
+	qfZoneScoped (true);
 	Cvar_Register (&wildmidi_volume_cvar, 0, 0);
 	Cvar_Register (&wildmidi_config_cvar, 0, 0);
 
@@ -91,6 +92,7 @@ midi_init (snd_t *snd)
 static wavinfo_t
 midi_get_info (snd_t *snd, void *handle)
 {
+	qfZoneScoped (true);
 	wavinfo_t   info;
 	struct _WM_Info *wm_info;
 
@@ -114,6 +116,7 @@ midi_get_info (snd_t *snd, void *handle)
 static long
 midi_stream_read (void *file, float **buf)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = (sfxstream_t *) file;
 	midi_file_t *mf = (midi_file_t *) stream->file;
 	int         size = FRAMES * CHANNELS * WIDTH;
@@ -134,6 +137,7 @@ midi_stream_read (void *file, float **buf)
 static int
 midi_stream_seek (sfxstream_t *stream, int pos)
 {
+	qfZoneScoped (true);
 	unsigned long int new_pos;
 	pos *= stream->base.wavinfo.width * stream->base.wavinfo.channels;
 	pos += stream->base.wavinfo.dataofs;
@@ -145,6 +149,7 @@ midi_stream_seek (sfxstream_t *stream, int pos)
 static void
 midi_stream_close (sfxbuffer_t *buffer)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = buffer->stream;
 	midi_file_t *mf = (midi_file_t *) stream->file;
 
@@ -156,6 +161,7 @@ midi_stream_close (sfxbuffer_t *buffer)
 static sfxbuffer_t *
 midi_stream_open (sfx_t *sfx)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = sfx->stream;
 	QFile	   *file;
 	midi	   *handle;
@@ -186,6 +192,7 @@ midi_stream_open (sfx_t *sfx)
 bool
 SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 {
+	qfZoneScoped (true);
 	snd_t      *snd = sfx->snd;
 	wavinfo_t   info;
 	midi *handle;

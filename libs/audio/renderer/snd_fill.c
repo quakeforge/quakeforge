@@ -80,6 +80,7 @@ static RING_BUFFER_ATOMIC(sfx_load_t, 512) load_queue;
 static void
 read_samples (sfxbuffer_t *buffer, int count)
 {
+	qfZoneScoped (true);
 
 	if (buffer->head + count > buffer->size) {
 		count -= buffer->size - buffer->head;
@@ -106,6 +107,7 @@ read_samples (sfxbuffer_t *buffer, int count)
 static void
 fill_buffer (sfxbuffer_t *buffer, unsigned headpos)
 {
+	qfZoneScoped (true);
 	unsigned    samples;
 	unsigned    loop_samples = 0;
 	const sfx_t *sfx = *buffer->sfx;
@@ -136,6 +138,7 @@ fill_buffer (sfxbuffer_t *buffer, unsigned headpos)
 static void
 queue_fill (sfxbuffer_t *buffer, unsigned headpos)
 {
+	qfZoneScoped (true);
 	sfx_fill_t  fill = {
 		.buffer = buffer,
 		.headpos = headpos,
@@ -147,6 +150,7 @@ queue_fill (sfxbuffer_t *buffer, unsigned headpos)
 static void
 queue_seek (sfxstream_t *stream, unsigned pos)
 {
+	qfZoneScoped (true);
 	sfx_seek_t  seek = {
 		.stream = stream,
 		.pos = pos,
@@ -158,6 +162,7 @@ queue_seek (sfxstream_t *stream, unsigned pos)
 static bool
 run_fill_queue (void)
 {
+	qfZoneScoped (true);
 	if (RB_DATA_AVAILABLE (fill_queue)) {
 		sfx_fill_t  fill;
 		RB_READ_DATA (fill_queue, &fill, 1);
@@ -171,6 +176,7 @@ run_fill_queue (void)
 static bool
 run_seek_queue (void)
 {
+	qfZoneScoped (true);
 	if (RB_DATA_AVAILABLE (seek_queue)) {
 		sfx_seek_t  seek;
 		RB_READ_DATA (seek_queue, &seek, 1);
@@ -185,6 +191,7 @@ run_seek_queue (void)
 static bool
 run_bind_queue (void)
 {
+	qfZoneScoped (true);
 	if (RB_DATA_AVAILABLE (bind_queue)) {
 		sfx_bind_t  bind;
 		RB_READ_DATA (bind_queue, &bind, 1);
@@ -205,6 +212,7 @@ run_bind_queue (void)
 static sfxbuffer_t *
 snd_block_open (sfx_t *sfx)
 {
+	qfZoneScoped (true);
 	sfxbuffer_t *buffer = sfx->block->buffer;
 	SND_Memory_Retain (buffer);
 	return buffer;
@@ -213,12 +221,14 @@ snd_block_open (sfx_t *sfx)
 static void
 snd_block_close (sfxbuffer_t *buffer)
 {
+	qfZoneScoped (true);
 	SND_Memory_Release (buffer);
 }
 
 static bool
 run_load_queue (void)
 {
+	qfZoneScoped (true);
 	if (RB_DATA_AVAILABLE (load_queue)) {
 		sfx_load_t  load;
 		RB_READ_DATA (load_queue, &load, 1);
@@ -238,6 +248,7 @@ run_load_queue (void)
 void
 SND_StreamSetPos (sfxbuffer_t *buffer, unsigned pos)
 {
+	qfZoneScoped (true);
 	float       stepscale;
 	sfxstream_t *stream = buffer->stream;
 	const sfx_t *sfx = stream->base.sfx;
@@ -254,6 +265,7 @@ SND_StreamSetPos (sfxbuffer_t *buffer, unsigned pos)
 void
 SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count)
 {
+	qfZoneScoped (true);
 	float       stepscale;
 	unsigned    headpos, samples;
 	sfxstream_t *stream = buffer->stream;
@@ -330,6 +342,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned count)
 void
 SND_Queue_Bind (sfx_t *sfx, channel_t *channel)
 {
+	qfZoneScoped (true);
 	sfx_bind_t bind = {
 		.sfx = sfx,
 		.channel = channel,
@@ -341,6 +354,7 @@ SND_Queue_Bind (sfx_t *sfx, channel_t *channel)
 void
 SND_Queue_Load (sfxblock_t *block, sfx_load_f loadf)
 {
+	qfZoneScoped (true);
 	sfx_load_t load = {
 		.block = block,
 		.load = loadf,
@@ -354,6 +368,7 @@ static _Atomic bool snd_fill_stop;
 static void *
 fill_thread (void *data)
 {
+	qfZoneScoped (true);
 	while (!snd_fill_stop) {
 		bool did_something = false;
 		did_something |= run_fill_queue ();
@@ -372,6 +387,7 @@ static pthread_t fill_thread_id;
 bool
 SND_Fill_Init (void)
 {
+	qfZoneScoped (true);
 	if (pthread_create (&fill_thread_id, nullptr, fill_thread, nullptr) < 0) {
 		memset (&fill_thread_id, 0, sizeof (fill_thread_id));
 		Sys_Printf (RED"could not create thread"DFL"\n");
@@ -383,6 +399,7 @@ SND_Fill_Init (void)
 void
 SND_Fill_Shutdown (void)
 {
+	qfZoneScoped (true);
 	snd_fill_stop = true;
 	void *ret;
 	pthread_join (fill_thread_id, &ret);

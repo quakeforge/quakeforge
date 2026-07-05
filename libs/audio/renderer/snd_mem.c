@@ -62,12 +62,14 @@ static memzone_t *snd_zone;
 void
 SND_Memory_Init_Cvars (void)
 {
+	qfZoneScoped (true);
 	Cvar_Register (&snd_mem_size_cvar, nullptr, nullptr);
 }
 
 static void __attribute__((format(PRINTF,2,3)))
 snd_zone_error (void *data, const char *fmt, ...)
 {
+	qfZoneScoped (true);
 	va_list     args;
 	dstring_t  *msg = dstring_new ();
 
@@ -79,6 +81,7 @@ snd_zone_error (void *data, const char *fmt, ...)
 static void
 snd_memory_shutdown (void *data)
 {
+	qfZoneScoped (true);
 	if (snd_zone) {
 		size_t      size = snd_mem_size * 1024 * 1024;
 		Sys_Free (snd_zone, size);
@@ -88,6 +91,7 @@ snd_memory_shutdown (void *data)
 bool
 SND_Memory_Init (void)
 {
+	qfZoneScoped (true);
 	size_t      size = snd_mem_size * 1024 * 1024;
 
 	snd_zone = Sys_Alloc (size);
@@ -115,6 +119,7 @@ SND_Memory_Init (void)
 sfxbuffer_t *
 SND_Memory_AllocBuffer (unsigned samples)
 {
+	qfZoneScoped (true);
 	size_t      size = offsetof (sfxbuffer_t, data[samples]);
 	// Z_Malloc (currently) clears memory, don't need that for the whole
 	// buffer (just the header), but Z_TagMalloc does not
@@ -135,24 +140,28 @@ SND_Memory_AllocBuffer (unsigned samples)
 void
 SND_Memory_Free (void *ptr)
 {
+	qfZoneScoped (true);
 	Z_Free (snd_zone, ptr);
 }
 
 void
 SND_Memory_SetTag (void *ptr, int tag)
 {
+	qfZoneScoped (true);
 	Z_SetTag (snd_zone, ptr, tag);
 }
 
 int
 SND_Memory_Retain (void *ptr)
 {
+	qfZoneScoped (true);
 	return Z_IncRetainCount (snd_zone, ptr);
 }
 
 int
 SND_Memory_Release (void *ptr)
 {
+	qfZoneScoped (true);
 	int         retain =  Z_DecRetainCount (snd_zone, ptr);
 	if (!retain) {
 		Z_Free (snd_zone, ptr);
@@ -163,18 +172,21 @@ SND_Memory_Release (void *ptr)
 int
 SND_Memory_GetRetainCount (void *ptr)
 {
+	qfZoneScoped (true);
 	return Z_GetRetainCount (snd_zone, ptr);
 }
 
 static sfxbuffer_t *
 snd_open_fail (sfx_t *sfx)
 {
+	qfZoneScoped (true);
 	return nullptr;
 }
 
 bool
 SND_Load (sfx_t *sfx)
 {
+	qfZoneScoped (true);
 	char       *realname;
 	char        buf[4];
 	QFile      *file;

@@ -56,12 +56,14 @@ static hashtab_t *snd_sfx_hash;
 static const char *
 snd_sfx_getkey (const void *sfx, void *unused)
 {
+	qfZoneScoped (true);
 	return ((sfx_t *) sfx)->name;
 }
 
 static void
 snd_sfx_free (void *_sfx, void *unused)
 {
+	qfZoneScoped (true);
 	sfx_t      *sfx = (sfx_t *) _sfx;
 	free ((char *) sfx->name);
 	sfx->name = nullptr;
@@ -71,6 +73,7 @@ void
 SND_SFX_Block (sfx_t *sfx, char *realname, wavinfo_t info,
 			   sfxbuffer_t *(*load) (sfxblock_t *block))
 {
+	qfZoneScoped (true);
 	sfxblock_t *block = malloc (sizeof (sfxblock_t));
 	*block = (sfxblock_t) {
 		.base = {
@@ -91,6 +94,7 @@ void
 SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
 				sfxbuffer_t *(*open) (sfx_t *sfx))
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = calloc (1, sizeof (sfxstream_t));
 	sfx->open = open;
 	sfx->stream = stream;
@@ -107,6 +111,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 					int (*seek)(sfxstream_t *, int),
 					void (*close) (sfxbuffer_t *))
 {
+	qfZoneScoped (true);
 	snd_t      *snd = sfx->snd;
 	// reference stream's wavinfo
 	wavinfo_t  *wavinfo = &sfx->stream->base.wavinfo;
@@ -155,6 +160,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 void
 SND_SFX_StreamClose (sfxstream_t *stream)
 {
+	qfZoneScoped (true);
 	SND_PulldownResampler (stream);
 	SND_Memory_Free (stream->buffer);
 	free (stream);
@@ -163,6 +169,7 @@ SND_SFX_StreamClose (sfxstream_t *stream)
 sfx_t *
 SND_LoadSound (snd_t *snd, const char *name)
 {
+	qfZoneScoped (true);
 	sfx_t      *sfx;
 
 	if (!snd_sfx_hash)
@@ -188,6 +195,7 @@ SND_LoadSound (snd_t *snd, const char *name)
 sfx_t *
 SND_PrecacheSound (snd_t *snd, const char *name)
 {
+	qfZoneScoped (true);
 	sfx_t      *sfx;
 
 	if (!name)
@@ -200,6 +208,7 @@ SND_PrecacheSound (snd_t *snd, const char *name)
 static void
 s_gamedir (int phase, void *data)
 {
+	qfZoneScoped (true);
 	snd_num_sfx = 0;
 	Hash_FlushTable (snd_sfx_hash);
 }
@@ -207,6 +216,7 @@ s_gamedir (int phase, void *data)
 static void
 s_soundlist_f (void)
 {
+	qfZoneScoped (true);
 	int			total, i;
 	sfx_t	   *sfx;
 
@@ -221,6 +231,7 @@ s_soundlist_f (void)
 void
 SND_SFX_Init (snd_t *snd)
 {
+	qfZoneScoped (true);
 	snd_sfx_hash = Hash_NewTable (511, snd_sfx_getkey, snd_sfx_free,
 								  nullptr, nullptr);
 
@@ -233,5 +244,6 @@ SND_SFX_Init (snd_t *snd)
 void
 SND_SFX_Shutdown (snd_t *snd)
 {
+	qfZoneScoped (true);
 	Hash_DelTable (snd_sfx_hash);
 }

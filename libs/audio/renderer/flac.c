@@ -105,12 +105,14 @@ static void
 flac_error_func (const FLAC__StreamDecoder *decoder,
 				 FLAC__StreamDecoderErrorStatus status, void *client_data)
 {
+	qfZoneScoped (true);
 }
 
 static FLAC__StreamDecoderReadStatus
 flac_read_func (const FLAC__StreamDecoder *decoder, FLAC__byte buffer[],
 			    size_t *bytes, void *client_data)
 {
+	qfZoneScoped (true);
 	flacfile_t *ff = (flacfile_t *) client_data;
 	*bytes = Qread (ff->file, buffer, *bytes);
 	return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
@@ -120,6 +122,7 @@ static FLAC__StreamDecoderSeekStatus
 flac_seek_func (const FLAC__StreamDecoder *decoder,
 			    FLAC__uint64 absolute_byte_offset, void *client_data)
 {
+	qfZoneScoped (true);
 	flacfile_t *ff = (flacfile_t *) client_data;
 	Qseek (ff->file, absolute_byte_offset, SEEK_SET);
 	return FLAC__STREAM_DECODER_SEEK_STATUS_OK;
@@ -129,6 +132,7 @@ static FLAC__StreamDecoderTellStatus
 flac_tell_func (const FLAC__StreamDecoder *decoder,
 			    FLAC__uint64 *absolute_byte_offset, void *client_data)
 {
+	qfZoneScoped (true);
 	flacfile_t *ff = (flacfile_t *) client_data;
 	*absolute_byte_offset = Qtell (ff->file);
 	return FLAC__STREAM_DECODER_TELL_STATUS_OK;
@@ -138,6 +142,7 @@ static FLAC__StreamDecoderLengthStatus
 flac_length_func (const FLAC__StreamDecoder *decoder,
 				  FLAC__uint64 *stream_length, void *client_data)
 {
+	qfZoneScoped (true);
 	flacfile_t *ff = (flacfile_t *) client_data;
 	*stream_length = Qfilesize (ff->file);
 	return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
@@ -146,6 +151,7 @@ flac_length_func (const FLAC__StreamDecoder *decoder,
 static FLAC__bool
 flac_eof_func (const FLAC__StreamDecoder *decoder, void *client_data)
 {
+	qfZoneScoped (true);
 	flacfile_t *ff = (flacfile_t *) client_data;
 	return Qeof (ff->file);
 }
@@ -155,6 +161,7 @@ flac_write_func (const FLAC__StreamDecoder *decoder,
 				 const FLAC__Frame *frame, const FLAC__int32 * const buffer[],
 				 void *client_data)
 {
+	qfZoneScoped (true);
 	flacfile_t *ff = (flacfile_t *) client_data;
 	float      *out;
 	float       scale = 2.0 / (1 << ff->info.bits_per_sample);
@@ -181,6 +188,7 @@ static void
 flac_meta_func (const FLAC__StreamDecoder *decoder,
 			    const FLAC__StreamMetadata *metadata, void *client_data)
 {
+	qfZoneScoped (true);
 	flacfile_t *ff = (flacfile_t *) client_data;
 	if (metadata->type == FLAC__METADATA_TYPE_STREAMINFO)
 		ff->info = metadata->data.stream_info;
@@ -191,6 +199,7 @@ flac_meta_func (const FLAC__StreamDecoder *decoder,
 static flacfile_t *
 flac_open (QFile *file)
 {
+	qfZoneScoped (true);
 	flacfile_t *ff = calloc (1, sizeof (flacfile_t));
 	ff->decoder = FLAC__stream_decoder_new ();
 	ff->file = file;
@@ -235,6 +244,7 @@ flac_open (QFile *file)
 static void
 flac_close (flacfile_t *ff)
 {
+	qfZoneScoped (true);
 	FLAC__stream_decoder_finish (ff->decoder);
 	FLAC__stream_decoder_delete (ff->decoder);
 
@@ -252,6 +262,7 @@ flac_close (flacfile_t *ff)
 static int
 flac_read (flacfile_t *ff, float *buf, int len)
 {
+	qfZoneScoped (true);
 	int         count = 0;
 
 	while (len) {
@@ -282,6 +293,7 @@ flac_read (flacfile_t *ff, float *buf, int len)
 static sfxbuffer_t *
 flac_load (flacfile_t *ff, sfxblock_t *block)
 {
+	qfZoneScoped (true);
 	float      *data;
 	sfxbuffer_t *sb = 0;
 	const sfx_t *sfx = block->base.sfx;
@@ -314,6 +326,7 @@ flac_load (flacfile_t *ff, sfxblock_t *block)
 static sfxbuffer_t *
 flac_callback_load (sfxblock_t *block)
 {
+	qfZoneScoped (true);
 	QFile      *file;
 	flacfile_t *ff;
 
@@ -332,6 +345,7 @@ flac_callback_load (sfxblock_t *block)
 static void
 flac_block (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 {
+	qfZoneScoped (true);
 	flac_close (ff);
 	SND_SFX_Block (sfx, realname, info, flac_callback_load);
 }
@@ -339,6 +353,7 @@ flac_block (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 static long
 flac_stream_read (void *file, float **buf)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = (sfxstream_t *) file;
 	flacfile_t *ff = (flacfile_t *) stream->file;
 	int res = FLAC__stream_decoder_process_single (ff->decoder);
@@ -354,6 +369,7 @@ flac_stream_read (void *file, float **buf)
 static int
 flac_stream_seek (sfxstream_t *stream, int pos)
 {
+	qfZoneScoped (true);
 	flacfile_t *ff = stream->file;
 
 	ff->pos = ff->size = 0;
@@ -363,6 +379,7 @@ flac_stream_seek (sfxstream_t *stream, int pos)
 static void
 flac_stream_close (sfxbuffer_t *buffer)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = buffer->stream;
 
 	flac_close (stream->file);
@@ -372,6 +389,7 @@ flac_stream_close (sfxbuffer_t *buffer)
 static sfxbuffer_t *
 flac_stream_open (sfx_t *sfx)
 {
+	qfZoneScoped (true);
 	sfxstream_t *stream = sfx->stream;
 	QFile      *file;
 	void       *f;
@@ -394,6 +412,7 @@ flac_stream_open (sfx_t *sfx)
 static void
 flac_stream (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 {
+	qfZoneScoped (true);
 	flac_close (ff);
 	SND_SFX_Stream (sfx, realname, info, flac_stream_open);
 }
@@ -401,6 +420,7 @@ flac_stream (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 static wavinfo_t
 flac_get_info (flacfile_t *ff)
 {
+	qfZoneScoped (true);
 	int         sample_start = -1, sample_count = 0;
 	int         samples;
 	wavinfo_t   info;
@@ -449,6 +469,7 @@ flac_get_info (flacfile_t *ff)
 bool
 SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname)
 {
+	qfZoneScoped (true);
 	flacfile_t *ff;
 	wavinfo_t   info;
 

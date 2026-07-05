@@ -53,6 +53,7 @@ static unsigned max_overpaint;			// number of extra samples painted
 static inline bool
 check_channel_end (channel_t *ch, sfxbuffer_t *sb, int count, unsigned ltime)
 {
+	qfZoneScoped (true);
 	if (count <= 0 || ltime >= ch->end) {
 		if (ch->loopstart != (unsigned) -1) {
 			ch->pos = ch->loopstart;
@@ -68,6 +69,7 @@ check_channel_end (channel_t *ch, sfxbuffer_t *sb, int count, unsigned ltime)
 static inline void
 snd_paint_channel (channel_t *ch, sfxbuffer_t *sb, int count)
 {
+	qfZoneScoped (true);
 	unsigned    pos;
 	int         offs = 0;
 	float      *samps;
@@ -101,6 +103,7 @@ snd_paint_channel (channel_t *ch, sfxbuffer_t *sb, int count)
 void
 SND_PaintChannels (snd_t *snd, unsigned endtime)
 {
+	qfZoneScoped (true);
 	unsigned    end, ltime;
 	int         i, count;
 	channel_t  *ch;
@@ -182,6 +185,7 @@ static inline void
 snd_mix_single (portable_samplepair_t *pair, float **samp,
 				float lvol, float rvol)
 {
+	qfZoneScoped (true);
 	float       single = *(*samp)++;
 
 	pair->left += single * lvol;
@@ -192,6 +196,7 @@ static inline void
 snd_mix_pair (portable_samplepair_t *pair, float **samp,
 			  float lvol, float rvol)
 {
+	qfZoneScoped (true);
 	float       left = *(*samp)++;
 	float       right = *(*samp)++;
 
@@ -203,6 +208,7 @@ static inline void
 snd_mix_triple (portable_samplepair_t *pair, float **samp,
 				 float lvol, float rvol)
 {
+	qfZoneScoped (true);
 	float       left = *(*samp)++;
 	float       center = *(*samp)++;
 	float       right = *(*samp)++;
@@ -220,6 +226,7 @@ snd_mix_triple (portable_samplepair_t *pair, float **samp,
 static void
 snd_paint_mono (int offs, channel_t *ch, float *sfx, unsigned count)
 {
+	qfZoneScoped (true);
 	float       leftvol, rightvol;
 	unsigned    left_phase, right_phase;	// Never allowed < 0 anyway
 	unsigned    i = 0;
@@ -318,6 +325,7 @@ snd_paint_mono (int offs, channel_t *ch, float *sfx, unsigned count)
 static void
 snd_paint_stereo (int offs, channel_t *ch, float *samp, unsigned count)
 {
+	qfZoneScoped (true);
 	portable_samplepair_t *pair;
 	float       leftvol = ch->leftvol * VOLSCALE;
 	float       rightvol = ch->rightvol * VOLSCALE;
@@ -336,6 +344,7 @@ snd_paint_stereo (int offs, channel_t *ch, float *samp, unsigned count)
 static void
 snd_paint_3 (int offs, channel_t *ch, float *samp, unsigned count)
 {
+	qfZoneScoped (true);
 	portable_samplepair_t *pair;
 	float       leftvol = ch->leftvol * VOLSCALE;
 	float       rightvol = ch->rightvol * VOLSCALE;
@@ -355,6 +364,7 @@ snd_paint_3 (int offs, channel_t *ch, float *samp, unsigned count)
 static void
 snd_paint_4 (int offs, channel_t *ch, float *samp, unsigned count)
 {
+	qfZoneScoped (true);
 	portable_samplepair_t *pair;
 	float       leftvol = ch->leftvol * VOLSCALE;
 	float       rightvol = ch->rightvol * VOLSCALE;
@@ -375,6 +385,7 @@ snd_paint_4 (int offs, channel_t *ch, float *samp, unsigned count)
 static void
 snd_paint_5 (int offs, channel_t *ch, float *samp, unsigned count)
 {
+	qfZoneScoped (true);
 	portable_samplepair_t *pair;
 	float       leftvol = ch->leftvol * VOLSCALE;
 	float       rightvol = ch->rightvol * VOLSCALE;
@@ -396,6 +407,7 @@ snd_paint_5 (int offs, channel_t *ch, float *samp, unsigned count)
 static void
 snd_paint_6 (int offs, channel_t *ch, float *samp, unsigned count)
 {
+	qfZoneScoped (true);
 	portable_samplepair_t *pair;
 	float       leftvol = ch->leftvol * VOLSCALE;
 	float       rightvol = ch->rightvol * VOLSCALE;
@@ -419,6 +431,7 @@ snd_paint_6 (int offs, channel_t *ch, float *samp, unsigned count)
 static void
 snd_paint_7 (int offs, channel_t *ch, float *samp, unsigned count)
 {
+	qfZoneScoped (true);
 	portable_samplepair_t *pair;
 	float       leftvol = ch->leftvol * VOLSCALE;
 	float       rightvol = ch->rightvol * VOLSCALE;
@@ -443,6 +456,7 @@ snd_paint_7 (int offs, channel_t *ch, float *samp, unsigned count)
 static void
 snd_paint_8 (int offs, channel_t *ch, float *samp, unsigned count)
 {
+	qfZoneScoped (true);
 	portable_samplepair_t *pair;
 	float       leftvol = ch->leftvol * VOLSCALE;
 	float       rightvol = ch->rightvol * VOLSCALE;
@@ -460,6 +474,7 @@ snd_paint_8 (int offs, channel_t *ch, float *samp, unsigned count)
 void
 SND_SetPaint (sfxbuffer_t *sb)
 {
+	qfZoneScoped (true);
 	static sfxpaint_t *painters[] = {
 		nullptr,
 		snd_paint_mono,

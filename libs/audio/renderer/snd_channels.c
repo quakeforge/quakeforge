@@ -148,6 +148,7 @@ static cvar_t ambient_level_cvar = {
 static void
 snd_free_channel (channel_t *ch)
 {
+	qfZoneScoped (true);
 	sfxbuffer_t *buffer = ch->buffer;
 	ch->buffer = nullptr;
 	ch->stop = false;
@@ -167,6 +168,7 @@ snd_free_channel (channel_t *ch)
 channel_t *
 SND_AllocChannel (snd_t *snd)
 {
+	qfZoneScoped (true);
 	channel_t  *chan;
 
 	Sys_MaskPrintf (SYS_snd, "SND_AllocChannel: free channels: %d\n",
@@ -186,6 +188,7 @@ SND_AllocChannel (snd_t *snd)
 void
 SND_ChannelStop (snd_t *snd, channel_t *chan)
 {
+	qfZoneScoped (true);
 	if (!chan->buffer) {
 		Sys_MaskPrintf (SYS_warn, "Sound: stop called on invalid channel\n");
 	}
@@ -199,6 +202,7 @@ SND_ChannelStop (snd_t *snd, channel_t *chan)
 void
 SND_ScanChannels (snd_t *snd, bool wait)
 {
+	qfZoneScoped (true);
 	int         i;
 	channel_t  *ch;
 	int         count = 0;
@@ -246,6 +250,7 @@ SND_ScanChannels (snd_t *snd, bool wait)
 void
 SND_FinishChannels (void)
 {
+	qfZoneScoped (true);
 	int         i;
 	channel_t  *ch;
 
@@ -258,6 +263,7 @@ SND_FinishChannels (void)
 void
 SND_StopAllSounds (snd_t *snd)
 {
+	qfZoneScoped (true);
 	for (int i = 0; i < MAX_CHANNELS; i++) {
 		if (set_is_member (&dynamic_channels, i)
 			|| set_is_member (&looped_channels, i)
@@ -278,6 +284,7 @@ SND_StopAllSounds (snd_t *snd)
 static void
 s_play_f (void *_snd)
 {
+	qfZoneScoped (true);
 	snd_t      *snd = _snd;
 	dstring_t  *name = dstring_new ();
 	int			i;
@@ -301,6 +308,7 @@ s_play_f (void *_snd)
 static void
 s_playcenter_f (void *_snd)
 {
+	qfZoneScoped (true);
 	snd_t      *snd = _snd;
 	dstring_t  *name = dstring_new ();
 	int			i;
@@ -325,6 +333,7 @@ s_playcenter_f (void *_snd)
 static void
 s_playvol_f (void *_snd)
 {
+	qfZoneScoped (true);
 	snd_t      *snd = _snd;
 	dstring_t  *name = dstring_new ();
 	float		vol;
@@ -350,11 +359,13 @@ s_playvol_f (void *_snd)
 static void
 s_channels_gamedir (int phase, void *_snd)
 {
+	qfZoneScoped (true);
 }
 
 void
 SND_Channels_Init (snd_t *snd)
 {
+	qfZoneScoped (true);
 	Cvar_Register (&snd_phasesep_cvar, nullptr, nullptr);
 	Cvar_Register (&snd_volumesep_cvar, nullptr, nullptr);
 	Cvar_Register (&snd_swapchannelside_cvar, nullptr, nullptr);
@@ -382,6 +393,7 @@ SND_Channels_Init (snd_t *snd)
 static channel_t *
 s_pick_channel (snd_t *snd, int entnum, int entchannel, int looped)
 {
+	qfZoneScoped (true);
 	// check for finished non-looped sounds
 	for (auto c = set_first (&dynamic_channels); c; c = set_next (c)) {
 		channel_t  *ch = &snd_channels[c->element];
@@ -410,18 +422,21 @@ s_pick_channel (snd_t *snd, int entnum, int entchannel, int looped)
 void
 SND_AmbientOff (snd_t *snd)
 {
+	qfZoneScoped (true);
 	snd_ambient = false;
 }
 
 void
 SND_AmbientOn (snd_t *snd)
 {
+	qfZoneScoped (true);
 	snd_ambient = true;
 }
 
 void
 SND_SetAmbient (snd_t *snd, int amb_channel, sfx_t *sfx)
 {
+	qfZoneScoped (true);
 	if (amb_channel < 0 || amb_channel > NUM_AMBIENTS) {
 		return;
 	}
@@ -431,6 +446,7 @@ SND_SetAmbient (snd_t *snd, int amb_channel, sfx_t *sfx)
 static void
 s_updateAmbientSounds (snd_t *snd, const byte *ambient_sound_level)
 {
+	qfZoneScoped (true);
 	float		vol;
 	int			ambient_channel;
 
@@ -506,6 +522,7 @@ s_updateAmbientSounds (snd_t *snd, const byte *ambient_sound_level)
 static void
 s_spatialize (snd_t *snd, channel_t *ch)
 {
+	qfZoneScoped (true);
 	int			phase;					// in samples
 	vec_t		dist, dot, lscale, rscale, scale;
 	vec3_t		source_vec;
@@ -561,6 +578,7 @@ s_spatialize (snd_t *snd, channel_t *ch)
 static inline bool
 s_update_channel (snd_t *snd, channel_t *ch)
 {
+	qfZoneScoped (true);
 	if (!ch->buffer)
 		return false;
 	s_spatialize (snd, ch);
@@ -572,6 +590,7 @@ s_update_channel (snd_t *snd, channel_t *ch)
 static void
 s_combine_channel (channel_t *combine, channel_t *ch)
 {
+	qfZoneScoped (true);
 	combine->leftvol += ch->leftvol;
 	combine->rightvol += ch->rightvol;
 	ch->leftvol = ch->rightvol = 0;
@@ -580,6 +599,7 @@ s_combine_channel (channel_t *combine, channel_t *ch)
 void
 SND_SetListener (snd_t *snd, transform_t ear, const byte *ambient_sound_level)
 {
+	qfZoneScoped (true);
 	if (Transform_Valid (ear)) {
 		listener_origin  = Transform_GetWorldPosition (ear);
 		listener_forward = Transform_Forward (ear);
@@ -641,6 +661,7 @@ static bool
 snd_check_channels (snd_t *snd, channel_t *target_chan, const channel_t *check,
 					const sfx_t *sfx)
 {
+	qfZoneScoped (true);
 	if (!check || !check->buffer || check == target_chan)
 		return false;
 	if (*check->buffer->sfx == sfx && !check->pos) {
@@ -655,6 +676,7 @@ void
 SND_StartSound (snd_t *snd, int entnum, int entchannel, sfx_t *sfx,
 				vec4f_t origin, float vol, float attenuation)
 {
+	qfZoneScoped (true);
 	if (!sfx || !snd->speed)
 		return;
 	// pick a channel to play on
@@ -699,6 +721,7 @@ SND_StartSound (snd_t *snd, int entnum, int entchannel, sfx_t *sfx,
 static bool
 s_check_stop (snd_t *snd, int chan_ind, int entnum, int entchannel)
 {
+	qfZoneScoped (true);
 	entchan_t  *entchan = &snd_entity_channels[chan_ind];
 	if (entchan->id == entnum && entchan->channel == entchannel) {
 		SND_ChannelStop (snd, &snd_channels[chan_ind]);
@@ -710,6 +733,7 @@ s_check_stop (snd_t *snd, int chan_ind, int entnum, int entchannel)
 void
 SND_StopSound (snd_t *snd, int entnum, int entchannel)
 {
+	qfZoneScoped (true);
 	for (int i = 0; i < MAX_CHANNELS; i++) {
 		if (set_is_member (&dynamic_channels, i)
 			|| set_is_member (&looped_channels, i)) {
@@ -722,6 +746,7 @@ void
 SND_StaticSound (snd_t *snd, sfx_t *sfx, vec4f_t origin, float vol,
 				 float attenuation)
 {
+	qfZoneScoped (true);
 	if (!sfx)
 		return;
 	if (sfx->loopstart == (unsigned int) -1) {
@@ -761,6 +786,7 @@ SND_StaticSound (snd_t *snd, sfx_t *sfx, vec4f_t origin, float vol,
 void
 SND_LocalSound (snd_t *snd, const char *sound)
 {
+	qfZoneScoped (true);
 	sfx_t	   *sfx;
 	int         viewent = 0;
 
@@ -777,6 +803,7 @@ SND_LocalSound (snd_t *snd, const char *sound)
 void
 SND_ChannelSetVolume (channel_t *chan, float volume)
 {
+	qfZoneScoped (true);
 	int         chan_ind = chan - snd_channels;
 	snd_spacialization[chan_ind].volume = volume;
 	chan->leftvol = chan->rightvol = volume;
