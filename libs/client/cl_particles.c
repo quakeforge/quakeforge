@@ -1301,6 +1301,6 @@ void
 CL_ParticlesGravity (float gravity)
 {
 	cl_psystem->center = (vec4f_t) { 0, 0, -1, 0 };
-	cl_psystem->gravity = -gravity;
+	cl_psystem->gravity = gravity;
 	cl_psystem->min_dist = 0;
 }
