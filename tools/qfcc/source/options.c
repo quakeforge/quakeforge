@@ -551,6 +551,9 @@ parse_code_option (const char *opt)
 	if (OPTION(code, opt, "debug", debug, flag)) {
 		return true;
 	}
+	if (OPTION(code, opt, "void", void_vars, flag)) {
+		return true;
+	}
 	if (OPTION(code, opt, "fast-float", fast_float, flag)) {
 		return true;
 	}

@@ -669,8 +669,10 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 		}
 		sym->type = auto_type (sym->type, init);
 		if (is_void (sym->type)) {
-			error (0, "variable '%s' declared void", sym->name);
-			sym->type = type_default;
+			if (!options.code.void_vars) {
+				error (0, "variable '%s' declared void", sym->name);
+				sym->type = type_default;
+			}
 		}
 		auto full_name = sym->table ? sym_full_name (sym) : sym->name;
 		sym->def = new_def (full_name, sym->type, space, storage);
