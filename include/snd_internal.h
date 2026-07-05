@@ -499,7 +499,8 @@ void SND_SetPaint (sfxbuffer_t *sb);
 */
 ///@{
 
-unsigned SND_ResamplerFrames (const sfx_t *sfx, unsigned frames);
+unsigned SND_ResamplerFrames (const sfx_t *sfx, unsigned frames)
+	__attribute__((pure));
 
 /** Set up the various parameters that depend on the actual sample rate.
 	\param sb		buffer to setup
