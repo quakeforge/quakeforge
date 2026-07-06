@@ -1762,7 +1762,7 @@ op_call:
 				if (pr->debug_handler) {
 					pr->debug_handler (prd_watch_point, 0, pr->debug_data);
 				} else {
-					PR_RunError (pr, "watchpoint hit: %d -> %d",
+					PR_RunError (pr, "watchpoint hit: %x -> %x",
 								 old_val.value, pr->watch->value);
 				}
 			}
