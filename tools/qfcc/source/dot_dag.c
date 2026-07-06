@@ -157,6 +157,14 @@ print_node (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 	}
 	set_delete (edges);
 	if (0) {
+		for (edge_iter = set_first (node->parents); edge_iter;
+			 edge_iter = set_next (edge_iter)) {
+			dasprintf (dstr, "  \"dagnode_%p\" -> \"dagnode_%p\""
+					   " [dir=back,style=dotted];\n",
+					   dag->nodes[edge_iter->element], node);
+		}
+	}
+	if (0) {
 		for (edge_iter = set_first (node->reachable); edge_iter;
 			 edge_iter = set_next (edge_iter)) {
 			dasprintf (dstr,
