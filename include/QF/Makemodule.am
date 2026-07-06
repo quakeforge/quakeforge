@@ -41,6 +41,7 @@ include_qf = \
 	include/QF/object.h \
 	include/QF/pak.h \
 	include/QF/pakfile.h \
+	include/QF/particle.h \
 	include/QF/pcx.h \
 	include/QF/png.h \
 	include/QF/plist.h \
@@ -125,6 +126,7 @@ include_qf_input = \
 	include/QF/input/binding.h \
 	include/QF/input/event.h \
 	include/QF/input/event_names.h \
+	include/QF/input/gamepad.h \
 	include/QF/input/imt.h
 
 include_qf_math = \
@@ -184,6 +186,7 @@ include_qf_ui = \
 	include/QF/ui/font.h \
 	include/QF/ui/imui.h \
 	include/QF/ui/inputline.h \
+	include/QF/ui/node.h \
 	include/QF/ui/passage.h \
 	include/QF/ui/shaper.h \
 	include/QF/ui/text.h \
@@ -203,6 +206,7 @@ include_qf_vulkan = \
 	include/QF/Vulkan/funclist.h \
 	include/QF/Vulkan/image.h \
 	include/QF/Vulkan/instance.h \
+	include/QF/Vulkan/miploop.h \
 	include/QF/Vulkan/mouse_pick.h \
 	include/QF/Vulkan/pipeline.h \
 	include/QF/Vulkan/projection.h \

@@ -292,6 +292,10 @@ EXTRA_PROGRAMS += \
 	ruamoko/qwaq/qwaq-wl
 
 EXTRA_DIST += \
+	ruamoko/qwaq/config/qwaq-ed-fw.plist \
+	ruamoko/qwaq/config/qwaq-ed-in.cfg \
+	ruamoko/qwaq/config/qwaq-ed-rg.plist \
+	ruamoko/qwaq/config/scene.plist \
 	ruamoko/qwaq/debugger/debug.h \
 	ruamoko/qwaq/debugger/debugger.h \
 	ruamoko/qwaq/debugger/localsdata.h \
@@ -300,6 +304,7 @@ EXTRA_DIST += \
 	ruamoko/qwaq/debugger/views/arrayview.h \
 	ruamoko/qwaq/debugger/views/basicview.h \
 	ruamoko/qwaq/debugger/views/boolview.h	\
+	ruamoko/qwaq/debugger/views/classview.h	\
 	ruamoko/qwaq/debugger/views/defview.h \
 	ruamoko/qwaq/debugger/views/doubleview.h \
 	ruamoko/qwaq/debugger/views/entityview.h \
@@ -328,9 +333,15 @@ EXTRA_DIST += \
 	ruamoko/qwaq/gui/editwindow.h \
 	ruamoko/qwaq/gui/filewindow.h \
 	ruamoko/qwaq/gui/listview.h \
+	ruamoko/qwaq/gui/nodepanel.h \
+	ruamoko/qwaq/gui/ui_object.h \
 	ruamoko/qwaq/gui/virtinput.h \
+	ruamoko/qwaq/gui/window.h \
 	ruamoko/qwaq/input-app.h \
+	ruamoko/qwaq/mainmenu.h \
+	ruamoko/qwaq/physics.h \
 	ruamoko/qwaq/qwaq-app.h \
+	ruamoko/qwaq/qwaq-ed.h \
 	ruamoko/qwaq/qwaq-input.h \
 	ruamoko/qwaq/qwaq.h \
 	ruamoko/qwaq/threading.h \
@@ -346,6 +357,7 @@ EXTRA_DIST += \
 	ruamoko/qwaq/ui/rect.h \
 	ruamoko/qwaq/ui/scrollbar.h \
 	ruamoko/qwaq/ui/stringview.h \
+	ruamoko/qwaq/ui/table.h \
 	ruamoko/qwaq/ui/tableview.h \
 	ruamoko/qwaq/ui/textcontext.h \
 	ruamoko/qwaq/ui/titlebar.h \
@@ -368,5 +380,5 @@ EXTRA_DIST += \
 CLEANFILES += \
 	ruamoko/qwaq/qwaq-curses.log \
 	ruamoko/qwaq/*.dat \
-	ruamoko/qwaq/*.spv \
-	ruamoko/qwaq/*.sym
+	ruamoko/qwaq/*.sym \
+	ruamoko/qwaq/shader/*.spv

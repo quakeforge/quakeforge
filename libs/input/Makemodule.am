@@ -39,3 +39,7 @@ libs_input_libQFinput_la_SOURCES= \
 EXTRA_LTLIBRARIES += \
 	libs/input/libinput_evdev.la \
 	libs/input/libinput_xinput.la
+
+EXTRA_DIST += \
+	libs/input/gamecontrollerdb.txt \
+	libs/input/gamecontrollerdb_qf.txt

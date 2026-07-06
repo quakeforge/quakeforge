@@ -110,4 +110,5 @@ EXTRA_DIST += \
 	include/win32/resources/icon1Vista.ico \
 	include/win32/resources/icon1XP.ico \
 	include/win32/resources/quakeforge.rc \
-	include/win32/resources/resource.h
+	include/win32/resources/resource.h \
+	include/xinput/xi.h

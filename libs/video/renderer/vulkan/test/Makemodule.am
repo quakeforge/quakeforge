@@ -9,6 +9,9 @@ endif
 
 EXTRA_PROGRAMS += $(libs_video_renderer_vulkan_tests)
 
+EXTRA_DIST += \
+	libs/video/renderer/vulkan/test/prefixsum.plist
+
 libs_video_renderer_vulkan_test_libs= \
 	libs/video/renderer/librender_vulkan.la \
 	libs/video/renderer/r_scrap.lo \
