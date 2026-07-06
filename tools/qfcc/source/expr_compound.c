@@ -301,6 +301,10 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 	while (ele) {
 		if (ele->designator) {
 			state = get_designated_offset (type, ele->designator);
+		} else if (ele->type) {
+			// The element's type and offset were set internally
+			state.type = ele->type;
+			state.offset = ele->offset;
 		}
 		if (!state.type) {
 			break;

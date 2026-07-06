@@ -201,8 +201,12 @@ vector_to_compound (const expr_t *vector)
 	scoped_src_loc (vector);
 	auto compound = new_compound_init ();
 	compound->compound.type = vector->vector.type;
-	for (int i = 0; i < count; i++) {
+	for (int i = 0, offset = 0; i < count; i++) {
 		auto ele = new_element (elements[i], nullptr);
+		auto type = get_type (elements[i]);
+		ele->type = type;
+		ele->offset = offset;
+		offset += type_size (type);
 		append_init_element (&compound->compound, ele);
 	}
 	return compound;

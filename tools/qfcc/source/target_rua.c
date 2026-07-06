@@ -211,32 +211,12 @@ ruamoko_build_code (function_t *func, const expr_t *statements)
 	defspace_alloc_aligned_highwater (space, 0, STACK_ALIGN);
 }
 
-static int
-copy_elements (expr_t *block, const expr_t *dst, const expr_t *src, int base)
-{
-	int         offset = 0;
-	for (auto li = src->vector.list.head; li; li = li->next) {
-		auto e = li->expr;
-		if (e->type == ex_vector) {
-			offset += copy_elements (block, dst, e, offset + base);
-		} else {
-			auto type = get_type (e);
-			auto dst_ele = new_offset_alias_expr (type, dst, offset + base);
-			append_expr (block, assign_expr (dst_ele, e));
-			offset += type_aligned_size (type);
-		}
-	}
-	return offset;
-}
-
 static const expr_t *
 ruamoko_assign_vector (const expr_t *dst, const expr_t *src)
 {
-	expr_t     *block = new_block_expr (0);
-
-	copy_elements (block, dst, src, 0);
-	block->block.result = dst;
-	return block;
+	auto new = vector_to_compound (src);
+	auto tmp = initialized_temp_expr (nullptr, new);
+	return new_assign_expr (dst, tmp);
 }
 
 const expr_t *
