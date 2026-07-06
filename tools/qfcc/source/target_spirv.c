@@ -3618,7 +3618,7 @@ static const expr_t *
 spirv_assign_vector (const expr_t *dst, const expr_t *src)
 {
 	auto new = vector_to_compound (src);
-	return new_assign_expr (dst, new);;
+	return new_assign_expr (dst, new);
 }
 
 static const expr_t *

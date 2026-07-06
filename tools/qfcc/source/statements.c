@@ -1717,7 +1717,7 @@ ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 		ref = optimize_ptroffset (ref);
 		sblock = statement_subexpr (sblock, ref->ptroffset.ptr, base);
 		if (check_offset (ref->ptroffset.offset)) {
-			int const_offs = expr_integral (ref->ptroffset.offset);;
+			int const_offs = expr_integral (ref->ptroffset.offset);
 			*mode = 2;
 			*offset = short_operand (const_offs, ref);
 		} else {

@@ -824,7 +824,7 @@ create_namespace_chain (const expr_t *id_chain)
 		auto sym = symtab_lookup (current_symtab, ns_sym->name);
 		if (sym && sym->table == current_symtab) {
 			// switch to existing namespace
-			current_symtab = sym->namespace;;
+			current_symtab = sym->namespace;
 		} else {
 			auto ns_tab = new_symtab (current_symtab, stab_namespace);
 			ns_tab->space = current_symtab->space;

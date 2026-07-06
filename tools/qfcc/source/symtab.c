@@ -397,7 +397,7 @@ declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx)
 			error (0, "bitfield size must be a constant integer");
 		} else {
 			sym->sy_type = sy_bitfield;
-			sym->offset = expr_integral (spec.bit_size);;
+			sym->offset = expr_integral (spec.bit_size);
 		}
 	}
 	symtab_addsymbol (symtab, sym);
