@@ -1059,9 +1059,6 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 	const char *opcode;
 	bool        need_ptr = false;
 	st_type_t   type = st_move;
-	operand_t  *use = nullptr;
-	operand_t  *def = nullptr;
-	operand_t  *kill = nullptr;
 
 	scoped_src_loc (e);
 
@@ -1103,11 +1100,11 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 			*op = src;
 		}
 		if (!need_ptr && is_indirect (dst_expr)) {
-			if (is_variable (src_expr)) {
-				// FIXME this probably needs to be more agressive
-				// shouldn't emit code...
-				sblock = statement_subexpr (sblock, src_expr, &use);
-			}
+			//if (is_variable (src_expr)) {
+			//	// FIXME this probably needs to be more agressive
+			//	// shouldn't emit code...
+			//	sblock = statement_subexpr (sblock, src_expr, &use);
+			//}
 			if (options.code.progsversion == PROG_VERSION) {
 				// FIXME it was probably a mistake extracting the operand
 				// type from the statement expression in dags. Also, can't
@@ -1128,13 +1125,6 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 		// dst_expr and/or src_expr are dereferenced pointers, so need to
 		// un-dereference dst_expr to get the pointer and switch to movep
 		// or memsetp instructions.
-		if (is_variable (dst_expr)) {
-			// FIXME this probably needs to be more agressive
-			// shouldn't emit code...
-			sblock = statement_subexpr (sblock, dst_expr, &def);
-			//FIXME is this even necessary? if it is, should use copy_operand
-			sblock = statement_subexpr (sblock, dst_expr, &kill);
-		}
 		dst_expr = address_expr (dst_expr, 0);
 		need_ptr = true;
 	}
@@ -1163,9 +1153,6 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 	s->opa = src;
 	s->opb = size;
 	s->opc = dst;
-	s->use = use;
-	s->def = def;
-	s->kill = kill;
 	sblock_add_statement (sblock, s);
 	return sblock;
 }
