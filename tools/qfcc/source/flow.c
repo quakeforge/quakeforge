@@ -3008,4 +3008,48 @@ flow_data_flow (function_t *func)
 	func->sblock = flow_generate (graph);
 }
 
+static void __attribute__((used))
+flow_var_ud (function_t *func, flowvar_t *var)
+{
+	for (auto i = set_first (var->udchains); i; i = set_next (i)) {
+		auto ud = func->ud_chains[i->element];
+		auto v = func->vars[ud.var];
+		printf ("%d[%d]:%s %d %d\n", i->element, ud.var,
+				operand_string (v->op), ud.usest, ud.defst);
+	}
+}
+
+static void __attribute__((used))
+flow_var_du (function_t *func, flowvar_t *var)
+{
+	for (auto i = set_first (var->duchains); i; i = set_next (i)) {
+		auto du = func->du_chains[i->element];
+		auto v = func->vars[du.var];
+		printf ("%d[%d]:%s %d %d\n", i->element, du.var,
+				operand_string (v->op), du.defst, du.usest);
+	}
+}
+
+static void __attribute__((used))
+flow_st_ud (function_t *func, statement_t *st)
+{
+	for (int i = 0; i < st->num_use; i++) {
+		auto ud = func->ud_chains[st->first_use + i];
+		auto v = func->vars[ud.var];
+		printf ("%d[%d]:%s %d %d\n", st->first_use + i, ud.var,
+				operand_string (v->op), ud.usest, ud.defst);
+	}
+}
+
+static void __attribute__((used))
+flow_st_du (function_t *func, statement_t *st)
+{
+	for (int i = 0; i < st->num_def; i++) {
+		auto du = func->du_chains[st->first_def + i];
+		auto v = func->vars[du.var];
+		printf ("%d[%d]:%s %d %d\n", st->first_def + i, du.var,
+				operand_string (v->op), du.defst, du.usest);
+	}
+}
+
 ///@}
