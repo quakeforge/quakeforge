@@ -1614,7 +1614,7 @@ flow_chain_core (flowgraph_t *graph, reaching_t *reach,
 				set_assign (reach->tmp, var->define);
 				set_union (reach->tmp, var->amb_define);
 				set_intersection (reach->tmp, reach->gen);
-				// if this node defines the var, then use only the last
+				// if this flow node defines the var, then use only the last
 				// definition of that var
 				unsigned st_ind;
 				if (set_last_bit (reach->tmp, st->number, &st_ind)
