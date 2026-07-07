@@ -1616,13 +1616,12 @@ flow_chain_core (flowgraph_t *graph, reaching_t *reach,
 				set_intersection (reach->tmp, reach->gen);
 				// if this node defines the var, then use only the last
 				// definition of that var
-				for (int i = st->number; i-- > node->first_statement; ) {
-					if (set_is_member (reach->tmp, i)) {
-						set_remove_range (reach->tmp, 0, i);
-						set_remove_range (reach->tmp, i + 1,
-										  reach->func->num_statements);
-						break;
-					}
+				unsigned st_ind;
+				if (set_last_bit (reach->tmp, st->number, &st_ind)
+					&& st_ind >= (unsigned) node->first_statement) {
+					set_remove_range (reach->tmp, 0, st_ind);
+					set_remove_range (reach->tmp, st_ind + 1,
+									  reach->func->num_statements);
 				}
 
 				if (record) {
