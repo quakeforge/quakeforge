@@ -426,6 +426,12 @@ int set_is_member (const set_t *set, unsigned x) __attribute__((pure));
 */
 unsigned set_count (const set_t *set) __attribute__((pure));
 
+bool set_first_bit (const set_t *set, unsigned x, unsigned *ind)
+	__attribute__((nonnull(3)));
+bool set_last_bit (const set_t *set, unsigned x, unsigned *ind)
+	__attribute__((nonnull(3)));
+
+
 /** Find the first "member" of the set.
 
 	\warning	For normal sets, the set iterator represents a member of the
@@ -439,6 +445,9 @@ unsigned set_count (const set_t *set) __attribute__((pure));
 */
 set_iter_t *set_first (const set_t *set);
 set_iter_t *set_first_r (set_pool_t *set_pool, const set_t *set);
+
+set_iter_t *set_last (const set_t *set);
+set_iter_t *set_last_r (set_pool_t *set_pool, const set_t *set);
 
 /** Find the first "member" of the set inclusively after x.
 
@@ -472,6 +481,9 @@ set_iter_t *set_start_r (set_pool_t *set_pool, const set_t *set, unsigned x);
 */
 set_iter_t *set_next (set_iter_t *set_iter);
 set_iter_t *set_next_r (set_pool_t *set_pool, set_iter_t *set_iter);
+
+set_iter_t *set_prev (set_iter_t *set_iter);
+set_iter_t *set_prev_r (set_pool_t *set_pool, set_iter_t *set_iter);
 
 set_iter_t *set_while (set_iter_t *set_iter);
 set_iter_t *set_while_r (set_pool_t *set_pool, set_iter_t *set_iter);

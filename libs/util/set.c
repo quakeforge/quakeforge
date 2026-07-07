@@ -44,6 +44,7 @@
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
 #include "QF/set.h"
+#include "QF/math/bitop.h"
 
 static set_pool_t static_set_pool = {
 	0, 0,
@@ -717,7 +718,7 @@ set_count (const set_t *set)
 	return count;
 }
 
-static inline bool
+inline bool
 set_first_bit (const set_t *set, unsigned x, unsigned *ind)
 {
 	set_bits_t  mask = ~SET_ZERO;
@@ -730,6 +731,35 @@ set_first_bit (const set_t *set, unsigned x, unsigned *ind)
 			set_bits_t  c = set->map[i] & mask;
 			// extract lsb
 			c = c & ~(c - 1);
+			*ind = i * SET_BITS + set_count_bits (c - 1);
+			return true;
+		}
+		mask = ~SET_ZERO;
+	}
+	*ind = ~0;
+	return false;
+}
+
+inline bool
+set_last_bit (const set_t *set, unsigned x, unsigned *ind)
+{
+	set_bits_t  mask = ~SET_ZERO;
+
+	if (x > set->size) {
+		x = set->size;
+	}
+	if (!x) {
+		*ind = ~0;
+		return false;
+	}
+
+	if (x % SET_BITS) {
+		mask >>= SET_BITS - x % SET_BITS;
+	}
+	for (unsigned i = (x - 1) / SET_BITS; i != ~0u; i--) {
+		if (set->map[i] & mask) {
+			set_bits_t  c = set->map[i] & mask;
+			c = BITOP_RUPL (c + 1) - 1;
 			*ind = i * SET_BITS + set_count_bits (c - 1);
 			return true;
 		}
@@ -773,6 +803,27 @@ set_first (const set_t *set)
 }
 
 set_iter_t *
+set_last_r (set_pool_t *set_pool, const set_t *set)
+{
+	set_iter_t *set_iter;
+
+	unsigned ind;
+	if (set_last_bit (set, ~0, &ind)) {
+		set_iter = new_setiter (set_pool);
+		set_iter->set = set;
+		set_iter->element = ind;
+		return set_iter;
+	}
+	return nullptr;
+}
+
+set_iter_t *
+set_last (const set_t *set)
+{
+	return set_last_r (&static_set_pool, set);
+}
+
+set_iter_t *
 set_next_r (set_pool_t *set_pool, set_iter_t *set_iter)
 {
 	unsigned    x;
@@ -789,6 +840,25 @@ set_iter_t *
 set_next (set_iter_t *set_iter)
 {
 	return set_next_r (&static_set_pool, set_iter);
+}
+
+set_iter_t *
+set_prev_r (set_pool_t *set_pool, set_iter_t *set_iter)
+{
+	unsigned    x;
+
+	if (set_last_bit (set_iter->set, set_iter->element, &x)) {
+		set_iter->element = x;
+		return set_iter;
+	}
+	delete_setiter (set_pool, set_iter);
+	return 0;
+}
+
+set_iter_t *
+set_prev (set_iter_t *set_iter)
+{
+	return set_prev_r (&static_set_pool, set_iter);
 }
 
 set_iter_t *
