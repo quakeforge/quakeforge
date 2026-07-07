@@ -3014,8 +3014,13 @@ flow_var_ud (function_t *func, flowvar_t *var)
 	for (auto i = set_first (var->udchains); i; i = set_next (i)) {
 		auto ud = func->ud_chains[i->element];
 		auto v = func->vars[ud.var];
-		printf ("%d[%d]:%s %d %d\n", i->element, ud.var,
-				operand_string (v->op), ud.usest, ud.defst);
+		const char *dead = "";
+		if (func->dead_ud_chains
+			&& set_is_member (func->dead_ud_chains, v->number)) {
+			dead = " "RED"dead"DFL;
+		}
+		printf ("%d[%d]:%s u:%d d:%d%s\n", i->element, ud.var,
+				operand_string (v->op), ud.usest, ud.defst, dead);
 	}
 }
 
@@ -3025,8 +3030,13 @@ flow_var_du (function_t *func, flowvar_t *var)
 	for (auto i = set_first (var->duchains); i; i = set_next (i)) {
 		auto du = func->du_chains[i->element];
 		auto v = func->vars[du.var];
-		printf ("%d[%d]:%s %d %d\n", i->element, du.var,
-				operand_string (v->op), du.defst, du.usest);
+		const char *dead = "";
+		if (func->dead_du_chains
+			&& set_is_member (func->dead_du_chains, v->number)) {
+			dead = " "RED"dead"DFL;
+		}
+		printf ("%d[%d]:%s d:%d u:%d%s\n", i->element, du.var,
+				operand_string (v->op), du.defst, du.usest, dead);
 	}
 }
 
@@ -3036,8 +3046,13 @@ flow_st_ud (function_t *func, statement_t *st)
 	for (int i = 0; i < st->num_use; i++) {
 		auto ud = func->ud_chains[st->first_use + i];
 		auto v = func->vars[ud.var];
-		printf ("%d[%d]:%s %d %d\n", st->first_use + i, ud.var,
-				operand_string (v->op), ud.usest, ud.defst);
+		const char *dead = "";
+		if (func->dead_ud_chains
+			&& set_is_member (func->dead_ud_chains, v->number)) {
+			dead = " "RED"dead"DFL;
+		}
+		printf ("%d[%d]:%s u:%d d:%d%s\n", st->first_use + i, ud.var,
+				operand_string (v->op), ud.usest, ud.defst, dead);
 	}
 }
 
@@ -3047,8 +3062,54 @@ flow_st_du (function_t *func, statement_t *st)
 	for (int i = 0; i < st->num_def; i++) {
 		auto du = func->du_chains[st->first_def + i];
 		auto v = func->vars[du.var];
-		printf ("%d[%d]:%s %d %d\n", st->first_def + i, du.var,
-				operand_string (v->op), du.defst, du.usest);
+		const char *dead = "";
+		if (func->dead_du_chains
+			&& set_is_member (func->dead_du_chains, v->number)) {
+			dead = " "RED"dead"DFL;
+		}
+		printf ("%d[%d]:%s d:%d u:%d%s\n", st->first_def + i, du.var,
+				operand_string (v->op), du.defst, du.usest, dead);
+	}
+}
+
+static void __attribute__((used))
+flow_func_ud (function_t *func)
+{
+	for (int i = 0; i < func->num_ud_chains; i++) {
+		auto ud = func->ud_chains[i];
+		auto v = func->vars[ud.var];
+		const char *dead = "";
+		if (func->dead_ud_chains
+			&& set_is_member (func->dead_ud_chains, v->number)) {
+			dead = " "RED"dead"DFL;
+		}
+		printf ("%d[%d]:%s u:%d d:%d%s\n", i, ud.var,
+				operand_string (v->op), ud.usest, ud.defst, dead);
+	}
+}
+
+static void __attribute__((used))
+flow_func_du (function_t *func)
+{
+	for (int i = 0; i < func->num_ud_chains; i++) {
+		auto du = func->du_chains[i];
+		auto v = func->vars[du.var];
+		const char *dead = "";
+		if (func->dead_du_chains
+			&& set_is_member (func->dead_du_chains, v->number)) {
+			dead = " "RED"dead"DFL;
+		}
+		printf ("%d[%d]:%s d:%d u:%d%s\n", i, du.var,
+				operand_string (v->op), du.defst, du.usest, dead);
+	}
+}
+
+static void __attribute__((used))
+flow_func_vars (function_t *func, set_t *var_set)
+{
+	for (auto v = set_first (var_set); v; v = set_next (v)) {
+		auto var = func->vars[v->element];
+		printf ("%d %s\n", var->number, operand_string (var->op));
 	}
 }
 
