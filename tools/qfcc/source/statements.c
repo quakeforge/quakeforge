@@ -345,6 +345,7 @@ print_sblock (sblock_t *sblock)
 	printf ("number: %d\n", sblock->number);
 	printf ("id: %d\n", sblock->id);
 	for (auto s = sblock->statements; s; s = s->next) {
+		printf ("%d ", s->number);
 		print_statement (s);
 	}
 }
