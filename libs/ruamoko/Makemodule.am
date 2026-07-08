@@ -1,14 +1,16 @@
-ruamoko_rua_libs= \
+ruamoko_rua_deps= \
 	libs/gamecode/libQFgamecode.la \
 	libs/util/libQFutil.la
 
-lib_LTLIBRARIES += \
+libs_ruamoko_libs = \
 	libs/ruamoko/libQFruamoko.la \
 	libs/ruamoko/libQFruamoko_client.la
+lib_LTLIBRARIES += @libs_ruamoko_libs@
+EXTRA_LTLIBRARIES += $(libs_ruamoko_libs)
 
 libs_ruamoko_libQFruamoko_la_LDFLAGS=		$(lib_ldflags)
-libs_ruamoko_libQFruamoko_la_LIBADD=		$(ruamoko_rua_libs)
-libs_ruamoko_libQFruamoko_la_DEPENDENCIES=	$(ruamoko_rua_libs)
+libs_ruamoko_libQFruamoko_la_LIBADD=		$(ruamoko_rua_deps)
+libs_ruamoko_libQFruamoko_la_DEPENDENCIES=	$(ruamoko_rua_deps)
 libs_ruamoko_libQFruamoko_la_SOURCES= \
 	libs/ruamoko/pr_cmds.c \
 	libs/ruamoko/rua_cbuf.c \
@@ -36,7 +38,7 @@ libs_ruamoko_libQFruamoko_client_la_LIBADD= \
 libs_ruamoko_libQFruamoko_client_la_DEPENDENCIES= \
 	libs/ruamoko/libQFruamoko.la \
 	libs/ui/libQFgui.la \
-	$(ruamoko_rua_libs)
+	$(ruamoko_rua_deps)
 libs_ruamoko_libQFruamoko_client_la_SOURCES= \
 	libs/ruamoko/rua_game_init.c \
 	libs/ruamoko/rua_gui.c \

@@ -1,7 +1,14 @@
-lib_LTLIBRARIES += libs/input/libQFinput.la
-noinst_LTLIBRARIES += @input_libs@
+libs_input_libs=libs/input/libQFinput.la
+lib_LTLIBRARIES += @libs_input_libs@
+EXTRA_LTLIBRARIES += $(libs_input_libs)
 
-input_deps = @input_libs@
+input_evdev=libs/input/libinput_evdev.la
+input_xinput=libs/input/libinput_xinput.la
+
+noinst_LTLIBRARIES += @input_libs@
+EXTRA_LTLIBRARIES += $(input_evdev) $(input_xinput)
+
+input_deps = @input_libs@ libs/util/libQFutil.la
 
 in_evdev_src=	\
 	libs/input/evdev/hotplug.c \
@@ -35,10 +42,6 @@ libs_input_libQFinput_la_SOURCES= \
 	libs/input/in_gamepad.c \
 	libs/input/in_imt.c \
 	libs/input/keys.c
-
-EXTRA_LTLIBRARIES += \
-	libs/input/libinput_evdev.la \
-	libs/input/libinput_xinput.la
 
 EXTRA_DIST += \
 	libs/input/gamecontrollerdb.txt \

@@ -79,6 +79,7 @@ QF_SUBST($1_LIBS)])
 
 AC_DEFUN([QF_NEED], [m4_map_args_w([$2], [$1_need_], [=yes], [;])])
 
+dnl (file_prefix, need_prefix, file_suffix, list_var, need_list, path)
 AC_DEFUN([QF_PROCESS_NEED_subroutine],
 [m4_foreach_w([qfn_need], [$5],
 [if test x"${$2[_need_]qfn_need}" = xyes; then
@@ -92,6 +93,11 @@ AC_DEFUN([QF_PROCESS_NEED_FUNC],
 	$3
 fi
 ])])
+
+AC_DEFUN([QF_PROCESS_NEED_TEST],
+[m4_foreach_w([qfn_need], [$2],
+[AM_CONDITIONAL(run_$1_[]qfn_need[]_tests, [test x"${$1_need_]qfn_need[}" = xyes])]
+)])
 
 AC_DEFUN([QF_PROCESS_NEED_LIBS],
 [m4_define([qfn_ext], m4_default($4,[la]))

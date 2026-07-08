@@ -5,8 +5,10 @@ include libs/models/mesh/Makemodule.am
 include libs/models/sprite/Makemodule.am
 include libs/models/test/Makemodule.am
 
-lib_LTLIBRARIES +=	libs/models/libQFmodels.la
-noinst_LTLIBRARIES += @models_libs@
+libs_models_libs=libs/models/libQFmodels.la
+lib_LTLIBRARIES +=	@libs_models_libs@
+EXTRA_LTLIBRARIES += $(libs_models_libs)
+noinst_LTLIBRARIES += @models_sub_libs@
 EXTRA_LTLIBRARIES += \
 	libs/models/libmodels_gl.la \
 	libs/models/libmodels_glsl.la \
@@ -26,7 +28,7 @@ models_sources = \
 common_libs = \
 	libs/util/libQFutil.la
 
-models_libs=libs/models/brush/libbrush.la $(common_libs)
+models_libs=libs/models/brush/libbrush_server.la $(common_libs)
 
 libs_models_libQFmodels_la_LDFLAGS= 			$(lib_ldflags)
 libs_models_libQFmodels_la_LIBADD=				$(models_libs)

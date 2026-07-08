@@ -2,13 +2,25 @@ QWAQ_LIBS=@QWAQ_LIBS@
 QWAQ_DEPS=@QWAQ_DEPS@
 QWAQ_INCS=@QWAQ_INCS@
 
-noinst_PROGRAMS += @QWAQ_TARGETS@ \
-	ruamoko/qwaq/qwaq-app.dat$(EXEEXT) \
-	ruamoko/qwaq/qwaq-ed.dat$(EXEEXT) \
-	ruamoko/qwaq/qwaq-dbg.dat$(EXEEXT) \
-	ruamoko/qwaq/gcd.dat$(EXEEXT) \
-	ruamoko/qwaq/input-app.dat$(EXEEXT) \
-	ruamoko/qwaq/z-transform.dat$(EXEEXT)
+qwaq_targets=\
+	ruamoko/qwaq/qwaq-app.dat \
+	ruamoko/qwaq/qwaq-ed.dat \
+	ruamoko/qwaq/qwaq-dbg.dat \
+	ruamoko/qwaq/gcd.dat \
+	ruamoko/qwaq/input-app.dat \
+	ruamoko/qwaq/z-transform.dat
+
+noinst_PROGRAMS += @QWAQ_TARGETS@
+
+EXTRA_PROGRAMS += \
+	ruamoko/qwaq/qwaq-cmd \
+	ruamoko/qwaq/qwaq-curses \
+	ruamoko/qwaq/qwaq-win \
+	ruamoko/qwaq/qwaq-x11 \
+	ruamoko/qwaq/qwaq-wl \
+	$(qwaq_targets)
+
+EXTRA_LIBRARIES += $(ruamoko_qwaq_libs)
 
 atmosphere_src = ruamoko/qwaq/shader/atmosphere.r
 planetary_src = ruamoko/qwaq/shader/planetary.r
@@ -32,7 +44,8 @@ libui=ruamoko/qwaq/libui.a
 libmisc=ruamoko/qwaq/libmisc.a
 libedit=ruamoko/qwaq/libedit.a
 libdbg=ruamoko/qwaq/libdbg.a
-noinst_LIBRARIES += $(libui) $(libmisc) $(libedit) $(libdbg)
+ruamoko_qwaq_libs = $(libui) $(libmisc) $(libedit) $(libdbg)
+noinst_LIBRARIES += @ruamoko_qwaq_libs@
 
 ruamoko_qwaq_libui_a_SOURCES= \
 	ruamoko/qwaq/ui/button.r	\
@@ -283,13 +296,6 @@ ruamoko/qwaq/z-transform.dat$(EXEEXT): $(ruamoko_qwaq_z_transform_obj) $(QFCC_DE
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_z_transform_obj) -lr
 include $(ruamoko_qwaq_z_transform_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_z_transform_dep)
-
-EXTRA_PROGRAMS += \
-	ruamoko/qwaq/qwaq-cmd \
-	ruamoko/qwaq/qwaq-curses \
-	ruamoko/qwaq/qwaq-win \
-	ruamoko/qwaq/qwaq-x11 \
-	ruamoko/qwaq/qwaq-wl
 
 EXTRA_DIST += \
 	ruamoko/qwaq/config/qwaq-ed-fw.plist \

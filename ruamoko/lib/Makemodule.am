@@ -1,7 +1,7 @@
-ruamoko_libs=ruamoko/lib/libr.a ruamoko/lib/libqw.a ruamoko/lib/libnq.a ruamoko/lib/libcsqc.a
+ruamoko_lib_libs=ruamoko/lib/libr.a ruamoko/lib/libqw.a ruamoko/lib/libnq.a ruamoko/lib/libcsqc.a
 
-ruamoko_lib_LIBRARIES += $(ruamoko_libs)
-EXTRA_LIBRARIES += $(ruamoko_libs)
+ruamoko_lib_LIBRARIES += @ruamoko_lib_libs@
+EXTRA_LIBRARIES += $(ruamoko_lib_libs)
 
 noinst_HEADERS += \
 	ruamoko/lib/Array+Private.h

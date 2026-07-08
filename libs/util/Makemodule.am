@@ -1,6 +1,8 @@
 include libs/util/test/Makemodule.am
 
-lib_LTLIBRARIES += libs/util/libQFutil.la
+libs_util_libs=libs/util/libQFutil.la
+lib_LTLIBRARIES += @libs_util_libs@
+EXTRA_LTLIBRARIES += $(libs_util_libs)
 
 if ASM_ARCH
 util_asm= libs/util/libasm.la

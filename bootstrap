@@ -16,6 +16,7 @@ if test "$1" = "clean"; then
 	find . -name Makefile.in -print0 | xargs $ARGS rm -f
 	find . -path ./tools/texpaint -prune -o -name config.h.in -print0 | xargs $ARGS rm -f
 	find . \( -path ./vc2005 -o -path ./vc2008 \) -prune -o -name config.h -print0 | xargs $ARGS rm -f
+	find . -path '*/test/*.log' -o -path '*/test/*.trs' -print0 | xargs $ARGS rm -f
 	find . -name stamp-h1 -print0 | xargs $ARGS rm -f
 	find . -name '*~' -type f -print0 | xargs $ARGS rm -f
 	find . -name '*.rej' -type f -print0 | xargs $ARGS rm -f
@@ -34,6 +35,7 @@ if test "$1" = "clean"; then
 	rm -f RPM/build_rpm RPM/quakeforge.conf RPM/quakeforge.spec RPM/rpmmacros
 	find . -name '*.o' -type f -print0 | xargs $ARGS rm -f
 	find . -name '*.lo' -type f -print0 | xargs $ARGS rm -f
+	find . -name '*.la' -type f -print0 | xargs $ARGS rm -f
 	find . -name '*.qfo' -type f -print0 | xargs $ARGS rm -f
 	find . -name '.libs' -type d -print0 | xargs $ARGS rm -rf
 	find . -name '.deps' -type d -print0 | xargs $ARGS rm -rf

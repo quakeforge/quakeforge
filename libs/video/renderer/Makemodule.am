@@ -1,15 +1,18 @@
 include libs/video/renderer/vulkan/test/Makemodule.am
 include libs/video/renderer/vulkan/vkgen/Makemodule.am
 
+libs_video_renderer_libs=libs/video/renderer/libQFrenderer.la
+
 #lib_LTLIBRARIES += @VID_REND_TARGETS@
 plugin_LTLIBRARIES += @vid_render_plugins@
 noinst_LTLIBRARIES += \
-	libs/video/renderer/libQFrenderer.la \
+	@libs_video_renderer_libs@ \
 	@render_libs@ \
 	@vid_render_static_plugins@
 
 #plugins
 EXTRA_LTLIBRARIES += \
+	$(libs_video_renderer_libs) \
 	libs/video/renderer/vid_render_sw.la \
 	libs/video/renderer/vid_render_gl.la \
 	libs/video/renderer/vid_render_glsl.la \

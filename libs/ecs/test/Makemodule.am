@@ -7,9 +7,10 @@ libs_ecs_tests = \
 	libs/ecs/test/test-subpools \
 	libs/ecs/test/test-treehierarchy
 
+if run_libs_ecs_tests
 TESTS += $(libs_ecs_tests)
-
 check_PROGRAMS += $(libs_ecs_tests)
+endif
 
 libs_ecs_test_libs= \
 	libs/ecs/libQFecs.la \

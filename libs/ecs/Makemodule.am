@@ -1,8 +1,10 @@
 include libs/ecs/test/Makemodule.am
 
 ecs_deps=libs/util/libQFutil.la
+libs_ecs_libs=libs/ecs/libQFecs.la
 
-lib_LTLIBRARIES += libs/ecs/libQFecs.la
+lib_LTLIBRARIES += @libs_ecs_libs@
+EXTRA_LTLIBRARIES += $(libs_ecs_libs)
 
 libs_ecs_libQFecs_la_LDFLAGS=		$(lib_ldflags)
 libs_ecs_libQFecs_la_LIBADD=		$(ecs_deps)

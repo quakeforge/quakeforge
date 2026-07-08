@@ -2,12 +2,15 @@ include libs/audio/targets/Makemodule.am
 include libs/audio/renderer/Makemodule.am
 include libs/audio/test/Makemodule.am
 
+libs_audio_libs=\
+	libs/audio/libQFsound.la \
+	libs/audio/libQFcd.la
+
 plugin_LTLIBRARIES +=	@cd_plugins@
 noinst_LTLIBRARIES +=	@cd_static_plugins@
-lib_LTLIBRARIES +=	@CD_TARGETS@ @SND_TARGETS@
+lib_LTLIBRARIES +=	@libs_audio_libs@ @CD_TARGETS@ @SND_TARGETS@
 EXTRA_LTLIBRARIES += \
-	libs/audio/libQFsound.la \
-	libs/audio/libQFcd.la \
+	$(libs_audio_libs) \
 	libs/audio/cd_file.la \
 	libs/audio/cd_linux.la \
 	libs/audio/cd_sdl.la \

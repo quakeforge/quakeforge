@@ -1,8 +1,11 @@
 include libs/ui/test/Makemodule.am
 
-lib_LTLIBRARIES += \
+libs_ui_libs=\
 	libs/ui/libQFui.la \
 	libs/ui/libQFgui.la
+
+lib_LTLIBRARIES += @libs_ui_libs@
+EXTRA_LTLIBRARIES += $(libs_ui_libs)
 
 gui_deps = \
 	libs/ui/libQFui.la

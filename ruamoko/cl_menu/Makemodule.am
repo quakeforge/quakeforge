@@ -7,8 +7,8 @@ ruamoko_cl_menu_data=\
 	ruamoko/cl_menu/menu.sym
 
 ruamoko_cl_menudir = ${sharepath}/QF
-ruamoko_cl_menu_DATA = $(ruamoko_cl_menu_data)
-ruamoko_cl_menu_PROGRAMS = $(ruamoko_cl_menu_libexec)
+ruamoko_cl_menu_DATA = @ruamoko_cl_menu_data@
+ruamoko_cl_menu_PROGRAMS = @ruamoko_cl_menu_libexec@
 EXTRA_PROGRAMS += $(ruamoko_cl_menu_libexec)
 
 ruamoko_menu_src= \

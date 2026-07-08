@@ -1,4 +1,6 @@
-noinst_LTLIBRARIES += libs/client/libQFclient.la
+libs_client_libs=libs/client/libQFclient.la
+noinst_LTLIBRARIES += @libs_client_libs@
+EXTRA_LTLIBRARIES += $(libs_client_libs)
 
 SUFFICES += .part .pc
 .part.pc:

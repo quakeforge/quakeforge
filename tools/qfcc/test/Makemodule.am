@@ -157,6 +157,7 @@ fail_build_errors=
 test_defspace_src=\
 	tools/qfcc/test/tw-defspace.c tools/qfcc/test/tw-diagnostic.c tools/qfcc/test/tw-strpool.c
 
+if run_tools_qfcc_tests
 TESTS += \
 	$(test_bins) \
 	$(test_progs_dat:.dat=.run) \
@@ -171,6 +172,7 @@ check_PROGRAMS += \
 	tools/qfcc/test/test-harness \
 	$(test_progs_dat) \
 	$(test_bins)
+endif
 
 qfcc-tests: tools/qfcc/test/test-harness $(test_progs_dat) $(test_bins)
 

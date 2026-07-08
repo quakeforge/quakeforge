@@ -4,8 +4,10 @@ scene_deps=\
 	libs/models/libQFmodels.la \
 	libs/ecs/libQFecs.la \
 	libs/util/libQFutil.la
+libs_scene_libs=libs/scene/libQFscene.la
 
-lib_LTLIBRARIES += libs/scene/libQFscene.la
+lib_LTLIBRARIES += @libs_scene_libs@
+EXTRA_LTLIBRARIES += $(libs_scene_libs)
 
 libs_scene_libQFscene_la_LDFLAGS=		$(lib_ldflags)
 libs_scene_libQFscene_la_LIBADD=		$(scene_deps)
