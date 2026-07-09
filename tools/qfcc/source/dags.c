@@ -913,41 +913,6 @@ st_in_range (int st, flownode_t *fn)
 	return st >= start && st < end;
 }
 
-static bool
-exact_overlap (operand_t *op1, operand_t *op2)
-{
-	if (op1 == op2) {
-		// shouldn't happen
-		// the same object overlaps itself exactly
-		return true;
-	}
-	if (type_size (op1->type) != type_size (op1->type)) {
-		// shouldn't happen
-		// differt size so can't be exact overlap
-		return false;
-	}
-	if (op_is_constant (op1) || op_is_constant (op2)) {
-		// shouldn't happen
-		// constants never overlap with anything
-		return false;
-	}
-	if (op_is_temp (op1) != op_is_temp (op2)) {
-		// shouldn't happen
-		// defs and temps never overlap
-		return false;
-	}
-	// either both are temp or both are def
-	if (op_is_temp (op1)) {
-		auto t1 = &op1->tempop;
-		auto t2 = &op2->tempop;
-		return tempop_overlap (t1, t2) == dol_exact;
-	} else {
-		auto d1 = op1->def;
-		auto d2 = op2->def;
-		return def_overlap (d1, d2) == dol_exact;
-	}
-}
-
 static void
 dag_detect_hazards (dag_t *dag, daglabel_t *l, statement_t *s, dagnode_t *n)
 {
@@ -999,12 +964,10 @@ dag_detect_hazards (dag_t *dag, daglabel_t *l, statement_t *s, dagnode_t *n)
 		}
 		auto st = func->statements[du.usest];
 		for (int j = 0; j < st->num_use; j++) {
-			auto ud = func->ud_chains[s->first_use + j];
+			auto ud = func->ud_chains[st->first_use + j];
 			if (ud.var != label_var->number
 				&& set_is_member (alias_vars, ud.var)) {
-				if (!exact_overlap (label_var->op, func->vars[ud.var]->op)) {
-					must_write = true;
-				}
+				must_write = true;
 			}
 		}
 	}
