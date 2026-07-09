@@ -1834,9 +1834,9 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	int         i;
 	const type_t *type;
 
-	SET_DEFER (required);
-	set_assign (required, dagnode->required);
-	set_difference (required, dagnode->identifiers);
+	SET_DEFER (identifiers);
+	set_assign (identifiers, dagnode->required);
+	set_union (identifiers, dagnode->identifiers);
 
 	switch (dagnode->type) {
 		case st_none:
@@ -1845,11 +1845,8 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 								"non-leaf label in leaf node");
 			dst = dagnode->label->op;
 			type = dst->type;
-			if ((var_iter = set_first (dagnode->identifiers))) {
+			if ((var_iter = set_first (identifiers))) {
 				dst = generate_assignments (dag, block, dst, var_iter, type);
-			}
-			if (dst && (var_iter = set_first (required))) {
-				generate_assignments (dag, block, dst, var_iter, type);
 			}
 			break;
 		case st_alias:
@@ -1868,11 +1865,8 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 										dagnode->offset + offset,
 										value, dagnode->label->expr);
 			type = dst->type;
-			if ((var_iter = set_first (dagnode->identifiers))) {
+			if ((var_iter = set_first (identifiers))) {
 				dst = generate_assignments (dag, block, dst, var_iter, type);
-			}
-			if (dst && (var_iter = set_first (required))) {
-				generate_assignments (dag, block, dst, var_iter, type);
 			}
 			break;
 		case st_address:
@@ -1881,7 +1875,7 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			if (dagnode->children[1])
 				operands[1] = make_operand (dag, block, dagnode, 1);
 			type = dagnode->vtype;
-			if (!(var_iter = set_first (dagnode->identifiers))) {
+			if (!(var_iter = set_first (identifiers))) {
 				operands[2] = temp_operand (type, dagnode->label->expr);
 			} else {
 				daglabel_t *var = dag->labels[var_iter->element];
@@ -1894,9 +1888,6 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 								  dagnode->label->expr);
 			sblock_add_statement (block, st);
 			generate_assignments (dag, block, operands[2], var_iter, type);
-			if (dst && (var_iter = set_first (required))) {
-				generate_assignments (dag, block, dst, var_iter, type);
-			}
 			break;
 		case st_assign:
 			internal_error (dagnode->label->expr, "unexpected assignment node");
