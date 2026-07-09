@@ -1136,6 +1136,7 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 		vec3        offset;
 		float       radius;
 		vec3        axis;
+		vec3        extent;
 		col_type_t  type;
 	} collider;
 }
@@ -1216,6 +1217,10 @@ load_scene (plitem_t *scene_item, scene_t scene)
 			collider.capsule.radius = ent_init.collider.radius;
 			collider.capsule.axis = ent_init.collider.axis;
 			break;
+		case col_box:
+			have_collider = true;
+			collider.box.offset = ent_init.collider.offset;
+			collider.box.extent = ent_init.collider.extent;
 		}
 		uint e = ~0u;//FIXME
 		if (mesh || have_collider) {
@@ -1237,6 +1242,9 @@ load_scene (plitem_t *scene_item, scene_t scene)
 					break;
 				case col_capsule:
 					body = calc_inertia_capsule (collider, ent_init.invDensity);
+					break;
+				case col_box:
+					body = calc_inertia_box (collider, ent_init.invDensity);
 					break;
 				}
 			} else if (mesh) {

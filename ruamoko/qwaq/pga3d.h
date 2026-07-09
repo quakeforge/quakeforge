@@ -36,6 +36,7 @@ typedef enum col_type_e {
 	col_plane,
 	col_ball,
 	col_capsule,
+	col_box,
 } col_type_t;
 
 typedef struct collider_s {
@@ -50,6 +51,10 @@ typedef struct collider_s {
 			float radius;
 			vec3 axis;		// point_t with implied 0 e123
 		} capsule;
+		struct {
+			vec3 offset;
+			vec3 extent;
+		} box;
 	};
 	col_type_t  type;
 } collider_t;

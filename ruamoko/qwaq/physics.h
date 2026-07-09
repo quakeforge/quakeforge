@@ -28,6 +28,7 @@ extern uint *collider_ents;
 body_t calc_inertia_plane (collider_t collider, float invDensity);
 body_t calc_inertia_ball (collider_t collider, float invDensity);
 body_t calc_inertia_capsule (collider_t collider, float invDensity);
+body_t calc_inertia_box (collider_t collider, float invDensity);
 
 void update_physics (uint ent);
 

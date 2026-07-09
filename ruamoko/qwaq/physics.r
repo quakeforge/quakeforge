@@ -13,6 +13,29 @@ void set_component (uint ent, uint comp, void *data) = #0;
 uint new_entity () = #0;
 void del_entity (uint ent) = #0;
 
+float
+clamp (float x, float a, float b)
+{
+	return max (a, min(x, b));
+}
+
+@generic (v = [PGA.bvect, vec3]) {
+
+v abs(v x)
+{
+	uvec3 m = (vec3) x < '0 0 0';
+	return (v) ((uvec3) x & ~m) - (v) ((uvec3) x & m);
+}
+
+};
+
+@overload
+vec3 max(vec3 a, vec3 b)
+{
+	uvec3 m = a < b;
+	return (vec3) ((uvec3) a & ~m) + (vec3) ((uvec3) b & m);
+}
+
 //FIXME having PGA.group_mask(0xc) here and then providing a defintion causes
 //a segfault in qfcc
 @generic (genObj = [PGA.group_mask(0xe)]) {
@@ -93,12 +116,11 @@ draw_axes (transform_t xform)
 }
 
 void
-draw_collider (collider_t col, transform_t xform)
+draw_collider (collider_t col, transform_t xform, motor_t M)
 {
 	mat4 mat = Transform_GetWorldMatrix(xform);
 	switch (col.type) {
 	case col_plane:
-	{
 		@algebra (PGA) {
 			auto plane = col.plane;
 			// Gizmo_AddPlane expects a point and two spanning vectors
@@ -121,7 +143,6 @@ draw_collider (collider_t col, transform_t xform)
 			Gizmo_AddPlane (p, s, t, c1, c2, c3);
 		}
 		break;
-	}
 	case col_ball:
 		Gizmo_AddSphere (mat * vec4(col.ball.offset, 1), col.ball.radius,
 						 vec4(0.8, 0.4, 0.2, 0.9));
@@ -132,6 +153,40 @@ draw_collider (collider_t col, transform_t xform)
 		vec4 p2 = vec4 (col.capsule.offset - col.capsule.axis, 1);
 		Gizmo_AddCapsule (mat * p1, mat * p2, col.capsule.radius,
 						 vec4(0.2, 0.8, 0.9, 0.9));
+		break;
+	}
+	case col_box:
+	{
+		vec3 e = col.box.extent;
+		vec3 o = col.box.offset;
+		//auto q = M;
+		auto q = M.scalar + M.bvect;
+		static gizmo_node_t box_brush[] = {
+			{ .plane = {1, 0, 0, 1 }, .children = { 1, -1} },
+			{ .plane = {1, 0, 0,-1 }, .children = {-1,  2} },
+			{ .plane = {0, 1, 0, 1 }, .children = { 3, -1} },
+			{ .plane = {0, 1, 0,-1 }, .children = {-1,  4} },
+			{ .plane = {0, 0, 1, 1 }, .children = { 5, -1} },
+			{ .plane = {0, 0, 1,-1 }, .children = {-1, -2} },
+		};
+		gizmo_node_t rotated_box[countof(box_brush)];
+		for (uint i = 0; i < countof(box_brush); i++) {
+			auto p = box_brush[i].plane;
+			p.w = p.w * e[i >> 1] + o[i >> 1];
+			rotated_box[i] = {
+				.plane = (vec4) (q * (plane_t) p * ~q),
+				//.plane = (vec4) (M * (plane_t) p * ~M),
+				.children = box_brush[i].children,
+			};
+			printf ("%d %q\n", i, rotated_box[i].plane);
+		}
+		vec4 box_mins = '-20 -20 -20 0';
+		vec4 box_maxs = '20 20 20 0';
+		auto p = vec4 (col.box.offset, 1);
+		//Gizmo_AddBrush ('0 0 0 1', box_mins, box_maxs,
+		Gizmo_AddBrush (mat * p, box_mins, box_maxs,
+						countof (rotated_box), rotated_box,
+						vec4(0x55, 0xda, 0xba, 255)/255);
 		break;
 	}
 	}
@@ -334,10 +389,56 @@ bool get_contact_ball_capsule (uint aent, collider_t acol,
 	return false;
 }
 
-float
-clamp (float x, float a, float b)
+bool get_contact_ball_box (uint aent, collider_t acol,
+						   uint bent, collider_t bcol,
+						   contact_t *contact)
 {
-	return max (a, min(x, b));
+#if 0
+	state_t aS, bS;
+	body_t aB, bB;
+	get_component (aent, qent_state, &aS);
+	get_component (bent, qent_state, &bS);
+	get_component (aent, qent_body, &aB);
+	get_component (bent, qent_body, &bB);
+	auto aM = aS.M * aB.R;
+	auto bM = bS.M * bB.R;
+
+	// transform the ball's center point into the box's space
+	auto M = ~bM * aM
+	auto p = M * (point_t) [acol.ball.offset,    1] * ~M;
+
+	auto c = (point_t) [bcol.box.offset, 1];
+	auto e = (point_t) [bcol.box.extent, 1];
+
+	auto ap = (a∨p);
+	auto ab = (a∨b);
+	float h = (ap•ab)/(ab•ab);
+	h = h < 0 ? 0 : h > 1 ? 1 : h;
+	auto d = ap - h * ab;
+	float r = acol.ball.radius + bcol.capsule.radius;
+
+	if (d • ~d < r * r) {
+		@algebra (PGA) {
+			auto n = (e0 * d) / sqrt (d • ~d);
+			auto x = a + h * (b - a);
+			auto world_a = p + n * acol.ball.radius;
+			auto world_b = x - n * bcol.capsule.radius;
+			*contact = {
+				.world_a = world_a,
+				.world_b = world_b,
+				.local_a = ~aM * world_a * aM,
+				.local_b = ~bM * world_b * bM,
+				.normal = @undual (n),
+				.separation = sqrt (d • ~d) - r,
+				.a = aent,
+				.b = bent,
+			};
+			return true;
+		}
+	}
+#endif
+	return false;
+
 }
 
 bool get_contact_capsule_capsule (uint aent, collider_t acol,
@@ -461,7 +562,14 @@ bool get_contact_capsule_ball (uint a, collider_t acol,
 	return get_contact_ball_capsule (b, bcol, a, acol, contact);
 }
 
-get_contact_t get_contact[3][3] = {
+bool get_contact_box_ball (uint a, collider_t acol,
+						   uint b, collider_t bcol,
+						   contact_t *contact)
+{
+	return get_contact_ball_box (b, bcol, a, acol, contact);
+}
+
+get_contact_t get_contact[4][4] = {
 	//col_plane
 	{
 		nil,	// two infinite planes almost always collide, so ignore
@@ -472,11 +580,18 @@ get_contact_t get_contact[3][3] = {
 		get_contact_ball_plane,
 		get_contact_ball_ball,
 		get_contact_ball_capsule,
+		get_contact_ball_box,
 	},
 	{
 		get_contact_capsule_plane,
 		get_contact_capsule_ball,
 		get_contact_capsule_capsule,
+	},
+	{
+		nil,
+		get_contact_box_ball,
+		nil,
+		nil,
 	},
 };
 
@@ -533,7 +648,7 @@ update_physics (uint ent)
 		//FIXME O(N^2)
 		collider_t col;
 		get_component (ent, qent_collider, &col);
-		draw_collider (col, xform);
+		draw_collider (col, xform, M);
 		for (uint i = 0; i < num_collider_ents; i++) {
 			uint        oent = collider_ents[i];
 			collider_t  ocol;
@@ -586,19 +701,6 @@ calc_inertia_ball (collider_t collider, float invDensity)
 	body.Ii.bvect *= invDensity;
 	body.Ii.bvecp *= invDensity / I;
 	return body;
-}
-
-vec3 abs(vec3 x)
-{
-	uvec3 m = x < '0 0 0';
-	return (vec3) ((uvec3) x & ~m) - (vec3) ((uvec3) x & m);
-}
-
-@overload
-vec3 max(vec3 a, vec3 b)
-{
-	uvec3 m = a < b;
-	return (vec3) ((uvec3) a & ~m) + (vec3) ((uvec3) b & m);
 }
 
 vec3 best_axis(vec3 dir, @out int ind)
@@ -671,9 +773,29 @@ calc_inertia_capsule (collider_t collider, float invDensity)
 
 	body.R = R * T;
 
-	printf ("%v %v\n", body.I.bvect, body.I.bvecp);
-	printf ("%v %v\n", body.Ii.bvect, body.Ii.bvecp);
-	printf ("%g %v %v %g\n", body.R.scalar, body.R.bvect, body.R.bvecp, body.R.qvec);
 
+	return body;
+}
+
+body_t
+calc_inertia_box (collider_t collider, float invDensity)
+{
+	body_t body = {};//infinite mass
+	body.R = 1;
+	vec3 e = collider.box.extent;
+	if (!invDensity || @horiz(| e == '0 0 0')) {
+		return body;
+	}
+	float vol = 8 * e.x * e.y * e.z;
+	e = e * e;
+	float I = 1.0f / 3;
+	invDensity /= vol;
+	body.Ii.bvect = '1 1 1';
+	body.Ii.bvecp = (PGA.bvecp) [e.y + e.z, e.z + e.x, e.x + e.y];
+	//body.Ii.bvecp = (PGA.bvecp) (e.yzx + e.zxy);
+	body.I.bvect = body.Ii.bvect / invDensity;
+	body.I.bvecp = body.Ii.bvecp * I / invDensity;
+	body.Ii.bvect *= invDensity;
+	body.Ii.bvecp *= invDensity / I;
 	return body;
 }
