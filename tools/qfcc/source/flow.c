@@ -326,7 +326,7 @@ flowvar_get_def (flowvar_t *var)
 	return 0;
 }
 
-/**	Get a def or temp var operand's flowvar.
+/**	Get a def or temp var, or pseudo op operand's flowvar.
  *
  *	Other operand types never have a flowvar.
  *
@@ -345,8 +345,6 @@ flow_get_var (operand_t *op)
 			if (op->tempop.alias) {
 				//This is for main vars that are never referenced as such,
 				//but should probably never happen for temps.
-				//FIXME var isn't counted properly and won't get into
-				//the functions's var list.
 				flow_get_var (op->tempop.alias);
 			}
 		}
@@ -361,11 +359,9 @@ flow_get_var (operand_t *op)
 			if (d->alias) {
 				d = d->alias;
 				//This is for main vars that are never referenced as such.
-				//The eg, arrays that are only indexed and not referenced
-				//by a pointer, or vector variables accessed only by
-				//components and not as a whole.
-				//FIXME var isn't counted properly and won't get into
-				//the functions's var list.
+				//eg, arrays that are only indexed and not referenced by a
+				//pointer, or vector variables accessed only by components
+				//and not as a whole.
 				operand_t *aop;
 				if (d->flowvar) {
 					aop = d->flowvar->op;
