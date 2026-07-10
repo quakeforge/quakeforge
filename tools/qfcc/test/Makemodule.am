@@ -28,6 +28,7 @@ test_progs_dat=\
 	tools/qfcc/test/brokenalias.dat \
 	tools/qfcc/test/brokenbox1.dat \
 	tools/qfcc/test/brokenbox2.dat \
+	tools/qfcc/test/brokenbox3.dat \
 	tools/qfcc/test/brokeninertia.dat \
 	tools/qfcc/test/brokenkill.dat \
 	tools/qfcc/test/brokenline.dat \
@@ -391,6 +392,16 @@ tools/qfcc/test/brokenbox2.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(brokenbox2_dep) # am--include-marker
 r_depfiles_remade += $(brokenbox2_dep)
+
+tools_qfcc_test_brokenbox3_dat_SOURCES=tools/qfcc/test/brokenbox3.r
+brokenbox3_obj=$(tools_qfcc_test_brokenbox3_dat_SOURCES:.r=.o)
+brokenbox3_dep=$(call qcautodep,$(tools_qfcc_test_brokenbox3_dat_SOURCES))
+tools/qfcc/test/brokenbox3.dat$(EXEEXT): $(brokenbox3_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(brokenbox3_obj)
+tools/qfcc/test/brokenbox3.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(brokenbox3_dep) # am--include-marker
+r_depfiles_remade += $(brokenbox3_dep)
 
 tools_qfcc_test_brokeninertia_dat_SOURCES=tools/qfcc/test/brokeninertia.r
 brokeninertia_obj=$(tools_qfcc_test_brokeninertia_dat_SOURCES:.r=.o)
