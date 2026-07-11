@@ -123,6 +123,20 @@
 		};
 	},
 	{
+		name = "Sphere0";
+		grav_flag = true;
+		position = (-21, 9, 5, 1);
+		vel = (0, 1, 0);
+		grav_flag = false;
+		target = true;
+		from_shape = true;
+		invDensity = 26;
+		collider = {
+			type = col_ball;
+			radius = 1;
+		};
+	},
+	{
 		name = "Sphere";
 		mesh = create_quadsphere;
 		mesh_flag = true;

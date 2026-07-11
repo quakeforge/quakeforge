@@ -19,22 +19,33 @@ clamp (float x, float a, float b)
 	return max (a, min(x, b));
 }
 
-@generic (v = [PGA.bvect, vec3]) {
+@generic (v3 = [PGA.bvect, vec3], v4 = [PGA.vec, PGA.tvec, vec4]) {
 
-v abs(v x)
+v3 abs(v3 x)
 {
 	uvec3 m = (vec3) x < '0 0 0';
-	return (v) ((uvec3) x & ~m) - (v) ((uvec3) x & m);
+	return (v3) ((uvec3) x & ~m) - (v3) ((uvec3) x & m);
+}
+
+v4 abs(v4 x)
+{
+	uvec4 m = (vec4) x < '0 0 0 0';
+	return (v4) ((uvec4) x & ~m) - (v4) ((uvec4) x & m);
+}
+
+v3 max(v3 a, v3 b)
+{
+	uvec3 m = a < b;
+	return (v3) ((uvec3) a & ~m) + (v3) ((uvec3) b & m);
+}
+
+v4 max(v4 a, v4 b)
+{
+	uvec4 m = a < b;
+	return (v4) ((uvec4) a & ~m) + (v4) ((uvec4) b & m);
 }
 
 };
-
-@overload
-vec3 max(vec3 a, vec3 b)
-{
-	uvec3 m = a < b;
-	return (vec3) ((uvec3) a & ~m) + (vec3) ((uvec3) b & m);
-}
 
 //FIXME having PGA.group_mask(0xc) here and then providing a defintion causes
 //a segfault in qfcc
@@ -178,7 +189,6 @@ draw_collider (collider_t col, transform_t xform, motor_t M)
 				//.plane = (vec4) (M * (plane_t) p * ~M),
 				.children = box_brush[i].children,
 			};
-			printf ("%d %q\n", i, rotated_box[i].plane);
 		}
 		vec4 box_mins = '-20 -20 -20 0';
 		vec4 box_maxs = '20 20 20 0';
@@ -393,7 +403,6 @@ bool get_contact_ball_box (uint aent, collider_t acol,
 						   uint bent, collider_t bcol,
 						   contact_t *contact)
 {
-#if 0
 	state_t aS, bS;
 	body_t aB, bB;
 	get_component (aent, qent_state, &aS);
@@ -404,31 +413,34 @@ bool get_contact_ball_box (uint aent, collider_t acol,
 	auto bM = bS.M * bB.R;
 
 	// transform the ball's center point into the box's space
-	auto M = ~bM * aM
+	auto M = ~bM * aM;
 	auto p = M * (point_t) [acol.ball.offset,    1] * ~M;
 
 	auto c = (point_t) [bcol.box.offset, 1];
-	auto e = (point_t) [bcol.box.extent, 1];
+	auto e = (point_t) [bcol.box.extent, 0];
+	float r = acol.ball.radius;
 
-	auto ap = (a∨p);
-	auto ab = (a∨b);
-	float h = (ap•ab)/(ab•ab);
-	h = h < 0 ? 0 : h > 1 ? 1 : h;
-	auto d = ap - h * ab;
-	float r = acol.ball.radius + bcol.capsule.radius;
-
-	if (d • ~d < r * r) {
-		@algebra (PGA) {
+	@algebra (PGA) {
+		auto q = (c∨p).bvect;
+		auto mins = -(e123 ∨ e).bvect;
+		auto maxs =  (e123 ∨ e).bvect;
+		auto tmin = (uvec3) (q < mins);
+		auto tmax = (uvec3) (maxs < q);
+		auto tcen = ~tmin & ~tmax;
+		auto x = (PGA.bvect) ( (tmin & (uvec3) mins)
+							 + (tcen & (uvec3) q)
+							 + (tmax & (uvec3) maxs));
+		auto d = q - x;
+		if (d • ~d < r * r) {
 			auto n = (e0 * d) / sqrt (d • ~d);
-			auto x = a + h * (b - a);
-			auto world_a = p + n * acol.ball.radius;
-			auto world_b = x - n * bcol.capsule.radius;
+			auto box_a = p + n * acol.ball.radius;
+			auto box_b = c - e0 * x;	// e0 * x gives the negative point
 			*contact = {
-				.world_a = world_a,
-				.world_b = world_b,
-				.local_a = ~aM * world_a * aM,
-				.local_b = ~bM * world_b * bM,
-				.normal = @undual (n),
+				.world_a = bM * box_a * ~bM,
+				.world_b = bM * box_b * ~bM,
+				.local_a = ~M * box_a * M,
+				.local_b = box_b,
+				.normal = bM * @undual (n) * ~bM,
 				.separation = sqrt (d • ~d) - r,
 				.a = aent,
 				.b = bent,
@@ -436,7 +448,6 @@ bool get_contact_ball_box (uint aent, collider_t acol,
 			return true;
 		}
 	}
-#endif
 	return false;
 
 }
