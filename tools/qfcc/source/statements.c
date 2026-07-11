@@ -576,11 +576,16 @@ tempop_overlap (tempop_t *t1, tempop_t *t2)
 	if (offs1 == offs2 && size1 == size2) {
 		return dol_exact;
 	}
-	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2)
+	if (offs1 >= offs2 && offs1 + size1 <= offs2 + size2) {
 		return dol_sub;
-	if (offs1 < offs2 + size2 && offs2 < offs1 + size1)
+	}
+	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2) {
+		return dol_super;
+	}
+	if (offs1 < offs2 + size2 && offs2 < offs1 + size1) {
 		return dol_partial;
-	return dol_all;
+	}
+	return dol_none;
 }
 
 unsigned
