@@ -942,6 +942,10 @@ dag_detect_hazards (dag_t *dag, daglabel_t *l, statement_t *s, dagnode_t *n)
 			if (ud.defst >= s->number) {
 				continue;
 			}
+			// use is earlier in the node. no hazard
+			if (ud.usest <= s->number) {
+				continue;
+			}
 			auto st = func->statements[ud.defst];
 			auto node = dag->nodes[st->dag_node];
 			// record the WAW hazard
