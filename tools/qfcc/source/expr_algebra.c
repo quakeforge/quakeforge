@@ -3567,7 +3567,8 @@ algebra_cast_expr (const type_t *dstType, const expr_t *e)
 		}
 		if (is_algebra (srcType)) {
 			algebra = algebra_get (srcType);
-			auto alias = edag_add_expr (new_alias_expr (algebra->type, e));
+			auto atype = vector_type (algebra->type, type_width (srcType));
+			auto alias = edag_add_expr (new_alias_expr (atype, e));
 			return cast_expr (dstType, alias);
 		} else {
 			auto type = vector_type (algebra->type, type_width (dstType));
