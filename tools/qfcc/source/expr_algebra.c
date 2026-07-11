@@ -556,7 +556,21 @@ mvec_scatter (const expr_t **components, const expr_t *mvec, algebra_t *algebra)
 		if (components[group]) {
 			internal_error (mvec, "duplicate group in multivec expression");
 		}
-		components[group] = edag_add_expr (c->alias.expr);
+		auto ctype = get_type (c->alias.expr);
+		if (!type_same (algebra->type, base_type (ctype))) {
+			auto vtype = vector_type (algebra->type, type_width (ctype));
+			auto a = new_expr ();
+			a->type = ex_alias;
+			a->alias = (ex_alias_t) {
+				.type = vtype,
+				.expr = c->alias.expr,
+				.offset = c->alias.offset,
+			};
+			c = a;
+		} else {
+			c = c->alias.expr;
+		}
+		components[group] = edag_add_expr (c);
 	}
 }
 
