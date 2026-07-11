@@ -539,9 +539,9 @@ do_op_uint (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 		return e2;
 	if (op == '*' && val2 == 1)
 		return e1;
-	if (op == '*' && val1 == 0)
+	if ((op == '*' || op == '&') && val1 == 0)
 		return e1;
-	if (op == '*' && val2 == 0)
+	if ((op == '*' || op == '&') && val2 == 0)
 		return e2;
 	if (op == '/' && val2 == 1)
 		return e1;
@@ -549,9 +549,9 @@ do_op_uint (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 		return error (e, "division by zero");
 	if (op == '/' && val1 == 0)
 		return e1;
-	if (op == '+' && val1 == 0)
+	if ((op == '+' || op == '|') && val1 == 0)
 		return e2;
-	if (op == '+' && val2 == 0)
+	if ((op == '+' || op == '|') && val2 == 0)
 		return e1;
 	if (op == '-' && val2 == 0)
 		return e1;
