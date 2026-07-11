@@ -583,6 +583,35 @@ tempop_overlap (tempop_t *t1, tempop_t *t2)
 	return dol_all;
 }
 
+unsigned
+tempop_calc_overlap (tempop_t *t1, tempop_t *t2)
+{
+	int         offs1 = t1->offset;
+	int         offs2 = t2->offset;
+	int         size1 = type_size (t1->type);
+	int         size2 = type_size (t2->type);
+
+	if (t1->alias) {
+		offs1 += t1->alias->tempop.offset;
+	}
+	if (t2->alias) {
+		offs2 += t2->alias->tempop.offset;
+	}
+	if (offs1 == offs2 && size1 == size2) {
+		return dol_mask_exact;
+	}
+	if (offs1 >= offs2 && offs1 + size1 <= offs2 + size2) {
+		return dol_mask_sub;
+	}
+	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2) {
+		return dol_mask_super;
+	}
+	if (offs1 < offs2 + size2 && offs2 < offs1 + size1) {
+		return dol_mask_partial;
+	}
+	return dol_mask_none;
+}
+
 int
 tempop_visit_all (tempop_t *tempop, def_overlap_t overlap,
 			      int (*visit) (tempop_t *, void *), void *data)
