@@ -399,6 +399,63 @@ bool get_contact_ball_capsule (uint aent, collider_t acol,
 	return false;
 }
 
+bool get_contact_plane_box (uint aent, collider_t acol,
+							 uint bent, collider_t bcol,
+							 contact_t *contact)
+{
+	state_t aS, bS;
+	body_t aB, bB;
+	get_component (aent, qent_state, &aS);
+	get_component (bent, qent_state, &bS);
+	get_component (aent, qent_body, &aB);
+	get_component (bent, qent_body, &bB);
+	auto aM = aS.M * aB.R;
+	auto bM = bS.M * bB.R;
+
+	// transform the plane into the box's space
+	auto M = ~bM * aM;
+	auto p = M * acol.plane * ~M;
+
+	auto c = (point_t) [bcol.box.offset, 1];
+	auto e = (point_t) [bcol.box.extent, 0];
+
+	@algebra (PGA) {
+		// a plane is just a sphere with infinite radius and its center at
+		// infinity, however, the center is behind the plane rather than in
+		// front of it
+		auto q = (c ∨ (-p * e0123)).bvect;
+		auto mins = -(e123 ∨ e).bvect;
+		auto maxs =  (e123 ∨ e).bvect;
+		auto tmin = (uvec3) ((vec3) q < '0 0 0');
+		auto tmax = (uvec3) ('0 0 0' < (vec3) q);
+		auto tcen = ~tmin & ~tmax;
+		auto x = (PGA.bvect) ( (tmin & (uvec3) mins)
+							 + (tcen & (uvec3) q)
+							 + (tmax & (uvec3) maxs));
+		auto P = c - e0 * x;	// e0 * x gives the negative point
+
+		auto d = p ∨ P;
+		if (d < 0) {
+			auto n = p * e0123;
+			auto box_a = (P • p) * p;
+			auto box_b = P;
+			*contact = {
+				.world_a = bM * box_a * ~bM,
+				.world_b = bM * box_b * ~bM,
+				.local_a = ~M * box_a * M,
+				.local_b = box_b,
+				.normal = bM * @undual (n) * ~bM,
+				.separation = d,
+				.a = aent,
+				.b = bent,
+			};
+			return true;
+		}
+	}
+	return false;
+
+}
+
 bool get_contact_ball_box (uint aent, collider_t acol,
 						   uint bent, collider_t bcol,
 						   contact_t *contact)
@@ -573,6 +630,13 @@ bool get_contact_capsule_ball (uint a, collider_t acol,
 	return get_contact_ball_capsule (b, bcol, a, acol, contact);
 }
 
+bool get_contact_box_plane (uint a, collider_t acol,
+						   uint b, collider_t bcol,
+						   contact_t *contact)
+{
+	return get_contact_plane_box (b, bcol, a, acol, contact);
+}
+
 bool get_contact_box_ball (uint a, collider_t acol,
 						   uint b, collider_t bcol,
 						   contact_t *contact)
@@ -586,6 +650,7 @@ get_contact_t get_contact[4][4] = {
 		nil,	// two infinite planes almost always collide, so ignore
 		get_contact_plane_ball,
 		get_contact_plane_capsule,
+		get_contact_plane_box,
 	},
 	{
 		get_contact_ball_plane,
@@ -599,7 +664,7 @@ get_contact_t get_contact[4][4] = {
 		get_contact_capsule_capsule,
 	},
 	{
-		nil,
+		get_contact_box_plane,
 		get_contact_box_ball,
 		nil,
 		nil,
