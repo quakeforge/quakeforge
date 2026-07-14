@@ -471,7 +471,7 @@ bool get_contact_ball_box (uint aent, collider_t acol,
 
 	// transform the ball's center point into the box's space
 	auto M = ~bM * aM;
-	auto p = M * (point_t) [acol.ball.offset,    1] * ~M;
+	auto p = M * (point_t) [acol.ball.offset, 1] * ~M;
 
 	auto c = (point_t) [bcol.box.offset, 1];
 	auto e = (point_t) [bcol.box.extent, 0];
@@ -506,7 +506,6 @@ bool get_contact_ball_box (uint aent, collider_t acol,
 		}
 	}
 	return false;
-
 }
 
 bool get_contact_capsule_capsule (uint aent, collider_t acol,
@@ -609,6 +608,137 @@ bool get_contact_capsule_capsule (uint aent, collider_t acol,
 	return false;
 }
 
+static point_t
+box_closest_point (point_t p, point_t c, point_t e)
+{
+	@algebra (PGA) {
+		auto q = (c∨p).bvect;
+		auto mins = -(e123 ∨ e).bvect;
+		auto maxs =  (e123 ∨ e).bvect;
+		auto tmin = (uvec3) (q < mins);
+		auto tmax = (uvec3) (maxs < q);
+		auto tcen = ~tmin & ~tmax;
+		auto x = (PGA.bvect) ( (tmin & (uvec3) mins)
+							 + (tcen & (uvec3) q)
+							 + (tmax & (uvec3) maxs));
+		return c - e0 * x;
+	}
+}
+
+bool get_contact_capsule_box (uint aent, collider_t acol,
+							  uint bent, collider_t bcol,
+							  contact_t *contact)
+{
+	state_t aS, bS;
+	body_t aB, bB;
+	get_component (aent, qent_state, &aS);
+	get_component (bent, qent_state, &bS);
+	get_component (aent, qent_body, &aB);
+	get_component (bent, qent_body, &bB);
+	auto aM = aS.M * aB.R;
+	auto bM = bS.M * bB.R;
+
+	// transform the capsule into the box's space
+	auto M = ~bM * aM;
+
+	auto C = M * (point_t) [acol.capsule.offset, 1] * ~M;
+	auto A = M * (point_t) [acol.capsule.axis,   0] * ~M;
+	auto c = (point_t) [bcol.box.offset, 1];
+	auto e = (point_t) [bcol.box.extent, 0];
+
+	auto P = C - A;
+	auto Q = C + A;
+
+	bivector_t L = P ∨ Q;
+
+	@algebra (PGA) {
+		auto mins = -e;
+		auto maxs =  e;
+		// project the box's center onto the line of the capsule's axis
+		auto x = ((c • L) * ~L).tvec / (L • ~L);
+		// get the corner of the box closest to the axis of the capsule by
+		// dint of being the closest corner to the projection of the box's
+		// center on the capsule's axis.
+		auto tmin = (uvec4) ((vec4)x <= vec4(0));
+		auto tmax = ~tmin;
+		auto p = (point_t) ( (tmin & (uvec4) mins)
+						   + (tmax & (uvec4) maxs)) + c;
+		// find the other ends of the 3 edges coming off p and create lines
+		// for those three edges by first finding the corner furthest from
+		// the capsule's axis
+		auto v = (point_t) ( (tmin & (uvec4) ( 2*e))
+						   + (tmax & (uvec4) (-2*e)));
+		// FIXME make it easier to get at components of GA objects
+		auto Lx = p ∨ (point_t) ((uvec4) v & '-1 0 0 0'u);
+		auto Ly = p ∨ (point_t) ((uvec4) v & '0 -1 0 0'u);
+		auto Lz = p ∨ (point_t) ((uvec4) v & '0 0 -1 0'u);
+		// Find the lines of shortest distance between the edges and the
+		// capsule's axis
+		auto LLx = L × Lx;
+		auto LLy = L × Ly;
+		auto LLz = L × Lz;
+
+		// Find the lines of projection of the corner of the box closest to
+		// the axis of the capsule on the capsule's axis
+		// FIXME .tvec required because the info required for cancelling the
+		// bivector terms is lost. This may be fixable with better high-level
+		// dags
+		auto dx = (((p • LLx) * ~LLx).tvec ∨ p) / (LLx • ~LLx);
+		auto dy = (((p • LLy) * ~LLy).tvec ∨ p) / (LLy • ~LLy);
+		auto dz = (((p • LLz) * ~LLz).tvec ∨ p) / (LLz • ~LLz);
+
+		// Find box side end points of the lines of shortest distance between
+		// the capsule's axis and the box edges, but clamped to be on the box
+		// edge.
+		auto bx = p - e0 * (min (max ((dx • Lx) / (Lx • ~Lx), 0), 1) * Lx);
+		auto by = p - e0 * (min (max ((dy • Ly) / (Ly • ~Ly), 0), 1) * Ly);
+		auto bz = p - e0 * (min (max ((dz • Lz) / (Lz • ~Lz), 0), 1) * Lz);
+
+		point_t yx = ((bx • L) * ~L).tvec / (L • ~L);
+		point_t yy = ((by • L) * ~L).tvec / (L • ~L);
+		point_t yz = ((bz • L) * ~L).tvec / (L • ~L);
+		// Find capesule side end points of the lines of shortest distance
+		// between the capesule's axis and the box edges.
+		point_t zx = P - e0 * (min (max(((P ∨ bx) • ~L) / (L • ~L), 0), 1) * L);
+		point_t zy = P - e0 * (min (max(((P ∨ by) • ~L) / (L • ~L), 0), 1) * L);
+		point_t zz = P - e0 * (min (max(((P ∨ bz) • ~L) / (L • ~L), 0), 1) * L);
+		// Find the points on the box closest to the end points of the capsule
+		point_t Px = box_closest_point (P, c, e);
+		point_t Qx = box_closest_point (Q, c, e);
+
+		auto wPx = (vec4) (bM * Px * ~bM);
+		auto wQx = (vec4) (bM * Qx * ~bM);
+		auto wbx = (vec4) (bM * bx * ~bM);
+		auto wby = (vec4) (bM * by * ~bM);
+		auto wbz = (vec4) (bM * bz * ~bM);
+		auto wyx = (vec4) (bM * yx * ~bM);
+		auto wyy = (vec4) (bM * yy * ~bM);
+		auto wyz = (vec4) (bM * yz * ~bM);
+		auto wzx = (vec4) (bM * zx * ~bM);
+		auto wzy = (vec4) (bM * zy * ~bM);
+		auto wzz = (vec4) (bM * zz * ~bM);
+		auto wP = (vec4) (bM * P * ~bM);
+		auto wQ = (vec4) (bM * Q * ~bM);
+		Gizmo_AddSphere (wbx, 0.1, {1, 0, 0, 0.5});
+		Gizmo_AddSphere (wby, 0.1, {0, 1, 0, 0.5});
+		Gizmo_AddSphere (wbz, 0.1, {0, 0, 1, 0.5});
+		Gizmo_AddCapsule (wbx, wzx, 0.03, {0, 1, 1, 0.5});
+		Gizmo_AddCapsule (wby, wzy, 0.03, {1, 0, 1, 0.5});
+		Gizmo_AddCapsule (wbz, wzz, 0.03, {1, 1, 0, 0.5});
+		Gizmo_AddSphere (wPx, 0.1, {1, 1, 1, 0.5});
+		Gizmo_AddSphere (wQx, 0.1, {1, 1, 1, 0.5});
+		Gizmo_AddSphere (wP, 0.1, {1, 1, 1, 0.5});
+		Gizmo_AddSphere (wQ, 0.1, {1, 1, 1, 0.5});
+		Gizmo_AddSphere (wzx, 0.1, {0, 1, 1, 0.5});
+		Gizmo_AddSphere (wzy, 0.1, {1, 0, 1, 0.5});
+		Gizmo_AddSphere (wzz, 0.1, {1, 1, 0, 0.5});
+		Gizmo_AddCapsule (wP, wPx, 0.03, {0.5, 0, 0.5, 0.5});
+		Gizmo_AddCapsule (wQ, wQx, 0.03, {0.5, 0.5, 0, 0.5});
+	}
+
+	return false;
+}
+
 bool get_contact_ball_plane (uint a, collider_t acol,
 							 uint b, collider_t bcol,
 							 contact_t *contact)
@@ -644,30 +774,37 @@ bool get_contact_box_ball (uint a, collider_t acol,
 	return get_contact_ball_box (b, bcol, a, acol, contact);
 }
 
+bool get_contact_box_capsule (uint a, collider_t acol,
+						   uint b, collider_t bcol,
+						   contact_t *contact)
+{
+	return get_contact_capsule_box (b, bcol, a, acol, contact);
+}
+
 get_contact_t get_contact[4][4] = {
-	//col_plane
-	{
-		nil,	// two infinite planes almost always collide, so ignore
-		get_contact_plane_ball,
-		get_contact_plane_capsule,
-		get_contact_plane_box,
+	[col_plane] = {
+		[col_plane]   = nil,	// two infinite planes almost always collide
+		[col_ball]    = get_contact_plane_ball,
+		[col_capsule] = get_contact_plane_capsule,
+		[col_box]     = get_contact_plane_box,
 	},
-	{
-		get_contact_ball_plane,
-		get_contact_ball_ball,
-		get_contact_ball_capsule,
-		get_contact_ball_box,
+	[col_ball] = {
+		[col_plane]   = get_contact_ball_plane,
+		[col_ball]    = get_contact_ball_ball,
+		[col_capsule] = get_contact_ball_capsule,
+		[col_box]     = get_contact_ball_box,
 	},
-	{
-		get_contact_capsule_plane,
-		get_contact_capsule_ball,
-		get_contact_capsule_capsule,
+	[col_capsule] = {
+		[col_plane]   = get_contact_capsule_plane,
+		[col_ball]    = get_contact_capsule_ball,
+		[col_capsule] = get_contact_capsule_capsule,
+		[col_box]     = get_contact_capsule_box,
 	},
-	{
-		get_contact_box_plane,
-		get_contact_box_ball,
-		nil,
-		nil,
+	[col_box] = {
+		[col_plane]   = get_contact_box_plane,
+		[col_ball]    = get_contact_box_ball,
+		[col_capsule] = get_contact_box_capsule,
+		[col_box]     = nil,
 	},
 };
 

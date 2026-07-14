@@ -383,7 +383,8 @@ pixpal_colorid (uint x, uint y)
 	[cameras addObject:active_camera];
 
 	camera_state = {
-		.M = make_motor ({ -4, 0, 3, 0, }, { 0, 0.316227766, 0, 0.948683298 }),
+		//.M = make_motor ({ -4, 0, 3, 0, }, { 0, 0.316227766, 0, 0.948683298 }),
+		.M = make_motor ({ -16, 12, 10, 0, }, { -0.223606797, 0.223606797, 0.670820393, 0.670820393 }),
 	};
 
 	IMP imp;
