@@ -806,7 +806,7 @@ Vulkan_Gizmo_AddBrush (vec4f_t orig, const vec4f_t bounds[2],
 
 void
 Vulkan_Gizmo_AddPlane (vec4f_t p, vec4f_t s, vec4f_t t,
-					   quat_t gcol, quat_t scol, quat_t tcol,
+					   const quat_t gcol, const quat_t scol, const quat_t tcol,
 					   vulkan_ctx_t *ctx)
 {
 	vec4f_t n = crossf (s, t);
@@ -832,4 +832,18 @@ Vulkan_Gizmo_AddPlane (vec4f_t p, vec4f_t s, vec4f_t t,
 	QuatScale (scol, 255, plane.scol);
 	QuatScale (tcol, 255, plane.tcol);
 	gizmo_add_object (&plane, sizeof (plane), 0, true, ctx);
+}
+
+void
+Vulkan_Gizmo_AddLine (vec4f_t u, vec4f_t m, float r, const quat_t color,
+					  vulkan_ctx_t *ctx)
+{
+	giz_line_t line = {
+		.cmd = 4,
+		.u = { VectorExpand (u) },
+		.m = { VectorExpand (m) },
+		.r = r,
+	};
+	QuatScale (color, 255, line.col);
+	gizmo_add_object (&line, sizeof (line), 0, true, ctx);
 }

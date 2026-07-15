@@ -271,6 +271,43 @@ draw_brush (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	}
 }
 
+void
+draw_line (uint ind, vec3 v, vec3 eye, @inout vec4 color)
+{
+	line_t line = {
+		.bvect = (PGA.bvect) load_vec3 (ind + 0),
+		.bvecp = (PGA.bvecp) load_vec3 (ind + 3),
+	};
+	auto eyep = make_point (eye, 1);
+	auto vel = make_point (v, 0);
+	auto ray = eyep ∨ vel;
+
+	auto r = asfloat (objects[ind + 6]);
+	auto col = asrgba (objects[ind + 7]);
+
+	auto M = line * ray;
+	@algebra(PGA) {
+		float d;
+		bool in_front = true;
+		if (M.bvect • ~M.bvect > 0) {
+			// the line and ray are skew
+			float den = M.bvect • ~M.bvect;
+			float num = ⋆M.qvec;
+			auto L = M.bvect + M.bvecp;
+			bivec_t dir = eyep ∨ ((eyep • L) * ~L).tvec;
+			in_front = dir • ~ray > 0;
+			d = (num * num) / den;
+		} else {
+			// the line is parallel to the ray
+			auto Mo = ⋆M.bvecp;
+			d = Mo • ~Mo / (M.scalar * M.scalar);
+		}
+		if (in_front && d < r * r) {
+			color = volumetric_color (true, sqrt (d) / r, color, col);
+		}
+	}
+}
+
 #include "infplane.finc"
 
 const float N = 128.0; // grid ratio
@@ -342,6 +379,7 @@ void main()
 		case 1: draw_capsule (obj_id + 1, v, eye, color); break;
 		case 2: draw_brush (obj_id + 1, v, eye, color); break;
 		case 3: draw_plane (obj_id + 1, cam, vec3 (UV, 1), color); break;
+		case 4: draw_line (obj_id + 1, v, eye, color); break;
 		}
 		queue_ind = next;
 	}

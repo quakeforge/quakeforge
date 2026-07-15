@@ -138,6 +138,7 @@ void Gizmo_AddBrush (vec4 orig, vec4 mins, vec4 maxs,
 					 int num_nodes, gizmo_node_t *nodes, vec4 color) = #0;
 void Gizmo_AddPlane (vec4 p, vec4 s, vec4 t,
 					 vec4 gcol, vec4 scol, vec4 tcol) = #0;
+void Gizmo_AddLine (vec3 u, vec3 m, float r, vec4 color) = #0;
 
 void Painter_AddLine (vec2 p1, vec2 p2, float r, vec4 color) = #0;
 void Painter_AddCircle (vec2 c, float r, vec4 color) = #0;

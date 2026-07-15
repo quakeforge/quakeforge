@@ -12,5 +12,6 @@ void Gizmo_AddBrush (vec4 orig, vec4 mins, vec4 maxs,
 					 int num_nodes, gizmo_node_t *nodes, vec4 color);
 void Gizmo_AddPlane (vec4 p, vec4 s, vec4 t,
 					 vec4 gcol, vec4 scol, vec4 tcol);
+void Gizmo_AddLine (vec3 u, vec3 m, float r, vec4 color);
 
 #endif//__gizmo_h
