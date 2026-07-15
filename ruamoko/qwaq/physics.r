@@ -652,20 +652,62 @@ bool get_contact_capsule_box (uint aent, collider_t acol,
 	bivector_t L = P ∨ Q;
 
 	@algebra (PGA) {
-		auto mins = -e;
-		auto maxs =  e;
-		// project the box's center onto the line of the capsule's axis
-		auto x = ((c • L) * ~L).tvec / (L • ~L);
-		// get the corner of the box closest to the axis of the capsule by
-		// dint of being the closest corner to the projection of the box's
-		// center on the capsule's axis.
-		auto tmin = (uvec4) ((vec4)x <= vec4(0));
+		bivector_t line;
+		point_t    box_point;
+		point_t    cap_point;
+
+		point_t Px = box_closest_point (P, c, e);
+		bivector_t LPx = P ∨ Px;
+		if (LPx • ~L < 0) {
+			box_point = Px;
+			cap_point = P;
+			line = LPx;
+
+			auto wP = (vec4) (bM * P * ~bM);
+			auto wPx = (vec4) (bM * Px * ~bM);
+			Gizmo_AddSphere (wP, 0.1, {1, 1, 1, 0.5});
+			Gizmo_AddSphere (wPx, 0.1, {1, 1, 1, 0.5});
+			Gizmo_AddCapsule (wP, wPx, 0.03, {0.5, 0, 0.5, 0.5});
+			goto check_distance;
+		}
+
+		point_t Qx = box_closest_point (Q, c, e);
+		bivector_t LQx = Q ∨ Qx;
+		if (LQx • ~L > 0) {
+			box_point = Qx;
+			cap_point = Q;
+			line = LQx;
+
+			auto wQ = (vec4) (bM * Q * ~bM);
+			auto wQx = (vec4) (bM * Qx * ~bM);
+			Gizmo_AddSphere (wQ, 0.1, {1, 1, 1, 0.5});
+			Gizmo_AddSphere (wQx, 0.1, {1, 1, 1, 0.5});
+			Gizmo_AddCapsule (wQ, wQx, 0.03, {0.5, 0.5, 0, 0.5});
+			goto check_distance;
+		}
+		auto wP = (vec4) (bM * P * ~bM);
+		auto wQ = (vec4) (bM * Q * ~bM);
+		Gizmo_AddSphere (wP, 0.03, {1, 1, 1, 0.5});
+		Gizmo_AddSphere (wQ, 0.03, {1, 1, 1, 0.5});
+
+		// Get the direction from the box center to the capsule's axis
+		// multiplying by e0 gives negates the result, so do axis to center
+		// FIXME .tvec required because the info required for cancelling the
+		// bivector terms is lost. This may be fixable with better high-level
+		// dags
+		auto dir = e0 * (((c • L) * ~L).tvec ∨ c);
+
+		// get the corner of the box most in the direction of the capsule's
+		// axis
+		auto tmin = (uvec4) ((vec4)dir <= vec4(0));
 		auto tmax = ~tmin;
-		auto p = (point_t) ( (tmin & (uvec4) mins)
-						   + (tmax & (uvec4) maxs)) + c;
+		auto p = (point_t) ( (tmin & (uvec4) -e)
+						   + (tmax & (uvec4)  e)) + c;
 		// find the other ends of the 3 edges coming off p and create lines
 		// for those three edges by first finding the corner furthest from
 		// the capsule's axis
+		// the actual length doesn't matter, but using 2*e helps when
+		// visualizing the edges
 		auto v = (point_t) ( (tmin & (uvec4) ( 2*e))
 						   + (tmax & (uvec4) (-2*e)));
 		// FIXME make it easier to get at components of GA objects
@@ -680,9 +722,6 @@ bool get_contact_capsule_box (uint aent, collider_t acol,
 
 		// Find the lines of projection of the corner of the box closest to
 		// the axis of the capsule on the capsule's axis
-		// FIXME .tvec required because the info required for cancelling the
-		// bivector terms is lost. This may be fixable with better high-level
-		// dags
 		auto dx = (((p • LLx) * ~LLx).tvec ∨ p) / (LLx • ~LLx);
 		auto dy = (((p • LLy) * ~LLy).tvec ∨ p) / (LLy • ~LLy);
 		auto dz = (((p • LLz) * ~LLz).tvec ∨ p) / (LLz • ~LLz);
@@ -694,49 +733,73 @@ bool get_contact_capsule_box (uint aent, collider_t acol,
 		auto by = p - e0 * (min (max ((dy • Ly) / (Ly • ~Ly), 0), 1) * Ly);
 		auto bz = p - e0 * (min (max ((dz • Lz) / (Lz • ~Lz), 0), 1) * Lz);
 
-		point_t yx = ((bx • L) * ~L).tvec / (L • ~L);
-		point_t yy = ((by • L) * ~L).tvec / (L • ~L);
-		point_t yz = ((bz • L) * ~L).tvec / (L • ~L);
-		// Find capesule side end points of the lines of shortest distance
-		// between the capesule's axis and the box edges.
-		point_t zx = P - e0 * (min (max(((P ∨ bx) • ~L) / (L • ~L), 0), 1) * L);
-		point_t zy = P - e0 * (min (max(((P ∨ by) • ~L) / (L • ~L), 0), 1) * L);
-		point_t zz = P - e0 * (min (max(((P ∨ bz) • ~L) / (L • ~L), 0), 1) * L);
-		// Find the points on the box closest to the end points of the capsule
-		point_t Px = box_closest_point (P, c, e);
-		point_t Qx = box_closest_point (Q, c, e);
+		// Find capsule side end points of the lines of shortest distance
+		// between the capsule's axis and the box edges.
+		point_t cx = P - e0 * (((P ∨ bx) • ~L) / (L • ~L) * L);
+		point_t cy = P - e0 * (((P ∨ by) • ~L) / (L • ~L) * L);
+		point_t cz = P - e0 * (((P ∨ bz) • ~L) / (L • ~L) * L);
 
-		auto wPx = (vec4) (bM * Px * ~bM);
-		auto wQx = (vec4) (bM * Qx * ~bM);
 		auto wbx = (vec4) (bM * bx * ~bM);
 		auto wby = (vec4) (bM * by * ~bM);
 		auto wbz = (vec4) (bM * bz * ~bM);
-		auto wyx = (vec4) (bM * yx * ~bM);
-		auto wyy = (vec4) (bM * yy * ~bM);
-		auto wyz = (vec4) (bM * yz * ~bM);
-		auto wzx = (vec4) (bM * zx * ~bM);
-		auto wzy = (vec4) (bM * zy * ~bM);
-		auto wzz = (vec4) (bM * zz * ~bM);
-		auto wP = (vec4) (bM * P * ~bM);
-		auto wQ = (vec4) (bM * Q * ~bM);
+		auto wcx = (vec4) (bM * cx * ~bM);
+		auto wcy = (vec4) (bM * cy * ~bM);
+		auto wcz = (vec4) (bM * cz * ~bM);
 		Gizmo_AddSphere (wbx, 0.1, {1, 0, 0, 0.5});
 		Gizmo_AddSphere (wby, 0.1, {0, 1, 0, 0.5});
 		Gizmo_AddSphere (wbz, 0.1, {0, 0, 1, 0.5});
-		Gizmo_AddCapsule (wbx, wzx, 0.03, {0, 1, 1, 0.5});
-		Gizmo_AddCapsule (wby, wzy, 0.03, {1, 0, 1, 0.5});
-		Gizmo_AddCapsule (wbz, wzz, 0.03, {1, 1, 0, 0.5});
-		Gizmo_AddSphere (wPx, 0.1, {1, 1, 1, 0.5});
-		Gizmo_AddSphere (wQx, 0.1, {1, 1, 1, 0.5});
-		Gizmo_AddSphere (wP, 0.1, {1, 1, 1, 0.5});
-		Gizmo_AddSphere (wQ, 0.1, {1, 1, 1, 0.5});
-		Gizmo_AddSphere (wzx, 0.1, {0, 1, 1, 0.5});
-		Gizmo_AddSphere (wzy, 0.1, {1, 0, 1, 0.5});
-		Gizmo_AddSphere (wzz, 0.1, {1, 1, 0, 0.5});
-		Gizmo_AddCapsule (wP, wPx, 0.03, {0.5, 0, 0.5, 0.5});
-		Gizmo_AddCapsule (wQ, wQx, 0.03, {0.5, 0.5, 0, 0.5});
+		Gizmo_AddCapsule (wbx, wcx, 0.03, {0, 1, 1, 0.5});
+		Gizmo_AddCapsule (wby, wcy, 0.03, {1, 0, 1, 0.5});
+		Gizmo_AddCapsule (wbz, wcz, 0.03, {1, 1, 0, 0.5});
+		Gizmo_AddSphere (wcx, 0.1, {0, 1, 1, 0.5});
+		Gizmo_AddSphere (wcy, 0.1, {1, 0, 1, 0.5});
+		Gizmo_AddSphere (wcz, 0.1, {1, 1, 0, 0.5});
+
+		float distx = (cx ∨ bx) • (bx ∨ cx);
+		float disty = (cy ∨ by) • (by ∨ cy);
+		float distz = (cz ∨ bz) • (bz ∨ cz);
+		float dist = min (distx, min (disty, distz));
+		if (dist == distx) {
+			box_point = bx;
+			cap_point = cx;
+			line = cx ∨ bx;
+			goto check_distance;
+		} else if (dist == disty) {
+			box_point = by;
+			cap_point = cy;
+			line = cy ∨ by;
+			goto check_distance;
+		} else {
+			box_point = bz;
+			cap_point = cz;
+			line = cz ∨ bz;
+			goto check_distance;
+		}
+		// this shouldn't happen as there is always a line of closest approach,
+		return false;
+check_distance:
+		auto wbox = (vec4) (bM * box_point * ~bM);
+		auto wcap = (vec4) (bM * cap_point * ~bM);
+		Gizmo_AddCapsule (wbox, wcap, 0.1, {0, 1, 0, 0.5});
+
+		float r = acol.capsule.radius;
+		if (line • ~line < r * r) {
+			auto n = -(e0 * line) / sqrt (line • ~line);
+			*contact = {
+				.world_a = bM * cap_point * ~bM,
+				.world_b = bM * box_point * ~bM,
+				.local_a = ~M * cap_point * M,
+				.local_b = box_point,
+				.normal = bM * @undual (n) * ~bM,
+				.separation = sqrt (line • ~line) - r,
+				.a = aent,
+				.b = bent,
+			};
+			return true;
+		}
+		return false;
 	}
 
-	return false;
 }
 
 bool get_contact_ball_plane (uint a, collider_t acol,
