@@ -3441,12 +3441,16 @@ algebra_negate (const expr_t *e)
 static const expr_t *
 hodge_dual (const expr_t *e, bool undual)
 {
-	auto algebra = algebra_context (get_type (e));
+	auto type = get_type (e);
+	auto algebra = algebra_context (type);
 	if (!algebra) {
 		return error (e, "cannot take the %s of a scalar without context",
 					  undual ? "undual" : "dual");
 	}
 	e = algebra_optimize (e);
+	if (!e) {
+		e = new_zero_expr (type);
+	}
 	auto layout = &algebra->layout;
 
 	const expr_t *a[layout->count] = {};

@@ -72,11 +72,17 @@ proc_expr (const expr_t *expr, rua_ctx_t *ctx)
 	if (expr->expr.op == 'C') {
 		auto type = proc_decl_type (expr->expr.e1, ctx);
 		auto e = expr_process (expr->expr.e2, ctx);
+		if (is_error (e)) {
+			return e;
+		}
 		return cast_expr (type, e);
 	}
 	if (expr->expr.op == QC_BITCAST) {
 		auto type = proc_decl_type (expr->expr.e1, ctx);
 		auto e = expr_process (expr->expr.e2, ctx);
+		if (is_error (e)) {
+			return e;
+		}
 		if (is_reference (get_type (e))) {
 			e = pointer_deref (e);
 		}
