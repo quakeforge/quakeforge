@@ -397,6 +397,79 @@ is_axial (const expr_t *vec, bool *sign, int *ind)
 }
 
 static const expr_t *
+remove_cross_scales (const expr_t *cross, const expr_t *vec)
+{
+	auto l = cross->expr.e1;
+	auto r = cross->expr.e2;
+
+	int l_terms = count_terms (l);
+	if (l_terms) {
+		auto l_type = get_type (l);
+		const expr_t *l_adds[l_terms + 1] = {};
+		const expr_t *l_subs[l_terms + 1] = {};
+		scatter_terms (cross->expr.e1, l_adds, l_subs);
+		for (auto search = l_adds; *search; search++) {
+			auto v = traverse_scale (*search);
+			if (v == vec) {
+				*search = &skip;
+			}
+		}
+		for (auto search = l_subs; *search; search++) {
+			auto v = traverse_scale (*search);
+			if (v == vec) {
+				*search = &skip;
+			}
+		}
+		clean_skips (l_adds);
+		clean_skips (l_subs);
+		l = gather_terms (l_type, l_adds, l_subs);
+	}
+
+	int r_terms = count_terms (r);
+	if (r_terms) {
+		auto r_type = get_type (r);
+		const expr_t *r_adds[r_terms + 1] = {};
+		const expr_t *r_subs[r_terms + 1] = {};
+		scatter_terms (cross->expr.e2, r_adds, r_subs);
+		for (auto search = r_adds; *search; search++) {
+			auto v = traverse_scale (*search);
+			if (v == vec) {
+				*search = &skip;
+			}
+		}
+		for (auto search = r_subs; *search; search++) {
+			auto v = traverse_scale (*search);
+			if (v == vec) {
+				*search = &skip;
+			}
+		}
+		clean_skips (r_adds);
+		clean_skips (r_subs);
+		r = gather_terms (r_type, r_adds, r_subs);
+	}
+
+	if (!l || !r) {
+		return nullptr;
+	}
+	bool neg = false;
+	if (is_neg (l)) {
+		neg = !neg;
+		l = neg_expr (l);
+	}
+	if (is_neg (r)) {
+		neg = !neg;
+		r = neg_expr (r);
+	}
+
+	auto type = get_type (cross);
+	cross = typed_binary_expr (type, QC_CROSS, l, r);
+	if (neg) {
+		cross = neg_expr (cross);
+	}
+	return cross;
+}
+
+static const expr_t *
 optimize_dot (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 {
 	auto l = expr->expr.e1;
@@ -409,6 +482,11 @@ optimize_dot (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	} else {
 		l = optimize_core (l);
 		r = optimize_core (r);
+		if (l && is_cross (l)) {
+			l = remove_cross_scales (l, r);
+		} else if (r && is_cross (r)) {
+			r = remove_cross_scales (r, l);
+		}
 		if (!l || !r || reject_dot (l, r)) {
 			return &skip;
 		}
