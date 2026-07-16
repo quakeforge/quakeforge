@@ -3595,6 +3595,11 @@ algebra_cast_expr (const type_t *dstType, const expr_t *e)
 			return edag_add_expr (cast);
 		}
 	}
+	if (algebra && !srcAlgebra) {
+		if (type_same (algebra->type, srcType)) {
+			srcAlgebra = algebra;
+		}
+	}
 
 	if (!algebra || !srcAlgebra) {
 		return cast_error (e, srcType, dstType);
