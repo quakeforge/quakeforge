@@ -973,8 +973,7 @@ expr_address (sblock_t *sblock, const expr_t *e, operand_t **op)
 	const expr_t *offset = e->address.offset;
 
 	if (lvalue->type == ex_alias && offset && is_constant (offset)) {
-		lvalue = new_offset_alias_expr (lvalue->alias.type,
-										lvalue->alias.expr,
+		lvalue = new_offset_alias_expr (lvalue->alias.type, lvalue,
 										expr_int (offset));
 		offset = 0;
 	} else if (offset && is_constant (offset)) {
