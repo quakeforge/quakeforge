@@ -132,6 +132,7 @@ draw_collider (collider_t col, transform_t xform, motor_t M)
 	mat4 mat = Transform_GetWorldMatrix(xform);
 	switch (col.type) {
 	case col_plane:
+		break;
 		@algebra (PGA) {
 			auto plane = col.plane;
 			// Gizmo_AddPlane expects a point and two spanning vectors
@@ -168,6 +169,7 @@ draw_collider (collider_t col, transform_t xform, motor_t M)
 	}
 	case col_box:
 	{
+		break;
 		vec3 e = col.box.extent;
 		vec3 o = col.box.offset;
 		//auto q = M;
@@ -909,12 +911,14 @@ update_physics (uint ent)
 	get_component (ent, qent_body, &body);
 	get_component (ent, qent_transform, &xform);
 
-	if (has_component (ent, qent_grav)) {
-		state = update_grav_state (state, body, xform);
-	} else {
-		state = update_block_state (state, body, xform);
+	if (!physics_paused) {
+		if (has_component (ent, qent_grav)) {
+			state = update_grav_state (state, body, xform);
+		} else {
+			state = update_block_state (state, body, xform);
+		}
+		set_component (ent, qent_state, &state);
 	}
-	set_component (ent, qent_state, &state);
 
 	auto M = state.M * body.R;
 	set_transform (M, xform);

@@ -123,18 +123,31 @@
 		};
 	},
 	{
+		name = "Box";
+		mesh = create_block;
+		mesh_param = (2, 3, 1);
+		position = (-16, 24, 7, 1);
+		target = true;
+		from_shape = true;
+		invDensity = 36;
+		collider = {
+			type = col_box;
+			extent = (1, 1.5, 0.5)
+		};
+	},
+	/*{
 		name = "Capsule0";
 		position = (-14, 20, 5, 1);
 		target = true;
 		from_shape = true;
 		invDensity = 1;
-		vel = (-0.1, 0, 0);
+		//vel = (-0.1, 0, 0);
 		collider = {
 			type = col_capsule;
 			radius = 0.5;
 			axis = (0, 0, 0.75);
 		};
-	},
+	},*/
 	{
 		name = "Sphere0";
 		grav_flag = true;

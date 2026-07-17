@@ -55,6 +55,7 @@ static string pbr_conv_shader =
 ;
 
 float camera_speed = 1;
+bool physics_paused = false;
 
 int in_context;
 in_axis_t *cam_move_forward;
@@ -1089,15 +1090,18 @@ draw_quadsphere_gizmos (int key_devid, int bspace, int subdiv,
 }
 
 bool
-check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
+check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key,
+			int p_key)
 {
 	static bool editor_key_pressed = false;
+	static bool physics_key_pressed = false;
 
-	in_buttoninfo_t info[4] = {};
+	in_buttoninfo_t info[5] = {};
 	IN_GetButtonInfo (key_devid, lctrl_key, &info[0]);
 	IN_GetButtonInfo (key_devid, lalt_key, &info[1]);
 	IN_GetButtonInfo (key_devid, q_key, &info[2]);
 	IN_GetButtonInfo (key_devid, e_key, &info[3]);
+	IN_GetButtonInfo (key_devid, p_key, &info[4]);
 	if (info[0].state && info[2].state) {
 		return true;
 	}
@@ -1108,6 +1112,14 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key)
 		editor_key_pressed = true;
 	} else {
 		editor_key_pressed = false;
+	}
+	if (info[4].state) {
+		if (!physics_key_pressed) {
+			physics_paused = !physics_paused;
+		}
+		physics_key_pressed = true;
+	} else {
+		physics_key_pressed = false;
 	}
 	return false;
 }
@@ -1360,6 +1372,7 @@ main (int argc, string *argv)
 	int ralt_key = IN_GetButtonNumber (key_devid, "Alt_R");
 	int q_key = IN_GetButtonNumber (key_devid, "q");
 	int e_key = IN_GetButtonNumber (key_devid, "e");
+	int p_key = IN_GetButtonNumber (key_devid, "p");
 	int bspace = IN_GetButtonNumber (key_devid, "BackSpace");
 
 #if 0
@@ -1464,8 +1477,10 @@ main (int argc, string *argv)
 
 		leafnode ();
 
+		//Gizmo_AddLine ('0 1 0', '1 0 1', 0.1, '1 0 1 1');
+
 		if (quit_editor ||
-			check_keys (key_devid, lctrl_key, lalt_key, q_key, e_key)) {
+			check_keys (key_devid, lctrl_key, lalt_key, q_key, e_key, p_key)) {
 			break;
 		}
 	}

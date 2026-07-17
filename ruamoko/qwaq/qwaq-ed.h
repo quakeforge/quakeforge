@@ -21,6 +21,8 @@ void leafnode();
 
 extern float camera_speed;
 
+extern bool physics_paused;
+
 extern int in_context;
 extern in_axis_t *cam_move_forward;
 extern in_axis_t *cam_move_side;
