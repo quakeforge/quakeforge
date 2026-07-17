@@ -804,6 +804,142 @@ check_distance:
 
 }
 
+static point_t
+plane_closest_point (plane_t p, point_t c, point_t e)
+{
+	@algebra (PGA) {
+		auto q = (c ∨ (-p * e0123)).bvect;
+		auto mins = -(e123 ∨ e).bvect;
+		auto maxs =  (e123 ∨ e).bvect;
+		auto tmin = (uvec3) ((vec3) q < '0 0 0');
+		auto tmax = (uvec3) ('0 0 0' < (vec3) q);
+		auto tcen = ~tmin & ~tmax;
+		auto x = (PGA.bvect) ( (tmin & (uvec3) mins)
+							 + (tcen & (uvec3) q)
+							 + (tmax & (uvec3) maxs));
+		return c - e0 * x;
+	}
+}
+
+typedef struct boxstate_s {
+	point_t c[2];
+	point_t e[2];
+	bvec3 outa[2];
+	bvec3 outb[2];
+	bvec3 outc[2];
+	bvec3 out[2];
+	motor_t M[2];
+	motor_t abM[2];
+} boxstate_t;
+
+static void
+test_space (boxstate_t *s, bool swapped)
+{
+	int a = 1+!swapped;
+	int b = 1+swapped;
+	const vec3 pone = ' 1.0  1.0  1.0'f;
+	const vec3 mone = '-1.0 -1.0 -1.0'f;
+
+	@algebra (PGA) {
+		auto d = e0 * ((s.abM[b] * s.c[b] * ~s.abM[b]) ∨ s.c[a]);
+		auto tmin = (uvec4) ((vec4) d <= vec4(0));
+		auto tmax = ~tmin;
+		auto x = (point_t) ( (tmin & (uvec4) -s.e[a])
+						   + (tmax & (uvec4)  s.e[a])) + s.c[a];
+		auto sgn = (vec3) ( (tmin.xyz & @bitcast (uvec3, mone))
+						  + (tmax.xyz & @bitcast (uvec3, pone)));
+		plane_t px = x • (e32 * sgn.x);
+		plane_t py = x • (e13 * sgn.y);
+		plane_t pz = x • (e21 * sgn.z);
+
+		auto bpx = s.abM[a] * px * ~s.abM[a];
+		auto bpy = s.abM[a] * py * ~s.abM[a];
+		auto bpz = s.abM[a] * pz * ~s.abM[a];
+
+		auto qx = plane_closest_point (bpx, s.c[b], s.e[b]);
+		auto qy = plane_closest_point (bpy, s.c[b], s.e[b]);
+		auto qz = plane_closest_point (bpz, s.c[b], s.e[b]);
+		vec3 dista = [bpx ∨ qx, bpy ∨ qy, bpz ∨ qz];
+		vec3 distb = [bpy ∨ qx, bpz ∨ qy, bpx ∨ qz];
+		vec3 distc = [bpz ∨ qx, bpx ∨ qy, bpy ∨ qz];
+		s.outa[b] = dista > vec3(0);
+		s.outb[b] = distb > vec3(0);
+		s.outc[b] = distc > vec3(0);
+		s.out[b] = [@horiz(| [s.outa[b].x, s.outb[b].x, s.outc[b].x]),
+					@horiz(| [s.outa[b].y, s.outb[b].y, s.outc[b].y]),
+					@horiz(| [s.outa[b].z, s.outb[b].z, s.outc[b].z])];
+		Gizmo_AddSphere ((vec4) (s.M[b] * qx * ~s.M[b]), 0.1 + 0.1*s.out[b].x, {1, 0, 0, 1});
+		Gizmo_AddSphere ((vec4) (s.M[b] * qy * ~s.M[b]), 0.1 + 0.1*s.out[b].y, {0, 1, 0, 1});
+		Gizmo_AddSphere ((vec4) (s.M[b] * qz * ~s.M[b]), 0.1 + 0.1*s.out[b].z, {0, 0, 1, 1});
+
+		auto lx = s.M[a] * (py ∧ pz) * ~s.M[a];
+		auto ly = s.M[a] * (pz ∧ px) * ~s.M[a];
+		auto lz = s.M[a] * (px ∧ py) * ~s.M[a];
+		Gizmo_AddLine ((vec3) lx.bvect, (vec3) lx.bvecp, 0.01, {1, 0, 0, 0.5});
+		Gizmo_AddLine ((vec3) ly.bvect, (vec3) ly.bvecp, 0.01, {0, 1, 0, 0.5});
+		Gizmo_AddLine ((vec3) lz.bvect, (vec3) lz.bvecp, 0.01, {0, 0, 1, 0.5});
+
+		if (!s.outa[b]) {
+			Gizmo_AddSphere ((vec4) (s.M[b] * s.c[b] * ~s.M[b]), 0.3, {1, 1, 1, 1});
+		}
+			auto rx = s.abM[b] * qx * ~s.abM[b];
+			auto ry = s.abM[b] * qy * ~s.abM[b];
+			auto rz = s.abM[b] * qz * ~s.abM[b];
+			auto sx = box_closest_point (rx, s.c[a], s.e[a]);
+			auto sy = box_closest_point (ry, s.c[a], s.e[a]);
+			auto sz = box_closest_point (rz, s.c[a], s.e[a]);
+			vec3 dists = [(sx∨rx)•(rx∨sx),(sy∨ry)•(ry∨sy),(sz∨rz)•(rz∨sz)];
+			point_t wr = nil, ws = nil;
+			if (dists.x <= min (dists.y, dists.z)) {
+				wr = rx;
+				ws = sx;
+			} else if (dists.y <= min (dists.z, dists.x)) {
+				wr = ry;
+				ws = sy;
+			} else if (dists.z <= min (dists.x, dists.y)) {
+				wr = rz;
+				ws = sz;
+			}
+			wr = s.M[a] * wr * ~s.M[a];
+			ws = s.M[a] * ws * ~s.M[a];
+			Gizmo_AddCapsule ((vec4)wr, (vec4)ws, 0.1, {1, 0, 1, 0.5});
+			Gizmo_AddSphere ((vec4)ws, 0.13, {0, 1, 0, 0.5});
+	}
+}
+
+bool get_contact_box_box (uint aent, collider_t acol,
+						  uint bent, collider_t bcol,
+						  contact_t *contact)
+{
+	state_t aS, bS;
+	body_t aB, bB;
+	get_component (aent, qent_state, &aS);
+	get_component (bent, qent_state, &bS);
+	get_component (aent, qent_body, &aB);
+	get_component (bent, qent_body, &bB);
+	auto aM = aS.M * aB.R;
+	auto bM = bS.M * bB.R;
+
+	// transform the capsule into the box's space
+	auto abM = ~bM * aM;
+	auto baM = ~aM * bM;
+
+	auto ac = (point_t) [acol.box.offset, 1];
+	auto ae = (point_t) [acol.box.extent, 0];
+	auto bc = (point_t) [bcol.box.offset, 1];
+	auto be = (point_t) [bcol.box.extent, 0];
+
+	boxstate_t state = {
+		.c = {ac, bc},
+		.e = {ae, be},
+		.M = {aM, bM},
+		.abM = {abM, baM},
+	};
+	test_space (&state, false);
+	test_space (&state, true);
+	return false;
+}
+
 bool get_contact_ball_plane (uint a, collider_t acol,
 							 uint b, collider_t bcol,
 							 contact_t *contact)
@@ -869,7 +1005,7 @@ get_contact_t get_contact[4][4] = {
 		[col_plane]   = get_contact_box_plane,
 		[col_ball]    = get_contact_box_ball,
 		[col_capsule] = get_contact_box_capsule,
-		[col_box]     = nil,
+		[col_box]     = get_contact_box_box,
 	},
 };
 
