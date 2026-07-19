@@ -401,6 +401,26 @@ bool get_contact_ball_capsule (uint aent, collider_t acol,
 	return false;
 }
 
+static point_t
+box_plane_point (plane_t p, point_t c, point_t e)
+{
+	@algebra (PGA) {
+		// a plane is just a sphere with infinite radius and its center at
+		// infinity, however, the center is behind the plane rather than in
+		// front of it
+		auto q = (c ∨ (-p * e0123)).bvect;
+		auto mins = -(e123 ∨ e).bvect;
+		auto maxs =  (e123 ∨ e).bvect;
+		auto tmin = (uvec3) ((vec3) q < '0 0 0');
+		auto tmax = (uvec3) ('0 0 0' < (vec3) q);
+		auto tcen = ~tmin & ~tmax;
+		auto x = (PGA.bvect) ( (tmin & (uvec3) mins)
+							 + (tcen & (uvec3) q)
+							 + (tmax & (uvec3) maxs));
+		return c - e0 * x;	// e0 * x gives the negative point
+	}
+}
+
 bool get_contact_plane_box (uint aent, collider_t acol,
 							 uint bent, collider_t bcol,
 							 contact_t *contact)
@@ -422,20 +442,7 @@ bool get_contact_plane_box (uint aent, collider_t acol,
 	auto e = (point_t) [bcol.box.extent, 0];
 
 	@algebra (PGA) {
-		// a plane is just a sphere with infinite radius and its center at
-		// infinity, however, the center is behind the plane rather than in
-		// front of it
-		auto q = (c ∨ (-p * e0123)).bvect;
-		auto mins = -(e123 ∨ e).bvect;
-		auto maxs =  (e123 ∨ e).bvect;
-		auto tmin = (uvec3) ((vec3) q < '0 0 0');
-		auto tmax = (uvec3) ('0 0 0' < (vec3) q);
-		auto tcen = ~tmin & ~tmax;
-		auto x = (PGA.bvect) ( (tmin & (uvec3) mins)
-							 + (tcen & (uvec3) q)
-							 + (tmax & (uvec3) maxs));
-		auto P = c - e0 * x;	// e0 * x gives the negative point
-
+		auto P = box_plane_point (p, c, e);
 		auto d = p ∨ P;
 		if (d < 0) {
 			auto n = p * e0123;
@@ -821,89 +828,212 @@ plane_closest_point (plane_t p, point_t c, point_t e)
 	}
 }
 
+typedef struct boxvoronoi_s {
+	uvec4 min;
+	uvec4 cen;
+	uvec4 max;
+	point_t x;
+	vec3 sign;
+} boxvoronoi_t;
+
 typedef struct boxstate_s {
 	point_t c[2];
 	point_t e[2];
-	bvec3 outa[2];
-	bvec3 outb[2];
-	bvec3 outc[2];
-	bvec3 out[2];
 	motor_t M[2];
 	motor_t abM[2];
+
+	plane_t px[2];
+	plane_t py[2];
+	plane_t pz[2];
+	boxvoronoi_t v[2];
+	int planes[2];
 } boxstate_t;
 
-static void
-test_space (boxstate_t *s, bool swapped)
+@generic (bivec = [bivector_t]) {
+void Gizmo_AddLine (bivec bv, float radius, vec4 color)
 {
-	int a = 1+!swapped;
-	int b = 1+swapped;
+	Gizmo_AddLine ((vec3) bv.bvect, (vec3) bv.bvecp, radius, color);
+}
+};
+
+static boxvoronoi_t
+box_voronoi_classification (point_t p, point_t c, point_t e)
+{
 	const vec3 pone = ' 1.0  1.0  1.0'f;
 	const vec3 mone = '-1.0 -1.0 -1.0'f;
 
 	@algebra (PGA) {
-		auto d = e0 * ((s.abM[b] * s.c[b] * ~s.abM[b]) ∨ s.c[a]);
-		auto tmin = (uvec4) ((vec4) d <= vec4(0));
-		auto tmax = ~tmin;
-		auto x = (point_t) ( (tmin & (uvec4) -s.e[a])
-						   + (tmax & (uvec4)  s.e[a])) + s.c[a];
-		auto sgn = (vec3) ( (tmin.xyz & @bitcast (uvec3, mone))
-						  + (tmax.xyz & @bitcast (uvec3, pone)));
-		plane_t px = x • (e32 * sgn.x);
-		plane_t py = x • (e13 * sgn.y);
-		plane_t pz = x • (e21 * sgn.z);
+		auto tmin = (uvec4) ((vec4) p <= vec4(0));
+		auto tmax = (uvec4) ((vec4) p >  vec4(0));
+		auto tcen = ~tmin & ~tmax;
+		boxvoronoi_t v = {
+			.min = tmin,
+			.cen = tcen,
+			.max = tmax,
+			.x = (point_t) ( (tmin & (uvec4) -e)
+						   + (tcen & (uvec4)  p)
+						   + (tmax & (uvec4)  e)) + c,
+			.sign = (vec3) ( (tmin.xyz & @bitcast (uvec3, mone))
+						   + (tmax.xyz & @bitcast (uvec3, pone))),
+		};
+		return v;
+	}
+}
 
-		auto bpx = s.abM[a] * px * ~s.abM[a];
-		auto bpy = s.abM[a] * py * ~s.abM[a];
-		auto bpz = s.abM[a] * pz * ~s.abM[a];
+static void
+box_test_space (boxstate_t *s, bool swapped)
+{
+	int a = 1+!swapped;
+	int b = 1+swapped;
+	@algebra (PGA) {
+		auto v = box_voronoi_classification (s.abM[b] * s.c[b] * ~s.abM[b],
+											 s.c[a], s.e[a]);
+		s.v[a] = v;
+		s.px[a] = v.x • (e32 * v.sign.x);
+		s.py[a] = v.x • (e13 * v.sign.y);
+		s.pz[a] = v.x • (e21 * v.sign.z);
+		s.planes[a] = -@horiz(+ v.min.xyz | v.max.xyz);
 
-		auto qx = plane_closest_point (bpx, s.c[b], s.e[b]);
-		auto qy = plane_closest_point (bpy, s.c[b], s.e[b]);
-		auto qz = plane_closest_point (bpz, s.c[b], s.e[b]);
-		vec3 dista = [bpx ∨ qx, bpy ∨ qy, bpz ∨ qz];
-		vec3 distb = [bpy ∨ qx, bpz ∨ qy, bpx ∨ qz];
-		vec3 distc = [bpz ∨ qx, bpx ∨ qy, bpy ∨ qz];
-		s.outa[b] = dista > vec3(0);
-		s.outb[b] = distb > vec3(0);
-		s.outc[b] = distc > vec3(0);
-		s.out[b] = [@horiz(| [s.outa[b].x, s.outb[b].x, s.outc[b].x]),
-					@horiz(| [s.outa[b].y, s.outb[b].y, s.outc[b].y]),
-					@horiz(| [s.outa[b].z, s.outb[b].z, s.outc[b].z])];
-		Gizmo_AddSphere ((vec4) (s.M[b] * qx * ~s.M[b]), 0.1 + 0.1*s.out[b].x, {1, 0, 0, 1});
-		Gizmo_AddSphere ((vec4) (s.M[b] * qy * ~s.M[b]), 0.1 + 0.1*s.out[b].y, {0, 1, 0, 1});
-		Gizmo_AddSphere ((vec4) (s.M[b] * qz * ~s.M[b]), 0.1 + 0.1*s.out[b].z, {0, 0, 1, 1});
+		auto p = s.M[a] * v.x * ~s.M[a];
 
-		auto lx = s.M[a] * (py ∧ pz) * ~s.M[a];
-		auto ly = s.M[a] * (pz ∧ px) * ~s.M[a];
-		auto lz = s.M[a] * (px ∧ py) * ~s.M[a];
-		Gizmo_AddLine ((vec3) lx.bvect, (vec3) lx.bvecp, 0.01, {1, 0, 0, 0.5});
-		Gizmo_AddLine ((vec3) ly.bvect, (vec3) ly.bvecp, 0.01, {0, 1, 0, 0.5});
-		Gizmo_AddLine ((vec3) lz.bvect, (vec3) lz.bvecp, 0.01, {0, 0, 1, 0.5});
+		Gizmo_AddSphere ((vec4) p, 0.05, {1, 1+swapped, 1, 0.5});
+	}
+}
 
-		if (!s.outa[b]) {
-			Gizmo_AddSphere ((vec4) (s.M[b] * s.c[b] * ~s.M[b]), 0.3, {1, 1, 1, 1});
+void
+draw_edges (boxstate_t *s, bool swapped)
+{
+	int a = 1+!swapped;
+	int b = 1+swapped;
+
+	auto px = s.px[a];
+	auto py = s.py[a];
+	auto pz = s.pz[a];
+
+	auto lyz = s.M[a] * (py ∧ pz) * ~s.M[a];
+	auto lzx = s.M[a] * (pz ∧ px) * ~s.M[a];
+	auto lxy = s.M[a] * (px ∧ py) * ~s.M[a];
+
+	//FIXME need the cast otherwise qfcc segfaults when looking for the
+	//generic function
+	Gizmo_AddLine (lyz, 0.01, (vec4) {1, 0, 0, 0.5});
+	Gizmo_AddLine (lzx, 0.01, (vec4) {0, 1, 0, 0.5});
+	Gizmo_AddLine (lxy, 0.01, (vec4) {0, 0, 1, 0.5});
+if (!swapped) return;
+	{
+		// FIXME qfcc fails to optimize  M * ⋆(a ∧ b) * ~M correctly, missing
+		// cancelations in the trivector due to insufficnet distirbution (the
+		// cancelations do not depend on any hidden knowlege)
+		//auto dyz = ⋆(py ∧ pz);
+		//auto dzx = ⋆(pz ∧ px);
+		//auto dxy = ⋆(px ∧ py);
+		//dyz = s.M[a] * dyz * ~s.M[a];
+		//dzx = s.M[a] * dzx * ~s.M[a];
+		//dxy = s.M[a] * dxy * ~s.M[a];
+
+		auto dyz = ⋆(s.abM[a] * (py ∧ pz) * ~s.abM[a]);
+		auto dzx = ⋆(s.abM[a] * (pz ∧ px) * ~s.abM[a]);
+		auto dxy = ⋆(s.abM[a] * (px ∧ py) * ~s.abM[a]);
+		dyz = s.M[b] * dyz * ~s.M[b];
+		dzx = s.M[b] * dzx * ~s.M[b];
+		dxy = s.M[b] * dxy * ~s.M[b];
+		Gizmo_AddLine (dyz, 0.01, (vec4) {0, 1, 1, 0.5});
+		Gizmo_AddLine (dzx, 0.01, (vec4) {1, 0, 1, 0.5});
+		Gizmo_AddLine (dxy, 0.01, (vec4) {1, 1, 0, 0.5});
+	}
+	{
+		@algebra (PGA) {
+			auto dx = ⋆(s.abM[a] * s.v[a].x * ~s.abM[a]);
+			auto px = (e123 • dx) * dx;
+			Gizmo_AddSphere ((vec4) (s.M[b]*px*~s.M[b]), 0.015, {0, 1, 0, 0.5});
 		}
-			auto rx = s.abM[b] * qx * ~s.abM[b];
-			auto ry = s.abM[b] * qy * ~s.abM[b];
-			auto rz = s.abM[b] * qz * ~s.abM[b];
-			auto sx = box_closest_point (rx, s.c[a], s.e[a]);
-			auto sy = box_closest_point (ry, s.c[a], s.e[a]);
-			auto sz = box_closest_point (rz, s.c[a], s.e[a]);
-			vec3 dists = [(sx∨rx)•(rx∨sx),(sy∨ry)•(ry∨sy),(sz∨rz)•(rz∨sz)];
-			point_t wr = nil, ws = nil;
-			if (dists.x <= min (dists.y, dists.z)) {
-				wr = rx;
-				ws = sx;
-			} else if (dists.y <= min (dists.z, dists.x)) {
-				wr = ry;
-				ws = sy;
-			} else if (dists.z <= min (dists.x, dists.y)) {
-				wr = rz;
-				ws = sz;
-			}
-			wr = s.M[a] * wr * ~s.M[a];
-			ws = s.M[a] * ws * ~s.M[a];
-			Gizmo_AddCapsule ((vec4)wr, (vec4)ws, 0.1, {1, 0, 1, 0.5});
-			Gizmo_AddSphere ((vec4)ws, 0.13, {0, 1, 0, 0.5});
+	}
+	for (int i = 0; i < 21; i++) {
+		@algebra (PGA) {
+		for (int j = 0; j < 21; j++) {
+			auto px = point_t(-1, (i-10)/10f, (j-10)/10f, 0) @hadamard s.e[b]
+					+ s.c[b];
+			auto py = point_t((i-10)/10f, -1, (j-10)/10f, 0) @hadamard s.e[b]
+					+ s.c[b];
+			auto pz = point_t((i-10)/10f, (j-10)/10f, -1, 0) @hadamard s.e[b]
+					+ s.c[b];
+			auto dpx = ⋆px;
+			auto dpy = ⋆py;
+			auto dpz = ⋆pz;
+			auto pdx = (e123 • dpx) * dpx;
+			auto pdy = (e123 • dpy) * dpy;
+			auto pdz = (e123 • dpz) * dpz;
+			Gizmo_AddSphere ((vec4) (s.M[b]*pdx*~s.M[b]), 0.005, {0, 1, 1, 0.5});
+			Gizmo_AddSphere ((vec4) (s.M[b]*pdy*~s.M[b]), 0.005, {1, 0, 1, 0.5});
+			Gizmo_AddSphere ((vec4) (s.M[b]*pdz*~s.M[b]), 0.005, {1, 1, 0, 0.5});
+		}
+		}
+	}
+
+	for (int i = 0; i < 12; i++) {
+		//FIXME non-static initializes incorrectly
+		static vec3 n[12][2] = {
+			{' 1  0 0', '0  1  0'},
+			{' 1  0 0', '0  0  1'},
+			{' 1  0 0', '0 -1  0'},
+			{' 1  0 0', '0  0 -1'},
+			{'-1  0 0', '0  1  0'},
+			{'-1  0 0', '0  0  1'},
+			{'-1  0 0', '0 -1  0'},
+			{'-1  0 0', '0  0 -1'},
+			{' 0  1 0', '0  0  1'},
+			{' 0  1 0', '0  0 -1'},
+			{' 0 -1 0', '0  0  1'},
+			{' 0 -1 0', '0  0 -1'},
+		};
+		@algebra (PGA) {
+			auto x = s.c[a] + (point_t) vec4(n[i][0], 0) @hadamard s.e[a];
+			auto y = s.c[a] + (point_t) vec4(n[i][1], 0) @hadamard s.e[a];
+			auto p1 = x • ((e32 + e13 + e21) @hadamard (PGA.bvect) n[i][0]);
+			auto p2 = y • ((e32 + e13 + e21) @hadamard (PGA.bvect) n[i][1]);
+
+			auto dl = ⋆(s.abM[a] * (p1 ∧ p2) * ~s.abM[a]);
+			dl = s.M[b] * dl * ~s.M[b];
+			//Gizmo_AddLine (dl, 0.005, (vec4) {1, 1, 1, 0.5});
+			auto z = s.M[b] * s.c[b] * ~s.M[b];
+			z = ((z • dl) * ~dl).tvec;
+			Gizmo_AddSphere ((vec4) z, 0.015, {1, 0, 1, 0.5});
+			auto P1 = ⋆(s.abM[a] * p1 * ~s.abM[a]);
+			auto P2 = ⋆(s.abM[a] * p2 * ~s.abM[a]);
+			P1 /= ⋆(e0∧P1);
+			P2 /= ⋆(e0∧P2);
+			Gizmo_AddSphere ((vec4) (s.M[b]*P1*~s.M[b]), 0.015, {1, 0, 0, 0.5});
+			Gizmo_AddSphere ((vec4) (s.M[b]*P2*~s.M[b]), 0.015, {1, 0, 0, 0.5});
+		}
+	}
+	for (int i = 0; i < 12; i++) {
+		//FIXME non-static initializes incorrectly
+		static vec3 n[12][2] = {
+			{' 1  0 0', '0  1  0'},
+			{' 1  0 0', '0  0  1'},
+			{' 1  0 0', '0 -1  0'},
+			{' 1  0 0', '0  0 -1'},
+			{'-1  0 0', '0  1  0'},
+			{'-1  0 0', '0  0  1'},
+			{'-1  0 0', '0 -1  0'},
+			{'-1  0 0', '0  0 -1'},
+			{' 0  1 0', '0  0  1'},
+			{' 0  1 0', '0  0 -1'},
+			{' 0 -1 0', '0  0  1'},
+			{' 0 -1 0', '0  0 -1'},
+		};
+		@algebra (PGA) {
+			auto x = s.c[b] + (point_t) vec4(n[i][0], 0) @hadamard s.e[b];
+			auto y = s.c[b] + (point_t) vec4(n[i][1], 0) @hadamard s.e[b];
+			auto p1 = x • ((e32 + e13 + e21) @hadamard (PGA.bvect) n[i][0]);
+			auto p2 = y • ((e32 + e13 + e21) @hadamard (PGA.bvect) n[i][1]);
+
+			auto P1 = s.M[b]*⋆p1*~s.M[b];
+			auto P2 = s.M[b]*⋆p2*~s.M[b];
+			P1 /= ⋆(e0∧P1);
+			P2 /= ⋆(e0∧P2);
+			Gizmo_AddCapsule ((vec4) P1, (vec4) P2, 0.005, {0, 1, 0, 0.5});
+		}
 	}
 }
 
@@ -929,14 +1059,38 @@ bool get_contact_box_box (uint aent, collider_t acol,
 	auto bc = (point_t) [bcol.box.offset, 1];
 	auto be = (point_t) [bcol.box.extent, 0];
 
+	Gizmo_AddSphere ((vec4) (bM*bc*~bM), 0.15, {1, 0, 1, 0.5});
+
 	boxstate_t state = {
 		.c = {ac, bc},
 		.e = {ae, be},
 		.M = {aM, bM},
 		.abM = {abM, baM},
 	};
-	test_space (&state, false);
-	test_space (&state, true);
+	box_test_space (&state, false);
+	box_test_space (&state, true);
+	draw_edges (&state, false);
+	draw_edges (&state, true);
+	if (state.planes[1] == 1) {
+		// find closest point on a to b's plane
+		@algebra (PGA) {
+			auto v = state.v[1];
+			auto p = ((e32 + e13 + e21) @hadamard (PGA.bvect) v.sign) • v.x;
+			auto P = box_plane_point (baM * p * ~baM, ac, ae);
+			//printf ("%q %q\n", p, P);
+			Gizmo_AddSphere ((vec4) (aM*P*~aM), 0.15,
+							 {0.729, 0.855, 0.333, 0.5});
+		}
+	}
+	auto x = box_closest_point (abM * state.v[0].x * ~abM, bc, be);
+	auto y = box_voronoi_classification (baM * x * ~baM, ac, ae);
+	Gizmo_AddSphere ((vec4) (bM*x*~bM), 0.05, {0, 1, 0, 0.5});
+	int planes = -@horiz(+ y.min.xyz | y.max.xyz);
+	Gizmo_AddSphere ((vec4) (aM*y.x*~aM), 0.05,
+					 {planes == 1, planes == 2, planes == 3, 0.5});
+	Gizmo_AddSphere ((vec4) (aM*y.x*~aM), 0.002, {1, 1, 1, 0.5});
+
+	//printf ("%d %d\n", state.planes[0], state.planes[1]);
 	return false;
 }
 
