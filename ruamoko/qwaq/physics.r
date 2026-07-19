@@ -910,15 +910,25 @@ draw_edges (boxstate_t *s, bool swapped)
 	auto py = s.py[a];
 	auto pz = s.pz[a];
 
-	auto lyz = s.M[a] * (py ∧ pz) * ~s.M[a];
-	auto lzx = s.M[a] * (pz ∧ px) * ~s.M[a];
-	auto lxy = s.M[a] * (px ∧ py) * ~s.M[a];
+	@algebra (PGA) {
+		auto lyz = s.M[a] * (py ∧ pz) * ~s.M[a];
+		auto lzx = s.M[a] * (pz ∧ px) * ~s.M[a];
+		auto lxy = s.M[a] * (px ∧ py) * ~s.M[a];
 
-	//FIXME need the cast otherwise qfcc segfaults when looking for the
-	//generic function
-	Gizmo_AddLine (lyz, 0.01, (vec4) {1, 0, 0, 0.5});
-	Gizmo_AddLine (lzx, 0.01, (vec4) {0, 1, 0, 0.5});
-	Gizmo_AddLine (lxy, 0.01, (vec4) {0, 0, 1, 0.5});
+		auto O = s.M[b] * e123 * ~s.M[b];
+		auto pyz = ((O • lyz) * ~lyz).tvec;
+		auto pzx = ((O • lzx) * ~lzx).tvec;
+		auto pxy = ((O • lxy) * ~lxy).tvec;
+
+		//FIXME need the cast otherwise qfcc segfaults when looking for the
+		//generic function
+		Gizmo_AddLine (lyz, 0.01, (vec4) {1, 0, 0, 0.5});
+		Gizmo_AddLine (lzx, 0.01, (vec4) {0, 1, 0, 0.5});
+		Gizmo_AddLine (lxy, 0.01, (vec4) {0, 0, 1, 0.5});
+		Gizmo_AddSphere ((vec4) pyz, 0.02, {0, 1, 1, 0.9});
+		Gizmo_AddSphere ((vec4) pzx, 0.02, {1, 0, 1, 0.9});
+		Gizmo_AddSphere ((vec4) pxy, 0.02, {1, 1, 0, 0.9});
+	}
 if (!swapped) return;
 	{
 		// FIXME qfcc fails to optimize  M * ⋆(a ∧ b) * ~M correctly, missing
@@ -963,11 +973,31 @@ if (!swapped) return;
 			auto pdx = (e123 • dpx) * dpx;
 			auto pdy = (e123 • dpy) * dpy;
 			auto pdz = (e123 • dpz) * dpz;
-			Gizmo_AddSphere ((vec4) (s.M[b]*pdx*~s.M[b]), 0.005, {0, 1, 1, 0.5});
-			Gizmo_AddSphere ((vec4) (s.M[b]*pdy*~s.M[b]), 0.005, {1, 0, 1, 0.5});
-			Gizmo_AddSphere ((vec4) (s.M[b]*pdz*~s.M[b]), 0.005, {1, 1, 0, 0.5});
+			Gizmo_AddSphere ((vec4) (s.M[b]*pdx*~s.M[b]), 0.005, {1, 0, 0, 0.5});
+			Gizmo_AddSphere ((vec4) (s.M[b]*pdy*~s.M[b]), 0.005, {0, 1, 0, 0.5});
+			Gizmo_AddSphere ((vec4) (s.M[b]*pdz*~s.M[b]), 0.005, {0, 0, 1, 0.5});
 		}
 		}
+	}
+	@algebra (PGA) {
+		auto px = (point_t(-1, 0, 0, 0) @hadamard s.e[b] + s.c[b]) • e23;
+		auto py = (point_t(0, -1, 0, 0) @hadamard s.e[b] + s.c[b]) • e31;
+		auto pz = (point_t(0, 0, -1, 0) @hadamard s.e[b] + s.c[b]) • e12;
+		auto cx = -(⋆px + ⋆(e0∧⋆px)*e123);
+		auto cy = -(⋆py + ⋆(e0∧⋆py)*e123);
+		auto cz = -(⋆pz + ⋆(e0∧⋆pz)*e123);
+		auto rx = sqrt(⋆cx • ~⋆cx) / ⋆(e0∧cx);
+		auto ry = sqrt(⋆cy • ~⋆cy) / ⋆(e0∧cy);
+		auto rz = sqrt(⋆cz • ~⋆cz) / ⋆(e0∧cz);
+		auto mcx = e123*cx*e321;
+		auto mcy = e123*cy*e321;
+		auto mcz = e123*cz*e321;
+		Gizmo_AddSphere ((vec4) (s.M[b]*cx*~s.M[b]), rx, {0, 1, 1, 0.9});
+		Gizmo_AddSphere ((vec4) (s.M[b]*cy*~s.M[b]), ry, {1, 0, 1, 0.9});
+		Gizmo_AddSphere ((vec4) (s.M[b]*cz*~s.M[b]), rz, {1, 1, 0, 0.9});
+		Gizmo_AddSphere ((vec4) (s.M[b]*mcx*~s.M[b]), rx, {0, 1, 1, 0.9});
+		Gizmo_AddSphere ((vec4) (s.M[b]*mcy*~s.M[b]), ry, {1, 0, 1, 0.9});
+		Gizmo_AddSphere ((vec4) (s.M[b]*mcz*~s.M[b]), rz, {1, 1, 0, 0.9});
 	}
 
 	for (int i = 0; i < 12; i++) {
