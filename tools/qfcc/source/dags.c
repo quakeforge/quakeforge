@@ -971,7 +971,12 @@ dag_detect_hazards (dag_t *dag, daglabel_t *l, statement_t *s, dagnode_t *n)
 			auto ud = func->ud_chains[st->first_use + j];
 			if (ud.var != label_var->number
 				&& set_is_member (alias_vars, ud.var)) {
-				must_write = true;
+				auto var = func->vars[ud.var];
+				unsigned ol = operand_calc_overlap (var->op, label_var->op);
+				// there is a hazard only if var is not completely overwritten
+				if (!(ol & (dol_mask_sub | dol_mask_exact))) {
+					must_write = true;
+				}
 			}
 		}
 	}

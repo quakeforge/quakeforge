@@ -617,6 +617,19 @@ tempop_calc_overlap (tempop_t *t1, tempop_t *t2)
 	return dol_mask_none;
 }
 
+unsigned operand_calc_overlap (operand_t *o1, operand_t *o2)
+{
+	if (o1->op_type == o2->op_type) {
+		if (o1->op_type == op_temp) {
+			return tempop_calc_overlap (&o1->tempop, &o2->tempop);
+		}
+		if (o1->op_type == op_def) {
+			return def_calc_overlap (o1->def, o2->def);
+		}
+	}
+	return 0;
+}
+
 int
 tempop_visit_all (tempop_t *tempop, def_overlap_t overlap,
 			      int (*visit) (tempop_t *, void *), void *data)
