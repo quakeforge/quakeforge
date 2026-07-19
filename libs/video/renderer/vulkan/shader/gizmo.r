@@ -26,7 +26,7 @@ vec4
 volumetric_color (const bool enable, const float depth,
 				  const vec4 base_color, const vec4 mix_color)
 {
-	float factor = enable ? exp (-mix_color.a * depth) : 0;
+	float factor = enable ? exp (-mix_color.a * abs(depth)) : 0;
 	return mix (vec4(mix_color.rgb, 1), base_color, 1 - factor);
 }
 
