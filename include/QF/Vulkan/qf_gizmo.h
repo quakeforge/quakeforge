@@ -47,7 +47,7 @@ typedef struct giz_queue_s {
 
 typedef struct giz_sphere_s {
 	uint32_t    cmd;
-	float       c[3];
+	float       c[4];
 	float       r;
 	byte        col[4];
 } giz_sphere_t;

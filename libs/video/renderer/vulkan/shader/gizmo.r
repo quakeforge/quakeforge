@@ -33,19 +33,17 @@ volumetric_color (const bool enable, const float depth,
 void
 draw_sphere (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 {
-	auto c = vec3 (asfloat (objects[ind + 0]),
-				   asfloat (objects[ind + 1]),
-				   asfloat (objects[ind + 2])) - eye;
-	//if (c • v < 0) {
-	//	return;
-	//}
-	auto r = asfloat (objects[ind + 3]);
-	auto col = asrgba (objects[ind + 4]);
-	float d = r * r - c • c + (c • v) * (c • v) / (v • v);
-	//if (d < 0) {
-	//	color = col;
-	//	return;
-	//}
+	auto c = (point_t) load_vec4 (ind);
+
+	auto eyep = make_point (eye, 1);
+	auto vel = make_point (v, 0);
+	auto ray = eyep ∨ vel;
+
+	auto r = asfloat (objects[ind + 4]);
+	auto col = asrgba (objects[ind + 5]);
+
+	auto M = c * ~ray;
+	float d = r * r - (⋆M.tvec • ~⋆M.tvec) / (M.vec • ~M.vec);
 	float dist = d > 0 ? sqrt (d) : 0;
 	color = volumetric_color (d > 0, 3 * dist / r, color, col);
 }

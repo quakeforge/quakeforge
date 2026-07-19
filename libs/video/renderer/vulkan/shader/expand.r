@@ -40,11 +40,9 @@ const uint verts[] = {
 void
 transform_sphere (uint ind, @inout vec3 vert_pos, @inout vec3 vert_norm)
 {
-	auto c = vec3 (asfloat (objects[ind + 0]),
-				   asfloat (objects[ind + 1]),
-				   asfloat (objects[ind + 2]));
-	auto r = asfloat (objects[ind + 3]);
-	vert_pos = c + r * vert_pos;
+	auto c = load_vec4 (ind);
+	auto r = asfloat (objects[ind + 4]);
+	vert_pos = c.xyz/c.w + r * vert_pos;
 }
 
 void

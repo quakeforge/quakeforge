@@ -755,7 +755,7 @@ Vulkan_Gizmo_AddSphere (vec4f_t c, float r, const quat_t color,
 {
 	giz_sphere_t sphere = {
 		.cmd = 0,
-		.c = { VectorExpand (c) },
+		.c = { VEC4_EXP (c) },
 		.r = r,
 	};
 	QuatScale (color, 255, sphere.col);
