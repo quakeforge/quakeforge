@@ -450,6 +450,9 @@ build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
 						e = pointer_deref (e);
 					}
 					e = cast_expr (arg_types[i], e);
+					if (e->type == ex_bool) {
+						e = convert_from_bool (e, arg_types[i]);
+					}
 					if (is_error (e)) {
 						return e;
 					}
