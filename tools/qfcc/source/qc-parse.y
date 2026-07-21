@@ -742,6 +742,13 @@ decl_expr (specifier_t spec, const expr_t *init, rua_ctx_t *ctx)
 	if (current_symtab->type == stab_local && sym) {
 		auto proxy = new_symbol (sym->name);
 		proxy->is_proxy = true;
+		if (spec.is_typedef) {
+			//FIXME this won't work for typedefs that need to be processed
+			//should create a suitable type expr and mark the proxy as an expr
+			//and then TYPE_NAME check needs to check for such as well
+			proxy->sy_type = sy_type;
+			proxy->type = spec.type;
+		}
 		symtab_addsymbol (current_symtab, proxy);
 	}
 	return append_decl (decl, sym, init);
