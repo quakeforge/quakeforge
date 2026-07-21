@@ -38,6 +38,7 @@ draw_sphere (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	auto eyep = make_point (eye, 1);
 	auto vel = make_point (v, 0);
 	auto ray = eyep ∨ vel;
+	auto dir = eyep ∨ c;
 
 	auto r = asfloat (objects[ind + 4]);
 	auto col = asrgba (objects[ind + 5]);
@@ -45,7 +46,14 @@ draw_sphere (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	auto M = c * ~ray;
 	float d = r * r - (⋆M.tvec • ~⋆M.tvec) / (M.vec • ~M.vec);
 	float dist = d > 0 ? sqrt (d) : 0;
-	color = volumetric_color (d > 0, 3 * dist / r, color, col);
+	@algebra (PGA) {
+		bool draw = false;
+		//FIXME bools don't work in expressions
+		if (d > 0 && dir • ~ray + dist * ⋆(e0 ∧ c) * sqrt(ray • ~ray) >= 0) {
+			draw = true;
+		}
+		color = volumetric_color (draw, 3 * dist / r, color, col);
+	}
 }
 
 @generic (genObj = [line_t, point_t]) {
