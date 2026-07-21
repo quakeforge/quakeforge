@@ -2475,6 +2475,9 @@ spirv_branch (const expr_t *e, spirvctx_t *ctx)
 			bool not = e->branch.type == pr_branch_eq;
 			auto tl = e->branch.target;
 			auto fl = e->branch.false_target;
+			if (!tl) {
+				tl = spirv_new_label ("if");
+			}
 			if (!fl) {
 				fl = spirv_new_label ("else");
 			}
