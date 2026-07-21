@@ -928,6 +928,22 @@ draw_edges (boxstate_t *s, bool swapped)
 		Gizmo_AddSphere ((vec4) pyz, 0.02, {0, 1, 1, 0.9});
 		Gizmo_AddSphere ((vec4) pzx, 0.02, {1, 0, 1, 0.9});
 		Gizmo_AddSphere ((vec4) pxy, 0.02, {1, 1, 0, 0.9});
+		for (int i = 0; i < 21; i++) {
+			float t = (i - 10) / 10f;
+
+			auto xyz = pyz + e0 * ~lyz * t * 2;
+			auto xzx = pzx + e0 * ~lzx * t * 2;
+			auto xxy = pxy + e0 * ~lxy * t * 2;
+			auto dyz = ⋆(~s.M[b] * xyz * s.M[b]);
+			auto dzx = ⋆(~s.M[b] * xzx * s.M[b]);
+			auto dxy = ⋆(~s.M[b] * xxy * s.M[b]);
+			auto pdyz = (e123 • dyz) * dyz;
+			auto pdzx = (e123 • dzx) * dzx;
+			auto pdxy = (e123 • dxy) * dxy;
+			Gizmo_AddSphere ((vec4) (s.M[b]*pdyz*~s.M[b]), 0.02, {0, 1, 1, 0.9});
+			Gizmo_AddSphere ((vec4) (s.M[b]*pdzx*~s.M[b]), 0.02, {1, 0, 1, 0.9});
+			Gizmo_AddSphere ((vec4) (s.M[b]*pdxy*~s.M[b]), 0.02, {1, 1, 0, 0.9});
+		}
 	}
 if (!swapped) return;
 	{
@@ -998,6 +1014,9 @@ if (!swapped) return;
 		Gizmo_AddSphere ((vec4) (s.M[b]*mcx*~s.M[b]), rx, {0, 1, 1, 0.9});
 		Gizmo_AddSphere ((vec4) (s.M[b]*mcy*~s.M[b]), ry, {1, 0, 1, 0.9});
 		Gizmo_AddSphere ((vec4) (s.M[b]*mcz*~s.M[b]), rz, {1, 1, 0, 0.9});
+
+		auto c = 2*ry * s.e[b] * (e2 ∨ s.e[b]) / (⋆s.e[b] • ⋆s.e[b]) + s.c[b];
+		Gizmo_AddSphere ((vec4) (s.M[b]*c*~s.M[b]), 0.01, {1, 1, 1, 0});
 	}
 
 	for (int i = 0; i < 12; i++) {
@@ -1080,7 +1099,7 @@ bool get_contact_box_box (uint aent, collider_t acol,
 	auto aM = aS.M * aB.R;
 	auto bM = bS.M * bB.R;
 
-	// transform the capsule into the box's space
+	// transform box a into box b's space
 	auto abM = ~bM * aM;
 	auto baM = ~aM * bM;
 
