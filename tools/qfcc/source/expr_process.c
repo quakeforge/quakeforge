@@ -619,7 +619,7 @@ proc_assign (const expr_t *expr, rua_ctx_t *ctx)
 	scoped_src_loc (expr);
 	const expr_t *assign;
 	if (dst->type == ex_xvalue && dst->xvalue.assign) {
-		assign = dst->xvalue.assign (dst->xvalue.expr, src);
+		assign = dst->xvalue.assign (dst->xvalue.expr, src, dst->xvalue.data);
 	} else {
 		assign = assign_expr (dst, src);
 	}

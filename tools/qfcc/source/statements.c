@@ -1619,7 +1619,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 		const expr_t *assign = nullptr;
 		if (dst_expr->type == ex_xvalue && dst_expr->xvalue.assign) {
 			auto xvalue = dst_expr->xvalue;
-			assign = xvalue.assign (xvalue.expr, out_expr);
+			assign = xvalue.assign (xvalue.expr, out_expr, xvalue.data);
 		} else {
 			assign = assign_expr (dst_expr, out_expr);
 		}

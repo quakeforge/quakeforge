@@ -238,7 +238,7 @@ typedef struct {
 } bitfield_t;
 
 static const expr_t *
-bitfield_assign (const expr_t *dst, const expr_t *src)
+bitfield_assign (const expr_t *dst, const expr_t *src, void *data)
 {
 	scoped_src_loc (dst);
 	if (dst->type != ex_bitfield) {

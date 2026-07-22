@@ -2350,7 +2350,7 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 	} else if (dst_expr->type == ex_xvalue && dst_expr->xvalue.lvalue) {
 		auto xvalue = dst_expr->xvalue;
 		if (xvalue.assign) {
-			auto expr = xvalue.assign (xvalue.expr, src_expr);
+			auto expr = xvalue.assign (xvalue.expr, src_expr, xvalue.data);
 			return spirv_emit_expr (expr, ctx);
 		}
 		dst = spirv_emit_expr (xvalue.expr, ctx);

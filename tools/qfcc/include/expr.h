@@ -443,7 +443,8 @@ typedef struct {
 typedef struct {
 	const expr_t *expr;
 	// use ex_xvalue_t::expr for dst
-	const expr_t *(*assign) (const expr_t *dst, const expr_t *src);
+	const expr_t *(*assign) (const expr_t *dst, const expr_t *src, void *data);
+	void       *data;			///< data pointer for assign
 	bool        lvalue;			///< rvalue if false
 } ex_xvalue_t;
 
