@@ -75,6 +75,7 @@ typedef struct spirvctx_s {
 
 	const spirv_grammar_t *core;
 	function_t *cur_func;
+	unsigned    cur_block;	///< label id of current block (code space)
 
 	struct DARRAY_TYPE (unsigned) type_ids;
 	struct DARRAY_TYPE (unsigned) expr_ids;		///< Flushed per function
@@ -810,14 +811,16 @@ static unsigned
 spirv_Label (spirvctx_t *ctx)
 {
 	auto insn = spirv_new_insn (SpvOpLabel, 2, ctx->code_space, ctx);
-	INSN (insn, 1) = spirv_id (ctx);
-	return INSN (insn, 1);
+	ctx->cur_block = spirv_id (ctx);
+	INSN (insn, 1) = ctx->cur_block;
+	return ctx->cur_block;
 }
 
 static unsigned
 spirv_LabelId (unsigned id, spirvctx_t *ctx)
 {
 	auto insn = spirv_new_insn (SpvOpLabel, 2, ctx->code_space, ctx);
+	ctx->cur_block = id;
 	INSN (insn, 1) = id;
 	return id;
 }
@@ -2661,7 +2664,7 @@ spirv_incop (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
-spirv_cond (const expr_t *e, spirvctx_t *ctx)
+spirv_cond_select (const expr_t *e, spirvctx_t *ctx)
 {
 	unsigned test_id = spirv_emit_expr (e->cond.test, ctx);
 	unsigned true_id = spirv_emit_expr (e->cond.true_expr, ctx);
@@ -2677,6 +2680,71 @@ spirv_cond (const expr_t *e, spirvctx_t *ctx)
 	INSN (insn, 4) = true_id;
 	INSN (insn, 5) = false_id;
 	return id;
+}
+
+typedef struct spirvpair_s {
+	unsigned    expr_id;
+	unsigned    label_id;
+} spirvpair_t;
+
+typedef struct spirvphi_s {
+	spirvctx_t *ctx;
+	struct DARRAY_TYPE (spirvpair_t) pairs;
+} spirvphi_t;
+
+static const expr_t *
+spirv_phi_assign (const expr_t *dst, const expr_t *src, void *data)
+{
+	spirvphi_t *phi_ctx = data;
+	auto ctx = phi_ctx->ctx;
+	spirvpair_t pair = {
+		.expr_id = spirv_emit_expr (src, ctx),
+		.label_id = ctx->cur_block,
+	};
+	DARRAY_APPEND (&phi_ctx->pairs, pair);
+	return nullptr;
+}
+
+static unsigned
+spirv_cond_phi (const expr_t *e, spirvctx_t *ctx)
+{
+	spirvphi_t phi_ctx = {
+		.ctx = ctx,
+		.pairs = DARRAY_STATIC_INIT (8),
+	};
+	scoped_src_loc (e);
+	auto xvalue = new_xvalue_expr (nullptr, true);
+	xvalue->xvalue.assign = spirv_phi_assign;
+	xvalue->xvalue.data = &phi_ctx;
+	auto true_val = new_assign_expr (xvalue, e->cond.true_expr);
+	auto false_val = new_assign_expr (xvalue, e->cond.false_expr);
+	auto cond = new_select_expr (false, e->cond.test, true_val, e, false_val);
+	spirv_emit_expr (cond, ctx);
+
+	auto phi = spirv_new_insn (SpvOpPhi, 3 + 2 * phi_ctx.pairs.size,
+							   ctx->code_space, ctx);
+	unsigned tid = spirv_Type (get_type (e), ctx);
+	unsigned id = spirv_id (ctx);
+	INSN (phi, 1) = tid;
+	INSN (phi, 2) = id;
+	for (unsigned i = 0; i < phi_ctx.pairs.size; i++) {
+		auto pair = phi_ctx.pairs.a[i];
+		INSN (phi, 3 + 2 * i + 0) = pair.expr_id;
+		INSN (phi, 3 + 2 * i + 1) = pair.label_id;
+	}
+	return id;
+}
+
+static unsigned
+spirv_cond (const expr_t *e, spirvctx_t *ctx)
+{
+	if (e->cond.test->type == ex_bool) {
+		return spirv_cond_phi (e, ctx);
+	} else {
+		//FIXME use spirv_cond_phi if true_expr or false_expr have side effects
+		//Need to detect side effects
+		return spirv_cond_select (e, ctx);
+	}
 }
 
 static unsigned
@@ -2971,7 +3039,7 @@ spirv_ptroffset (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 {
-	if (e->type == ex_error) {
+	if (!e || e->type == ex_error) {
 		return 0;
 	}
 	if (spirv_expr_id (e, ctx)) {
