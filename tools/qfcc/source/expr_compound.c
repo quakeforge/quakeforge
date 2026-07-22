@@ -265,7 +265,7 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 	initstate_t state = {};
 	if (is_algebra (type)) {
 		for (auto e = ele; e; e = e->next) {
-			if (!e->designator) {
+			if (!e->designator && !is_mono_group (type)) {
 				error (eles, "block initializer of multi-vector type requires "
 					   "designators for all initializer elements");
 				return false;
