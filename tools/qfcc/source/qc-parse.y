@@ -450,7 +450,7 @@ resolve_type_spec (specifier_t spec, rua_ctx_t *ctx)
 static specifier_t
 typename_spec (specifier_t spec, rua_ctx_t *ctx)
 {
-	spec = default_type (spec, 0);
+	spec.is_typename = true;
 	return spec;
 }
 
@@ -1789,10 +1789,10 @@ struct_specifier
 			}
 		}
 	| BLOCK tag struct_list { $$ = $3; }
-	| handle tag
+	| handle[spec] tag
 		{
-			specifier_t spec = $1;
-			symbol_t   *sym = find_handle ($2, spec.type);
+			auto spec = resolve_type_spec ($spec, ctx);
+			symbol_t   *sym = find_handle ($tag, spec.type);
 			sym->type = find_type (sym->type);
 			$$ = type_spec (sym->type);
 			if (!sym->table) {

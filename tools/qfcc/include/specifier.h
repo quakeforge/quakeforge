@@ -82,6 +82,7 @@ typedef struct specifier_s {
 			bool        is_short:1;
 			bool        is_long:1;
 			bool        is_typedef:1;
+			bool        is_typename:1;
 			bool        is_overload:1;
 			bool        is_generic:1;
 			bool        is_generic_block:1;

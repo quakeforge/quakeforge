@@ -925,6 +925,19 @@ spec_process (specifier_t spec, rua_ctx_t *ctx)
 	if (spec.storage == sc_local || spec.storage == sc_param) {
 		spec.is_function = false;
 	}
+	if (spec.is_typename && !(spec.type || spec.type_expr)) {
+		auto sym = spec.sym;
+		if (sym) {
+			if (sym->sy_type != sy_type) {
+				internal_error (0, "invalid typename");
+			}
+			auto type_expr = proc_symbol (new_symbol_expr (sym), ctx);
+			if (is_error (type_expr)) {
+				return (specifier_t) { .type = type_default };
+			}
+			spec.type = get_type (type_expr);
+		}
+	}
 	if (!spec.type_expr) {
 		spec = default_type (spec, spec.sym);
 	}
@@ -1071,6 +1084,10 @@ proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 			spec.type = append_type (sym->type, spec.type);
 			spec.type = find_type (spec.type);
 			sym->type = nullptr;
+		}
+		if (spec.type_expr) {
+			spec.type = resolve_type (spec.type_expr, ctx);
+			spec.type_expr = nullptr;
 		}
 		auto symtab = current_symtab;
 		ctx->language->parse_declaration (spec, sym, init, symtab, block, ctx);
