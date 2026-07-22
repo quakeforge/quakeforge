@@ -47,11 +47,7 @@ draw_sphere (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	float d = r * r - (⋆M.tvec • ~⋆M.tvec) / (M.vec • ~M.vec);
 	float dist = d > 0 ? sqrt (d) : 0;
 	@algebra (PGA) {
-		bool draw = false;
-		//FIXME bools don't work in expressions
-		if (d > 0 && dir • ~ray + dist * ⋆(e0 ∧ c) * sqrt(ray • ~ray) >= 0) {
-			draw = true;
-		}
+		bool draw = d > 0 && dir•~ray + dist*⋆(e0∧c)*sqrt(ray•~ray) >= 0;
 		color = volumetric_color (draw, 3 * dist / r, color, col);
 	}
 }
