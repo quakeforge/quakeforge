@@ -1931,8 +1931,7 @@ convert_from_bool (const expr_t *e, const type_t *type)
 	} else {
 		return error (e, "can't convert from boolean value");
 	}
-	auto cond = new_expr_copy (e);
-	return conditional_expr (cond, one, zero);
+	return new_cond_expr (e, one, zero);
 }
 
 const expr_t *
