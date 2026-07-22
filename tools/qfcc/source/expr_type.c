@@ -402,23 +402,25 @@ static const type_t *
 resolve_vector (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
 	auto type = resolve_type (args[0], ctx);
-	if (type) {
-		int width = 0;
-		if (arg_count > 1) {
-			auto width_expr = evaluate_int (args[1], ctx);
-			if (is_error (width_expr)) {
-				return nullptr;
-			}
-			width = expr_integral (width_expr);
-		} else {
-			width = type_width (type);
-		}
-		type = vector_type (type, width);
-		if (!type) {
-			error (args[0], "invalid @vector");
-		}
+	if (!type) {
+		return nullptr;
 	}
-	return type;
+	int width = 0;
+	if (arg_count > 1) {
+		auto width_expr = evaluate_int (args[1], ctx);
+		if (is_error (width_expr)) {
+			return nullptr;
+		}
+		width = expr_integral (width_expr);
+	} else {
+		width = type_width (type);
+	}
+	auto btype = base_type (type);
+	auto vtype = vector_type (btype, width);
+	if (!vtype) {
+		error (args[0], "invalid @vector");
+	}
+	return vtype;
 }
 
 static const type_t *
