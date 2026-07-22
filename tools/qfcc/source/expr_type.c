@@ -268,9 +268,36 @@ evaluate_int (const expr_t *expr, rua_ctx_t *ctx)
 }
 
 static const expr_t *
-evaluate_int_op (int arg_count, const expr_t **args, rua_ctx_t *ctx)
+evaluate_width (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
-	return evaluate_int (args[0], ctx);
+	auto type = resolve_type (args[0], ctx);
+	if (!type) {
+		return error (args[0], "invalid type passed to %s",
+					  type_funcs[QC_AT_WIDTH].name);
+	}
+	return new_int_expr (type_width (type), false);
+}
+
+static const expr_t *
+evaluate_rows (int arg_count, const expr_t **args, rua_ctx_t *ctx)
+{
+	auto type = resolve_type (args[0], ctx);
+	if (!type) {
+		return error (args[0], "invalid type passed to %s",
+					  type_funcs[QC_AT_ROWS].name);
+	}
+	return new_int_expr (type_rows (type), false);
+}
+
+static const expr_t *
+evaluate_cols (int arg_count, const expr_t **args, rua_ctx_t *ctx)
+{
+	auto type = resolve_type (args[0], ctx);
+	if (!type) {
+		return error (args[0], "invalid type passed to %s",
+					  type_funcs[QC_AT_COLS].name);
+	}
+	return new_int_expr (type_cols (type), false);
 }
 
 static const type_t *
@@ -796,7 +823,7 @@ static type_func_t type_funcs[] = {
 	[QC_AT_WIDTH] = {
 		.name = "@width",
 		.check_params = single_type,
-		.evaluate = evaluate_int_op,
+		.evaluate = evaluate_width,
 		.compute = compute_width,
 	},
 	[QC_AT_VECTOR] = {
@@ -809,13 +836,13 @@ static type_func_t type_funcs[] = {
 	[QC_AT_ROWS] = {
 		.name = "@rows",
 		.check_params = single_type,
-		.evaluate = evaluate_int_op,
+		.evaluate = evaluate_rows,
 		.compute = compute_rows,
 	},
 	[QC_AT_COLS] = {
 		.name = "@cols",
 		.check_params = single_type,
-		.evaluate = evaluate_int_op,
+		.evaluate = evaluate_cols,
 		.compute = compute_cols,
 	},
 	[QC_AT_MATRIX] = {
