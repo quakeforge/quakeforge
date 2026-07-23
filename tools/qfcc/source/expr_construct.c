@@ -116,7 +116,7 @@ construct_by_components (const type_t *type,
 					}
 					all_implicit = all_implicit && pexpr->implicit;
 					all_constant = all_constant && is_constant (pexpr);
-					components[cind++] = val;
+					components[cind++] = value_cast_expr (type, val);
 					c += type_rows (ptype);
 					continue;
 				}
