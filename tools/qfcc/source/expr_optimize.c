@@ -41,6 +41,8 @@
 #include "tools/qfcc/include/value.h"
 
 static const expr_t *optimize_core (const expr_t *expr);
+static void cancel_terms (const expr_t **adds, const expr_t **subs);
+
 static const expr_t skip;
 
 static int
@@ -777,18 +779,14 @@ static const expr_t *
 optimize_mult (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 {
 	int num_factors = count_factors (expr);
-	int total = 0;
 	int fac_counts[num_factors + 1] = {};
 	const expr_t *factors[num_factors + 2] = {};
-	if (is_mult (expr)) {
-		scatter_factors (expr, factors);
-	} else {
-		factors[0] = expr;
-	}
+	bool neg = scatter_factors (expr, factors);
 	for (auto f = factors; *f; f++) {
 		*f = optimize_core (*f);
 	}
 
+	int total = 0;
 	for (auto search = adds; *search; search++) {
 		if (is_mult (*search)) {
 			for (auto f = factors; *f; f++) {
@@ -825,23 +823,39 @@ optimize_mult (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 		}
 	}
 
-	const expr_t *com_adds[count + 2] = {};
-	const expr_t *com_subs[count + 2] = {};
-	auto dst = com_adds;
-	*dst++ = remult (expr, common);
+	auto tmp = remult (expr, common);
+	int num_terms = count_terms (tmp);
+	const expr_t *com_adds[count + num_terms + 2] = {};
+	const expr_t *com_subs[count + num_terms + 2] = {};
+	if (num_terms) {
+		if (neg) {
+			scatter_terms (tmp, com_subs, com_adds);
+		} else {
+			scatter_terms (tmp, com_adds, com_subs);
+		}
+	} else {
+		if (neg) {
+			com_subs[0] = tmp;
+		} else {
+			com_adds[0] = tmp;
+		}
+	}
+	const expr_t **dst;
+	for (dst = com_adds; *dst; dst++) continue;
 	for (auto src = adds; *src; src++) {
 		if (is_mult (*src) && mult_has_factor (*src, common)) {
 			*dst++ = remult (*src, common);
 			*src = &skip;
 		}
 	}
-	dst = com_subs;
+	for (dst = com_subs; *dst; dst++) continue;
 	for (auto src = subs; *src; src++) {
 		if (is_mult (*src) && mult_has_factor (*src, common)) {
 			*dst++ = remult (*src, common);
 			*src = &skip;
 		}
 	}
+	cancel_terms (com_adds, com_subs);
 
 	auto col = gather_terms (type, com_adds, com_subs);
 	if (!col || !(col = optimize_core (col))) {
@@ -1332,20 +1346,26 @@ optimize_scale_products (const expr_t **adds, const expr_t **subs)
 static void
 optimize_mult_products (const expr_t **adds, const expr_t **subs)
 {
-	for (auto scan = adds; *scan; scan++) {
-		if (is_mult (*scan)) {
-			auto e = *scan;
-			*scan = &skip;
-			*scan = optimize_mult (e, adds, subs);
+	bool did_something;
+	do {
+		did_something = false;
+		for (auto scan = adds; *scan; scan++) {
+			if (is_mult (*scan)) {
+				auto e = *scan;
+				*scan = &skip;
+				*scan = optimize_mult (e, adds, subs);
+				did_something |= *scan != e;
+			}
 		}
-	}
-	for (auto scan = subs; *scan; scan++) {
-		if (is_mult (*scan)) {
-			auto e = *scan;
-			*scan = &skip;
-			*scan = optimize_mult (e, subs, adds);
+		for (auto scan = subs; *scan; scan++) {
+			if (is_mult (*scan)) {
+				auto e = *scan;
+				*scan = &skip;
+				*scan = optimize_mult (e, subs, adds);
+				did_something |= *scan != e;
+			}
 		}
-	}
+	} while (did_something);
 
 	clean_skips (adds);
 	clean_skips (subs);
@@ -1623,7 +1643,7 @@ optimize_core (const expr_t *expr)
 		if (new) {
 			auto ext = new_expr_copy (expr);
 			ext->extend.src = new;
-			new = ext;
+			new = edag_add_expr (ext);
 		}
 		return new;
 	} else if (is_sum (expr)) {
