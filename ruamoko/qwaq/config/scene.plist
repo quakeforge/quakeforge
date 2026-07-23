@@ -110,19 +110,6 @@
 		target = true;
 	},
 	{
-		name = "Block";
-		mesh = create_block;
-		mesh_param = (9, 1, 4);
-		position = (-20, 20, 5, 1);
-		avel = (0, 0.0005, 1);
-		target = true;
-		invDensity = 36;
-		collider = {
-			type = col_box;
-			extent = (4.5, 0.5, 2)
-		};
-	},
-	{
 		name = "Box";
 		mesh = create_block;
 		mesh_param = (2, 3, 1);
@@ -133,6 +120,19 @@
 		collider = {
 			type = col_box;
 			extent = (1, 1.5, 0.5)
+		};
+	},
+	{
+		name = "Block";
+		mesh = create_block;
+		mesh_param = (9, 1, 4);
+		position = (-20, 20, 5, 1);
+		avel = (0, 0.0005, 1);
+		target = true;
+		invDensity = 36;
+		collider = {
+			type = col_box;
+			extent = (4.5, 0.5, 2)
 		};
 	},
 	/*{
