@@ -485,9 +485,6 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 		list_scatter_rev (&args->list, arguments);
 	}
 
-	if ((err = optimize_arguments (arguments, arg_count))) {
-		return err;
-	}
 	if ((err = check_arg_count (fexpr, ftype, arg_count, &param_count))) {
 		return err;
 	}
@@ -537,6 +534,17 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 const expr_t *
 function_expr (const expr_t *fexpr, const expr_t *args, rua_ctx_t *ctx)
 {
+	if (args) {
+		int arg_count = list_count (&args->list);
+		const expr_t *arguments[arg_count + 1] = {};
+		list_scatter (&args->list, arguments);
+		if (auto err = optimize_arguments (arguments, arg_count)) {
+			return err;
+		}
+		auto opt = new_list_expr (nullptr);
+		list_gather (&opt->list, arguments, arg_count);
+		args = opt;
+	}
 	if (fexpr->type == ex_type) {
 		return constructor_expr (fexpr, args);
 	}
