@@ -2304,10 +2304,11 @@ algebra_scope
 	;
 
 algebra_block
-	: '{' algebra_scope statement_list '}' end_scope
+	: '{' algebra_scope statement_list[list] '}' end_scope
 		{
-			$$ = $3;
+			$$ = $list;
 		}
+	| '{' algebra_scope '}' end_scope				{ $$ = nullptr; }
 	;
 
 compound_statement
