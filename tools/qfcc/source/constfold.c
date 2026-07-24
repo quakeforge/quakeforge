@@ -636,27 +636,6 @@ do_op_short (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 	return e;
 }
 
-static operation_t *do_op[ev_type_count];
-static const expr_t *
-do_op_invalid (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
-{
-	auto t1 = get_type (e1);
-	auto t2 = get_type (e2);
-
-	dstring_t  *enc1 = dstring_newstr ();
-	dstring_t  *enc2 = dstring_newstr ();
-
-	print_type_str (enc1, t1);
-	print_type_str (enc2, t2);
-
-	//print_expr (e);
-	e1 = error (e1, "invalid operands for binary %s: %s %s",
-				get_op_string (op), enc1->str, enc2->str);
-	dstring_delete (enc1);
-	dstring_delete (enc2);
-	return e1;
-}
-
 static operation_t op_void[ev_type_count] = {
 };
 
@@ -912,9 +891,13 @@ fold_constants (const expr_t *e)
 		t1 = extract_type (e1);
 		t2 = extract_type (e2);
 
-		if (t1 >= ev_type_count || t2 >= ev_type_count
-			|| !do_op[t1] || !do_op[t1][t2]) {
-			return do_op_invalid (op, e, e1, e2);
+		if (t1 >= ev_type_count || t2 >= ev_type_count) {
+			internal_error (e, "invalid types in expression");
+		}
+		if (!do_op[t1] || !do_op[t1][t2]) {
+			// don't know how to fold this combination, but the operation has
+			// been typedeched elsewhere
+			return e;
 		}
 		return do_op[t1][t2] (op, e, e1, e2);
 	} else if (e->type == ex_alias
