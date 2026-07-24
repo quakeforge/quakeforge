@@ -860,6 +860,15 @@ I_DoPrint (dstring_t *tmp, dstring_t *result, fmt_item_t *formatting)
 					PRINT (uint);
 				}
 				break;
+			case 'o':
+				if (current->flags & FMT_LONG) {
+					dstring_appendstr (tmp, PRIo64);
+					PRINT (ulong);
+				} else {
+					dstring_appendstr (tmp, PRIo32);
+					PRINT (uint);
+				}
+				break;
 			case 'u':
 				if (current->flags & FMT_LONG) {
 					dstring_appendstr (tmp, PRIu64);
@@ -1107,7 +1116,7 @@ fmt_state_modifiers (fmt_state_t *state)
 	// no modifiers supported
 	if (state->c[0] == 'l'
 		&& (state->c[1] == 'i' || state->c[1] == 'd' || state->c[1] == 'x'
-			|| state->c[1] == 'u'
+			|| state->c[1] == 'u' || state->c[1] == 'o'
 			|| state->c[1] == 'v' || state->c[1] == 'q')) {
 		(*state->fi)->flags |= FMT_LONG;
 		state->c++;
@@ -1260,7 +1269,8 @@ fmt_state_conversion (fmt_state_t *state)
 			break;
 		case 'u':
 		case 'x':
-			// int, unsigned or hex notation
+		case 'o':
+			// int, unsigned, octal or hex notation
 			(*state->fi)->type = conv;
 			if ((*state->fi)->flags & FMT_LONG) {
 				(*state->fi)->data.ulong_var = P_ULONG (pr, state->fmt_count);
