@@ -135,9 +135,9 @@
 			extent = (4.5, 0.5, 2)
 		};
 	},
-	/*{
+	{
 		name = "Capsule0";
-		position = (-14, 20, 5, 1);
+		position = (-15, 21, 5, 1);
 		target = true;
 		from_shape = true;
 		invDensity = 1;
@@ -147,7 +147,7 @@
 			radius = 0.5;
 			axis = (0, 0, 0.75);
 		};
-	},*/
+	},
 	{
 		name = "Sphere0";
 		grav_flag = true;

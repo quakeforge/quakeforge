@@ -13,13 +13,7 @@ void set_component (uint ent, uint comp, void *data) = #0;
 uint new_entity () = #0;
 void del_entity (uint ent) = #0;
 
-float
-clamp (float x, float a, float b)
-{
-	return max (a, min(x, b));
-}
-
-@generic (vec = [vec2, vec3, vec4, PGA.vec, PGA.bvect, PGA.bvecp, PGA.tvec]) {
+@generic (vec = [float, vec2, vec3, vec4, PGA.vec, PGA.bvect, PGA.bvecp, PGA.tvec]) {
 
 vec abs(vec x)
 {
@@ -50,10 +44,10 @@ vec sign (vec v)
 	typedef @vector(uint, @width(vec)) uvec;
 	const vec pone = vec(1);
 	const vec mone = vec(-1);
-	auto tmin = (uvec) ((@vector(vec)) v < @vector(vec)(0));
+	auto tmin = @bitcast (uvec, ((@vector(vec)) v < @vector(vec)(0)));
 	auto tmax = ~tmin;
-	auto sgn = (vec) ( (tmin & @bitcast (uvec, mone))
-					   + (tmax & @bitcast (uvec, pone)));
+	auto sgn = @bitcast (vec, ( (tmin & @bitcast (uvec, mone))
+							  + (tmax & @bitcast (uvec, pone))));
 	return sgn;
 }
 
@@ -68,6 +62,12 @@ vec bound (vec mins, vec v, vec maxs)
 					   + (tmax & (uvec) maxs));
 }
 };
+
+float
+clamp (float x, float a, float b)
+{
+	return max (a, min(x, b));
+}
 
 //FIXME having PGA.group_mask(0xc) here and then providing a defintion causes
 //a segfault in qfcc
@@ -830,24 +830,61 @@ void Gizmo_AddLine (bivec bv, float radius, vec4 color)
 }
 };
 
-int findmsb(uint x)
+bool test_axis (bivector_t L, bivector_t T, mat3 A, mat3 B,
+				motor_t M, vec4 color, point_t cA, point_t cB, bool draw_plane)
 {
-	int c = -1;
-	while (x) {
-		c++;
-		x >>= 1;
+	auto l = vec3 (L.bvect);
+	float tA = @horiz (+ abs (l * A));
+	float tB = @horiz (+ abs (l * B));
+	float tT = fabs (L • ~T);
+	bool t = tT > tA + tB;
+	if (!t) {
+		color.xyz = '1 1 1' - color.xyz;
 	}
-	return c;
+	Gizmo_AddLine (M * L * ~M, 0.1, color);
+	float s = sign(L • T);
+	@algebra (PGA) {
+		point_t pA = ((cA • L) * ~L).tvec / (L • ~L);
+		point_t pB = ((cB • L) * ~L).tvec / (L • ~L);
+		point_t xA = pA - s * tA * (e0 ∧ L) / (L • ~L);
+		point_t xB = pB + s * tB * (e0 ∧ L) / (L • ~L);
+		Gizmo_AddCapsule ((vec4)(M*pB*~M), (vec4)(M*xB*~M), 0.2, color);
+		Gizmo_AddCapsule ((vec4)(M*pA*~M), (vec4)(M*xA*~M), 0.2, color);
+
+		if (draw_plane) {
+			auto x = xA / ⋆(e0 ∧ xA);
+			plane_t p = -x • L;
+			p /= sqrt (p • p);
+			p = M*p*~M;
+			quaternion q;
+			if (p[3] < 0) {
+				auto r = sqrt (p * (plane_t)'0 0 -1 0');
+				q = [r.scalar, -r.bvect];
+			} else {
+				auto r = sqrt (p * (plane_t)'0 0 1 0');
+				q = [r.scalar, -r.bvect];
+			}
+			auto s = vec4(q * (vector)'0.1 0 0', 0);
+			auto t = vec4(q * (vector)'0 0.1 0', 0);
+			Gizmo_AddPlane ((vec4)(M*xA*~M), s, t, color, color, color);
+			Gizmo_AddPlane ((vec4)(M*xB*~M), s, t, color, color, color);
+		}
+	}
+	return t;
 }
 
-int faceind(vec3 v)
+bivector_t
+make_line (bivector_t A, bivector_t B)
 {
-	@algebra (PGA) {
-		auto a = abs(v);
-		auto m = (a >= max(a.yzx, a.zxy)) & uvec3 (0x01, 0x02, 0x04);
-		int ind = findmsb (@horiz(| m));
-		return ind + ((v[ind] < 0) & 3);
-	}
+	auto L = A × B;
+	// semi-normalize the line: remove the translation part of the screw
+	// without changing the magnitude. Many thanks to Hamish and Enki
+	// for the help in understanding why the result of the commutator
+	// product behaved very strangely: it's a screw line (the logarithm
+	// of a full motor!) so includes translation along the axis thus
+	// resulting in very weird behavior when ray-traced.
+	L.bvecp -= (L.bvecp ∧ L.bvect) * ~L.bvect / (L • ~L);
+	return L;
 }
 
 bool get_contact_box_box (uint aent, collider_t acol,
@@ -867,88 +904,52 @@ bool get_contact_box_box (uint aent, collider_t acol,
 	auto M = ~bM * aM;
 
 	auto cA = (point_t) [acol.box.offset, 1];
-	auto eA = (point_t) [acol.box.extent, 0];
+	auto eA = acol.box.extent;
 	auto cB = (point_t) [bcol.box.offset, 1];
-	auto eB = (point_t) [bcol.box.extent, 0];
+	auto eB = bcol.box.extent;
 
-	// scale factors needed to take the box to a cube
-	auto scale = bcol.box.extent.yzx * bcol.box.extent.zxy;
-
-	typedef struct {
-		vec4    color;
-		point_t c;
-		float   r;
-	} sphere_t;
+	bivector_t T = (cB ∨ (M * cA * ~M));
 	@algebra (PGA) {
-		static PGA.bvect normals[] = { e32, e13, e21, e23, e31, e12 };
+		mat3 A = {
+			eA[0] * vec3 ((M * e23 * ~M).bvect),
+			eA[1] * vec3 ((M * e31 * ~M).bvect),
+			eA[2] * vec3 ((M * e12 * ~M).bvect),
+		};
+		mat3 B = {
+			eB[0] * vec3 (e23),
+			eB[1] * vec3 (e31),
+			eB[2] * vec3 (e12),
+		};
+		//Gizmo_AddLine (bM * A * ~bM, 0.01, (vec4) { 0, 1, 1, 0.9 });
+		//Gizmo_AddLine (bM * B * ~bM, 0.01, (vec4) { 1, 1, 0, 0.9 });
+		Gizmo_AddLine (bM * T * ~bM, 0.01, (vec4) { 1, 0, 1, 0.9 });
 
-		sphere_t face_spheres[6];
-		for (int i = 0; i < 6; i++) {
-			auto df = ⋆(normals[i] • (cB + ((i/3) * 2 - 1) * eB));
-			df /= ⋆(e0∧df);
-			face_spheres[i] = {
-				.color = {(i%3)!=0, (i%3)!=1, (i%3)!=2, 0.9},
-				.c = (df + e123) / 2,
-				.r = sqrt (⋆df • ⋆df) / 2,
-			};
-			//Gizmo_AddSphere ((vec4)(bM*face_spheres[i].c*~bM),
-			//				 face_spheres[i].r, face_spheres[i].color);
-		}
-		if (1) for (int i = 0; i < 8; i++) {
-			// put armkers at the intersection points of the face spheres
-			int ind = (i&1)*3;
-			auto a = (e123 * ⋆face_spheres[ind].c).bvect;
-			auto sgn = (point_t) { 2*(i&1) - 1, (i&2) - 1, (i&4)/2 - 1, 0 };
-			auto e = sgn @hadamard eB / sqrt(⋆eB • ⋆eB);
-			float r = fabs((e123 * ⋆e).bvect•a) * face_spheres[ind].r * 2;
-			auto x = cB + 2 * r * e;
-			Gizmo_AddSphere ((vec4)(bM*x*~bM), 0.005, {1, 1, 1, 0});
-		}
-		for (int i = 0; i < 6; i++) {
-			// find A's face plane through an extent corner (the mins and
-			// maxs corners are enough to find all six faces using the
-			// approrpiate normal)
-			auto f = normals[i] • (cA + ((i/3) * 2 - 1) * eA);
-			// find the plane's dual with respect to B's origin
-			auto df = ⋆(M*f*~M);
-			df /= ⋆(e0∧df);
-			if (1) {
-				// draw the dual-sphere for box A's face-plane
-				vec4 color = {(i%3)==0, (i%3)==1, (i%3)==2, 0.9};
-				auto c = (df + e123) / 2;
-				auto r = sqrt (⋆df • ⋆df) / 2;
-				Gizmo_AddSphere ((vec4)(bM*c*~bM), r, color);
-			}
+		test_axis (cB∨e032, T, A, B, bM, { 1, 0, 0, 0.9 }, M*cA*~M, cB, false);
+		test_axis (cB∨e013, T, A, B, bM, { 0, 1, 0, 0.9 }, M*cA*~M, cB, false);
+		test_axis (cB∨e021, T, A, B, bM, { 0, 0, 1, 0.9 }, M*cA*~M, cB, false);
 
-			int ind = faceind (((vec4)df).xyz * scale);
-			if (1) {
-				// draw the selected dual-sphere for box B's face-plane
-				// may wind up with multiple of the same sphere when more than
-				// one face is in the same general direction
-				Gizmo_AddSphere ((vec4)(bM*face_spheres[ind].c*~bM),
-								 face_spheres[ind].r, face_spheres[ind].color);
-			}
+		test_axis (M*(cA∨e032)*~M, T, A, B, bM, { 1, 0, 0, 0.9 }, M*cA*~M, cB, false);
+		test_axis (M*(cA∨e013)*~M, T, A, B, bM, { 0, 1, 0, 0.9 }, M*cA*~M, cB, false);
+		test_axis (M*(cA∨e021)*~M, T, A, B, bM, { 0, 0, 1, 0.9 }, M*cA*~M, cB, false);
 
-			auto v = (e123 * ⋆df).bvect;
-			auto sgn = sign (v);
-			auto e = -(e123 * ⋆eB).bvect @hadamard sgn;
-			auto a = -(e123 * ⋆face_spheres[ind].c).bvect;
-			a /= sqrt(a • ~a);
-			float r1 = fabs(e•~a) * face_spheres[ind].r * 2;
-			float r2 = v•~e;
-			auto col = face_spheres[i].color;
-			if (1) {
-				// draw the projection of B's origin on A's face-plane
-				if (r2 >= r1) {
-					// indicate that the A's plane cuts B
-					col.w = -1;
-				}
-				f = aM * f * ~aM;
-				auto x = bM * e123 * ~bM;
-				x = (x • f) * ~f / (f • ~f);
-				Gizmo_AddSphere ((vec4)x, 0.1, col);
-			}
-		}
+		auto Lxx = make_line (cB ∨ e032, M * (cA ∨ e032) * ~M);
+		test_axis (Lxx, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
+		auto Lxy = make_line (cB ∨ e032, M * (cA ∨ e013) * ~M);
+		test_axis (Lxy, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
+		auto Lxz = make_line (cB ∨ e032, M * (cA ∨ e021) * ~M);
+		test_axis (Lxz, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
+		auto Lyx = make_line (cB ∨ e013, M * (cA ∨ e032) * ~M);
+		test_axis (Lyx, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
+		auto Lyy = make_line (cB ∨ e013, M * (cA ∨ e013) * ~M);
+		test_axis (Lyy, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
+		auto Lyz = make_line (cB ∨ e013, M * (cA ∨ e021) * ~M);
+		test_axis (Lyz, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
+		auto Lzx = make_line (cB ∨ e021, M * (cA ∨ e032) * ~M);
+		test_axis (Lzx, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
+		auto Lzy = make_line (cB ∨ e021, M * (cA ∨ e013) * ~M);
+		test_axis (Lzy, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
+		auto Lzz = make_line (cB ∨ e021, M * (cA ∨ e021) * ~M);
+		test_axis (Lzz, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
 	}
 	return false;
 }
