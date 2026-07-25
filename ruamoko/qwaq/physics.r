@@ -993,7 +993,31 @@ bool get_contact_box_box (uint aent, collider_t acol,
 		int Aind = axes[0].index & 7;
 		int Bind = axes[0].index >> 3;
 		if (Aind && Bind) {
-			printf ("edge-edge ");
+			auto Bx = Baxes[Bind - 1];
+			auto Ax = Baxes[Aind - 1];
+
+			auto Ba = axes[0].axis.bvect;
+			float d = sign (T • ~Ba);
+			point_t bo = eB @hadamard sign (d * e0 ∧ Ba.bvect);
+			int bind = Bind - 1;
+			bo[bind] = 0;
+			auto bP = cB - bo;
+			auto bL = Bx • bP * ~bP / (bP • ~bP);
+
+			auto Aa = ~M * Ba * M;
+			point_t ao = eA @hadamard sign (d * e0 ∧ Aa.bvect);
+			int aind = Aind - 1;
+			ao[aind] = 0;
+			auto aP = cA + ao;
+			auto aL = Ax • aP * ~aP / (aP • ~aP);
+
+			Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.25, {1, 0, 1, 0.5});
+			Gizmo_AddLine (bM * bL * ~bM, 0.1, (vec4) { 0.4, 0.8, 0.3, 0.9 });
+			Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.25, {1, 0, 1, 0.5});
+			Gizmo_AddLine (aM * aL * ~aM, 0.1, (vec4) { 0.4, 0.8, 0.3, 0.9 });
+			auto L = make_line (bL, M * aL * ~M);
+			//printf ("edge-edge ");
+			Gizmo_AddLine (bM * L * ~bM, 0.1, color);
 		} else if (Aind) {
 			auto x = -e0∧Aaxes[Aind - 1];
 			auto a = axes[0].axis.bvect;
@@ -1012,7 +1036,7 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.005, color);
 			Gizmo_AddSphere (vec4(bM * aP * ~bM), 0.005, color);
 			Gizmo_AddCapsule (vec4(bM*aP*~bM), vec4(bM*bP*~bM), 0.02, color);
-			printf ("A-face ");
+			//printf ("A-face ");
 		} else if (Bind) {
 			auto x = -e0∧Baxes[Bind - 1];
 			auto a = axes[0].axis.bvect;
@@ -1035,16 +1059,16 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			Gizmo_AddSphere (vec4(aM * bP * ~aM), 0.005, color);
 			Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.005, color);
 			Gizmo_AddCapsule (vec4(aM*aP*~aM), vec4(aM*bP*~aM), 0.02, color);
-			printf ("B-face ");
+			//printf ("B-face ");
 		} else {
 			printf ("what the what?\n");
 		}
-		printf ("axis[0]: %v %v %g %02o\n",
-				axes[0].axis.bvect, axes[0].axis.bvecp,
-				axes[0].dist / axes[0].den, axes[0].index);
-		printf ("axis[1]: %v %v %g %02o\n",
-				axes[1].axis.bvect, axes[1].axis.bvecp,
-				axes[1].dist / axes[0].den, axes[1].index);
+		//printf ("axis[0]: %v %v %g %02o\n",
+		//		axes[0].axis.bvect, axes[0].axis.bvecp,
+		//		axes[0].dist / axes[0].den, axes[0].index);
+		//printf ("axis[1]: %v %v %g %02o\n",
+		//		axes[1].axis.bvect, axes[1].axis.bvecp,
+		//		axes[1].dist / axes[1].den, axes[1].index);
 	}
 	return false;
 }
