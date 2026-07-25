@@ -992,6 +992,8 @@ bool get_contact_box_box (uint aent, collider_t acol,
 		vec4 color = miss ? '1 1 1 0.5' : '1 0 1 0.5';
 		int Aind = axes[0].index & 7;
 		int Bind = axes[0].index >> 3;
+		point_t AX = nil;
+		point_t BX = nil;
 		if (Aind && Bind) {
 			auto Bx = Baxes[Bind - 1];
 			auto Ax = Baxes[Aind - 1];
@@ -1015,10 +1017,13 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			auto bx = (bP • L * ~L).tvec / (L • ~L);
 			auto ax = ((M*aP*~M) • L * ~L).tvec / (L • ~L);
 
+			BX = bx;
+			AX = ~M * ax * M;
+
 			Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.25, {1, 0, 1, 0.5});
-			Gizmo_AddLine (bM * bL * ~bM, 0.1, (vec4) { 0.4, 0.8, 0.3, 0.9 });
+			Gizmo_AddLine (bM * bL * ~bM, 0.01, (vec4) { 0.4, 0.8, 0.3, 0.9 });
 			Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.25, {1, 0, 1, 0.5});
-			Gizmo_AddLine (aM * aL * ~aM, 0.1, (vec4) { 0.4, 0.8, 0.3, 0.9 });
+			Gizmo_AddLine (aM * aL * ~aM, 0.01, (vec4) { 0.4, 0.8, 0.3, 0.9 });
 
 			Gizmo_AddSphere (vec4(bM * bx * ~bM), 0.005, color);
 			Gizmo_AddSphere (vec4(bM * ax * ~bM), 0.005, color);
@@ -1037,6 +1042,8 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			auto p = u • P;
 			auto bP = box_plane_point (p, cB, eB);
 			auto aP = bP • p * ~p / (p • ~p);
+			BX = bP;
+			AX = ~M * aP * M;
 			Gizmo_AddSphere (vec4(bM * P * ~bM), 0.25, {1, 1, 0, 0.5});
 			draw_plane_gizmo (bM*p*~bM, bM*P*~bM, {1, 1, 0, 0.5});
 
@@ -1060,6 +1067,8 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			auto p = (~M * u • P * M).vec;
 			auto aP = box_plane_point (p, cA, eA);
 			auto bP = aP • p * ~p / (p • ~p);
+			AX = aP;
+			BX = M * bP * ~M;
 			Gizmo_AddSphere (vec4(bM * P * ~bM), 0.25, {0, 1, 1, 0.5});
 			draw_plane_gizmo (aM*p*~aM, bM*P*~bM, {0, 1, 1, 0.5});
 
@@ -1069,6 +1078,15 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			//printf ("B-face ");
 		} else {
 			printf ("what the what?\n");
+		}
+		if (miss) {
+			auto bx = bound (cB - eB, BX, cB + eB);
+			auto ax = bound (cA - eA, AX, cA + eA);
+			//printf ("%q %q %q %q\n", AX, ax, BX, bx);
+			vec4 color = { 1, 0, 0, 0.9 };
+			Gizmo_AddSphere (vec4(bM * bx * ~bM), 0.005, color);
+			Gizmo_AddSphere (vec4(aM * ax * ~aM), 0.005, color);
+			Gizmo_AddCapsule (vec4(aM*ax*~aM), vec4(bM*bx*~bM), 0.02, color);
 		}
 		//printf ("axis[0]: %v %v %g %02o\n",
 		//		axes[0].axis.bvect, axes[0].axis.bvecp,
