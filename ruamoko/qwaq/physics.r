@@ -162,12 +162,12 @@ draw_collider (collider_t col, transform_t xform, motor_t M)
 			auto P = (plane • e123) * plane;
 			auto p = mat * (vec4)(P / ⋆(e0 * P));
 			quaternion q;
-			if (plane[3] < 0) {
+			if (plane[2] < 0) {
 				auto r = sqrt (plane * (plane_t)'0 0 -1 0');
-				q = [r.scalar, r.bvect];
+				q = [r.scalar, -r.bvect];
 			} else {
 				auto r = sqrt (plane * (plane_t)'0 0 1 0');
-				q = [r.scalar, r.bvect];
+				q = [r.scalar, -r.bvect];
 			}
 			auto s = vec4(q * mat[0].xyz, 0);
 			auto t = vec4(q * mat[1].xyz, 0);
@@ -842,7 +842,7 @@ draw_plane_gizmo (plane_t p, point_t x, vec4 color)
 {
 	p /= sqrt (p • p);
 	quaternion q;
-	if (p[3] < 0) {
+	if (p[2] < 0) {
 		auto r = sqrt (p * (plane_t)'0 0 -1 0');
 		q = [r.scalar, -r.bvect];
 	} else {
