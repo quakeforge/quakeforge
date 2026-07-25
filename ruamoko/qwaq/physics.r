@@ -54,12 +54,12 @@ vec sign (vec v)
 vec bound (vec mins, vec v, vec maxs)
 {
 	typedef @vector(uint, @width(vec)) uvec;
-	auto tmin = (uvec) ((@vector(vec)) q < (@vector(vec)) mins);
-	auto tmax = (uvec) ((@vector(vec)) maxs < (@vector(vec)) q);
+	auto tmin = @bitcast (uvec, ((@vector(vec)) v < (@vector(vec)) mins));
+	auto tmax = @bitcast (uvec, ((@vector(vec)) maxs < (@vector(vec)) v));
 	auto tcen = ~tmin & ~tmax;
-	return (PGA.bvect) ( (tmin & (uvec) mins)
-					   + (tcen & (uvec) q)
-					   + (tmax & (uvec) maxs));
+	return (vec) ( (tmin & (uvec) mins)
+				 + (tcen & (uvec) v)
+				 + (tmax & (uvec) maxs));
 }
 };
 
