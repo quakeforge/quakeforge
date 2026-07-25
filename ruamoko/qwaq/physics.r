@@ -1015,10 +1015,17 @@ bool get_contact_box_box (uint aent, collider_t acol,
 
 			auto L = make_line (bL, M * aL * ~M);
 			auto bx = (bP • L * ~L).tvec / (L • ~L);
-			auto ax = ((M*aP*~M) • L * ~L).tvec / (L • ~L);
+			auto al = ~M * L * M;
+			auto ax = (aP • al * ~al).tvec / (al • ~al);
+			bx = bound (cB - eB, bx, cB + eB);
+			ax = bound (cA - eA, ax, cA + eA);
+			// clamp again because edge-corner can invalidate the position
+			// on the edge
+			bx = bound (cB - eB, M*ax*~M, cB + eB);
+			ax = bound (cA - eA, ~M*bx*M, cA + eA);
 
 			BX = bx;
-			AX = ~M * ax * M;
+			AX = ax;
 
 			Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.25, {1, 0, 1, 0.5});
 			Gizmo_AddLine (bM * bL * ~bM, 0.01, (vec4) { 0.4, 0.8, 0.3, 0.9 });
@@ -1026,8 +1033,8 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			Gizmo_AddLine (aM * aL * ~aM, 0.01, (vec4) { 0.4, 0.8, 0.3, 0.9 });
 
 			Gizmo_AddSphere (vec4(bM * bx * ~bM), 0.005, color);
-			Gizmo_AddSphere (vec4(bM * ax * ~bM), 0.005, color);
-			Gizmo_AddCapsule (vec4(bM*ax*~bM), vec4(bM*bx*~bM), 0.02, color);
+			Gizmo_AddSphere (vec4(aM * ax * ~aM), 0.005, color);
+			Gizmo_AddCapsule (vec4(aM*ax*~aM), vec4(bM*bx*~bM), 0.02, color);
 			//Gizmo_AddLine (bM * L * ~bM, 0.1, color);
 			//printf ("edge-edge ");
 		} else if (Aind) {
@@ -1041,15 +1048,15 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			auto P = M * cA * ~M - d * o;
 			auto p = u • P;
 			auto bP = box_plane_point (p, cB, eB);
-			auto aP = bP • p * ~p / (p • ~p);
+			auto aP = bound (cA - eA, ~M * bP * M, cA + eA);
 			BX = bP;
-			AX = ~M * aP * M;
+			AX = aP;
 			Gizmo_AddSphere (vec4(bM * P * ~bM), 0.25, {1, 1, 0, 0.5});
 			draw_plane_gizmo (bM*p*~bM, bM*P*~bM, {1, 1, 0, 0.5});
 
 			Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.005, color);
-			Gizmo_AddSphere (vec4(bM * aP * ~bM), 0.005, color);
-			Gizmo_AddCapsule (vec4(bM*aP*~bM), vec4(bM*bP*~bM), 0.02, color);
+			Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.005, color);
+			Gizmo_AddCapsule (vec4(aM*aP*~aM), vec4(bM*bP*~bM), 0.02, color);
 			//printf ("A-face ");
 		} else if (Bind) {
 			auto x = -e0∧Baxes[Bind - 1];
@@ -1066,15 +1073,15 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			// cross products is expanded into the dot product form
 			auto p = (~M * u • P * M).vec;
 			auto aP = box_plane_point (p, cA, eA);
-			auto bP = aP • p * ~p / (p • ~p);
+			auto bP = bound (cB - eB, M * aP * ~M, cB + eB);
 			AX = aP;
-			BX = M * bP * ~M;
+			BX = bP;
 			Gizmo_AddSphere (vec4(bM * P * ~bM), 0.25, {0, 1, 1, 0.5});
 			draw_plane_gizmo (aM*p*~aM, bM*P*~bM, {0, 1, 1, 0.5});
 
-			Gizmo_AddSphere (vec4(aM * bP * ~aM), 0.005, color);
+			Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.005, color);
 			Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.005, color);
-			Gizmo_AddCapsule (vec4(aM*aP*~aM), vec4(aM*bP*~aM), 0.02, color);
+			Gizmo_AddCapsule (vec4(aM*aP*~aM), vec4(bM*bP*~bM), 0.02, color);
 			//printf ("B-face ");
 		} else {
 			printf ("what the what?\n");
