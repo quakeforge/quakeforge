@@ -830,20 +830,46 @@ void Gizmo_AddLine (bivec bv, float radius, vec4 color)
 }
 };
 
-bool test_axis (bivector_t L, bivector_t T, mat3 A, mat3 B,
-				motor_t M, vec4 color, point_t cA, point_t cB, bool draw_plane)
+typedef struct boxaxis_s {
+	bivector_t  axis;
+	float       dist;
+	float       den;
+	int         index;
+} boxaxis_t;
+
+static void
+draw_plane_gizmo (plane_t p, point_t x, vec4 color)
 {
+	p /= sqrt (p • p);
+	quaternion q;
+	if (p[3] < 0) {
+		auto r = sqrt (p * (plane_t)'0 0 -1 0');
+		q = [r.scalar, -r.bvect];
+	} else {
+		auto r = sqrt (p * (plane_t)'0 0 1 0');
+		q = [r.scalar, -r.bvect];
+	}
+	auto s = vec4(q * (vector)'0.1 0 0', 0);
+	auto t = vec4(q * (vector)'0 0.1 0', 0);
+	Gizmo_AddPlane (vec4(x), s, t, color, color, color);
+}
+
+bool test_axis (bivector_t L, bivector_t T, mat3 A, mat3 B,
+				motor_t M, boxaxis_t *axes, int index,
+				vec4 color, point_t cA, point_t cB, bool draw_plane)
+{
+	float den = sqrt(L • ~L);
 	auto l = vec3 (L.bvect);
 	float tA = @horiz (+ abs (l * A));
 	float tB = @horiz (+ abs (l * B));
 	float tT = fabs (L • ~T);
-	bool t = tT > tA + tB;
-	if (!t) {
+	float dist = tT - (tA + tB);
+	if (dist < 0) {
 		color.xyz = '1 1 1' - color.xyz;
 	}
-	Gizmo_AddLine (M * L * ~M, 0.1, color);
-	float s = sign(L • T);
-	@algebra (PGA) {
+	if (0) @algebra (PGA) {
+		Gizmo_AddLine (M * L * ~M, 0.1, color);
+		float s = sign(L • T);
 		point_t pA = ((cA • L) * ~L).tvec / (L • ~L);
 		point_t pB = ((cB • L) * ~L).tvec / (L • ~L);
 		point_t xA = pA - s * tA * (e0 ∧ L) / (L • ~L);
@@ -854,23 +880,28 @@ bool test_axis (bivector_t L, bivector_t T, mat3 A, mat3 B,
 		if (draw_plane) {
 			auto x = xA / ⋆(e0 ∧ xA);
 			plane_t p = -x • L;
-			p /= sqrt (p • p);
 			p = M*p*~M;
-			quaternion q;
-			if (p[3] < 0) {
-				auto r = sqrt (p * (plane_t)'0 0 -1 0');
-				q = [r.scalar, -r.bvect];
-			} else {
-				auto r = sqrt (p * (plane_t)'0 0 1 0');
-				q = [r.scalar, -r.bvect];
-			}
-			auto s = vec4(q * (vector)'0.1 0 0', 0);
-			auto t = vec4(q * (vector)'0 0.1 0', 0);
-			Gizmo_AddPlane ((vec4)(M*xA*~M), s, t, color, color, color);
-			Gizmo_AddPlane ((vec4)(M*xB*~M), s, t, color, color, color);
+			draw_plane_gizmo (p, M*xA*~M, color);
+			draw_plane_gizmo (p, M*xB*~M, color);
 		}
 	}
-	return t;
+	if (dist * axes[0].den > axes[0].dist * den) {
+		axes[1] = axes[0];
+		axes[0] = {
+			.axis = L,
+			.dist = dist,
+			.den = den,
+			.index = index,
+		};
+	} else if (dist * axes[1].den > axes[1].dist * den) {
+		axes[1] = {
+			.axis = L,
+			.dist = dist,
+			.den = den,
+			.index = index,
+		};
+	}
+	return dist > 0;
 }
 
 bivector_t
@@ -904,52 +935,116 @@ bool get_contact_box_box (uint aent, collider_t acol,
 	auto M = ~bM * aM;
 
 	auto cA = (point_t) [acol.box.offset, 1];
-	auto eA = acol.box.extent;
+	auto eA = (point_t) [acol.box.extent, 0];
 	auto cB = (point_t) [bcol.box.offset, 1];
-	auto eB = bcol.box.extent;
+	auto eB = (point_t) [bcol.box.extent, 0];
 
 	bivector_t T = (cB ∨ (M * cA * ~M));
+	auto cBB = cB;
+	auto cAB = M * cA * ~M;
+	boxaxis_t axes[2] = {
+		{ .dist = -1, .den = 0 },	// negative infinity
+		{ .dist = -1, .den = 0 },	// negative infinity
+	};
 	@algebra (PGA) {
+		bivector_t Aaxes[3] = {
+			M * (cA ∨ e032) * ~M,
+			M * (cA ∨ e013) * ~M,
+			M * (cA ∨ e021) * ~M,
+		};
+		bivector_t Baxes[3] = {
+			cB ∨ e032,
+			cB ∨ e013,
+			cB ∨ e021,
+		};
 		mat3 A = {
-			eA[0] * vec3 ((M * e23 * ~M).bvect),
-			eA[1] * vec3 ((M * e31 * ~M).bvect),
-			eA[2] * vec3 ((M * e12 * ~M).bvect),
+			eA[0] * vec3 (Aaxes[0].bvect),
+			eA[1] * vec3 (Aaxes[1].bvect),
+			eA[2] * vec3 (Aaxes[2].bvect),
 		};
 		mat3 B = {
-			eB[0] * vec3 (e23),
-			eB[1] * vec3 (e31),
-			eB[2] * vec3 (e12),
+			eB[0] * vec3 (Baxes[0].bvect),
+			eB[1] * vec3 (Baxes[1].bvect),
+			eB[2] * vec3 (Baxes[2].bvect),
 		};
 		//Gizmo_AddLine (bM * A * ~bM, 0.01, (vec4) { 0, 1, 1, 0.9 });
 		//Gizmo_AddLine (bM * B * ~bM, 0.01, (vec4) { 1, 1, 0, 0.9 });
 		Gizmo_AddLine (bM * T * ~bM, 0.01, (vec4) { 1, 0, 1, 0.9 });
 
-		test_axis (cB∨e032, T, A, B, bM, { 1, 0, 0, 0.9 }, M*cA*~M, cB, false);
-		test_axis (cB∨e013, T, A, B, bM, { 0, 1, 0, 0.9 }, M*cA*~M, cB, false);
-		test_axis (cB∨e021, T, A, B, bM, { 0, 0, 1, 0.9 }, M*cA*~M, cB, false);
+		bool miss = false;
+		for (int i = 0; i < 3; i++) {
+			vec4 color = { 0, 0, 0, 0.9 };
+			color[i] = 1;
 
-		test_axis (M*(cA∨e032)*~M, T, A, B, bM, { 1, 0, 0, 0.9 }, M*cA*~M, cB, false);
-		test_axis (M*(cA∨e013)*~M, T, A, B, bM, { 0, 1, 0, 0.9 }, M*cA*~M, cB, false);
-		test_axis (M*(cA∨e021)*~M, T, A, B, bM, { 0, 0, 1, 0.9 }, M*cA*~M, cB, false);
+			miss |= test_axis (Baxes[i], T, A, B, bM, axes, (i + 1) * 0o10,
+							   color, cAB, cBB, false);
+			miss |= test_axis (Aaxes[i], T, A, B, bM, axes, (i + 1) * 0o01,
+							   color, cAB, cBB, false);
+			for (int j = 0; j < 3; j++) {
+				color = { 0.5, 0.4, 0.8, 0.9 };
+				auto L = make_line (Baxes[i], Aaxes[j]);
+				miss |= test_axis (L, T, A, B, bM, axes,
+								   (i + 1) * 0o10 + (j + 1) * 0x01,
+								   color, cAB, cBB, false);
+			}
+		}
 
-		auto Lxx = make_line (cB ∨ e032, M * (cA ∨ e032) * ~M);
-		test_axis (Lxx, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
-		auto Lxy = make_line (cB ∨ e032, M * (cA ∨ e013) * ~M);
-		test_axis (Lxy, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
-		auto Lxz = make_line (cB ∨ e032, M * (cA ∨ e021) * ~M);
-		test_axis (Lxz, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
-		auto Lyx = make_line (cB ∨ e013, M * (cA ∨ e032) * ~M);
-		test_axis (Lyx, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
-		auto Lyy = make_line (cB ∨ e013, M * (cA ∨ e013) * ~M);
-		test_axis (Lyy, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
-		auto Lyz = make_line (cB ∨ e013, M * (cA ∨ e021) * ~M);
-		test_axis (Lyz, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
-		auto Lzx = make_line (cB ∨ e021, M * (cA ∨ e032) * ~M);
-		test_axis (Lzx, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
-		auto Lzy = make_line (cB ∨ e021, M * (cA ∨ e013) * ~M);
-		test_axis (Lzy, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
-		auto Lzz = make_line (cB ∨ e021, M * (cA ∨ e021) * ~M);
-		test_axis (Lzz, T, A, B, bM, { 0.5, 0.4, 0.8, 0.9 }, M*cA*~M, cB, false);
+		vec4 color = miss ? '1 1 1 0.5' : '1 0 1 0.5';
+		int Aind = axes[0].index & 7;
+		int Bind = axes[0].index >> 3;
+		if (Aind && Bind) {
+			printf ("edge-edge ");
+		} else if (Aind) {
+			auto x = -e0∧Aaxes[Aind - 1];
+			auto a = axes[0].axis.bvect;
+			auto u = T • a * ~a / (a • ~a);
+			float d = sign (T • ~a);
+			//FIXME qfcc double subtracts for eA[Aind - 1]
+			auto ind = Aind - 1;
+			auto o = eA[ind] * x;
+			auto P = M * cA * ~M - d * o;
+			auto p = u • P;
+			auto bP = box_plane_point (p, cB, eB);
+			auto aP = bP • p * ~p / (p • ~p);
+			Gizmo_AddSphere (vec4(bM * P * ~bM), 0.25, {1, 1, 0, 0.5});
+			draw_plane_gizmo (bM*p*~bM, bM*P*~bM, {1, 1, 0, 0.5});
+
+			Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.005, color);
+			Gizmo_AddSphere (vec4(bM * aP * ~bM), 0.005, color);
+			Gizmo_AddCapsule (vec4(bM*aP*~bM), vec4(bM*bP*~bM), 0.02, color);
+			printf ("A-face ");
+		} else if (Bind) {
+			auto x = -e0∧Baxes[Bind - 1];
+			auto a = axes[0].axis.bvect;
+			auto u = -T • a * ~a / (a • ~a);
+			float d = sign (T • ~a);
+			//FIXME qfcc double subtracts for eB[Bind - 1]
+			auto ind = Bind - 1;
+			auto o = eB[ind] * x;
+			auto P = cB + d * o;
+			//FIXME qfcc fails to optimize out the Jacobi identity (cycle
+			// of a×b×c, probably because the scale products don't get
+			// redistributed nicely, but also possibly because one of the
+			// cross products is expanded into the dot product form
+			auto p = (~M * u • P * M).vec;
+			auto aP = box_plane_point (p, cA, eA);
+			auto bP = aP • p * ~p / (p • ~p);
+			Gizmo_AddSphere (vec4(bM * P * ~bM), 0.25, {0, 1, 1, 0.5});
+			draw_plane_gizmo (aM*p*~aM, bM*P*~bM, {0, 1, 1, 0.5});
+
+			Gizmo_AddSphere (vec4(aM * bP * ~aM), 0.005, color);
+			Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.005, color);
+			Gizmo_AddCapsule (vec4(aM*aP*~aM), vec4(aM*bP*~aM), 0.02, color);
+			printf ("B-face ");
+		} else {
+			printf ("what the what?\n");
+		}
+		printf ("axis[0]: %v %v %g %02o\n",
+				axes[0].axis.bvect, axes[0].axis.bvecp,
+				axes[0].dist / axes[0].den, axes[0].index);
+		printf ("axis[1]: %v %v %g %02o\n",
+				axes[1].axis.bvect, axes[1].axis.bvecp,
+				axes[1].dist / axes[0].den, axes[1].index);
 	}
 	return false;
 }
