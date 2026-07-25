@@ -1011,13 +1011,20 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			auto aP = cA + ao;
 			auto aL = Ax • aP * ~aP / (aP • ~aP);
 
+			auto L = make_line (bL, M * aL * ~M);
+			auto bx = (bP • L * ~L).tvec / (L • ~L);
+			auto ax = ((M*aP*~M) • L * ~L).tvec / (L • ~L);
+
 			Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.25, {1, 0, 1, 0.5});
 			Gizmo_AddLine (bM * bL * ~bM, 0.1, (vec4) { 0.4, 0.8, 0.3, 0.9 });
 			Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.25, {1, 0, 1, 0.5});
 			Gizmo_AddLine (aM * aL * ~aM, 0.1, (vec4) { 0.4, 0.8, 0.3, 0.9 });
-			auto L = make_line (bL, M * aL * ~M);
+
+			Gizmo_AddSphere (vec4(bM * bx * ~bM), 0.005, color);
+			Gizmo_AddSphere (vec4(bM * ax * ~bM), 0.005, color);
+			Gizmo_AddCapsule (vec4(bM*ax*~bM), vec4(bM*bx*~bM), 0.02, color);
+			//Gizmo_AddLine (bM * L * ~bM, 0.1, color);
 			//printf ("edge-edge ");
-			Gizmo_AddLine (bM * L * ~bM, 0.1, color);
 		} else if (Aind) {
 			auto x = -e0∧Aaxes[Aind - 1];
 			auto a = axes[0].axis.bvect;
