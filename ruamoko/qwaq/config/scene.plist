@@ -31,7 +31,7 @@
 		position = (-15, -15, 0, 1);
 		target = true;
 	},
-	/*{
+	{
 		name = "Asteroid";
 		model = progs/asteroid.iqm;
 		entqueue = pixpal;
@@ -46,7 +46,7 @@
 			type = col_ball;
 			radius = 5;
 		};
-	},*/
+	},
 	{
 		name = "Night Heron";
 		model = night_heron.iqm;
@@ -99,6 +99,27 @@
 		collider = {
 			type = col_plane;
 			plane = (-1, 0, 0, 5);
+		};
+	},
+	{
+		name = "Plane4";
+		collider = {
+			type = col_plane;
+			plane = (0, -1, 0, 30);
+		};
+	},
+	{
+		name = "Plane5";
+		collider = {
+			type = col_plane;
+			plane = (1, 0, 0, 50);
+		};
+	},
+	{
+		name = "Plane6";
+		collider = {
+			type = col_plane;
+			plane = (0, 0, -1, 20);
 		};
 	},
 	{
@@ -192,7 +213,7 @@
 			radius = 1;
 		};
 	},
-	/*{
+	{
 		name = "Capsule2";
 		model = progs/Capsule.mdl;
 		position = (0, -9, 2, 1);
@@ -230,7 +251,7 @@
 			radius = 0.5;
 			axis = (0, 2.5, 0);
 		};
-	},*/
+	},
 	{
 		name = "Sphere3";
 		grav_flag = true;

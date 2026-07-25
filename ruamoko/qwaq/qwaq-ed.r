@@ -359,7 +359,7 @@ pixpal_colorid (uint x, uint y)
 	}, 0);
 	// ambient light
 	Light_AddLight (ldata, {
-		{ 1, 1, 1, 24800 },
+		{ 1, 1, 1, 248 },
 		{ 0, 0, 0, 0 },
 		{ 0, 0, 0, -1 },
 		{ 0, 0, 1, 0 },
@@ -1475,7 +1475,7 @@ main (int argc, string *argv)
 		//							qsmesh, mat);
 		//}
 
-		//leafnode ();
+		leafnode ();
 
 		//Gizmo_AddLine ('0 1 0', '1 0 1', 0.1, '1 0 1 1');
 
