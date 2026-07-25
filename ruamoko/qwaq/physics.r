@@ -1095,6 +1095,26 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			Gizmo_AddSphere (vec4(aM * ax * ~aM), 0.005, color);
 			Gizmo_AddCapsule (vec4(aM*ax*~aM), vec4(bM*bx*~bM), 0.02, color);
 		}
+		if (!miss) {
+			auto wa = aM * AX * ~aM;
+			auto wb = bM * BX * ~bM;
+			auto line = wa ∨ wb;
+			auto l = T • axes[0].axis * ~axes[0].axis;
+			auto n = @undual(e0 * axes[0].axis);
+			n /= sqrt (n • ~n);
+			//printf ("%q %q %q\n", wa, wb, n);
+			*contact = {
+				.world_a = wa,
+				.world_b = wb,
+				.local_a = AX,
+				.local_b = BX,
+				.normal = n,
+				.separation = sqrt (line • ~line),
+				.a = aent,
+				.b = bent,
+			};
+			return true;
+		}
 		//printf ("axis[0]: %v %v %g %02o\n",
 		//		axes[0].axis.bvect, axes[0].axis.bvecp,
 		//		axes[0].dist / axes[0].den, axes[0].index);
