@@ -233,8 +233,8 @@ uint *collider_ents;
 typedef struct contact_s {
 	point_t world_a, world_b;
 	point_t local_a, local_b;
-	plane_t normal;
-	float separation;
+	plane_t normal;				// A on back, B on front
+	float separation;			// zero or negative when in contact
 	float time;
 	uint a, b;
 } contact_t;
@@ -686,9 +686,9 @@ bool get_contact_capsule_box (uint aent, collider_t acol,
 
 			auto wP = (vec4) (bM * P * ~bM);
 			auto wPx = (vec4) (bM * Px * ~bM);
-			Gizmo_AddSphere (wP, 0.1, {1, 1, 1, 0.5});
-			Gizmo_AddSphere (wPx, 0.1, {1, 1, 1, 0.5});
-			Gizmo_AddCapsule (wP, wPx, 0.03, {0.5, 0, 0.5, 0.5});
+			//Gizmo_AddSphere (wP, 0.1, {1, 1, 1, 0.5});
+			//Gizmo_AddSphere (wPx, 0.1, {1, 1, 1, 0.5});
+			//Gizmo_AddCapsule (wP, wPx, 0.03, {0.5, 0, 0.5, 0.5});
 			goto check_distance;
 		}
 
@@ -701,15 +701,15 @@ bool get_contact_capsule_box (uint aent, collider_t acol,
 
 			auto wQ = (vec4) (bM * Q * ~bM);
 			auto wQx = (vec4) (bM * Qx * ~bM);
-			Gizmo_AddSphere (wQ, 0.1, {1, 1, 1, 0.5});
-			Gizmo_AddSphere (wQx, 0.1, {1, 1, 1, 0.5});
-			Gizmo_AddCapsule (wQ, wQx, 0.03, {0.5, 0.5, 0, 0.5});
+			//Gizmo_AddSphere (wQ, 0.1, {1, 1, 1, 0.5});
+			//Gizmo_AddSphere (wQx, 0.1, {1, 1, 1, 0.5});
+			//Gizmo_AddCapsule (wQ, wQx, 0.03, {0.5, 0.5, 0, 0.5});
 			goto check_distance;
 		}
 		auto wP = (vec4) (bM * P * ~bM);
 		auto wQ = (vec4) (bM * Q * ~bM);
-		Gizmo_AddSphere (wP, 0.03, {1, 1, 1, 0.5});
-		Gizmo_AddSphere (wQ, 0.03, {1, 1, 1, 0.5});
+		//Gizmo_AddSphere (wP, 0.03, {1, 1, 1, 0.5});
+		//Gizmo_AddSphere (wQ, 0.03, {1, 1, 1, 0.5});
 
 		// Get the direction from the box center to the capsule's axis
 		// multiplying by e0 gives negates the result, so do axis to center
@@ -766,15 +766,15 @@ bool get_contact_capsule_box (uint aent, collider_t acol,
 		auto wcx = (vec4) (bM * cx * ~bM);
 		auto wcy = (vec4) (bM * cy * ~bM);
 		auto wcz = (vec4) (bM * cz * ~bM);
-		Gizmo_AddSphere (wbx, 0.1, {1, 0, 0, 0.5});
-		Gizmo_AddSphere (wby, 0.1, {0, 1, 0, 0.5});
-		Gizmo_AddSphere (wbz, 0.1, {0, 0, 1, 0.5});
-		Gizmo_AddCapsule (wbx, wcx, 0.03, {0, 1, 1, 0.5});
-		Gizmo_AddCapsule (wby, wcy, 0.03, {1, 0, 1, 0.5});
-		Gizmo_AddCapsule (wbz, wcz, 0.03, {1, 1, 0, 0.5});
-		Gizmo_AddSphere (wcx, 0.1, {0, 1, 1, 0.5});
-		Gizmo_AddSphere (wcy, 0.1, {1, 0, 1, 0.5});
-		Gizmo_AddSphere (wcz, 0.1, {1, 1, 0, 0.5});
+		//Gizmo_AddSphere (wbx, 0.1, {1, 0, 0, 0.5});
+		//Gizmo_AddSphere (wby, 0.1, {0, 1, 0, 0.5});
+		//Gizmo_AddSphere (wbz, 0.1, {0, 0, 1, 0.5});
+		//Gizmo_AddCapsule (wbx, wcx, 0.03, {0, 1, 1, 0.5});
+		//Gizmo_AddCapsule (wby, wcy, 0.03, {1, 0, 1, 0.5});
+		//Gizmo_AddCapsule (wbz, wcz, 0.03, {1, 1, 0, 0.5});
+		//Gizmo_AddSphere (wcx, 0.1, {0, 1, 1, 0.5});
+		//Gizmo_AddSphere (wcy, 0.1, {1, 0, 1, 0.5});
+		//Gizmo_AddSphere (wcz, 0.1, {1, 1, 0, 0.5});
 
 		float distx = (cx ∨ bx) • (bx ∨ cx);
 		float disty = (cy ∨ by) • (by ∨ cy);
@@ -801,7 +801,7 @@ bool get_contact_capsule_box (uint aent, collider_t acol,
 check_distance:
 		auto wbox = (vec4) (bM * box_point * ~bM);
 		auto wcap = (vec4) (bM * cap_point * ~bM);
-		Gizmo_AddCapsule (wbox, wcap, 0.1, {0, 1, 0, 0.5});
+		//Gizmo_AddCapsule (wbox, wcap, 0.1, {0, 1, 0, 0.5});
 
 		float r = acol.capsule.radius;
 		if (line • ~line < r * r) {
@@ -969,7 +969,7 @@ bool get_contact_box_box (uint aent, collider_t acol,
 		};
 		//Gizmo_AddLine (bM * A * ~bM, 0.01, (vec4) { 0, 1, 1, 0.9 });
 		//Gizmo_AddLine (bM * B * ~bM, 0.01, (vec4) { 1, 1, 0, 0.9 });
-		Gizmo_AddLine (bM * T * ~bM, 0.01, (vec4) { 1, 0, 1, 0.9 });
+		//Gizmo_AddLine (bM * T * ~bM, 0.01, (vec4) { 1, 0, 1, 0.9 });
 
 		bool miss = false;
 		for (int i = 0; i < 3; i++) {
@@ -1027,14 +1027,14 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			BX = bx;
 			AX = ax;
 
-			Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.25, {1, 0, 1, 0.5});
-			Gizmo_AddLine (bM * bL * ~bM, 0.01, (vec4) { 0.4, 0.8, 0.3, 0.9 });
-			Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.25, {1, 0, 1, 0.5});
-			Gizmo_AddLine (aM * aL * ~aM, 0.01, (vec4) { 0.4, 0.8, 0.3, 0.9 });
+			//Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.25, {1, 0, 1, 0.5});
+			//Gizmo_AddLine (bM * bL * ~bM, 0.01, (vec4) { 0.4, 0.8, 0.3, 0.9 });
+			//Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.25, {1, 0, 1, 0.5});
+			//Gizmo_AddLine (aM * aL * ~aM, 0.01, (vec4) { 0.4, 0.8, 0.3, 0.9 });
 
-			Gizmo_AddSphere (vec4(bM * bx * ~bM), 0.005, color);
-			Gizmo_AddSphere (vec4(aM * ax * ~aM), 0.005, color);
-			Gizmo_AddCapsule (vec4(aM*ax*~aM), vec4(bM*bx*~bM), 0.02, color);
+			//Gizmo_AddSphere (vec4(bM * bx * ~bM), 0.005, color);
+			//Gizmo_AddSphere (vec4(aM * ax * ~aM), 0.005, color);
+			//Gizmo_AddCapsule (vec4(aM*ax*~aM), vec4(bM*bx*~bM), 0.02, color);
 			//Gizmo_AddLine (bM * L * ~bM, 0.1, color);
 			//printf ("edge-edge ");
 		} else if (Aind) {
@@ -1051,12 +1051,12 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			auto aP = bound (cA - eA, ~M * bP * M, cA + eA);
 			BX = bP;
 			AX = aP;
-			Gizmo_AddSphere (vec4(bM * P * ~bM), 0.25, {1, 1, 0, 0.5});
-			draw_plane_gizmo (bM*p*~bM, bM*P*~bM, {1, 1, 0, 0.5});
+			//Gizmo_AddSphere (vec4(bM * P * ~bM), 0.25, {1, 1, 0, 0.5});
+			//draw_plane_gizmo (bM*p*~bM, bM*P*~bM, {1, 1, 0, 0.5});
 
-			Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.005, color);
-			Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.005, color);
-			Gizmo_AddCapsule (vec4(aM*aP*~aM), vec4(bM*bP*~bM), 0.02, color);
+			//Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.005, color);
+			//Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.005, color);
+			//Gizmo_AddCapsule (vec4(aM*aP*~aM), vec4(bM*bP*~bM), 0.02, color);
 			//printf ("A-face ");
 		} else if (Bind) {
 			auto x = -e0∧Baxes[Bind - 1];
@@ -1076,12 +1076,12 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			auto bP = bound (cB - eB, M * aP * ~M, cB + eB);
 			AX = aP;
 			BX = bP;
-			Gizmo_AddSphere (vec4(bM * P * ~bM), 0.25, {0, 1, 1, 0.5});
-			draw_plane_gizmo (aM*p*~aM, bM*P*~bM, {0, 1, 1, 0.5});
+			//Gizmo_AddSphere (vec4(bM * P * ~bM), 0.25, {0, 1, 1, 0.5});
+			//draw_plane_gizmo (aM*p*~aM, bM*P*~bM, {0, 1, 1, 0.5});
 
-			Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.005, color);
-			Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.005, color);
-			Gizmo_AddCapsule (vec4(aM*aP*~aM), vec4(bM*bP*~bM), 0.02, color);
+			//Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.005, color);
+			//Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.005, color);
+			//Gizmo_AddCapsule (vec4(aM*aP*~aM), vec4(bM*bP*~bM), 0.02, color);
 			//printf ("B-face ");
 		} else {
 			printf ("what the what?\n");
@@ -1091,9 +1091,9 @@ bool get_contact_box_box (uint aent, collider_t acol,
 			auto ax = bound (cA - eA, AX, cA + eA);
 			//printf ("%q %q %q %q\n", AX, ax, BX, bx);
 			vec4 color = { 1, 0, 0, 0.9 };
-			Gizmo_AddSphere (vec4(bM * bx * ~bM), 0.005, color);
-			Gizmo_AddSphere (vec4(aM * ax * ~aM), 0.005, color);
-			Gizmo_AddCapsule (vec4(aM*ax*~aM), vec4(bM*bx*~bM), 0.02, color);
+			//Gizmo_AddSphere (vec4(bM * bx * ~bM), 0.005, color);
+			//Gizmo_AddSphere (vec4(aM * ax * ~aM), 0.005, color);
+			//Gizmo_AddCapsule (vec4(aM*ax*~aM), vec4(bM*bx*~bM), 0.02, color);
 		}
 		if (!miss) {
 			auto wa = aM * AX * ~aM;
