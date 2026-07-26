@@ -140,8 +140,17 @@ quat_conj (const expr_t *e)
 {
 	quat_t      q;
 
-	QuatConj (expr_vector (e), q);
-	return new_quaternion_expr (q);
+	if (is_constant (e)) {
+		QuatConj (expr_vector (e), q);
+		return new_quaternion_expr (q);
+	} else {
+		auto qv = offset_cast (&type_vector, e, 0);
+		auto qs = offset_cast (&type_float, e, 3);
+		qv = neg_expr (qv);
+		const expr_t *elements[] = { qv, qs };
+		auto quat = new_vector_list_gather (&type_quaternion, elements, 2);
+		return edag_add_expr (quat);
+	}
 }
 
 static const expr_t *
@@ -338,7 +347,7 @@ static unary_type_t quat_u[] = {
 		.no_vectorize = true },
 	{ .op = '!', .result_type = &type_bool,       .constant = quat_not,
 		.no_vectorize = true },
-	{ .op = '~', .result_type = &type_quaternion, .constant = quat_conj,
+	{ .op = '~', .process = &quat_conj, .constant = quat_conj,
 		.no_vectorize = true },
 
 	{}
