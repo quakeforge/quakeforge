@@ -6,7 +6,8 @@
 
 #include "camera.h"
 #include "camerasystem.h"
-#include "qwaq-ed.h"	//FIXME cam_next and cam_prev
+
+#include "gui/slider.h"
 
 in_axis_t *cam_move_forward;
 in_axis_t *cam_move_side;
@@ -150,6 +151,11 @@ in_axis_t *mouse_y;
 	self.speed.speed = speed;
 }
 
+-(void)setSensitivity:(float)sensitivity
+{
+	self.speed.sensitivity = sensitivity;
+}
+
 @end
 
 @implementation CamWindow
@@ -159,7 +165,10 @@ in_axis_t *mouse_y;
 		return nil;
 	}
 	system = [sys retain];
-	IMUI_Window_SetSize (window, {300, 90});
+	IMUI_Window_SetSize (window, {300, 130});
+
+	exp_slider = [[Slider slider:{0, 6} step:0.05 ctx:ctx] retain];
+	sens_slider = [[Slider slider:{-3, 0} step:0.05 ctx:ctx] retain];
 	camera_speed_exp = 0;
 	return self;
 }
@@ -179,42 +188,17 @@ in_axis_t *mouse_y;
 			continue;
 		}
 		UI_Vertical {
-			imui_style_t style;
-			IMUI_Style_Fetch (IMUI_context, &style);
-			UI_SetFill (style.background.normal);
-			uint dent = IMUI_ActiveItem (IMUI_context,
-										 imui_size_percent, 100,
-										 imui_size_pixels, 25,
-										 sprintf ("source_%p", self));
-			IMUI_SetViewPos (IMUI_context, {0, 0});
-			IMUI_SetViewFree (IMUI_context, {true, true});
-			IMUI_SetViewGravity (IMUI_context, grav_northwest);
-
-			int mode = IMUI_UpdateHotActive (IMUI_context);
-			IMUI_CheckButtonState (IMUI_context);
-			UI_SetFill (style.foreground.color[mode]);
-
-			auto io = IMUI_GetIO (IMUI_context);
-			if (io.active == dent) {
-				IMUI_SetDragId (IMUI_context, io.active);
-			}
-			io = IMUI_GetIO (IMUI_context);
-			if (io.drag_id == dent) {
-				if (io.pressed == 1) {
-					drag_start = io.mouse_active;
-					start_exp = camera_speed_exp;
-				}
-				float delta = (io.mouse_active.x - drag_start.x) * 0.05f;
-				camera_speed_exp = start_exp + delta;
-				if (camera_speed_exp > 6) {
-					camera_speed_exp = 6;
-				}
-				if (camera_speed_exp < 0) {
-					camera_speed_exp = 0;
-				}
+			if ([exp_slider draw:camera_speed_exp]) {
 				[system setSpeed:pow (10, camera_speed_exp)];
 			}
-			IMUI_Labelf (IMUI_context, "%4.1f##camWindow", camera_speed_exp);
+			IMUI_Labelf (IMUI_context, "%4.1f##camWindow_sp", camera_speed_exp);
+		}
+		//FIXME sort out why Slider needs free positioning
+		UI_Vertical {
+			if ([sens_slider draw:sensitivity]) {
+				[system setSensitivity:pow (10, sensitivity)];
+			}
+			IMUI_Labelf (IMUI_context, "%4.1f##camWindow_sn", sensitivity);
 		}
 	}
 	return self;

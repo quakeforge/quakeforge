@@ -49,12 +49,17 @@ typedef struct camspeed_s {
 @end
 
 #include "gui/window.h"
+
+@class Slider;
+
 @interface CamWindow : Window
 {
 	CameraSystem *system;
 	float camera_speed_exp;
-	float start_exp;
-	ivec2 drag_start;
+	float sensitivity;
+
+	Slider *exp_slider;
+	Slider *sens_slider;
 }
 +(CamWindow *) camWindow:(CameraSystem*)sys ctx:(imui_ctx_t)ctx;
 -draw;

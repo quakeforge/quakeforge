@@ -127,6 +127,7 @@ qwaq_core_src= \
 	ruamoko/qwaq/gui/editwindow.r \
 	ruamoko/qwaq/gui/filewindow.r \
 	ruamoko/qwaq/gui/listview.r \
+	ruamoko/qwaq/gui/slider.r \
 	ruamoko/qwaq/gui/ui_object.r \
 	ruamoko/qwaq/gui/virtinput.r \
 	ruamoko/qwaq/gui/window.r
