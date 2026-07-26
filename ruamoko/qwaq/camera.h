@@ -26,6 +26,7 @@ typedef @handle(long) transform_h transform_t;
 -drawExcept:(Camera *) skip;
 -drawHUD;
 -enableHUD:(bool)enable;
+-(transform_t)xform;
 @end
 
 typedef struct camspeed_s camspeed_t;

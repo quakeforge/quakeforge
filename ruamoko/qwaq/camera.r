@@ -48,6 +48,11 @@
 	return state;
 }
 
+-(transform_t)xform
+{
+	return xform;
+}
+
 -setTransformFromMotor:(motor_t)M
 {
 	set_transform (M, xform);

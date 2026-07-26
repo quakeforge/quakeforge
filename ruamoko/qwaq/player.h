@@ -9,6 +9,7 @@
 #include <input.h>
 
 void add_target (entity_t tgt);
+quaternion fromtorot(vector a, vector b);
 
 @class PlayerCam;
 

@@ -88,6 +88,7 @@ void refresh_2d (void (func)(void)) = #0;
 void setpalette (void *palette, void *colormap) = #0;
 void newscene (scene_t scene) = #0;
 void set_sky_id (uint texid) = #0;
+void set_sky_rotation (quaternion texid) = #0;
 
 void setevents (int (func)(struct IE_event_s *, void *), void *data) = #0;
 void setctxcbuf (int ctx) = #0;
@@ -1112,6 +1113,31 @@ create_pbr_stuff (uint skyid)
 	Render_SetJobBlackboardVar ("main", "pbr_brdf_lut", tex_lut);
 }
 
+float
+right_ascension (int h, int m, float s)
+{
+	return M_PI * ((s / 60 + m) / 60 + h) / 12;
+}
+
+float
+declination (int d, int m, float s)
+{
+	s = 1;
+	if (d < 0) {
+		s = -1;
+		d = -d;
+	}
+	return s * M_PI * ((s / 60 + m) / 60 + d) / 180;
+}
+
+vector
+spherical (float th, float ph)
+{
+	vec2 ph_v = sincos (ph);
+	vec2 th_v = sincos (th);
+	return vec3 (ph_v.y * th_v.yx, ph_v.x);
+}
+
 int
 main (int argc, string *argv)
 {
@@ -1132,6 +1158,28 @@ main (int argc, string *argv)
 	//ImphenziaPixPal
 	uint pixpal = load_resource ("pixpal.meta");
 	uint skyid = load_resource ("eso0932a.meta");
+	//FIXME put in meta file
+	// Alpha Centauri from wikipedia
+	vector real_a = spherical (right_ascension(14,39,36.5),
+							   declination(-60,50,2.4));
+	// Betelgeuse from wikipedia
+	vector real_b = spherical (right_ascension(5, 55,10.30536),
+							   declination(7,24,25.4304));
+	// Alpha Centauri measured from eso0932a with unrotated sky
+	vector qwaq_a = spherical (right_ascension(14,50,11.2),
+							   declination(1,23,34.9));
+	// Betelgeuse measured from eso0932a with unrotated sky
+	vector qwaq_b = spherical (right_ascension(7,7,18.2),
+							   declination(-10,9,2.3));
+	vector real_n = real_b × real_a;
+	vector qwaq_n = qwaq_b × qwaq_a;
+	quaternion qr_n = fromtorot (qwaq_n, real_n);
+	quaternion qr_na = fromtorot (qr_n * qwaq_a, real_a);
+	quaternion qr_nb = fromtorot (qr_n * qwaq_b, real_b);
+	quaternion qr_a = qr_na * qr_n;
+	quaternion qr_b = qr_nb * qr_n;
+	quaternion qr = qr_a + qr_b;
+	qr /= sqrt (qr • qr);
 
 	create_pbr_stuff (skyid);
 
@@ -1191,6 +1239,7 @@ main (int argc, string *argv)
 	auto main_window = [[MainWindow window:imui_ctx] retain];
 	auto cam_window = [[CamWindow camWindow:camera_system ctx:imui_ctx] retain];
 	set_sky_id (skyid);
+	set_sky_rotation (~qr);
 
 	load_scene (PL_GetPropertyList (scene_plist), scene);
 

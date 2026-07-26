@@ -395,6 +395,12 @@ bi(set_sky_id)
 	r_funcs->R_SetSkyId (texid);
 }
 
+bi(set_sky_rotation)
+{
+	vec4f_t     rot = { VEC4_EXP (P_QUAT (pr, 0)) };
+	r_funcs->R_SetSkyRotation (rot);
+}
+
 static vec4f_t
 vec_select (vec4i_t mask, vec4f_t a, vec4f_t b)
 {
@@ -600,6 +606,7 @@ static builtin_t builtins[] = {
 	bi(res_is_cubemap,-1, 1, p(uint)),
 	bi(newscene,      -1, 1, p(long)),
 	bi(set_sky_id,    -1, 1, p(uint)),
+	bi(set_sky_rotation, -1, 1, p(quaternion)),
 	bi(refresh,       -1, 1, p(long)),
 	bi(refresh_2d,    -1, 1, p(func)),
 	bi(setpalette,    -1, 2, p(ptr), p(ptr)),

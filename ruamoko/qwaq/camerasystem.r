@@ -161,6 +161,12 @@ in_axis_t *mouse_y;
 	self.speed.sensitivity = sensitivity;
 }
 
+-(vec3)forward
+{
+	Camera *camera = [cameras objectAtIndex:0];
+	auto xform = [camera xform];
+	return Transform_Forward (xform).xyz;
+}
 @end
 
 @implementation CamWindow
@@ -170,7 +176,7 @@ in_axis_t *mouse_y;
 		return nil;
 	}
 	system = [sys retain];
-	IMUI_Window_SetSize (window, {300, 130});
+	IMUI_Window_SetSize (window, {300, 150});
 
 	exp_slider = [[Slider slider:{0, 6} step:0.05 ctx:ctx] retain];
 	sens_slider = [[Slider slider:{-3, 0} step:0.05 ctx:ctx] retain];
@@ -204,6 +210,29 @@ in_axis_t *mouse_y;
 				[system setSensitivity:pow (10, sensitivity)];
 			}
 			IMUI_Labelf (IMUI_context, "%4.1f##camWindow_sn", sensitivity);
+			UI_Horizontal {
+				vec3 forward = [system forward];
+				vec2 xy = forward.xy;
+				float ra = atan2 (forward.y, forward.x) * 12 / M_PI;
+				float decl = atan2 (forward.z, sqrt (xy • xy)) * 180 / M_PI;
+				if (ra < 0) {
+					ra += 24;
+				}
+				int ra_h = int (ra);
+				int ra_m = int ((ra - ra_h) * 60);
+				float ra_s = ((ra - ra_h) * 60 - ra_m) * 60;
+				float sgn = decl < 0 ? -1 : 1;
+				decl = fabs (decl);
+				int decl_d = int (decl);
+				int decl_m = int (fabs ((decl - decl_d) * 60));
+				float decl_s = ((decl - decl_d) * 60 - decl_m) * 60;
+				string ra_str = sprintf ("%2dh%02dm%04.1fs", ra_h, ra_m, ra_s);
+				string decl_str = sprintf ("%3.0f⁰%02d'%04.1f\"",
+										   sgn * float(decl_d), decl_m, decl_s);
+				IMUI_Labelf (IMUI_context, "%s##camWindow_aim_ra", ra_str);
+				UI_FlexibleSpace ();
+				IMUI_Labelf (IMUI_context, "%s##camWindow_aim_de", decl_str);
+			}
 		}
 	}
 	return self;
