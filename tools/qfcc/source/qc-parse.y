@@ -578,26 +578,8 @@ make_ellipsis (void)
 }
 
 static param_t *
-make_param (specifier_t spec, rua_ctx_t *ctx)
+set_param_qual (specifier_t spec, param_t *param)
 {
-	//FIXME should not be sc_global
-	//FIXME if (spec.storage == sc_global || spec.storage == sc_extern) {
-	if (spec.storage < sc_inout) {
-		spec.storage = sc_param;
-	}
-
-	param_t *param;
-	if (generic_block && spec.type_expr) {
-		auto name = spec.sym ? spec.sym->name : nullptr;
-		param = new_generic_param (spec.type_expr, name);
-	} else if (spec.sym) {
-		spec = spec_process (spec, ctx);
-		spec.type = find_type (append_type (spec.sym->type, spec.type));
-		param = new_param (nullptr, spec.type, spec.sym->name);
-	} else {
-		spec = spec_process (spec, ctx);
-		param = new_param (nullptr, spec.type, nullptr);
-	}
 	if (spec.is_const) {
 		if (spec.storage == sc_out) {
 			error (0, "cannot use const with @out");
@@ -628,10 +610,38 @@ make_param (specifier_t spec, rua_ctx_t *ctx)
 }
 
 static param_t *
-make_selector (const char *selector, const type_t *type, const char *name)
+make_param (specifier_t spec, rua_ctx_t *ctx)
+{
+	//FIXME should not be sc_global
+	//FIXME if (spec.storage == sc_global || spec.storage == sc_extern) {
+	if (spec.storage < sc_inout) {
+		spec.storage = sc_param;
+	}
+
+	param_t *param;
+	if (generic_block && spec.type_expr) {
+		auto name = spec.sym ? spec.sym->name : nullptr;
+		param = new_generic_param (spec.type_expr, name);
+	} else if (spec.sym) {
+		spec = spec_process (spec, ctx);
+		spec.type = find_type (append_type (spec.sym->type, spec.type));
+		param = new_param (nullptr, spec.type, spec.sym->name);
+	} else {
+		spec = spec_process (spec, ctx);
+		param = new_param (nullptr, spec.type, nullptr);
+	}
+	return set_param_qual (spec, param);
+}
+
+static param_t *
+make_selector (specifier_t spec, const char *selector, const type_t *type,
+			   const char *name)
 {
 	param_t    *param = new_param (selector, type, name);
-	return param;
+	if (spec.storage < sc_inout) {
+		spec.storage = sc_param;
+	}
+	return set_param_qual (spec, param);
 }
 
 static param_t *
@@ -3119,7 +3129,10 @@ methodproto
 			$$ = $2;
 		}
 	| ci error ';'
-		{ $$ = new_method (&type_id, make_selector ("", 0, 0), 0, ctx); }
+		{
+			specifier_t spec = { .storage = sc_param };
+			$$ = new_method (&type_id, make_selector (spec, "", 0, 0), 0, ctx);
+		}
 	;
 
 methoddecl
@@ -3145,7 +3158,11 @@ optional_param_list
 	;
 
 unaryselector
-	: selector					{ $$ = make_selector ($1->name, 0, 0); }
+	: selector
+		{
+			specifier_t spec = { .storage = sc_param };
+			$$ = make_selector (spec, $1->name, 0, 0);
+		}
 	;
 
 keywordselector
@@ -3186,23 +3203,25 @@ reserved_word
 	;
 
 keyworddecl
-	: selector ':' '(' typename ')' identifier
+	: selector[sel] ':' '(' typename[spec] ')' identifier[id]
 		{
-			auto spec = resolve_type_spec ($4, ctx);
-			$$ = make_selector ($1->name, spec.type, $6->name);
+			auto spec = resolve_type_spec ($spec, ctx);
+			$$ = make_selector (spec, $sel->name, spec.type, $id->name);
 		}
-	| selector ':' identifier
+	| selector[sel] ':' identifier[id]
 		{
-			$$ = make_selector ($1->name, &type_id, $3->name);
+			specifier_t spec = { .storage = sc_param };
+			$$ = make_selector (spec, $sel->name, &type_id, $id->name);
 		}
-	| ':' '(' typename ')' identifier
+	| ':' '(' typename[spec] ')' identifier[id]
 		{
-			auto spec = resolve_type_spec ($3, ctx);
-			$$ = make_selector ("", spec.type, $5->name);
+			auto spec = resolve_type_spec ($spec, ctx);
+			$$ = make_selector (spec, "", spec.type, $id->name);
 		}
-	| ':' identifier
+	| ':' identifier[id]
 		{
-			$$ = make_selector ("", &type_id, $2->name);
+			specifier_t spec = { .storage = sc_param };
+			$$ = make_selector (spec, "", &type_id, $id->name);
 		}
 	;
 
