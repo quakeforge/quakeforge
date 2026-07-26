@@ -61,6 +61,7 @@ typedef struct matrixctx_s {
 	qfv_matrix_buffer_t matrices;
 	vec4f_t      sky_rotation[2];
 	vec4f_t      sky_velocity;
+	bool         sky_auto_rotate;
 	vec4f_t      sky_fix;
 	double       sky_time;
 	int             dirty;

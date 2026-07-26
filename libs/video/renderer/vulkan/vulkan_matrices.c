@@ -98,7 +98,7 @@ setup_sky (vulkan_ctx_t *ctx)
 	float       blend;
 	mat4f_t     mat;
 
-	while (vr_data.realtime - mctx->sky_time > 1) {
+	while (mctx->sky_auto_rotate && (vr_data.realtime - mctx->sky_time > 1)) {
 		mctx->sky_rotation[0] = mctx->sky_rotation[1];
 		mctx->sky_rotation[1] = qmulf (mctx->sky_velocity,
 									   mctx->sky_rotation[0]);
