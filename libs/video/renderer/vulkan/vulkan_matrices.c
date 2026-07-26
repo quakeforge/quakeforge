@@ -137,6 +137,14 @@ Vulkan_SetSkyMatrix (vulkan_ctx_t *ctx, mat4f_t sky)
 	}
 }
 
+void
+Vulkan_SetSkyRotation (vec4f_t rot, vulkan_ctx_t *ctx)
+{
+	auto mctx = ctx->matrix_context;
+	mctx->sky_rotation[0] = rot;
+	mctx->sky_rotation[1] = rot;
+}
+
 static void
 update_matrices (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {

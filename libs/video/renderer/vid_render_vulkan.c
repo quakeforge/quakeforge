@@ -255,6 +255,12 @@ vulkan_R_SetSkyId (uint32_t id)
 }
 
 static void
+vulkan_R_SetSkyRotation (vec4f_t rot)
+{
+	Vulkan_SetSkyRotation (rot, vulkan_ctx);
+}
+
+static void
 vulkan_R_NewScene (scene_t *scene)
 {
 	Vulkan_NewScene (scene, vulkan_ctx);
@@ -890,6 +896,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.R_ClearState     = vulkan_R_ClearState,
 	.R_LoadSkys       = vulkan_R_LoadSkys,
 	.R_SetSkyId       = vulkan_R_SetSkyId,
+	.R_SetSkyRotation = vulkan_R_SetSkyRotation,
 	.R_NewScene       = vulkan_R_NewScene,
 	.R_LineGraph      = vulkan_R_LineGraph,
 
