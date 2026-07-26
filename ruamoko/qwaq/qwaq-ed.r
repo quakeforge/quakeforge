@@ -9,7 +9,7 @@
 #include "gui/nodepanel.h"
 #include "gui/window.h"
 #include "armature.h"
-#include "camera.h"
+#include "camerasystem.h"
 #include "gizmo.h"
 #include "mainmenu.h"
 #include "physics.h"
@@ -54,20 +54,9 @@ static string pbr_conv_shader =
 #embed "ruamoko/qwaq/shader/pbr_conv.r.spv"
 ;
 
-float camera_speed = 1;
 bool physics_paused = false;
 
 int in_context;
-in_axis_t *cam_move_forward;
-in_axis_t *cam_move_side;
-in_axis_t *cam_move_up;
-in_axis_t *cam_move_pitch;
-in_axis_t *cam_move_yaw;
-in_axis_t *cam_move_roll;
-in_button_t *cam_next;
-in_button_t *cam_prev;
-in_axis_t *mouse_x;
-in_axis_t *mouse_y;
 
 in_axis_t *move_forward;
 in_axis_t *move_side;
@@ -82,9 +71,10 @@ in_button_t *shift;
 in_button_t *move_jump;
 in_button_t *target_lock;
 
-vec2 mouse_start;
-bool mouse_dragging_mmb;
-bool mouse_dragging_rmb;
+scene_t scene;
+CameraSystem *camera_system;
+
+mousestate_t mouse_state;
 
 bool draw_editor_overlay = true;
 bool quit_editor = false;
@@ -209,96 +199,12 @@ float frametime;
 @class MainMenu;
 MainMenu *main_menu;
 
-@interface CamWindow : Window
-{
-	float camera_speed_exp;
-	float start_exp;
-	ivec2 drag_start;
-}
-+(CamWindow *) camWindow:(imui_ctx_t)ctx;
--draw;
-@end
-
-@implementation CamWindow
--initWithContext:(imui_ctx_t)ctx
-{
-	if (!(self = [super initWithContext:ctx name:"CamWindow"])) {
-		return nil;
-	}
-	IMUI_Window_SetSize (window, {300, 80});
-	camera_speed_exp = 0;
-	return self;
-}
-
-+(CamWindow *) camWindow:(imui_ctx_t)ctx
-{
-	return [[[CamWindow alloc] initWithContext:ctx] autorelease];
-}
-
--draw
-{
-	if (![super draw]) {
-		return nil;
-	}
-	UI_Window (window) {
-		if (IMUI_Window_IsCollapsed (window)) {
-			continue;
-		}
-		UI_Vertical {
-			UI_SetFill (current_style.background.normal);
-			uint dent = IMUI_ActiveItem (IMUI_context,
-										 imui_size_percent, 100,
-										 imui_size_pixels, 25,
-										 sprintf ("source_%p", self));
-			IMUI_SetViewPos (IMUI_context, {0, 0});
-			IMUI_SetViewFree (IMUI_context, {true, true});
-			IMUI_SetViewGravity (IMUI_context, grav_northwest);
-
-			int mode = IMUI_UpdateHotActive (IMUI_context);
-			IMUI_CheckButtonState (IMUI_context);
-			UI_SetFill (current_style.foreground.color[mode]);
-
-			auto io = IMUI_GetIO (IMUI_context);
-			if (io.active == dent) {
-				IMUI_SetDragId (IMUI_context, io.active);
-			}
-			io = IMUI_GetIO (IMUI_context);
-			if (io.drag_id == dent) {
-				if (io.pressed == 1) {
-					drag_start = io.mouse_active;
-					start_exp = camera_speed_exp;
-				}
-				float delta = (io.mouse_active.x - drag_start.x) * 0.05f;
-				camera_speed_exp = start_exp + delta;
-				if (camera_speed_exp > 6) {
-					camera_speed_exp = 6;
-				}
-				if (camera_speed_exp < 0) {
-					camera_speed_exp = 0;
-				}
-				camera_speed = pow (10, camera_speed_exp);
-			}
-			IMUI_Labelf (IMUI_context, "%4.1f##camWindow", camera_speed_exp);
-		}
-	}
-	return self;
-}
-@end
-
 @interface MainWindow : Window <ListView>
 {
 	Array *clips;
 	ListView *clipsView;
 	Array *bones;
 	ListView *bonesView;
-
-	scene_t scene;
-
-	Camera *active_camera;
-	uint active_camera_index;
-	Array  *cameras;
-
-	state_t camera_state;
 
 	int show_armature;
 
@@ -316,7 +222,6 @@ MainMenu *main_menu;
 -draw;
 -setModel:(model_t) model;
 -nextClip:(float)frametime;
--(scene_t) scene;
 @end
 
 uint
@@ -345,8 +250,6 @@ pixpal_colorid (uint x, uint y)
 	bonesView = [[ListView list:"MainWindow:bones" ctx:ctx] retain];
 
 	IMUI_Window_SetSize (window, {400, 300});
-
-	scene = Scene_NewScene ();
 
 	lightingdata_t ldata = Light_CreateLightingData (scene);
 	Light_EnableSun (ldata);
@@ -377,25 +280,6 @@ pixpal_colorid (uint x, uint y)
 		{ 0, 0, 1, 0 },
 	}, 0);
 	Scene_SetLighting (scene, ldata);
-
-	cameras = [[Array array] retain];
-
-	active_camera_index = [cameras count];
-	active_camera = [[Camera inScene:scene] retain];
-	[cameras addObject:active_camera];
-
-	camera_state = {
-		//.M = make_motor ({ -4, 0, 3, 0, }, { 0, 0.316227766, 0, 0.948683298 }),
-		.M = make_motor ({ -16, 12, 10, 0, }, { -0.223606797, 0.223606797, 0.670820393, 0.670820393 }),
-	};
-
-	IMP imp;
-	imp = [self methodForSelector: @selector (nextCamera:)];
-	IN_ButtonAddListener (cam_next, imp, self);
-	imp = [self methodForSelector: @selector (prevCamera:)];
-	IN_ButtonAddListener (cam_prev, imp, self);
-
-	Scene_SetCamera (scene, [active_camera entity]);
 
 	Particles_SetGravitry (scene, { 0, 0, 3, 1}, 3, 0.25);
 	//need to fix palette array/non-array in vulkan
@@ -433,64 +317,6 @@ pixpal_colorid (uint x, uint y)
 	[super dealloc];
 }
 
--addCamera:(Camera *) camera
-{
-	[cameras addObject:camera];
-	return self;
-}
-
--(void) nextCamera:(in_button_t *)button
-{
-	if (button.state & inb_edge_down) {
-		button.state &= inb_down;
-
-		uint old_cam = active_camera_index;
-		if (++active_camera_index >= [cameras count]) {
-			active_camera_index = 0;
-		}
-		if (active_camera_index != old_cam) {
-			active_camera = [cameras objectAtIndex:active_camera_index];
-			Scene_SetCamera (scene, [active_camera entity]);
-		}
-	}
-}
-
--(void) prevCamera:(in_button_t *)button
-{
-	if (button.state & inb_edge_down) {
-		button.state &= inb_down;
-
-		uint old_cam = active_camera_index;
-		if ((int) --active_camera_index < 0) {
-			active_camera_index = [cameras count] - 1;
-		}
-		if (active_camera_index < 0) {
-			[self error:"no cameras!"];
-		}
-		if (active_camera_index != old_cam) {
-			active_camera = [cameras objectAtIndex:active_camera_index];
-			Scene_SetCamera (scene, [active_camera entity]);
-		}
-	}
-}
-
--updateCamera
-{
-	camera_first_person (&camera_state);
-	if (mouse_dragging_mmb) {
-		camera_mouse_trackball (&camera_state);
-	}
-	if (mouse_dragging_rmb) {
-		camera_mouse_first_person (&camera_state);
-	}
-	Camera *camera = [cameras objectAtIndex:0];
-	[camera setTransformFromMotor:camera_state.M];
-
-	[cameras makeObjectsPerformSelector: @selector(drawExcept:)
-							 withObject: active_camera];
-	return self;
-}
-
 static vec4 axis_points[][2] = {
 	{{0, 0, 0, 1}, {1, 0, 0, 1}},
 	{{0, 0, 0, 1}, {0, 1, 0, 1}},
@@ -526,26 +352,26 @@ static gizmo_node_t covered_step[] = {
 	if (![super draw]) {
 		return nil;
 	}
-	if (ent && anim && arm && show_armature) {
-		qfa_update_anim (anim, frametime);
-		if (root_anim) {
-			qfa_update_anim (root_anim, frametime);
-			qfa_get_pose_motors (anim, arm.pose);
+	//if (ent && anim && arm && show_armature) {
+	//	qfa_update_anim (anim, frametime);
+	//	if (root_anim) {
+	//		qfa_update_anim (root_anim, frametime);
+	//		qfa_get_pose_motors (anim, arm.pose);
 
-			auto E = make_motor (Transform_GetWorldPosition (trans),
-								 Transform_GetWorldRotation (trans));
-			arm_motor_t M;
-			qfa_get_pose_motors (root_anim, &M);
-			M.m = E * M.m;
-			auto cam = Entity_GetTransform ([active_camera entity]);
-			draw_armature (cam, arm, M);
-			for (int i = 0; i < 3; i++) {
-				auto p1 = E * (point_t) axis_points[i][0] * ~E;
-				auto p2 = E * (point_t) axis_points[i][1] * ~E;
-				draw_3dline (cam, (vec4) p1, (vec4) p2, axis_colors[i]);
-			}
-		}
-	}
+	//		auto E = make_motor (Transform_GetWorldPosition (trans),
+	//							 Transform_GetWorldRotation (trans));
+	//		arm_motor_t M;
+	//		qfa_get_pose_motors (root_anim, &M);
+	//		M.m = E * M.m;
+	//		auto cam = Entity_GetTransform ([active_camera entity]);
+	//		draw_armature (cam, arm, M);
+	//		for (int i = 0; i < 3; i++) {
+	//			auto p1 = E * (point_t) axis_points[i][0] * ~E;
+	//			auto p2 = E * (point_t) axis_points[i][1] * ~E;
+	//			draw_3dline (cam, (vec4) p1, (vec4) p2, axis_colors[i]);
+	//		}
+	//	}
+	//}
 
 	imui_style_t style;
 	IMUI_Style_Fetch (IMUI_context, &style);
@@ -698,17 +524,6 @@ static gizmo_node_t covered_step[] = {
 	Entity_SetAnimation (ent, anim);
 	return self;
 }
-
--(scene_t) scene
-{
-	return scene;
-}
-
--(Camera *) camera
-{
-   return active_camera;
-}
-
 
 -(void)itemSelected:(int) item in:(Array *)items
 {
@@ -909,27 +724,27 @@ capture_mouse_event (struct IE_event_s *event)
 	if (event.mouse.type == ie_mousedown
 		&& ((event.mouse.buttons ^ prev_mouse.buttons) & 2)) {
 		IN_UpdateGrab (1);
-		mouse_dragging_mmb = true;
-		mouse_start = vec2 ( event.mouse.x, event.mouse.y);
+		mouse_state.dragging_mmb = true;
+		mouse_state.drag_start = vec2 ( event.mouse.x, event.mouse.y);
 	} else if (event.mouse.type == ie_mouseup
 			   && ((event.mouse.buttons ^ prev_mouse.buttons) & 2)) {
 		IN_UpdateGrab (0);
-		mouse_dragging_mmb = false;
+		mouse_state.dragging_mmb = false;
 	}
 
 	if (event.mouse.type == ie_mousedown
 		&& ((event.mouse.buttons ^ prev_mouse.buttons) & 4)) {
 		IN_UpdateGrab (1);
-		mouse_dragging_rmb = true;
-		mouse_start = vec2 ( event.mouse.x, event.mouse.y);
+		mouse_state.dragging_rmb = true;
+		mouse_state.drag_start = vec2 ( event.mouse.x, event.mouse.y);
 	} else if (event.mouse.type == ie_mouseup
 			   && ((event.mouse.buttons ^ prev_mouse.buttons) & 4)) {
 		IN_UpdateGrab (0);
-		mouse_dragging_rmb = false;
+		mouse_state.dragging_rmb = false;
 	}
 
 	prev_mouse = event.mouse;
-	return !(mouse_dragging_mmb | mouse_dragging_rmb);
+	return !(mouse_state.dragging_mmb | mouse_state.dragging_rmb);
 }
 
 int
@@ -945,7 +760,7 @@ event_hander (struct IE_event_s *event, void *data)
 					IN_GetDeviceName (event.device.devid));
 			break;
 		case ie_mouse:
-			if ((mouse_dragging_mmb | mouse_dragging_rmb)
+			if ((mouse_state.dragging_mmb | mouse_state.dragging_rmb)
 				|| !IMUI_ProcessEvent (imui_ctx, event)) {
 				return capture_mouse_event (event);
 			}
@@ -970,17 +785,7 @@ setup_bindings (void)
 	IMT_SetContext (in_context);
 	setctxcbuf (in_context);
 
-	cam_move_forward = IN_CreateAxis ("cam.move.forward", "Camera Fore/Aft");
-	cam_move_side = IN_CreateAxis ("cam.move.side", "Camera Left/Right");
-	cam_move_up = IN_CreateAxis ("cam.move.up", "Camera Up/Down");
-	cam_move_pitch = IN_CreateAxis ("cam.move.pitch", "Camera Pitch");
-	cam_move_yaw = IN_CreateAxis ("cam.move.yaw", "Camera Yaw");
-	cam_move_roll = IN_CreateAxis ("cam.move.roll", "Camera Roll");
-	cam_next = IN_CreateButton ("cam.next", "Camera Next");
-	cam_prev = IN_CreateButton ("cam.prev", "Camera Prev");
-	mouse_x = IN_CreateAxis ("mouse.x", "Mouse X");
-	mouse_y = IN_CreateAxis ("mouse.y", "Mouse Y");
-
+	[CameraSystem create_bindings];
 	move_forward = IN_CreateAxis ("move.forward", "Player Move Fore/Aft");
 	move_side = IN_CreateAxis ("move.side", "Player Move Left/Right");
 	move_up = IN_CreateAxis ("move.up", "Player Move Up/Down");
@@ -1405,25 +1210,27 @@ main (int argc, string *argv)
 	arp_end ();
 	arp_start ();
 
+	scene = Scene_NewScene ();
+	camera_system = [[CameraSystem cameraSystem:scene] retain];
 	auto main_window = [[MainWindow window:imui_ctx] retain];
-	auto cam_window = [[CamWindow camWindow:imui_ctx] retain];
+	auto cam_window = [[CamWindow camWindow:camera_system ctx:imui_ctx] retain];
 	set_sky_id (skyid);
 
-	load_scene (PL_GetPropertyList (scene_plist), [main_window scene]);
+	load_scene (PL_GetPropertyList (scene_plist), scene);
 
-	id player = [[Player player:[main_window scene]] retain];
-	id playercam = [[PlayerCam inScene:[main_window scene]] retain];
+	id player = [[Player player:scene] retain];
+	id playercam = [[PlayerCam inScene:scene] retain];
 	[player setCamera:playercam];
-	[main_window addCamera:playercam];
+	[camera_system addCamera:playercam];
 
-	int planetary_queue = Scene_Entqueue ([main_window scene], "planetary");
-	int pixpal_queue = Scene_Entqueue ([main_window scene], "pixpal");
+	int planetary_queue = Scene_Entqueue (scene, "planetary");
+	int pixpal_queue = Scene_Entqueue (scene, "pixpal");
 
 	//[main_window setModel:Model_Load ("progs/girl14.iqm")];
 
-	auto earth_ent = create_orrery (planetary_queue, [main_window scene]);
+	auto earth_ent = create_orrery (planetary_queue, scene);
 
-	auto emitter = Scene_CreateEntity ([main_window scene]);
+	auto emitter = Scene_CreateEntity (scene);
 	Transform_SetLocalTransform (Entity_GetTransform (emitter),
 								 {1, 1, 1, 1},
 									 {0, 0.707, 0, 0.707}, { 3, 0, 3, 1});
@@ -1441,7 +1248,7 @@ main (int argc, string *argv)
 		arp_end ();
 		arp_start ();
 
-		frametime = refresh ([main_window scene]);
+		frametime = refresh (scene);
 		realtime += frametime;
 		if (early_exit) {
 			if (realtime > early_exit + double (1ul<<32)) {
@@ -1466,7 +1273,7 @@ main (int argc, string *argv)
 		[player think:frametime];
 		[playercam think:frametime];
 		[main_window nextClip:frametime];
-		[main_window updateCamera];
+		[camera_system updateCamera:mouse_state];
 
 		//if (0) {
 		//	auto xform = Entity_GetTransform (QuadSphere_ent);

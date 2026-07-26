@@ -1,0 +1,222 @@
+#include <Array.h>
+#include <input.h>
+#include <imui.h>
+#include <math.h>
+#include <string.h>
+
+#include "camera.h"
+#include "camerasystem.h"
+#include "qwaq-ed.h"	//FIXME cam_next and cam_prev
+
+in_axis_t *cam_move_forward;
+in_axis_t *cam_move_side;
+in_axis_t *cam_move_up;
+in_axis_t *cam_move_pitch;
+in_axis_t *cam_move_yaw;
+in_axis_t *cam_move_roll;
+in_button_t *cam_next;
+in_button_t *cam_prev;
+
+in_axis_t *mouse_x;
+in_axis_t *mouse_y;
+
+@implementation CameraSystem
+
++(void)create_bindings
+{
+	cam_move_forward = IN_CreateAxis ("cam.move.forward", "Camera Fore/Aft");
+	cam_move_side = IN_CreateAxis ("cam.move.side", "Camera Left/Right");
+	cam_move_up = IN_CreateAxis ("cam.move.up", "Camera Up/Down");
+	cam_move_pitch = IN_CreateAxis ("cam.move.pitch", "Camera Pitch");
+	cam_move_yaw = IN_CreateAxis ("cam.move.yaw", "Camera Yaw");
+	cam_move_roll = IN_CreateAxis ("cam.move.roll", "Camera Roll");
+	cam_next = IN_CreateButton ("cam.next", "Camera Next");
+	cam_prev = IN_CreateButton ("cam.prev", "Camera Prev");
+
+	mouse_x = IN_CreateAxis ("mouse.x", "Mouse X");
+	mouse_y = IN_CreateAxis ("mouse.y", "Mouse Y");
+}
+
+-init:(scene_t)scene
+{
+	if (!(self = [super init])) {
+		return nil;
+	}
+
+	self.scene = scene;
+	cameras = [[Array array] retain];
+
+	// create a default camera
+	active_camera_index = [cameras count];
+	active_camera = [[Camera inScene:scene] retain];
+	[cameras addObject:active_camera];
+	Scene_SetCamera (scene, [active_camera entity]);
+
+	IMP imp;
+	imp = [self methodForSelector: @selector (nextCamera:)];
+	IN_ButtonAddListener (cam_next, imp, self);
+	imp = [self methodForSelector: @selector (prevCamera:)];
+	IN_ButtonAddListener (cam_prev, imp, self);
+
+	speed = { 1, 1 };
+
+	//FIXME
+	[active_camera setState:{
+		.M = make_motor ({ -4, 0, 3, 0, }, { 0, 0.316227766, 0, 0.948683298 }),
+		//.M = make_motor ({ -16, 12, 10, 0, },
+		//		{ -0.223606797, 0.223606797, 0.670820393, 0.670820393 }),
+	}];
+	return self;
+}
+
++(CameraSystem *) cameraSystem:(scene_t)scene
+{
+	return [[[CameraSystem alloc] init:scene] autorelease];
+}
+
+-(void)dealloc
+{
+	[self error:"dealloc"];
+	[super dealloc];
+}
+
+-addCamera:(Camera *) camera
+{
+	[cameras addObject:camera];
+	return self;
+}
+
+-(void) nextCamera:(in_button_t *)button
+{
+	if (button.state & inb_edge_down) {
+		button.state &= inb_down;
+
+		uint old_cam = active_camera_index;
+		if (++active_camera_index >= [cameras count]) {
+			active_camera_index = 0;
+		}
+		if (active_camera_index != old_cam) {
+			active_camera = [cameras objectAtIndex:active_camera_index];
+			Scene_SetCamera (scene, [active_camera entity]);
+		}
+	}
+}
+
+-(void) prevCamera:(in_button_t *)button
+{
+	if (button.state & inb_edge_down) {
+		button.state &= inb_down;
+
+		uint old_cam = active_camera_index;
+		if ((int) --active_camera_index < 0) {
+			active_camera_index = [cameras count] - 1;
+		}
+		if (active_camera_index < 0) {
+			[self error:"no cameras!"];
+		}
+		if (active_camera_index != old_cam) {
+			active_camera = [cameras objectAtIndex:active_camera_index];
+			Scene_SetCamera (scene, [active_camera entity]);
+		}
+	}
+}
+
+-updateCamera:(mousestate_t)mouse
+{
+	Camera *camera = [cameras objectAtIndex:0];
+	auto state = [camera state];
+
+	camera_first_person (&state, speed);
+	if (mouse.dragging_mmb) {
+		camera_mouse_trackball (&state, mouse.drag_start);
+	}
+	if (mouse.dragging_rmb) {
+		camera_mouse_first_person (&state);
+	}
+	[camera setState:state];
+
+	[cameras makeObjectsPerformSelector: @selector(drawExcept:)
+							 withObject: active_camera];
+	return self;
+}
+
+-(Camera *) camera
+{
+	return active_camera;
+}
+
+-(void)setSpeed:(float)speed
+{
+	self.speed.speed = speed;
+}
+
+@end
+
+@implementation CamWindow
+-initWithContext:(CameraSystem*)sys ctx:(imui_ctx_t)ctx
+{
+	if (!(self = [super initWithContext:ctx name:"CamWindow"])) {
+		return nil;
+	}
+	system = [sys retain];
+	IMUI_Window_SetSize (window, {300, 90});
+	camera_speed_exp = 0;
+	return self;
+}
+
++(CamWindow *) camWindow:(CameraSystem*)sys ctx:(imui_ctx_t)ctx
+{
+	return [[[CamWindow alloc] initWithContext:sys ctx:ctx] autorelease];
+}
+
+-draw
+{
+	if (![super draw]) {
+		return nil;
+	}
+	UI_Window (window) {
+		if (IMUI_Window_IsCollapsed (window)) {
+			continue;
+		}
+		UI_Vertical {
+			imui_style_t style;
+			IMUI_Style_Fetch (IMUI_context, &style);
+			UI_SetFill (style.background.normal);
+			uint dent = IMUI_ActiveItem (IMUI_context,
+										 imui_size_percent, 100,
+										 imui_size_pixels, 25,
+										 sprintf ("source_%p", self));
+			IMUI_SetViewPos (IMUI_context, {0, 0});
+			IMUI_SetViewFree (IMUI_context, {true, true});
+			IMUI_SetViewGravity (IMUI_context, grav_northwest);
+
+			int mode = IMUI_UpdateHotActive (IMUI_context);
+			IMUI_CheckButtonState (IMUI_context);
+			UI_SetFill (style.foreground.color[mode]);
+
+			auto io = IMUI_GetIO (IMUI_context);
+			if (io.active == dent) {
+				IMUI_SetDragId (IMUI_context, io.active);
+			}
+			io = IMUI_GetIO (IMUI_context);
+			if (io.drag_id == dent) {
+				if (io.pressed == 1) {
+					drag_start = io.mouse_active;
+					start_exp = camera_speed_exp;
+				}
+				float delta = (io.mouse_active.x - drag_start.x) * 0.05f;
+				camera_speed_exp = start_exp + delta;
+				if (camera_speed_exp > 6) {
+					camera_speed_exp = 6;
+				}
+				if (camera_speed_exp < 0) {
+					camera_speed_exp = 0;
+				}
+				[system setSpeed:pow (10, camera_speed_exp)];
+			}
+			IMUI_Labelf (IMUI_context, "%4.1f##camWindow", camera_speed_exp);
+		}
+	}
+	return self;
+}
+@end

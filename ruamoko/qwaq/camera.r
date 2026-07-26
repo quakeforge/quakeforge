@@ -1,9 +1,10 @@
 #include <draw.h>
+#include <input.h>
 #include <math.h>
 
 #include "camera.h"
+#include "camerasystem.h"
 #include "gizmo.h"
-#include "qwaq-ed.h"
 
 @implementation Camera
 
@@ -36,6 +37,17 @@
 	return ent;
 }
 
+-setState:(state_t)state
+{
+	self.state = state;
+	return [self setTransformFromMotor:state.M];
+}
+
+-(state_t)state
+{
+	return state;
+}
+
 -setTransformFromMotor:(motor_t)M
 {
 	set_transform (M, xform);
@@ -63,10 +75,31 @@
 	return self;
 }
 
+-drawHUD
+{
+	if (hud_enabled) {
+		auto mat = Transform_GetWorldMatrix (xform);
+		vec4 x = mat[0];
+		vec4 y = mat[1];
+		vec4 z = mat[2];
+		vec4 p = mat[3];
+		vec4 color = {1, 0, 0, 0.5};
+		Gizmo_AddCapsule (p + x + y + z, p + x + y + z, 0.025, color);
+		Gizmo_AddCapsule (p + x + y + z, p + x + y + z, 0.025, color);
+	}
+	return self;
+}
+
+-enableHUD:(bool)enable
+{
+	hud_enabled = enable;
+	return self;
+}
+
 @end
 
 void
-camera_first_person (state_t *state)
+camera_first_person (state_t *state, camspeed_t speed)
 {
 	vector dpos = {};
 	dpos.x -= IN_UpdateAxis (cam_move_forward);
@@ -78,8 +111,8 @@ camera_first_person (state_t *state)
 	drot.y -= IN_UpdateAxis (cam_move_pitch);
 	drot.z -= IN_UpdateAxis (cam_move_yaw);
 
-	dpos *= 0.01 * camera_speed;
-	drot *= ((float)M_PI / 360);
+	dpos *= 0.01 * speed.speed;
+	drot *= ((float)M_PI / 360) * speed.sensitivity;
 	state.B = {
 		.bvect = (PGA.bvect) drot,
 		.bvecp = (PGA.bvecp) dpos,
@@ -159,7 +192,7 @@ max (float x, float y)
 static float trackball_sensitivity = 10.0f;
 #define sphere_scale 1.0f
 void
-camera_mouse_trackball (state_t *state)
+camera_mouse_trackball (state_t *state, vec2 mouse_start)
 {
 	vec2 delta = {
 		IN_UpdateAxis (mouse_x),
