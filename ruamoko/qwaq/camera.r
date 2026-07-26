@@ -79,13 +79,13 @@
 {
 	if (hud_enabled) {
 		auto mat = Transform_GetWorldMatrix (xform);
-		vec4 x = mat[0];
-		vec4 y = mat[1];
-		vec4 z = mat[2];
+		vec4 x = 5*mat[0];
+		vec4 y = 0.1*mat[1];
+		vec4 z = 0.1*mat[2];
 		vec4 p = mat[3];
 		vec4 color = {1, 0, 0, 0.5};
-		Gizmo_AddCapsule (p + x + y + z, p + x + y + z, 0.025, color);
-		Gizmo_AddCapsule (p + x + y + z, p + x + y + z, 0.025, color);
+		Gizmo_AddCapsule (p + x + y + z, p + x - y - z, 0.005, color);
+		Gizmo_AddCapsule (p + x - y + z, p + x + y - z, 0.005, color);
 	}
 	return self;
 }

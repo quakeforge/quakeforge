@@ -17,6 +17,7 @@ in_axis_t *cam_move_yaw;
 in_axis_t *cam_move_roll;
 in_button_t *cam_next;
 in_button_t *cam_prev;
+in_button_t *cam_hud;
 
 in_axis_t *mouse_x;
 in_axis_t *mouse_y;
@@ -33,6 +34,7 @@ in_axis_t *mouse_y;
 	cam_move_roll = IN_CreateAxis ("cam.move.roll", "Camera Roll");
 	cam_next = IN_CreateButton ("cam.next", "Camera Next");
 	cam_prev = IN_CreateButton ("cam.prev", "Camera Prev");
+	cam_hud = IN_CreateButton ("cam.hud", "Camera Hud");
 
 	mouse_x = IN_CreateAxis ("mouse.x", "Mouse X");
 	mouse_y = IN_CreateAxis ("mouse.y", "Mouse Y");
@@ -135,6 +137,9 @@ in_axis_t *mouse_y;
 		camera_mouse_first_person (&state);
 	}
 	[camera setState:state];
+
+	[camera enableHUD: cam_hud.state & inb_down];
+	[camera drawHUD];
 
 	[cameras makeObjectsPerformSelector: @selector(drawExcept:)
 							 withObject: active_camera];
