@@ -7,17 +7,6 @@
 #include "pga3d.h"
 
 #include <input.h>
-extern in_axis_t *move_forward;
-extern in_axis_t *move_side;
-extern in_axis_t *move_up;
-extern in_axis_t *move_pitch;
-extern in_axis_t *move_yaw;
-extern in_axis_t *move_roll;
-extern in_axis_t *look_forward;
-extern in_axis_t *look_right;
-extern in_axis_t *look_up;
-extern in_button_t *move_jump;
-extern in_button_t *target_lock;
 
 void add_target (entity_t tgt);
 
@@ -46,6 +35,7 @@ void add_target (entity_t tgt);
 	PlayerCam *camera;
 }
 +player:(scene_t) scene;
++(void)create_bindings;
 
 -setCamera:(PlayerCam *)camera;
 -think:(float)frametime;

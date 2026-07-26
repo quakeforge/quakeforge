@@ -58,19 +58,6 @@ bool physics_paused = false;
 
 int in_context;
 
-in_axis_t *move_forward;
-in_axis_t *move_side;
-in_axis_t *move_up;
-in_axis_t *move_pitch;
-in_axis_t *move_yaw;
-in_axis_t *move_roll;
-in_axis_t *look_forward;
-in_axis_t *look_right;
-in_axis_t *look_up;
-in_button_t *shift;
-in_button_t *move_jump;
-in_button_t *target_lock;
-
 scene_t scene;
 CameraSystem *camera_system;
 
@@ -786,18 +773,7 @@ setup_bindings (void)
 	setctxcbuf (in_context);
 
 	[CameraSystem create_bindings];
-	move_forward = IN_CreateAxis ("move.forward", "Player Move Fore/Aft");
-	move_side = IN_CreateAxis ("move.side", "Player Move Left/Right");
-	move_up = IN_CreateAxis ("move.up", "Player Move Up/Down");
-	move_pitch = IN_CreateAxis ("move.pitch", "Player Pitch");
-	move_yaw = IN_CreateAxis ("move.yaw", "Player Yaw");
-	move_roll = IN_CreateAxis ("move.roll", "Player Roll");
-	shift = IN_CreateButton ("shift", "Player shift");
-	move_jump = IN_CreateButton ("move.jump", "Player Jump");
-	look_forward = IN_CreateAxis ("look.forward", "Player Look Forward");
-	look_right = IN_CreateAxis ("look.right", "Player Look Right");
-	look_up = IN_CreateAxis ("look.up", "Player Look Up");
-	target_lock = IN_CreateButton ("target.lock", "Player Target Lock");
+	[Player create_bindings];
 
 	plitem_t *config = PL_GetPropertyList (input_cfg);
 	IN_LoadConfig (config);
