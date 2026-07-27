@@ -126,6 +126,7 @@ typedef struct symtab_s {
 	void       *procsymbol_data;
 	void       *data;
 	const char *name;
+	void       *return_addr;	///< who created this operand
 } symtab_t;
 
 const char *symtype_str (sy_type_e type) __attribute__((const));

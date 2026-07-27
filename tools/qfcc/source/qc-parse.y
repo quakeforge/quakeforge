@@ -2286,6 +2286,7 @@ new_scope
 				block->block.create_scope = create_local_scope;
 				//FIXME this is dumb
 				block->block.scope = new_symtab (current_symtab, stab_local);
+				block->block.scope->space = current_symtab->space;
 				current_symtab = block->block.scope;
 			}
 			$$ = block;
