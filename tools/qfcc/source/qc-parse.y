@@ -3357,6 +3357,9 @@ static keyword_t rua_keywords[] = {
 	{ "mat2", QC_TYPE_SPEC, .spec = { . type = &type_mat2x2 } },
 	{ "mat3", QC_TYPE_SPEC, .spec = { . type = &type_mat3x3 } },
 	{ "mat4", QC_TYPE_SPEC, .spec = { . type = &type_mat4x4 } },
+	{ "dmat2", QC_TYPE_SPEC, .spec = { . type = &type_dmat2x2 } },
+	{ "dmat3", QC_TYPE_SPEC, .spec = { . type = &type_dmat3x3 } },
+	{ "dmat4", QC_TYPE_SPEC, .spec = { . type = &type_dmat4x4 } },
 };
 
 // These keywords are all part of the Ruamoko (Objective-QC) language.
