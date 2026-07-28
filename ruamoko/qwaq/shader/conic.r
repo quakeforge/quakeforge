@@ -59,14 +59,16 @@ main ()
 			float vn = ⋆(e0 ∧ p);
 			p /= vn;
 			vec4 proj_p = PV * vec4 (p);
-			if (proj_p.z < proj_p.w * d) {
-				continue;
-			}
 			// Assumes s and t are orthogonal and unit
 			auto uv = vec2 (-(c.point ∨ p) • (c.point ∨ c.s),
 							-(c.point ∨ p) • (c.point ∨ c.t));
 			vec2 duvdx = dFdx(uv);
 			vec2 duvdy = dFdy(uv);
+			// Check depth *late* in order to keep uv smooth and thus the
+			// derivatives more accurate.
+			if (proj_p.z < proj_p.w * d) {
+				continue;
+			}
 			float l = c.slr;
 			float e = c.ecc;
 			float x = uv.x;
