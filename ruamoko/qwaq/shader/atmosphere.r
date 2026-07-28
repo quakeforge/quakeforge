@@ -5,12 +5,8 @@
 #include "GLSL/general.h"
 #include "GLSL/fragment.h"
 
-void printf (string fmt, ...)
-	= @intrinsic(OpExtInst, "NonSemantic.DebugPrintf", DebugPrintf);
+#include "common.h"
 
-#define INPUT_ATTACH(ind) \
-	[uniform, input_attachment_index(ind), set(0), binding(ind)] \
-	@image(float, SubpassData)
 INPUT_ATTACH(0) compo;
 INPUT_ATTACH(1) depth;
 

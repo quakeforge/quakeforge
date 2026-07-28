@@ -8,6 +8,9 @@
 
 void printf (string fmt, ...);
 
+[no_va_list] void Render_SetJobBlackboardVar (string job, string name, ...);
+[no_va_list] void Render_SetBlackboardVar (string name, ...);
+void Render_RunJob (string name);
 void Render_UpdateBuffer (string name, ulong offset, void *data, ulong size);
 ulong Render_BufferAddress (string name);
 ulong Render_BufferOffset (string name);

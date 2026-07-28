@@ -1,0 +1,36 @@
+(
+	{
+		name = Sun;
+		mass = 1;
+		radius = 1;
+
+	},
+	{
+		name = Earth;
+		mass = 1;
+		radius = 1;
+		parent = Sun;
+		orbit = {
+			QR = 5;
+			EC = 0.1;
+			TP = 0;
+			OM = 30;
+			W = 10;
+			IN = 45;
+		};
+	},
+	{
+		name = Moon;
+		mass = 1;
+		radius = 1;
+		parent = Earth;
+		orbit = {
+			QR = 1;
+			EC = 0.8;
+			TP = 0;
+			OM = 60;
+			W = 30;
+			IN = 5;
+		};
+	},
+)

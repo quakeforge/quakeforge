@@ -17,10 +17,16 @@
 #include "playercam.h"
 #include "qwaq-ed.h"
 
+#include "orrery/grandorrery.h"
+
 #include "shader/planetary.h"
 
 void traceon() = #0;
 void traceoff() = #0;
+
+static string orrery_plist =
+#embed "config/orrery.plist"
+;
 
 static string scene_plist =
 #embed "config/scene.plist"
@@ -1183,6 +1189,9 @@ main (int argc, string *argv)
 
 	create_pbr_stuff (skyid);
 
+	Render_SetBlackboardVar ("num_conics", 0);
+	Render_SetBlackboardVar ("conics", 0ul);
+
 	IN_SendConnectedDevices ();
 	setup_bindings ();
 
@@ -1267,6 +1276,9 @@ main (int argc, string *argv)
 	//need to fix palette array/non-array in vulkan
 	//Particles_SetPalette ([main_window scene], pixpal, 128);
 
+	PLItem *pl = [PLItem fromString:orrery_plist];
+	GrandOrrery *orrery = [[GrandOrrery orrery:pl] retain];
+
 	//create_cube ();
 	while (true) {
 		num_collider_ents = 0;
@@ -1291,6 +1303,7 @@ main (int argc, string *argv)
 		Gizmo_AddSphere ({0,0,3,1}, 0.25, vec4(0,1,0,0.2));
 
 		update_orrery (earth_ent, realtime);
+		[orrery update];
 
 		//update_cube(frametime);
 		//draw_cube();

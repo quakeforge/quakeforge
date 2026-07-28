@@ -999,6 +999,24 @@ render_graph = {
 				//};
 			};
 		};
+		conic = {
+			shader = {
+				fragment = {
+					stage = fragment;
+					name = main;
+					module = conic.r.spv;
+				};
+			};
+			layout = {
+				descriptorSets = ($input, matrix_set);
+				pushConstants = {
+					fragment = {
+						conics = ptr;
+						num_conics = float;
+					};
+				};
+			};
+		};
 		output = {
 			@inherit = $compose_base;
 			shader = {
@@ -1729,6 +1747,11 @@ render_graph = {
 		};
 		buffers = {
 			planetary = {
+				size = 1048576;
+				usage = transfer_dst|shader_device_address|storage_buffer;
+				perframe = true;
+			};
+			orrery = {
 				size = 1048576;
 				usage = transfer_dst|shader_device_address|storage_buffer;
 				perframe = true;
@@ -2633,6 +2656,20 @@ render_graph = {
 								$atmosphere.shader.fragment,
 							);
 							layout = $atmosphere.layout;
+						};
+						conic = {
+							@inherit = $compose_base;
+
+							color = $color.compose;
+							tasks = (
+								{ func = fullscreen_pass; },
+							);
+
+							stages = (
+								$fstriangle.shader.vertexst,
+								$conic.shader.fragment,
+							);
+							layout = $conic.layout;
 						};
 					};
 				};
