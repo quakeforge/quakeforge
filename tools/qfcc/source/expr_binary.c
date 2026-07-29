@@ -282,7 +282,7 @@ promote_exprs (const expr_t **e1, const expr_t **e2)
 	}
 	*e1 = cast_expr (t1, *e1);
 	*e2 = cast_expr (t2, *e2);
-	return true;
+	return !is_error (*e1) && !is_error (*e2);
 }
 
 static const expr_t *
