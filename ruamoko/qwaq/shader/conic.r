@@ -12,6 +12,8 @@ INPUT_ATTACH(1) depth;
 
 #include "conic.h"
 
+vec4 asrgba (uint x) = GLSL(UnpackUnorm4x8);
+
 [push_constant] @block PushConstants {
 	conic_t    *conics;
 	uint        num_conics;
@@ -79,7 +81,7 @@ main ()
 			float dd = F * F / (df • df);
 			float alpha = c.width - sqrt (dd) / (abs(vn));
 			alpha = max (min(alpha, 1), 0);
-			color += vec4(1)*alpha;
+			color += asrgba (c.color) * alpha;
 		}
 	}
 	frag_color = color;
