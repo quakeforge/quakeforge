@@ -4,6 +4,7 @@
 #include <Object.h>
 
 @class PLItem;
+@class Body;
 @class Orbit;
 
 #include "../shader/conic.h"
@@ -25,7 +26,7 @@ typedef struct po_params_s {
 	po_params_t params;
 	double mean_motion;
 }
-+(PhysicalOrbit *) orbit:(PLItem *)plitem;
++(PhysicalOrbit *) orbit:(PLItem *)plitem parent:(Body *)parent;
 -(conic_t)conicData;
 -(dvec3)position:(double)time;
 @end

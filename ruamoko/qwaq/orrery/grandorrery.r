@@ -1,4 +1,5 @@
 #include <PropertyList.h>
+#include <math.h>
 
 #include "body.h"
 #include "grandorrery.h"
@@ -23,7 +24,7 @@
 		Orbiter *obj = [Orbiter orbiter:obj_item orrery:self];
 		[objects addObject:obj];
 	}
-	central_object = [objects objectAtIndex:2];
+	central_object = [objects objectAtIndex:3];
 	return self;
 }
 
@@ -57,7 +58,12 @@
 
 		//FIXME qfcc uses 3 convs instead of a vector
 		auto pos = vec4 ([orbiter position], 1);
-		Gizmo_AddSphere (pos, 0.1, [orbiter color]);
+		double r = [orbiter radius];
+		if (r) {
+			r = log(r / 6370e3);
+			r = (sqrt (r * r + 1) + r) / 2;
+		}
+		Gizmo_AddSphere (pos, 0.0001+(float)r*0.05f, [orbiter color]);
 	}
 	ulong addr = Render_BufferAddress ("orrery");
 	Render_SetBlackboardVar ("num_conics", num_conics);

@@ -30,6 +30,7 @@
 -(string)name;
 -(dvec3)position;
 -(vec4)color;
+-(double)radius;
 @end
 
 #endif//__qwaq_orrery_orbiter_h

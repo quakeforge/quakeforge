@@ -21,7 +21,7 @@ void printf (string fmt, ...);
 	double mass = [[plitem getObjectForKey:"mass"] number];
 	mu = mass * G;
 
-	radius = [[plitem getObjectForKey:"mass"] number];
+	radius = [[plitem getObjectForKey:"radius"] number];
 	rot_speed = [[axis getObjectForKey:"W"] number];
 	rot_epoch = [[axis getObjectForKey:"W???"] number];//XXX
 	rot_at_epoch = [[axis getObjectForKey:"W???"] number];//XXX
@@ -48,5 +48,15 @@ void printf (string fmt, ...);
 +(Body *)body:(PLItem *)plitem orrery:(GrandOrrery *)orrery
 {
 	return [[[Body alloc] initWithPList:plitem orrery:orrery] autorelease];
+}
+
+-(double)mu
+{
+	return mu;
+}
+
+-(double)radius
+{
+	return radius;
 }
 @end

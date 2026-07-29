@@ -28,7 +28,7 @@ void printf(string fmt, ...);
 	}
 	auto o = [plitem getObjectForKey:"orbit"];
 	if (o) {
-		orbit = [[PhysicalOrbit orbit:o] retain];
+		orbit = [[PhysicalOrbit orbit:o parent:parent] retain];
 	}
 
 	return self;
@@ -129,6 +129,11 @@ void printf(string fmt, ...);
 
 -(vec4)color
 {
-	return vec4((color>>0)&0xff, (color>>8)&0xff, (color>>16)&0xff, (color>>24)&0xff)/255;
+	return vec4((color>>0)&0xff, (color>>8)&0xff, (color>>16)&0xff, (color>>24)&0x0f)/255;
+}
+
+-(double)radius
+{
+	return 0;
 }
 @end

@@ -15,6 +15,7 @@
 	dmat3 frame;
 }
 +(Body *)body:(PLItem *)plitem orrery:(GrandOrrery *)orrery;
+-(double)mu;
 @end
 
 #endif//__qwaq_orrery_body_h
