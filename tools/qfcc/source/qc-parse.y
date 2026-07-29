@@ -748,6 +748,9 @@ decl_expr (specifier_t spec, const expr_t *init, rua_ctx_t *ctx)
 {
 	auto sym = spec.sym;
 	spec.sym = nullptr;
+	if (current_symtab->type == stab_local && spec.storage == sc_global) {
+		spec.storage = sc_local;
+	}
 	auto decl = new_decl_expr (spec);
 	if (current_symtab->type == stab_local && sym) {
 		auto proxy = new_symbol (sym->name);
