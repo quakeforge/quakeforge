@@ -8,9 +8,9 @@ void printf (string fmt, ...);
 
 @implementation Body
 
--initWithPList:(PLItem *)plitem
+-initWithPList:(PLItem *)plitem orrery:(GrandOrrery *)orrery
 {
-	if (!(self = [super initWithPList:plitem])) {
+	if (!(self = [super initWithPList:plitem orrery:orrery])) {
 		return nil;
 	}
 
@@ -45,8 +45,8 @@ void printf (string fmt, ...);
 	return self;
 }
 
-+(Body *)body:(PLItem *)plitem
++(Body *)body:(PLItem *)plitem orrery:(GrandOrrery *)orrery
 {
-	return [[[Body alloc] initWithPList:plitem] autorelease];
+	return [[[Body alloc] initWithPList:plitem orrery:orrery] autorelease];
 }
 @end

@@ -1,5 +1,6 @@
 #include <PropertyList.h>
 
+#include "body.h"
 #include "grandorrery.h"
 #include "orbiter.h"
 #include "physorbit.h"
@@ -19,10 +20,10 @@
 
 	for (int i = 0; i < [plitem count]; i++) {
 		PLItem *obj_item = [plitem getObjectAtIndex:i];
-		printf ("%s\n", [[obj_item getObjectForKey:"name"] string]);
-		Orbiter *obj = [Orbiter orbiter:obj_item];
+		Orbiter *obj = [Orbiter orbiter:obj_item orrery:self];
 		[objects addObject:obj];
 	}
+	central_object = [objects objectAtIndex:2];
 	return self;
 }
 
@@ -31,23 +32,32 @@
 	return [[[GrandOrrery alloc] initWithPList:plitem] autorelease];
 }
 
+-(Body *)findBody:(string)name
+{
+	for (int i = [objects count]; i-- > 0; ) {
+		Orbiter *obj = [objects objectAtIndex:i];
+		if ([obj class] == [Body class] && [obj name] == name) {
+			return (Body *) obj;
+		}
+	}
+	return nil;
+}
+
 -update:(double) time
 {
 	uint num_conics = 0;
 	int count = [objects count];
+	[central_object updatePosition:time ref:central_object];
 	for (int i = 0; i < count; i++) {
-		PhysicalOrbit *orbit = [[objects objectAtIndex:i] orbit];
-		if (orbit) {
-			conic_t conic = [orbit conicData];
-			Render_UpdateBuffer ("orrery", num_conics * sizeof(conic_t),
-								 &conic, sizeof (conic));
-			num_conics++;
+		Orbiter *orbiter = [objects objectAtIndex:i];
+		conic_t conic = [orbiter conicData];
+		Render_UpdateBuffer ("orrery", num_conics * sizeof(conic_t),
+							 &conic, sizeof (conic));
+		num_conics++;
 
-			//FIXME qfcc uses 3 convs instead of a vector
-			vec3 pos = vec3 ([orbit position:time]);
-			Gizmo_AddSphere ((vec4) conic.point + vec4(pos, 0), 0.1,
-							 { 0.5, 0.5, 1, 0.9});
-		}
+		//FIXME qfcc uses 3 convs instead of a vector
+		auto pos = vec4 ([orbiter position], 1);
+		Gizmo_AddSphere (pos, 0.1, [orbiter color]);
 	}
 	ulong addr = Render_BufferAddress ("orrery");
 	Render_SetBlackboardVar ("num_conics", num_conics);

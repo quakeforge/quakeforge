@@ -14,7 +14,7 @@
 	double rot_at_epoch;
 	dmat3 frame;
 }
-+(Body *)body:(PLItem *)plitem;
++(Body *)body:(PLItem *)plitem orrery:(GrandOrrery *)orrery;
 @end
 
 #endif//__qwaq_orrery_body_h
