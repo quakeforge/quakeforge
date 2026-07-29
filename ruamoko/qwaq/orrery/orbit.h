@@ -3,23 +3,16 @@
 
 #include <Object.h>
 
-@class PLItem;
-
-typedef struct plitem_s plitem_t;
-
 #include "../shader/conic.h"
 
 @interface Orbit : Object
 {
-	dmat3 frame;
+	@private
 	double eccentricity;
-	double periapsis;
-	double mean_motion;
-	double period;
-	double epoch;
 }
-+(Orbit *) orbit:(PLItem *)plitem;
++(Orbit *) orbit:(double)e;
 -(conic_t) conicData;
+-(dvec2)ta_sincos:(double)M;
 @end
 
 #endif//__orrery_orbit_h

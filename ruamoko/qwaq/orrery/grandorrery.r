@@ -2,9 +2,10 @@
 
 #include "grandorrery.h"
 #include "orbiter.h"
-#include "orbit.h"
+#include "physorbit.h"
 
 #include "../qwaq-ed.h"
+#include "../gizmo.h"
 
 @implementation GrandOrrery
 
@@ -30,17 +31,22 @@
 	return [[[GrandOrrery alloc] initWithPList:plitem] autorelease];
 }
 
--update
+-update:(double) time
 {
 	uint num_conics = 0;
 	int count = [objects count];
 	for (int i = 0; i < count; i++) {
-		Orbit *orbit = [[objects objectAtIndex:i] orbit];
+		PhysicalOrbit *orbit = [[objects objectAtIndex:i] orbit];
 		if (orbit) {
 			conic_t conic = [orbit conicData];
 			Render_UpdateBuffer ("orrery", num_conics * sizeof(conic_t),
 								 &conic, sizeof (conic));
 			num_conics++;
+
+			//FIXME qfcc uses 3 convs instead of a vector
+			vec3 pos = vec3 ([orbit position:time]);
+			Gizmo_AddSphere ((vec4) conic.point + vec4(pos, 0), 0.1,
+							 { 0.5, 0.5, 1, 0.9});
 		}
 	}
 	ulong addr = Render_BufferAddress ("orrery");

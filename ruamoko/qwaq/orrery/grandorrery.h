@@ -15,7 +15,7 @@ const double G=6.6743e-11;
 	Orbiter *central_object;
 }
 +(GrandOrrery *) orrery:(PLItem *) plitem;
--update;
+-update:(double) time;
 @end
 
 #endif//__qwaq_orrery_grandorrery_h

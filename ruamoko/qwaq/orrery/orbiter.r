@@ -2,7 +2,7 @@
 #include <math.h>
 
 #include "orbiter.h"
-#include "orbit.h"
+#include "physorbit.h"
 #include "body.h"
 
 @implementation Orbiter
@@ -14,7 +14,7 @@
 	}
 	auto o = [plitem getObjectForKey:"orbit"];
 	if (o) {
-		orbit = [[Orbit orbit:o] retain];
+		orbit = [[PhysicalOrbit orbit:o] retain];
 	}
 
 	return self;
@@ -29,7 +29,7 @@
 	}
 }
 
--(Orbit *)orbit
+-(PhysicalOrbit *)orbit
 {
 	return orbit;
 }

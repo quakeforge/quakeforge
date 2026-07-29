@@ -4,7 +4,7 @@
 #include <Object.h>
 
 @class Body;
-@class Orbit;
+@class PhysicalOrbit;
 @class Array;
 @class PLItem;
 
@@ -13,10 +13,10 @@
 	Body *parent;
 	Array *children;
 
-	Orbit *orbit;
+	PhysicalOrbit *orbit;
 }
 +(Orbiter *)orbiter:(PLItem *)plitem;
--(Orbit *)orbit;
+-(PhysicalOrbit *)orbit;
 @end
 
 #endif//__qwaq_orrery_orbiter_h

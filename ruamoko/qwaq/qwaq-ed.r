@@ -1303,7 +1303,7 @@ main (int argc, string *argv)
 		Gizmo_AddSphere ({0,0,3,1}, 0.25, vec4(0,1,0,0.2));
 
 		update_orrery (earth_ent, realtime);
-		[orrery update];
+		[orrery update:realtime - double (1ul<<32)];
 
 		//update_cube(frametime);
 		//draw_cube();
