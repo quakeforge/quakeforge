@@ -156,7 +156,7 @@ new_def (const char *name, const type_t *type, defspace_t *space,
 		// Need to use aligned size when allocating user defs to ensure
 		// they can be used safely with sizeof for anything accessing memory.
 		int         size = type_aligned_size (type);
-		int         alignment = type->alignment;
+		int         alignment = type_align (type);
 
 		if (!size && is_array (type) && !deferred_size (storage)) {
 			error (0, "%s has incomplete type", name);
