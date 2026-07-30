@@ -10,10 +10,14 @@ const double G=6.6743e-11;
 @class Body;
 @class Orbiter;
 
+typedef struct conic_s conic_t;
+
 @interface GrandOrrery : Object
 {
 	Array *objects;
 	Orbiter *central_object;
+	conic_t *conic_buffer;
+	uint conic_count;
 }
 +(GrandOrrery *) orrery:(PLItem *) plitem;
 -(Body *)findBody:(string)name;
