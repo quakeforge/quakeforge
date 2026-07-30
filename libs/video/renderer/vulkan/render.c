@@ -1644,6 +1644,7 @@ void
 QFV_PushBlackboard (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 					qfv_pipeline_t *pipeline)
 {
+	qfZoneScoped (true);
 	auto rctx = ctx->render_context;
 	auto device = ctx->device;
 

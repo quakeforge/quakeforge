@@ -201,9 +201,11 @@ QFV_PushConstants (qfv_device_t *device, VkCommandBuffer cmd,
 				   VkPipelineLayout layout, uint32_t numPC,
 				   const qfv_push_constants_t *constants)
 {
+	qfZoneScoped (true);
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	for (uint32_t i = 0; i < numPC; i++) {
+		//FIXME rework blackboard system to merge vars into blocks
 		dfunc->vkCmdPushConstants (cmd, layout, constants[i].stageFlags,
 								   constants[i].offset, constants[i].size,
 								   constants[i].data);

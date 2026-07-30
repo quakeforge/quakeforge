@@ -61,6 +61,7 @@
 static void
 mesh_depth_range (qfv_taskctx_t *taskctx, float minDepth, float maxDepth)
 {
+	qfZoneNamed (zone, true);
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
@@ -82,6 +83,7 @@ static VkWriteDescriptorSet base_buffer_write = {
 void
 Vulkan_MeshAddBones (vulkan_ctx_t *ctx, qf_model_t *model)
 {
+	qfZoneNamed (zone, true);
 	qfvPushDebug (ctx, "Vulkan_MeshAddBones");
 
 	auto device = ctx->device;
@@ -130,6 +132,7 @@ Vulkan_MeshAddBones (vulkan_ctx_t *ctx, qf_model_t *model)
 void
 Vulkan_MeshRemoveBones (vulkan_ctx_t *ctx, qf_model_t *model)
 {
+	qfZoneNamed (zone, true);
 	auto rctx = ctx->render_context;
 	auto mctx = ctx->mesh_context;
 	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
@@ -145,6 +148,7 @@ Vulkan_MeshRemoveBones (vulkan_ctx_t *ctx, qf_model_t *model)
 void
 Vulkan_MeshAddSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
 {
+	qfZoneNamed (zone, true);
 	meshctx_t *mctx = ctx->mesh_context;
 	skin->descriptor = Vulkan_CreateCombinedImageSampler (ctx, skin->view,
 														  mctx->sampler);
@@ -153,6 +157,7 @@ Vulkan_MeshAddSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
 void
 Vulkan_MeshRemoveSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
 {
+	qfZoneNamed (zone, true);
 	Vulkan_FreeTexture (ctx, skin->descriptor);
 	skin->descriptor = 0;
 }
@@ -307,6 +312,8 @@ static qfm_attrdesc_t default_attributes[] = {
 static uint32_t
 set_vertex_attributes (qf_mesh_t *mesh, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 {
+	//FIXME cache the setup for each mesh (and maybe look into vertex pulling)
+	qfZoneNamed (zone, true);
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 
@@ -372,6 +379,7 @@ set_vertex_attributes (qf_mesh_t *mesh, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 static qfv_skin_t *
 get_skin (renderer_t *renderer, qf_mesh_t *mesh)
 {
+	qfZoneNamed (zone, true);
 	qfv_skin_t *skin = nullptr;
 	if (renderer->skin) {
 		skin_t     *tskin = Skin_Get (renderer->skin);
@@ -400,6 +408,7 @@ static void
 mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 				renderer_t *renderer)
 {
+	qfZoneNamed (zone, true);
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
@@ -543,6 +552,7 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 static void
 mesh_draw_entqueue (int stage, int pass, int entqueue, qfv_taskctx_t *taskctx)
 {
+	qfZoneNamed (zone, true);
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
