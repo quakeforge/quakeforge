@@ -36,6 +36,16 @@ static inline void __qftVkZoneEnd (___tracy_vkctx_scope ***zone)
 #define qftVkScopedZoneC(ctx, cmdbuf, name, color) \
 	qftVkZoneC (ctx, cmdbuf, name, color) \
 	__qftVkScoped (___tracy_gpu_zone)
+#define qftVkZoneTransient(ctx, cmdbuf, name) \
+	TracyCVkZoneTransient (ctx, ___tracy_gpu_zone, cmdbuf, name, true)
+#define qftVkZoneTransientC(ctx, cmdbuf, name, color) \
+	TracyCVkZoneTransientC (ctx, ___tracy_gpu_zone, cmdbuf, name, color, true)
+#define qftVkScopedZoneTransient(ctx, cmdbuf, name) \
+	qftVkZoneTransient (ctx, cmdbuf, name) \
+	__qftVkScoped (___tracy_gpu_zone)
+#define qftVkScopedZoneTransientC(ctx, cmdbuf, name, color) \
+	qftVkZoneTransientC (ctx, cmdbuf, name, color) \
+	__qftVkScoped (___tracy_gpu_zone)
 #define qftVkZoneEnd(varname) TracyCVkZoneEnd (varname)
 
 #else
@@ -54,6 +64,14 @@ static inline void __qftVkZoneEnd (___tracy_vkctx_scope ***zone)
 	do { (void)(ctx); (void)(cmdbuf); (void)(name); (void)(color);} while (0)
 #define qftVkScopedZoneC(ctx, cmdbuf, name, color) \
 	qftVkZoneC (ctx, cmdbuf, name, color)
+#define qftVkZoneTransient(ctx, cmdbuf, name) \
+	do { (void)(ctx); (void)(cmdbuf); (void)(name);} while (0)
+#define qftVkZoneTransientC(ctx, cmdbuf, name, color) \
+	do { (void)(ctx); (void)(cmdbuf); (void)(name); (void)(color);} while (0)
+#define qftVkScopedZoneTransient(ctx, cmdbuf, name) \
+	qftVkZoneTransient (ctx, cmdbuf, name)
+#define qftVkScopedZoneTransientC(ctx, cmdbuf, name, color) \
+	qftVkZoneTransientC (ctx, cmdbuf, name, color)
 #define qftVkZoneEnd(varname)
 
 #endif
