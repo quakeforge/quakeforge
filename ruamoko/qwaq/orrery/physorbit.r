@@ -51,12 +51,12 @@ void printf (string fmt, ...);
 	frame[0] = [ p.c*a.c - p.s*a.s*i.c, a.s*p.c + p.s*a.c*i.c, p.s*i.s];
 	frame[1] = [-p.s*a.c - p.c*a.s*i.c,-a.s*p.s + p.c*a.c*i.c, p.c*i.s];
 	frame[2] = [               a.s*i.s,              -a.c*i.s,     i.c];
-	printf ("    %g %g %g\n", params.p, params.e, params.t);
-	printf ("    %g %g %g\n", params.W, params.w, params.i);
-	printf ("    [%g %g] [%g %g] [%g %g]\n", a.c, a.s, p.c, p.s, i.c, i.s);
-	printf ("    [%g %g %g]\n", frame[0].x, frame[0].y, frame[0].z);
-	printf ("    [%g %g %g]\n", frame[1].x, frame[1].y, frame[1].z);
-	printf ("    [%g %g %g]\n", frame[2].x, frame[2].y, frame[2].z);
+	//printf ("    %g %g %g\n", params.p, params.e, params.t);
+	//printf ("    %g %g %g\n", params.W, params.w, params.i);
+	//printf ("    [%g %g] [%g %g] [%g %g]\n", a.c, a.s, p.c, p.s, i.c, i.s);
+	//printf ("    [%g %g %g]\n", frame[0].x, frame[0].y, frame[0].z);
+	//printf ("    [%g %g %g]\n", frame[1].x, frame[1].y, frame[1].z);
+	//printf ("    [%g %g %g]\n", frame[2].x, frame[2].y, frame[2].z);
 #undef s
 #undef c
 	return self;

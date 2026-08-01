@@ -644,7 +644,7 @@ event_handler (const IE_event_t *ie_event, void *_res)
 static void
 BI_shutdown (void *data)
 {
-	printf ("BI_shutdown\n");
+	//printf ("BI_shutdown\n");
 	ECS_DelRegistry (canvas_sys.reg);
 	ColorCache_Shutdown ();
 }

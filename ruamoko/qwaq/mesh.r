@@ -96,13 +96,13 @@ calc_inertia_tensor (msgbuf_t model_buf, float inv_density)
 	@algebra (PGA) {
 		I /= 60;// assumes density of 1 (corrected later)
 	}
-	printf ("C=%q\n", C);
-	printf ("com=%q\n", com);
-	printf ("vol=%g\n", vol);
-	printf ("\n");
-	printf ("  %v\n", I[0]);
-	printf ("I=%v\n", I[1]);
-	printf ("  %v\n", I[2]);
+	//printf ("C=%q\n", C);
+	//printf ("com=%q\n", com);
+	//printf ("vol=%g\n", vol);
+	//printf ("\n");
+	//printf ("  %v\n", I[0]);
+	//printf ("I=%v\n", I[1]);
+	//printf ("  %v\n", I[2]);
 
 	motor_t R = { .scalar = 1, };
 	@algebra (PGA) {
@@ -158,18 +158,18 @@ calc_inertia_tensor (msgbuf_t model_buf, float inv_density)
 			if (!changed) break;
 		}
 	}
-	printf ("\n");
-	printf ("  %v\n", I[0]);
-	printf ("I=%v\n", I[1]);
-	printf ("  %v\n", I[2]);
-	printf ("\n");
+	//printf ("\n");
+	//printf ("  %v\n", I[0]);
+	//printf ("I=%v\n", I[1]);
+	//printf ("  %v\n", I[2]);
+	//printf ("\n");
 	auto c = @dual(pga_vec_t(com.xyz, 1));
 	@algebra (PGA) {
 		R = R * (0.5 - 0.5 * e123 * c);
 	}
-	printf ("%g %v %v %g\n", R.scalar, R.bvect, R.bvecp, R.qvec);
+	//printf ("%g %v %v %g\n", R.scalar, R.bvect, R.bvecp, R.qvec);
 	auto Ivec = vec3 (I[0][0], I[1][1], I[2][2]);
-	printf ("%v\n", Ivec);
+	//printf ("%v\n", Ivec);
 
 	float density = inv_density ? 1 / inv_density : 0;
 
@@ -911,14 +911,14 @@ create_quadsphere (bool do_colors)
 		offset + sizeof (qf_mesh_t) * 7,
 		offset + sizeof (qf_mesh_t) * 8,
 	};
-	printf ("offset: %d\n", offset);
-	for (int i = 0; i < levels; i++) {
-		printf ("  %d:offset: %d\n", i, mesh_offsets[i]);
-	}
+	//printf ("offset: %d\n", offset);
+	//for (int i = 0; i < levels; i++) {
+	//	printf ("  %d:offset: %d\n", i, mesh_offsets[i]);
+	//}
 	MsgBuf_WriteSeek (msg, sizeof (qf_mesh_t) * levels, msg_cur);
 
 	int attributes_offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
-	printf ("attributes_offset: %d\n", attributes_offset);
+	//printf ("attributes_offset: %d\n", attributes_offset);
 	mesh_template.attributes.offset = attributes_offset;
 	mesh_template.attributes.offset -= mesh_offsets[0];
 	MsgBuf_WriteBytes (msg, attributes,

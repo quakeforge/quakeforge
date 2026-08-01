@@ -606,12 +606,12 @@ event_hander (struct IE_event_s *event, void *data)
 {
 	switch (event.type) {
 		case ie_add_device:
-			printf ("add %d: %s\n", event.device.devid,
-					IN_GetDeviceName (event.device.devid));
+			//printf ("add %d: %s\n", event.device.devid,
+			//		IN_GetDeviceName (event.device.devid));
 			break;
 		case ie_remove_device:
-			printf ("rem %d: %s\n", event.device.devid,
-					IN_GetDeviceName (event.device.devid));
+			//printf ("rem %d: %s\n", event.device.devid,
+			//		IN_GetDeviceName (event.device.devid));
 			break;
 		case ie_mouse:
 			if ((mouse_state.dragging_mmb | mouse_state.dragging_rmb)
@@ -821,13 +821,13 @@ load_scene (plitem_t *scene_item, scene_t scene)
 	for (int i = 0; i < count; i++) {
 		id ent_item = [scene_plist getObjectAtIndex:i];
 		EntityInit *ent_init = [EntityInit fromPropertyList:[ent_item item]];
-		printf ("name: %s\n", ent_init.name);
-		printf ("model: %s\n", ent_init.model);
-		printf ("position: %q\n", ent_init.position);
-		printf ("rotation: %q\n", ent_init.rotation);
-		printf ("scale: %q\n", ent_init.scale);
-		printf ("target: %s\n", ent_init.target ? "true" : "false");
-		printf ("invDensity: %g\n", ent_init.invDensity);
+		//printf ("name: %s\n", ent_init.name);
+		//printf ("model: %s\n", ent_init.model);
+		//printf ("position: %q\n", ent_init.position);
+		//printf ("rotation: %q\n", ent_init.rotation);
+		//printf ("scale: %q\n", ent_init.scale);
+		//printf ("target: %s\n", ent_init.target ? "true" : "false");
+		//printf ("invDensity: %g\n", ent_init.invDensity);
 
 		entity_t ent = Scene_CreateEntity (scene);
 		transform_t xform = Entity_GetTransform (ent);
@@ -974,7 +974,7 @@ create_pbr_stuff (uint skyid)
 
 	uint tex_ibl = find_resource ("diff_cube");
 	uint tex_lut = find_resource ("brdf");
-	printf ("tex_ibl: %08x tex_lut: %08x\n", tex_ibl, tex_lut);
+	//printf ("tex_ibl: %08x tex_lut: %08x\n", tex_ibl, tex_lut);
 	Render_SetJobBlackboardVar ("main", "pbr_irradiance", tex_ibl);
 	Render_SetJobBlackboardVar ("main", "pbr_brdf_lut", tex_lut);
 }

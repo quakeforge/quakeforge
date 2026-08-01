@@ -37,10 +37,10 @@ void printf (string fmt, ...);
 	frame[1] = [-r.s*t.c - r.c*d.s*t.s,  r.c*t.c - r.s*d.s*t.s, d.c*t.s];
 	frame[2] = [           r.c*d.c,                r.s*d.c,     d.s    ];
 
-	printf ("    %g %g\n", mu, radius);
-	printf ("    [%g %g %g]\n", frame[0].x, frame[0].y, frame[0].z);
-	printf ("    [%g %g %g]\n", frame[1].x, frame[1].y, frame[1].z);
-	printf ("    [%g %g %g]\n", frame[2].x, frame[2].y, frame[2].z);
+	//printf ("    %g %g\n", mu, radius);
+	//printf ("    [%g %g %g]\n", frame[0].x, frame[0].y, frame[0].z);
+	//printf ("    [%g %g %g]\n", frame[1].x, frame[1].y, frame[1].z);
+	//printf ("    [%g %g %g]\n", frame[2].x, frame[2].y, frame[2].z);
 
 	return self;
 }
