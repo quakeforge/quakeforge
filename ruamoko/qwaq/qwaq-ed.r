@@ -1004,6 +1004,36 @@ spherical (float th, float ph)
 	return vec3 (ph_v.y * th_v.yx, ph_v.x);
 }
 
+void
+print_clipinfo(model_t model, uint clip)
+{
+	auto clipinfo = Model_GetClipInfo (model, clip);
+	uint count = clipinfo.num_frames * clipinfo.num_channels;
+	uint size = (count + 1) / 2;
+	void *framedata = obj_malloc (size * sizeof(int));
+	printf ("%d %d %d %d\n", clipinfo.num_frames, clipinfo.num_channels, size,
+			size * sizeof(int));
+	qfm_channel_t *channels = obj_malloc (clipinfo.num_channels
+										  * sizeof (qfm_channel_t));
+	Model_GetChannelInfo (model, channels);
+	Model_GetFrameData (model, clip, framedata);
+	int num_joints = Model_NumJoints (model);
+	qfm_joint_t *joints = obj_malloc (num_joints * sizeof (qfm_joint_t));
+	Model_GetJoints (model, joints);
+	auto msgbuf = MsgBuf_New (framedata, (int)count * 2);
+	for (uint frame = 0; frame < clipinfo.num_frames; frame++) {
+		printf ("frame %d\n", frame);
+		for (uint chan = 0; chan < clipinfo.num_channels; chan++) {
+			int d = MsgBuf_ReadShort (msgbuf);
+			int j = channels[chan].data / 48;
+			int o = (channels[chan].data % 48) / 4;
+			printf ("%4d %5d %9f @ %2d:%d %s:%s\n", chan, d,
+					channels[chan].base + channels[chan].scale * d, j, o,
+					joints[j].name, field_names[o]);
+		}
+	}
+}
+
 int
 main (int argc, string *argv)
 {
@@ -1023,6 +1053,7 @@ main (int argc, string *argv)
 
 	//ImphenziaPixPal
 	uint pixpal = load_resource ("pixpal.meta");
+
 	uint skyid = load_resource ("eso0932a.meta");
 	//FIXME put in meta file
 	// Alpha Centauri from wikipedia
@@ -1073,31 +1104,6 @@ main (int argc, string *argv)
 	int p_key = IN_GetButtonNumber (key_devid, "p");
 	int bspace = IN_GetButtonNumber (key_devid, "BackSpace");
 
-#if 0
-	uint count = clipinfo.num_frames * clipinfo.num_channels;
-	uint size = (count + 1) / 2;
-	void *framedata = obj_malloc (size);
-	qfm_channel_t *channels = obj_malloc (clipinfo.num_channels
-										  * sizeof (qfm_channel_t));
-	Model_GetChannelInfo (mrfixit, channels);
-	Model_GetFrameData (mrfixit, 0, framedata);
-	int num_joints = Model_NumJoints (mrfixit);
-	qfm_joint_t *joints = obj_malloc (num_joints * sizeof (qfm_joint_t));
-	Model_GetJoints (mrfixit, joints);
-	auto msgbuf = MsgBuf_New (framedata, (int)count * 2);
-	for (uint frame = 0; frame < clipinfo.num_frames; frame++) {
-		printf ("frame %d\n", frame);
-		for (uint chan = 0; chan < clipinfo.num_channels; chan++) {
-			int d = MsgBuf_ReadShort (msgbuf);
-			int j = channels[chan].data / 48;
-			int o = (channels[chan].data % 48) / 4;
-			printf ("%4d %5d %9f @ %2d:%d %s:%s\n", chan, d,
-					channels[chan].base + channels[chan].scale * d, j, o,
-					joints[j].name, field_names[o]);
-		}
-	}
-#endif
-
 	main_menu = [[MainMenu menu:imui_ctx] retain];
 
 	arp_end ();
@@ -1121,6 +1127,15 @@ main (int argc, string *argv)
 	int pixpal_queue = Scene_Entqueue (scene, "pixpal");
 
 	//[main_window setModel:Model_Load ("progs/girl14.iqm")];
+
+	if (0) {
+		auto girl = Model_Load ("progs/girl14.iqm");
+		int num_clips = 1;//Model_NumClips (girl);
+		for (int i = 0; i < num_clips; i++) {
+			print_clipinfo (girl, i);
+		}
+		Model_Unload (girl);
+	}
 
 	auto earth_ent = create_orrery (planetary_queue, scene);
 
