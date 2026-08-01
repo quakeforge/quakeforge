@@ -204,13 +204,13 @@ R_RunTrails (float dT)
 void
 R_Trails_Init_Cvars (void)
 {
-	Sys_Printf ("R_Trails_Init_Cvars\n");
+	//Sys_Printf ("R_Trails_Init_Cvars\n");
 }
 
 static void
 trails_shutdown (void *data)
 {
-	Sys_Printf ("trails_shutdown\n");
+	//Sys_Printf ("trails_shutdown\n");
 	ECS_DelRegistry (trails_system.reg);
 	Sys_Free (trail_point_buffer, trail_point_buffer_size);
 }
@@ -218,7 +218,7 @@ trails_shutdown (void *data)
 void
 R_Trails_Init (void)
 {
-	Sys_Printf ("R_Trails_Init\n");
+	//Sys_Printf ("R_Trails_Init\n");
 	Sys_RegisterShutdown (trails_shutdown, 0);
 	auto reg = ECS_NewRegistry ("r_trails");
 	trails_system.reg = reg;

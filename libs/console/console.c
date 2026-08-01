@@ -80,7 +80,8 @@ Con_Interp_f (void *data, const cvar_t *cvar)
 	if (interp) {
 		cbuf_t *new;
 
-		Sys_Printf ("Switching to interpreter '%s'\n", con_interpreter);
+		Sys_MaskPrintf (SYS_console, "Switching to interpreter '%s'\n",
+						con_interpreter);
 
 		new = Cbuf_New (interp);
 
