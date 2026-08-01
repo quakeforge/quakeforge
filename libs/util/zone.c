@@ -337,12 +337,16 @@ Z_TagMalloc (memzone_t *zone, size_t size, int tag)
 	start = base->prev;
 
 	do {
-		if (rover == start)			// scaned all the way around the list
+		if (rover == start)			// scanned all the way around the list
 			return NULL;
-		if (rover->tag)
+		if (rover->tag) {
+			if ((uintptr_t) rover->next - (uintptr_t) zone >= zone->size) {
+				Sys_Error ("rover next corrupted");
+			}
 			base = rover = rover->next;
-		else
+		} else {
 			rover = rover->next;
+		}
 	} while (base->tag || base->block_size < size);
 
 	// found a block big enough
@@ -459,9 +463,11 @@ Z_Print (memzone_t *zone)
 		if (!block->tag && !block->next->tag)
 			Sys_Printf ("ERROR: two consecutive free blocks\n");
 		int     id = *(int *) ((byte *) block + block->block_size - 4);
-		if (block->tag && (id != ZONEID))
+		if (block->tag && (id != ZONEID)) {
 			Sys_Printf ("ERROR: memory trashed in block %x != %x\n",
 						id, ZONEID);
+			break;
+		}
 		fflush (stdout);
 	}
 }
