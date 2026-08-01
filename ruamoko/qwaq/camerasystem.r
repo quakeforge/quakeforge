@@ -22,6 +22,88 @@ in_button_t *cam_hud;
 in_axis_t *mouse_x;
 in_axis_t *mouse_y;
 
+//FIXME having PGA.group_mask(0xc) here and then providing a defintion causes
+//a segfault in qfcc
+@generic (genObj = [PGA.group_mask(0xe)]) {
+
+genObj
+sqrt (genObj x)
+{
+	auto a = x + 1;
+	return a / sqrt (a • ~a);
+}
+
+};
+
+@overload
+PGA.group_mask(0xc)
+sqrt (PGA.group_mask(0xc) x)
+{
+	return (x + x.scalar) / 2;
+}
+
+//void
+motor_t
+camera_lookat (point_t eye, point_t target, point_t up)
+{
+//sqrt( b / a ) = +- b * normalize( b + a )
+	@algebra (PGA) {
+		point_t eye_0 = e123;
+		point_t eye_fwd = e032;
+		point_t eye_up = e021;
+		auto l0 = (eye_0 ∨ eye_fwd);
+		auto p0 = (eye_0 ∨ eye_fwd ∨ eye_up);
+
+		auto l = -(eye ∨ target);
+		auto p = (eye ∨ target ∨ up);
+		float f = (p • p) / (l•~l);
+		if (f < 0.005) {
+			// looking (nearly) parallel (or anti-parallel) to the up vector,
+			// so fall back (smoothly) to the reference plane
+			f = f / 0.005;
+			p = f * p + (1 - f) * p0;
+		}
+		p /= sqrt (p • p);
+		l /= sqrt (l • ~l);
+
+		auto T = sqrt(-eye * eye_0);
+		auto Tm = l * T * l0 * ~T;
+		Tm = normalize (Tm);
+		motor_t R;
+		if (Tm.scalar < -0.5) {
+			// looking backwards along the reference forward direction
+			// Rotate 180 around an axis in the reference plane that's
+			// perpendicular to the reference forward direction, calculate
+			// the rotation to get to that, then undo the 180 degree rotation
+			auto A = ((⋆(p0 * e0123) ∧ ⋆(l0 * e0)) • eye) * eye;
+			if ((A • Tm).scalar < 0) {
+				A = ~A;
+			}
+			Tm = A * l * ~A * T * l0 * ~T;
+			Tm = normalize (Tm);
+			R = ~A * sqrt(Tm) * T;
+		} else {
+			R = sqrt(Tm) * T;
+		}
+		//FIXME scalar+bvect isn't accepted by full motors for normalize
+		motor_t pp = p * R * p0 * ~R;
+		auto Rm = normalize (pp);
+		motor_t L;
+		if (Rm.scalar < -0.5) {
+			// The target plane is "almost" anti-parallel to the reference
+			// plane, so rotate it 180 around the target line, calculate the
+			// needed rotation, then undo the 180 degree rotation
+			p = l * p * ~l;
+			pp = p * R * p0 * ~R;
+			Rm = normalize (pp);
+			L = ~l * sqrt(Rm) * R;
+		} else {
+			L = sqrt(Rm) * R;
+		}
+		return normalize (L);
+	}
+}
+
 @implementation CameraSystem
 
 +(void)create_bindings

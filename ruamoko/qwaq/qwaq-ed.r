@@ -319,28 +319,6 @@ static vec4 axis_points[][2] = {
 
 static int axis_colors[] = { 12, 10, 9 };
 
-static gizmo_node_t tetra_brush[] = {
-	{ .plane = { 1,-1,-1,-0.5}, .children= {-1, 1} },
-	{ .plane = {-1, 1,-1,-0.5}, .children= {-1, 2} },
-	{ .plane = { 1, 1, 1,-0.5}, .children= {-1, 3} },
-	{ .plane = {-1,-1, 1,-0.5}, .children= {-1,-2} },
-};
-
-static gizmo_node_t covered_step[] = {
-	{ .plane = {1, 0, 0, 1   }, .children = { 1, -1} },
-	{ .plane = {1, 0, 0,-1   }, .children = {-1,  2} },
-	{ .plane = {0, 1, 0, 1   }, .children = { 3, -1} },
-	{ .plane = {0, 1, 0,-1   }, .children = {-1,  4} },
-	{ .plane = {0, 0, 1, 1   }, .children = { 5, -1} },
-	{ .plane = {0, 0, 1,-1.5 }, .children = {-1,  6} },
-
-	{ .plane = {0, 0, 1, 0   }, .children = { 7, -2} },
-	{ .plane = {0, 0, 1,-0.75}, .children = { 9,  8} },
-	{ .plane = {1, 0, 0, 0   }, .children = {-2, -1} },
-	{ .plane = {1, 0, 0, 0.5 }, .children = {-1, 10} },
-	{ .plane = {0, 0, 1,-1   }, .children = {-2, -1} },
-};
-
 -draw
 {
 	if (![super draw]) {
@@ -384,42 +362,6 @@ static gizmo_node_t covered_step[] = {
 			[clipsView draw];
 		}
 	}
-
-	// Frog
-	Gizmo_AddSphere ({-2     , -2     , 0.5f , 1}, 0.5f , vec4(0.7, 0.9, 0.4, 0.9));
-	Gizmo_AddSphere ({-2+0.3f, -2+0.3f, 0.1f , 1}, 0.1f , vec4(0.7, 0.9, 0.4, 0.9));
-	Gizmo_AddSphere ({-2+0.3f, -2-0.3f, 0.1f , 1}, 0.1f , vec4(0.7, 0.9, 0.4, 0.9));
-	Gizmo_AddSphere ({-2-0.3f, -2-0.3f, 0.1f , 1}, 0.1f , vec4(0.7, 0.9, 0.4, 0.9));
-	Gizmo_AddSphere ({-2-0.3f, -2+0.3f, 0.1f , 1}, 0.1f , vec4(0.7, 0.9, 0.4, 0.9));
-	Gizmo_AddSphere ({-2     , -2+0.4f, 0.75f, 1}, 0.2f , vec4(0.7, 0.9, 0.4, 0.9));
-	Gizmo_AddSphere ({-2+0.1f, -2+0.5f, 0.9f , 1}, 0.05f, vec4(0.7, 0.9, 0.4, 0.9));
-	Gizmo_AddSphere ({-2-0.1f, -2+0.5f, 0.9f , 1}, 0.05f, vec4(0.7, 0.9, 0.4, 0.9));
-
-	Gizmo_AddSphere ({1, 0.5, 3}, 0.5, vec4(0.8, 0.9, 0.1, 0.8));
-	Gizmo_AddSphere ({1.5,-0.75, 3}, 1, vec4(0.6, 0.9, 0.5, 0.8));
-	Gizmo_AddCapsule ({-1.5,-0.75, 3}, { 1, 1.75, 5.5}, 0.25, vec4(0.9, 0.5, 0.6, 0.8));
-	Gizmo_AddCapsule ({-1.5,-0.75, 3}, {-4, 1.75, 5.5}, 0.25, vec4(0.6, 0.5, 0.9, 0.8));
-	Gizmo_AddCapsule ({-1.5,-0.75, 3}, { 1,-3.25, 5.5}, 0.25, vec4(0.9, 0.5, 0.9, 0.8));
-	Gizmo_AddCapsule ({-1.5,-0.75, 3}, {-4,-3.25, 5.5}, 0.25, vec4(0.6, 0.5, 0.6, 0.8));
-	Gizmo_AddCapsule ({-1.5,-0.75, 3}, { 1, 1.75, 0.5}, 0.25, vec4(0.9, 0.5, 0.6, 0.8));
-	Gizmo_AddCapsule ({-1.5,-0.75, 3}, {-4, 1.75, 0.5}, 0.25, vec4(0.6, 0.5, 0.9, 0.8));
-	Gizmo_AddCapsule ({-1.5,-0.75, 3}, { 1,-3.25, 0.5}, 0.25, vec4(0.9, 0.5, 0.9, 0.8));
-	Gizmo_AddCapsule ({-1.5,-0.75, 3}, {-4,-3.25, 0.5}, 0.25, vec4(0.6, 0.5, 0.6, 0.8));
-
-	Gizmo_AddBrush ({-1, 1, 1}, {-0.5,-0.5,-0.5}, {0.5, 0.5, 0.5},
-					countof (tetra_brush), tetra_brush,
-					vec4(0xba, 0xda, 0x55, 255)/255);
-	Gizmo_AddBrush ({-2,-2, 2}, {-1.5,-1.5,-1.5}, {1.5, 1.5, 1.5},
-					countof (covered_step), covered_step,
-					vec4(0xba, 0xda, 0x55, 255)/255);
-	//float s = sin((float)(realtime - double(1ul << 32)));
-	//float c = cos((float)(realtime - double(1ul << 32)));
-	//Painter_AddCircle ({300 + 100 * c, 300 + 100 * s}, 20, {0.8, 0.9, 0.1, 1});
-	//Painter_AddBox ({300, 300}, {25, 5}, 5, {1, .8, 0, 1});
-	//Painter_AddLine ({300, 300}, {400, 450}, 30 * s * s, {0.8, 0.4, 0.3, 1});
-	//Painter_AddBezier ({300, 300}, {400 + 150 * c, 300 + 150 * s},
-	//				   {300 + 100 * (c * c - s * s), 450 + 100 * 2 * c * s},
-	//				   {400, 450}, 10 + 10 * s, {0.85, 0.5, 0.77, 1});
 	return self;
 }
 
@@ -536,88 +478,6 @@ static gizmo_node_t covered_step[] = {
 	[self itemSelected:item in:items];
 }
 @end
-
-//FIXME having PGA.group_mask(0xc) here and then providing a defintion causes
-//a segfault in qfcc
-@generic (genObj = [PGA.group_mask(0xe)]) {
-
-genObj
-sqrt (genObj x)
-{
-	auto a = x + 1;
-	return a / sqrt (a • ~a);
-}
-
-};
-
-@overload
-PGA.group_mask(0xc)
-sqrt (PGA.group_mask(0xc) x)
-{
-	return (x + x.scalar) / 2;
-}
-
-//void
-motor_t
-camera_lookat (point_t eye, point_t target, point_t up)
-{
-//sqrt( b / a ) = +- b * normalize( b + a )
-	@algebra (PGA) {
-		point_t eye_0 = e123;
-		point_t eye_fwd = e032;
-		point_t eye_up = e021;
-		auto l0 = (eye_0 ∨ eye_fwd);
-		auto p0 = (eye_0 ∨ eye_fwd ∨ eye_up);
-
-		auto l = -(eye ∨ target);
-		auto p = (eye ∨ target ∨ up);
-		float f = (p • p) / (l•~l);
-		if (f < 0.005) {
-			// looking (nearly) parallel (or anti-parallel) to the up vector,
-			// so fall back (smoothly) to the reference plane
-			f = f / 0.005;
-			p = f * p + (1 - f) * p0;
-		}
-		p /= sqrt (p • p);
-		l /= sqrt (l • ~l);
-
-		auto T = sqrt(-eye * eye_0);
-		auto Tm = l * T * l0 * ~T;
-		Tm = normalize (Tm);
-		motor_t R;
-		if (Tm.scalar < -0.5) {
-			// looking backwards along the reference forward direction
-			// Rotate 180 around an axis in the reference plane that's
-			// perpendicular to the reference forward direction, calculate
-			// the rotation to get to that, then undo the 180 degree rotation
-			auto A = ((⋆(p0 * e0123) ∧ ⋆(l0 * e0)) • eye) * eye;
-			if ((A • Tm).scalar < 0) {
-				A = ~A;
-			}
-			Tm = A * l * ~A * T * l0 * ~T;
-			Tm = normalize (Tm);
-			R = ~A * sqrt(Tm) * T;
-		} else {
-			R = sqrt(Tm) * T;
-		}
-		//FIXME scalar+bvect isn't accepted by full motors for normalize
-		motor_t pp = p * R * p0 * ~R;
-		auto Rm = normalize (pp);
-		motor_t L;
-		if (Rm.scalar < -0.5) {
-			// The target plane is "almost" anti-parallel to the reference
-			// plane, so rotate it 180 around the target line, calculate the
-			// needed rotation, then undo the 180 degree rotation
-			p = l * p * ~l;
-			pp = p * R * p0 * ~R;
-			Rm = normalize (pp);
-			L = ~l * sqrt(Rm) * R;
-		} else {
-			L = sqrt(Rm) * R;
-		}
-		return normalize (L);
-	}
-}
 
 static void
 color_window (void)
@@ -1300,13 +1160,8 @@ main (int argc, string *argv)
 			}
 		}
 
-		Gizmo_AddSphere ({0,0,3,1}, 0.25, vec4(0,1,0,0.2));
-
 		update_orrery (earth_ent, realtime);
 		[orrery update:realtime - double (1ul<<32)];
-
-		//update_cube(frametime);
-		//draw_cube();
 
 		[player think:frametime];
 		[playercam think:frametime];
@@ -1321,8 +1176,6 @@ main (int argc, string *argv)
 		//}
 
 		leafnode ();
-
-		//Gizmo_AddLine ('0 1 0', '1 0 1', 0.1, '1 0 1 1');
 
 		if (quit_editor ||
 			check_keys (key_devid, lctrl_key, lalt_key, q_key, e_key, p_key)) {
