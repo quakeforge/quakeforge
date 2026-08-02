@@ -71,6 +71,7 @@ typedef struct qwaq_ebresources_s {
 static editbuffer_t *
 editbuffer_new (qwaq_ebresources_t *res)
 {
+	qfZoneScoped (true);
 	editbuffer_t *buffer = PR_RESNEW (res->buffers);
 	buffer->next = res->buffer_list;
 	buffer->prev = &res->buffer_list;
@@ -84,6 +85,7 @@ editbuffer_new (qwaq_ebresources_t *res)
 static void
 editbuffer_free (qwaq_ebresources_t *res, editbuffer_t *buffer)
 {
+	qfZoneScoped (true);
 	if (buffer->next) {
 		buffer->next->prev = buffer->prev;
 	}
@@ -94,24 +96,28 @@ editbuffer_free (qwaq_ebresources_t *res, editbuffer_t *buffer)
 static void
 editbuffer_reset (qwaq_ebresources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->buffers);
 }
 
 static inline editbuffer_t *
 editbuffer_get (qwaq_ebresources_t *res, unsigned index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET (res->buffers, index);
 }
 
 static inline int __attribute__((pure))
 editbuffer_index (qwaq_ebresources_t *res, editbuffer_t *buffer)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX (res->buffers, buffer);
 }
 
 static always_inline editbuffer_t * __attribute__((pure))
 get_editbuffer (qwaq_ebresources_t *res, const char *name, int handle)
 {
+	qfZoneScoped (true);
 	editbuffer_t *buffer = editbuffer_get (res, handle);
 
 	if (!buffer || !buffer->txtbuffer) {
@@ -123,24 +129,28 @@ get_editbuffer (qwaq_ebresources_t *res, const char *name, int handle)
 static always_inline int
 isword (int c)
 {
+	qfZoneScoped (true);
 	return c >= 128 || c == '_' || iswalnum(c);
 }
 
 static always_inline unsigned
 spanGap (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	return ptr < buffer->gapOffset ? ptr : ptr + buffer->gapSize;
 }
 
 static always_inline byte
 getCharRaw (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	return buffer->text[spanGap (buffer, ptr)];
 }
 
 static always_inline unipair_t
 getChar (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	char *ch = &buffer->text[spanGap (buffer, ptr)];
 	if (!(*ch & 0x80)) {
 		return (unipair_t) {*ch, 1};
@@ -162,6 +172,7 @@ getChar (txtbuffer_t *buffer, unsigned ptr)
 static always_inline unsigned
 nextChar (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	unipair_t up;
 	if (ptr < buffer->textSize
 		&& (up = getChar (buffer, ptr)).unicode != '\n') {
@@ -173,6 +184,7 @@ nextChar (txtbuffer_t *buffer, unsigned ptr)
 static always_inline unsigned
 prevChar (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	byte c;
 	while (ptr > 0
 		   && ((c = getCharRaw (buffer, ptr - 1)) & 0xc0) == 0x80
@@ -188,6 +200,7 @@ prevChar (txtbuffer_t *buffer, unsigned ptr)
 static always_inline unsigned __attribute__((pure))
 nextNonSpace (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	while (ptr < buffer->textSize) {
 		auto up = getChar (buffer, ptr);
 		if (!iswspace (up.unicode) || up.unicode == '\n') {
@@ -201,6 +214,7 @@ nextNonSpace (txtbuffer_t *buffer, unsigned ptr)
 static always_inline unsigned
 prevNonSpace (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	while (ptr > 0) {
 		unsigned prev = prevChar (buffer, ptr);
 		auto up = getChar (buffer, prev);
@@ -215,6 +229,7 @@ prevNonSpace (txtbuffer_t *buffer, unsigned ptr)
 static always_inline unsigned __attribute__((pure))
 nextWord (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	if (buffer->textSize && ptr < buffer->textSize - 1) {
 		while (ptr < buffer->textSize) {
 			auto up = getChar (buffer, ptr);
@@ -240,6 +255,7 @@ nextWord (txtbuffer_t *buffer, unsigned ptr)
 static always_inline unsigned
 prevWord (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	if (ptr > 0) {
 		while (ptr > 0) {
 			unsigned prev = prevChar (buffer, ptr);
@@ -270,6 +286,7 @@ prevWord (txtbuffer_t *buffer, unsigned ptr)
 static always_inline unsigned __attribute__((pure))
 nextLine (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	unsigned    oldptr = ptr;
 	while (ptr < buffer->textSize && getChar (buffer, ptr++).unicode != '\n') {
 	}
@@ -283,6 +300,7 @@ nextLine (txtbuffer_t *buffer, unsigned ptr)
 static always_inline unsigned
 prevLine (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	if (ptr) {
 		ptr--;
 		while (ptr > 0 && getCharRaw (buffer, ptr - 1) != '\n') {
@@ -295,6 +313,7 @@ prevLine (txtbuffer_t *buffer, unsigned ptr)
 static always_inline unsigned
 charPos (txtbuffer_t *buffer, unsigned ptr, unsigned target, int tabSize)
 {
+	qfZoneScoped (true);
 	unsigned    pos = 0;
 
 	while (ptr < target) {
@@ -311,6 +330,7 @@ charPos (txtbuffer_t *buffer, unsigned ptr, unsigned target, int tabSize)
 static always_inline unsigned __attribute__((pure))
 charPtr (txtbuffer_t *buffer, unsigned ptr, unsigned target, int tabSize)
 {
+	qfZoneScoped (true);
 	unsigned    pos = 0;
 	while (pos < target && ptr < buffer->textSize
 		   && getChar (buffer, ptr).unicode != '\n') {
@@ -330,6 +350,7 @@ charPtr (txtbuffer_t *buffer, unsigned ptr, unsigned target, int tabSize)
 static always_inline unsigned __attribute__((pure))
 getEOW (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	while (ptr < buffer->textSize) {
 		auto up = getChar (buffer, ptr);
 		if (!isword (up.unicode)) {
@@ -343,6 +364,7 @@ getEOW (txtbuffer_t *buffer, unsigned ptr)
 static always_inline unsigned
 getBOW (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	while (ptr > 0) {
 		unsigned prev = prevChar (buffer, ptr);
 		auto up = getChar (buffer, prev);
@@ -357,6 +379,7 @@ getBOW (txtbuffer_t *buffer, unsigned ptr)
 static always_inline unsigned __attribute__((pure))
 getEOL (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	while (ptr < buffer->textSize) {
 		auto up = getChar (buffer, ptr);
 		if (up.unicode == '\n') {
@@ -370,6 +393,7 @@ getEOL (txtbuffer_t *buffer, unsigned ptr)
 static always_inline void
 readString (txtbuffer_t *buffer, eb_sel_t *sel, char *str)
 {
+	qfZoneScoped (true);
 	unsigned    start = sel->start;
 	unsigned    length = sel->length;
 	unsigned    end = sel->start + sel->length;
@@ -389,6 +413,7 @@ readString (txtbuffer_t *buffer, eb_sel_t *sel, char *str)
 static always_inline unsigned
 getBOL (txtbuffer_t *buffer, unsigned ptr)
 {
+	qfZoneScoped (true);
 	while (ptr > 0) {
 		char        c = getCharRaw (buffer, ptr - 1);
 		if (c == '\n') {
@@ -402,6 +427,7 @@ getBOL (txtbuffer_t *buffer, unsigned ptr)
 static always_inline unsigned
 _countLines (txtbuffer_t *buffer, unsigned start, unsigned len)
 {
+	qfZoneScoped (true);
 	unsigned    count = 0;
 	char       *ptr = buffer->text + start;
 
@@ -414,6 +440,7 @@ _countLines (txtbuffer_t *buffer, unsigned start, unsigned len)
 static always_inline unsigned
 countLines (txtbuffer_t *buffer, unsigned start, unsigned len)
 {
+	qfZoneScoped (true);
 	if (start < buffer->gapOffset) {
 		if (start + len <= buffer->gapOffset) {
 			return _countLines (buffer, start, len);
@@ -432,6 +459,7 @@ _search (txtbuffer_t *buffer, const char *ptr, unsigned len,
 		 const char *str, unsigned slen, int dir,
 		 int (*cmp)(const char *, const char *, size_t))
 {
+	qfZoneScoped (true);
 	while (len-- > 0) {
 		if (*ptr == *str) {
 			unsigned    offset = ptr - buffer->text;
@@ -461,6 +489,7 @@ static int
 search (txtbuffer_t *buffer, const eb_sel_t *sel, const char *str, int dir,
 		eb_sel_t *find, int (*cmp)(const char *, const char *, size_t))
 {
+	qfZoneScoped (true);
 	unsigned    start = sel->start;
 	unsigned    slen = strlen (str);
 	unsigned    end = start + sel->length - slen;
@@ -515,6 +544,7 @@ search (txtbuffer_t *buffer, const eb_sel_t *sel, const char *str, int dir,
 static int
 saveFile (txtbuffer_t *buffer, const char *filename)
 {
+	qfZoneScoped (true);
 	QFile       *file = Qopen (filename, "wt");
 
 	if (file) {
@@ -535,6 +565,7 @@ saveFile (txtbuffer_t *buffer, const char *filename)
 static int
 loadFile (txtbuffer_t *buffer, const char *filename)
 {
+	qfZoneScoped (true);
 	QFile      *file = Qopen (filename, "rtz");
 	char       *dst;
 	unsigned    len;
@@ -561,6 +592,7 @@ formatLine (txtbuffer_t *buffer, unsigned linePtr, unsigned xpos,
 			int *dst, unsigned length, eb_sel_t *selection, eb_color_t *colors,
 			int tabSize)
 {
+	qfZoneScoped (true);
 	unsigned    pos = 0;
 	unsigned    ptr = linePtr;
 	unsigned    sels = selection->start;
@@ -629,6 +661,7 @@ formatLine (txtbuffer_t *buffer, unsigned linePtr, unsigned xpos,
 static void
 bi__i_EditBuffer__init (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	__auto_type self = &P_STRUCT (pr, qwaq_editbuffer_t, 0);
 	// [super init];
@@ -646,6 +679,7 @@ bi__i_EditBuffer__init (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__initWithFile_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	__auto_type self = &P_STRUCT (pr, qwaq_editbuffer_t, 0);
 	// [super init];
@@ -667,6 +701,7 @@ bi__i_EditBuffer__initWithFile_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__dealloc (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	__auto_type self = &P_STRUCT (pr, qwaq_editbuffer_t, 0);
 	int         buffer_id = self->buffer;
@@ -679,6 +714,7 @@ bi__i_EditBuffer__dealloc (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__nextChar_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -690,6 +726,7 @@ bi__i_EditBuffer__nextChar_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__prevChar_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -701,6 +738,7 @@ bi__i_EditBuffer__prevChar_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__nextNonSpace_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -712,6 +750,7 @@ bi__i_EditBuffer__nextNonSpace_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__prevNonSpace_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -723,6 +762,7 @@ bi__i_EditBuffer__prevNonSpace_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__isWord_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -734,6 +774,7 @@ bi__i_EditBuffer__isWord_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__nextWord_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -745,6 +786,7 @@ bi__i_EditBuffer__nextWord_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__prevWord_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -756,6 +798,7 @@ bi__i_EditBuffer__prevWord_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__nextLine_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -767,6 +810,7 @@ bi__i_EditBuffer__nextLine_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__prevLine_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -778,6 +822,7 @@ bi__i_EditBuffer__prevLine_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__nextLine__ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -799,6 +844,7 @@ bi__i_EditBuffer__nextLine__ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__prevLine__ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -814,6 +860,7 @@ bi__i_EditBuffer__prevLine__ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__charPos_at_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -827,6 +874,7 @@ bi__i_EditBuffer__charPos_at_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__charPtr_at_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -840,6 +888,7 @@ bi__i_EditBuffer__charPtr_at_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__getWord_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -854,6 +903,7 @@ bi__i_EditBuffer__getWord_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__getLine_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -868,6 +918,7 @@ bi__i_EditBuffer__getLine_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__getBOL_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -879,6 +930,7 @@ bi__i_EditBuffer__getBOL_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__getEOL_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -890,6 +942,7 @@ bi__i_EditBuffer__getEOL_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__getBOT (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	//qwaq_ebresources_t *res = _res;
 	//int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	//editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -900,6 +953,7 @@ bi__i_EditBuffer__getBOT (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__getEOT (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -910,6 +964,7 @@ bi__i_EditBuffer__getEOT (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__readString_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -925,6 +980,7 @@ bi__i_EditBuffer__readString_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__getChar_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -939,6 +995,7 @@ bi__i_EditBuffer__getChar_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__putChar_at_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -954,6 +1011,7 @@ bi__i_EditBuffer__putChar_at_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__insertChar_at_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -970,6 +1028,7 @@ bi__i_EditBuffer__insertChar_at_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__insertMsgBuf_at_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -990,6 +1049,7 @@ bi__i_EditBuffer__insertMsgBuf_at_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__deleteText_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int  buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	auto buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -1005,6 +1065,7 @@ bi__i_EditBuffer__deleteText_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__countLines_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -1017,6 +1078,7 @@ bi__i_EditBuffer__countLines_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__search_for_direction_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -1031,6 +1093,7 @@ bi__i_EditBuffer__search_for_direction_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__isearch_for_direction_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -1045,6 +1108,7 @@ bi__i_EditBuffer__isearch_for_direction_ (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__formatLine_from_into_width_highlight_colors_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -1065,6 +1129,7 @@ bi__i_EditBuffer__formatLine_from_into_width_highlight_colors_ (progs_t *pr, voi
 static void
 bi__i_EditBuffer__modified (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -1074,6 +1139,7 @@ bi__i_EditBuffer__modified (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__textSize (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -1083,6 +1149,7 @@ bi__i_EditBuffer__textSize (progs_t *pr, void *_res)
 static void
 bi__i_EditBuffer__saveFile_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -1096,6 +1163,7 @@ bi__i_EditBuffer__saveFile_ (progs_t *pr, void *_res)
 static void
 qwaq_ebresources_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qwaq_ebresources_t *) _res;
 
 	for (editbuffer_t *buffer = res->buffer_list; buffer;
@@ -1109,6 +1177,7 @@ qwaq_ebresources_clear (progs_t *pr, void *_res)
 static void
 qwaq_ebresources_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	free (_res);
 }
 
@@ -1161,6 +1230,7 @@ static builtin_t builtins[] = {
 void
 QWAQ_EditBuffer_Init (progs_t *pr)
 {
+	qfZoneScoped (true);
 	qwaq_ebresources_t *res = calloc (sizeof (*res), 1);
 	res->pr = pr;
 

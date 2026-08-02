@@ -125,6 +125,7 @@ typedef struct graphics_resources_s {
 static void
 quit_f (void)
 {
+	qfZoneScoped (true);
 	if (!con_module)
 		Sys_Printf ("I hope you wanted to quit\n");
 	Sys_Quit ();
@@ -138,6 +139,7 @@ static canvas_system_t canvas_sys;
 static void
 bi_2d (void *data)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = data;
 	if (res->qc2d) {
 		PR_ExecuteProgram (res->pr, res->qc2d);
@@ -154,6 +156,7 @@ static SCR_Func bi_2dfuncs[] = {
 static void
 vidsize_listener (void *data, const viddef_t *vdef)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = data;
 	Canvas_SetLen (canvas_sys, res->canvas,
 				   (view_pos_t) { vdef->width, vdef->height });
@@ -193,6 +196,7 @@ bi(set_component)
 
 bi(set_update)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = _res;
 	uint32_t ent = P_UINT (pr, 0);
 	pr_func_t func = P_FUNCTION (pr, 1);
@@ -201,12 +205,14 @@ bi(set_update)
 
 bi(new_entity)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = _res;
 	R_UINT (pr) = ECS_NewEntity (res->ecs.reg);
 }
 
 bi(del_entity)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = _res;
 	ECS_DelEntity (res->ecs.reg, P_UINT (pr, 0));
 }
@@ -215,6 +221,7 @@ static void
 bi_comp_create (void *comp, ecs_registry_t *reg, uint32_t ent,
 				const component_t *component)
 {
+	qfZoneScoped (true);
 	qwaq_ecs_t *ecs = component->data;
 	auto pr = ecs->pr;
 	uint32_t comp_id = component - ecs->components;
@@ -239,6 +246,7 @@ static void
 bi_comp_destroy (void *comp, ecs_registry_t *reg, uint32_t ent,
 				 const component_t *component)
 {
+	qfZoneScoped (true);
 	qwaq_ecs_t *ecs = component->data;
 	auto pr = ecs->pr;
 	uint32_t comp_id = component - ecs->components;
@@ -263,12 +271,14 @@ static void
 bi_comp_ui (void *comp, ecs_registry_t *reg, uint32_t ent,
 			const component_t *component)
 {
+	qfZoneScoped (true);
 }
 
 static void
 bi_create_registry (graphics_resources_t *res, int num_components,
 					qwaq_comp_t *components)
 {
+	qfZoneScoped (true);
 	size_t size = sizeof (component_t[num_components + 1])
 				+ sizeof (pr_func_t[num_components])//create
 				+ sizeof (pr_func_t[num_components])//destroy
@@ -307,6 +317,7 @@ bi_create_registry (graphics_resources_t *res, int num_components,
 
 bi(init_graphics)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = _res;
 	VID_Init (default_palette[0], default_colormap);
 	IN_Init (pr->pr_hunk);
@@ -362,6 +373,7 @@ bi(init_graphics)
 
 bi(load_resource)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = _res;
 	const char *name = P_GSTRING (pr, 0);
 	auto resfile = QFS_FOpenFile (name);
@@ -373,30 +385,35 @@ bi(load_resource)
 
 bi(find_resource)
 {
+	qfZoneScoped (true);
 	const char *name = P_GSTRING (pr, 0);
 	R_UINT (pr) = mod_funcs->find_resource (name);
 }
 
 bi(res_is_cubemap)
 {
+	qfZoneScoped (true);
 	uint32_t id = P_UINT (pr, 0);
 	R_UINT (pr) = mod_funcs->res_is_cubemap (id);
 }
 
 bi(newscene)
 {
+	qfZoneScoped (true);
 	pr_ulong_t  scene_id = P_ULONG (pr, 0);
 	SCR_NewScene (Scene_GetScene (pr, scene_id));
 }
 
 bi(set_sky_id)
 {
+	qfZoneScoped (true);
 	pr_uint_t   texid = P_UINT (pr, 0);
 	r_funcs->R_SetSkyId (texid);
 }
 
 bi(set_sky_rotation)
 {
+	qfZoneScoped (true);
 	vec4f_t     rot = { VEC4_EXP (P_QUAT (pr, 0)) };
 	r_funcs->R_SetSkyRotation (rot);
 }
@@ -404,12 +421,14 @@ bi(set_sky_rotation)
 static vec4f_t
 vec_select (vec4i_t mask, vec4f_t a, vec4f_t b)
 {
+	qfZoneScoped (true);
 	return (vec4f_t) ((mask & (vec4i_t) a) | (~mask & (vec4i_t) b));
 }
 
 static vec4f_t
 box_corner (ent_aabb_t box, int corner)
 {
+	qfZoneScoped (true);
 	vec4f_t b_min = loadvec3f (box.mins);
 	vec4f_t b_max = loadvec3f (box.maxs);
 	b_max[3] = 1;
@@ -425,6 +444,7 @@ box_corner (ent_aabb_t box, int corner)
 static ent_aabb_t
 transform_bounds (const mat4f_t mat, ent_aabb_t bounds)
 {
+	qfZoneScoped (true);
 	vec4f_t nb[] = {
 		{ INFINITY, INFINITY, INFINITY },
 		{-INFINITY,-INFINITY,-INFINITY },
@@ -445,6 +465,7 @@ transform_bounds (const mat4f_t mat, ent_aabb_t bounds)
 static void
 gfx_check_pipe (graphics_resources_t *res)
 {
+	qfZoneScoped (true);
 	int ret = 0;
 	int handle = 0;
 	struct timespec timeout;
@@ -475,6 +496,7 @@ gfx_check_pipe (graphics_resources_t *res)
 
 bi(refresh)
 {
+	qfZoneScoped (true);
 	qfFrameMark;
 	graphics_resources_t *res = _res;
 	res->con_realtime = Sys_DoubleTime () - res->basetime;
@@ -562,12 +584,14 @@ bi(refresh)
 
 bi(refresh_2d)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = _res;
 	res->qc2d = P_FUNCTION (pr, 0);
 }
 
 bi(setpalette)
 {
+	qfZoneScoped (true);
 	byte       *palette = (byte *) P_GPOINTER (pr, 0);
 	byte       *colormap = (byte *) P_GPOINTER (pr, 1);
 	VID_SetPalette (palette, colormap);
@@ -575,6 +599,7 @@ bi(setpalette)
 
 bi(setevents)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = _res;
 	res->qcevent = P_FUNCTION (pr, 0);
 	res->qcevent_data = P_POINTER (pr, 1);
@@ -582,11 +607,13 @@ bi(setevents)
 
 bi(setctxcbuf)
 {
+	qfZoneScoped (true);
 	IMT_SetContextCbuf (P_INT (pr, 0), qwaq_cbuf);
 }
 
 bi(addcbuftxt)
 {
+	qfZoneScoped (true);
 	Cbuf_AddText (qwaq_cbuf, P_GSTRING (pr, 0));
 }
 
@@ -619,6 +646,7 @@ static builtin_t builtins[] = {
 static int
 event_handler (const IE_event_t *ie_event, void *_res)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = _res;
 	if (res->qcevent) {
 		auto pr = res->pr;
@@ -644,6 +672,7 @@ event_handler (const IE_event_t *ie_event, void *_res)
 static void
 BI_shutdown (void *data)
 {
+	qfZoneScoped (true);
 	//printf ("BI_shutdown\n");
 	ECS_DelRegistry (canvas_sys.reg);
 	ColorCache_Shutdown ();
@@ -652,6 +681,7 @@ BI_shutdown (void *data)
 static byte *
 write_raw_rgb (byte *dst, byte r, byte g, byte b)
 {
+	qfZoneScoped (true);
 	*dst++ = r;
 	*dst++ = g;
 	*dst++ = b;
@@ -661,6 +691,7 @@ write_raw_rgb (byte *dst, byte r, byte g, byte b)
 static byte *
 write_rgb (byte *dst, byte r, byte g, byte b)
 {
+	qfZoneScoped (true);
 #define shift(x) (((x) << 2) | (((x) & 0x3f) >> 4))
 	*dst++ = shift(r);
 	*dst++ = shift(g);
@@ -672,12 +703,14 @@ write_rgb (byte *dst, byte r, byte g, byte b)
 static byte *
 write_grey (byte *dst, byte grey)
 {
+	qfZoneScoped (true);
 	return write_rgb (dst, grey, grey, grey);
 }
 
 static byte *
 genererate_irgb (byte *dst, byte lo, byte melo, byte mehi, byte hi)
 {
+	qfZoneScoped (true);
 	for (int i = 0; i < 16; i++) {
 		byte        l = i & 8 ? melo : lo;
 		byte        h = i & 8 ? hi : mehi;
@@ -695,6 +728,7 @@ genererate_irgb (byte *dst, byte lo, byte melo, byte mehi, byte hi)
 static byte *
 write_run (byte *dst, byte *hue, byte ch, const byte *levels)
 {
+	qfZoneScoped (true);
 	byte        rgb[3] = {
 		*hue & 4 ? levels[4] : levels[0],
 		*hue & 2 ? levels[4] : levels[0],
@@ -716,6 +750,7 @@ write_run (byte *dst, byte *hue, byte ch, const byte *levels)
 static byte *
 write_cycle (byte *dst, byte lo, byte melo, byte me, byte mehi, byte hi)
 {
+	qfZoneScoped (true);
 	const byte  levels[] = { lo, melo, me, mehi, hi };
 	byte        hue = 1;
 	dst = write_run (dst, &hue, 4, levels);
@@ -731,6 +766,7 @@ write_cycle (byte *dst, byte lo, byte melo, byte me, byte mehi, byte hi)
 static void
 generate_palette (void)
 {
+	qfZoneScoped (true);
 	const byte  grey[] = {
 		0,  5,  8,  11, 14, 17, 20, 24,
 		28, 32, 36, 40, 45, 50, 56, 63,
@@ -770,6 +806,7 @@ generate_palette (void)
 static void
 generate_colormap (memhunk_t *hunk)
 {
+	qfZoneScoped (true);
 	byte        colors[64][256][3];
 	tex_t       tex = {
 		.width = 256,
@@ -848,6 +885,7 @@ static const char *bi_dirconf = R"(
 static int
 qwaq_gfx_send_event (void *data, qwaq_event_t *event)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = data;
 	pthread_mutex_lock (&res->pipe_cond.mut);
 	while (RB_SPACE_AVAILABLE (res->pipe) < 1) {
@@ -873,6 +911,7 @@ static progsinit_f secondary_init[] = {
 void
 BI_Graphics_Main_Init (progs_t *pr)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = malloc (sizeof (graphics_resources_t));
 	*res = (graphics_resources_t) {
 		.pr = pr,
@@ -934,6 +973,7 @@ secondary_clear (progs_t *pr, void *_res)
 void
 BI_Graphics_Secondary_Init (progs_t *pr)
 {
+	qfZoneScoped (true);
 	graphics_resources_t *res = malloc (sizeof (graphics_resources_t));
 	*res = (graphics_resources_t) {
 		.pr = pr,

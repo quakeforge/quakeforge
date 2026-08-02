@@ -87,36 +87,42 @@ typedef struct qwaq_debug_s {
 static qwaq_target_t *
 target_new (qwaq_debug_t *debug)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (debug->targets);
 }
 
 static void
 target_free (qwaq_debug_t *debug, qwaq_target_t *target)
 {
+	qfZoneScoped (true);
 	PR_RESFREE (debug->targets, target);
 }
 
 static void
 target_reset (qwaq_debug_t *debug)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (debug->targets);
 }
 
 static inline qwaq_target_t *
 target_get (qwaq_debug_t *debug, unsigned index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET (debug->targets, index);
 }
 
 static inline int __attribute__((pure))
 target_index (qwaq_debug_t *debug, qwaq_target_t *target)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX (debug->targets, target);
 }
 
 static always_inline qwaq_target_t * __attribute__((pure))
 get_target (qwaq_debug_t *debug, const char *name, int handle)
 {
+	qfZoneScoped (true);
 	qwaq_target_t *target = target_get (debug, handle);
 
 	if (!target || !target->debugger) {
@@ -128,6 +134,7 @@ get_target (qwaq_debug_t *debug, const char *name, int handle)
 static qdb_state_t
 get_state (progs_t *tpr)
 {
+	qfZoneScoped (true);
 	pr_string_t file = 0;
 	unsigned    line = 0;
 	pr_func_t   func = 0;
@@ -160,6 +167,7 @@ get_state (progs_t *tpr)
 static bool
 is_new_line (qdb_state_t last_state, qdb_state_t state)
 {
+	qfZoneScoped (true);
 	return !(last_state.staddr != state.staddr
 			 && last_state.func == state.func
 			 && last_state.file == state.file
@@ -169,6 +177,7 @@ is_new_line (qdb_state_t last_state, qdb_state_t state)
 static void
 qwaq_debug_handler (prdebug_t debug_event, void *param, void *data)
 {
+	qfZoneScoped (true);
 	__auto_type target = (qwaq_target_t *) data;
 	qwaq_debug_t *debug = target->debugger;
 	qwaq_event_t event = {};
@@ -244,6 +253,7 @@ static qwaq_debug_t *qwaq_debug_data;
 static int
 qwaq_debug_load (progs_t *pr)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) PR_Resources_Find (pr, "qwaq-debug");
 
 	pthread_mutex_lock (&debug_data_mutex);
@@ -257,6 +267,7 @@ qwaq_debug_load (progs_t *pr)
 static void
 qwaq_debug_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	target_reset (debug);
 }
@@ -264,23 +275,27 @@ qwaq_debug_clear (progs_t *pr, void *_res)
 static void
 qwaq_debug_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	free (_res);
 }
 
 static void
 qwaq_target_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 }
 
 static void
 qwaq_target_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	// no block to free
 }
 
 static int
 qwaq_target_load (progs_t *pr)
 {
+	qfZoneScoped (true);
 	pthread_mutex_lock (&debug_data_mutex);
 	while (!qwaq_debug_data) {
 		pthread_cond_wait (&debug_data_cond, &debug_data_mutex);
@@ -310,6 +325,7 @@ qwaq_target_load (progs_t *pr)
 static void
 pre_debug_handler (prdebug_t debug_event, void *param, void *data)
 {
+	qfZoneScoped (true);
 	qwaq_progs_t *qp = data;
 	qwaq_debug_t *debug = qp->data;
 
@@ -351,6 +367,7 @@ pre_debug_handler (prdebug_t debug_event, void *param, void *data)
 static void
 qdb_event_name (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int         event = P_INT (pr, 0);
 
 	R_STRING (pr) = 0;
@@ -362,6 +379,7 @@ qdb_event_name (progs_t *pr, void *_res)
 static void
 qdb_load_progs (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	auto debug = (qwaq_debug_t *) _res;
 	auto fname = P_GSTRING (pr, 0);
 
@@ -400,6 +418,7 @@ qdb_load_progs (progs_t *pr, void *_res)
 static void
 qdb_set_trace (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	int         state = P_INT (pr, 1);
@@ -412,6 +431,7 @@ qdb_set_trace (progs_t *pr, void *_res)
 static void
 qdb_set_stepping (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	int         state = P_INT (pr, 1);
@@ -423,6 +443,7 @@ qdb_set_stepping (progs_t *pr, void *_res)
 static void
 qdb_set_breakpoint (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	unsigned    staddr = P_INT (pr, 1);
@@ -441,6 +462,7 @@ qdb_set_breakpoint (progs_t *pr, void *_res)
 static void
 qdb_clear_breakpoint (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	unsigned    staddr = P_UINT (pr, 1);
@@ -458,6 +480,7 @@ qdb_clear_breakpoint (progs_t *pr, void *_res)
 static void
 qdb_set_watchpoint (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	pr_ptr_t    offset = P_UINT (pr, 1);
@@ -475,6 +498,7 @@ qdb_set_watchpoint (progs_t *pr, void *_res)
 static void
 qdb_clear_watchpoint (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -487,6 +511,7 @@ qdb_clear_watchpoint (progs_t *pr, void *_res)
 static void
 qdb_continue (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -500,6 +525,7 @@ qdb_continue (progs_t *pr, void *_res)
 static void
 qdb_until_new_line (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -511,6 +537,7 @@ qdb_until_new_line (progs_t *pr, void *_res)
 static void
 qdb_until_function (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -522,6 +549,7 @@ qdb_until_function (progs_t *pr, void *_res)
 static void
 qdb_until_depth (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -533,6 +561,7 @@ qdb_until_depth (progs_t *pr, void *_res)
 static void
 qdb_terminate (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -546,6 +575,7 @@ qdb_terminate (progs_t *pr, void *_res)
 static void
 qdb_delete_target (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -565,6 +595,7 @@ qdb_delete_target (progs_t *pr, void *_res)
 static void
 qdb_get_state (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -589,6 +620,7 @@ qdb_get_state (progs_t *pr, void *_res)
 static void
 qdb_get_stack_depth (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -600,6 +632,7 @@ qdb_get_stack_depth (progs_t *pr, void *_res)
 static void
 qdb_get_stack (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -624,6 +657,7 @@ qdb_get_stack (progs_t *pr, void *_res)
 static void
 qdb_get_event (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -660,6 +694,7 @@ qdb_get_event (progs_t *pr, void *_res)
 static void
 qdb_get_data (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -686,6 +721,7 @@ qdb_get_data (progs_t *pr, void *_res)
 static void
 qdb_get_string (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -701,6 +737,7 @@ qdb_get_string (progs_t *pr, void *_res)
 static void
 qdb_get_file_path (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -726,6 +763,7 @@ qdb_get_file_path (progs_t *pr, void *_res)
 static void
 qdb_find_string (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -738,6 +776,7 @@ qdb_find_string (progs_t *pr, void *_res)
 static void
 qdb_find_global (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -758,6 +797,7 @@ qdb_find_global (progs_t *pr, void *_res)
 static void
 qdb_find_field (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -778,6 +818,7 @@ qdb_find_field (progs_t *pr, void *_res)
 static void
 return_function (progs_t *pr, dfunction_t *func)
 {
+	qfZoneScoped (true);
 	R_POINTER (pr) = 0;
 	if (func) {
 		__auto_type f
@@ -796,6 +837,7 @@ return_function (progs_t *pr, dfunction_t *func)
 static void
 qdb_find_function (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -809,6 +851,7 @@ qdb_find_function (progs_t *pr, void *_res)
 static void
 qdb_get_function (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -825,6 +868,7 @@ qdb_get_function (progs_t *pr, void *_res)
 static void
 return_auxfunction (progs_t *pr, pr_auxfunction_t *auxfunc)
 {
+	qfZoneScoped (true);
 	R_POINTER (pr) = 0;
 	if (auxfunc) {
 		__auto_type f
@@ -843,6 +887,7 @@ return_auxfunction (progs_t *pr, pr_auxfunction_t *auxfunc)
 static void
 qdb_find_auxfunction (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -861,6 +906,7 @@ qdb_find_auxfunction (progs_t *pr, void *_res)
 static void
 qdb_get_auxfunction (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -874,6 +920,7 @@ qdb_get_auxfunction (progs_t *pr, void *_res)
 static void
 qdb_get_local_defs (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -900,6 +947,7 @@ qdb_get_local_defs (progs_t *pr, void *_res)
 static void
 qdb_get_source_line_addr (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -913,6 +961,7 @@ qdb_get_source_line_addr (progs_t *pr, void *_res)
 static void
 qdb_has_data_stack (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -924,6 +973,7 @@ qdb_has_data_stack (progs_t *pr, void *_res)
 static void
 qdb_get_frame_addr (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type debug = (qwaq_debug_t *) _res;
 	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
@@ -981,6 +1031,7 @@ static builtin_t builtins[] = {
 void
 QWAQ_Debug_SetFuncs (progs_t *pr, progsinit_f *funcs)
 {
+	qfZoneScoped (true);
 	auto debug = (qwaq_debug_t *) PR_Resources_Find (pr, "qwaq-debug");
 	int count = 0;
 	for (auto f = funcs; *f; f++, count++) continue;
@@ -995,6 +1046,7 @@ QWAQ_Debug_SetFuncs (progs_t *pr, progsinit_f *funcs)
 void
 QWAQ_Debug_SetEvent (progs_t *pr, qwaq_debug_handler_f send, void *data)
 {
+	qfZoneScoped (true);
 	auto debug = (qwaq_debug_t *) PR_Resources_Find (pr, "qwaq-debug");
 	debug->event_handler = send;
 	debug->event_data = data;
@@ -1003,6 +1055,7 @@ QWAQ_Debug_SetEvent (progs_t *pr, qwaq_debug_handler_f send, void *data)
 void
 QWAQ_Debug_Init (progs_t *pr)
 {
+	qfZoneScoped (true);
 	qwaq_debug_t *debug = malloc (sizeof (*debug));
 
 	*debug = (qwaq_debug_t) {
@@ -1020,6 +1073,7 @@ QWAQ_Debug_Init (progs_t *pr)
 void
 QWAQ_DebugTarget_Init (progs_t *pr)
 {
+	qfZoneScoped (true);
 	PR_AddLoadFunc (pr, qwaq_target_load);
 	PR_Resources_Register (pr, "qwaq-target", 0, qwaq_target_clear,
 						   qwaq_target_destroy);

@@ -50,6 +50,7 @@
 int
 qwaq_pipe_acquire_string (qwaq_pipe_t *pipe)
 {
+	qfZoneScoped (true);
 	int         string_id = -1;
 
 	pthread_mutex_lock (&pipe->string_id_cond.mut);
@@ -66,6 +67,7 @@ qwaq_pipe_acquire_string (qwaq_pipe_t *pipe)
 void
 qwaq_pipe_release_string (qwaq_pipe_t *pipe, int string_id)
 {
+	qfZoneScoped (true);
 	pthread_mutex_lock (&pipe->string_id_cond.mut);
 	while (RB_SPACE_AVAILABLE (pipe->string_ids) < 1) {
 		pthread_cond_wait (&pipe->string_id_cond.wcond,
@@ -79,6 +81,7 @@ qwaq_pipe_release_string (qwaq_pipe_t *pipe, int string_id)
 void
 qwaq_pipe_submit (qwaq_pipe_t *pipe, const int *cmd, unsigned len)
 {
+	qfZoneScoped (true);
 	pthread_mutex_lock (&pipe->pipe_cond.mut);
 	while (RB_SPACE_AVAILABLE (pipe->pipe) < len) {
 		pthread_cond_wait (&pipe->pipe_cond.wcond,
@@ -92,6 +95,7 @@ qwaq_pipe_submit (qwaq_pipe_t *pipe, const int *cmd, unsigned len)
 void
 qwaq_pipe_receive (qwaq_pipe_t *pipe, int *result, int cmd, unsigned len)
 {
+	qfZoneScoped (true);
 	//Sys_Printf ("qwaq_wait_result: %d %d\n", cmd, len);
 	pthread_mutex_lock (&pipe->pipe_cond.mut);
 	while (RB_DATA_AVAILABLE (pipe->pipe) < len
@@ -108,6 +112,7 @@ qwaq_pipe_receive (qwaq_pipe_t *pipe, int *result, int cmd, unsigned len)
 void
 qwaq_init_timeout (struct timespec *timeout, int64_t time)
 {
+	qfZoneScoped (true);
 	#define SEC 1000000000L
 	struct timeval now;
 	gettimeofday(&now, 0);
@@ -122,6 +127,7 @@ qwaq_init_timeout (struct timespec *timeout, int64_t time)
 void
 qwaq_init_cond (rwcond_t *cond)
 {
+	qfZoneScoped (true);
 	pthread_cond_init (&cond->rcond, 0);
 	pthread_cond_init (&cond->wcond, 0);
 	pthread_mutex_init (&cond->mut, 0);
@@ -130,6 +136,7 @@ qwaq_init_cond (rwcond_t *cond)
 void
 qwaq_init_pipe (qwaq_pipe_t *pipe)
 {
+	qfZoneScoped (true);
 	qwaq_init_cond (&pipe->pipe_cond);
 	qwaq_init_cond (&pipe->string_id_cond);
 

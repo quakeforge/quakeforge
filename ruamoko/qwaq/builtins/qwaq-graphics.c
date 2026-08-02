@@ -41,6 +41,7 @@
 void
 qwaq_graphics_init (progs_t *pr)
 {
+	qfZoneScoped (true);
 	pr->zone_size = 128 * 1024 * 1024;
 }
 
@@ -57,6 +58,7 @@ static progsinit_f secondary_app[] = { nullptr };
 int
 qwaq_init_threads (qwaq_thread_set_t *thread_data, memhunk_t *main_hunk)
 {
+	qfZoneScoped (true);
 	int         main_ind = -1;
 	size_t      memsize = 128 * 1024 * 1024;
 

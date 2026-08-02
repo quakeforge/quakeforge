@@ -63,6 +63,7 @@ static FILE *logfile;
 static __attribute__((format(PRINTF, 1, 0))) void
 qwaq_print (const char *fmt, va_list args)
 {
+	qfZoneScoped (true);
 	vfprintf (logfile, fmt, args);
 	fflush (logfile);
 }
@@ -70,6 +71,7 @@ qwaq_print (const char *fmt, va_list args)
 static void
 qwaq_log_init (progs_t *pr)
 {
+	qfZoneScoped (true);
 	logfile = fopen ("qwaq-curses.log", "wt");
 	Sys_SetStdPrintf (qwaq_print);
 }
@@ -91,6 +93,7 @@ static progsinit_f target_app[] = {
 int
 qwaq_init_threads (qwaq_thread_set_t *thread_data, memhunk_t *main_hunk)
 {
+	qfZoneScoped (true);
 	int         main_ind = -1;
 
 	IN_Init_Cvars ();
