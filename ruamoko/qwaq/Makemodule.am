@@ -31,7 +31,7 @@ pbr_conv_src = ruamoko/qwaq/shader/pbr_conv.r
 
 qwaqshader_src = \
 	$(atmosphere_src) \
-	$(conic_src)
+	$(conic_src) \
 	$(pixpal_src) \
 	$(pbr_brdf_src) \
 	$(pbr_conv_src) \
