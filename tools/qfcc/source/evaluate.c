@@ -155,7 +155,6 @@ void
 setup_value_progs (void)
 {
 	PR_Init (&value_pr);
-	PR_Debug_Init (&value_pr);
 }
 
 ex_value_t *

@@ -92,7 +92,6 @@ setup_test (test_t *test)
 {
 	memset (&test_pr, 0, sizeof (test_pr));
 	PR_Init (&test_pr);
-	PR_Debug_Init (&test_pr);
 	test_pr.progs = &test_progs;
 	test_pr.debug_handler = test_debug_handler;
 	test_pr.debug_data = &test_pr;

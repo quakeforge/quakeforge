@@ -523,7 +523,7 @@ RUA_GUI_Init (progs_t *pr, int secure)
 	gui_resources_t *res = calloc (1, sizeof (gui_resources_t));
 	res->pr = pr;
 
-	PR_Resources_Register (pr, "Draw", res, bi_gui_clear, bi_gui_destroy);
+	PR_Resources_Register (pr, "GUI", res, bi_gui_clear, bi_gui_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 
 	res->reg = ECS_NewRegistry ("rua gui");
@@ -550,7 +550,7 @@ canvas_system_t
 RUA_GUI_GetCanvasSystem (progs_t *pr)
 {
 	qfZoneScoped (true);
-	gui_resources_t *res = PR_Resources_Find (pr, "Draw");
+	gui_resources_t *res = PR_Resources_Find (pr, "GUI");
 	return res->csys;
 }
 
@@ -558,7 +558,7 @@ passage_t *
 RUA_GUI_GetPassage (progs_t *pr, int handle)
 {
 	qfZoneScoped (true);
-	gui_resources_t *res = PR_Resources_Find (pr, "Draw");
+	gui_resources_t *res = PR_Resources_Find (pr, "GUI");
 	auto psg = get_passage (res, handle);
 	return psg->passage;
 }
