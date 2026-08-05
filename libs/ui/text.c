@@ -157,14 +157,14 @@ layout_glyphs (glyphnode_t *node, font_t *font, unsigned glpyhCount,
 		uint32_t    glyphid = glyphInfo[k].codepoint;
 		vec2i_t     bearing = font->glyph_bearings[glyphid];
 
-		int         xp = glyphPos[k].x_offset / 64;
-		int         yp = glyphPos[k].y_offset / 64;
-		int         xa = glyphPos[k].x_advance / 64;
-		int         ya = glyphPos[k].y_advance / 64;
-		xp += bearing[0];
-		yp += bearing[1];
-		int         xm = xp + font->glyph_rects[glyphid].width;
-		int         ym = yp - font->glyph_rects[glyphid].height;
+		int         xp = glyphPos[k].x_offset;
+		int         yp = glyphPos[k].y_offset;
+		int         xa = glyphPos[k].x_advance;
+		int         ya = glyphPos[k].y_advance;
+		xp += bearing[0] * 64;
+		yp += bearing[1] * 64;
+		int         xm = xp + font->glyph_rects[glyphid].width * 64;
+		int         ym = yp - font->glyph_rects[glyphid].height * 64;
 
 		if (xm - xp == 0) {
 			xm = xa;
@@ -186,7 +186,7 @@ layout_glyphs (glyphnode_t *node, font_t *font, unsigned glpyhCount,
 		x += xa;
 		y += ya;
 	}
-	return (view_pos_t) { .x = x, .y = y };
+	return (view_pos_t) { .x = x / 64, .y = y / 64 };
 }
 
 static void
@@ -208,9 +208,9 @@ configure_textview (view_t textview, glyphobj_t *glyphs, glyphnode_t *node,
 		};
 	}
 	Ent_SetComponent (textview.id, c_glyphs, textview.reg, &glyph_ref);
-	View_SetPos (textview, node->mins[0], -node->mins[1]);
-	View_SetLen (textview, node->maxs[0] - node->mins[0],
-						   node->maxs[1] - node->mins[1]);
+	View_SetPos (textview, node->mins[0], -node->mins[1] / 64);
+	View_SetLen (textview, (node->maxs[0] - node->mins[0]) / 64,
+						   (node->maxs[1] - node->mins[1]) / 64);
 	View_Control (textview)->free_x = 1;
 	View_Control (textview)->free_y = 1;
 }
@@ -406,8 +406,8 @@ Text_Size (struct font_s *font, const char *str, uint32_t len,
 		size.y = (*head)->maxs[1] - (*head)->mins[1];
 	}
 	if (!string_vertical) {
-		int ascender = font->face->size->metrics.ascender / 64;
-		int descender = font->face->size->metrics.descender / 64;
+		int ascender = font->face->size->metrics.ascender;
+		int descender = font->face->size->metrics.descender;
 		size.y = ascender - descender;
 	}
 	return size;
