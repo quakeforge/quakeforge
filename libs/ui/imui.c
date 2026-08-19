@@ -92,6 +92,7 @@ struct imui_ctx_s {
 	PR_RESMAP (imui_state_map_t) state_map;
 	imui_state_map_t *state_wrappers;
 	font_t     *font;
+	int16_t     ptsize;
 
 	int64_t     frame_start;
 	int64_t     frame_draw;
@@ -364,6 +365,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		if (file) {
 			ctx->font = Font_Load (file, fspec.index, fontsize);
 			//Qclose (file); FIXME closed by QFS_LoadFile
+			ctx->ptsize = fontsize * 64;
 		}
 		free (fspec.path);
 	}
@@ -1519,7 +1521,7 @@ static view_t
 add_text_str_len (imui_ctx_t *ctx, view_t view, const char *str, int length,
 				  int mode)
 {
-	auto text = Text_StringView (ctx->tsys, view, ctx->font,
+	auto text = Text_StringView (ctx->tsys, view, ctx->font, ctx->ptsize,
 								 str, length, 0, 0, ctx->shaper);
 	setup_text (ctx, text);
 
@@ -1602,8 +1604,8 @@ IMUI_UpdateHotActive (imui_ctx_t *ctx)
 view_pos_t
 IMUI_TextSize (imui_ctx_t *ctx, const char *str)
 {
-	return Text_Size (ctx->font, str, strlen (str), nullptr, nullptr,
-					  ctx->shaper);
+	return Text_Size (ctx->font, ctx->ptsize, str, strlen (str),
+					  nullptr, nullptr, ctx->shaper);
 }
 
 void
@@ -1684,7 +1686,7 @@ IMUI_Label32Attr (imui_ctx_t *ctx, const uint32_t *str, const uint32_t *attr,
 	set_control (ctx, view, false);
 
 	for (uint32_t i = 0, ind = 0; i < num_counts; ind += counts[i++]) {
-		auto text = Text_String32View (ctx->tsys, view, ctx->font,
+		auto text = Text_String32View (ctx->tsys, view, ctx->font, ctx->ptsize,
 									   &str[ind], counts[i], 0, 0,
 									   ctx->shaper);
 

@@ -45,6 +45,7 @@ typedef struct shaping_s {
 	const script_component_t *script;
 	const featureset_t *features;
 	const struct font_s *font;
+	int16_t     ptsize;
 } shaping_t;
 
 text_shaper_t *Shaper_New (void);

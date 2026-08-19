@@ -51,6 +51,7 @@ typedef struct shaper_cache_s {
 	struct shaper_cache_s *next;
 	struct shaper_cache_s **prev;
 	script_component_t script;
+	int16_t     ptsize;
 	featureset_t features;
 	const font_t *font;
 	char       *text;
@@ -64,20 +65,21 @@ typedef struct shaper_font_s {
 	uint32_t    fontid;
 } shaper_font_t;
 
-struct text_shaper_s {
+typedef struct text_shaper_s {
 	hashtab_t  *tab;
 	hashctx_t  *hashctx;
 	PR_RESMAP (shaper_cache_t) cache_map;
 	shaper_cache_t *buffers;
 	shaper_cache_t *unused_buffers;	// buffers not used since last flush
 	struct DARRAY_TYPE (shaper_font_t) fonts;
-};
+} text_shaper_t;
 
 static uintptr_t
 shaper_get_hash (const void *obj, void *data)
 {
 	const shaper_cache_t *cache = obj;
 	uintptr_t script = Hash_Buffer (&cache->script, sizeof (cache->script));
+	uintptr_t ptsize = cache->ptsize * UINT64_C (0xbf58476d1ce4e5b9);
 	auto f = &cache->features;
 	uintptr_t features = 0;
 	if (f->a && f->size) {
@@ -91,7 +93,7 @@ shaper_get_hash (const void *obj, void *data)
 		size_t size = sizeof (uint32_t[cache->text_len]);
 		text = Hash_Buffer (cache->text32, size);
 	}
-	return script + features + font + text;
+	return script + ptsize + features + font + text;
 }
 
 static bool
@@ -100,6 +102,9 @@ shaper_compare (const void *a, const void *b, void *data)
 	const shaper_cache_t *cachea = a;
 	const shaper_cache_t *cacheb = b;
 	if (cachea->font->fontid != cacheb->font->fontid) {
+		return 0;
+	}
+	if (cachea->ptsize != cacheb->ptsize) {
 		return 0;
 	}
 	auto af = &cachea->features;
@@ -111,6 +116,9 @@ shaper_compare (const void *a, const void *b, void *data)
 		return 0;
 	}
 	if (memcmp (&cachea->script, &cacheb->script, sizeof (cachea->script))) {
+		return 0;
+	}
+	if (cachea->ptsize != cacheb->ptsize) {
 		return 0;
 	}
 	if (cachea->text_len != cacheb->text_len) {
@@ -287,8 +295,11 @@ shaper_shape_text (text_shaper_t *shaper, shaper_cache_t *search_cache)
 		auto hb_font = shaper_find_font (shaper, cache->font);
 		auto direction = cache->script.direction;
 		auto script = cache->script.script;
+		int16_t ptsize = cache->ptsize;
 		auto language = cache->script.language;
 		auto features = &cache->features;
+		FT_Set_Char_Size (cache->font->face, 0, ptsize, 72, 72);//FIXME 72
+		hb_ft_font_changed (hb_font);
 		hb_buffer_reset (cache->buffer);
 		hb_buffer_set_direction (buffer, direction | HB_DIRECTION_LTR);
 		hb_buffer_set_script (buffer, script);
@@ -322,6 +333,7 @@ Shaper_ShapeText (text_shaper_t *shaper, const shaping_t *control,
 {
 	shaper_cache_t search_cache = {
 		.script = *control->script,
+		.ptsize = control->ptsize,
 		.features.size = control->features->size,
 		.features.a = control->features->a,
 		.font = control->font,
@@ -337,6 +349,7 @@ Shaper_ShapeText32 (text_shaper_t *shaper, const shaping_t *control,
 {
 	shaper_cache_t search_cache = {
 		.script = *control->script,
+		.ptsize = control->ptsize,
 		.features.size = control->features->size,
 		.features.a = control->features->a,
 		.font = control->font,

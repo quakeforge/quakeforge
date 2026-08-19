@@ -361,7 +361,7 @@ draw_glyphs (view_pos_t *abs, glyphset_t *glyphset, glyphref_t *gref)
 	while (count-- > 0) {
 		glyphobj_t *g = glyph++;
 		r_funcs->draw.Glyph (abs->x + g->x, abs->y + g->y,
-							 g->fontid, g->glyphid, 254);
+							 g->key.fontid, g->key.glyphid, 254);
 	}
 }
 

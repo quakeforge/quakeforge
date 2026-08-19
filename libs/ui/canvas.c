@@ -33,6 +33,7 @@
 
 #define IMPLEMENT_CANVAS_Funcs
 #include "QF/ui/canvas.h"
+#include "QF/ui/font.h"
 #include "QF/ui/imui.h"
 #include "QF/ui/text.h"
 #include "QF/ui/view.h"
@@ -382,7 +383,7 @@ draw_glyph_refs (view_pos_t *abs, glyphset_t *glyphset, glyphref_t *gref,
 	while (count-- > 0) {
 		glyphobj_t *g = glyph++;
 		r_funcs->draw.Glyph (abs->x + g->x / 64, abs->y + g->y / 64,
-							 g->fontid, g->glyphid, color);
+							 g->key.fontid, g->key.glyphid, color);
 	}
 }
 
