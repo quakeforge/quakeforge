@@ -34,6 +34,7 @@
 #define IMPLEMENT_CANVAS_Funcs
 #include "QF/ui/canvas.h"
 #include "QF/ui/font.h"
+#include "QF/ui/glyphcache.h"
 #include "QF/ui/imui.h"
 #include "QF/ui/text.h"
 #include "QF/ui/view.h"
@@ -374,7 +375,7 @@ draw_outline_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 
 static void
 draw_glyph_refs (view_pos_t *abs, glyphset_t *glyphset, glyphref_t *gref,
-				 uint32_t color)
+				 uint32_t color, glyphcache_t *cache)
 {
 	qfZoneScoped (true);
 	uint32_t    count = gref->count;
@@ -382,8 +383,9 @@ draw_glyph_refs (view_pos_t *abs, glyphset_t *glyphset, glyphref_t *gref,
 
 	while (count-- > 0) {
 		glyphobj_t *g = glyph++;
+		glyphkey_t k = cache->objs[g->cacheind];
 		r_funcs->draw.Glyph (abs->x + g->x / 64, abs->y + g->y / 64,
-							 g->key.fontid, g->key.glyphid, color);
+							 k.fontid, k.glyphid, color);
 	}
 }
 
@@ -412,6 +414,7 @@ draw_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool, ecs_range_t range)
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
 	auto        glyphset = (glyphset_t *) pool->data + range.start;
+	auto        cache = canvas_sys->glyphcache;
 
 	while (count-- > 0) {
 		view_t      view = { .id = *ent++, .reg = reg, .comp = vhref};
@@ -420,7 +423,7 @@ draw_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool, ecs_range_t range)
 			view_pos_t  abs = View_GetAbs (view);
 			glyphref_t *gref = Ent_GetComponent (view.id, glyphs, reg);
 			uint32_t   *c = Ent_SafeGetComponent (view.id, color, reg);
-			draw_glyph_refs (&abs, gs, gref, c ? *c : 254);
+			draw_glyph_refs (&abs, gs, gref, c ? *c : 254, cache);
 		}
 	}
 }
@@ -437,6 +440,7 @@ draw_passage_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
 	auto        glyphset = (glyphset_t *) pool->data + range.start;
+	auto        cache = canvas_sys->glyphcache;
 
 	while (count-- > 0) {
 		view_t      psg_view = { .id = *ent++, .reg = reg, .comp = vhref};
@@ -453,7 +457,7 @@ draw_passage_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 		for (uint32_t i = href.index; i < h->num_objects; i++) {
 			glyphref_t *gref = Ent_GetComponent (h->ent[i], glyphs, reg);
 			uint32_t   *c = Ent_SafeGetComponent (h->ent[i], color, reg);
-			draw_glyph_refs (&abs[i], gs, gref, c ? *c : 254);
+			draw_glyph_refs (&abs[i], gs, gref, c ? *c : 254, cache);
 
 			if (0) draw_box (abs, len, i, 253);
 		}
@@ -485,6 +489,8 @@ Canvas_Draw (canvas_system_t canvas_sys)
 		[canvas_lateupdate] = draw_update,
 		[canvas_outline]    = draw_outline_views,
 	};
+
+	glyphcache_load_glyphs (canvas_sys);
 
 	auto        reg = canvas_sys.reg;
 	ecs_pool_t *canvas_pool = &reg->comp_pools[c_canvas];
@@ -541,6 +547,7 @@ Canvas_InitSys (canvas_system_t *canvas_sys, ecs_registry_t *reg)
 											 text_comp_count),
 		.imui_base = ECS_RegisterComponents (reg, imui_components,
 											 imui_comp_count),
+		.glyphcache = glyphcache_new (),
 	};
 }
 

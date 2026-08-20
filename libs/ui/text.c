@@ -37,6 +37,7 @@
 #include "QF/sys.h"
 
 #include "QF/ui/font.h"
+#include "QF/ui/glyphcache.h"
 #include "QF/ui/passage.h"
 #include "QF/ui/shaper.h"
 #include "QF/ui/text.h"
@@ -220,7 +221,7 @@ configure_textview (view_t textview, glyphobj_t *glyphs, glyphnode_t *node,
 		glyphobj_t *go = node->glyphs + k;
 		glyphs[glyphref_base + k] = (glyphobj_t) {
 			.key = go->key,
-			.glyphid = go->glyphid,
+			.cacheind = go->cacheind,
 			.x = go->x + node->mins[0],
 			.y = go->y + node->maxs[1],
 		};

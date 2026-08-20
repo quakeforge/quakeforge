@@ -43,6 +43,7 @@
 
 #include "QF/ui/canvas.h"
 #include "QF/ui/font.h"
+#include "QF/ui/glyphcache.h"
 #include "QF/ui/passage.h"
 #include "QF/ui/shaper.h"
 #include "QF/ui/text.h"

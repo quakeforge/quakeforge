@@ -56,28 +56,6 @@ typedef struct font_s {
 	uint32_t    fontid;
 } font_t;
 
-typedef union glyphkey_s {
-	uint64_t    raw_key;
-	struct {
-		uint64_t    glyphid:16;
-		uint64_t    fontid:10;
-		uint64_t    ptsize:14;	// 8.6 fixed-point
-		uint64_t    subpixel_x:2;
-		uint64_t    subpixel_y:2;
-		uint64_t    render_mode:2;
-		uint64_t    _reserved:18;
-	};
-} glyphkey_t;
-
-static_assert(sizeof(glyphkey_t) == sizeof(uint64_t));
-
-typedef struct glyphobj_s {
-	glyphkey_t  key;
-	uint64_t    glyphid:16;
-	int64_t     x:24;			// 18.6 fixed-point
-	int64_t     y:24;			// 18.6 fixed-point
-} glyphobj_t;
-
 void Font_Init (void);
 void Font_Free (font_t *font);
 font_t *Font_Load (QFile *font_file, int index, int size);

@@ -70,12 +70,25 @@ typedef struct canvas_s {
 
 extern const struct component_s canvas_components[canvas_comp_count];
 
+typedef struct vrect_s vrect_t;
+typedef struct rscrap_s rscrap_t;
+typedef union glyphkey_s glyphkey_t;
+typedef struct glyphobj_s glyphobj_t;
+
+typedef struct glyphcache_s {
+	glyphkey_t *map;
+	glyphkey_t *objs;
+	vrect_t    *rects;
+	rscrap_t   *scrap;
+} glyphcache_t;
+
 typedef struct canvas_system_s {
 	ecs_registry_t *reg;
 	uint32_t    base;
 	uint32_t    view_base;
 	uint32_t    text_base;
 	uint32_t    imui_base;
+	glyphcache_t *glyphcache;
 } canvas_system_t;
 
 struct view_s;
