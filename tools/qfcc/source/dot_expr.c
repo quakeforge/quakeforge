@@ -212,7 +212,8 @@ print_bool (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
 	for (i = 0; i < fl_count; i++)
 		dasprintf (dstr, "%*se_%p:f%d -> e_%p;\n", indent, "", e, i,
 				   boolean->false_list->e[i]);
-	dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->boolean.e);
+	dasprintf (dstr, "%*se_%p -> e_%p [label=\"e\"];\n", indent, "", e,
+			   e->boolean.e);
 }
 
 static void
@@ -503,14 +504,22 @@ print_select (dstring_t *dstr, const expr_t *e, int level, set_t *printed,
 	int         indent = level * 2 + 2;
 
 	_print_expr (dstr, e->select.test, level, printed, next);
-	_print_expr (dstr, e->select.true_body, level, printed, next);
-	_print_expr (dstr, e->select.false_body, level, printed, next);
+	if (e->select.true_body) {
+		_print_expr (dstr, e->select.true_body, level, printed, next);
+	}
+	if (e->select.false_body) {
+		_print_expr (dstr, e->select.false_body, level, printed, next);
+	}
 	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"\"];\n", indent, "", e,
 			   e->select.test);
-	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"t\"];\n", indent, "", e,
-			   e->select.true_body);
-	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"f\"];\n", indent, "", e,
-			   e->select.false_body);
+	if (e->select.true_body) {
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"t\"];\n", indent, "", e,
+				   e->select.true_body);
+	}
+	if (e->select.false_body) {
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"f\"];\n", indent, "", e,
+				   e->select.false_body);
+	}
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
 			   "select", e->loc.line);
 }
