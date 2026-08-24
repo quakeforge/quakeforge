@@ -486,8 +486,7 @@ unary_expr (int op, const expr_t *e)
 	auto t = get_type (e);
 
 	if (op == '!' && e->type == ex_bool) {
-		return new_boolean_expr (e->boolean.false_list,
-								 e->boolean.true_list, e);
+		return new_boolean_expr (!e->boolean.not, e->boolean.e);
 	}
 
 	if (op == '+' && is_math (t)) {

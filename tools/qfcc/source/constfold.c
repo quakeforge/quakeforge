@@ -394,7 +394,7 @@ do_op_vector (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 		}
 	} else {
 	}
-	if (is_compare (op) || is_logic (op)) {
+	if (is_compare_op (op) || is_logic (op)) {
 		//if (options.code.progsversion > PROG_ID_VERSION)
 		//	e->expr.type = &type_int;
 		//else

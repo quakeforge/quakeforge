@@ -993,9 +993,9 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 	if (options.traditional) {
 		if (e2->type == ex_expr && !e2->paren) {
 			if (((op == '&' || op == '|')
-				 && (is_math_op (e2->expr.op) || is_compare (e2->expr.op)))
+				 && (is_math_op (e2->expr.op) || is_compare_op (e2->expr.op)))
 				|| (op == '='
-					&&(e2->expr.op == QC_OR || e2->expr.op == QC_AND))) {
+					&& (e2->expr.op == QC_OR || e2->expr.op == QC_AND))) {
 				notice (e1, "precedence of `%s' and `%s' inverted for "
 							"traditional code", get_op_string (op),
 							get_op_string (e2->expr.op));
@@ -1003,7 +1003,7 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 				e1 = paren_expr (e1);
 				return binary_expr (e2->expr.op, e1, e2->expr.e2);
 			}
-			if (((op == QC_EQ || op == QC_NE) && is_compare (e2->expr.op))
+			if (((op == QC_EQ || op == QC_NE) && is_compare_op (e2->expr.op))
 				|| (op == QC_OR && e2->expr.op == QC_AND)
 				|| (op == '|' && e2->expr.op == '&')) {
 				notice (e1, "precedence of `%s' raised to `%s' for "
@@ -1015,7 +1015,7 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 			}
 		} else if (e1->type == ex_expr && !e1->paren) {
 			if (((op == '&' || op == '|')
-				 && (is_math_op (e1->expr.op) || is_compare (e1->expr.op)))
+				 && (is_math_op (e1->expr.op) || is_compare_op (e1->expr.op)))
 				|| (op == '='
 					&&(e2->expr.op == QC_OR || e2->expr.op == QC_AND))) {
 				notice (e1, "precedence of `%s' and `%s' inverted for "
@@ -1030,11 +1030,11 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 		if (e2->type == ex_expr && !e2->paren) {
 			if ((op == '&' || op == '|' || op == '^')
 				&& (is_math_op (e2->expr.op)
-					|| is_compare (e2->expr.op))) {
+					|| is_compare_op (e2->expr.op))) {
 				if (options.warnings.precedence)
 					warning (e2, "suggest parentheses around %s in "
 							 "operand of %c",
-							 is_compare (e2->expr.op)
+							 is_compare_op (e2->expr.op)
 									? "comparison"
 									: get_op_string (e2->expr.op),
 							 op);
@@ -1043,11 +1043,11 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 		if (e1->type == ex_expr && !e1->paren) {
 			if ((op == '&' || op == '|' || op == '^')
 				&& (is_math_op (e1->expr.op)
-					|| is_compare (e1->expr.op))) {
+					|| is_compare_op (e1->expr.op))) {
 				if (options.warnings.precedence)
 					warning (e1, "suggest parentheses around %s in "
 							 "operand of %c",
-							 is_compare (e1->expr.op)
+							 is_compare_op (e1->expr.op)
 									? "comparison"
 									: get_op_string (e1->expr.op),
 							 op);

@@ -111,12 +111,12 @@ proc_expr (const expr_t *expr, rua_ctx_t *ctx)
 		return e2;
 	}
 
+	const expr_t *e;
 	if (short_circuit) {
-		auto label = new_label_expr ();
-		return bool_expr (expr->expr.op, label, e1, e2);
+		e = bool_expr (expr->expr.op, e1, e2);
+	} else {
+		e = binary_expr (expr->expr.op, e1, e2);
 	}
-
-	auto e = binary_expr (expr->expr.op, e1, e2);
 	if (expr->paren) {
 		e = paren_expr (e);
 	}

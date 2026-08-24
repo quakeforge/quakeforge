@@ -66,6 +66,15 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
+static int __attribute__((pure))
+has_block_expr (const expr_t *e)
+{
+	while (e->type == ex_alias) {
+		e = e->alias.expr;
+	}
+	return e->type == ex_block;
+}
+
 const expr_t *
 test_expr (const expr_t *e)
 {
@@ -74,6 +83,25 @@ test_expr (const expr_t *e)
 	}
 	if (e->type == ex_bool) {
 		return e;
+	}
+	if (e->type == ex_assign) {
+		if (!e->paren && options.warnings.precedence)
+			warning (e, "suggest parentheses around assignment "
+					 "used as truth value");
+		auto tst = e->assign.src;
+		if (has_block_expr (tst) && has_block_expr (e->assign.dst)) {
+			tst = new_temp_def_expr (get_type (tst));
+			e = new_assign_expr (e->assign.dst,
+								 assign_expr (tst, e->assign.src));
+		} else if (has_block_expr (tst)) {
+			tst = e->assign.dst;
+		}
+		tst = test_expr (tst);
+		auto block = new_block_expr (nullptr);
+		append_expr (block, e);
+		//append_expr (block, tst);
+		block->block.result = tst;
+		return block;
 	}
 	auto type = get_type (e);
 	if (!type) {
@@ -97,127 +125,143 @@ test_expr (const expr_t *e)
 	return edag_add_expr (e);
 }
 
-void
-backpatch (ex_boollist_t *list, const expr_t *label)
+static void
+bool_check_precedence (const expr_t *e)
 {
-	int         i;
-	expr_t     *e;
-
-	if (!list)
-		return;
-	if (!label || label->type != ex_label)
-		internal_error (label, "not a label");
-
-	for (i = 0; i < list->size; i++) {
-		e = list->e[i];
-		if (e->type == ex_branch && e->branch.type < pr_branch_call) {
-			e->branch.target = label;
-		} else {
-			internal_error (e, 0);
-		}
-		((expr_t *)label)->label.used++;
+	if (e->type == ex_bool && e->boolean.e->type == ex_expr &&
+		e->boolean.e->expr.op == QC_AND && !e->paren) {
+		warning (e, "suggest parentheses around '&&' within '||'");
 	}
 }
 
-static ex_boollist_t *
-merge (ex_boollist_t *l1, ex_boollist_t *l2)
+static bool
+bool_compat (const expr_t *e, int op)
 {
-	ex_boollist_t  *m;
-
-	if (!l1 && !l2)
-		return 0;
-	if (!l2)
-		return l1;
-	if (!l1)
-		return l2;
-	m = malloc (offsetof (ex_boollist_t, e[l1->size + l2->size]));
-	m->size = l1->size + l2->size;
-	memcpy (m->e, l1->e, l1->size * sizeof (const expr_t *));
-	memcpy (m->e + l1->size, l2->e, l2->size * sizeof (const expr_t *));
-	return m;
-}
-
-static ex_boollist_t *
-make_list (const expr_t *e)
-{
-	ex_boollist_t  *m;
-
-	m = malloc (offsetof (ex_boollist_t, e[1]));
-	m->size = 1;
-	m->e[0] = (expr_t *) e;
-	return m;
+	if (e->type == ex_bool && e->boolean.e->expr.op == op) {
+		return !e->boolean.not;
+	}
+	return false;
 }
 
 const expr_t *
-bool_expr (int op, const expr_t *label, const expr_t *e1, const expr_t *e2)
+bool_expr (int op, const expr_t *e1, const expr_t *e2)
 {
-	expr_t     *block;
-
-	if (!options.code.short_circuit)
+	if (!options.code.short_circuit) {
 		return binary_expr (op, e1, e2);
+	}
 
 	e1 = convert_bool (e1, false);
-	if (e1->type == ex_error)
+	if (e1->type == ex_error) {
 		return e1;
+	}
 
 	e2 = convert_bool (e2, false);
-	if (e2->type == ex_error)
+	if (e2->type == ex_error) {
 		return e2;
-
-	block = new_block_expr (0);
-	append_expr (block, e1);
-	append_expr (block, label);
-	append_expr (block, e2);
-
-	switch (op) {
-		case QC_OR:
-			backpatch (e1->boolean.false_list, label);
-			return new_boolean_expr (merge (e1->boolean.true_list,
-											e2->boolean.true_list),
-									 e2->boolean.false_list, block);
-			break;
-		case QC_AND:
-			backpatch (e1->boolean.true_list, label);
-			return new_boolean_expr (e2->boolean.true_list,
-									 merge (e1->boolean.false_list,
-											e2->boolean.false_list), block);
-			break;
 	}
-	internal_error (e1, 0);
+
+	if (op == QC_OR) {
+		bool_check_precedence (e1);
+		bool_check_precedence (e2);
+	}
+	if (bool_compat (e1, op)) {
+		e1 = e1->boolean.e;
+	}
+	if (bool_compat (e2, op)) {
+		e2 = e2->boolean.e;
+	}
+	auto type = base_type (get_type (e1));
+	auto e = typed_binary_expr (type, op, e1, e2);
+	return new_boolean_expr (false, e);
 }
 
-static int __attribute__((pure))
-has_block_expr (const expr_t *e)
+static bool
+bool_is_bool (const expr_t *e, int op)
 {
-	while (e->type == ex_alias) {
-		e = e->alias.expr;
+	if (e->type == ex_expr && is_logic (e->expr.op)) {
+		if (e->expr.op != op) {
+			internal_error (e, "mixed bool operands: %s in %s tree",
+							get_op_string (e->expr.op), get_op_string (op));
+		}
+		return true;
 	}
-	return e->type == ex_block;
+	return false;
+}
+
+void
+flatten_bool (expr_t *block, const expr_t *e, int op)
+{
+	if (bool_is_bool (e, op)) {
+		flatten_bool (block, e->expr.e1, op);
+		flatten_bool (block, e->expr.e2, op);
+		return;
+	}
+	append_expr (block, e);
+}
+
+static void
+bool_block (expr_t *block, const expr_t *e, int op,
+			const expr_t *true_label, const expr_t *false_label)
+{
+	if (is_constant (e)) {
+		int         val;
+
+		if (is_integral_val (e)) {
+			val = expr_integral (e);
+		} else if (is_floating_val (e)) {
+			val = expr_floating (e) != 0;
+		} else {
+			internal_error (e, "unexpedted bool value");
+		}
+		auto b = goto_expr (val ? true_label : false_label);
+		append_expr (block, b);
+	} else {
+		auto b = branch_expr (op == QC_OR ? QC_NE : QC_EQ, e,
+							  op == QC_OR ? true_label : false_label);
+		append_expr (block, b);
+	}
+}
+
+void
+make_bool (expr_t *if_block, const expr_t *e,
+		   const expr_t *true_label, const expr_t *false_label)
+{
+	if (e->type != ex_bool) {
+		bool_block (if_block, e, QC_OR, true_label, false_label);
+		auto g = goto_expr (false_label);
+		append_expr (if_block, g);
+		return;
+	}
+	auto block = new_block_expr (nullptr);
+	int op = e->boolean.e->expr.op;
+	bool inv = (op == QC_OR) ^ e->boolean.not;
+	flatten_bool (block, e->boolean.e, op);
+	int count = list_count (&block->block.list);
+	if (!count) {
+		internal_error (e, "empty boolean expression");
+	}
+
+	const expr_t *tests[count];
+	list_scatter (&block->block.list, tests);
+
+	for (int i = 0; i < count; i++) {
+		if (tests[i]->type == ex_bool) {
+			auto cont = new_label_expr ();
+			auto tl = inv ? true_label : cont;
+			auto fl = inv ? cont : false_label;
+			make_bool (if_block, tests[i], tl, fl);
+			append_expr (if_block, cont);
+		} else {
+			bool_block (if_block, tests[i], op, true_label, false_label);
+		}
+	}
+	auto g = goto_expr (inv ? false_label : true_label);
+	append_expr (if_block, g);
 }
 
 const expr_t *
 convert_bool (const expr_t *e, bool block)
 {
-	if (e->type == ex_assign) {
-		if (!e->paren && options.warnings.precedence)
-			warning (e, "suggest parentheses around assignment "
-					 "used as truth value");
-		auto tst = e->assign.src;
-		if (has_block_expr (tst) && has_block_expr (e->assign.dst)) {
-			tst = new_temp_def_expr (get_type (tst));
-			e = new_assign_expr (e->assign.dst,
-								 assign_expr (tst, e->assign.src));
-		} else if (has_block_expr (tst)) {
-			tst = e->assign.dst;
-		}
-		auto b = convert_bool (tst, true);
-		if (b->type == ex_error)
-			return b;
-		// insert the assignment into the boolean's block
-		prepend_expr ((expr_t *) b->boolean.e, e);	//FIXME cast
-		return b;
-	}
-
 	if (e->type == ex_uexpr && e->expr.op == '!'
 		&& !is_string(get_type (e->expr.e1))) {
 		e = convert_bool (e->expr.e1, false);
@@ -225,36 +269,15 @@ convert_bool (const expr_t *e, bool block)
 			return e;
 		e = unary_expr ('!', e);
 	}
+	auto type = get_type (e);
+	if (is_compare (e) && is_scalar (type) && type_size (type) == 1) {
+		return e;
+	}
 	if (e->type != ex_bool) {
 		e = test_expr (e);
-		if (e->type == ex_error)
+		if (e->type == ex_error) {
 			return e;
-		if (is_constant (e)) {
-			int         val;
-
-			auto b = goto_expr (0);
-			if (is_int_val (e)) {
-				val = expr_int (e);
-			} else {
-				val = expr_float (e) != 0;
-			}
-			if (val)
-				e = new_boolean_expr (make_list (b), 0, b);
-			else
-				e = new_boolean_expr (0, make_list (b), b);
-		} else {
-			auto b = new_block_expr (0);
-			append_expr (b, branch_expr (QC_NE, e, 0));
-			append_expr (b, goto_expr (0));
-			e = new_boolean_expr (make_list (b->block.list.head->expr),
-								  make_list (b->block.list.head->next->expr),
-								  b);
 		}
-	}
-	if (block && e->boolean.e->type != ex_block) {
-		expr_t     *block = new_block_expr (0);
-		append_expr (block, e->boolean.e);
-		((expr_t *) e)->boolean.e = block;
 	}
 	return edag_add_expr (e);
 }

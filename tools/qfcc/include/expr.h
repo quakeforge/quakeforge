@@ -186,10 +186,8 @@ typedef struct {
 } ex_boollist_t;
 
 typedef struct {
-	ex_boollist_t *true_list;
-	ex_boollist_t *false_list;
-	const expr_t *merge;		// merge label (for spir-v)
 	const expr_t *e;
+	bool        not;
 } ex_bool_t;
 
 typedef struct ex_memset_s {
@@ -653,8 +651,7 @@ expr_t *new_label_ref (const ex_label_t *label);
 expr_t *new_state_expr (const expr_t *frame, const expr_t *think,
 						const expr_t *step);
 
-expr_t *new_boolean_expr (ex_boollist_t *true_list, ex_boollist_t *false_list,
-						  const expr_t *e);
+expr_t *new_boolean_expr (bool not, const expr_t *e);
 
 /**	Create a new statement block expression node.
 
@@ -1005,12 +1002,14 @@ bool is_relational (const expr_t *e) __attribute__((pure));
 */
 bool is_equality (const expr_t *e) __attribute__((pure));
 
+bool is_compare (const expr_t *e) __attribute__((pure));
+
 /**	Check if the op-code is a comparison.
 
 	\param op		The op-code to check.
 	\return			True if the op-code is a comparison operator.
 */
-bool is_compare (int op) __attribute__((const));
+bool is_compare_op (int op) __attribute__((const));
 
 /**	Check if the op-code is a bit-shift.
 
@@ -1150,11 +1149,12 @@ const expr_t *convert_nil (const expr_t *e, const type_t *t) __attribute__((warn
 const expr_t *convert_buffer (const expr_t *e, const type_t *t) __attribute__((warn_unused_result));
 
 const expr_t *test_expr (const expr_t *e);
-void backpatch (ex_boollist_t *list, const expr_t *label);
+void flatten_bool (expr_t *block, const expr_t *e, int op);
+void make_bool (expr_t *block, const expr_t *e,
+				const expr_t *true_label, const expr_t *false_label);
 const expr_t *convert_bool (const expr_t *e, bool block) __attribute__((warn_unused_result));
 const expr_t *convert_from_bool (const expr_t *e, const type_t *type) __attribute__((warn_unused_result));
-const expr_t *bool_expr (int op, const expr_t *label, const expr_t *e1,
-					     const expr_t *e2);
+const expr_t *bool_expr (int op, const expr_t *e1, const expr_t *e2);
 void build_bool_block (expr_t *block, const expr_t *e);
 const expr_t *binary_expr (int op, const expr_t *e1, const expr_t *e2);
 const expr_t *field_expr (const expr_t *e1, const expr_t *e2);

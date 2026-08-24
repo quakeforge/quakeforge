@@ -2024,13 +2024,10 @@ statement_loop (sblock_t *sblock, const expr_t *e)
 		test = convert_bool (test, true);
 		if (!is_error (test)) {
 			if (not) {
-				backpatch (test->boolean.true_list, break_label);
-				backpatch (test->boolean.false_list, body_label);
+				make_bool (loop, test, break_label, body_label);
 			} else {
-				backpatch (test->boolean.true_list, body_label);
-				backpatch (test->boolean.false_list, break_label);
+				make_bool (loop, test, body_label, break_label);
 			}
-			append_expr (loop, test);
 		}
 		append_expr (loop, break_label);
 	} else {
@@ -2040,13 +2037,10 @@ statement_loop (sblock_t *sblock, const expr_t *e)
 		test = convert_bool (test, true);
 		if (!is_error (test)) {
 			if (not) {
-				backpatch (test->boolean.true_list, break_label);
-				backpatch (test->boolean.false_list, body_label);
+				make_bool (loop, test, break_label, body_label);
 			} else {
-				backpatch (test->boolean.true_list, body_label);
-				backpatch (test->boolean.false_list, break_label);
+				make_bool (loop, test, body_label, break_label);
 			}
-			append_expr (loop, test);
 		}
 		append_expr (loop, body_label);
 		append_expr (loop, body);

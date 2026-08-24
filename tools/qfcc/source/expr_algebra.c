@@ -3371,13 +3371,11 @@ algebra_compare (int op, const expr_t *e1, const expr_t *e2)
 	mvec_scatter (b, e2, algebra);
 
 	const expr_t *cmp = nullptr;
-	expr_t *bool_label = nullptr;
 	for (int i = 0; i < layout->count; i++) {
 		if (a[i] || b[i]) {
 			auto c = component_compare (op, a[i], b[i], algebra);
 			if (cmp) {
-				bool_label = new_label_expr ();
-				cmp = bool_expr (QC_AND, bool_label, cmp, c);
+				cmp = bool_expr (QC_AND, cmp, c);
 			} else {
 				cmp = c;
 			}
