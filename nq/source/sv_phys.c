@@ -893,6 +893,7 @@ SV_RunNewmis (void)
 void
 SV_Physics (void)
 {
+	qfZoneScoped (true);
 	edict_t    *ent;
 
 	SV_ProgStartFrame ();

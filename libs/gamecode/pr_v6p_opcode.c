@@ -1602,6 +1602,7 @@ error:
 int
 PR_Check_v6p_Opcodes (progs_t *pr)
 {
+	qfZoneScoped (true);
 	const v6p_opcode_t *op;
 	dstatement_t *st;
 	int         state_ok = 0;

@@ -111,7 +111,7 @@ TraceLine (chasestate_t *cs, vec4f_t start, vec4f_t end)
 
 	memset (&trace, 0, sizeof (trace));
 	trace.fraction = 1;
-	MOD_TraceLine (cs->worldmodel->brush.hulls, 0, (vec_t*)&start, (vec_t*)&end, &trace);//FIXME
+	MOD_TraceLine (cs->worldmodel->brush->hulls, 0, (vec_t*)&start, (vec_t*)&end, &trace);//FIXME
 
 	return (vec4f_t) {trace.endpos[0], trace.endpos[1], trace.endpos[2], 1};
 }

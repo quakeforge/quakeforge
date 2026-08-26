@@ -292,6 +292,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 VISIBLE plitem_t *
 ED_ConvertToPlist (script_t *script, int nohack, struct hashctx_s **hashctx)
 {
+	qfZoneScoped (true);
 	dstring_t  *dstr = dstring_newstr ();
 	plitem_t   *plist = PL_NewArray ();
 	plitem_t   *ent;
@@ -447,6 +448,7 @@ ED_InitEntity (progs_t *pr, plitem_t *entity, edict_t *ent)
 static void
 ED_SpawnEntities (progs_t *pr, plitem_t *entity_list)
 {
+	qfZoneScoped (true);
 	edict_t    *ent;
 	plitem_t   *entity;
 	plitem_t   *item;
@@ -502,6 +504,7 @@ ED_SpawnEntities (progs_t *pr, plitem_t *entity_list)
 VISIBLE plitem_t *
 ED_Parse (progs_t *pr, const char *data)
 {
+	qfZoneScoped (true);
 	script_t	*script;
 	plitem_t    *entity_list = 0;
 
@@ -525,6 +528,7 @@ ED_Parse (progs_t *pr, const char *data)
 VISIBLE void
 ED_LoadFromFile (progs_t *pr, const char *data)
 {
+	qfZoneScoped (true);
 	plitem_t    *entity_list;
 
 	if (pr->edict_parse) {

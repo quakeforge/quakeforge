@@ -606,17 +606,9 @@ vulkan_BufferSize (const char *name)
 }
 
 static void
-vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, memhunk_t *hunk)
+vulkan_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 {
-	auto save_hunk = vulkan_ctx->hunk;
-	vulkan_ctx->hunk = hunk;
-	Vulkan_Mod_LoadLighting (mod, bsp, vulkan_ctx);
-	vulkan_ctx->hunk = save_hunk;
-}
-
-static void
-vulkan_Mod_SubdivideSurface (model_t *mod, msurface_t *fa, memhunk_t *hunk)
-{
+	Vulkan_Mod_LoadLighting (brush_ctx, vulkan_ctx);
 }
 
 static void
@@ -626,6 +618,12 @@ vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, memhunk_t *hunk)
 	vulkan_ctx->hunk = hunk;
 	Vulkan_Mod_ProcessTexture (mod, tx, vulkan_ctx);
 	vulkan_ctx->hunk = save_hunk;
+}
+
+static void
+vulkan_Mod_FinalizeBrushModel (mod_brush_ctx_t *brush_ctx)
+{
+	Vulkan_Mod_FinalizeBrushModel (brush_ctx, vulkan_ctx);
 }
 
 static void
@@ -759,9 +757,9 @@ vulkan_vid_render_create_context (void *data)
 static vid_model_funcs_t model_funcs = {
 	.texture_render_size  = sizeof (vulktex_t) + 2 * sizeof (qfv_tex_t),
 
-	.Mod_LoadLighting     = vulkan_Mod_LoadLighting,
-	.Mod_SubdivideSurface = vulkan_Mod_SubdivideSurface,
-	.Mod_ProcessTexture   = vulkan_Mod_ProcessTexture,
+	.Mod_LoadLighting       = vulkan_Mod_LoadLighting,
+	.Mod_ProcessTexture     = vulkan_Mod_ProcessTexture,
+	.Mod_FinalizeBrushModel = vulkan_Mod_FinalizeBrushModel,
 
 	.Mod_LoadMesh        = Mod_LoadMeshModel,
 	.Mod_LoadIQM         = Mod_LoadIQM,

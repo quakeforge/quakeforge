@@ -228,7 +228,7 @@ glsl_R_BuildLightmaps (model_t **models, int num_models)
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
-		brush = &m->brush;
+		brush = m->brush;
 		// non-bsp models don't have surfaces.
 		for (unsigned i = 0; i < brush->numsurfaces; i++) {
 			msurface_t *surf = brush->surfaces + i;
@@ -250,7 +250,7 @@ glsl_R_BuildLightmaps (model_t **models, int num_models)
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
-		brush = &m->brush;
+		brush = m->brush;
 		// non-bsp models don't have surfaces.
 		for (unsigned i = 0; i < brush->numsurfaces; i++) {
 			msurface_t *surf = brush->surfaces + i;

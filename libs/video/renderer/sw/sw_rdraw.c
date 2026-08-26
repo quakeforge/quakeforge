@@ -786,8 +786,8 @@ R_ZDrawSubmodelPolys (uint32_t render_id, mod_brush_t *brush)
 	float       dot;
 	plane_t    *plane;
 
-	surf = &brush->surfaces[brush->firstmodelsurface];
-	numsurfaces = brush->nummodelsurfaces;
+	surf = &brush->surfaces[brush->firstface];
+	numsurfaces = brush->numfaces;
 
 	for (i = 0; i < numsurfaces; i++, surf++) {
 		// find which side of the node we are on

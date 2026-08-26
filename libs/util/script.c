@@ -37,6 +37,7 @@
 VISIBLE script_t *
 Script_New (void)
 {
+	qfZoneScoped (true);
 	script_t *script = calloc (1, sizeof (script_t));
 	script->token = dstring_newstr ();
 	return script;
@@ -45,6 +46,7 @@ Script_New (void)
 VISIBLE void
 Script_Delete (script_t *script)
 {
+	qfZoneScoped (true);
 	dstring_delete (script->token);
 	free (script);
 }
@@ -52,6 +54,7 @@ Script_Delete (script_t *script)
 VISIBLE void
 Script_Start (script_t *script, const char *file, const char *data)
 {
+	qfZoneScoped (true);
 	script->line = 1;
 	script->file = file;
 	script->p = data;
@@ -66,6 +69,7 @@ Script_Start (script_t *script, const char *file, const char *data)
 VISIBLE bool
 Script_TokenAvailable (script_t *script, bool crossline)
 {
+	qfZoneScoped (true);
 	if (script->error) {
 		return false;
 	}
@@ -105,6 +109,7 @@ Script_TokenAvailable (script_t *script, bool crossline)
 VISIBLE bool
 Script_GetToken (script_t *script, bool crossline)
 {
+	qfZoneScoped (true);
 	const char *token_p;
 
 	if (script->error) {
@@ -167,6 +172,7 @@ Script_GetToken (script_t *script, bool crossline)
 VISIBLE bool
 Script_GetLine (script_t *script)
 {
+	qfZoneScoped (true);
 	const char *token_p = script->p;
 	while (*script->p) {
 		if (script->p[0] == '\n') {
@@ -190,6 +196,7 @@ Script_GetLine (script_t *script)
 VISIBLE void
 Script_UngetToken (script_t *script)
 {
+	qfZoneScoped (true);
 	if (!script->error) {
 		script->unget = true;
 	}
@@ -198,6 +205,7 @@ Script_UngetToken (script_t *script)
 VISIBLE const char *
 Script_Token (script_t *script)
 {
+	qfZoneScoped (true);
 	if (script->error) {
 		return 0;
 	}

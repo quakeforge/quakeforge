@@ -102,21 +102,21 @@ link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 	scene_t    *scene = ldata->scene;
 	model_t    *model = scene->worldmodel;
 
-	set_t       _pvs = SET_STATIC_INIT (model->brush.visleafs, alloca);
+	set_t       _pvs = SET_STATIC_INIT (model->brush->visleafs, alloca);
 	set_t      *pvs = &_pvs;
 	uint32_t    leafnum = ~0u;
 	if (light->position[3]) {
 		// positional light
-		mleaf_t    *leaf = Mod_PointInLeaf (light->position, &model->brush);
-		Mod_LeafPVS_set (leaf, &model->brush, 0, pvs);
-		leafnum = leaf - model->brush.leafs;
+		mleaf_t    *leaf = Mod_PointInLeaf (light->position, model->brush);
+		Mod_LeafPVS_set (leaf, model->brush, 0, pvs);
+		leafnum = leaf - model->brush->leafs;
 	} else if (DotProduct (light->axis, light->axis)) {
 		// directional light (sun)
 		pvs = ldata->sun_pvs;
 		leafnum = 0;
 	} else {
 		// ambient light
-		Mod_LeafPVS_set (model->brush.leafs, &model->brush, 0xff, pvs);
+		Mod_LeafPVS_set (model->brush->leafs, model->brush, 0xff, pvs);
 	}
 	Ent_SetComponent (ent.id, ent.base + scene_lightleaf, ent.reg, &leafnum);
 
@@ -129,7 +129,7 @@ link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 	}
 	uint32_t efrag = nullent;
 	for (auto li = set_first (pvs); li; li = set_next (li)) {
-		mleaf_t    *leaf = model->brush.leafs + li->element + 1;
+		mleaf_t    *leaf = model->brush->leafs + li->element + 1;
 		if (test_light_leaf (light, leaf)) {
 			efrag = R_LinkEfrag (scene, leaf, ent, mod_light, efrag);
 		}
@@ -184,7 +184,7 @@ void
 Light_EnableSun (lightingdata_t *ldata)
 {
 	scene_t    *scene = ldata->scene;
-	auto brush = &scene->worldmodel->brush;
+	auto brush = scene->worldmodel->brush;
 
 	if (!ldata->sun_pvs) {
 		ldata->sun_pvs = set_new_size (brush->visleafs);

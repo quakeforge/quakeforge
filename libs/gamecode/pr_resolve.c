@@ -71,30 +71,35 @@ PR_SearchDefs (pr_def_t *defs, unsigned num_defs, pr_ptr_t offset)
 pr_def_t *
 PR_GlobalAtOfs (progs_t * pr, pr_ptr_t ofs)
 {
+	qfZoneScoped (true);
 	return PR_SearchDefs (pr->pr_globaldefs, pr->progs->globaldefs.count, ofs);
 }
 
 VISIBLE pr_def_t *
 PR_FieldAtOfs (progs_t * pr, pr_ptr_t ofs)
 {
+	qfZoneScoped (true);
 	return PR_SearchDefs (pr->pr_fielddefs, pr->progs->fielddefs.count, ofs);
 }
 
 VISIBLE pr_def_t *
 PR_FindField (progs_t * pr, const char *name)
 {
+	qfZoneScoped (true);
 	return  Hash_Find (pr->field_hash, name);
 }
 
 VISIBLE pr_def_t *
 PR_FindGlobal (progs_t * pr, const char *name)
 {
+	qfZoneScoped (true);
 	return  Hash_Find (pr->global_hash, name);
 }
 
 VISIBLE dfunction_t *
 PR_FindFunction (progs_t * pr, const char *name)
 {
+	qfZoneScoped (true);
 	return  Hash_Find (pr->function_hash, name);
 }
 
@@ -107,6 +112,7 @@ PR_Undefined (progs_t *pr, const char *type, const char *name)
 VISIBLE int
 PR_ResolveGlobals (progs_t *pr)
 {
+	qfZoneScoped (true);
 	const char *sym;
 	pr_def_t   *def;
 	int         i;

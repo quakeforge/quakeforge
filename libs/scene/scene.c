@@ -337,12 +337,7 @@ static uint32_t empty_leaf_flags[] = {
 
 static char empty_entities[] = { 0 };
 
-static model_t empty_world = {
-	.type = mod_brush,
-	.radius = INFINITY,
-	.mins = {-INFINITY, -INFINITY, -INFINITY},
-	.maxs = { INFINITY,  INFINITY,  INFINITY},
-	.brush = {
+static mod_brush_t empty_brush = {
 		.numsubmodels = 1,
 		.submodels = empty_submodel,
 		.modleafs = 2,
@@ -359,7 +354,14 @@ static model_t empty_world = {
 		.node_parents = empty_node_parents,
 		.leaf_parents = empty_leaf_parents,
 		.leaf_flags = empty_leaf_flags,
-	},
+};
+
+static model_t empty_world = {
+	.type = mod_brush,
+	.radius = INFINITY,
+	.mins = {-INFINITY, -INFINITY, -INFINITY},
+	.maxs = { INFINITY,  INFINITY,  INFINITY},
+	.brush = &empty_brush,
 };
 
 static model_t *empty_world_models[] = {
@@ -392,7 +394,7 @@ Scene_NewScene (scene_system_t *extra_systems)
 
 	scene->ent_queue = EntQueue_New (mod_num_types);
 	scene->efrag_db = malloc (sizeof (efrag_db_t));
-	Efrags_InitDB (scene->efrag_db, empty_world.brush.visleafs + 1);
+	Efrags_InitDB (scene->efrag_db, empty_brush.visleafs + 1);
 
 	return scene;
 }
@@ -409,7 +411,7 @@ Scene_SetWorld (scene_t *scene, model_t *worldmodel)
 	} else {
 		scene->worldmodel = &empty_world;
 	}
-	Efrags_InitDB (scene->efrag_db, scene->worldmodel->brush.visleafs + 1);
+	Efrags_InitDB (scene->efrag_db, scene->worldmodel->brush->visleafs + 1);
 }
 
 void

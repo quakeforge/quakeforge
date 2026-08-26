@@ -64,7 +64,7 @@ static void
 SV_AddToFatPVS (vec4f_t org, int node_id)
 {
 	float       d;
-	auto brush = &sv.worldmodel->brush;
+	auto brush = sv.worldmodel->brush;
 
 	while (1) {
 		// if this is a leaf, accumulate the pvs bits
@@ -99,9 +99,9 @@ static set_t *
 SV_FatPVS (vec4f_t org)
 {
 	if (!fatpvs) {
-		fatpvs = set_new_size (sv.worldmodel->brush.visleafs);
+		fatpvs = set_new_size (sv.worldmodel->brush->visleafs);
 	}
-	set_expand (fatpvs, sv.worldmodel->brush.visleafs);
+	set_expand (fatpvs, sv.worldmodel->brush->visleafs);
 	set_empty (fatpvs);
 	SV_AddToFatPVS (org, 0);
 	return fatpvs;

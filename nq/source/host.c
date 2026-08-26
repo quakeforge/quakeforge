@@ -44,6 +44,7 @@
 #include "QF/va.h"
 
 #include "QF/plugin/console.h"
+#include "QF/thread/schedule.h"
 
 #include "buildnum.h"
 
@@ -88,6 +89,7 @@ size_t      minimum_memory;
 
 client_t   *host_client;				// current client
 
+wssched_t  *host_sched;
 memhunk_t  *host_hunk;
 
 static sys_jmpbuf host_abortserver;
@@ -921,6 +923,8 @@ Host_Init (void)
 	Sys_RegisterShutdown (Host_Shutdown, 0);
 	Sys_Printf ("Host_Init\n");
 
+	host_sched = wssched_create (Sys_ProcessorCount ());
+
 	host_cbuf = Cbuf_New (&id_interp);
 	cmd_source = src_command;
 
@@ -951,7 +955,7 @@ Host_Init (void)
 
 	NET_Init (host_cbuf, host_hunk);
 
-	Mod_Init (host_hunk);
+	Mod_Init (host_sched, host_hunk);
 
 	SV_Init ();
 
@@ -1000,4 +1004,6 @@ Host_Shutdown (void *data)
 	Cbuf_Delete (host_cbuf);
 	DARRAY_CLEAR (&host_server_spawn);
 	va_destroy_context (0);
+
+	wssched_destroy (host_sched);
 }

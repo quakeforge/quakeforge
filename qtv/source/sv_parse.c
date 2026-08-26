@@ -120,7 +120,7 @@ sv_find_touched_leafs (server_t *sv, qtv_entity_t *ent, int node_id)
 {
 	// add an efrag if the node is a leaf
 	if (node_id < 0) {
-		mleaf_t    *leaf = sv->worldmodel->brush.leafs + ~node_id;
+		mleaf_t    *leaf = sv->worldmodel->brush->leafs + ~node_id;
 		if (leaf->contents == CONTENTS_SOLID) {
 			return;
 		}
@@ -135,7 +135,7 @@ sv_find_touched_leafs (server_t *sv, qtv_entity_t *ent, int node_id)
 	VectorAdd (ent->e.origin, ent->model->mins, emins);
 	VectorAdd (ent->e.origin, ent->model->maxs, emaxs);
 
-	mnode_t    *node = sv->worldmodel->brush.nodes + node_id;
+	mnode_t    *node = sv->worldmodel->brush->nodes + node_id;
 	plane_t    *splitplane = (plane_t *) &node->plane;
 	int         sides = BOX_ON_PLANE_SIDE (emins, emaxs, splitplane);
 	if (sides & 1) {

@@ -26,6 +26,7 @@ models_sources = \
 	libs/models/winding.c
 
 common_libs = \
+	libs/thread/libQFthread.la \
 	libs/util/libQFutil.la
 
 models_libs=libs/models/brush/libbrush_server.la $(common_libs)

@@ -167,8 +167,8 @@ gl_R_InitSurfaceChains (mod_brush_t *brush)
 	qfZoneScoped (true);
 	if (static_chains)
 		free (static_chains);
-	static_chains = calloc (brush->nummodelsurfaces, sizeof (instsurf_t));
-	for (unsigned i = 0; i < brush->nummodelsurfaces; i++)
+	static_chains = calloc (brush->numfaces, sizeof (instsurf_t));
+	for (unsigned i = 0; i < brush->numfaces; i++)
 		brush->surfaces[i].instsurf = static_chains + i;
 
 	release_instsurfs ();
@@ -500,7 +500,7 @@ gl_R_DrawBrushModel (entity_t e)
 	mat4f_t     worldMatrix;
 	auto renderer = Entity_GetRenderer (e);
 	model_t    *model = renderer->model;
-	mod_brush_t *brush = &model->brush;
+	mod_brush_t *brush = model->brush;
 	glbspctx_t  bspctx = {
 		brush,
 		Entity_GetAnimation (e),
@@ -544,7 +544,7 @@ gl_R_DrawBrushModel (entity_t e)
 	}
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
-	if (brush->firstmodelsurface != 0 && r_dlight_lightmap) {
+	if (brush->firstface != 0 && r_dlight_lightmap) {
 		auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 		auto dlight_data = (dlight_t *) dlight_pool->data;
 		for (uint32_t i = 0; i < dlight_pool->count; i++) {
@@ -562,10 +562,10 @@ gl_R_DrawBrushModel (entity_t e)
 	qfglGetFloatv (GL_MODELVIEW_MATRIX, (vec_t*)&bspctx.transform[0]);
 	qfglPopMatrix ();
 
-	surf = &brush->surfaces[brush->firstmodelsurface];
+	surf = &brush->surfaces[brush->firstface];
 
 	// draw texture
-	for (unsigned i = 0; i < brush->nummodelsurfaces; i++, surf++) {
+	for (unsigned i = 0; i < brush->numfaces; i++, surf++) {
 		// find which side of the node we are on
 		plane_t    *plane = surf->plane;
 
@@ -706,7 +706,7 @@ gl_R_DrawWorld (void)
 		gl_R_DrawSky ();
 	}
 
-	bctx.brush = &r_refdef.worldmodel->brush;
+	bctx.brush = r_refdef.worldmodel->brush;
 	bctx.animation = &animation;
 
 	R_VisitWorldNodes (&bctx);
@@ -807,7 +807,7 @@ GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 	mvertex_t  *vertex_base = brush->vertexes;
 
 	// reconstruct the polygon
-	pedges = gl_currentmodel->brush.edges;
+	pedges = gl_currentmodel->brush->edges;
 	lnumverts = surf->numedges;
 
 	// draw texture
@@ -819,7 +819,7 @@ GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 
 	mtexinfo_t *texinfo = surf->texinfo;
 	for (i = 0; i < lnumverts; i++) {
-		lindex = gl_currentmodel->brush.surfedges[surf->firstedge + i];
+		lindex = gl_currentmodel->brush->surfedges[surf->firstedge + i];
 
 		if (lindex > 0) {
 			r_pedge = &pedges[lindex];
