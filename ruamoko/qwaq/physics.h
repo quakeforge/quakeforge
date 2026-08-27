@@ -22,12 +22,16 @@ extern uint max_collider_ents;
 extern uint num_collider_ents;
 extern uint *collider_ents;
 
-@overload float min (float x, float y);
-@overload float max (float x, float y);
+//FIXME used by camera.r (but it defines them) and physics.r defines generic
+//versions that include float (along with various vector types) but having
+//both causes qfcc to segfault
+//@overload float min (float x, float y);
+//@overload float max (float x, float y);
 
 body_t calc_inertia_plane (collider_t collider, float invDensity);
 body_t calc_inertia_ball (collider_t collider, float invDensity);
 body_t calc_inertia_capsule (collider_t collider, float invDensity);
+body_t calc_inertia_box (collider_t collider, float invDensity);
 
 void update_physics (uint ent);
 

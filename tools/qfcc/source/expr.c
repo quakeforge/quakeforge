@@ -490,15 +490,15 @@ new_state_expr (const expr_t *frame, const expr_t *think, const expr_t *step)
 }
 
 expr_t *
-new_boolean_expr (ex_boollist_t *true_list, ex_boollist_t *false_list,
-				  const expr_t *e)
+new_boolean_expr (bool not, const expr_t *e)
 {
 	expr_t     *b = new_expr ();
 
 	b->type = ex_bool;
-	b->boolean.true_list = true_list;
-	b->boolean.false_list = false_list;
-	b->boolean.e = e;
+	b->boolean = (ex_bool_t) {
+		.e = e,
+		.not = not,
+	};
 	return b;
 }
 
@@ -1931,8 +1931,7 @@ convert_from_bool (const expr_t *e, const type_t *type)
 	} else {
 		return error (e, "can't convert from boolean value");
 	}
-	auto cond = new_expr_copy (e);
-	return conditional_expr (cond, one, zero);
+	return new_cond_expr (e, one, zero);
 }
 
 const expr_t *
@@ -1991,7 +1990,13 @@ is_equality (const expr_t *e)
 }
 
 bool
-is_compare (int op)
+is_compare (const expr_t *e)
+{
+	return is_relational (e) || is_equality (e);
+}
+
+bool
+is_compare_op (int op)
 {
 	if (op == QC_EQ || op == QC_NE || op == QC_LE || op == QC_GE
 		|| op == QC_LT || op == QC_GT || op == '>' || op == '<')
@@ -2345,15 +2350,11 @@ conditional_expr (const expr_t *cond, const expr_t *e1, const expr_t *e2)
 
 	scoped_src_loc (cond);
 
-	expr_t     *block = new_block_expr (0);
 	auto type1 = get_type (e1);
 	auto type2 = get_type (e2);
 	expr_t     *tlabel = new_label_expr ();
 	expr_t     *flabel = new_label_expr ();
 	expr_t     *elabel = new_label_expr ();
-
-	backpatch (c->boolean.true_list, tlabel);
-	backpatch (c->boolean.false_list, flabel);
 
 	if (!type_same (type1, type2)) {
 		if (!type_assignable (type1, type2)
@@ -2368,21 +2369,22 @@ conditional_expr (const expr_t *cond, const expr_t *e1, const expr_t *e2)
 		}
 	}
 
-	block->block.result = type1 ? new_temp_def_expr (type1) : 0;
-	append_expr (block, c);
-	append_expr ((expr_t *) c->boolean.e, flabel);//FIXME cast
-	if (block->block.result)
-		append_expr (block, assign_expr (block->block.result, e2));
+	auto cond_block = new_block_expr (nullptr);
+	cond_block->block.result = type1 ? new_temp_def_expr (type1) : nullptr;
+	make_bool (cond_block, c, tlabel, flabel);
+	append_expr (cond_block, flabel);
+	if (cond_block->block.result)
+		append_expr (cond_block, assign_expr (cond_block->block.result, e2));
 	else
-		append_expr (block, e2);
-	append_expr (block, goto_expr (elabel));
-	append_expr (block, tlabel);
-	if (block->block.result)
-		append_expr (block, assign_expr (block->block.result, e1));
+		append_expr (cond_block, e2);
+	append_expr (cond_block, goto_expr (elabel));
+	append_expr (cond_block, tlabel);
+	if (cond_block->block.result)
+		append_expr (cond_block, assign_expr (cond_block->block.result, e1));
 	else
-		append_expr (block, e1);
-	append_expr (block, elabel);
-	return block;
+		append_expr (cond_block, e1);
+	append_expr (cond_block, elabel);
+	return cond_block;
 }
 
 expr_t *
@@ -2816,14 +2818,11 @@ build_if_statement (bool not, const expr_t *test, const expr_t *s1,
 	test = convert_bool (test, true);
 	if (test->type != ex_error) {
 		if (not) {
-			backpatch (test->boolean.true_list, fl);
-			backpatch (test->boolean.false_list, tl);
+			make_bool (if_expr, test, fl, tl);
 		} else {
-			backpatch (test->boolean.true_list, tl);
-			backpatch (test->boolean.false_list, fl);
+			make_bool (if_expr, test, tl, fl);
 		}
-		append_expr ((expr_t *) test->boolean.e, tl);//FIXME cast
-		append_expr (if_expr, test);
+		append_expr (if_expr, tl);
 	}
 	append_expr (if_expr, s1);
 

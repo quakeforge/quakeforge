@@ -80,7 +80,7 @@ rua_parse_declaration (specifier_t spec, symbol_t *sym, const expr_t *init,
 					error (init, "type mismatch in initializer");
 					init = new_zero_expr (spec.type);
 				}
-				if (!is_constexpr (init)) {
+				if (spec.storage != sc_local && !is_constexpr (init)) {
 					error (init, "non-constant initializer");
 					init = new_zero_expr (spec.type);
 				}

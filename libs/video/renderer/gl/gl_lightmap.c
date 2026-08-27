@@ -508,7 +508,7 @@ gl_overbright_f (void *data, const cvar_t *cvar)
 	if (!gl_R_BuildLightMap)
 		return;
 
-	brush = &r_refdef.worldmodel->brush;
+	brush = r_refdef.worldmodel->brush;
 
 	for (unsigned i = 0; i < brush->numsurfaces; i++) {
 		msurface_t *surf = brush->surfaces + i;
@@ -604,7 +604,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
-		brush = &m->brush;
+		brush = m->brush;
 		gl_currentmodel = m;
 		// non-bsp models don't have surfaces.
 		for (unsigned i = 0; i < brush->numsurfaces; i++) {
@@ -627,7 +627,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
-		brush = &m->brush;
+		brush = m->brush;
 		// non-bsp models don't have surfaces.
 		for (unsigned i = 0; i < brush->numsurfaces; i++) {
 			msurface_t *surf = brush->surfaces + i;

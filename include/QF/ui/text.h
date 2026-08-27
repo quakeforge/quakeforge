@@ -38,6 +38,8 @@
 
 #include "QF/ecs.h"
 
+typedef struct glyphobj_s glyphobj_t;
+
 // These can be converted to hb_direction_t simply by oring with 4
 typedef enum {
 	text_right_down,	// left to right, then down horizontal text
@@ -56,12 +58,6 @@ typedef struct script_component_s {
 	text_dir_e  direction;
 } script_component_t;
 
-typedef struct glyphobj_s {
-	int         glyphid;
-	int         x, y;
-	int         fontid;
-} glyphobj_t;
-
 typedef struct glyphref_s {
 	uint32_t    start;
 	uint32_t    count;
@@ -79,6 +75,8 @@ enum {
 	text_glyphs,
 	// tint color for glyphs
 	text_color,
+	// 26.6 point size of text
+	text_ptsize,
 	// text_script, text_font and text_features on the passage root object set
 	// the defaults for all text objects in the passage. The settings can be
 	// overridden at the paragraph level or individual text object level by
@@ -118,16 +116,16 @@ struct view_s Text_PassageView (text_system_t textsys, struct view_s parent,
 								struct font_s *font, struct passage_s *passage,
 								struct text_shaper_s *shaper);
 struct view_s Text_StringView (text_system_t textsys, struct view_s parent,
-							   struct font_s *font,
+							   struct font_s *font, int16_t ptsize,
 							   const char *str, uint32_t len,
 							   script_component_t *sc, featureset_t *fs,
 							   struct text_shaper_s *shaper);
 struct view_s Text_String32View (text_system_t textsys, struct view_s parent,
-								 struct font_s *font,
+								 struct font_s *font, int16_t ptsize,
 								 const uint32_t *str, uint32_t len,
 								 script_component_t *sc, featureset_t *fs,
 								 struct text_shaper_s *shaper);
-struct view_pos_s Text_Size (struct font_s *font,
+struct view_pos_s Text_Size (struct font_s *font, int16_t ptsize,
 							 const char *str, uint32_t len,
 							 script_component_t *sc, featureset_t *fs,
 							 struct text_shaper_s *shaper);
@@ -135,6 +133,7 @@ void Text_SetScript (text_system_t textsys, uint32_t textid,
 					 const char *lang, hb_script_t script, text_dir_e dir);
 void Text_SetFont (text_system_t textsys, uint32_t textid,
 				   struct font_s *font);
+void Text_SetPtSize (text_system_t textsys, uint32_t textid, int16_t ptsize);
 void Text_SetFeatures (text_system_t textsys, uint32_t textid,
 					   featureset_t *features);
 void Text_AddFeature (text_system_t textsys, uint32_t textid,

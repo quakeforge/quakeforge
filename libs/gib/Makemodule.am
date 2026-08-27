@@ -2,9 +2,11 @@ gib_deps= \
 	libs/ruamoko/libQFruamoko.la \
 	libs/util/libQFutil.la
 
-lib_LTLIBRARIES += \
+libs_gib_libs=\
 	libs/gib/libQFgib.la \
 	libs/gib/libQFgib_client.la
+lib_LTLIBRARIES += @libs_gib_libs@
+EXTRA_LTLIBRARIES += $(libs_gib_libs)
 
 libs_gib_libQFgib_la_LDFLAGS=		$(lib_ldflags)
 libs_gib_libQFgib_la_LIBADD=		$(gib_deps)

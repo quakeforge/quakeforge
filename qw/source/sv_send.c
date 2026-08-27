@@ -299,14 +299,14 @@ SV_Multicast (const vec3_t origin, int to)
 	int         leafnum, j;
 	mleaf_t    *leaf;
 	bool        reliable;
-	mod_brush_t *brush = &sv.worldmodel->brush;
+	mod_brush_t *brush = sv.worldmodel->brush;
 
 	vec4f_t     org = { VectorExpand (origin), 1 };
-	leaf = Mod_PointInLeaf (org, &sv.worldmodel->brush);
+	leaf = Mod_PointInLeaf (org, brush);
 	if (!leaf)
 		leafnum = 0;
 	else
-		leafnum = leaf - sv.worldmodel->brush.leafs;
+		leafnum = leaf - brush->leafs;
 
 	reliable = false;
 
@@ -347,7 +347,7 @@ SV_Multicast (const vec3_t origin, int to)
 		}
 
 		org = (vec4f_t) {VectorExpand (SVvector (client->edict, origin)), 1};
-		leaf = Mod_PointInLeaf (org, &sv.worldmodel->brush);
+		leaf = Mod_PointInLeaf (org, brush);
 		if (leaf) {
 			// -1 is because pvs rows are 1 based, not 0 based like leafs
 			leafnum = leaf - brush->leafs - 1;

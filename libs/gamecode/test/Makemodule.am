@@ -32,9 +32,10 @@ libs_gamecode_tests = \
 	libs/gamecode/test/test-vector \
 	libs/gamecode/test/test-with
 
+if run_libs_gamecode_tests
 TESTS += $(libs_gamecode_tests)
-
 check_PROGRAMS += $(libs_gamecode_tests)
+endif
 
 EXTRA_DIST += libs/gamecode/test/head.c libs/gamecode/test/main.c
 

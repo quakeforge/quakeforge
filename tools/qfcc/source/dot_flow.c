@@ -450,10 +450,13 @@ print_chains (flowgraph_t *graph, const char *filename, bool do_du)
 		auto ud = chains[i];
 		int src = do_du ? ud.defst : ud.usest;
 		int dst = do_du ? ud.usest : ud.defst;
+		// node labels are implicitly the statement number
+		// edge labels are the variable
 		dasprintf (dstr, "  %d -> %d [label=\"%d\"];\n", src, dst, ud.var);
 		set_add (statements, src);
 		set_add (statements, dst);
 	}
+	// mark any pseudo statement with a box (note start index)
 	for (auto si = set_start (statements, func->num_statements);
 		 si; si = set_next (si)) {
 		dasprintf (dstr, "  %d [shape=box];\n", si->element);

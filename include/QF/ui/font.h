@@ -37,7 +37,9 @@
 #include "QF/ui/vrect.h"
 #include "QF/simd/types.h"
 
-#include "r_scrap.h"
+#include "r_scrap.h"//FIXME
+
+typedef struct QFile_s QFile;
 
 typedef struct fontent_s {
 	uint32_t    id;

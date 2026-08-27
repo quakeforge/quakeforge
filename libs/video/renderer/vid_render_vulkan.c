@@ -255,6 +255,12 @@ vulkan_R_SetSkyId (uint32_t id)
 }
 
 static void
+vulkan_R_SetSkyRotation (vec4f_t rot)
+{
+	Vulkan_SetSkyRotation (rot, vulkan_ctx);
+}
+
+static void
 vulkan_R_NewScene (scene_t *scene)
 {
 	Vulkan_NewScene (scene, vulkan_ctx);
@@ -461,9 +467,15 @@ vulkan_Gizmo_AddBrush (vec4f_t orig, const vec4f_t bounds[2],
 
 static void
 vulkan_Gizmo_AddPlane (vec4f_t p, vec4f_t s, vec4f_t t,
-					   quat_t gcol, quat_t scol, quat_t tcol)
+					   const quat_t gcol, const quat_t scol, const quat_t tcol)
 {
 	Vulkan_Gizmo_AddPlane (p, s, t, gcol, scol, tcol, vulkan_ctx);
+}
+
+static void
+vulkan_Gizmo_AddLine (vec4f_t u, vec4f_t m, float r, const quat_t color)
+{
+	Vulkan_Gizmo_AddLine (u, m, r, color, vulkan_ctx);
 }
 
 static void
@@ -594,17 +606,9 @@ vulkan_BufferSize (const char *name)
 }
 
 static void
-vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, memhunk_t *hunk)
+vulkan_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 {
-	auto save_hunk = vulkan_ctx->hunk;
-	vulkan_ctx->hunk = hunk;
-	Vulkan_Mod_LoadLighting (mod, bsp, vulkan_ctx);
-	vulkan_ctx->hunk = save_hunk;
-}
-
-static void
-vulkan_Mod_SubdivideSurface (model_t *mod, msurface_t *fa, memhunk_t *hunk)
-{
+	Vulkan_Mod_LoadLighting (brush_ctx, vulkan_ctx);
 }
 
 static void
@@ -614,6 +618,12 @@ vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, memhunk_t *hunk)
 	vulkan_ctx->hunk = hunk;
 	Vulkan_Mod_ProcessTexture (mod, tx, vulkan_ctx);
 	vulkan_ctx->hunk = save_hunk;
+}
+
+static void
+vulkan_Mod_FinalizeBrushModel (mod_brush_ctx_t *brush_ctx)
+{
+	Vulkan_Mod_FinalizeBrushModel (brush_ctx, vulkan_ctx);
 }
 
 static void
@@ -747,9 +757,9 @@ vulkan_vid_render_create_context (void *data)
 static vid_model_funcs_t model_funcs = {
 	.texture_render_size  = sizeof (vulktex_t) + 2 * sizeof (qfv_tex_t),
 
-	.Mod_LoadLighting     = vulkan_Mod_LoadLighting,
-	.Mod_SubdivideSurface = vulkan_Mod_SubdivideSurface,
-	.Mod_ProcessTexture   = vulkan_Mod_ProcessTexture,
+	.Mod_LoadLighting       = vulkan_Mod_LoadLighting,
+	.Mod_ProcessTexture     = vulkan_Mod_ProcessTexture,
+	.Mod_FinalizeBrushModel = vulkan_Mod_FinalizeBrushModel,
 
 	.Mod_LoadMesh        = Mod_LoadMeshModel,
 	.Mod_LoadIQM         = Mod_LoadIQM,
@@ -870,6 +880,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 		.AddCapsule        = vulkan_Gizmo_AddCapsule,
 		.AddBrush          = vulkan_Gizmo_AddBrush,
 		.AddPlane          = vulkan_Gizmo_AddPlane,
+		.AddLine           = vulkan_Gizmo_AddLine,
 	},
 
 	.painter = {
@@ -883,6 +894,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.R_ClearState     = vulkan_R_ClearState,
 	.R_LoadSkys       = vulkan_R_LoadSkys,
 	.R_SetSkyId       = vulkan_R_SetSkyId,
+	.R_SetSkyRotation = vulkan_R_SetSkyRotation,
 	.R_NewScene       = vulkan_R_NewScene,
 	.R_LineGraph      = vulkan_R_LineGraph,
 

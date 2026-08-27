@@ -1,4 +1,6 @@
-noinst_PROGRAMS += ruamoko/gatest/gatest.dat$(EXEEXT)
+gatest=ruamoko/gatest/gatest.dat
+noinst_PROGRAMS += @ruamoko_gatest@
+EXTRA_PROGRAMS += $(gatest)
 
 gatest_dat_src= \
 	ruamoko/gatest/algebra.r \

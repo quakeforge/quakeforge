@@ -228,11 +228,11 @@ R_RecursiveClipBPoly (uint32_t render_id, bedge_t *pedges, mnode_t *pnode,
 			// draw if we've reached a non-solid leaf, done if all that's left
 			// is a solid leaf, and continue down the tree if it's not a leaf
 			int         child_id = pnode->children[i];
-			pn = r_refdef.worldmodel->brush.nodes + child_id;
+			pn = r_refdef.worldmodel->brush->nodes + child_id;
 
 			// we're done with this branch if the node or leaf isn't in the PVS
 			if (child_id < 0) {
-				mleaf_t    *leaf = r_refdef.worldmodel->brush.leafs + ~child_id;
+				mleaf_t    *leaf = r_refdef.worldmodel->brush->leafs + ~child_id;
 				if (r_visstate.leaf_visframes[~child_id]
 						== r_visstate.visframecount
 					&& leaf->contents != CONTENTS_SOLID) {
@@ -265,8 +265,8 @@ R_DrawSolidClippedSubmodelPolygons (uint32_t render_id, mod_brush_t *brush,
 
 	// FIXME: use bounding-box-based frustum clipping info?
 
-	surf = &brush->surfaces[brush->firstmodelsurface];
-	numsurfaces = brush->nummodelsurfaces;
+	surf = &brush->surfaces[brush->firstface];
+	numsurfaces = brush->numfaces;
 	pedges = brush->edges;
 
 	for (i = 0; i < numsurfaces; i++, surf++) {
@@ -332,8 +332,8 @@ R_DrawSubmodelPolygons (uint32_t render_id, mod_brush_t *brush, int clipflags,
 
 	// FIXME: use bounding-box-based frustum clipping info?
 
-	surf = &brush->surfaces[brush->firstmodelsurface];
-	numsurfaces = brush->nummodelsurfaces;
+	surf = &brush->surfaces[brush->firstface];
+	numsurfaces = brush->numfaces;
 
 	for (i = 0; i < numsurfaces; i++, surf++) {
 		// find which side of the node we are on
@@ -529,7 +529,7 @@ R_RenderWorld (void)
 {
 	int         i;
 	btofpoly_t  btofpolys[MAX_BTOFPOLYS];
-	mod_brush_t *brush = &r_refdef.worldmodel->brush;
+	mod_brush_t *brush = r_refdef.worldmodel->brush;
 	swbspctx_t  bspctx = {
 		brush,
 		0,
@@ -537,7 +537,6 @@ R_RenderWorld (void)
 
 	pbtofpolys = btofpolys;
 
-	brush = &r_refdef.worldmodel->brush;
 	r_pcurrentvertbase = brush->vertexes;
 
 	R_VisitWorldNodes (&bspctx, 15);

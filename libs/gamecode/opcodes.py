@@ -667,7 +667,7 @@ vecmat_formats = {
     "opcode": "OP_VMMUL_{mat_dim[1][d][dd]}{mat_dim[0][d][dd]}_{mat_type[t]}",
     "mnemonic": "mul",
     "opname": "mul",
-    "widths": "{mat_dim[0][d][dd]}, {mat_dim[1][d][dd]}, 0",
+    "widths": "{mat_dim[0][d][dd]}, {mat_dim[1][d][dd]}, {mat_dim[1][d][dd]}",
     "columns": "1, {mat_dim[1][d][dd]}, 1",
     "types": "{mat_types[t]}, {mat_types[t]}, {mat_types[t]}",
     "args": {

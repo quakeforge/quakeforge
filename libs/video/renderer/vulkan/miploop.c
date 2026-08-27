@@ -115,8 +115,8 @@ miploop_init_loop (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto img_name = *(const char **) params[2]->value;
 	auto sinfo = taskctx->stepinfo;
 	auto rt = sinfo->render_template;
-	Sys_Printf ("miploop_init_loop: %s %s %d %p\n",
-				sinfo->name, img_name, layers, textures);
+	Sys_MaskPrintf (SYS_vulkan, "miploop_init_loop: %s %s %d %p\n",
+					sinfo->name, img_name, layers, textures);
 	if (rt->num_renderpasses != 1) {
 		Sys_Error ("%d:%s: need exactly one render pass in render template",
 				   sinfo->line, sinfo->name);

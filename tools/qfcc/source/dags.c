@@ -913,41 +913,6 @@ st_in_range (int st, flownode_t *fn)
 	return st >= start && st < end;
 }
 
-static bool
-exact_overlap (operand_t *op1, operand_t *op2)
-{
-	if (op1 == op2) {
-		// shouldn't happen
-		// the same object overlaps itself exactly
-		return true;
-	}
-	if (type_size (op1->type) != type_size (op1->type)) {
-		// shouldn't happen
-		// differt size so can't be exact overlap
-		return false;
-	}
-	if (op_is_constant (op1) || op_is_constant (op2)) {
-		// shouldn't happen
-		// constants never overlap with anything
-		return false;
-	}
-	if (op_is_temp (op1) != op_is_temp (op2)) {
-		// shouldn't happen
-		// defs and temps never overlap
-		return false;
-	}
-	// either both are temp or both are def
-	if (op_is_temp (op1)) {
-		auto t1 = &op1->tempop;
-		auto t2 = &op2->tempop;
-		return tempop_overlap (t1, t2) == dol_exact;
-	} else {
-		auto d1 = op1->def;
-		auto d2 = op2->def;
-		return def_overlap (d1, d2) == dol_exact;
-	}
-}
-
 static void
 dag_detect_hazards (dag_t *dag, daglabel_t *l, statement_t *s, dagnode_t *n)
 {
@@ -977,6 +942,10 @@ dag_detect_hazards (dag_t *dag, daglabel_t *l, statement_t *s, dagnode_t *n)
 			if (ud.defst >= s->number) {
 				continue;
 			}
+			// use is earlier in the node. no hazard
+			if (ud.usest <= s->number) {
+				continue;
+			}
 			auto st = func->statements[ud.defst];
 			auto node = dag->nodes[st->dag_node];
 			// record the WAW hazard
@@ -999,10 +968,13 @@ dag_detect_hazards (dag_t *dag, daglabel_t *l, statement_t *s, dagnode_t *n)
 		}
 		auto st = func->statements[du.usest];
 		for (int j = 0; j < st->num_use; j++) {
-			auto ud = func->ud_chains[s->first_use + j];
+			auto ud = func->ud_chains[st->first_use + j];
 			if (ud.var != label_var->number
 				&& set_is_member (alias_vars, ud.var)) {
-				if (!exact_overlap (label_var->op, func->vars[ud.var]->op)) {
+				auto var = func->vars[ud.var];
+				unsigned ol = operand_calc_overlap (var->op, label_var->op);
+				// there is a hazard only if var is not completely overwritten
+				if (!(ol & (dol_mask_sub | dol_mask_exact))) {
 					must_write = true;
 				}
 			}
@@ -1107,6 +1079,14 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l, statement_t *s)
 		// for kill_barrier to valid)
 		if (node->number != kill_barrier) {
 			set_union (n->edges, node->parents);
+			for (auto p = set_first (node->parents); p; p = set_next (p)) {
+				auto pn = dag->nodes[p->element];
+				if (pn->type == st_alias) {
+					// the assignment must come after any uses of aliases
+					// of that variable
+					set_union (n->edges, pn->parents);
+				}
+			}
 		}
 		// nodes never need edges to themselves, but n might be one of node's
 		// parents
@@ -1863,9 +1843,9 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	int         i;
 	const type_t *type;
 
-	SET_DEFER (required);
-	set_assign (required, dagnode->required);
-	set_difference (required, dagnode->identifiers);
+	SET_DEFER (identifiers);
+	set_assign (identifiers, dagnode->required);
+	set_union (identifiers, dagnode->identifiers);
 
 	switch (dagnode->type) {
 		case st_none:
@@ -1874,11 +1854,8 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 								"non-leaf label in leaf node");
 			dst = dagnode->label->op;
 			type = dst->type;
-			if ((var_iter = set_first (dagnode->identifiers))) {
+			if ((var_iter = set_first (identifiers))) {
 				dst = generate_assignments (dag, block, dst, var_iter, type);
-			}
-			if (dst && (var_iter = set_first (required))) {
-				generate_assignments (dag, block, dst, var_iter, type);
 			}
 			break;
 		case st_alias:
@@ -1897,11 +1874,8 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 										dagnode->offset + offset,
 										value, dagnode->label->expr);
 			type = dst->type;
-			if ((var_iter = set_first (dagnode->identifiers))) {
+			if ((var_iter = set_first (identifiers))) {
 				dst = generate_assignments (dag, block, dst, var_iter, type);
-			}
-			if (dst && (var_iter = set_first (required))) {
-				generate_assignments (dag, block, dst, var_iter, type);
 			}
 			break;
 		case st_address:
@@ -1910,7 +1884,7 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			if (dagnode->children[1])
 				operands[1] = make_operand (dag, block, dagnode, 1);
 			type = dagnode->vtype;
-			if (!(var_iter = set_first (dagnode->identifiers))) {
+			if (!(var_iter = set_first (identifiers))) {
 				operands[2] = temp_operand (type, dagnode->label->expr);
 			} else {
 				daglabel_t *var = dag->labels[var_iter->element];
@@ -1923,9 +1897,6 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 								  dagnode->label->expr);
 			sblock_add_statement (block, st);
 			generate_assignments (dag, block, operands[2], var_iter, type);
-			if (dst && (var_iter = set_first (required))) {
-				generate_assignments (dag, block, dst, var_iter, type);
-			}
 			break;
 		case st_assign:
 			internal_error (dagnode->label->expr, "unexpected assignment node");

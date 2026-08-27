@@ -1,9 +1,10 @@
 libs_console_tests = \
 	libs/console/test/test-buffer
 
+if run_libs_console_tests
 TESTS += $(libs_console_tests)
-
 check_PROGRAMS += $(libs_console_tests)
+endif
 
 test_console_libs= \
 	libs/console/libQFconsole.la \

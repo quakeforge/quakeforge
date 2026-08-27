@@ -1,10 +1,10 @@
 ruamoko_scheme_libs=ruamoko/scheme/libscheme.a
 ruamoko_scheme_libexec=ruamoko/scheme/main.dat$(EXEEXT)
 
-ruamoko_lib_LIBRARIES += $(ruamoko_scheme_libs)
+ruamoko_lib_LIBRARIES += @ruamoko_scheme_libs@
 EXTRA_LIBRARIES += $(ruamoko_scheme_libs)
 
-noinst_PROGRAMS += $(ruamoko_scheme_libexec)
+noinst_PROGRAMS += @ruamoko_scheme_libexec@
 EXTRA_PROGRAMS  += $(ruamoko_scheme_libexec)
 
 ruamoko_scheme_libscheme_a_SOURCES=\

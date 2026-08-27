@@ -190,18 +190,21 @@ static qwaq_key_t default_keys[] = {
 static int
 qwaq_cmd_peek (qwaq_input_resources_t *res, int ahead)
 {
+	qfZoneScoped (true);
 	return *RB_PEEK_DATA (res->commands.pipe, ahead);
 }
 #if 0
 static dstring_t *
 qwaq_cmd_string (qwaq_input_resources_t *res, int string_id)
 {
+	qfZoneScoped (true);
 	return res->commands.strings + string_id;
 }
 #endif
 static dstring_t *
 qwaq_res_string (qwaq_input_resources_t *res, int string_id)
 {
+	qfZoneScoped (true);
 	return res->results.strings + string_id;
 }
 
@@ -213,6 +216,7 @@ static volatile sig_atomic_t winch_arrived;
 static void
 handle_winch (int sig)
 {
+	qfZoneScoped (true);
 	winch_arrived = 1;
 }
 #endif
@@ -220,6 +224,7 @@ handle_winch (int sig)
 int
 qwaq_add_event (qwaq_input_resources_t *res, qwaq_event_t *event)
 {
+	qfZoneScoped (true);
 	struct timespec timeout;
 	int         merged = 0;
 	int         ret = 0;
@@ -254,6 +259,7 @@ qwaq_add_event (qwaq_input_resources_t *res, qwaq_event_t *event)
 static void
 resize_event (qwaq_input_resources_t *res)
 {
+	qfZoneScoped (true);
 	qwaq_event_t event = {};
 	struct winsize size;
 	if (ioctl (fileno (stdout), TIOCGWINSZ, &size) != 0) {
@@ -269,6 +275,7 @@ resize_event (qwaq_input_resources_t *res)
 static void
 key_event (qwaq_input_resources_t *res, int key, unsigned shift)
 {
+	qfZoneScoped (true);
 	qwaq_event_t event = {};
 	event.what = qe_keydown;
 	event.when = Sys_DoubleTime ();
@@ -280,6 +287,7 @@ key_event (qwaq_input_resources_t *res, int key, unsigned shift)
 static void
 mouse_event (qwaq_input_resources_t *res, int what, int x, int y)
 {
+	qfZoneScoped (true);
 	qwaq_event_t event = {};
 
 	event.what = what;
@@ -306,6 +314,7 @@ mouse_event (qwaq_input_resources_t *res, int what, int x, int y)
 static void
 parse_mouse (qwaq_input_resources_t *res, unsigned ctrl, int x, int y, int cmd)
 {
+	qfZoneScoped (true);
 	int         button = ctrl & 3;
 	int         ext = (ctrl >> 6);
 	int         what = qe_none;
@@ -346,6 +355,7 @@ parse_mouse (qwaq_input_resources_t *res, unsigned ctrl, int x, int y, int cmd)
 static void
 parse_x10 (qwaq_input_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         x = (byte) res->escbuff.str[1] - '!';	// want 0-based
 	int         y = (byte) res->escbuff.str[2] - '!';	// want 0-based
 	unsigned    ctrl = (byte) res->escbuff.str[0] - ' ';
@@ -356,6 +366,7 @@ parse_x10 (qwaq_input_resources_t *res)
 static void
 parse_sgr (qwaq_input_resources_t *res, char cmd)
 {
+	qfZoneScoped (true);
 	unsigned    ctrl, x, y;
 
 	sscanf (res->escbuff.str, "%u;%u;%u", &ctrl, &x, &y);
@@ -366,6 +377,7 @@ parse_sgr (qwaq_input_resources_t *res, char cmd)
 static void
 parse_key (qwaq_input_resources_t *res)
 {
+	qfZoneScoped (true);
 	qwaq_key_t *key = Hash_Find (res->key_sequences, res->escbuff.str);
 
 	//Sys_Printf ("parse_key: %s\n", res->escbuff.str + 1);
@@ -378,6 +390,7 @@ parse_key (qwaq_input_resources_t *res)
 
 static void process_char (qwaq_input_resources_t *res, char ch)
 {
+	qfZoneScoped (true);
 	if (ch == 0x1b) {
 		// always reset if escape is seen, may be a desync
 		res->escstate = esc_escape;
@@ -456,6 +469,7 @@ esc_key_jump:
 static const char *
 key_sequence_getkey (const void *_seq, void *unused)
 {
+	qfZoneScoped (true);
 	__auto_type seq = (const qwaq_key_t *) _seq;
 	return seq->sequence;
 }
@@ -463,21 +477,25 @@ key_sequence_getkey (const void *_seq, void *unused)
 static void
 term_init (void *_res)
 {
+	qfZoneScoped (true);
 }
 
 static void
 term_shutdown (void *_res)
 {
+	qfZoneScoped (true);
 }
 
 static void
 term_set_device_event_data (void *device, void *event_data, void *data)
 {
+	qfZoneScoped (true);
 }
 
 static void *
 term_get_device_event_data (void *device, void *data)
 {
+	qfZoneScoped (true);
 	return 0;
 }
 
@@ -485,6 +503,7 @@ term_get_device_event_data (void *device, void *data)
 static void
 term_add_select (qf_fd_set *fdset, int *maxfd, void *_res)
 {
+	qfZoneScoped (true);
 	QF_FD_SET (FD, fdset);
 	if (*maxfd < FD) {
 		*maxfd = FD;
@@ -494,6 +513,7 @@ term_add_select (qf_fd_set *fdset, int *maxfd, void *_res)
 static void
 term_check_select (qf_fd_set *fdset, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_input_resources_t *res = _res;
 	char        buf[256];
 	int         len;
@@ -530,12 +550,14 @@ static int term_driver_handle;
 static void __attribute__((constructor))
 term_register_driver (void)
 {
+	qfZoneScoped (true);
 	term_driver_handle = IN_RegisterDriver (&term_driver, 0);
 }
 
 static int
 qwaq_input_event_handler (const IE_event_t *ie_event, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_input_resources_t *res = _res;
 	qwaq_event_t event = {};
 
@@ -583,6 +605,7 @@ qwaq_input_event_handler (const IE_event_t *ie_event, void *_res)
 static void
 qwaq_input_init (qwaq_input_resources_t *res)
 {
+	qfZoneScoped (true);
 	res->input_event_handler = IE_Add_Handler (qwaq_input_event_handler, res);
 	IE_Set_Focus (res->input_event_handler);
 	IN_DriverData (term_driver_handle, res);
@@ -610,6 +633,7 @@ qwaq_input_init (qwaq_input_resources_t *res)
 void
 qwaq_input_enable_mouse (void)
 {
+	qfZoneScoped (true);
 	// ncurses takes care of input mode for us, so need only tell xterm
 	// what we need
 	(void) !write(1, MOUSE_MOVES_ON, sizeof (MOUSE_MOVES_ON) - 1);
@@ -619,6 +643,7 @@ qwaq_input_enable_mouse (void)
 void
 qwaq_input_disable_mouse (void)
 {
+	qfZoneScoped (true);
 	// ncurses takes care of input mode for us, so need only tell xterm
 	// what we need
 	(void) !write(1, SGR_OFF, sizeof (SGR_OFF) - 1);
@@ -628,12 +653,14 @@ qwaq_input_disable_mouse (void)
 static void
 qwaq_process_input (qwaq_input_resources_t *res)
 {
+	qfZoneScoped (true);
 	IN_ProcessEvents ();
 }
 
 static void
 qwaq_input_shutdown (qwaq_input_resources_t *res)
 {
+	qfZoneScoped (true);
 	IE_Remove_Handler (res->input_event_handler);
 	IN_DriverData (term_driver_handle, 0);
 
@@ -645,6 +672,7 @@ qwaq_input_shutdown (qwaq_input_resources_t *res)
 static void
 bi_send_connected_devices (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_input_resources_t *res = _res;
 
 	int         command[] = {
@@ -658,6 +686,7 @@ bi_send_connected_devices (progs_t *pr, void *_res)
 static void
 bi_get_device_info (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_input_resources_t *res = _res;
 	int         devid = P_INT (pr, 0);
 
@@ -711,6 +740,7 @@ bi_get_device_info (progs_t *pr, void *_res)
 static int
 get_event (qwaq_input_resources_t *res, qwaq_event_t *event)
 {
+	qfZoneScoped (true);
 	struct timespec timeout;
 	int         ret = 0;
 	int         was_event = 0;
@@ -743,6 +773,7 @@ get_event (qwaq_input_resources_t *res, qwaq_event_t *event)
 static void
 bi_get_event (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_input_resources_t *res = _res;
 	qwaq_event_t *event = &P_STRUCT (pr, qwaq_event_t, 0);
 
@@ -752,12 +783,14 @@ bi_get_event (progs_t *pr, void *_res)
 static void
 cmd_send_connected_devices (qwaq_input_resources_t *res)
 {
+	qfZoneScoped (true);
 	IN_SendConnectedDevices ();
 }
 
 static void
 cmd_get_device_info (qwaq_input_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         devid = qwaq_cmd_peek (res, 2);
 	int         name_id = qwaq_pipe_acquire_string (&res->results);
 	int         id_id = qwaq_pipe_acquire_string (&res->results);
@@ -793,6 +826,7 @@ cmd_get_device_info (qwaq_input_resources_t *res)
 static void
 dump_command (qwaq_input_resources_t *res, int len)
 {
+	qfZoneScoped (true);
 	if (0) {
 		qwaq_input_commands cmd = qwaq_cmd_peek (res, 0);
 		Sys_Printf ("%s[%d]", qwaq_input_command_names[cmd], len);
@@ -806,6 +840,7 @@ dump_command (qwaq_input_resources_t *res, int len)
 static bool
 process_commands (qwaq_input_resources_t *res)
 {
+	qfZoneScoped (true);
 	struct timespec timeout;
 	int         avail;
 	int         len;
@@ -853,6 +888,7 @@ process_commands (qwaq_input_resources_t *res)
 static void *
 qwaq_input_thread (qwaq_thread_t *thread)
 {
+	qfZoneScoped (true);
 	qwaq_input_resources_t *res = thread->data;
 
 	do {
@@ -865,6 +901,7 @@ qwaq_input_thread (qwaq_thread_t *thread)
 static void
 bi_init_input (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_input_resources_t *res = _res;
 	qwaq_input_init (res);
 	res->initialized = 1;
@@ -892,6 +929,7 @@ static builtin_t builtins[] = {
 static void
 bi_input_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qwaq_input_resources_t *) _res;
 
 	if (res->input_thread) {
@@ -911,18 +949,21 @@ bi_input_clear (progs_t *pr, void *_res)
 static void
 bi_input_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	free (_res);
 }
 
 static int
 qwaq_send_event (void *data, qwaq_event_t *event)
 {
+	qfZoneScoped (true);
 	return qwaq_add_event (data, event);
 }
 
 void
 BI_TermInput_Init (progs_t *pr)
 {
+	qfZoneScoped (true);
 	qwaq_input_resources_t *res = calloc (sizeof (*res), 1);
 	res->pr = pr;
 

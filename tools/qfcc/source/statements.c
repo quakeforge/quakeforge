@@ -345,6 +345,7 @@ print_sblock (sblock_t *sblock)
 	printf ("number: %d\n", sblock->number);
 	printf ("id: %d\n", sblock->id);
 	for (auto s = sblock->statements; s; s = s->next) {
+		printf ("%d ", s->number);
 		print_statement (s);
 	}
 }
@@ -575,11 +576,58 @@ tempop_overlap (tempop_t *t1, tempop_t *t2)
 	if (offs1 == offs2 && size1 == size2) {
 		return dol_exact;
 	}
-	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2)
+	if (offs1 >= offs2 && offs1 + size1 <= offs2 + size2) {
 		return dol_sub;
-	if (offs1 < offs2 + size2 && offs2 < offs1 + size1)
+	}
+	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2) {
+		return dol_super;
+	}
+	if (offs1 < offs2 + size2 && offs2 < offs1 + size1) {
 		return dol_partial;
-	return dol_all;
+	}
+	return dol_none;
+}
+
+unsigned
+tempop_calc_overlap (tempop_t *t1, tempop_t *t2)
+{
+	int         offs1 = t1->offset;
+	int         offs2 = t2->offset;
+	int         size1 = type_size (t1->type);
+	int         size2 = type_size (t2->type);
+
+	if (t1->alias) {
+		offs1 += t1->alias->tempop.offset;
+	}
+	if (t2->alias) {
+		offs2 += t2->alias->tempop.offset;
+	}
+	if (offs1 == offs2 && size1 == size2) {
+		return dol_mask_exact;
+	}
+	if (offs1 >= offs2 && offs1 + size1 <= offs2 + size2) {
+		return dol_mask_sub;
+	}
+	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2) {
+		return dol_mask_super;
+	}
+	if (offs1 < offs2 + size2 && offs2 < offs1 + size1) {
+		return dol_mask_partial;
+	}
+	return dol_mask_none;
+}
+
+unsigned operand_calc_overlap (operand_t *o1, operand_t *o2)
+{
+	if (o1->op_type == o2->op_type) {
+		if (o1->op_type == op_temp) {
+			return tempop_calc_overlap (&o1->tempop, &o2->tempop);
+		}
+		if (o1->op_type == op_def) {
+			return def_calc_overlap (o1->def, o2->def);
+		}
+	}
+	return 0;
 }
 
 int
@@ -938,8 +986,7 @@ expr_address (sblock_t *sblock, const expr_t *e, operand_t **op)
 	const expr_t *offset = e->address.offset;
 
 	if (lvalue->type == ex_alias && offset && is_constant (offset)) {
-		lvalue = new_offset_alias_expr (lvalue->alias.type,
-										lvalue->alias.expr,
+		lvalue = new_offset_alias_expr (lvalue->alias.type, lvalue,
 										expr_int (offset));
 		offset = 0;
 	} else if (offset && is_constant (offset)) {
@@ -1058,9 +1105,6 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 	const char *opcode;
 	bool        need_ptr = false;
 	st_type_t   type = st_move;
-	operand_t  *use = nullptr;
-	operand_t  *def = nullptr;
-	operand_t  *kill = nullptr;
 
 	scoped_src_loc (e);
 
@@ -1102,11 +1146,11 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 			*op = src;
 		}
 		if (!need_ptr && is_indirect (dst_expr)) {
-			if (is_variable (src_expr)) {
-				// FIXME this probably needs to be more agressive
-				// shouldn't emit code...
-				sblock = statement_subexpr (sblock, src_expr, &use);
-			}
+			//if (is_variable (src_expr)) {
+			//	// FIXME this probably needs to be more agressive
+			//	// shouldn't emit code...
+			//	sblock = statement_subexpr (sblock, src_expr, &use);
+			//}
 			if (options.code.progsversion == PROG_VERSION) {
 				// FIXME it was probably a mistake extracting the operand
 				// type from the statement expression in dags. Also, can't
@@ -1127,13 +1171,6 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 		// dst_expr and/or src_expr are dereferenced pointers, so need to
 		// un-dereference dst_expr to get the pointer and switch to movep
 		// or memsetp instructions.
-		if (is_variable (dst_expr)) {
-			// FIXME this probably needs to be more agressive
-			// shouldn't emit code...
-			sblock = statement_subexpr (sblock, dst_expr, &def);
-			//FIXME is this even necessary? if it is, should use copy_operand
-			sblock = statement_subexpr (sblock, dst_expr, &kill);
-		}
 		dst_expr = address_expr (dst_expr, 0);
 		need_ptr = true;
 	}
@@ -1162,9 +1199,6 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 	s->opa = src;
 	s->opb = size;
 	s->opc = dst;
-	s->use = use;
-	s->def = def;
-	s->kill = kill;
 	sblock_add_statement (sblock, s);
 	return sblock;
 }
@@ -1258,7 +1292,7 @@ dereference_dst:
 	if (op) {
 		*op = src;
 	}
-	if (op_aliases_op (src, dst)) {
+	if (!ofs && op_aliases_op (src, dst)) {
 		return sblock;
 	}
 
@@ -1585,7 +1619,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 		const expr_t *assign = nullptr;
 		if (dst_expr->type == ex_xvalue && dst_expr->xvalue.assign) {
 			auto xvalue = dst_expr->xvalue;
-			assign = xvalue.assign (xvalue.expr, out_expr);
+			assign = xvalue.assign (xvalue.expr, out_expr, xvalue.data);
 		} else {
 			assign = assign_expr (dst_expr, out_expr);
 		}
@@ -1717,7 +1751,7 @@ ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 		ref = optimize_ptroffset (ref);
 		sblock = statement_subexpr (sblock, ref->ptroffset.ptr, base);
 		if (check_offset (ref->ptroffset.offset)) {
-			int const_offs = expr_integral (ref->ptroffset.offset);;
+			int const_offs = expr_integral (ref->ptroffset.offset);
 			*mode = 2;
 			*offset = short_operand (const_offs, ref);
 		} else {
@@ -1990,13 +2024,10 @@ statement_loop (sblock_t *sblock, const expr_t *e)
 		test = convert_bool (test, true);
 		if (!is_error (test)) {
 			if (not) {
-				backpatch (test->boolean.true_list, break_label);
-				backpatch (test->boolean.false_list, body_label);
+				make_bool (loop, test, break_label, body_label);
 			} else {
-				backpatch (test->boolean.true_list, body_label);
-				backpatch (test->boolean.false_list, break_label);
+				make_bool (loop, test, body_label, break_label);
 			}
-			append_expr (loop, test);
 		}
 		append_expr (loop, break_label);
 	} else {
@@ -2006,13 +2037,10 @@ statement_loop (sblock_t *sblock, const expr_t *e)
 		test = convert_bool (test, true);
 		if (!is_error (test)) {
 			if (not) {
-				backpatch (test->boolean.true_list, break_label);
-				backpatch (test->boolean.false_list, body_label);
+				make_bool (loop, test, break_label, body_label);
 			} else {
-				backpatch (test->boolean.true_list, body_label);
-				backpatch (test->boolean.false_list, break_label);
+				make_bool (loop, test, body_label, break_label);
 			}
-			append_expr (loop, test);
 		}
 		append_expr (loop, body_label);
 		append_expr (loop, body);

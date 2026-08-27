@@ -365,7 +365,7 @@ Model_NextDownload (void)
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
 						 va (prespawn_name, cl.servercount,
-							 cl_world.scene->worldmodel->brush.checksum2));
+							 cl_world.scene->worldmodel->brush->checksum2));
 	}
 }
 

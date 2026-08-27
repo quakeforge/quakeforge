@@ -102,12 +102,46 @@
 		};
 	},
 	{
+		name = "Plane4";
+		collider = {
+			type = col_plane;
+			plane = (0, -1, 0, 30);
+		};
+	},
+	{
+		name = "Plane5";
+		collider = {
+			type = col_plane;
+			plane = (1, 0, 0, 50);
+		};
+	},
+	{
+		name = "Plane6";
+		collider = {
+			type = col_plane;
+			plane = (0, 0, -1, 20);
+		};
+	},
+	{
 		name = "Icosahedron";
 		mesh = create_ico;
 		position = (-2, 2, 0.5, 1);
 		avel = (0, 0.0005, 1);
 		invDensity = 36;
 		target = true;
+	},
+	{
+		name = "Box";
+		mesh = create_block;
+		mesh_param = (2, 3, 1);
+		position = (-16, 24, 7, 1);
+		target = true;
+		from_shape = true;
+		invDensity = 36;
+		collider = {
+			type = col_box;
+			extent = (1, 1.5, 0.5)
+		};
 	},
 	{
 		name = "Block";
@@ -117,6 +151,37 @@
 		avel = (0, 0.0005, 1);
 		target = true;
 		invDensity = 36;
+		collider = {
+			type = col_box;
+			extent = (4.5, 0.5, 2)
+		};
+	},
+	{
+		name = "Capsule0";
+		position = (-15, 21, 5, 1);
+		target = true;
+		from_shape = true;
+		invDensity = 1;
+		//vel = (-0.1, 0, 0);
+		collider = {
+			type = col_capsule;
+			radius = 0.5;
+			axis = (0, 0, 0.75);
+		};
+	},
+	{
+		name = "Sphere0";
+		grav_flag = true;
+		position = (-21, 9, 6, 1);
+		vel = (0, 1, 0);
+		grav_flag = false;
+		target = true;
+		from_shape = true;
+		invDensity = 26;
+		collider = {
+			type = col_ball;
+			radius = 1;
+		};
 	},
 	{
 		name = "Sphere";

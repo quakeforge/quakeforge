@@ -33,6 +33,8 @@
 
 #include <stdlib.h>
 
+#include "QF/backtrace.h"
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
 #include "QF/sys.h"
@@ -43,6 +45,7 @@ struct pr_resource_s {
 	void *data;
 	void (*clear)(progs_t *pr, void *data);
 	void (*destroy)(progs_t *pr, void *data);
+	void *owner;
 };
 
 static const char *
@@ -93,14 +96,24 @@ PR_Resources_Register (progs_t *pr, const char *name, void *data,
 					   void (*clear)(progs_t *, void *),
 					   void (*destroy)(progs_t *, void *))
 {
+	if (pr_resource_t *res = Hash_Find (pr->resource_hash, name)) {
+		auto dstr = dstring_newstr ();
+		BT_pcInfo (dstr, (intptr_t) res->owner);
+		Sys_Error ("PR_Resources_Register: resource %s already registered"
+				   " by %p:%s", name, res->owner, dstr->str);
+	}
 	pr_resource_t *res = malloc (sizeof (pr_resource_t));
-	if (!res)
+	if (!res) {
 		Sys_Error ("PR_Resources_Register: out of memory");
-	res->name = name;
-	res->data = data;
-	res->clear = clear;
-	res->destroy = destroy;
-	res->next = pr->resources;
+	}
+	*res = (pr_resource_t) {
+		.name = name,
+		.next = pr->resources,
+		.data = data,
+		.clear = clear,
+		.destroy = destroy,
+		.owner = __builtin_return_address (0),
+	};
 	pr->resources = res;
 	Hash_Add (pr->resource_hash, res);
 }

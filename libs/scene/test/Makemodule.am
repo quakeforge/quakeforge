@@ -1,9 +1,10 @@
 libs_scene_tests = \
 	libs/scene/test/test-transform
 
+if run_libs_scene_tests
 TESTS += $(libs_scene_tests)
-
 check_PROGRAMS += $(libs_scene_tests)
+endif
 
 libs_scene_test_libs= \
 	libs/scene/libQFscene.la \

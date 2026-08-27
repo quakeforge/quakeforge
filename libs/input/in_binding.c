@@ -172,7 +172,7 @@ in_binding_add_device (const IE_event_t *ie_event)
 		DARRAY_APPEND (&known_devices, devid);
 		// keep the known devices sorted by id
 		heapsort (known_devices.a, known_devices.size, sizeof (int), devid_cmp);
-		Sys_Printf ("Added device %s %s\n", devname, id);
+		Sys_MaskPrintf (SYS_input, "Added device %s %s\n", devname, id);
 	}
 
 	in_devbindings_t *db = IN_GetDeviceEventData (devid);
@@ -184,9 +184,11 @@ in_binding_add_device (const IE_event_t *ie_event)
 
 	if (db) {
 		if (db->match_id) {
-			Sys_Printf ("Reconnected %s to %s %s\n", db->name, devname, id);
+			Sys_MaskPrintf (SYS_input, "Reconnected %s to %s %s\n",
+							db->name, devname, id);
 		} else {
-			Sys_Printf ("Reconnected %s to %s\n", db->name, devname);
+			Sys_MaskPrintf (SYS_input, "Reconnected %s to %s\n",
+							db->name, devname);
 		}
 		db->devid = devid;
 		IN_SetDeviceEventData (devid, db);
@@ -215,12 +217,14 @@ in_binding_remove_device (const IE_event_t *ie_event)
 	if (db) {
 		db->devid = -1;
 		if (db->match_id) {
-			Sys_Printf ("Disconnected %s from %s %s\n", db->name, devname, id);
+			Sys_MaskPrintf (SYS_input, "Disconnected %s from %s %s\n",
+							db->name, devname, id);
 		} else {
-			Sys_Printf ("Disconnected %s from %s\n", db->name, devname);
+			Sys_MaskPrintf (SYS_input, "Disconnected %s from %s\n",
+							db->name, devname);
 		}
 	}
-	Sys_Printf ("Removed device %s %s\n", devname, id);
+	Sys_MaskPrintf (SYS_input, "Removed device %s %s\n", devname, id);
 }
 
 static void

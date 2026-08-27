@@ -37,6 +37,7 @@ typedef struct {
 	bool        cow;				// Turn constants into variables if written to
 	bool        crc;				// Write progsdef.h crc to progs.dat
 	bool        debug;				// Generate debug info for the engine
+	bool        void_vars;			// allow vars to be declared void (qc)
 	bool        short_circuit;		// short circuit logic for && and ||
 	bool        optimize;			// perform optimizations
 	bool        fast_float;			// use floats directly in ifs

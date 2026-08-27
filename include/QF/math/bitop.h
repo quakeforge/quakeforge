@@ -40,11 +40,12 @@
 #include "QF/qtypes.h"
 #endif
 
-#define BITOP_RUP1__(x)  (            (x) | (            (x) >>  1))
-#define BITOP_RUP2__(x)  (BITOP_RUP1__(x) | (BITOP_RUP1__(x) >>  2))
-#define BITOP_RUP4__(x)  (BITOP_RUP2__(x) | (BITOP_RUP2__(x) >>  4))
-#define BITOP_RUP8__(x)  (BITOP_RUP4__(x) | (BITOP_RUP4__(x) >>  8))
-#define BITOP_RUP16__(x) (BITOP_RUP8__(x) | (BITOP_RUP8__(x) >> 16))
+#define BITOP_RUP1__(x)  (            (x)  | (            (x)  >>  1))
+#define BITOP_RUP2__(x)  (BITOP_RUP1__(x)  | (BITOP_RUP1__(x)  >>  2))
+#define BITOP_RUP4__(x)  (BITOP_RUP2__(x)  | (BITOP_RUP2__(x)  >>  4))
+#define BITOP_RUP8__(x)  (BITOP_RUP4__(x)  | (BITOP_RUP4__(x)  >>  8))
+#define BITOP_RUP16__(x) (BITOP_RUP8__(x)  | (BITOP_RUP8__(x)  >> 16))
+#define BITOP_RUP32__(x) (BITOP_RUP16__(x) | (BITOP_RUP16__(x) >> 32))
 /** Round x up to the next power of two.
 
 	Rounds x up to the next power of two leaving exact powers of two
@@ -55,6 +56,7 @@
 				of two.
 */
 #define BITOP_RUP(x) (BITOP_RUP16__((uint32_t)(x) - 1) + 1)
+#define BITOP_RUPL(x) (BITOP_RUP32__((uint64_t)(x) - 1) + 1)
 
 #define BITOP_LOG2__(x) ((((((x) & 0xffff0000) != 0) & 1) << 4) \
 						|(((((x) & 0xff00ff00) != 0) & 1) << 3) \

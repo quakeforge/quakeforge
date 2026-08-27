@@ -93,6 +93,7 @@
 #include "QF/scene/light.h"
 #include "QF/scene/transform.h"
 #include "QF/ui/font.h"//FIXME
+#include "QF/thread/schedule.h"
 
 #include "buildnum.h"
 #include "compat.h"
@@ -137,6 +138,8 @@ bool        noclip_anglehack;			// remnant from old quake
 cbuf_t     *cl_cbuf;
 cbuf_t     *cl_stbuf;
 memhunk_t  *cl_hunk;
+
+wssched_t *cl_sched;
 
 float cl_mem_size;
 static cvar_t cl_mem_size_cvar = {
@@ -1496,7 +1499,7 @@ CL_Init (void)
 	W_LoadWadFile ("gfx.wad", cl_hunk);
 	VID_Init (basepal, colormap);
 	IN_Init (cl_hunk);
-	Mod_Init (cl_hunk);
+	Mod_Init (cl_sched, cl_hunk);
 	R_Init (cl_hunk, nullptr);
 	r_data->lightstyle = cl.lightstyle;
 	Font_Init ();	//FIXME not here
@@ -2008,7 +2011,7 @@ Host_Frame (float time)
 		vec4f_t     origin;
 
 		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
-		l = Mod_PointInLeaf (origin, &cl_world.scene->worldmodel->brush);
+		l = Mod_PointInLeaf (origin, cl_world.scene->worldmodel->brush);
 		if (l)
 			asl = l->ambient_sound_level;
 		S_Update (cl.viewstate.camera_transform, asl);
@@ -2088,6 +2091,12 @@ CL_Autoexec (int phase, void *data)
 	}
 }
 
+static void
+Host_Shutdown (void *data)
+{
+	wssched_destroy (cl_sched);
+}
+
 void
 Host_Init (void)
 {
@@ -2110,6 +2119,10 @@ Host_Init (void)
 	QFS_Init ("qw");
 	QFS_GamedirCallback (CL_Autoexec, 0);
 	PI_Init ();
+
+	Sys_RegisterShutdown (Host_Shutdown, 0);
+
+	cl_sched = wssched_create (Sys_ProcessorCount ());
 
 	Sys_RegisterShutdown (Net_LogStop, 0);
 

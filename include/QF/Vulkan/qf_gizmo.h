@@ -47,7 +47,7 @@ typedef struct giz_queue_s {
 
 typedef struct giz_sphere_s {
 	uint32_t    cmd;
-	float       c[3];
+	float       c[4];
 	float       r;
 	byte        col[4];
 } giz_sphere_t;
@@ -76,6 +76,15 @@ typedef struct giz_plane_s {
 	byte        tcol[4];
 	float       p[3][4];
 } giz_plane_t;
+
+// infinite line/cylinder using Plucker coordinates
+typedef struct giz_line_s {
+	uint32_t    cmd;
+	float       u[3];
+	float       m[3];
+	float       r;
+	byte        col[4];
+} giz_line_t;
 
 typedef struct gizmoframe_s {
 	uint32_t    counts;
@@ -121,8 +130,10 @@ void Vulkan_Gizmo_AddBrush (vec4f_t orig, const vec4f_t bounds[2],
 							int num_nodes, const gizmo_node_t *nodes,
 							quat_t color, vulkan_ctx_t *ctx);
 void Vulkan_Gizmo_AddPlane (vec4f_t s, vec4f_t t, vec4f_t p,
-							quat_t gcol, quat_t scol, quat_t tcol,
-							vulkan_ctx_t *ctx);
+							const quat_t gcol, const quat_t scol,
+							const quat_t tcol, vulkan_ctx_t *ctx);
+void Vulkan_Gizmo_AddLine (vec4f_t u, vec4f_t m, float r,
+						   const quat_t color, vulkan_ctx_t *ctx);
 
 
 #endif//__QF_Vulkan_qf_gizmo_h

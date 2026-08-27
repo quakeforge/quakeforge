@@ -187,8 +187,7 @@ typedef struct mnode_s {
 
 typedef struct mleaf_s {
 // common with node
-	int			contents;		// wil be a negative contents number
-	int			cluster;		// cluster to which this leaf bleongs XXX
+	int			contents;		// will be a negative contents number
 
 	// for bounding box culling
 	float		mins[3];
@@ -214,11 +213,29 @@ typedef struct hull_s {
 	int         depth;				///< maximum depth of the tree
 } hull_t;
 
-typedef struct mod_brush_s {
-	unsigned    firstmodelsurface, nummodelsurfaces;
+typedef struct {
+	uint32_t    visoffs;
+	uint32_t    leafnum;
+} leafvis_t;
 
-	unsigned    numsubmodels;
-	dmodel_t   *submodels;
+typedef struct {
+	uint32_t    first_leaf;
+	uint32_t    num_leafs;
+} leafmap_t;
+
+typedef struct {
+	// index into array of surface ids
+	uint32_t    firstsurface;
+	uint32_t    numsurfaces;
+} cluster_t;
+
+typedef struct mod_brush_s {
+	unsigned    firstface;		///< index into main model's face list
+	unsigned    numfaces;
+
+	unsigned    numsubmodels;	///< always 1 for submodel brush instances
+	dmodel_t   *submodels;		///< this brush's submodel (in full list for
+								///< world model's submodels)
 
 	unsigned    numplanes;
 	plane_t    *planes;
@@ -235,7 +252,7 @@ typedef struct mod_brush_s {
 
 	unsigned    numnodes;
 	mnode_t    *nodes;
-	int         depth;				///< maximum depth of the tree
+	int         depth;			///< maximum depth of the tree
 
 	unsigned    numtexinfo;
 	mtexinfo_t *texinfo;
@@ -259,6 +276,17 @@ typedef struct mod_brush_s {
 	texture_t **textures;
 	texture_t  *skytexture;
 
+	uint32_t    vis_clusters;
+	leafmap_t  *leaf_map;
+	uint32_t   *cluster_map;
+	uint32_t   *cluster_offs;// cluster offset into cluster_vis
+	mnode_t    *cluster_nodes;
+	int         cluster_depth;
+	byte       *cluster_vis;
+	uint32_t   *cluster_surfs;
+	cluster_t  *clusters;
+
+	int         lightmap_bytes;
 	byte       *visdata;
 	byte       *lightdata;
 	char       *entities;	//FIXME should not be here
@@ -321,14 +349,17 @@ typedef struct model_s {
 	char		 path[MAX_QPATH];
 	char		 name[MAX_QPATH];
 	const struct vpath_s *vpath;// virtual path where this model was found
-	bool		 needload;		// bmodels and sprites don't cache normally
 	qf_model_t  *model;			// if not null, alias model is not cached
+	bool		 needload;		// bmodels and sprites don't cache normally
 
 	modtype_t	 type;
 	int			 numframes;
 	synctype_t	 synctype;
 
 	modeffects_t effects;
+
+	int         render_id;
+	uint32_t    model_id;
 
 // lighting info
 	float		 min_light;
@@ -341,16 +372,12 @@ typedef struct model_s {
 	vec3_t		 mins, maxs;
 
 // brush model
-	//FIXME should be a pointer (submodels make things tricky)
-	mod_brush_t brush;
+	mod_brush_t *brush;
 
 // additional model data
 	cache_user_t cache;
 	void      (*clear) (struct model_s *m, void *data);
 	void       *data;
-
-	int         render_id;
-	uint32_t    model_id;
 } model_t;
 
 // ============================================================================
@@ -358,7 +385,8 @@ typedef struct model_s {
 model_t *qfm_alloc_model (void);
 void qfm_free_model (model_t *mod);
 
-void Mod_Init (memhunk_t *hunk);
+typedef struct wssched_s wssched_t;
+void Mod_Init (wssched_t *sched, memhunk_t *hunk);
 void Mod_Init_Cvars (void);
 void Mod_ClearAll (void);
 model_t *Mod_ForName (const char *name, bool crash);
@@ -378,7 +406,5 @@ extern int gl_mesh_cache;
 extern float gl_subdivide_size;
 extern int gl_alias_render_tri;
 extern int gl_textures_external;
-extern int mod_sky_divide;
-extern int mod_lightmap_bytes;
 
 #endif//__QF_model_h

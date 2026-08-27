@@ -2249,7 +2249,8 @@ int
 type_aligned_size (const type_t *type)
 {
 	int         size = type_size (type);
-	return RUP (size, type->alignment);
+	int         alignment = type_align (type);
+	return RUP (size, alignment);
 }
 
 symtab_t *

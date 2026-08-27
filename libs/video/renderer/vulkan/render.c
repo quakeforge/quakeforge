@@ -201,7 +201,7 @@ run_subpass (qfv_subpass_t *sp, qfv_taskctx_t *taskctx)
 	QFV_duCmdBeginLabel (device, taskctx->cmd, sp->label.name,
 						 {VEC4_EXP (sp->label.color)});
 	{
-		qftVkScopedZone (taskctx->frame->qftVkCtx, taskctx->cmd, "subpass");
+		qftVkScopedZoneTransientC (taskctx->frame->qftVkCtx, taskctx->cmd, sp->label.name, sp->label.color32);
 
 		for (uint32_t i = 0; i < sp->pipeline_count; i++) {
 			__auto_type pipeline = &sp->pipelines[i];
@@ -228,7 +228,7 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, qfv_taskctx_t *taskctx,
 	auto frame = &rctx->frames.a[ctx->curFrame];
 
 	qfZoneNamed (zone, true);
-	qftVkScopedZone (frame->qftVkCtx, cmd, "renderpass");
+	qftVkScopedZoneTransientC (frame->qftVkCtx, cmd, rp->label.name, rp->label.color32);
 
 	QFV_duCmdBeginLabel (device, cmd, rp->label.name,
 						 {VEC4_EXP (rp->label.color)});
@@ -1644,6 +1644,7 @@ void
 QFV_PushBlackboard (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 					qfv_pipeline_t *pipeline)
 {
+	qfZoneScoped (true);
 	auto rctx = ctx->render_context;
 	auto device = ctx->device;
 

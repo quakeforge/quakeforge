@@ -326,7 +326,7 @@ flowvar_get_def (flowvar_t *var)
 	return 0;
 }
 
-/**	Get a def or temp var operand's flowvar.
+/**	Get a def or temp var, or pseudo op operand's flowvar.
  *
  *	Other operand types never have a flowvar.
  *
@@ -345,8 +345,6 @@ flow_get_var (operand_t *op)
 			if (op->tempop.alias) {
 				//This is for main vars that are never referenced as such,
 				//but should probably never happen for temps.
-				//FIXME var isn't counted properly and won't get into
-				//the functions's var list.
 				flow_get_var (op->tempop.alias);
 			}
 		}
@@ -361,11 +359,9 @@ flow_get_var (operand_t *op)
 			if (d->alias) {
 				d = d->alias;
 				//This is for main vars that are never referenced as such.
-				//The eg, arrays that are only indexed and not referenced
-				//by a pointer, or vector variables accessed only by
-				//components and not as a whole.
-				//FIXME var isn't counted properly and won't get into
-				//the functions's var list.
+				//eg, arrays that are only indexed and not referenced by a
+				//pointer, or vector variables accessed only by components
+				//and not as a whole.
 				operand_t *aop;
 				if (d->flowvar) {
 					aop = d->flowvar->op;
@@ -1614,15 +1610,14 @@ flow_chain_core (flowgraph_t *graph, reaching_t *reach,
 				set_assign (reach->tmp, var->define);
 				set_union (reach->tmp, var->amb_define);
 				set_intersection (reach->tmp, reach->gen);
-				// if this node defines the var, then use only the last
+				// if this flow node defines the var, then use only the last
 				// definition of that var
-				for (int i = st->number; i-- > node->first_statement; ) {
-					if (set_is_member (reach->tmp, i)) {
-						set_remove_range (reach->tmp, 0, i);
-						set_remove_range (reach->tmp, i + 1,
-										  reach->func->num_statements);
-						break;
-					}
+				unsigned st_ind;
+				if (set_last_bit (reach->tmp, st->number, &st_ind)
+					&& st_ind >= (unsigned) node->first_statement) {
+					set_remove_range (reach->tmp, 0, st_ind);
+					set_remove_range (reach->tmp, st_ind + 1,
+									  reach->func->num_statements);
 				}
 
 				if (record) {
@@ -3006,6 +3001,111 @@ flow_data_flow (function_t *func)
 	flow_build_dags (graph);
 	flow_cleanup_dags (graph);
 	func->sblock = flow_generate (graph);
+}
+
+static void __attribute__((used))
+flow_var_ud (function_t *func, flowvar_t *var)
+{
+	for (auto i = set_first (var->udchains); i; i = set_next (i)) {
+		auto ud = func->ud_chains[i->element];
+		auto v = func->vars[ud.var];
+		const char *dead = "";
+		if (func->dead_ud_chains
+			&& set_is_member (func->dead_ud_chains, v->number)) {
+			dead = " "RED"dead"DFL;
+		}
+		printf ("%d[%d]:%s u:%d d:%d%s\n", i->element, ud.var,
+				operand_string (v->op), ud.usest, ud.defst, dead);
+	}
+}
+
+static void __attribute__((used))
+flow_var_du (function_t *func, flowvar_t *var)
+{
+	for (auto i = set_first (var->duchains); i; i = set_next (i)) {
+		auto du = func->du_chains[i->element];
+		auto v = func->vars[du.var];
+		const char *dead = "";
+		if (func->dead_du_chains
+			&& set_is_member (func->dead_du_chains, v->number)) {
+			dead = " "RED"dead"DFL;
+		}
+		printf ("%d[%d]:%s d:%d u:%d%s\n", i->element, du.var,
+				operand_string (v->op), du.defst, du.usest, dead);
+	}
+}
+
+static void __attribute__((used))
+flow_st_ud (function_t *func, statement_t *st)
+{
+	for (int i = 0; i < st->num_use; i++) {
+		auto ud = func->ud_chains[st->first_use + i];
+		auto v = func->vars[ud.var];
+		const char *dead = "";
+		if (func->dead_ud_chains
+			&& set_is_member (func->dead_ud_chains, v->number)) {
+			dead = " "RED"dead"DFL;
+		}
+		printf ("%d[%d]:%s u:%d d:%d%s\n", st->first_use + i, ud.var,
+				operand_string (v->op), ud.usest, ud.defst, dead);
+	}
+}
+
+static void __attribute__((used))
+flow_st_du (function_t *func, statement_t *st)
+{
+	for (int i = 0; i < st->num_def; i++) {
+		auto du = func->du_chains[st->first_def + i];
+		auto v = func->vars[du.var];
+		const char *dead = "";
+		if (func->dead_du_chains
+			&& set_is_member (func->dead_du_chains, v->number)) {
+			dead = " "RED"dead"DFL;
+		}
+		printf ("%d[%d]:%s d:%d u:%d%s\n", st->first_def + i, du.var,
+				operand_string (v->op), du.defst, du.usest, dead);
+	}
+}
+
+static void __attribute__((used))
+flow_func_ud (function_t *func)
+{
+	for (int i = 0; i < func->num_ud_chains; i++) {
+		auto ud = func->ud_chains[i];
+		auto v = func->vars[ud.var];
+		const char *dead = "";
+		if (func->dead_ud_chains
+			&& set_is_member (func->dead_ud_chains, v->number)) {
+			dead = " "RED"dead"DFL;
+		}
+		printf ("%d[%d]:%s u:%d d:%d%s\n", i, ud.var,
+				operand_string (v->op), ud.usest, ud.defst, dead);
+	}
+}
+
+static void __attribute__((used))
+flow_func_du (function_t *func)
+{
+	for (int i = 0; i < func->num_ud_chains; i++) {
+		auto du = func->du_chains[i];
+		auto v = func->vars[du.var];
+		const char *dead = "";
+		if (func->dead_du_chains
+			&& set_is_member (func->dead_du_chains, v->number)) {
+			dead = " "RED"dead"DFL;
+		}
+		printf ("%d[%d]:%s d:%d u:%d%s\n", i, du.var,
+				operand_string (v->op), du.defst, du.usest, dead);
+	}
+}
+
+static void __attribute__((used))
+flow_func_vars (function_t *func, set_t *var_set)
+{
+	for (auto v = set_first (var_set); v; v = set_next (v)) {
+		auto var = func->vars[v->element];
+		printf ("%d %s\n", var->number, operand_string (var->op));
+	}
 }
 
 ///@}

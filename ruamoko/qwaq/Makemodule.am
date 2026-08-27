@@ -2,15 +2,28 @@ QWAQ_LIBS=@QWAQ_LIBS@
 QWAQ_DEPS=@QWAQ_DEPS@
 QWAQ_INCS=@QWAQ_INCS@
 
-noinst_PROGRAMS += @QWAQ_TARGETS@ \
-	ruamoko/qwaq/qwaq-app.dat$(EXEEXT) \
-	ruamoko/qwaq/qwaq-ed.dat$(EXEEXT) \
-	ruamoko/qwaq/qwaq-dbg.dat$(EXEEXT) \
-	ruamoko/qwaq/gcd.dat$(EXEEXT) \
-	ruamoko/qwaq/input-app.dat$(EXEEXT) \
-	ruamoko/qwaq/z-transform.dat$(EXEEXT)
+qwaq_targets=\
+	ruamoko/qwaq/qwaq-app.dat \
+	ruamoko/qwaq/qwaq-ed.dat \
+	ruamoko/qwaq/qwaq-dbg.dat \
+	ruamoko/qwaq/gcd.dat \
+	ruamoko/qwaq/input-app.dat \
+	ruamoko/qwaq/z-transform.dat
+
+noinst_PROGRAMS += @QWAQ_TARGETS@
+
+EXTRA_PROGRAMS += \
+	ruamoko/qwaq/qwaq-cmd \
+	ruamoko/qwaq/qwaq-curses \
+	ruamoko/qwaq/qwaq-win \
+	ruamoko/qwaq/qwaq-x11 \
+	ruamoko/qwaq/qwaq-wl \
+	$(qwaq_targets)
+
+EXTRA_LIBRARIES += $(ruamoko_qwaq_libs)
 
 atmosphere_src = ruamoko/qwaq/shader/atmosphere.r
+conic_src = ruamoko/qwaq/shader/conic.r
 planetary_src = ruamoko/qwaq/shader/planetary.r
 pixpal_src = ruamoko/qwaq/shader/pixpal.r
 pbr_brdf_src = ruamoko/qwaq/shader/pbr_brdf.r
@@ -18,6 +31,7 @@ pbr_conv_src = ruamoko/qwaq/shader/pbr_conv.r
 
 qwaqshader_src = \
 	$(atmosphere_src) \
+	$(conic_src) \
 	$(pixpal_src) \
 	$(pbr_brdf_src) \
 	$(pbr_conv_src) \
@@ -32,7 +46,8 @@ libui=ruamoko/qwaq/libui.a
 libmisc=ruamoko/qwaq/libmisc.a
 libedit=ruamoko/qwaq/libedit.a
 libdbg=ruamoko/qwaq/libdbg.a
-noinst_LIBRARIES += $(libui) $(libmisc) $(libedit) $(libdbg)
+ruamoko_qwaq_libs = $(libui) $(libmisc) $(libedit) $(libdbg)
+noinst_LIBRARIES += @ruamoko_qwaq_libs@
 
 ruamoko_qwaq_libui_a_SOURCES= \
 	ruamoko/qwaq/ui/button.r	\
@@ -114,13 +129,20 @@ qwaq_core_src= \
 	ruamoko/qwaq/gui/editwindow.r \
 	ruamoko/qwaq/gui/filewindow.r \
 	ruamoko/qwaq/gui/listview.r \
+	ruamoko/qwaq/gui/slider.r \
 	ruamoko/qwaq/gui/ui_object.r \
 	ruamoko/qwaq/gui/virtinput.r \
 	ruamoko/qwaq/gui/window.r
 
 qwaq_ed_dat_src= \
+	ruamoko/qwaq/orrery/body.r \
+	ruamoko/qwaq/orrery/grandorrery.r \
+	ruamoko/qwaq/orrery/orbit.r \
+	ruamoko/qwaq/orrery/orbiter.r \
+	ruamoko/qwaq/orrery/physorbit.r \
 	ruamoko/qwaq/armature.r \
 	ruamoko/qwaq/camera.r \
+	ruamoko/qwaq/camerasystem.r \
 	ruamoko/qwaq/physics.r \
 	ruamoko/qwaq/leafnode.r \
 	ruamoko/qwaq/mainmenu.r \
@@ -194,7 +216,9 @@ qwaq_client_libs= \
 	$(top_builddir)/libs/input/libQFinput.la \
 	$(top_builddir)/libs/audio/libQFcd.la \
 	$(top_builddir)/libs/audio/libQFsound.la \
-	$(top_builddir)/libs/image/libQFimage.la
+	$(top_builddir)/libs/image/libQFimage.la \
+	$(top_builddir)/libs/thread/libQFthread.la \
+	$(top_builddir)/libs/util/libQFutil.la
 
 qwaq_client_sources= \
 	ruamoko/qwaq/builtins/debug.c \
@@ -284,14 +308,11 @@ ruamoko/qwaq/z-transform.dat$(EXEEXT): $(ruamoko_qwaq_z_transform_obj) $(QFCC_DE
 include $(ruamoko_qwaq_z_transform_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_z_transform_dep)
 
-EXTRA_PROGRAMS += \
-	ruamoko/qwaq/qwaq-cmd \
-	ruamoko/qwaq/qwaq-curses \
-	ruamoko/qwaq/qwaq-win \
-	ruamoko/qwaq/qwaq-x11 \
-	ruamoko/qwaq/qwaq-wl
-
 EXTRA_DIST += \
+	ruamoko/qwaq/config/qwaq-ed-fw.plist \
+	ruamoko/qwaq/config/qwaq-ed-in.cfg \
+	ruamoko/qwaq/config/qwaq-ed-rg.plist \
+	ruamoko/qwaq/config/scene.plist \
 	ruamoko/qwaq/debugger/debug.h \
 	ruamoko/qwaq/debugger/debugger.h \
 	ruamoko/qwaq/debugger/localsdata.h \
@@ -300,6 +321,7 @@ EXTRA_DIST += \
 	ruamoko/qwaq/debugger/views/arrayview.h \
 	ruamoko/qwaq/debugger/views/basicview.h \
 	ruamoko/qwaq/debugger/views/boolview.h	\
+	ruamoko/qwaq/debugger/views/classview.h	\
 	ruamoko/qwaq/debugger/views/defview.h \
 	ruamoko/qwaq/debugger/views/doubleview.h \
 	ruamoko/qwaq/debugger/views/entityview.h \
@@ -328,9 +350,15 @@ EXTRA_DIST += \
 	ruamoko/qwaq/gui/editwindow.h \
 	ruamoko/qwaq/gui/filewindow.h \
 	ruamoko/qwaq/gui/listview.h \
+	ruamoko/qwaq/gui/nodepanel.h \
+	ruamoko/qwaq/gui/ui_object.h \
 	ruamoko/qwaq/gui/virtinput.h \
+	ruamoko/qwaq/gui/window.h \
 	ruamoko/qwaq/input-app.h \
+	ruamoko/qwaq/mainmenu.h \
+	ruamoko/qwaq/physics.h \
 	ruamoko/qwaq/qwaq-app.h \
+	ruamoko/qwaq/qwaq-ed.h \
 	ruamoko/qwaq/qwaq-input.h \
 	ruamoko/qwaq/qwaq.h \
 	ruamoko/qwaq/threading.h \
@@ -346,15 +374,17 @@ EXTRA_DIST += \
 	ruamoko/qwaq/ui/rect.h \
 	ruamoko/qwaq/ui/scrollbar.h \
 	ruamoko/qwaq/ui/stringview.h \
+	ruamoko/qwaq/ui/table.h \
 	ruamoko/qwaq/ui/tableview.h \
 	ruamoko/qwaq/ui/textcontext.h \
 	ruamoko/qwaq/ui/titlebar.h \
 	ruamoko/qwaq/ui/view.h \
 	ruamoko/qwaq/ui/window.h \
 	ruamoko/qwaq/shader/atmosphere.r \
-	ruamoko/qwaq/shader/pixpal.r \
+	ruamoko/qwaq/shader/conic.r \
 	ruamoko/qwaq/shader/pbr_brdf.r \
 	ruamoko/qwaq/shader/pbr_conv.r \
+	ruamoko/qwaq/shader/pixpal.r \
 	ruamoko/qwaq/shader/planetary.r \
 	ruamoko/qwaq/shader/planetary.h \
 	ruamoko/qwaq/armature.h \
@@ -368,5 +398,5 @@ EXTRA_DIST += \
 CLEANFILES += \
 	ruamoko/qwaq/qwaq-curses.log \
 	ruamoko/qwaq/*.dat \
-	ruamoko/qwaq/*.spv \
-	ruamoko/qwaq/*.sym
+	ruamoko/qwaq/*.sym \
+	ruamoko/qwaq/shader/*.spv

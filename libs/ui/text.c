@@ -37,6 +37,7 @@
 #include "QF/sys.h"
 
 #include "QF/ui/font.h"
+#include "QF/ui/glyphcache.h"
 #include "QF/ui/passage.h"
 #include "QF/ui/shaper.h"
 #include "QF/ui/text.h"
@@ -81,6 +82,10 @@ const component_t text_components[text_comp_count] = {
 	[text_color] = {
 		.size = sizeof (uint32_t),
 		.name = "color",
+	},
+	[text_ptsize] = {
+		.size = sizeof (int16_t),
+		.name = "ptsize",
 	},
 	[text_script] = {
 		.size = sizeof (script_component_t),
@@ -147,24 +152,39 @@ static view_resize_f text_flow_funcs[] = {
 	[text_up_left]      = text_flow_horizontal,
 };
 
+static glyphkey_t
+glyphcache_make_key (uint16_t glyphid, const shaping_t *shaping,
+					 int x, int y, uint16_t render_mode)
+{
+	return (glyphkey_t) {
+		.glyphid = glyphid,
+		.fontid = shaping->font->fontid,
+		.ptsize = shaping->ptsize,
+		.subpixel_x = (x & 0x3f) >> 4,
+		.subpixel_y = (y & 0x3f) >> 4,
+		.render_mode = render_mode,
+	};
+};
+
 static view_pos_t
-layout_glyphs (glyphnode_t *node, font_t *font, unsigned glpyhCount,
-			   const hb_glyph_info_t *glyphInfo,
+layout_glyphs (glyphnode_t *node, const shaping_t *shaping,
+			   unsigned glpyhCount, const hb_glyph_info_t *glyphInfo,
 			   const hb_glyph_position_t *glyphPos)
 {
 	int         x = 0, y = 0;
+	auto font = shaping->font;
 	for (unsigned k = 0; k < glpyhCount; k++) {
 		uint32_t    glyphid = glyphInfo[k].codepoint;
 		vec2i_t     bearing = font->glyph_bearings[glyphid];
 
-		int         xp = glyphPos[k].x_offset / 64;
-		int         yp = glyphPos[k].y_offset / 64;
-		int         xa = glyphPos[k].x_advance / 64;
-		int         ya = glyphPos[k].y_advance / 64;
-		xp += bearing[0];
-		yp += bearing[1];
-		int         xm = xp + font->glyph_rects[glyphid].width;
-		int         ym = yp - font->glyph_rects[glyphid].height;
+		int         xp = glyphPos[k].x_offset;
+		int         yp = glyphPos[k].y_offset;
+		int         xa = glyphPos[k].x_advance;
+		int         ya = glyphPos[k].y_advance;
+		xp += bearing[0] * 64;
+		yp += bearing[1] * 64;
+		int         xm = xp + font->glyph_rects[glyphid].width * 64;
+		int         ym = yp - font->glyph_rects[glyphid].height * 64;
 
 		if (xm - xp == 0) {
 			xm = xa;
@@ -178,15 +198,14 @@ layout_glyphs (glyphnode_t *node, font_t *font, unsigned glpyhCount,
 		node->maxs[1] = max (node->maxs[1], yp + y);
 
 		node->glyphs[k] = (glyphobj_t) {
-			.glyphid = glyphid,
+			.key = glyphcache_make_key (glyphid, shaping, x + xp, y - yp, 0),
 			.x = x + xp,
 			.y = y - yp,
-			.fontid = font->fontid,
 		};
 		x += xa;
 		y += ya;
 	}
-	return (view_pos_t) { .x = x, .y = y };
+	return (view_pos_t) { .x = x / 64, .y = y / 64 };
 }
 
 static void
@@ -201,16 +220,16 @@ configure_textview (view_t textview, glyphobj_t *glyphs, glyphnode_t *node,
 	for (uint32_t k = 0; k < node->count; k++) {
 		glyphobj_t *go = node->glyphs + k;
 		glyphs[glyphref_base + k] = (glyphobj_t) {
-			.glyphid = go->glyphid,
+			.key = go->key,
+			.cacheind = go->cacheind,
 			.x = go->x + node->mins[0],
 			.y = go->y + node->maxs[1],
-			.fontid = go->fontid,
 		};
 	}
 	Ent_SetComponent (textview.id, c_glyphs, textview.reg, &glyph_ref);
-	View_SetPos (textview, node->mins[0], -node->mins[1]);
-	View_SetLen (textview, node->maxs[0] - node->mins[0],
-						   node->maxs[1] - node->mins[1]);
+	View_SetPos (textview, node->mins[0], -node->mins[1] / 64);
+	View_SetLen (textview, (node->maxs[0] - node->mins[0]) / 64,
+						   (node->maxs[1] - node->mins[1]) / 64);
 	View_Control (textview)->free_x = 1;
 	View_Control (textview)->free_y = 1;
 }
@@ -219,9 +238,13 @@ static void
 set_shaping (shaping_t *shaping, uint32_t ent, text_system_t textsys)
 {
 	auto reg = textsys.reg;
+	uint32_t c_ptsize = textsys.text_base + text_ptsize;
 	uint32_t c_script = textsys.text_base + text_script;
 	uint32_t c_features = textsys.text_base + text_features;
 
+	if (Ent_HasComponent (ent, c_ptsize, reg)) {
+		shaping->ptsize = *(int16_t *) Ent_GetComponent (ent, c_ptsize, reg);
+	}
 	if (Ent_HasComponent (ent, c_script, reg)) {
 		shaping->script = Ent_GetComponent (ent, c_script, reg);
 	}
@@ -293,7 +316,7 @@ Text_PassageView (text_system_t textsys, view_t parent,
 				.maxs = { INT32_MIN, INT32_MIN },
 			};
 			glyph_count += c;
-			layout_glyphs (*head, font, c, glyphInfo, glyphPos);
+			layout_glyphs (*head, &txt_shaping, c, glyphInfo, glyphPos);
 
 			head = &(*head)->next;
 		}
@@ -365,7 +388,7 @@ Text_PassageView (text_system_t textsys, view_t parent,
 }
 
 view_pos_t
-Text_Size (struct font_s *font, const char *str, uint32_t len,
+Text_Size (struct font_s *font, int16_t ptsize, const char *str, uint32_t len,
 		   script_component_t *sc, featureset_t *fs,
 		   text_shaper_t *shaper)
 {
@@ -381,6 +404,7 @@ Text_Size (struct font_s *font, const char *str, uint32_t len,
 	featureset_t text_features = DARRAY_STATIC_INIT (0);
 	shaping_t   shaping = {
 		.script = &script,
+		.ptsize = ptsize,
 		.features = fs ? fs : &text_features,
 		.font = font,
 	};
@@ -398,7 +422,7 @@ Text_Size (struct font_s *font, const char *str, uint32_t len,
 		.mins = { 0, 0 },
 		.maxs = { INT32_MIN, INT32_MIN },
 	};
-	auto size = layout_glyphs (*head, font, c, glyphInfo, glyphPos);
+	auto size = layout_glyphs (*head, &shaping, c, glyphInfo, glyphPos);
 	if (!size.x) {
 		size.x = (*head)->maxs[0] - (*head)->mins[0];
 	}
@@ -406,8 +430,8 @@ Text_Size (struct font_s *font, const char *str, uint32_t len,
 		size.y = (*head)->maxs[1] - (*head)->mins[1];
 	}
 	if (!string_vertical) {
-		int ascender = font->face->size->metrics.ascender / 64;
-		int descender = font->face->size->metrics.descender / 64;
+		int ascender = font->face->size->metrics.ascender;
+		int descender = font->face->size->metrics.descender;
 		size.y = ascender - descender;
 	}
 	return size;
@@ -415,7 +439,7 @@ Text_Size (struct font_s *font, const char *str, uint32_t len,
 
 view_t
 Text_StringView (text_system_t textsys, view_t parent,
-				 font_t *font, const char *str, uint32_t len,
+				 font_t *font, int16_t ptsize, const char *str, uint32_t len,
 				 script_component_t *sc, featureset_t *fs,
 				 text_shaper_t *shaper)
 {
@@ -435,6 +459,7 @@ Text_StringView (text_system_t textsys, view_t parent,
 	featureset_t text_features = DARRAY_STATIC_INIT (0);
 	shaping_t   shaping = {
 		.script = &script,
+		.ptsize = ptsize,
 		.features = fs ? fs : &text_features,
 		.font = font,
 	};
@@ -455,7 +480,7 @@ Text_StringView (text_system_t textsys, view_t parent,
 		.maxs = { INT32_MIN, INT32_MIN },
 	};
 	glyph_count += c;
-	layout_glyphs (*head, font, c, glyphInfo, glyphPos);
+	layout_glyphs (*head, &shaping, c, glyphInfo, glyphPos);
 
 	head = &(*head)->next;
 
@@ -479,7 +504,8 @@ Text_StringView (text_system_t textsys, view_t parent,
 
 view_t
 Text_String32View (text_system_t textsys, view_t parent,
-				   font_t *font, const uint32_t *str, uint32_t len,
+				   font_t *font, int16_t ptsize,
+				   const uint32_t *str, uint32_t len,
 				   script_component_t *sc, featureset_t *fs,
 				   text_shaper_t *shaper)
 {
@@ -499,6 +525,7 @@ Text_String32View (text_system_t textsys, view_t parent,
 	featureset_t text_features = DARRAY_STATIC_INIT (0);
 	shaping_t   shaping = {
 		.script = &script,
+		.ptsize = ptsize,
 		.features = fs ? fs : &text_features,
 		.font = font,
 	};
@@ -519,7 +546,7 @@ Text_String32View (text_system_t textsys, view_t parent,
 		.maxs = { INT32_MIN, INT32_MIN },
 	};
 	glyph_count += c;
-	layout_glyphs (*head, font, c, glyphInfo, glyphPos);
+	layout_glyphs (*head, &shaping, c, glyphInfo, glyphPos);
 
 	head = &(*head)->next;
 
@@ -559,6 +586,13 @@ Text_SetFont (text_system_t textsys, uint32_t textid, font_t *font)
 {
 	Ent_SetComponent (textid, textsys.text_base + text_font, textsys.reg,
 					  &font);
+}
+
+void
+Text_SetPtSize (text_system_t textsys, uint32_t textid, int16_t ptsize)
+{
+	Ent_SetComponent (textid, textsys.text_base + text_ptsize, textsys.reg,
+					  &ptsize);
 }
 
 void

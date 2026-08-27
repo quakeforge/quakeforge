@@ -156,7 +156,7 @@ new_def (const char *name, const type_t *type, defspace_t *space,
 		// Need to use aligned size when allocating user defs to ensure
 		// they can be used safely with sizeof for anything accessing memory.
 		int         size = type_aligned_size (type);
-		int         alignment = type->alignment;
+		int         alignment = type_align (type);
 
 		if (!size && is_array (type) && !deferred_size (storage)) {
 			error (0, "%s has incomplete type", name);
@@ -669,8 +669,10 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 		}
 		sym->type = auto_type (sym->type, init);
 		if (is_void (sym->type)) {
-			error (0, "variable '%s' declared void", sym->name);
-			sym->type = type_default;
+			if (!options.code.void_vars) {
+				error (0, "variable '%s' declared void", sym->name);
+				sym->type = type_default;
+			}
 		}
 		auto full_name = sym->table ? sym_full_name (sym) : sym->name;
 		sym->def = new_def (full_name, sym->type, space, storage);
@@ -757,7 +759,7 @@ declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab,
 }
 
 static unsigned
-def_calc_overlap (def_t *d, int offset, int size)
+def_calc_offs_overlap (def_t *d, int offset, int size)
 {
 	// offset is relative to the main def, so if d is the main def, then
 	// don't use its offset so the calculations don't get thrown off
@@ -765,18 +767,26 @@ def_calc_overlap (def_t *d, int offset, int size)
 	int         d_size = type_size (d->type);
 
 	if (d_offset == offset && d_size == size) {
-		return 0b00001;
+		return dol_mask_exact;
 	}
 	if (d_offset >= offset && d_offset + d_size <= offset + size) {
-		return 0b00010;
+		return dol_mask_sub;
 	}
 	if (d_offset <= offset && d_offset + d_size >= offset + size) {
-		return 0b00100;
+		return dol_mask_super;
 	}
 	if (d_offset < offset + size && offset < d_offset + d_size) {
-		return 0b01000;
+		return dol_mask_partial;
 	}
-	return 0b10000;
+	return dol_mask_none;
+}
+
+unsigned
+def_calc_overlap (def_t *d1, def_t *d2)
+{
+	int         offset = d2->alias ? d2->offset : 0;
+	int         size = type_size (d2->type);
+	return def_calc_offs_overlap (d1, offset, size);
 }
 
 int
@@ -794,19 +804,21 @@ def_size (def_t *def)
 	return type_size (def->type);
 }
 
+// set bits are what to *block* (ie, 0 allows that mask through).
 static const unsigned dol_mask[] = {
-	0b11111,	// dol_none
-	0b00000,	// dol_all
-	0b10000,	// dol_partial
-	0b11100,	// dol_sub
-	0b11010,	// dol_super
-	0b11110,	// dol_exact
+	[dol_none]    = 0b11111,
+	[dol_all]     = 0b00000,
+	[dol_partial] = ~(dol_mask_partial | dol_mask_sub
+					  | dol_mask_super | dol_mask_exact) & 0b11111,
+	[dol_sub]     = ~(dol_mask_sub     | dol_mask_exact) & 0b11111,
+	[dol_super]   = ~(dol_mask_super   | dol_mask_exact) & 0b11111,
+	[dol_exact]   = ~(dol_mask_exact)                    & 0b11111,
 };
 
 def_overlap_t
 def_overlap (def_t *d1, def_t *d2)
 {
-	unsigned ol = def_calc_overlap (d1, d2->offset, type_size (d2->type));
+	unsigned ol = def_calc_offs_overlap (d1, d2->offset, type_size (d2->type));
 	if (!ol) {
 		return dol_none;
 	}
@@ -829,7 +841,7 @@ def_visit_overlaps (def_t *def, int offset, int size, def_overlap_t overlap,
 	for (def = def->alias_defs; def; def = def->next) {
 		if (def == skip)
 			continue;
-		if (overlap && (def_calc_overlap (def, offset, size) & mask))
+		if (overlap && (def_calc_offs_overlap (def, offset, size) & mask))
 			continue;
 		if ((ret = visit (def, data)))
 			return ret;
@@ -859,7 +871,7 @@ def_visit_all (def_t *def, def_overlap_t overlap,
 		def = def->alias;
 		if (!only_alias
 			&& (overlap == dol_none
-				|| !(def_calc_overlap (def, offset, size) & mask))
+				|| !(def_calc_offs_overlap (def, offset, size) & mask))
 			&& (ret = visit (def, data))) {
 			return ret;
 		}

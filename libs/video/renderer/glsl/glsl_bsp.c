@@ -316,7 +316,7 @@ glsl_R_InitSurfaceChains (mod_brush_t *brush)
 	release_static_instsurfs ();
 	release_instsurfs ();
 
-	for (unsigned i = 0; i < brush->nummodelsurfaces; i++) {
+	for (unsigned i = 0; i < brush->numfaces; i++) {
 		brush->surfaces[i].instsurf = get_static_instsurf ();
 		brush->surfaces[i].instsurf->surface = &brush->surfaces[i];
 	}
@@ -425,9 +425,9 @@ glsl_R_RegisterTextures (model_t **models, int num_models)
 	mod_brush_t *brush;
 
 	glsl_R_ClearTextures ();
-	glsl_R_InitSurfaceChains (&r_refdef.worldmodel->brush);
+	glsl_R_InitSurfaceChains (r_refdef.worldmodel->brush);
 	glsl_R_AddTexture (r_notexture_mip);
-	register_textures (&r_refdef.worldmodel->brush);
+	register_textures (r_refdef.worldmodel->brush);
 	for (i = 0; i < num_models; i++) {
 		m = models[i];
 		if (!m)
@@ -438,7 +438,7 @@ glsl_R_RegisterTextures (model_t **models, int num_models)
 		// world has already been done, not interested in non-brush models
 		if (m == r_refdef.worldmodel || m->type != mod_brush)
 			continue;
-		brush = &m->brush;
+		brush = m->brush;
 		brush->numsubmodels = 1; // no support for submodels in non-world model
 		register_textures (brush);
 	}
@@ -465,9 +465,9 @@ build_surf_displist (model_t **models, msurface_t *surf, int base,
 {
 	mod_brush_t *brush;
 	if (surf->model_index < 0) {
-		brush = &models[-surf->model_index - 1]->brush;
+		brush = models[-surf->model_index - 1]->brush;
 	} else {
-		brush = &r_refdef.worldmodel->brush;
+		brush = r_refdef.worldmodel->brush;
 	}
 	mvertex_t  *vertices = brush->vertexes;
 	medge_t    *edges = brush->edges;
@@ -560,7 +560,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 		// sub-models are done as part of the main model
 		if (*m->path == '*' || m->type != mod_brush)
 			continue;
-		brush = &m->brush;
+		brush = m->brush;
 		// non-bsp models don't have surfaces.
 		dm = brush->submodels;
 		for (uint32_t j = 0; j < brush->numsurfaces; j++) {
@@ -658,7 +658,7 @@ R_DrawBrushModel (entity_t e)
 	float       dot, radius;
 	auto renderer = Entity_GetRenderer (e);
 	model_t    *model = renderer->model;
-	mod_brush_t *brush = &model->brush;
+	mod_brush_t *brush = model->brush;
 	plane_t    *plane;
 	msurface_t *surf;
 	bool        rotated;
@@ -698,7 +698,7 @@ R_DrawBrushModel (entity_t e)
 	// calculate dynamic lighting for bmodel if it's not an instanced model
 	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
-	if (brush->firstmodelsurface != 0 && r_dlight_lightmap) {
+	if (brush->firstface != 0 && r_dlight_lightmap) {
 		for (uint32_t i = 0; i < dlight_pool->count; i++) {
 			auto dlight = &dlight_data[i];
 			vec4f_t     lightorigin;
@@ -709,9 +709,9 @@ R_DrawBrushModel (entity_t e)
 		}
 	}
 
-	surf = &brush->surfaces[brush->firstmodelsurface];
+	surf = &brush->surfaces[brush->firstface];
 
-	for (unsigned i = 0; i < brush->nummodelsurfaces; i++, surf++) {
+	for (unsigned i = 0; i < brush->numfaces; i++, surf++) {
 		// find the node side on which we are
 		plane = surf->plane;
 
@@ -1161,7 +1161,7 @@ glsl_R_DrawWorld (void)
 
 	clear_texture_chains ();	// do this first for water and skys
 
-	bctx.brush = &r_refdef.worldmodel->brush;
+	bctx.brush = r_refdef.worldmodel->brush;
 	bctx.animation = &animation;
 
 	R_VisitWorldNodes (&bctx);

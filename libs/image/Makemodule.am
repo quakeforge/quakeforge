@@ -1,6 +1,7 @@
 image_deps=libs/util/libQFutil.la
-
-lib_LTLIBRARIES += libs/image/libQFimage.la
+libs_image_libs=libs/image/libQFimage.la
+lib_LTLIBRARIES += @libs_image_libs@
+EXTRA_LTLIBRARIES += $(libs_image_libs)
 
 libs_image_libQFimage_la_LDFLAGS=		$(lib_ldflags)
 libs_image_libQFimage_la_LIBADD=		$(image_deps) $(PNG_LIBS)

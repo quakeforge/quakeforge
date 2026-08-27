@@ -13,6 +13,62 @@ void set_component (uint ent, uint comp, void *data) = #0;
 uint new_entity () = #0;
 void del_entity (uint ent) = #0;
 
+@generic (vec = [float, vec2, vec3, vec4, PGA.vec, PGA.bvect, PGA.bvecp, PGA.tvec]) {
+
+vec abs(vec x)
+{
+	typedef @vector(uint, @width(vec)) uvec;
+	//FIXME the typename sym gets trampled by the identifier sym in
+	//notype_declarator
+	//uvec m = x < vec(0);
+	auto m = (uvec) (x < vec(0));
+	return (vec) ((uvec) x & ~m) - (vec) ((uvec) x & m);
+}
+
+vec max(vec a, vec b)
+{
+	typedef @vector(uint, @width(vec)) uvec;
+	auto m = (uvec) (a < b);
+	return (vec) ((uvec) a & ~m) + (vec) ((uvec) b & m);
+}
+
+vec min(vec a, vec b)
+{
+	typedef @vector(uint, @width(vec)) uvec;
+	auto m = (uvec) (a > b);
+	return (vec) ((uvec) a & ~m) + (vec) ((uvec) b & m);
+}
+
+vec sign (vec v)
+{
+	typedef @vector(uint, @width(vec)) uvec;
+	const vec pone = vec(1);
+	const vec mone = vec(-1);
+	auto tmin = @bitcast (uvec, ((@vector(vec)) v < @vector(vec)(0)));
+	auto tmax = ~tmin;
+	auto sgn = @bitcast (vec, ( (tmin & @bitcast (uvec, mone))
+							  + (tmax & @bitcast (uvec, pone))));
+	return sgn;
+}
+
+vec bound (vec mins, vec v, vec maxs)
+{
+	typedef @vector(uint, @width(vec)) uvec;
+	auto tmin = @bitcast (uvec, ((@vector(vec)) v < (@vector(vec)) mins));
+	auto tmax = @bitcast (uvec, ((@vector(vec)) maxs < (@vector(vec)) v));
+	auto tcen = ~tmin & ~tmax;
+	return (vec) ( (tmin & (uvec) mins)
+				 + (tcen & (uvec) v)
+				 + (tmax & (uvec) maxs));
+}
+};
+
+float
+clamp (float x, float a, float b)
+{
+	return max (a, min(x, b));
+}
+
 //FIXME having PGA.group_mask(0xc) here and then providing a defintion causes
 //a segfault in qfcc
 @generic (genObj = [PGA.group_mask(0xe)]) {
@@ -93,12 +149,12 @@ draw_axes (transform_t xform)
 }
 
 void
-draw_collider (collider_t col, transform_t xform)
+draw_collider (collider_t col, transform_t xform, motor_t M)
 {
 	mat4 mat = Transform_GetWorldMatrix(xform);
 	switch (col.type) {
 	case col_plane:
-	{
+		break;
 		@algebra (PGA) {
 			auto plane = col.plane;
 			// Gizmo_AddPlane expects a point and two spanning vectors
@@ -106,12 +162,12 @@ draw_collider (collider_t col, transform_t xform)
 			auto P = (plane • e123) * plane;
 			auto p = mat * (vec4)(P / ⋆(e0 * P));
 			quaternion q;
-			if (plane[3] < 0) {
+			if (plane[2] < 0) {
 				auto r = sqrt (plane * (plane_t)'0 0 -1 0');
-				q = [r.scalar, r.bvect];
+				q = [r.scalar, -r.bvect];
 			} else {
 				auto r = sqrt (plane * (plane_t)'0 0 1 0');
-				q = [r.scalar, r.bvect];
+				q = [r.scalar, -r.bvect];
 			}
 			auto s = vec4(q * mat[0].xyz, 0);
 			auto t = vec4(q * mat[1].xyz, 0);
@@ -121,7 +177,6 @@ draw_collider (collider_t col, transform_t xform)
 			Gizmo_AddPlane (p, s, t, c1, c2, c3);
 		}
 		break;
-	}
 	case col_ball:
 		Gizmo_AddSphere (mat * vec4(col.ball.offset, 1), col.ball.radius,
 						 vec4(0.8, 0.4, 0.2, 0.9));
@@ -134,6 +189,40 @@ draw_collider (collider_t col, transform_t xform)
 						 vec4(0.2, 0.8, 0.9, 0.9));
 		break;
 	}
+	case col_box:
+	{
+		break;
+		vec3 e = col.box.extent;
+		vec3 o = col.box.offset;
+		//auto q = M;
+		auto q = M.scalar + M.bvect;
+		static gizmo_node_t box_brush[] = {
+			{ .plane = {1, 0, 0, 1 }, .children = { 1, -1} },
+			{ .plane = {1, 0, 0,-1 }, .children = {-1,  2} },
+			{ .plane = {0, 1, 0, 1 }, .children = { 3, -1} },
+			{ .plane = {0, 1, 0,-1 }, .children = {-1,  4} },
+			{ .plane = {0, 0, 1, 1 }, .children = { 5, -1} },
+			{ .plane = {0, 0, 1,-1 }, .children = {-1, -2} },
+		};
+		gizmo_node_t rotated_box[countof(box_brush)];
+		for (uint i = 0; i < countof(box_brush); i++) {
+			auto p = box_brush[i].plane;
+			p.w = p.w * e[i >> 1] + o[i >> 1];
+			rotated_box[i] = {
+				.plane = (vec4) (q * (plane_t) p * ~q),
+				//.plane = (vec4) (M * (plane_t) p * ~M),
+				.children = box_brush[i].children,
+			};
+		}
+		vec4 box_mins = '-20 -20 -20 0';
+		vec4 box_maxs = '20 20 20 0';
+		auto p = vec4 (col.box.offset, 1);
+		//Gizmo_AddBrush ('0 0 0 1', box_mins, box_maxs,
+		Gizmo_AddBrush (mat * p, box_mins, box_maxs,
+						countof (rotated_box), rotated_box,
+						vec4(0x55, 0xda, 0xba, 255)/255);
+		break;
+	}
 	}
 }
 
@@ -144,8 +233,8 @@ uint *collider_ents;
 typedef struct contact_s {
 	point_t world_a, world_b;
 	point_t local_a, local_b;
-	plane_t normal;
-	float separation;
+	plane_t normal;				// A on back, B on front
+	float separation;			// zero or negative when in contact
 	float time;
 	uint a, b;
 } contact_t;
@@ -334,10 +423,115 @@ bool get_contact_ball_capsule (uint aent, collider_t acol,
 	return false;
 }
 
-float
-clamp (float x, float a, float b)
+static point_t
+box_plane_point (plane_t p, point_t c, point_t e)
 {
-	return max (a, min(x, b));
+	@algebra (PGA) {
+		// a plane is just a sphere with infinite radius and its center at
+		// infinity, however, the center is behind the plane rather than in
+		// front of it
+		auto q = (c ∨ (-p * e0123)).bvect;
+		auto mins = -(e123 ∨ e).bvect;
+		auto maxs =  (e123 ∨ e).bvect;
+		auto tmin = (uvec3) ((vec3) q < '0 0 0');
+		auto tmax = (uvec3) ('0 0 0' < (vec3) q);
+		auto tcen = ~tmin & ~tmax;
+		auto x = (PGA.bvect) ( (tmin & (uvec3) mins)
+							 + (tcen & (uvec3) q)
+							 + (tmax & (uvec3) maxs));
+		return c - e0 * x;	// e0 * x gives the negative point
+	}
+}
+
+bool get_contact_plane_box (uint aent, collider_t acol,
+							 uint bent, collider_t bcol,
+							 contact_t *contact)
+{
+	state_t aS, bS;
+	body_t aB, bB;
+	get_component (aent, qent_state, &aS);
+	get_component (bent, qent_state, &bS);
+	get_component (aent, qent_body, &aB);
+	get_component (bent, qent_body, &bB);
+	auto aM = aS.M * aB.R;
+	auto bM = bS.M * bB.R;
+
+	// transform the plane into the box's space
+	auto M = ~bM * aM;
+	auto p = M * acol.plane * ~M;
+
+	auto c = (point_t) [bcol.box.offset, 1];
+	auto e = (point_t) [bcol.box.extent, 0];
+
+	@algebra (PGA) {
+		auto P = box_plane_point (p, c, e);
+		auto d = p ∨ P;
+		if (d < 0) {
+			auto n = p * e0123;
+			auto box_a = (P • p) * p;
+			auto box_b = P;
+			*contact = {
+				.world_a = bM * box_a * ~bM,
+				.world_b = bM * box_b * ~bM,
+				.local_a = ~M * box_a * M,
+				.local_b = box_b,
+				.normal = bM * @undual (n) * ~bM,
+				.separation = d,
+				.a = aent,
+				.b = bent,
+			};
+			return true;
+		}
+	}
+	return false;
+
+}
+
+bool get_contact_ball_box (uint aent, collider_t acol,
+						   uint bent, collider_t bcol,
+						   contact_t *contact)
+{
+	state_t aS, bS;
+	body_t aB, bB;
+	get_component (aent, qent_state, &aS);
+	get_component (bent, qent_state, &bS);
+	get_component (aent, qent_body, &aB);
+	get_component (bent, qent_body, &bB);
+	auto aM = aS.M * aB.R;
+	auto bM = bS.M * bB.R;
+
+	// transform the ball's center point into the box's space
+	auto M = ~bM * aM;
+	auto p = M * (point_t) [acol.ball.offset, 1] * ~M;
+
+	auto c = (point_t) [bcol.box.offset, 1];
+	auto e = (point_t) [bcol.box.extent, 0];
+	float r = acol.ball.radius;
+
+	@algebra (PGA) {
+		auto q = (c∨p).bvect;
+		auto mins = -(e123 ∨ e).bvect;
+		auto maxs =  (e123 ∨ e).bvect;
+		auto x = bound (mins, q, maxs);
+		auto d = q - x;
+		if (d • ~d < r * r) {
+			auto n = (e0 * d) / sqrt (d • ~d);
+			auto box_a = p + n * acol.ball.radius;
+			auto box_b = c - e0 * x;	// e0 * x gives the negative point
+			*contact = {
+				.world_a = bM * box_a * ~bM,
+				.world_b = bM * box_b * ~bM,
+				.local_a = ~M * box_a * M,
+				.local_b = box_b,
+				.normal = bM * @undual (n) * ~bM,
+				.separation = sqrt (d • ~d) - r,
+				.a = aent,
+				.b = bent,
+			};
+			return true;
+		}
+	}
+	return false;
 }
 
 bool get_contact_capsule_capsule (uint aent, collider_t acol,
@@ -440,6 +634,497 @@ bool get_contact_capsule_capsule (uint aent, collider_t acol,
 	return false;
 }
 
+static point_t
+box_closest_point (point_t p, point_t c, point_t e)
+{
+	@algebra (PGA) {
+		auto q = (c∨p).bvect;
+		auto mins = -(e123 ∨ e).bvect;
+		auto maxs =  (e123 ∨ e).bvect;
+		auto x = bound (mins, q, maxs);
+		return c - e0 * x;
+	}
+}
+
+bool get_contact_capsule_box (uint aent, collider_t acol,
+							  uint bent, collider_t bcol,
+							  contact_t *contact)
+{
+	state_t aS, bS;
+	body_t aB, bB;
+	get_component (aent, qent_state, &aS);
+	get_component (bent, qent_state, &bS);
+	get_component (aent, qent_body, &aB);
+	get_component (bent, qent_body, &bB);
+	auto aM = aS.M * aB.R;
+	auto bM = bS.M * bB.R;
+
+	// transform the capsule into the box's space
+	auto M = ~bM * aM;
+
+	auto C = M * (point_t) [acol.capsule.offset, 1] * ~M;
+	auto A = M * (point_t) [acol.capsule.axis,   0] * ~M;
+	auto c = (point_t) [bcol.box.offset, 1];
+	auto e = (point_t) [bcol.box.extent, 0];
+
+	auto P = C - A;
+	auto Q = C + A;
+
+	bivector_t L = P ∨ Q;
+
+	@algebra (PGA) {
+		bivector_t line;
+		point_t    box_point;
+		point_t    cap_point;
+
+		point_t Px = box_closest_point (P, c, e);
+		bivector_t LPx = P ∨ Px;
+		if (LPx • ~L < 0) {
+			box_point = Px;
+			cap_point = P;
+			line = LPx;
+
+			auto wP = (vec4) (bM * P * ~bM);
+			auto wPx = (vec4) (bM * Px * ~bM);
+			//Gizmo_AddSphere (wP, 0.1, {1, 1, 1, 0.5});
+			//Gizmo_AddSphere (wPx, 0.1, {1, 1, 1, 0.5});
+			//Gizmo_AddCapsule (wP, wPx, 0.03, {0.5, 0, 0.5, 0.5});
+			goto check_distance;
+		}
+
+		point_t Qx = box_closest_point (Q, c, e);
+		bivector_t LQx = Q ∨ Qx;
+		if (LQx • ~L > 0) {
+			box_point = Qx;
+			cap_point = Q;
+			line = LQx;
+
+			auto wQ = (vec4) (bM * Q * ~bM);
+			auto wQx = (vec4) (bM * Qx * ~bM);
+			//Gizmo_AddSphere (wQ, 0.1, {1, 1, 1, 0.5});
+			//Gizmo_AddSphere (wQx, 0.1, {1, 1, 1, 0.5});
+			//Gizmo_AddCapsule (wQ, wQx, 0.03, {0.5, 0.5, 0, 0.5});
+			goto check_distance;
+		}
+		auto wP = (vec4) (bM * P * ~bM);
+		auto wQ = (vec4) (bM * Q * ~bM);
+		//Gizmo_AddSphere (wP, 0.03, {1, 1, 1, 0.5});
+		//Gizmo_AddSphere (wQ, 0.03, {1, 1, 1, 0.5});
+
+		// Get the direction from the box center to the capsule's axis
+		// multiplying by e0 gives negates the result, so do axis to center
+		// FIXME .tvec required because the info required for cancelling the
+		// bivector terms is lost. This may be fixable with better high-level
+		// dags
+		auto dir = e0 * (((c • L) * ~L).tvec ∨ c);
+
+		// get the corner of the box most in the direction of the capsule's
+		// axis
+		auto tmin = (uvec4) ((vec4)dir <= vec4(0));
+		auto tmax = ~tmin;
+		auto p = (point_t) ( (tmin & (uvec4) -e)
+						   + (tmax & (uvec4)  e)) + c;
+		// find the other ends of the 3 edges coming off p and create lines
+		// for those three edges by first finding the corner furthest from
+		// the capsule's axis
+		// the actual length doesn't matter, but using 2*e helps when
+		// visualizing the edges
+		auto v = (point_t) ( (tmin & (uvec4) ( 2*e))
+						   + (tmax & (uvec4) (-2*e)));
+		// FIXME make it easier to get at components of GA objects
+		auto Lx = p ∨ (point_t) ((uvec4) v & '-1 0 0 0'u);
+		auto Ly = p ∨ (point_t) ((uvec4) v & '0 -1 0 0'u);
+		auto Lz = p ∨ (point_t) ((uvec4) v & '0 0 -1 0'u);
+		// Find the lines of shortest distance between the edges and the
+		// capsule's axis
+		auto LLx = L × Lx;
+		auto LLy = L × Ly;
+		auto LLz = L × Lz;
+
+		// Find the lines of projection of the corner of the box closest to
+		// the axis of the capsule on the capsule's axis
+		auto dx = (((p • LLx) * ~LLx).tvec ∨ p) / (LLx • ~LLx);
+		auto dy = (((p • LLy) * ~LLy).tvec ∨ p) / (LLy • ~LLy);
+		auto dz = (((p • LLz) * ~LLz).tvec ∨ p) / (LLz • ~LLz);
+
+		// Find box side end points of the lines of shortest distance between
+		// the capsule's axis and the box edges, but clamped to be on the box
+		// edge.
+		auto bx = p - e0 * (min (max ((dx • Lx) / (Lx • ~Lx), 0), 1) * Lx);
+		auto by = p - e0 * (min (max ((dy • Ly) / (Ly • ~Ly), 0), 1) * Ly);
+		auto bz = p - e0 * (min (max ((dz • Lz) / (Lz • ~Lz), 0), 1) * Lz);
+
+		// Find capsule side end points of the lines of shortest distance
+		// between the capsule's axis and the box edges.
+		point_t cx = P - e0 * (((P ∨ bx) • ~L) / (L • ~L) * L);
+		point_t cy = P - e0 * (((P ∨ by) • ~L) / (L • ~L) * L);
+		point_t cz = P - e0 * (((P ∨ bz) • ~L) / (L • ~L) * L);
+
+		auto wbx = (vec4) (bM * bx * ~bM);
+		auto wby = (vec4) (bM * by * ~bM);
+		auto wbz = (vec4) (bM * bz * ~bM);
+		auto wcx = (vec4) (bM * cx * ~bM);
+		auto wcy = (vec4) (bM * cy * ~bM);
+		auto wcz = (vec4) (bM * cz * ~bM);
+		//Gizmo_AddSphere (wbx, 0.1, {1, 0, 0, 0.5});
+		//Gizmo_AddSphere (wby, 0.1, {0, 1, 0, 0.5});
+		//Gizmo_AddSphere (wbz, 0.1, {0, 0, 1, 0.5});
+		//Gizmo_AddCapsule (wbx, wcx, 0.03, {0, 1, 1, 0.5});
+		//Gizmo_AddCapsule (wby, wcy, 0.03, {1, 0, 1, 0.5});
+		//Gizmo_AddCapsule (wbz, wcz, 0.03, {1, 1, 0, 0.5});
+		//Gizmo_AddSphere (wcx, 0.1, {0, 1, 1, 0.5});
+		//Gizmo_AddSphere (wcy, 0.1, {1, 0, 1, 0.5});
+		//Gizmo_AddSphere (wcz, 0.1, {1, 1, 0, 0.5});
+
+		float distx = (cx ∨ bx) • (bx ∨ cx);
+		float disty = (cy ∨ by) • (by ∨ cy);
+		float distz = (cz ∨ bz) • (bz ∨ cz);
+		float dist = min (distx, min (disty, distz));
+		if (dist == distx) {
+			box_point = bx;
+			cap_point = cx;
+			line = cx ∨ bx;
+			goto check_distance;
+		} else if (dist == disty) {
+			box_point = by;
+			cap_point = cy;
+			line = cy ∨ by;
+			goto check_distance;
+		} else {
+			box_point = bz;
+			cap_point = cz;
+			line = cz ∨ bz;
+			goto check_distance;
+		}
+		// this shouldn't happen as there is always a line of closest approach,
+		return false;
+check_distance:
+		auto wbox = (vec4) (bM * box_point * ~bM);
+		auto wcap = (vec4) (bM * cap_point * ~bM);
+		//Gizmo_AddCapsule (wbox, wcap, 0.1, {0, 1, 0, 0.5});
+
+		float r = acol.capsule.radius;
+		if (line • ~line < r * r) {
+			auto n = -(e0 * line) / sqrt (line • ~line);
+			*contact = {
+				.world_a = bM * cap_point * ~bM,
+				.world_b = bM * box_point * ~bM,
+				.local_a = ~M * cap_point * M,
+				.local_b = box_point,
+				.normal = bM * @undual (n) * ~bM,
+				.separation = sqrt (line • ~line) - r,
+				.a = aent,
+				.b = bent,
+			};
+			return true;
+		}
+		return false;
+	}
+
+}
+
+@generic (bivec = [bivector_t]) {
+void Gizmo_AddLine (bivec bv, float radius, vec4 color)
+{
+	Gizmo_AddLine ((vec3) bv.bvect, (vec3) bv.bvecp, radius, color);
+}
+};
+
+typedef struct boxaxis_s {
+	bivector_t  axis;
+	float       dist;
+	float       den;
+	int         index;
+} boxaxis_t;
+
+static void
+draw_plane_gizmo (plane_t p, point_t x, vec4 color)
+{
+	p /= sqrt (p • p);
+	quaternion q;
+	if (p[2] < 0) {
+		auto r = sqrt (p * (plane_t)'0 0 -1 0');
+		q = [r.scalar, -r.bvect];
+	} else {
+		auto r = sqrt (p * (plane_t)'0 0 1 0');
+		q = [r.scalar, -r.bvect];
+	}
+	auto s = vec4(q * (vector)'0.1 0 0', 0);
+	auto t = vec4(q * (vector)'0 0.1 0', 0);
+	Gizmo_AddPlane (vec4(x), s, t, color, color, color);
+}
+
+bool test_axis (bivector_t L, bivector_t T, mat3 A, mat3 B,
+				motor_t M, boxaxis_t *axes, int index,
+				vec4 color, point_t cA, point_t cB, bool draw_plane)
+{
+	float den = sqrt(L • ~L);
+	auto l = vec3 (L.bvect);
+	float tA = @horiz (+ abs (l * A));
+	float tB = @horiz (+ abs (l * B));
+	float tT = fabs (L • ~T);
+	float dist = tT - (tA + tB);
+	if (dist < 0) {
+		color.xyz = '1 1 1' - color.xyz;
+	}
+	if (0) @algebra (PGA) {
+		Gizmo_AddLine (M * L * ~M, 0.1, color);
+		float s = sign(L • T);
+		point_t pA = ((cA • L) * ~L).tvec / (L • ~L);
+		point_t pB = ((cB • L) * ~L).tvec / (L • ~L);
+		point_t xA = pA - s * tA * (e0 ∧ L) / (L • ~L);
+		point_t xB = pB + s * tB * (e0 ∧ L) / (L • ~L);
+		Gizmo_AddCapsule ((vec4)(M*pB*~M), (vec4)(M*xB*~M), 0.2, color);
+		Gizmo_AddCapsule ((vec4)(M*pA*~M), (vec4)(M*xA*~M), 0.2, color);
+
+		if (draw_plane) {
+			auto x = xA / ⋆(e0 ∧ xA);
+			plane_t p = -x • L;
+			p = M*p*~M;
+			draw_plane_gizmo (p, M*xA*~M, color);
+			draw_plane_gizmo (p, M*xB*~M, color);
+		}
+	}
+	if (dist * axes[0].den > axes[0].dist * den) {
+		axes[1] = axes[0];
+		axes[0] = {
+			.axis = L,
+			.dist = dist,
+			.den = den,
+			.index = index,
+		};
+	} else if (dist * axes[1].den > axes[1].dist * den) {
+		axes[1] = {
+			.axis = L,
+			.dist = dist,
+			.den = den,
+			.index = index,
+		};
+	}
+	return dist > 0;
+}
+
+bivector_t
+make_line (bivector_t A, bivector_t B)
+{
+	auto L = A × B;
+	// semi-normalize the line: remove the translation part of the screw
+	// without changing the magnitude. Many thanks to Hamish and Enki
+	// for the help in understanding why the result of the commutator
+	// product behaved very strangely: it's a screw line (the logarithm
+	// of a full motor!) so includes translation along the axis thus
+	// resulting in very weird behavior when ray-traced.
+	L.bvecp -= (L.bvecp ∧ L.bvect) * ~L.bvect / (L • ~L);
+	return L;
+}
+
+bool get_contact_box_box (uint aent, collider_t acol,
+						  uint bent, collider_t bcol,
+						  contact_t *contact)
+{
+	state_t aS, bS;
+	body_t aB, bB;
+	get_component (aent, qent_state, &aS);
+	get_component (bent, qent_state, &bS);
+	get_component (aent, qent_body, &aB);
+	get_component (bent, qent_body, &bB);
+	auto aM = aS.M * aB.R;
+	auto bM = bS.M * bB.R;
+
+	// transform box A into the box B's space
+	auto M = ~bM * aM;
+
+	auto cA = (point_t) [acol.box.offset, 1];
+	auto eA = (point_t) [acol.box.extent, 0];
+	auto cB = (point_t) [bcol.box.offset, 1];
+	auto eB = (point_t) [bcol.box.extent, 0];
+
+	bivector_t T = (cB ∨ (M * cA * ~M));
+	auto cBB = cB;
+	auto cAB = M * cA * ~M;
+	boxaxis_t axes[2] = {
+		{ .dist = -1, .den = 0 },	// negative infinity
+		{ .dist = -1, .den = 0 },	// negative infinity
+	};
+	@algebra (PGA) {
+		bivector_t Aaxes[3] = {
+			M * (cA ∨ e032) * ~M,
+			M * (cA ∨ e013) * ~M,
+			M * (cA ∨ e021) * ~M,
+		};
+		bivector_t Baxes[3] = {
+			cB ∨ e032,
+			cB ∨ e013,
+			cB ∨ e021,
+		};
+		mat3 A = {
+			eA[0] * vec3 (Aaxes[0].bvect),
+			eA[1] * vec3 (Aaxes[1].bvect),
+			eA[2] * vec3 (Aaxes[2].bvect),
+		};
+		mat3 B = {
+			eB[0] * vec3 (Baxes[0].bvect),
+			eB[1] * vec3 (Baxes[1].bvect),
+			eB[2] * vec3 (Baxes[2].bvect),
+		};
+		//Gizmo_AddLine (bM * A * ~bM, 0.01, (vec4) { 0, 1, 1, 0.9 });
+		//Gizmo_AddLine (bM * B * ~bM, 0.01, (vec4) { 1, 1, 0, 0.9 });
+		//Gizmo_AddLine (bM * T * ~bM, 0.01, (vec4) { 1, 0, 1, 0.9 });
+
+		bool miss = false;
+		for (int i = 0; i < 3; i++) {
+			vec4 color = { 0, 0, 0, 0.9 };
+			color[i] = 1;
+
+			miss |= test_axis (Baxes[i], T, A, B, bM, axes, (i + 1) * 0o10,
+							   color, cAB, cBB, false);
+			miss |= test_axis (Aaxes[i], T, A, B, bM, axes, (i + 1) * 0o01,
+							   color, cAB, cBB, false);
+			for (int j = 0; j < 3; j++) {
+				color = { 0.5, 0.4, 0.8, 0.9 };
+				auto L = make_line (Baxes[i], Aaxes[j]);
+				miss |= test_axis (L, T, A, B, bM, axes,
+								   (i + 1) * 0o10 + (j + 1) * 0x01,
+								   color, cAB, cBB, false);
+			}
+		}
+
+		vec4 color = miss ? '1 1 1 0.5' : '1 0 1 0.5';
+		int Aind = axes[0].index & 7;
+		int Bind = axes[0].index >> 3;
+		point_t AX = nil;
+		point_t BX = nil;
+		if (Aind && Bind) {
+			auto Bx = Baxes[Bind - 1];
+			auto Ax = Baxes[Aind - 1];
+
+			auto Ba = axes[0].axis.bvect;
+			float d = sign (T • ~Ba);
+			point_t bo = eB @hadamard sign (d * e0 ∧ Ba.bvect);
+			int bind = Bind - 1;
+			bo[bind] = 0;
+			auto bP = cB - bo;
+			auto bL = Bx • bP * ~bP / (bP • ~bP);
+
+			auto Aa = ~M * Ba * M;
+			point_t ao = eA @hadamard sign (d * e0 ∧ Aa.bvect);
+			int aind = Aind - 1;
+			ao[aind] = 0;
+			auto aP = cA + ao;
+			auto aL = Ax • aP * ~aP / (aP • ~aP);
+
+			auto L = make_line (bL, M * aL * ~M);
+			auto bx = (bP • L * ~L).tvec / (L • ~L);
+			auto al = ~M * L * M;
+			auto ax = (aP • al * ~al).tvec / (al • ~al);
+			bx = bound (cB - eB, bx, cB + eB);
+			ax = bound (cA - eA, ax, cA + eA);
+			// clamp again because edge-corner can invalidate the position
+			// on the edge
+			bx = bound (cB - eB, M*ax*~M, cB + eB);
+			ax = bound (cA - eA, ~M*bx*M, cA + eA);
+
+			BX = bx;
+			AX = ax;
+
+			//Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.25, {1, 0, 1, 0.5});
+			//Gizmo_AddLine (bM * bL * ~bM, 0.01, (vec4) { 0.4, 0.8, 0.3, 0.9 });
+			//Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.25, {1, 0, 1, 0.5});
+			//Gizmo_AddLine (aM * aL * ~aM, 0.01, (vec4) { 0.4, 0.8, 0.3, 0.9 });
+
+			//Gizmo_AddSphere (vec4(bM * bx * ~bM), 0.005, color);
+			//Gizmo_AddSphere (vec4(aM * ax * ~aM), 0.005, color);
+			//Gizmo_AddCapsule (vec4(aM*ax*~aM), vec4(bM*bx*~bM), 0.02, color);
+			//Gizmo_AddLine (bM * L * ~bM, 0.1, color);
+			//printf ("edge-edge ");
+		} else if (Aind) {
+			auto x = -e0∧Aaxes[Aind - 1];
+			auto a = axes[0].axis.bvect;
+			auto u = T • a * ~a / (a • ~a);
+			float d = sign (T • ~a);
+			//FIXME qfcc double subtracts for eA[Aind - 1]
+			auto ind = Aind - 1;
+			auto o = eA[ind] * x;
+			auto P = M * cA * ~M - d * o;
+			auto p = u • P;
+			auto bP = box_plane_point (p, cB, eB);
+			auto aP = bound (cA - eA, ~M * bP * M, cA + eA);
+			BX = bP;
+			AX = aP;
+			//Gizmo_AddSphere (vec4(bM * P * ~bM), 0.25, {1, 1, 0, 0.5});
+			//draw_plane_gizmo (bM*p*~bM, bM*P*~bM, {1, 1, 0, 0.5});
+
+			//Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.005, color);
+			//Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.005, color);
+			//Gizmo_AddCapsule (vec4(aM*aP*~aM), vec4(bM*bP*~bM), 0.02, color);
+			//printf ("A-face ");
+		} else if (Bind) {
+			auto x = -e0∧Baxes[Bind - 1];
+			auto a = axes[0].axis.bvect;
+			auto u = -T • a * ~a / (a • ~a);
+			float d = sign (T • ~a);
+			//FIXME qfcc double subtracts for eB[Bind - 1]
+			auto ind = Bind - 1;
+			auto o = eB[ind] * x;
+			auto P = cB + d * o;
+			//FIXME qfcc fails to optimize out the Jacobi identity (cycle
+			// of a×b×c, probably because the scale products don't get
+			// redistributed nicely, but also possibly because one of the
+			// cross products is expanded into the dot product form
+			auto p = (~M * u • P * M).vec;
+			auto aP = box_plane_point (p, cA, eA);
+			auto bP = bound (cB - eB, M * aP * ~M, cB + eB);
+			AX = aP;
+			BX = bP;
+			//Gizmo_AddSphere (vec4(bM * P * ~bM), 0.25, {0, 1, 1, 0.5});
+			//draw_plane_gizmo (aM*p*~aM, bM*P*~bM, {0, 1, 1, 0.5});
+
+			//Gizmo_AddSphere (vec4(bM * bP * ~bM), 0.005, color);
+			//Gizmo_AddSphere (vec4(aM * aP * ~aM), 0.005, color);
+			//Gizmo_AddCapsule (vec4(aM*aP*~aM), vec4(bM*bP*~bM), 0.02, color);
+			//printf ("B-face ");
+		} else {
+			printf ("what the what?\n");
+		}
+		if (miss) {
+			auto bx = bound (cB - eB, BX, cB + eB);
+			auto ax = bound (cA - eA, AX, cA + eA);
+			//printf ("%q %q %q %q\n", AX, ax, BX, bx);
+			vec4 color = { 1, 0, 0, 0.9 };
+			//Gizmo_AddSphere (vec4(bM * bx * ~bM), 0.005, color);
+			//Gizmo_AddSphere (vec4(aM * ax * ~aM), 0.005, color);
+			//Gizmo_AddCapsule (vec4(aM*ax*~aM), vec4(bM*bx*~bM), 0.02, color);
+		}
+		if (!miss) {
+			auto wa = aM * AX * ~aM;
+			auto wb = bM * BX * ~bM;
+			auto line = wa ∨ wb;
+			auto l = T • axes[0].axis * ~axes[0].axis;
+			auto n = @undual(e0 * axes[0].axis);
+			n /= sqrt (n • ~n);
+			//printf ("%q %q %q\n", wa, wb, n);
+			*contact = {
+				.world_a = wa,
+				.world_b = wb,
+				.local_a = AX,
+				.local_b = BX,
+				.normal = n,
+				.separation = sqrt (line • ~line),
+				.a = aent,
+				.b = bent,
+			};
+			return true;
+		}
+		//printf ("axis[0]: %v %v %g %02o\n",
+		//		axes[0].axis.bvect, axes[0].axis.bvecp,
+		//		axes[0].dist / axes[0].den, axes[0].index);
+		//printf ("axis[1]: %v %v %g %02o\n",
+		//		axes[1].axis.bvect, axes[1].axis.bvecp,
+		//		axes[1].dist / axes[1].den, axes[1].index);
+	}
+	return false;
+}
+
 bool get_contact_ball_plane (uint a, collider_t acol,
 							 uint b, collider_t bcol,
 							 contact_t *contact)
@@ -461,22 +1146,51 @@ bool get_contact_capsule_ball (uint a, collider_t acol,
 	return get_contact_ball_capsule (b, bcol, a, acol, contact);
 }
 
-get_contact_t get_contact[3][3] = {
-	//col_plane
-	{
-		nil,	// two infinite planes almost always collide, so ignore
-		get_contact_plane_ball,
-		get_contact_plane_capsule,
+bool get_contact_box_plane (uint a, collider_t acol,
+						   uint b, collider_t bcol,
+						   contact_t *contact)
+{
+	return get_contact_plane_box (b, bcol, a, acol, contact);
+}
+
+bool get_contact_box_ball (uint a, collider_t acol,
+						   uint b, collider_t bcol,
+						   contact_t *contact)
+{
+	return get_contact_ball_box (b, bcol, a, acol, contact);
+}
+
+bool get_contact_box_capsule (uint a, collider_t acol,
+						   uint b, collider_t bcol,
+						   contact_t *contact)
+{
+	return get_contact_capsule_box (b, bcol, a, acol, contact);
+}
+
+get_contact_t get_contact[4][4] = {
+	[col_plane] = {
+		[col_plane]   = nil,	// two infinite planes almost always collide
+		[col_ball]    = get_contact_plane_ball,
+		[col_capsule] = get_contact_plane_capsule,
+		[col_box]     = get_contact_plane_box,
 	},
-	{
-		get_contact_ball_plane,
-		get_contact_ball_ball,
-		get_contact_ball_capsule,
+	[col_ball] = {
+		[col_plane]   = get_contact_ball_plane,
+		[col_ball]    = get_contact_ball_ball,
+		[col_capsule] = get_contact_ball_capsule,
+		[col_box]     = get_contact_ball_box,
 	},
-	{
-		get_contact_capsule_plane,
-		get_contact_capsule_ball,
-		get_contact_capsule_capsule,
+	[col_capsule] = {
+		[col_plane]   = get_contact_capsule_plane,
+		[col_ball]    = get_contact_capsule_ball,
+		[col_capsule] = get_contact_capsule_capsule,
+		[col_box]     = get_contact_capsule_box,
+	},
+	[col_box] = {
+		[col_plane]   = get_contact_box_plane,
+		[col_ball]    = get_contact_box_ball,
+		[col_capsule] = get_contact_box_capsule,
+		[col_box]     = get_contact_box_box,
 	},
 };
 
@@ -518,12 +1232,14 @@ update_physics (uint ent)
 	get_component (ent, qent_body, &body);
 	get_component (ent, qent_transform, &xform);
 
-	if (has_component (ent, qent_grav)) {
-		state = update_grav_state (state, body, xform);
-	} else {
-		state = update_block_state (state, body, xform);
+	if (!physics_paused) {
+		if (has_component (ent, qent_grav)) {
+			state = update_grav_state (state, body, xform);
+		} else {
+			state = update_block_state (state, body, xform);
+		}
+		set_component (ent, qent_state, &state);
 	}
-	set_component (ent, qent_state, &state);
 
 	auto M = state.M * body.R;
 	set_transform (M, xform);
@@ -533,7 +1249,7 @@ update_physics (uint ent)
 		//FIXME O(N^2)
 		collider_t col;
 		get_component (ent, qent_collider, &col);
-		draw_collider (col, xform);
+		draw_collider (col, xform, M);
 		for (uint i = 0; i < num_collider_ents; i++) {
 			uint        oent = collider_ents[i];
 			collider_t  ocol;
@@ -586,19 +1302,6 @@ calc_inertia_ball (collider_t collider, float invDensity)
 	body.Ii.bvect *= invDensity;
 	body.Ii.bvecp *= invDensity / I;
 	return body;
-}
-
-vec3 abs(vec3 x)
-{
-	uvec3 m = x < '0 0 0';
-	return (vec3) ((uvec3) x & ~m) - (vec3) ((uvec3) x & m);
-}
-
-@overload
-vec3 max(vec3 a, vec3 b)
-{
-	uvec3 m = a < b;
-	return (vec3) ((uvec3) a & ~m) + (vec3) ((uvec3) b & m);
 }
 
 vec3 best_axis(vec3 dir, @out int ind)
@@ -671,9 +1374,29 @@ calc_inertia_capsule (collider_t collider, float invDensity)
 
 	body.R = R * T;
 
-	printf ("%v %v\n", body.I.bvect, body.I.bvecp);
-	printf ("%v %v\n", body.Ii.bvect, body.Ii.bvecp);
-	printf ("%g %v %v %g\n", body.R.scalar, body.R.bvect, body.R.bvecp, body.R.qvec);
 
+	return body;
+}
+
+body_t
+calc_inertia_box (collider_t collider, float invDensity)
+{
+	body_t body = {};//infinite mass
+	body.R = 1;
+	vec3 e = collider.box.extent;
+	if (!invDensity || @horiz(| e == '0 0 0')) {
+		return body;
+	}
+	float vol = 8 * e.x * e.y * e.z;
+	e = e * e;
+	float I = 1.0f / 3;
+	invDensity /= vol;
+	body.Ii.bvect = '1 1 1';
+	body.Ii.bvecp = (PGA.bvecp) [e.y + e.z, e.z + e.x, e.x + e.y];
+	//body.Ii.bvecp = (PGA.bvecp) (e.yzx + e.zxy);
+	body.I.bvect = body.Ii.bvect / invDensity;
+	body.I.bvecp = body.Ii.bvecp * I / invDensity;
+	body.Ii.bvect *= invDensity;
+	body.Ii.bvecp *= invDensity / I;
 	return body;
 }

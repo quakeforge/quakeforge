@@ -14,16 +14,25 @@ typedef @handle(long) transform_h transform_t;
 	scene_t     scene;
 	entity_t    ent;
 	transform_t xform;
+	bool        hud_enabled;
+	state_t     state;
 }
 +(Camera *) inScene:(scene_t)scene;
 -(entity_t) entity;
+-setState:(state_t)state;
+-(state_t)state;
 -setTransformFromMotor:(motor_t)M;
 -draw;
 -drawExcept:(Camera *) skip;
+-drawHUD;
+-enableHUD:(bool)enable;
+-(transform_t)xform;
 @end
 
-void camera_first_person (state_t *camera_state);
-void camera_mouse_trackball (state_t *camera_state);
+typedef struct camspeed_s camspeed_t;
+
+void camera_first_person (state_t *camera_state, camspeed_t speed);
+void camera_mouse_trackball (state_t *camera_state, vec2 mouse_start);
 void camera_mouse_first_person (state_t *camera_state);
 
 #endif//__camera_h

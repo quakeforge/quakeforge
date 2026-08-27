@@ -11,7 +11,6 @@
 	point_t focus;
 	point_t nest;
 	point_t up;
-	state_t state;
 }
 +(PlayerCam *) inScene:(scene_t)scene;
 -think:(float)frametime;

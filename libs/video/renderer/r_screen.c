@@ -333,7 +333,7 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs,
 	if (!r_lock_viewleaf && r_refdef.scene && r_refdef.scene->worldmodel) {
 		r_refdef.scene->viewleaf = 0;
 		vec4f_t     position = refdef->frame.position;
-		auto brush = &r_refdef.scene->worldmodel->brush;
+		auto brush = r_refdef.scene->worldmodel->brush;
 		r_refdef.scene->viewleaf = Mod_PointInLeaf (position, brush);
 		r_dowarpold = r_dowarp;
 		if (r_waterwarp) {
@@ -508,7 +508,7 @@ SCR_NewScene (scene_t *scene)
 	r_refdef.scene = scene;
 	auto hunk = r_refdef.hunk;
 	if (scene) {
-		mod_brush_t *brush = &r_refdef.scene->worldmodel->brush;
+		mod_brush_t *brush = r_refdef.scene->worldmodel->brush;
 		int         count = brush->numnodes + brush->modleafs
 							+ brush->numsurfaces;
 		int         size = count * sizeof (int);

@@ -1,6 +1,6 @@
 ruamoko_game_libexec=ruamoko/game/game.dat$(EXEEXT)
 
-noinst_PROGRAMS += $(ruamoko_game_libexec)
+noinst_PROGRAMS += @ruamoko_game_libexec@
 EXTRA_PROGRAMS += $(ruamoko_game_libexec)
 
 ruamoko_game_src= ruamoko/game/Axe.r ruamoko/game/GameEntity.r ruamoko/game/World.r ruamoko/game/tempent.r

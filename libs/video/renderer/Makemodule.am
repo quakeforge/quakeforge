@@ -1,15 +1,18 @@
 include libs/video/renderer/vulkan/test/Makemodule.am
 include libs/video/renderer/vulkan/vkgen/Makemodule.am
 
+libs_video_renderer_libs=libs/video/renderer/libQFrenderer.la
+
 #lib_LTLIBRARIES += @VID_REND_TARGETS@
 plugin_LTLIBRARIES += @vid_render_plugins@
 noinst_LTLIBRARIES += \
-	libs/video/renderer/libQFrenderer.la \
+	@libs_video_renderer_libs@ \
 	@render_libs@ \
 	@vid_render_static_plugins@
 
 #plugins
 EXTRA_LTLIBRARIES += \
+	$(libs_video_renderer_libs) \
 	libs/video/renderer/vid_render_sw.la \
 	libs/video/renderer/vid_render_gl.la \
 	libs/video/renderer/vid_render_glsl.la \
@@ -99,14 +102,8 @@ glslshaderpath = libs/video/renderer/glsl
 shader_src = \
 	$(glslshaderpath)/quakeforge.glsl \
 	$(glslshaderpath)/sgustavson.glsl
-shader_gen = \
-	$(glslshaderpath)/quakeforge.slc \
-	$(glslshaderpath)/sgustavson.slc
 
-SUFFIXES += .geom .comp .frag .vert .spv .spvc .fc .vc .slc .glsl
-.glsl.slc:
-	$(V_SED)sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
-	$(am__mv) $@.t $@
+SUFFIXES += .geom .comp .frag .vert .spv .spvc .fc .vc
 
 video_renderer_glsl_libs= \
 	libs/video/renderer/librender_glsl.la \
@@ -134,8 +131,7 @@ libs_video_renderer_librender_glsl_la_SOURCES = \
 	libs/video/renderer/glsl/glsl_trails.c \
 	libs/video/renderer/glsl/glsl_warp.c \
 	libs/video/renderer/glsl/qfglsl.c \
-	libs/video/renderer/glsl/vid_common_glsl.c \
-	$(shader_src)
+	libs/video/renderer/glsl/vid_common_glsl.c
 
 video_renderer_sw_libs= \
 	libs/video/renderer/librender_sw.la \
@@ -591,19 +587,17 @@ $(vkparse_cinc) $(vkparse_hinc)&: $(vkgen) $(qwaq_cmd) $(vkparse_plist)
 CLEANFILES += \
 	libs/video/renderer/glsl/*.vc \
 	libs/video/renderer/glsl/*.fc \
-	libs/video/renderer/glsl/*.slc \
 	libs/video/renderer/vulkan/shader/*.spv \
 	libs/video/renderer/vulkan/shader/*.spvc \
 	vkgen.sym \
 	$(vkparse_src)
-
-BUILT_SOURCES += $(shader_gen)
 
 #shader_DATA += \
 #	libs/video/renderer/vulkan/passthrough.vert.spv \
 #	libs/video/renderer/vulkan/pushcolor.frag.spv
 
 EXTRA_DIST += \
+	$(shader_src) \
 	libs/video/renderer/vulkan/vkparse.plist \
 	libs/video/renderer/vulkan/vkparse.h \
 	$(rp_main_def_src) \

@@ -38,6 +38,7 @@ qtv_LIBS= \
 		libs/models/libQFmodels.la \
 		libs/console/libQFconsole.la \
 		libs/ui/libQFui.la \
+		libs/thread/libQFthread.la \
 		libs/util/libQFutil.la
 
 qtv_server_SOURCES=	qtv/source/client.c qtv/source/connection.c qtv/source/qtv.c qtv/source/sbar.c qtv/source/server.c qtv/source/sv_parse.c $(tracy_src)

@@ -556,7 +556,21 @@ mvec_scatter (const expr_t **components, const expr_t *mvec, algebra_t *algebra)
 		if (components[group]) {
 			internal_error (mvec, "duplicate group in multivec expression");
 		}
-		components[group] = edag_add_expr (c->alias.expr);
+		auto ctype = get_type (c->alias.expr);
+		if (!type_same (algebra->type, base_type (ctype))) {
+			auto vtype = vector_type (algebra->type, type_width (ctype));
+			auto a = new_expr ();
+			a->type = ex_alias;
+			a->alias = (ex_alias_t) {
+				.type = vtype,
+				.expr = c->alias.expr,
+				.offset = c->alias.offset,
+			};
+			c = a;
+		} else {
+			c = c->alias.expr;
+		}
+		components[group] = edag_add_expr (c);
 	}
 }
 
@@ -3357,13 +3371,11 @@ algebra_compare (int op, const expr_t *e1, const expr_t *e2)
 	mvec_scatter (b, e2, algebra);
 
 	const expr_t *cmp = nullptr;
-	expr_t *bool_label = nullptr;
 	for (int i = 0; i < layout->count; i++) {
 		if (a[i] || b[i]) {
 			auto c = component_compare (op, a[i], b[i], algebra);
 			if (cmp) {
-				bool_label = new_label_expr ();
-				cmp = bool_expr (QC_AND, bool_label, cmp, c);
+				cmp = bool_expr (QC_AND, cmp, c);
 			} else {
 				cmp = c;
 			}
@@ -3427,12 +3439,16 @@ algebra_negate (const expr_t *e)
 static const expr_t *
 hodge_dual (const expr_t *e, bool undual)
 {
-	auto algebra = algebra_context (get_type (e));
+	auto type = get_type (e);
+	auto algebra = algebra_context (type);
 	if (!algebra) {
 		return error (e, "cannot take the %s of a scalar without context",
 					  undual ? "undual" : "dual");
 	}
 	e = algebra_optimize (e);
+	if (!e) {
+		e = new_zero_expr (type);
+	}
 	auto layout = &algebra->layout;
 
 	const expr_t *a[layout->count] = {};
@@ -3567,13 +3583,19 @@ algebra_cast_expr (const type_t *dstType, const expr_t *e)
 		}
 		if (is_algebra (srcType)) {
 			algebra = algebra_get (srcType);
-			auto alias = edag_add_expr (new_alias_expr (algebra->type, e));
+			auto atype = vector_type (algebra->type, type_width (srcType));
+			auto alias = edag_add_expr (new_alias_expr (atype, e));
 			return cast_expr (dstType, alias);
 		} else {
 			auto type = vector_type (algebra->type, type_width (dstType));
 			auto cast = cast_expr (type, e);
 			cast = fold_constants (new_alias_expr (dstType, cast));
 			return edag_add_expr (cast);
+		}
+	}
+	if (algebra && !srcAlgebra) {
+		if (type_same (algebra->type, srcType)) {
+			srcAlgebra = algebra;
 		}
 	}
 

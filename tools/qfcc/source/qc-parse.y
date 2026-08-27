@@ -450,7 +450,7 @@ resolve_type_spec (specifier_t spec, rua_ctx_t *ctx)
 static specifier_t
 typename_spec (specifier_t spec, rua_ctx_t *ctx)
 {
-	spec = default_type (spec, 0);
+	spec.is_typename = true;
 	return spec;
 }
 
@@ -578,26 +578,8 @@ make_ellipsis (void)
 }
 
 static param_t *
-make_param (specifier_t spec, rua_ctx_t *ctx)
+set_param_qual (specifier_t spec, param_t *param)
 {
-	//FIXME should not be sc_global
-	//FIXME if (spec.storage == sc_global || spec.storage == sc_extern) {
-	if (spec.storage < sc_inout) {
-		spec.storage = sc_param;
-	}
-
-	param_t *param;
-	if (generic_block && spec.type_expr) {
-		auto name = spec.sym ? spec.sym->name : nullptr;
-		param = new_generic_param (spec.type_expr, name);
-	} else if (spec.sym) {
-		spec = spec_process (spec, ctx);
-		spec.type = find_type (append_type (spec.sym->type, spec.type));
-		param = new_param (nullptr, spec.type, spec.sym->name);
-	} else {
-		spec = spec_process (spec, ctx);
-		param = new_param (nullptr, spec.type, nullptr);
-	}
 	if (spec.is_const) {
 		if (spec.storage == sc_out) {
 			error (0, "cannot use const with @out");
@@ -628,10 +610,38 @@ make_param (specifier_t spec, rua_ctx_t *ctx)
 }
 
 static param_t *
-make_selector (const char *selector, const type_t *type, const char *name)
+make_param (specifier_t spec, rua_ctx_t *ctx)
+{
+	//FIXME should not be sc_global
+	//FIXME if (spec.storage == sc_global || spec.storage == sc_extern) {
+	if (spec.storage < sc_inout) {
+		spec.storage = sc_param;
+	}
+
+	param_t *param;
+	if (generic_block && spec.type_expr) {
+		auto name = spec.sym ? spec.sym->name : nullptr;
+		param = new_generic_param (spec.type_expr, name);
+	} else if (spec.sym) {
+		spec = spec_process (spec, ctx);
+		spec.type = find_type (append_type (spec.sym->type, spec.type));
+		param = new_param (nullptr, spec.type, spec.sym->name);
+	} else {
+		spec = spec_process (spec, ctx);
+		param = new_param (nullptr, spec.type, nullptr);
+	}
+	return set_param_qual (spec, param);
+}
+
+static param_t *
+make_selector (specifier_t spec, const char *selector, const type_t *type,
+			   const char *name)
 {
 	param_t    *param = new_param (selector, type, name);
-	return param;
+	if (spec.storage < sc_inout) {
+		spec.storage = sc_param;
+	}
+	return set_param_qual (spec, param);
 }
 
 static param_t *
@@ -738,10 +748,20 @@ decl_expr (specifier_t spec, const expr_t *init, rua_ctx_t *ctx)
 {
 	auto sym = spec.sym;
 	spec.sym = nullptr;
+	if (current_symtab->type == stab_local && spec.storage == sc_global) {
+		spec.storage = sc_local;
+	}
 	auto decl = new_decl_expr (spec);
 	if (current_symtab->type == stab_local && sym) {
 		auto proxy = new_symbol (sym->name);
 		proxy->is_proxy = true;
+		if (spec.is_typedef) {
+			//FIXME this won't work for typedefs that need to be processed
+			//should create a suitable type expr and mark the proxy as an expr
+			//and then TYPE_NAME check needs to check for such as well
+			proxy->sy_type = sy_type;
+			proxy->type = spec.type;
+		}
 		symtab_addsymbol (current_symtab, proxy);
 	}
 	return append_decl (decl, sym, init);
@@ -824,7 +844,7 @@ create_namespace_chain (const expr_t *id_chain)
 		auto sym = symtab_lookup (current_symtab, ns_sym->name);
 		if (sym && sym->table == current_symtab) {
 			// switch to existing namespace
-			current_symtab = sym->namespace;;
+			current_symtab = sym->namespace;
 		} else {
 			auto ns_tab = new_symtab (current_symtab, stab_namespace);
 			ns_tab->space = current_symtab->space;
@@ -1782,10 +1802,10 @@ struct_specifier
 			}
 		}
 	| BLOCK tag struct_list { $$ = $3; }
-	| handle tag
+	| handle[spec] tag
 		{
-			specifier_t spec = $1;
-			symbol_t   *sym = find_handle ($2, spec.type);
+			auto spec = resolve_type_spec ($spec, ctx);
+			symbol_t   *sym = find_handle ($tag, spec.type);
 			sym->type = find_type (sym->type);
 			$$ = type_spec (sym->type);
 			if (!sym->table) {
@@ -2269,6 +2289,7 @@ new_scope
 				block->block.create_scope = create_local_scope;
 				//FIXME this is dumb
 				block->block.scope = new_symtab (current_symtab, stab_local);
+				block->block.scope->space = current_symtab->space;
 				current_symtab = block->block.scope;
 			}
 			$$ = block;
@@ -2297,10 +2318,11 @@ algebra_scope
 	;
 
 algebra_block
-	: '{' algebra_scope statement_list '}' end_scope
+	: '{' algebra_scope statement_list[list] '}' end_scope
 		{
-			$$ = $3;
+			$$ = $list;
 		}
+	| '{' algebra_scope '}' end_scope				{ $$ = nullptr; }
 	;
 
 compound_statement
@@ -3111,7 +3133,10 @@ methodproto
 			$$ = $2;
 		}
 	| ci error ';'
-		{ $$ = new_method (&type_id, make_selector ("", 0, 0), 0, ctx); }
+		{
+			specifier_t spec = { .storage = sc_param };
+			$$ = new_method (&type_id, make_selector (spec, "", 0, 0), 0, ctx);
+		}
 	;
 
 methoddecl
@@ -3137,7 +3162,11 @@ optional_param_list
 	;
 
 unaryselector
-	: selector					{ $$ = make_selector ($1->name, 0, 0); }
+	: selector
+		{
+			specifier_t spec = { .storage = sc_param };
+			$$ = make_selector (spec, $1->name, 0, 0);
+		}
 	;
 
 keywordselector
@@ -3178,23 +3207,25 @@ reserved_word
 	;
 
 keyworddecl
-	: selector ':' '(' typename ')' identifier
+	: selector[sel] ':' '(' typename[spec] ')' identifier[id]
 		{
-			auto spec = resolve_type_spec ($4, ctx);
-			$$ = make_selector ($1->name, spec.type, $6->name);
+			auto spec = resolve_type_spec ($spec, ctx);
+			$$ = make_selector (spec, $sel->name, spec.type, $id->name);
 		}
-	| selector ':' identifier
+	| selector[sel] ':' identifier[id]
 		{
-			$$ = make_selector ($1->name, &type_id, $3->name);
+			specifier_t spec = { .storage = sc_param };
+			$$ = make_selector (spec, $sel->name, &type_id, $id->name);
 		}
-	| ':' '(' typename ')' identifier
+	| ':' '(' typename[spec] ')' identifier[id]
 		{
-			auto spec = resolve_type_spec ($3, ctx);
-			$$ = make_selector ("", spec.type, $5->name);
+			auto spec = resolve_type_spec ($spec, ctx);
+			$$ = make_selector (spec, "", spec.type, $id->name);
 		}
-	| ':' identifier
+	| ':' identifier[id]
 		{
-			$$ = make_selector ("", &type_id, $2->name);
+			specifier_t spec = { .storage = sc_param };
+			$$ = make_selector (spec, "", &type_id, $id->name);
 		}
 	;
 
@@ -3330,6 +3361,9 @@ static keyword_t rua_keywords[] = {
 	{ "mat2", QC_TYPE_SPEC, .spec = { . type = &type_mat2x2 } },
 	{ "mat3", QC_TYPE_SPEC, .spec = { . type = &type_mat3x3 } },
 	{ "mat4", QC_TYPE_SPEC, .spec = { . type = &type_mat4x4 } },
+	{ "dmat2", QC_TYPE_SPEC, .spec = { . type = &type_dmat2x2 } },
+	{ "dmat3", QC_TYPE_SPEC, .spec = { . type = &type_dmat3x3 } },
+	{ "dmat4", QC_TYPE_SPEC, .spec = { . type = &type_dmat4x4 } },
 };
 
 // These keywords are all part of the Ruamoko (Objective-QC) language.

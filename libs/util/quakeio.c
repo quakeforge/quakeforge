@@ -756,6 +756,7 @@ Qfopen (FILE *file, const char *mode)
 	qfile->file = file;
 	if (flags & QF_READ)
 		qfile->size = check_file (fileno (file), -1, -1, 0);
+	qfile->funcs = qio_FILE_funcs;
 	qfile->c = -1;
 	return qfile;
 }

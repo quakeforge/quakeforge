@@ -1378,7 +1378,7 @@ sys_stop (int version, _Unwind_Action actions,
 	intptr_t   *jmpbuf = _jmpbuf;
 #ifdef _WIN32
 	if (!context) {
-		// if we get here, then attempting to delete the exception contextuuu
+		// if we get here, then attempting to delete the exception context
 		// can fail
 		__builtin_longjmp (jmpbuf, 1);
 	}

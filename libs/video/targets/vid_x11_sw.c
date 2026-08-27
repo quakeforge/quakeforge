@@ -547,6 +547,8 @@ ResetFrameBuffer (void)
 	char       *buf;
 
 	if (x_framebuffer[0]) {
+		free (x_framebuffer[0]->data);
+		x_framebuffer[0]->data = nullptr;
 		XDestroyImage (x_framebuffer[0]);
 	}
 
@@ -581,7 +583,7 @@ ResetSharedFrameBuffers (void)
 		// free up old frame buffer memory
 		if (x_framebuffer[frm]) {
 			XShmDetach (x_disp, &x_shminfo[frm]);
-			free (x_framebuffer[frm]);
+			XFree (x_framebuffer[frm]);
 			shmdt (x_shminfo[frm].shmaddr);
 		}
 		// create the image

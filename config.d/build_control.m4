@@ -48,6 +48,12 @@ VID_REND_TARGETS=""
 VID_REND_NOINST_TARGETS=""
 VID_TARGETS=""
 
+m4_define([client_libraries],
+	[util gamecode ruamoko gib audio image models console net qw client]
+	[scene input thread ecs ui video_renderer])
+m4_define([server_libraries],
+	[util gamecode ruamoko gib image models console net])
+
 if test "x$HAVE_FBDEV" = xyes; then
 	if test "x$ENABLE_clients_fbdev" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-fbdev\$(EXEEXT)"
@@ -68,16 +74,10 @@ if test "x$HAVE_FBDEV" = xyes; then
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
-		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
+		QF_NEED(libs, client_libraries)
 	fi
 fi
 if test "x$HAVE_X" = xyes; then
-	if test "x$ENABLE_clients_glx" = xyes; then
-		QF_NEED(vid, [common x11])
-	fi
-	if test "x$ENABLE_clients_glslx" = xyes; then
-		QF_NEED(vid, [common x11])
-	fi
 	if test "x$ENABLE_clients_x11" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-x11\$(EXEEXT)"
@@ -111,7 +111,7 @@ if test "x$HAVE_X" = xyes; then
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
-		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
+		QF_NEED(libs, client_libraries)
 	fi
 fi
 if test "x$HAVE_SDL" = xyes; then
@@ -136,7 +136,7 @@ if test "x$HAVE_SDL" = xyes; then
 		QF_NEED(qw, [client common sdl])
 		QF_NEED(nq, [client common sdl])
 		QF_NEED(console, [client])
-		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
+		QF_NEED(libs, client_libraries)
 	fi
 fi
 if test "x$HAVE_SVGA" = xyes; then
@@ -159,7 +159,7 @@ if test "x$HAVE_SVGA" = xyes; then
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
-		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
+		QF_NEED(libs, client_libraries)
 	fi
 fi
 if test "x$mingw" = xyes -o "x$cygwin" = xyes; then
@@ -191,7 +191,7 @@ if test "x$mingw" = xyes -o "x$cygwin" = xyes; then
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
-		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
+		QF_NEED(libs, client_libraries)
 	fi
 fi
 if test "x$HAVE_WAYLAND" = xyes; then
@@ -225,8 +225,12 @@ if test "x$HAVE_WAYLAND" = xyes; then
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
-		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
+		QF_NEED(libs, client_libraries)
 	fi
+fi
+
+if test -n "$QWAQ_TARGETS"; then
+	QWAQ_TARGETS="$QWAQ_TARGETS \$(qwaq_targets)"
 fi
 
 unset SV_TARGETS
@@ -236,7 +240,8 @@ if test "x$ENABLE_servers_nq" = xyes; then
 	QF_NEED(nq, [common server])
 	QF_NEED(console, [server])
 	QF_NEED(top, [nq])
-	QF_NEED(libs,[util gamecode ruamoko gib image models console net])
+	QF_NEED(libs, server_libraries)
+	QF_NEED(brush, [server])
 fi
 if test "x$ENABLE_servers_qtv" = xyes; then
 	QTV_TARGETS="qtv-server\$(EXEEXT) $QTV_TARGETS"
@@ -244,14 +249,14 @@ if test "x$ENABLE_servers_qtv" = xyes; then
 #	QF_NEED(qtv, [common server])
 	QF_NEED(console, [server])
 	QF_NEED(top, [qtv])
-	QF_NEED(libs,[util models console net qw])
+	QF_NEED(libs, server_libraries)
 fi
 if test "x$ENABLE_servers_master" = xyes; then
 	HW_TARGETS="hw-master\$(EXEEXT) $HW_TARGETS"
 	QW_TARGETS="qw-master\$(EXEEXT) $QW_TARGETS"
 	SV_TARGETS="$SV_TARGETS master"
 	QF_NEED(top, [hw qw])
-	QF_NEED(libs,[util console net qw])
+	QF_NEED(libs, server_libraries)
 fi
 if test "x$ENABLE_servers_qw" = xyes; then
 	QW_TARGETS="qw-server\$(EXEEXT) $QW_TARGETS"
@@ -259,7 +264,8 @@ if test "x$ENABLE_servers_qw" = xyes; then
 	QF_NEED(qw, [common server])
 	QF_NEED(console, [server])
 	QF_NEED(top, [qw])
-	QF_NEED(libs,[util gamecode ruamoko gib models console net qw])
+	QF_NEED(libs, server_libraries)
+	QF_NEED(brush, [server])
 fi
 
 if test "x$ENABLE_tools_bsp2img" = xyes; then
@@ -395,17 +401,44 @@ QF_PROCESS_NEED_LIST(top, [libs hw nq qtv qw tools ruamoko])
 QF_PROCESS_NEED_LIBS(swrend, [asm])
 QF_PROCESS_NEED_LIBS(render, [gl glsl sw vulkan], [libs/video/renderer])
 QF_PROCESS_NEED_LIST(vid_render, [gl glsl sw vulkan])
-QF_PROCESS_NEED_LIBS(models, [gl glsl sw vulkan], [libs/models])
+QF_PROCESS_NEED_LIBS(models_sub, [gl glsl sw vulkan], [libs/models])
 QF_PROCESS_NEED_LIBS(alias, [gl glsl sw vulkan], [libs/models/alias])
-QF_PROCESS_NEED_LIBS(brush, [gl glsl sw vulkan], [libs/models/brush])
+QF_PROCESS_NEED_LIBS(brush, [gl glsl sw server vulkan], [libs/models/brush])
 QF_PROCESS_NEED_LIBS(iqm, [gl glsl sw vulkan], [libs/models/iqm])
 QF_PROCESS_NEED_LIBS(mesh, [gl glsl sw vulkan], [libs/models/mesh])
 QF_PROCESS_NEED_LIBS(sprite, [gl glsl sw vulkan], [libs/models/sprite])
 
-QF_PROCESS_NEED_LIBS(input, [evdev xinput], [libs/input])
 QF_PROCESS_NEED_LIBS(vid, [common sdl svga win x11 wl], [libs/video/targets])
 QF_PROCESS_NEED_LIBS(qw, [client common sdl win server], [qw/source], a)
 QF_PROCESS_NEED_LIBS(nq, [client common sdl win server], [nq/source], a)
+
+QF_PROCESS_NEED_FUNC(libs,
+	[util gamecode ruamoko gib audio image models console net qw client]
+	[scene input thread ecs ui video_renderer],
+	[[libs_]qfn_need[_libs]='$([libs_]qfn_need[_libs])']
+	[QF_SUBST([libs_]qfn_need[_libs])])
+
+QF_PROCESS_NEED_TEST(libs,
+	[util gamecode ruamoko gib audio image models console net qw client]
+	[scene input thread ecs ui video_renderer])
+QF_PROCESS_NEED_TEST(render, [sw glsl gl vulkan])
+QF_PROCESS_NEED_TEST(tools, [bsp2img carne gsc pak qfbsp qfcc qflight qflmp qfmodelgen qfspritegen qfvis qwaq wad wav])
+
+QF_PROCESS_NEED_FUNC(ruamoko,
+	[cl_menu cl_menu_gui game gatest lib scheme qwaq],
+	[[ruamoko_]qfn_need='$(qfn_need)']
+	[[ruamoko_]qfn_need='$(qfn_need[_data])']
+	[[ruamoko_]qfn_need='$(qfn_need[_libexec])']
+	[[ruamoko_]qfn_need[_libs]='$(qfn_need[_libs])']
+	[QF_SUBST([ruamoko_]qfn_need)
+	 QF_SUBST([ruamoko_]qfn_need[_data])
+	 QF_SUBST([ruamoko_]qfn_need[_libexec])
+	 QF_SUBST([ruamoko_]qfn_need[_libs])])
+
+QF_PROCESS_NEED_FUNC(input,
+	[evdev xinput],
+	[input_libs="$input_libs "'$([input_]qfn_need)']
+	[QF_SUBST([input_libs])])
 
 if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libs/audio/libQFcd.la"
@@ -435,6 +468,12 @@ QF_SUBST(PREFER_PIC)
 QF_SUBST(PREFER_NON_PIC)
 QF_SUBST(STATIC)
 
+if test "x$libs_need_audio" = xyes; then
+	QF_PROCESS_NEED_FUNC(cd,[xmms sdl sgi win linux file], QF_NEED(plugins,cd))
+	QF_PROCESS_NEED_FUNC(snd_output,[sdl mme sgi sun win dx oss jack alsa ma], QF_NEED(plugins,snd_output))
+	QF_PROCESS_NEED_FUNC(snd_render,[default], QF_NEED(plugins,snd_render))
+fi
+
 AC_ARG_WITH(static-plugins,
 	AS_HELP_STRING([--with-static-plugins],
 		[build plugins into executable rather than separate]),
@@ -449,9 +488,15 @@ if test "x$static_plugins" = xyes; then
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [server], [libs/console], [server])
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [client], [libs/console], [client])
 
-	QF_PROCESS_NEED_STATIC_PLUGINS(snd_output, [sdl mme sgi sun win dx oss jack alsa ma], [libs/audio/targets])
-	QF_PROCESS_NEED_STATIC_PLUGINS(snd_render, [default], [libs/audio/renderer])
-	QF_PROCESS_NEED_STATIC_PLUGINS(cd, [xmms sdl sgi win linux file], [libs/audio])
+	if test "x$plugins_need_snd_output" = xyes; then
+		QF_PROCESS_NEED_STATIC_PLUGINS(snd_output, [sdl mme sgi sun win dx oss jack alsa ma], [libs/audio/targets])
+	fi
+	if test "x$plugins_need_snd_render" = xyes; then
+		QF_PROCESS_NEED_STATIC_PLUGINS(snd_render, [default], [libs/audio/renderer])
+	fi
+	if test "x$plugins_need_cd" = xyes; then
+		QF_PROCESS_NEED_STATIC_PLUGINS(cd, [xmms sdl sgi win linux file], [libs/audio])
+	fi
 	AC_DEFINE(STATIC_PLUGINS, 1, [Define this if you are building static plugins])
 	if test -n "$SOUND_TYPES"; then
 		SOUND_TYPES="$SOUND_TYPES (static)"
@@ -463,9 +508,15 @@ else
 	QF_PROCESS_NEED_PLUGINS(vid_render, [sw glsl gl vulkan], [libs/video/renderer])
 	QF_PROCESS_NEED_PLUGINS(console, [server], [libs/console], [server])
 	QF_PROCESS_NEED_PLUGINS(console, [client], [libs/console], [client])
-	QF_PROCESS_NEED_PLUGINS(snd_output, [sdl mme sgi sun win dx oss jack alsa ma], [libs/audio/targets])
-	QF_PROCESS_NEED_PLUGINS(snd_render, [default], [libs/audio/renderer])
-	QF_PROCESS_NEED_PLUGINS(cd, [xmms sdl sgi win linux file], [libs/audio])
+	if test "x$plugins_need_snd_output" = xyes; then
+		QF_PROCESS_NEED_PLUGINS(snd_output, [sdl mme sgi sun win dx oss jack alsa ma], [libs/audio/targets])
+	fi
+	if test "x$plugins_need_snd_render" = xyes; then
+		QF_PROCESS_NEED_PLUGINS(snd_render, [default], [libs/audio/renderer])
+	fi
+	if test "x$plugins_need_cd" = xyes; then
+		QF_PROCESS_NEED_PLUGINS(cd, [xmms sdl sgi win linux file], [libs/audio])
+	fi
 fi
 
 dnl Do not use -module here, it belongs in makefile.am due to automake

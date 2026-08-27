@@ -1,8 +1,9 @@
-noinst_LTLIBRARIES += libs/models/brush/libbrush.la @brush_libs@
+noinst_LTLIBRARIES += @brush_libs@
 EXTRA_LTLIBRARIES += \
 	libs/models/brush/libbrush_gl.la \
 	libs/models/brush/libbrush_glsl.la \
 	libs/models/brush/libbrush_sw.la \
+	libs/models/brush/libbrush_server.la \
 	libs/models/brush/libbrush_vulkan.la
 
 brush_src= libs/models/brush/model_brush.c
@@ -11,7 +12,7 @@ brush_glsl_src= libs/models/brush/glsl_model_brush.c
 brush_sw_src= libs/models/brush/sw_model_brush.c
 brush_vulkan_src= libs/models/brush/vulkan_model_brush.c
 
-libs_models_brush_libbrush_la_SOURCES= $(brush_src)
+libs_models_brush_libbrush_server_la_SOURCES= $(brush_src)
 
 libs_models_brush_libbrush_gl_la_SOURCES= $(brush_gl_src) $(brush_src)
 

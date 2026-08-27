@@ -76,8 +76,6 @@ static vid_model_funcs_t model_funcs = {
 	.texture_render_size = 0,
 
 	.Mod_LoadLighting     = sw_Mod_LoadLighting,
-	.Mod_SubdivideSurface = 0,
-	.Mod_ProcessTexture   = 0,
 
 	.Mod_LoadIQM         = Mod_LoadIQM,
 	.Mod_LoadAliasModel  = Mod_LoadAliasModel,

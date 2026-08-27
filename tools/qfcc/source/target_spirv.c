@@ -75,6 +75,7 @@ typedef struct spirvctx_s {
 
 	const spirv_grammar_t *core;
 	function_t *cur_func;
+	unsigned    cur_block;	///< label id of current block (code space)
 
 	struct DARRAY_TYPE (unsigned) type_ids;
 	struct DARRAY_TYPE (unsigned) expr_ids;		///< Flushed per function
@@ -85,6 +86,16 @@ typedef struct spirvctx_s {
 
 	rua_loc_t last_debug;
 } spirvctx_t;
+
+typedef struct spirvpair_s {
+	unsigned    expr_id;
+	unsigned    label_id;
+} spirvpair_t;
+
+typedef struct spirvphi_s {
+	spirvctx_t *ctx;
+	struct DARRAY_TYPE (spirvpair_t) pairs;
+} spirvphi_t;
 
 static unsigned spirv_value (const expr_t *e, spirvctx_t *ctx);
 
@@ -154,6 +165,17 @@ spirv_label_id (const ex_label_t *label, spirvctx_t *ctx)
 	}
 	ctx->label_ids.a[label->id] = id;
 	return id;
+}
+
+static const expr_t *
+spirv_new_label (const char *name)
+{
+	unsigned id = current_target.label_id++;
+	auto label = new_expr ();
+	label->type = ex_label;
+	label->label.id = id;
+	label->label.name = save_string (va ("$$spv:%s:%d", name, id));
+	return label;
 }
 
 static bool
@@ -810,15 +832,33 @@ static unsigned
 spirv_Label (spirvctx_t *ctx)
 {
 	auto insn = spirv_new_insn (SpvOpLabel, 2, ctx->code_space, ctx);
-	INSN (insn, 1) = spirv_id (ctx);
-	return INSN (insn, 1);
+	ctx->cur_block = spirv_id (ctx);
+	INSN (insn, 1) = ctx->cur_block;
+	return ctx->cur_block;
 }
 
 static unsigned
 spirv_LabelId (unsigned id, spirvctx_t *ctx)
 {
 	auto insn = spirv_new_insn (SpvOpLabel, 2, ctx->code_space, ctx);
+	ctx->cur_block = id;
 	INSN (insn, 1) = id;
+	return id;
+}
+
+static unsigned
+spirv_Phi (int count, spirvpair_t *pairs, const type_t *type, spirvctx_t *ctx)
+{
+	auto phi = spirv_new_insn (SpvOpPhi, 3 + 2 * count, ctx->code_space, ctx);
+	unsigned tid = spirv_Type (type, ctx);
+	unsigned id = spirv_id (ctx);
+	INSN (phi, 1) = tid;
+	INSN (phi, 2) = id;
+	for (int i = 0; i < count; i++) {
+		auto pair = pairs[i];
+		INSN (phi, 3 + 2 * i + 0) = pair.expr_id;
+		INSN (phi, 3 + 2 * i + 1) = pair.label_id;
+	}
 	return id;
 }
 
@@ -1688,35 +1728,50 @@ static unsigned
 spirv_bool (const expr_t *e, spirvctx_t *ctx)
 {
 	scoped_src_loc (e);
-	auto merge = e->boolean.merge;
 	auto block = new_block_expr (nullptr);
-	build_bool_block (block, e);
 
-	int         num_expr = list_count (&block->block.list);
-	expr_t     *exprs[num_expr + 1];
-	list_scatter (&block->block.list, (const expr_t **) exprs);
-	exprs[num_expr] = 0;	// mark end of list
-	expr_t    **d = exprs;
-	expr_t    **s = exprs;
+	auto merge_label = spirv_new_label ("merge");
+	unsigned merge = spirv_label_id (&merge_label->label, ctx);
 
-	while (s[0]) {
-		if (is_if_expr (s[0])) {
-			s[0]->branch.merge = merge;
-			merge = nullptr;
-		}
-		if (is_if_expr (s[0]) && is_goto_expr (s[1])) {
-			auto l = s[1]->branch.target;
-			s[0]->branch.false_target = l;
-			*d++ = *s++;	// copy if
-			s++;			// skip over goto
-		} else {
-			*d++ = *s++;
-		}
+	int op = e->boolean.e->expr.op;
+	if (!is_logic (op)) {
+		internal_error (e, "not a boolean expression");
 	}
-	block->block.list = (ex_list_t) {};
-	list_gather (&block->block.list, (const expr_t **) exprs, d - exprs);
+	bool not = (op == QC_OR) ^ e->boolean.not;
 
-	return spirv_emit_expr (block, ctx);
+	flatten_bool (block, e->boolean.e, op);
+	int count = list_count (&block->block.list);
+	if (!count) {
+		internal_error (e, "empty boolean expression");
+	}
+
+	auto test_val = new_bool_expr (not);
+	auto fall_val = new_bool_expr (!not);
+	spirvpair_t pairs[count + 1];
+	const expr_t *tests[count];
+	list_scatter (&block->block.list, tests);
+
+	unsigned next = ctx->cur_block;
+	for (int i = 0; i < count; i++) {
+		unsigned test_id = spirv_emit_expr (tests[i], ctx);
+		pairs[i] = (spirvpair_t) {
+			.expr_id = spirv_emit_expr (test_val, ctx),
+			.label_id = next,
+		};
+		if (!i) {
+			spirv_SelectionMerge (merge, ctx);
+		}
+		next = spirv_id (ctx);
+		spirv_BranchConditional (not, test_id, next, merge, ctx);
+		spirv_LabelId (next, ctx);
+	}
+	pairs[count] = (spirvpair_t) {
+		.expr_id = spirv_emit_expr (fall_val, ctx),
+		.label_id = next,
+	};
+	spirv_Branch (merge, ctx);
+	spirv_LabelId (merge, ctx);
+	return spirv_Phi (count + 1, pairs, &type_bool, ctx);
 }
 
 static unsigned
@@ -2350,7 +2405,7 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 	} else if (dst_expr->type == ex_xvalue && dst_expr->xvalue.lvalue) {
 		auto xvalue = dst_expr->xvalue;
 		if (xvalue.assign) {
-			auto expr = xvalue.assign (xvalue.expr, src_expr);
+			auto expr = xvalue.assign (xvalue.expr, src_expr, xvalue.data);
 			return spirv_emit_expr (expr, ctx);
 		}
 		dst = spirv_emit_expr (xvalue.expr, ctx);
@@ -2451,17 +2506,6 @@ spirv_jump (const expr_t *e, spirvctx_t *ctx)
 	return 0;
 }
 
-static const expr_t *
-spirv_new_label (const char *name)
-{
-	unsigned id = current_target.label_id++;
-	auto label = new_expr ();
-	label->type = ex_label;
-	label->label.id = id;
-	label->label.name = save_string (va ("$$spv:%s:%d", name, id));
-	return label;
-}
-
 static unsigned
 spirv_branch (const expr_t *e, spirvctx_t *ctx)
 {
@@ -2475,6 +2519,9 @@ spirv_branch (const expr_t *e, spirvctx_t *ctx)
 			bool not = e->branch.type == pr_branch_eq;
 			auto tl = e->branch.target;
 			auto fl = e->branch.false_target;
+			if (!tl) {
+				tl = spirv_new_label ("if");
+			}
 			if (!fl) {
 				fl = spirv_new_label ("else");
 			}
@@ -2658,7 +2705,7 @@ spirv_incop (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
-spirv_cond (const expr_t *e, spirvctx_t *ctx)
+spirv_cond_select (const expr_t *e, spirvctx_t *ctx)
 {
 	unsigned test_id = spirv_emit_expr (e->cond.test, ctx);
 	unsigned true_id = spirv_emit_expr (e->cond.true_expr, ctx);
@@ -2674,6 +2721,52 @@ spirv_cond (const expr_t *e, spirvctx_t *ctx)
 	INSN (insn, 4) = true_id;
 	INSN (insn, 5) = false_id;
 	return id;
+}
+
+static const expr_t *
+spirv_phi_assign (const expr_t *dst, const expr_t *src, void *data)
+{
+	spirvphi_t *phi_ctx = data;
+	auto ctx = phi_ctx->ctx;
+	spirvpair_t pair = {
+		.expr_id = spirv_emit_expr (src, ctx),
+		.label_id = ctx->cur_block,
+	};
+	DARRAY_APPEND (&phi_ctx->pairs, pair);
+	return nullptr;
+}
+
+static unsigned
+spirv_cond_phi (const expr_t *e, spirvctx_t *ctx)
+{
+	spirvphi_t phi_ctx = {
+		.ctx = ctx,
+		.pairs = DARRAY_STATIC_INIT (8),
+	};
+	scoped_src_loc (e);
+	auto xvalue = new_xvalue_expr (nullptr, true);
+	xvalue->xvalue.assign = spirv_phi_assign;
+	xvalue->xvalue.data = &phi_ctx;
+	auto true_val = new_assign_expr (xvalue, e->cond.true_expr);
+	auto false_val = new_assign_expr (xvalue, e->cond.false_expr);
+	auto cond = new_select_expr (false, e->cond.test, true_val, e, false_val);
+	spirv_emit_expr (cond, ctx);
+
+	unsigned id = spirv_Phi (phi_ctx.pairs.size, phi_ctx.pairs.a,
+							 get_type (e), ctx);
+	return id;
+}
+
+static unsigned
+spirv_cond (const expr_t *e, spirvctx_t *ctx)
+{
+	if (e->cond.test->type == ex_bool) {
+		return spirv_cond_phi (e, ctx);
+	} else {
+		//FIXME use spirv_cond_phi if true_expr or false_expr have side effects
+		//Need to detect side effects
+		return spirv_cond_select (e, ctx);
+	}
 }
 
 static unsigned
@@ -2693,22 +2786,6 @@ spirv_field_array (const expr_t *e, spirvctx_t *ctx)
 		id = spirv_ptr_load (res_type, id, align, ctx);
 	}
 	return id;
-}
-
-static const expr_t *
-spirv_backpatch (bool not, const expr_t *test, const expr_t *merge,
-				 const expr_t *true_label, const expr_t *false_label)
-{
-	test = convert_bool (test, true);
-	((expr_t *) test)->boolean.merge = merge;
-	if (not) {
-		backpatch (test->boolean.true_list, false_label);
-		backpatch (test->boolean.false_list, true_label);
-	} else {
-		backpatch (test->boolean.true_list, true_label);
-		backpatch (test->boolean.false_list, false_label);
-	}
-	return test;
 }
 
 static unsigned
@@ -2739,9 +2816,10 @@ spirv_loop (const expr_t *e, spirvctx_t *ctx)
 
 		auto body_label = spirv_new_label ("body");
 		unsigned body = spirv_label_id (&body_label->label, ctx);
-		auto test = spirv_backpatch (e->loop.not, e->loop.test, nullptr,
-									 body_label, break_label);
-		spirv_emit_expr (test, ctx);
+		auto test = e->loop.test;
+		unsigned test_id = spirv_emit_expr (test, ctx);
+		spirv_BranchConditional (e->loop.not, test_id, body, merge, ctx);
+
 		spirv_LabelId (body, ctx);
 		spirv_emit_expr (e->loop.body, ctx);
 		spirv_SplitBlockId (cont, ctx);
@@ -2768,9 +2846,15 @@ spirv_select (const expr_t *e, spirvctx_t *ctx)
 		false_label = spirv_new_label ("false");
 		false_id = spirv_label_id (&false_label->label, ctx);
 	}
-	auto test = spirv_backpatch (e->select.not, e->select.test, merge_label,
-								 true_label, false_label);
-	spirv_emit_expr (test, ctx);
+
+	auto head_id = spirv_id (ctx);
+	spirv_Branch (head_id, ctx);
+	spirv_LabelId (head_id, ctx);
+
+	auto test = e->select.test;
+	unsigned test_id = spirv_emit_expr (test, ctx);
+	spirv_SelectionMerge (merge, ctx);
+	spirv_BranchConditional (e->select.not, test_id, true_id, false_id, ctx);
 	spirv_LabelId (true_id, ctx);
 	if (e->select.true_body) {
 		spirv_emit_expr (e->select.true_body, ctx);
@@ -2968,7 +3052,7 @@ spirv_ptroffset (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 {
-	if (e->type == ex_error) {
+	if (!e || e->type == ex_error) {
 		return 0;
 	}
 	if (spirv_expr_id (e, ctx)) {
@@ -3618,7 +3702,7 @@ static const expr_t *
 spirv_assign_vector (const expr_t *dst, const expr_t *src)
 {
 	auto new = vector_to_compound (src);
-	return new_assign_expr (dst, new);;
+	return new_assign_expr (dst, new);
 }
 
 static const expr_t *

@@ -2,7 +2,9 @@ include libs/gamecode/test/Makemodule.am
 
 gc_deps=libs/util/libQFutil.la
 
-noinst_LTLIBRARIES += libs/gamecode/libQFgamecode.la
+libs_gamecode_libs=libs/gamecode/libQFgamecode.la
+noinst_LTLIBRARIES += @libs_gamecode_libs@
+EXTRA_LTLIBRARIES += $(libs_gamecode_libs)
 
 libs_gamecode_libQFgamecode_la_LDFLAGS=
 libs_gamecode_libQFgamecode_la_LIBADD=		$(gc_deps)

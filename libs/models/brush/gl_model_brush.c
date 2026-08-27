@@ -47,6 +47,7 @@
 #include "QF/va.h"
 #include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_textures.h"
+#include "QF/GL/qf_vid.h"
 
 #include "compat.h"
 #include "mod_internal.h"
@@ -153,19 +154,23 @@ gl_brush_allocator (void *data, size_t size)
 }
 
 void
-gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp, memhunk_t *hunk)
+gl_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 {
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
+	auto hunk = brush_ctx->hunk;
 	byte        d;
 	byte       *in, *out, *data;
 	dstring_t  *litfilename = dstring_new ();
 	size_t      i;
 	int         ver;
 	QFile      *lit_file;
-	mod_brush_t *brush = &mod->brush;
+	int lightmap_bytes = brush->lightmap_bytes;
 
 	dstring_copystr (litfilename, mod->path);
 	brush->lightdata = NULL;
-	if (mod_lightmap_bytes > 1) {
+	if (lightmap_bytes > 1) {
 		// LordHavoc: check for a .lit file to load
 		QFS_StripExtension (litfilename->str, litfilename->str);
 		dstring_appendstr (litfilename, ".lit");
@@ -201,12 +206,12 @@ gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp, memhunk_t *hunk)
 		return;
 	}
 	brush->lightdata = Hunk_AllocName (hunk,
-									   bsp->lightdatasize * mod_lightmap_bytes,
+									   bsp->lightdatasize * lightmap_bytes,
 									   litfilename->str);
 	in = bsp->lightdata;
 	out = brush->lightdata;
 
-	if (mod_lightmap_bytes > 1)
+	if (lightmap_bytes > 1)
 		for (i = 0; i < bsp->lightdatasize ; i++) {
 			d = vid.gammatable[*in++];
 			*out++ = d;
@@ -328,7 +333,7 @@ gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa, memhunk_t *hunk)
 	float      *vec;
 	int         lindex, numverts, i;
 	vec3_t      verts[64];
-	mod_brush_t *brush = &mod->brush;
+	mod_brush_t *brush = mod->brush;
 
 	warpface = fa;
 
@@ -348,4 +353,11 @@ gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa, memhunk_t *hunk)
 	if (numverts > 3) {
 		SubdividePolygon (numverts, verts[0], hunk);
 	}
+}
+
+void
+gl_Mod_BrushContext (mod_brush_ctx_t *brush_ctx)
+{
+	brush_ctx->sky_divide = gl_sky_divide;
+	brush_ctx->brush->lightmap_bytes = r_lightmap_components == 1 ? 1 : 3;
 }

@@ -110,6 +110,7 @@ new_symtab (symtab_t *parent, stab_type_e type)
 		tabsize = 1023;
 	symtab->tab = Hash_NewTable (tabsize, sym_getkey, 0, 0, 0);
 	symtab->symtail = &symtab->symbols;
+	symtab->return_addr = __builtin_return_address (0);
 	return symtab;
 }
 
@@ -397,7 +398,7 @@ declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx)
 			error (0, "bitfield size must be a constant integer");
 		} else {
 			sym->sy_type = sy_bitfield;
-			sym->offset = expr_integral (spec.bit_size);;
+			sym->offset = expr_integral (spec.bit_size);
 		}
 	}
 	symtab_addsymbol (symtab, sym);

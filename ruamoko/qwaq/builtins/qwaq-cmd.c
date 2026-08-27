@@ -64,6 +64,7 @@ static progsinit_f main_app[] = {
 int
 qwaq_init_threads (qwaq_thread_set_t *thread_data, memhunk_t *main_hunk)
 {
+	qfZoneScoped (true);
 	int         main_ind = -1;
 
 	for (size_t i = 1, thread_ind = 0; i < thread_data->size; i++) {

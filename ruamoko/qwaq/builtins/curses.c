@@ -167,36 +167,42 @@ static const char *qwaq_command_names[]= {
 static window_t *
 window_new (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->window_map);
 }
 
 static void
 window_free (qwaq_resources_t *res, window_t *win)
 {
+	qfZoneScoped (true);
 	PR_RESFREE (res->window_map, win);
 }
 
 static void
 window_reset (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->window_map);
 }
 
 static inline window_t *
 window_get (qwaq_resources_t *res, unsigned index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET(res->window_map, index);
 }
 
 static inline int __attribute__((pure))
 window_index (qwaq_resources_t *res, window_t *win)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX (res->window_map, win);
 }
 
 static always_inline window_t * __attribute__((pure))
 get_window (qwaq_resources_t *res, const char *name, int handle)
 {
+	qfZoneScoped (true);
 	if (handle == 1) {
 		return &res->stdscr;
 	}
@@ -213,36 +219,42 @@ get_window (qwaq_resources_t *res, const char *name, int handle)
 static panel_t *
 panel_new (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->panel_map);
 }
 
 static void
 panel_free (qwaq_resources_t *res, panel_t *win)
 {
+	qfZoneScoped (true);
 	PR_RESFREE (res->panel_map, win);
 }
 
 static void
 panel_reset (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->panel_map);
 }
 
 static inline panel_t *
 panel_get (qwaq_resources_t *res, unsigned index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET(res->panel_map, index);
 }
 
 static inline int __attribute__((pure))
 panel_index (qwaq_resources_t *res, panel_t *win)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX (res->panel_map, win);
 }
 
 static always_inline panel_t * __attribute__((pure))
 get_panel (qwaq_resources_t *res, const char *name, int handle)
 {
+	qfZoneScoped (true);
 	panel_t   *panel = panel_get (res, handle);
 
 	if (!panel || !panel->panel) {
@@ -254,18 +266,21 @@ get_panel (qwaq_resources_t *res, const char *name, int handle)
 static int
 qwaq_cmd_peek (qwaq_resources_t *res, int ahead)
 {
+	qfZoneScoped (true);
 	return *RB_PEEK_DATA (res->commands.pipe, ahead);
 }
 
 static dstring_t *
 qwaq_cmd_string (qwaq_resources_t *res, int string_id)
 {
+	qfZoneScoped (true);
 	return res->commands.strings + string_id;
 }
 
 static void
 cmd_syncprint (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         string_id = qwaq_cmd_peek (res, 2);
 
 	Sys_Printf ("%s\n", qwaq_cmd_string (res, string_id)->str);
@@ -275,6 +290,7 @@ cmd_syncprint (qwaq_resources_t *res)
 static void
 cmd_newwin (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         xpos = qwaq_cmd_peek (res, 2);
 	int         ypos = qwaq_cmd_peek (res, 3);
 	int         xlen = qwaq_cmd_peek (res, 4);
@@ -292,6 +308,7 @@ cmd_newwin (qwaq_resources_t *res)
 static void
 cmd_delwin (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
@@ -302,6 +319,7 @@ cmd_delwin (qwaq_resources_t *res)
 static void
 cmd_getwrect (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 	int         xpos, ypos;
 	int         xlen, ylen;
@@ -320,6 +338,7 @@ cmd_getwrect (qwaq_resources_t *res)
 static void
 cmd_new_panel (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
@@ -335,6 +354,7 @@ cmd_new_panel (qwaq_resources_t *res)
 static void
 cmd_del_panel (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         panel_id = qwaq_cmd_peek (res, 2);
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
@@ -345,6 +365,7 @@ cmd_del_panel (qwaq_resources_t *res)
 static void
 cmd_hide_panel (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         panel_id = qwaq_cmd_peek (res, 2);
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
@@ -354,6 +375,7 @@ cmd_hide_panel (qwaq_resources_t *res)
 static void
 cmd_show_panel (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         panel_id = qwaq_cmd_peek (res, 2);
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
@@ -363,6 +385,7 @@ cmd_show_panel (qwaq_resources_t *res)
 static void
 cmd_top_panel (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         panel_id = qwaq_cmd_peek (res, 2);
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
@@ -372,6 +395,7 @@ cmd_top_panel (qwaq_resources_t *res)
 static void
 cmd_bottom_panel (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         panel_id = qwaq_cmd_peek (res, 2);
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
@@ -381,6 +405,7 @@ cmd_bottom_panel (qwaq_resources_t *res)
 static void
 cmd_move_panel (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         panel_id = qwaq_cmd_peek (res, 2);
 	int         x = qwaq_cmd_peek (res, 3);
 	int         y = qwaq_cmd_peek (res, 4);
@@ -392,6 +417,7 @@ cmd_move_panel (qwaq_resources_t *res)
 static void
 cmd_panel_window (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         panel_id = qwaq_cmd_peek (res, 2);
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
@@ -404,6 +430,7 @@ cmd_panel_window (qwaq_resources_t *res)
 static void
 cmd_replace_panel (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         panel_id = qwaq_cmd_peek (res, 2);
 	int         window_id = qwaq_cmd_peek (res, 3);
 
@@ -416,18 +443,21 @@ cmd_replace_panel (qwaq_resources_t *res)
 static void
 cmd_update_panels (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	update_panels ();
 }
 
 static void
 cmd_doupdate (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	doupdate ();
 }
 
 static void
 cmd_mvwaddstr (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 	int         x = qwaq_cmd_peek (res, 3);
 	int         y = qwaq_cmd_peek (res, 4);
@@ -441,6 +471,7 @@ cmd_mvwaddstr (qwaq_resources_t *res)
 static void
 cmd_waddstr (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 	int         string_id = qwaq_cmd_peek (res, 3);
 
@@ -452,6 +483,7 @@ cmd_waddstr (qwaq_resources_t *res)
 static void
 cmd_mvwaddch (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 	int         x = qwaq_cmd_peek (res, 3);
 	int         y = qwaq_cmd_peek (res, 4);
@@ -464,6 +496,7 @@ cmd_mvwaddch (qwaq_resources_t *res)
 static void
 cmd_waddch (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 	int         ch = qwaq_cmd_peek (res, 3);
 
@@ -474,6 +507,7 @@ cmd_waddch (qwaq_resources_t *res)
 static void
 cmd_wrefresh (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
@@ -483,6 +517,7 @@ cmd_wrefresh (qwaq_resources_t *res)
 static void
 cmd_init_pair (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         pair = qwaq_cmd_peek (res, 2);
 	int         f = qwaq_cmd_peek (res, 3);
 	int         b = qwaq_cmd_peek (res, 4);
@@ -493,6 +528,7 @@ cmd_init_pair (qwaq_resources_t *res)
 static void
 cmd_wbkgd (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 	int         ch = qwaq_cmd_peek (res, 3);
 
@@ -503,6 +539,7 @@ cmd_wbkgd (qwaq_resources_t *res)
 static void
 cmd_werase (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
@@ -512,6 +549,7 @@ cmd_werase (qwaq_resources_t *res)
 static void
 cmd_scrollok (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 	int         flag = qwaq_cmd_peek (res, 3);
 
@@ -522,6 +560,7 @@ cmd_scrollok (qwaq_resources_t *res)
 static void
 cmd_wmove (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 	int         x = qwaq_cmd_peek (res, 3);
 	int         y = qwaq_cmd_peek (res, 4);
@@ -533,6 +572,7 @@ cmd_wmove (qwaq_resources_t *res)
 static void
 cmd_move (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         x = qwaq_cmd_peek (res, 2);
 	int         y = qwaq_cmd_peek (res, 3);
 
@@ -542,6 +582,7 @@ cmd_move (qwaq_resources_t *res)
 static void
 cmd_curs_set (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         visibility = qwaq_cmd_peek (res, 2);
 
 	curs_set (visibility);
@@ -550,6 +591,7 @@ cmd_curs_set (qwaq_resources_t *res)
 static void
 cmd_wborder (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 	int         ls = qwaq_cmd_peek (res, 3);
 	int         rs = qwaq_cmd_peek (res, 4);
@@ -567,6 +609,7 @@ cmd_wborder (qwaq_resources_t *res)
 static void
 cmd_mvwblit_line (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 	int         x = qwaq_cmd_peek (res, 3);
 	int         y = qwaq_cmd_peek (res, 4);
@@ -590,6 +633,7 @@ cmd_mvwblit_line (qwaq_resources_t *res)
 static void
 cmd_wresize (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 	int         width = qwaq_cmd_peek (res, 3);
 	int         height = qwaq_cmd_peek (res, 4);
@@ -601,6 +645,7 @@ cmd_wresize (qwaq_resources_t *res)
 static void
 cmd_resizeterm (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         width = qwaq_cmd_peek (res, 2);
 	int         height = qwaq_cmd_peek (res, 3);
 
@@ -610,6 +655,7 @@ cmd_resizeterm (qwaq_resources_t *res)
 static void
 cmd_mvwhline (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 	int         x = qwaq_cmd_peek (res, 3);
 	int         y = qwaq_cmd_peek (res, 4);
@@ -623,6 +669,7 @@ cmd_mvwhline (qwaq_resources_t *res)
 static void
 cmd_mvwvline (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	int         window_id = qwaq_cmd_peek (res, 2);
 	int         x = qwaq_cmd_peek (res, 3);
 	int         y = qwaq_cmd_peek (res, 4);
@@ -636,6 +683,7 @@ cmd_mvwvline (qwaq_resources_t *res)
 static void
 dump_command (qwaq_resources_t *res, int len)
 {
+	qfZoneScoped (true);
 	if (0) {
 		qwaq_commands cmd = qwaq_cmd_peek (res, 0);
 		Sys_Printf ("%s[%d]", qwaq_command_names[cmd], len);
@@ -653,6 +701,7 @@ dump_command (qwaq_resources_t *res, int len)
 static bool
 process_commands (qwaq_resources_t *res)
 {
+	qfZoneScoped (true);
 	struct timespec timeout;
 	int         avail;
 	int         len;
@@ -793,6 +842,7 @@ static int need_endwin;
 static void
 bi_shutdown (void *_pr)
 {
+	qfZoneScoped (true);
 	if (need_endwin) {
 		qwaq_input_disable_mouse ();
 		endwin ();
@@ -802,6 +852,7 @@ bi_shutdown (void *_pr)
 static void
 bi_syncprintf (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         string_id = qwaq_pipe_acquire_string (&res->commands);
 	dstring_t  *print_buffer = qwaq_cmd_string (res, string_id);
@@ -818,6 +869,7 @@ bi_syncprintf (progs_t *pr, void *_res)
 static void
 bi_create_window (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         xpos = P_INT (pr, 0);
 	int         ypos = P_INT (pr, 1);
@@ -839,6 +891,7 @@ bi_create_window (progs_t *pr, void *_res)
 static void
 bi_destroy_window (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 
@@ -852,6 +905,7 @@ bi_destroy_window (progs_t *pr, void *_res)
 static void
 qwaq_getwrect (qwaq_resources_t *res, int window_id)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = res->pr;
 
 	if (get_window (res, __FUNCTION__, window_id)) {
@@ -872,6 +926,7 @@ qwaq_getwrect (qwaq_resources_t *res, int window_id)
 static void
 bi_getwrect (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	qwaq_getwrect (res, P_INT (pr, 0));
 }
@@ -879,6 +934,7 @@ bi_getwrect (progs_t *pr, void *_res)
 static void
 bi_create_panel (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 
@@ -897,6 +953,7 @@ bi_create_panel (progs_t *pr, void *_res)
 static void
 panel_command (progs_t *pr, qwaq_resources_t *res, qwaq_commands cmd)
 {
+	qfZoneScoped (true);
 	int         panel_id = P_INT (pr, 0);
 
 	if (get_panel (res, __FUNCTION__, panel_id)) {
@@ -909,6 +966,7 @@ panel_command (progs_t *pr, qwaq_resources_t *res, qwaq_commands cmd)
 static void
 bi_destroy_panel (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	panel_command (pr, res, qwaq_cmd_del_panel);
 }
@@ -916,6 +974,7 @@ bi_destroy_panel (progs_t *pr, void *_res)
 static void
 bi_hide_panel (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	panel_command (pr, res, qwaq_cmd_hide_panel);
 }
@@ -923,6 +982,7 @@ bi_hide_panel (progs_t *pr, void *_res)
 static void
 bi_show_panel (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	panel_command (pr, res, qwaq_cmd_show_panel);
 }
@@ -930,6 +990,7 @@ bi_show_panel (progs_t *pr, void *_res)
 static void
 bi_top_panel (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	panel_command (pr, res, qwaq_cmd_top_panel);
 }
@@ -937,6 +998,7 @@ bi_top_panel (progs_t *pr, void *_res)
 static void
 bi_bottom_panel (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	panel_command (pr, res, qwaq_cmd_bottom_panel);
 }
@@ -944,6 +1006,7 @@ bi_bottom_panel (progs_t *pr, void *_res)
 static void
 bi_move_panel (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         panel_id = P_INT (pr, 0);
 	int         x = P_INT (pr, 1);
@@ -959,6 +1022,7 @@ bi_move_panel (progs_t *pr, void *_res)
 static void
 bi_panel_window (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         panel_id = P_INT (pr, 0);
 
@@ -977,6 +1041,7 @@ bi_panel_window (progs_t *pr, void *_res)
 static void
 bi_replace_panel (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         panel_id = P_INT (pr, 0);
 	int         window_id = P_INT (pr, 1);
@@ -993,6 +1058,7 @@ bi_replace_panel (progs_t *pr, void *_res)
 static void
 qwaq_update_panels (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 
 	int         command[] = { qwaq_cmd_update_panels, 0, };
@@ -1002,6 +1068,7 @@ qwaq_update_panels (progs_t *pr, void *_res)
 static void
 bi_update_panels (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	qwaq_update_panels (pr, res);
 }
@@ -1009,6 +1076,7 @@ bi_update_panels (progs_t *pr, void *_res)
 static void
 qwaq_doupdate (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 
 	int         command[] = { qwaq_cmd_doupdate, 0, };
@@ -1018,6 +1086,7 @@ qwaq_doupdate (progs_t *pr, void *_res)
 static void
 bi_doupdate (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	qwaq_doupdate (pr, res);
 }
@@ -1025,6 +1094,7 @@ bi_doupdate (progs_t *pr, void *_res)
 static void
 qwaq_waddstr (qwaq_resources_t *res, int window_id, const char *str)
 {
+	qfZoneScoped (true);
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         string_id = qwaq_pipe_acquire_string (&res->commands);
 		dstring_t  *print_buffer = qwaq_cmd_string (res, string_id);
@@ -1042,6 +1112,7 @@ qwaq_waddstr (qwaq_resources_t *res, int window_id, const char *str)
 static void
 bi_waddstr (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 	const char *str = P_GSTRING (pr, 1);
@@ -1052,6 +1123,7 @@ bi_waddstr (progs_t *pr, void *_res)
 static void
 qwaq_wresize (qwaq_resources_t *res, int window_id, int width, int height)
 {
+	qfZoneScoped (true);
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = {
 						qwaq_cmd_wresize, 0,
@@ -1065,6 +1137,7 @@ qwaq_wresize (qwaq_resources_t *res, int window_id, int width, int height)
 static void
 bi_wresize (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	int         width = P_INT (pr, 1);
@@ -1076,6 +1149,7 @@ bi_wresize (progs_t *pr, void *_res)
 static void
 qwaq_resizeterm (qwaq_resources_t *res, int width, int height)
 {
+	qfZoneScoped (true);
 	int         command[] = { qwaq_cmd_resizeterm, 0, width, height };
 
 	command[1] = CMD_SIZE(command);
@@ -1084,6 +1158,7 @@ qwaq_resizeterm (qwaq_resources_t *res, int width, int height)
 static void
 bi_resizeterm (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         width = P_INT (pr, 0);
 	int         height = P_INT (pr, 1);
@@ -1095,6 +1170,7 @@ static void
 qwaq_mvwhline (qwaq_resources_t *res, int window_id,
 			   int x, int y, int ch, int n)
 {
+	qfZoneScoped (true);
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = {
 						qwaq_cmd_mvwhline, 0,
@@ -1108,6 +1184,7 @@ qwaq_mvwhline (qwaq_resources_t *res, int window_id,
 static void
 bi_mvwhline (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	int         x = P_INT (pr, 1);
@@ -1122,6 +1199,7 @@ static void
 qwaq_mvwvline (qwaq_resources_t *res, int window_id,
 			   int x, int y, int ch, int n)
 {
+	qfZoneScoped (true);
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = {
 						qwaq_cmd_mvwvline, 0,
@@ -1135,6 +1213,7 @@ qwaq_mvwvline (qwaq_resources_t *res, int window_id,
 static void
 bi_mvwvline (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	int         x = P_INT (pr, 1);
@@ -1149,6 +1228,7 @@ static void
 qwaq_mvwaddstr (qwaq_resources_t *res, int window_id,
 				int x, int y, const char *str)
 {
+	qfZoneScoped (true);
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         string_id = qwaq_pipe_acquire_string (&res->commands);
 		dstring_t  *print_buffer = qwaq_cmd_string (res, string_id);
@@ -1166,6 +1246,7 @@ qwaq_mvwaddstr (qwaq_resources_t *res, int window_id,
 static void
 bi_mvwaddstr (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 	int         x = P_INT (pr, 1);
@@ -1179,6 +1260,7 @@ static void
 qwaq_mvwprintf (qwaq_resources_t *res, int window_id,
 				int x, int y, int fmt_arg)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = res->pr;
 
 	if (get_window (res, __FUNCTION__, window_id)) {
@@ -1200,6 +1282,7 @@ qwaq_mvwprintf (qwaq_resources_t *res, int window_id,
 static void
 bi_mvwprintf (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 	int         x = P_INT (pr, 1);
@@ -1211,6 +1294,7 @@ bi_mvwprintf (progs_t *pr, void *_res)
 static void
 qwaq_wprintf (qwaq_resources_t *res, int window_id, int fmt_arg)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = res->pr;
 
 	if (get_window (res, __FUNCTION__, window_id)) {
@@ -1232,6 +1316,7 @@ qwaq_wprintf (qwaq_resources_t *res, int window_id, int fmt_arg)
 static void
 bi_wprintf (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 
@@ -1242,6 +1327,7 @@ static void
 qwaq_wvprintf (qwaq_resources_t *res, int window_id,
 			   const char *fmt, pr_va_list_t *args)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = res->pr;
 	pr_type_t  *list_start = PR_GetPointer (pr, args->list);
 	pr_type_t **list = alloca (args->count * sizeof (*list));
@@ -1269,6 +1355,7 @@ qwaq_wvprintf (qwaq_resources_t *res, int window_id,
 static void
 bi_wvprintf (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 	const char *fmt = P_GSTRING (pr, 1);
@@ -1280,6 +1367,7 @@ bi_wvprintf (progs_t *pr, void *_res)
 static void
 qwaq_waddch (qwaq_resources_t *res, int window_id, int ch)
 {
+	qfZoneScoped (true);
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_waddch, 0, window_id, ch };
 
@@ -1290,6 +1378,7 @@ qwaq_waddch (qwaq_resources_t *res, int window_id, int ch)
 static void
 bi_waddch (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 	int         ch = P_INT (pr, 0);
@@ -1301,6 +1390,7 @@ static void
 qwaq_mvwvprintf (qwaq_resources_t *res, int window_id, int x, int y,
 				 const char *fmt, pr_va_list_t *args)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = res->pr;
 	pr_type_t  *list_start = PR_GetPointer (pr, args->list);
 	pr_type_t **list = alloca (args->count * sizeof (*list));
@@ -1328,6 +1418,7 @@ qwaq_mvwvprintf (qwaq_resources_t *res, int window_id, int x, int y,
 static void
 bi_mvwvprintf (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 	int         x = P_INT (pr, 1);
@@ -1341,6 +1432,7 @@ bi_mvwvprintf (progs_t *pr, void *_res)
 static void
 qwaq_mvwaddch (qwaq_resources_t *res, int window_id, int x, int y, int ch)
 {
+	qfZoneScoped (true);
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = {
 						qwaq_cmd_mvwaddch, 0,
@@ -1353,6 +1445,7 @@ qwaq_mvwaddch (qwaq_resources_t *res, int window_id, int x, int y, int ch)
 static void
 bi_mvwaddch (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 	int         x = P_INT (pr, 1);
@@ -1365,6 +1458,7 @@ bi_mvwaddch (progs_t *pr, void *_res)
 static void
 qwaq_wrefresh (qwaq_resources_t *res, int window_id)
 {
+	qfZoneScoped (true);
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_wrefresh, 0, window_id, };
 		command[1] = CMD_SIZE(command);
@@ -1374,6 +1468,7 @@ qwaq_wrefresh (qwaq_resources_t *res, int window_id)
 static void
 bi_wrefresh (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 
@@ -1383,18 +1478,21 @@ bi_wrefresh (progs_t *pr, void *_res)
 static void
 bi_max_colors (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = COLORS;
 }
 
 static void
 bi_max_color_pairs (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = COLOR_PAIRS;
 }
 
 static void
 qwaq_init_pair (qwaq_resources_t *res, int pair, int f, int b)
 {
+	qfZoneScoped (true);
 
 	int         command[] = { qwaq_cmd_init_pair, 0, pair, f, b, };
 	command[1] = CMD_SIZE(command);
@@ -1403,6 +1501,7 @@ qwaq_init_pair (qwaq_resources_t *res, int pair, int f, int b)
 static void
 bi_init_pair (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         pair = P_INT (pr, 0);
 	int         f = P_INT (pr, 1);
@@ -1414,6 +1513,7 @@ bi_init_pair (progs_t *pr, void *_res)
 static void
 qwaq_wbkgd (qwaq_resources_t *res, int window_id, int ch)
 {
+	qfZoneScoped (true);
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_wbkgd, 0, window_id, ch, };
 		command[1] = CMD_SIZE(command);
@@ -1423,6 +1523,7 @@ qwaq_wbkgd (qwaq_resources_t *res, int window_id, int ch)
 static void
 bi_wbkgd (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 	int         ch = P_INT (pr, 1);
@@ -1433,6 +1534,7 @@ bi_wbkgd (progs_t *pr, void *_res)
 static void
 qwaq_werase (qwaq_resources_t *res, int window_id, int ch)
 {
+	qfZoneScoped (true);
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_werase, 0, window_id, };
 		command[1] = CMD_SIZE(command);
@@ -1442,6 +1544,7 @@ qwaq_werase (qwaq_resources_t *res, int window_id, int ch)
 static void
 bi_werase (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 	int         ch = P_INT (pr, 1);
@@ -1452,6 +1555,7 @@ bi_werase (progs_t *pr, void *_res)
 static void
 qwaq_scrollok (qwaq_resources_t *res, int window_id, int flag)
 {
+	qfZoneScoped (true);
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_scrollok, 0, window_id, flag, };
 		command[1] = CMD_SIZE(command);
@@ -1461,6 +1565,7 @@ qwaq_scrollok (qwaq_resources_t *res, int window_id, int flag)
 static void
 bi_scrollok (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 	int         flag = P_INT (pr, 1);
@@ -1471,6 +1576,7 @@ bi_scrollok (progs_t *pr, void *_res)
 static void
 qwaq_wmove (qwaq_resources_t *res, int window_id, int x, int y)
 {
+	qfZoneScoped (true);
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_wmove, 0, window_id, x, y, };
 		command[1] = CMD_SIZE(command);
@@ -1480,6 +1586,7 @@ qwaq_wmove (qwaq_resources_t *res, int window_id, int x, int y)
 static void
 bi_wmove (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 	int         x = P_INT (pr, 1);
@@ -1492,6 +1599,7 @@ static const char qwaq_acs_char_map[] = "lmkjtuvwqxnos`afg~,+.-hi0pryz{|}";
 static void
 qwaq_acs_char (progs_t *pr, unsigned acs)
 {
+	qfZoneScoped (true);
 	if (acs < 256) {
 		R_INT (pr) = NCURSES_ACS(acs);
 	} else if (acs - 256 < sizeof (qwaq_acs_char_map)) {
@@ -1503,6 +1611,7 @@ qwaq_acs_char (progs_t *pr, unsigned acs)
 static void
 bi_acs_char (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int         acs = P_INT (pr, 0);
 
 	qwaq_acs_char (pr, acs);
@@ -1511,6 +1620,7 @@ bi_acs_char (progs_t *pr, void *_res)
 static void
 qwaq_move (qwaq_resources_t *res, int x, int y)
 {
+	qfZoneScoped (true);
 	int         command[] = { qwaq_cmd_move, 0, x, y, };
 	command[1] = CMD_SIZE(command);
 	qwaq_pipe_submit (&res->commands, command, command[1]);
@@ -1518,6 +1628,7 @@ qwaq_move (qwaq_resources_t *res, int x, int y)
 static void
 bi_move (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -1528,6 +1639,7 @@ bi_move (progs_t *pr, void *_res)
 static void
 qwaq_curs_set (qwaq_resources_t *res, int visibility)
 {
+	qfZoneScoped (true);
 	int         command[] = { qwaq_cmd_curs_set, 0, visibility, };
 	command[1] = CMD_SIZE(command);
 	qwaq_pipe_submit (&res->commands, command, command[1]);
@@ -1535,6 +1647,7 @@ qwaq_curs_set (qwaq_resources_t *res, int visibility)
 static void
 bi_curs_set (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         visibility = P_INT (pr, 0);
 
@@ -1545,6 +1658,7 @@ static void
 qwaq_wborder (qwaq_resources_t *res, int window_id,
 			  box_sides_t sides, box_corners_t corns)
 {
+	qfZoneScoped (true);
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_wborder, 0, window_id,
 								  sides.ls, sides.rs, sides.ts, sides.bs,
@@ -1556,6 +1670,7 @@ qwaq_wborder (qwaq_resources_t *res, int window_id,
 static void
 bi_wborder (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 	__auto_type sides = P_PACKED (pr, box_sides_t, 1);
@@ -1568,6 +1683,7 @@ static void
 qwaq__mvwblit_line (qwaq_resources_t *res, int window_id, int x, int y,
 				    int *chs, int len)
 {
+	qfZoneScoped (true);
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         chs_id = qwaq_pipe_acquire_string (&res->commands);
 		dstring_t  *chs_buf = qwaq_cmd_string (res, chs_id);
@@ -1586,6 +1702,7 @@ qwaq__mvwblit_line (qwaq_resources_t *res, int window_id, int x, int y,
 static void
 bi_mvwblit_line (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_INT (pr, 0);
 	int         x = P_INT (pr, 1);
@@ -1598,6 +1715,7 @@ bi_mvwblit_line (progs_t *pr, void *_res)
 static void *
 qwaq_curses_thread (qwaq_thread_t *thread)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = thread->data;
 
 	while (process_commands (res)) continue;
@@ -1608,6 +1726,7 @@ qwaq_curses_thread (qwaq_thread_t *thread)
 static void
 bi_initialize (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	initscr ();
@@ -1632,6 +1751,7 @@ bi_initialize (progs_t *pr, void *data)
 static void
 bi__c_TextContext__is_initialized (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	R_INT (pr) = res->initialized;
 }
@@ -1639,6 +1759,7 @@ bi__c_TextContext__is_initialized (progs_t *pr, void *_res)
 static void
 bi__c_TextContext__max_colors (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	bi_max_colors (pr, res);
 }
@@ -1646,6 +1767,7 @@ bi__c_TextContext__max_colors (progs_t *pr, void *_res)
 static void
 bi__c_TextContext__max_color_pairs (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	bi_max_color_pairs (pr, res);
 }
@@ -1653,6 +1775,7 @@ bi__c_TextContext__max_color_pairs (progs_t *pr, void *_res)
 static void
 bi__c_TextContext__init_pair_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         pair = P_INT (pr, 2);
 	int         f = P_INT (pr, 3);
@@ -1664,6 +1787,7 @@ bi__c_TextContext__init_pair_ (progs_t *pr, void *_res)
 static void
 bi__c_TextContext__acs_char_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int         acs = P_INT (pr, 2);
 
 	qwaq_acs_char (pr, acs);
@@ -1672,6 +1796,7 @@ bi__c_TextContext__acs_char_ (progs_t *pr, void *_res)
 static void
 bi__c_TextContext__move_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	Point      *pos = &P_PACKED (pr, Point, 2);
 
@@ -1681,6 +1806,7 @@ bi__c_TextContext__move_ (progs_t *pr, void *_res)
 static void
 bi__c_TextContext__curs_set_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         visibility = P_INT (pr, 2);
 
@@ -1690,6 +1816,7 @@ bi__c_TextContext__curs_set_ (progs_t *pr, void *_res)
 static void
 bi__c_TextContext__doupdate (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	bi_doupdate (pr, res);
 }
@@ -1697,6 +1824,7 @@ bi__c_TextContext__doupdate (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__mvprintf_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	Point      *pos = &P_PACKED (pr, Point, 2);
@@ -1707,6 +1835,7 @@ bi__i_TextContext__mvprintf_ (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__printf_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 
@@ -1716,6 +1845,7 @@ bi__i_TextContext__printf_ (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__vprintf_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	const char *fmt = P_GSTRING (pr, 2);
@@ -1727,6 +1857,7 @@ bi__i_TextContext__vprintf_ (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__addch_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	int         ch = P_INT (pr, 2);
@@ -1737,6 +1868,7 @@ bi__i_TextContext__addch_ (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__addstr_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	const char *str = P_GSTRING (pr, 2);
@@ -1747,6 +1879,7 @@ bi__i_TextContext__addstr_ (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__mvvprintf_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	Point      *pos = &P_PACKED (pr, Point, 2);
@@ -1759,6 +1892,7 @@ bi__i_TextContext__mvvprintf_ (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__resizeTo_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	__auto_type self = &P_STRUCT (pr, qwaq_textcontext_t, 0);
 	int         window_id = self->window;
@@ -1773,6 +1907,7 @@ bi__i_TextContext__resizeTo_ (progs_t *pr, void *_res)
 static void
 bi__c_TextContext__refresh (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	qwaq_update_panels (pr, res);
 	qwaq_doupdate (pr, res);
@@ -1781,6 +1916,7 @@ bi__c_TextContext__refresh (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__refresh (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 
@@ -1794,6 +1930,7 @@ bi__i_TextContext__refresh (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__mvaddch_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	Point      *pos = &P_PACKED (pr, Point, 2);
@@ -1805,6 +1942,7 @@ bi__i_TextContext__mvaddch_ (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__mvaddstr_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	Point      *pos = &P_PACKED (pr, Point, 2);
@@ -1816,6 +1954,7 @@ bi__i_TextContext__mvaddstr_ (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__bkgd_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	__auto_type self = &P_STRUCT (pr, qwaq_textcontext_t, 0);
 	int         window_id = self->window;
@@ -1828,6 +1967,7 @@ bi__i_TextContext__bkgd_ (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	__auto_type self = &P_STRUCT (pr, qwaq_textcontext_t, 0);
 	int         window_id = self->window;
@@ -1839,6 +1979,7 @@ bi__i_TextContext__clear (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__scrollok_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	int         flag = P_INT (pr, 2);
@@ -1849,6 +1990,7 @@ bi__i_TextContext__scrollok_ (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__border_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	__auto_type sides = P_PACKED (pr, box_sides_t, 2);
@@ -1860,6 +2002,7 @@ bi__i_TextContext__border_ (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__mvhline_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	__auto_type self = &P_STRUCT (pr, qwaq_textcontext_t, 0);
 	int         window_id = self->window;
@@ -1873,6 +2016,7 @@ bi__i_TextContext__mvhline_ (progs_t *pr, void *_res)
 static void
 bi__i_TextContext__mvvline_ (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = _res;
 	__auto_type self = &P_STRUCT (pr, qwaq_textcontext_t, 0);
 	int         window_id = self->window;
@@ -1886,6 +2030,7 @@ bi__i_TextContext__mvvline_ (progs_t *pr, void *_res)
 static void
 bi_curses_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qwaq_resources_t *) _res;
 
 	if (res->command_thread) {
@@ -1910,6 +2055,7 @@ bi_curses_clear (progs_t *pr, void *_res)
 static void
 bi_curses_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	free (_res);
 }
 
@@ -2009,6 +2155,7 @@ static builtin_t builtins[] = {
 void
 BI_Curses_Init (progs_t *pr)
 {
+	qfZoneScoped (true);
 	qwaq_resources_t *res = calloc (sizeof (*res), 1);
 	res->pr = pr;
 

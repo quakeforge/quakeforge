@@ -46,6 +46,7 @@ typedef struct memhunk_s memhunk_t;
 typedef struct qf_model_s qf_model_t;
 typedef struct plitem_s plitem_t;
 
+typedef struct mod_brush_ctx_s mod_brush_ctx_t;
 struct mod_alias_ctx_s;
 struct mod_iqm_ctx_s;
 typedef struct mod_mesh_ctx_s mod_mesh_ctx_t;
@@ -62,11 +63,14 @@ struct texture_s;
 
 typedef struct vid_model_funcs_s {
 	size_t      texture_render_size;// size of renderer specific texture data
-	void (*Mod_LoadLighting) (model_t *mod, bsp_t *bsp, memhunk_t *hunk);
+	void (*Mod_BrushContext) (mod_brush_ctx_t *brush_ctx);
+	void (*Mod_LoadLighting) (mod_brush_ctx_t *brush_ctx);
 	void (*Mod_SubdivideSurface) (model_t *mod, msurface_t *fa,
 								  memhunk_t *hunk);
 	void (*Mod_ProcessTexture) (model_t *mod, struct texture_s *tx,
 								memhunk_t *hunk);
+	void (*Mod_FinalizeBrushModel) (mod_brush_ctx_t *brush_ctx);
+
 	void (*Mod_LoadMesh) (model_t *mod, byte *buffer, size_t buf_size,
 						  memhunk_t *hunk);
 	void (*Mod_LoadIQM) (model_t *mod, void *buffer, memhunk_t *hunk);
@@ -143,7 +147,8 @@ typedef struct vid_gizmo_s {
 	void (*AddBrush) (vec4f_t orig, const vec4f_t bounds[2],
 					  int num_nodes, const gizmo_node_t *nodes, quat_t color);
 	void (*AddPlane) (vec4f_t p, vec4f_t s, vec4f_t t,
-					  quat_t gcol, quat_t scol, quat_t tcol);
+					  const quat_t gcol, const quat_t scol, const quat_t tcol);
+	void (*AddLine) (vec4f_t u, vec4f_t m, float r, const quat_t color);
 } vid_gizmo_t;
 
 typedef struct vid_painter_s {
@@ -165,6 +170,7 @@ typedef struct vid_render_funcs_s {
 	void (*R_ClearState) (void);
 	void (*R_LoadSkys) (const char *);
 	void (*R_SetSkyId) (uint32_t id);
+	void (*R_SetSkyRotation) (vec4f_t rot);
 	void (*R_NewScene) (struct scene_s *scene);
 	void (*R_LineGraph) (int x, int y, int *h_vals, int count, int height);
 

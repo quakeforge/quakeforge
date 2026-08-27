@@ -98,7 +98,7 @@ setup_sky (vulkan_ctx_t *ctx)
 	float       blend;
 	mat4f_t     mat;
 
-	while (vr_data.realtime - mctx->sky_time > 1) {
+	while (mctx->sky_auto_rotate && (vr_data.realtime - mctx->sky_time > 1)) {
 		mctx->sky_rotation[0] = mctx->sky_rotation[1];
 		mctx->sky_rotation[1] = qmulf (mctx->sky_velocity,
 									   mctx->sky_rotation[0]);
@@ -135,6 +135,14 @@ Vulkan_SetSkyMatrix (vulkan_ctx_t *ctx, mat4f_t sky)
 		memcpy (mctx->matrices.Sky, sky, sizeof (mat4f_t));
 		mctx->dirty = mctx->frames.size;
 	}
+}
+
+void
+Vulkan_SetSkyRotation (vec4f_t rot, vulkan_ctx_t *ctx)
+{
+	auto mctx = ctx->matrix_context;
+	mctx->sky_rotation[0] = rot;
+	mctx->sky_rotation[1] = rot;
 }
 
 static void

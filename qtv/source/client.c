@@ -982,11 +982,11 @@ emit_entities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 static void
 add_to_fat_pvs (vec4f_t org, int node_id, server_t *sv)
 {
-	auto brush = &sv->worldmodel->brush;
+	auto brush = sv->worldmodel->brush;
 	while (1) {
 		// if this is a leaf, accumulate the pvs bits
 		if (node_id < 0) {
-			mleaf_t    *leaf = sv->worldmodel->brush.leafs + ~node_id;
+			mleaf_t    *leaf = brush->leafs + ~node_id;
 			if (leaf->contents != CONTENTS_SOLID) {
 				Mod_LeafPVS_mix (leaf, brush, 0xff, sv->fatpvs);
 			}
@@ -1010,9 +1010,9 @@ static set_t *
 fat_pvs (vec4f_t org, server_t *sv)
 {
 	if (!sv->fatpvs) {
-		sv->fatpvs = set_new_size (sv->worldmodel->brush.visleafs);
+		sv->fatpvs = set_new_size (sv->worldmodel->brush->visleafs);
 	}
-	set_expand (sv->fatpvs, sv->worldmodel->brush.visleafs);
+	set_expand (sv->fatpvs, sv->worldmodel->brush->visleafs);
 	set_empty (sv->fatpvs);
 
 	add_to_fat_pvs (org, 0, sv);

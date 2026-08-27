@@ -256,7 +256,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 {
 	qfvPushDebug (ctx, vac (ctx->va_ctx, "brush.load_textures: %s", mod->name));
 
-	auto brush = &mod->brush;
+	auto brush = mod->brush;
 	int num_tex = 0;
 	int tex_map[brush->numtextures + 1] = {};
 	for (unsigned i = 0; i < brush->numtextures; i++) {
@@ -312,7 +312,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 		}
 		int tex_ind = tex_map[i];
 		QFV_ResourceInitTexImage (&images[tex_ind], tx->name, true, &tex);
-		images[i].image.num_layers = layers;
+		images[tex_ind].image.num_layers = layers;
 		QFV_ResourceInitImageView (&views[tex_ind], tex_ind, &images[tex_ind]);
 		// all bsp images need to be arrays, even if they have only one layer
 		views[tex_ind].image_view.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
@@ -342,6 +342,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	// transparent textures want transparent black
 	memset (trans_palette + 255*4, 0, 4);
 
+	//FIXME ad_tears has a LOT of texture data and the buffer runs out
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "brush.tex");
 	for (unsigned i = 0; i < brush->numtextures; i++) {
 		auto tx = brush->textures[i];
@@ -351,7 +352,6 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 
 		byte       *palette = vid.palette32;
 		if (tx->name[0] == '{') {
-			printf ("%s\n", tx->name);
 			palette = trans_palette;
 		} else if (strncmp (tx->name, "sky", 3) == 0) {
 			palette = sky_palette;
@@ -387,11 +387,14 @@ vulkan_brush_allocator (void *data, size_t size)
 }
 
 void
-Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
+Vulkan_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx, vulkan_ctx_t *ctx)
 {
-	mod_brush_t *brush = &mod->brush;
+	auto mod = brush_ctx->mod;
+	auto brush = brush_ctx->brush;
+	auto bsp = brush_ctx->bsp;
+	auto hunk = brush_ctx->hunk;
 
-	mod_lightmap_bytes = 3;
+	brush->lightmap_bytes = 3;
 	if (!bsp->lightdatasize) {
 		brush->lightdata = NULL;
 		return;
@@ -404,7 +407,7 @@ Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
 	QFile      *lit_file;
 
 	brush->lightdata = 0;
-	if (mod_lightmap_bytes > 1) {
+	if (brush->lightmap_bytes > 1) {
 		// LordHavoc: check for a .lit file to load
 		dstring_t  *litfilename = dstring_new ();
 		dstring_copystr (litfilename, mod->name);
@@ -413,7 +416,7 @@ Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
 		lit_file = QFS_VOpenFile (litfilename->str, 0, mod->vpath);
 
 		vulkan_brush_alloc_t vulkan_brush_alloc = {
-			.hunk = ctx->hunk,
+			.hunk = hunk,
 			.name = litfilename->str,
 		};
 		qfs_allocator_t alloc = {
@@ -452,5 +455,15 @@ Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
 		*out++ = d;
 		*out++ = d;
 		*out++ = d;
+	}
+}
+
+void
+Vulkan_Mod_FinalizeBrushModel (mod_brush_ctx_t *brush_ctx, vulkan_ctx_t *ctx)
+{
+	auto bctx = ctx->bsp_context;
+
+	if (brush_ctx->max_edges > bctx->max_edges) {
+		bctx->max_edges = brush_ctx->max_edges;
 	}
 }

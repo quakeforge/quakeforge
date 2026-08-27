@@ -293,6 +293,13 @@ int def_offset (def_t *def) __attribute__((pure));
 */
 int def_size (def_t *def) __attribute__((pure));
 
+// These are all strict. eg, non-strict sub is sub|exact
+constexpr unsigned dol_mask_none    = 0b10000;
+constexpr unsigned dol_mask_partial = 0b01000;
+constexpr unsigned dol_mask_super   = 0b00100;
+constexpr unsigned dol_mask_sub     = 0b00010;
+constexpr unsigned dol_mask_exact   = 0b00001;
+
 typedef enum {
 	dol_none,		// visit only the main def
 	dol_all,		// visit all defs
@@ -342,6 +349,7 @@ int def_visit_overlaps (def_t *def, int offset, int size, def_overlap_t overlap,
 						def_t *skip,
 						int (*visit) (def_t *, void *), void *data);
 def_overlap_t def_overlap (def_t *d1, def_t *d2) __attribute__((pure));
+unsigned def_calc_overlap (def_t *d1, def_t *d2) __attribute__((pure));
 ///@}
 
 #endif//__def_h

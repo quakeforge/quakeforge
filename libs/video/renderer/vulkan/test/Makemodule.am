@@ -1,13 +1,14 @@
-libs_video_renderer_vulkan_tests = \
+render_vulkan_tests = \
 	libs/video/renderer/vulkan/test/test-prefixsum \
 	libs/video/renderer/vulkan/test/test-staging
 
-if TEST_VULKAN
-TESTS += $(libs_video_renderer_vulkan_tests)
-check_PROGRAMS += $(libs_video_renderer_vulkan_tests)
+if run_render_vulkan_tests
+TESTS += $(render_vulkan_tests)
+check_PROGRAMS += $(render_vulkan_tests)
 endif
 
-EXTRA_PROGRAMS += $(libs_video_renderer_vulkan_tests)
+EXTRA_DIST += \
+	libs/video/renderer/vulkan/test/prefixsum.plist
 
 libs_video_renderer_vulkan_test_libs= \
 	libs/video/renderer/librender_vulkan.la \

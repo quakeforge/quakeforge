@@ -85,6 +85,7 @@ qwaq_thread_set_t thread_data;
 static QFile *
 open_file (const char *path, int *len)
 {
+	qfZoneScoped (true);
 	QFile      *file = Qopen (path, "rbz");
 	char        errbuff[1024];
 
@@ -101,6 +102,7 @@ open_file (const char *path, int *len)
 static void *
 load_file (progs_t *pr, const char *name, off_t *_size)
 {
+	qfZoneScoped (true);
 	QFile      *file;
 	int         size;
 	char       *sym;
@@ -123,6 +125,7 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 static void *
 allocate_progs_mem (progs_t *pr, int size)
 {
+	qfZoneScoped (true);
 	size = (size + 63) & ~63;
 #ifdef _WIN32
 	return _aligned_malloc (size, 64);
@@ -134,6 +137,7 @@ allocate_progs_mem (progs_t *pr, int size)
 static void
 free_progs_mem (progs_t *pr, void *mem)
 {
+	qfZoneScoped (true);
 #ifdef _WIN32
 	_aligned_free (mem);
 #else
@@ -144,6 +148,7 @@ free_progs_mem (progs_t *pr, void *mem)
 static memhunk_t *
 init_qf (void)
 {
+	qfZoneScoped (true);
 	qwaq_cbuf = Cbuf_New (&id_interp);
 
 	Sys_Init ();
@@ -165,6 +170,7 @@ init_qf (void)
 static void
 bi_printf (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	dstring_t  *dstr = dstring_new ();
 
 	RUA_Sprintf (pr, dstr, "printf", 0);
@@ -177,6 +183,7 @@ bi_printf (progs_t *pr, void *_res)
 static void
 bi_traceon (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	pr->pr_trace = true;
 	pr->pr_trace_depth = pr->pr_depth;
 }
@@ -184,6 +191,7 @@ bi_traceon (progs_t *pr, void *_res)
 static void
 bi_traceoff (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	pr->pr_trace = false;
 }
 
@@ -199,23 +207,27 @@ static builtin_t common_builtins[] = {
 static void
 common_builtins_init (progs_t *pr)
 {
+	qfZoneScoped (true);
 	PR_RegisterBuiltins (pr, common_builtins, 0);
 }
 
 static void
 qwaq_thread_clear (progs_t *pr, void *_thread)
 {
+	qfZoneScoped (true);
 }
 
 static void
 qwaq_thread_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	// resource block is the thread data: don't own it
 }
 
 static progs_t *
 create_progs (qwaq_thread_t *thread)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = calloc (1, sizeof (*pr));
 	progsinit_f *funcs = thread->progsinit;
 
@@ -242,6 +254,7 @@ create_progs (qwaq_thread_t *thread)
 static int
 load_progs (progs_t *pr, const char *name)
 {
+	qfZoneScoped (true);
 	QFile      *file;
 	int         size;
 
@@ -267,6 +280,7 @@ load_progs (progs_t *pr, const char *name)
 static void
 spawn_progs (qwaq_progs_t *qp)
 {
+	qfZoneScoped (true);
 	dfunction_t *dfunc;
 	const char *name = 0;
 	pr_string_t *pr_argv;
@@ -321,6 +335,7 @@ spawn_progs (qwaq_progs_t *qp)
 static void *
 run_progs (void *data)
 {
+	qfZoneScoped (true);
 	qwaq_progs_t *qp = data;
 	auto thread = qp->thread;
 
@@ -350,6 +365,7 @@ run_progs (void *data)
 void
 start_progs_thread (qwaq_progs_t *qwaq_progs)
 {
+	qfZoneScoped (true);
 	auto thread = qwaq_progs->thread;
 	pthread_create (&thread->thread_id, 0, run_progs, qwaq_progs);
 }
@@ -357,6 +373,7 @@ start_progs_thread (qwaq_progs_t *qwaq_progs)
 qwaq_thread_t *
 create_thread (void *(*thread_func) (qwaq_thread_t *), void *data)
 {
+	qfZoneScoped (true);
 	qwaq_thread_t *thread = calloc (1, sizeof (*thread));
 
 	thread->data = data;
@@ -369,6 +386,7 @@ create_thread (void *(*thread_func) (qwaq_thread_t *), void *data)
 static void
 usage (int status)
 {
+	qfZoneScoped (true);
 	printf ("%s - QuakeForge runtime\n", this_program);
 	printf ("sorry, no help yet\n");
 	exit (status);
@@ -377,6 +395,7 @@ usage (int status)
 static int
 parse_argset (int argc, char **argv)
 {
+	qfZoneScoped (true);
 	qwaq_thread_t *thread = calloc (1, sizeof (*thread));
 	DARRAY_INIT (&thread->args, 8);
 
@@ -394,6 +413,7 @@ parse_argset (int argc, char **argv)
 static int
 parse_args (int argc, char **argv)
 {
+	qfZoneScoped (true);
 	int         c;
 	qwaq_thread_t *main_thread = calloc (1, sizeof (*main_thread));
 	int         qargs_ind = -1;
@@ -436,6 +456,7 @@ done:
 int
 main (int argc, char **argv)
 {
+	qfZoneScoped (true);
 	int         qargs_ind = -1;
 	int         main_ind = -1;
 	int         ret = 0;

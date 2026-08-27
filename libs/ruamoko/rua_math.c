@@ -271,7 +271,7 @@ bi_sincos (progs_t *pr, void *data)
 {
 	qfZoneScoped (true);
 	double     *vec = &R_var (pr, double);
-	float       x = P_FLOAT (pr, 0);
+	double      x = P_DOUBLE (pr, 0);
 	sincos (x, &vec[0], &vec[1]);
 }
 
@@ -384,8 +384,8 @@ static void
 bi_sincosh (progs_t *pr, void *data)
 {
 	qfZoneScoped (true);
-	float      *vec = &R_var (pr, float);
-	float       x = P_FLOAT (pr, 0);
+	double     *vec = &R_var (pr, double);
+	double      x = P_DOUBLE (pr, 0);
 	vec[0] = sinh (x);
 	vec[1] = cosh (x);
 }

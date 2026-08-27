@@ -1,17 +1,18 @@
-libs_model_tests = \
+libs_models_tests = \
 	libs/models/test/testclip \
 	libs/models/test/testcontents \
 	libs/models/test/testportals \
 	libs/models/test/test-motor \
 	libs/models/test/test-quickhull
 
-libs_model_fail_tests = \
+libs_models_xfail_tests = \
 	libs/models/test/test-quickhull
 
-TESTS += $(libs_model_tests)
-XFAIL_TESTS += $(libs_model_fail_tests)
-
-check_PROGRAMS += $(libs_model_tests) $(libs_model_fail_tests)
+if run_libs_models_tests
+TESTS += $(libs_models_tests)
+XFAIL_TESTS += $(libs_models_xfail_tests)
+check_PROGRAMS += $(libs_models_tests) $(libs_models_xfail_tests)
+endif
 
 EXTRA_DIST += \
 	libs/models/test/trace-id.c \

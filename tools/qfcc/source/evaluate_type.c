@@ -345,7 +345,6 @@ void
 setup_type_progs (void)
 {
 	PR_Init (&type_pr);
-	PR_Debug_Init (&type_pr);
 }
 
 const type_t *

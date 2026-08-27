@@ -206,6 +206,9 @@ do_cast (const type_t *dstType, const expr_t *e, bool value)
 		n->expr.type = dstType;
 		c = n;
 	} else {
+		if (type_size (dstType) != type_size (srcType)) {
+			return error (e, "cannot bitcast to a different sized type");
+		}
 		c = new_alias_expr (dstType, e);
 	}
 	return edag_add_expr (c);

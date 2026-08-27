@@ -43,6 +43,7 @@
 
 #include "QF/ui/canvas.h"
 #include "QF/ui/font.h"
+#include "QF/ui/glyphcache.h"
 #include "QF/ui/passage.h"
 #include "QF/ui/shaper.h"
 #include "QF/ui/text.h"
@@ -361,7 +362,7 @@ draw_glyphs (view_pos_t *abs, glyphset_t *glyphset, glyphref_t *gref)
 	while (count-- > 0) {
 		glyphobj_t *g = glyph++;
 		r_funcs->draw.Glyph (abs->x + g->x, abs->y + g->y,
-							 g->fontid, g->glyphid, 254);
+							 g->key.fontid, g->key.glyphid, 254);
 	}
 }
 
@@ -523,7 +524,7 @@ RUA_GUI_Init (progs_t *pr, int secure)
 	gui_resources_t *res = calloc (1, sizeof (gui_resources_t));
 	res->pr = pr;
 
-	PR_Resources_Register (pr, "Draw", res, bi_gui_clear, bi_gui_destroy);
+	PR_Resources_Register (pr, "GUI", res, bi_gui_clear, bi_gui_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 
 	res->reg = ECS_NewRegistry ("rua gui");
@@ -550,7 +551,7 @@ canvas_system_t
 RUA_GUI_GetCanvasSystem (progs_t *pr)
 {
 	qfZoneScoped (true);
-	gui_resources_t *res = PR_Resources_Find (pr, "Draw");
+	gui_resources_t *res = PR_Resources_Find (pr, "GUI");
 	return res->csys;
 }
 
@@ -558,7 +559,7 @@ passage_t *
 RUA_GUI_GetPassage (progs_t *pr, int handle)
 {
 	qfZoneScoped (true);
-	gui_resources_t *res = PR_Resources_Find (pr, "Draw");
+	gui_resources_t *res = PR_Resources_Find (pr, "GUI");
 	auto psg = get_passage (res, handle);
 	return psg->passage;
 }

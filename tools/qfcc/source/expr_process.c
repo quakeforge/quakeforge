@@ -72,11 +72,17 @@ proc_expr (const expr_t *expr, rua_ctx_t *ctx)
 	if (expr->expr.op == 'C') {
 		auto type = proc_decl_type (expr->expr.e1, ctx);
 		auto e = expr_process (expr->expr.e2, ctx);
+		if (is_error (e)) {
+			return e;
+		}
 		return cast_expr (type, e);
 	}
 	if (expr->expr.op == QC_BITCAST) {
 		auto type = proc_decl_type (expr->expr.e1, ctx);
 		auto e = expr_process (expr->expr.e2, ctx);
+		if (is_error (e)) {
+			return e;
+		}
 		if (is_reference (get_type (e))) {
 			e = pointer_deref (e);
 		}
@@ -105,12 +111,12 @@ proc_expr (const expr_t *expr, rua_ctx_t *ctx)
 		return e2;
 	}
 
+	const expr_t *e;
 	if (short_circuit) {
-		auto label = new_label_expr ();
-		return bool_expr (expr->expr.op, label, e1, e2);
+		e = bool_expr (expr->expr.op, e1, e2);
+	} else {
+		e = binary_expr (expr->expr.op, e1, e2);
 	}
-
-	auto e = binary_expr (expr->expr.op, e1, e2);
 	if (expr->paren) {
 		e = paren_expr (e);
 	}
@@ -613,7 +619,7 @@ proc_assign (const expr_t *expr, rua_ctx_t *ctx)
 	scoped_src_loc (expr);
 	const expr_t *assign;
 	if (dst->type == ex_xvalue && dst->xvalue.assign) {
-		assign = dst->xvalue.assign (dst->xvalue.expr, src);
+		assign = dst->xvalue.assign (dst->xvalue.expr, src, dst->xvalue.data);
 	} else {
 		assign = assign_expr (dst, src);
 	}
@@ -919,6 +925,19 @@ spec_process (specifier_t spec, rua_ctx_t *ctx)
 	if (spec.storage == sc_local || spec.storage == sc_param) {
 		spec.is_function = false;
 	}
+	if (spec.is_typename && !(spec.type || spec.type_expr)) {
+		auto sym = spec.sym;
+		if (sym) {
+			if (sym->sy_type != sy_type) {
+				internal_error (0, "invalid typename");
+			}
+			auto type_expr = proc_symbol (new_symbol_expr (sym), ctx);
+			if (is_error (type_expr)) {
+				return (specifier_t) { .type = type_default };
+			}
+			spec.type = get_type (type_expr);
+		}
+	}
 	if (!spec.type_expr) {
 		spec = default_type (spec, spec.sym);
 	}
@@ -1065,6 +1084,10 @@ proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 			spec.type = append_type (sym->type, spec.type);
 			spec.type = find_type (spec.type);
 			sym->type = nullptr;
+		}
+		if (spec.type_expr) {
+			spec.type = resolve_type (spec.type_expr, ctx);
+			spec.type_expr = nullptr;
 		}
 		auto symtab = current_symtab;
 		ctx->language->parse_declaration (spec, sym, init, symtab, block, ctx);

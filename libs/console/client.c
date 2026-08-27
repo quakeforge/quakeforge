@@ -1209,7 +1209,7 @@ C_Init (void)
 	con = con_main;
 	con_linewidth = -1;
 
-	Sys_Printf ("Console initialized.\n");
+	Sys_MaskPrintf (SYS_console, "Console initialized.\n");
 
 	// register our commands
 	Cmd_AddCommand ("toggleconsole", ToggleConsole_f,
