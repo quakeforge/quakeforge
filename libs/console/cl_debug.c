@@ -425,7 +425,7 @@ camera_mouse_first_person (void)
 	delta_pos[1] -= IN_UpdateAxis (&deb_move_side);
 	delta_pos[2] -= IN_UpdateAxis (&deb_move_up);
 
-	float dt = *con_data.frametime;
+	float dt = 0.01;
 
 	vec4f_t     rot = Transform_GetLocalRotation (debug_camera_pivot);
 	delta_pos = qvmulf (rot, delta_pos) * dt;
