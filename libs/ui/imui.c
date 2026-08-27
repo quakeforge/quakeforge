@@ -2439,13 +2439,13 @@ IMUI_ScrollBar (imui_ctx_t *ctx, const char *name)
 		if (content) {
 			auto delta = check_drag_delta (ctx, tt_state->entity);
 			auto clen = content->len;
-			if (vertical) {
-				content->pos.y += delta.y;
+			if (vertical && slen.y && clen.y > slen.y) {
 				int max = clen.y - slen.y;
+				content->pos.y += delta.y * max / slen.y;
 				content->pos.y = bound (0, content->pos.y, max);
-			} else {
-				content->pos.x += delta.x;
+			} else if (slen.x && clen.x > slen.x) {
 				int max = clen.x - slen.x;
+				content->pos.x += delta.x * max / slen.x;
 				content->pos.x = bound (0, content->pos.x, max);
 			}
 			auto cpos = content->pos;
