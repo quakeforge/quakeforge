@@ -1020,6 +1020,23 @@ aiee (int sig)
 #endif
 }
 
+#define SIGNAME(x) [x] = #x
+
+static const char *signames[] = {
+#ifndef _WIN32
+	SIGNAME (SIGHUP),
+	SIGNAME (SIGQUIT),
+	SIGNAME (SIGTRAP),
+	SIGNAME (SIGIOT),
+	SIGNAME (SIGBUS),
+#endif
+	SIGNAME (SIGINT),
+	SIGNAME (SIGILL),
+	SIGNAME (SIGSEGV),
+	SIGNAME (SIGTERM),
+	SIGNAME (SIGFPE),
+};
+
 #ifdef _WIN32
 static void
 signal_handler (int sig)
@@ -1030,7 +1047,8 @@ signal_handler (int sig)
 	if (in_signal_handler) {
 		aiee (sig);
 	}
-	printf ("Received signal %d, exiting...\n", sig);
+	printf ("Received signal %d (%s), exiting...\n", sig,
+			(unsigned) sig < countof (signames) ? signames[sig] : "???");
 
 	switch (sig) {
 		case SIGINT:
@@ -1085,7 +1103,8 @@ signal_handler (int sig, siginfo_t *info, void *ucontext)
 	if (in_signal_handler) {
 		aiee (sig);
 	}
-	printf ("Received signal %d, exiting...\n", sig);
+	printf ("Received signal %d (%s), exiting...\n", sig,
+			(unsigned) sig < countof (signames) ? signames[sig] : "???");
 
 	switch (sig) {
 		case SIGINT:
