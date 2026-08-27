@@ -205,7 +205,7 @@ layout_glyphs (glyphnode_t *node, const shaping_t *shaping,
 		x += xa;
 		y += ya;
 	}
-	return (view_pos_t) { .x = x / 64, .y = y / 64 };
+	return (view_pos_t) { .x = x, .y = y };
 }
 
 static void

@@ -1604,8 +1604,9 @@ IMUI_UpdateHotActive (imui_ctx_t *ctx)
 view_pos_t
 IMUI_TextSize (imui_ctx_t *ctx, const char *str)
 {
-	return Text_Size (ctx->font, ctx->ptsize, str, strlen (str),
-					  nullptr, nullptr, ctx->shaper);
+	auto size = Text_Size (ctx->font, ctx->ptsize, str, strlen (str),
+						   nullptr, nullptr, ctx->shaper);
+	return VP_div (size, (view_pos_t) {64, 64});
 }
 
 void
