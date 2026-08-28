@@ -1398,6 +1398,7 @@ Mod_BuildClusterNodes (mod_brush_t *brush, int node_id, int32_t *node_cluster,
 					   mnode_t *cluster_nodes, int *cluster_depth, int depth,
 					   int *num_nodes)
 {
+	qfZoneScoped (true);
 	if (depth > *cluster_depth) {
 		*cluster_depth = depth;
 	}

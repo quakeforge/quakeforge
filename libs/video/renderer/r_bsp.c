@@ -46,6 +46,7 @@
 void
 R_MarkLeavesPVS (visstate_t *visstate, const set_t *pvs)
 {
+	qfZoneScoped (true);
 	int visframecount = ++visstate->visframecount;
 	auto brush = visstate->brush;
 	auto node_visframes = visstate->node_visframes;
@@ -80,6 +81,7 @@ R_MarkLeavesPVS (visstate_t *visstate, const set_t *pvs)
 void
 R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
 {
+	qfZoneScoped (true);
 	auto brush = visstate->brush;
 	set_t        vis = SET_STATIC_INIT (brush->visleafs, alloca);
 
@@ -108,6 +110,7 @@ R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
 texture_t  *
 R_TextureAnimation (int frame, msurface_t *surf)
 {
+	qfZoneScoped (true);
 	texture_t  *base = surf->texinfo->texture;
 	int         count, relative;
 
