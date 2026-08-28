@@ -229,19 +229,20 @@ R_RecursiveClipBPoly (uint32_t render_id, bedge_t *pedges, mnode_t *pnode,
 			// is a solid leaf, and continue down the tree if it's not a leaf
 			int         child_id = pnode->children[i];
 			pn = r_refdef.worldmodel->brush->nodes + child_id;
+			auto visstate = r_refdef.worldmodel->brush->visstate;
 
 			// we're done with this branch if the node or leaf isn't in the PVS
 			if (child_id < 0) {
 				mleaf_t    *leaf = r_refdef.worldmodel->brush->leafs + ~child_id;
-				if (r_visstate.leaf_visframes[~child_id]
-						== r_visstate.visframecount
+				if (visstate->leaf_visframes[~child_id]
+					== visstate->vis_frame
 					&& leaf->contents != CONTENTS_SOLID) {
 					r_currentbkey = leaf->key;
 					R_RenderBmodelFace (render_id, psideedges[i], surf);
 				}
 			} else {
-				if (r_visstate.node_visframes[child_id]
-						== r_visstate.visframecount) {
+				if (visstate->node_visframes[child_id]
+						== visstate->vis_frame) {
 					R_RecursiveClipBPoly (render_id, psideedges[i], pn, surf);
 				}
 			}
@@ -377,6 +378,7 @@ visit_node (swbspctx_t *bctx, mnode_t *node, int side, int clipflags)
 	msurface_t *surf;
 	uint32_t    render_id = bctx->render_id;
 	mod_brush_t *brush = bctx->brush;
+	visstate_t *visstate = brush->visstate;
 
 	// sneaky hack for side = side ? SURF_PLANEBACK : 0;
 	side = (~side + 1) & SURF_PLANEBACK;
@@ -385,7 +387,7 @@ visit_node (swbspctx_t *bctx, mnode_t *node, int side, int clipflags)
 		int         surf_id = node->firstsurface;
 		surf = brush->surfaces + surf_id;
 		for (; c; c--, surf++, surf_id++) {
-			if (r_visstate.face_visframes[surf_id] != r_visstate.visframecount)
+			if (visstate->face_visframes[surf_id] != visstate->vis_frame)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK
@@ -417,10 +419,11 @@ test_node (swbspctx_t *bctx, int node_id, int *clipflags)
 	int         i, *pindex;
 	vec3_t      acceptpt, rejectpt;
 	double      d;
+	auto visstate = bctx->brush->visstate;
 
 	if (node_id < 0)
 		return 0;
-	if (r_visstate.node_visframes[node_id] != r_visstate.visframecount)
+	if (visstate->node_visframes[node_id] != visstate->vis_frame)
 		return 0;
 	// cull the clipping planes if not trivial accept
 	// FIXME: the compiler is doing a lousy job of optimizing here; it could be

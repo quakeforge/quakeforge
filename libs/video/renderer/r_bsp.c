@@ -47,7 +47,7 @@ void
 R_MarkLeavesPVS (visstate_t *visstate, const set_t *pvs)
 {
 	qfZoneScoped (true);
-	int visframecount = ++visstate->visframecount;
+	int vis_frame = ++visstate->vis_frame;
 	auto brush = visstate->brush;
 	auto node_visframes = visstate->node_visframes;
 	auto leaf_visframes = visstate->leaf_visframes;
@@ -63,16 +63,16 @@ R_MarkLeavesPVS (visstate_t *visstate, const set_t *pvs)
 		if ((c = leaf->nummarksurfaces)) {
 			auto mark = brush->marksurfaces + leaf->firstmarksurface;
 			do {
-				face_visframes[*mark - brush->surfaces] = visframecount;
+				face_visframes[*mark - brush->surfaces] = vis_frame;
 				mark++;
 			} while (--c);
 		}
-		leaf_visframes[i + 1] = visframecount;
+		leaf_visframes[i + 1] = vis_frame;
 		int         node_id = brush->leaf_parents[leaf - brush->leafs];
 		while (node_id >= 0) {
-			if (node_visframes[node_id] == visframecount)
+			if (node_visframes[node_id] == vis_frame)
 				break;
-			node_visframes[node_id] = visframecount;
+			node_visframes[node_id] = vis_frame;
 			node_id = brush->node_parents[node_id];
 		}
 	}

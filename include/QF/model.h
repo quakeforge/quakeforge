@@ -229,6 +229,15 @@ typedef struct {
 	uint32_t    numsurfaces;
 } cluster_t;
 
+typedef struct visstate_s {
+	const mleaf_t *viewleaf;
+	int         *node_visframes;
+	int         *leaf_visframes;
+	int         *face_visframes;
+	int          vis_frame;
+	const struct mod_brush_s *brush;
+} visstate_t;
+
 typedef struct mod_brush_s {
 	unsigned    firstface;		///< index into main model's face list
 	unsigned    numfaces;
@@ -290,6 +299,8 @@ typedef struct mod_brush_s {
 	byte       *visdata;
 	byte       *lightdata;
 	char       *entities;	//FIXME should not be here
+
+	visstate_t *visstate;
 
 	int32_t    *node_parents;
 	int32_t    *leaf_parents;

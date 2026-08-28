@@ -124,7 +124,7 @@ register_textures (mod_brush_t *brush, vulkan_ctx_t *ctx)
 }
 
 static void
-init_visstate (bspctx_t *bctx)
+init_visstate (bspctx_t *bctx, visstate_t *visstate)
 {
 	qfZoneScoped (true);
 	mod_brush_t *brush = r_refdef.worldmodel->brush;
@@ -139,19 +139,19 @@ init_visstate (bspctx_t *bctx)
 													"visframes");
 	int        *debug_leaf_frames = debug_node_frames + brush->numnodes;
 	int        *debug_face_frames = debug_leaf_frames + brush->modleafs;
-	bctx->shadow_pass.vis_frame = 0;
-	bctx->shadow_pass.face_frames = shadow_face_frames;
-	bctx->shadow_pass.leaf_frames = shadow_leaf_frames;
-	bctx->shadow_pass.node_frames = shadow_node_frames;
+	bctx->shadow_pass.visstate = (visstate_t) {
+		.face_visframes = shadow_face_frames,
+		.leaf_visframes = shadow_leaf_frames,
+		.node_visframes = shadow_node_frames,
+		.brush = brush,
+	};
 
-	bctx->debug_pass.vis_frame = 0;
-	bctx->debug_pass.face_frames = debug_face_frames;
-	bctx->debug_pass.leaf_frames = debug_leaf_frames;
-	bctx->debug_pass.node_frames = debug_node_frames;
-
-	bctx->main_pass.face_frames = r_visstate.face_visframes;
-	bctx->main_pass.leaf_frames = r_visstate.leaf_visframes;
-	bctx->main_pass.node_frames = r_visstate.node_visframes;
+	bctx->debug_pass.visstate = (visstate_t) {
+		.face_visframes = debug_face_frames,
+		.leaf_visframes = debug_leaf_frames,
+		.node_visframes = debug_node_frames,
+		.brush = brush,
+	};
 }
 
 static void
@@ -480,8 +480,16 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	qfZoneScoped (true);
 	qfv_device_t *device = ctx->device;
 	bspctx_t   *bctx = ctx->bsp_context;
+	visstate_t *visstate = nullptr;
+	for (int i = 0; i < num_models; i++) {
+		model_t    *m = models[i];
+		if (m && m->type == mod_brush) {
+			visstate = m->brush->visstate;
+			break;
+		}
+	}
 
-	init_visstate (bctx);
+	init_visstate (bctx, visstate);
 	if (!num_models) {
 		return;
 	}
@@ -780,8 +788,8 @@ visit_node_bfcull (bsp_pass_t *pass, const mnode_t *node, int side)
 	// not all nodes have any surfaces to draw (purely a split plane)
 	if ((c = node->numsurfaces)) {
 		const bsp_face_t *face = bctx->faces + node->firstsurface;
-		const int  *frame = pass->face_frames + node->firstsurface;
-		int         vis_frame = pass->vis_frame;
+		const int  *frame = pass->visstate.face_visframes + node->firstsurface;
+		int         vis_frame = pass->visstate.vis_frame;
 		for (; c; c--, face++, frame++) {
 			if (*frame != vis_frame)
 				continue;
@@ -808,8 +816,8 @@ visit_node_no_bfcull (bsp_pass_t *pass, const mnode_t *node, int side)
 	// not all nodes have any surfaces to draw (purely a split plane)
 	if ((c = node->numsurfaces)) {
 		const bsp_face_t *face = bctx->faces + node->firstsurface;
-		const int  *frame = pass->face_frames + node->firstsurface;
-		int         vis_frame = pass->vis_frame;
+		const int  *frame = pass->visstate.face_visframes + node->firstsurface;
+		int         vis_frame = pass->visstate.vis_frame;
 		for (; c; c--, face++, frame++) {
 			if (*frame != vis_frame)
 				continue;
@@ -824,7 +832,7 @@ test_node (const bsp_pass_t *pass, int node_id)
 {
 	if (node_id < 0)
 		return 0;
-	if (pass->node_frames[node_id] != pass->vis_frame)
+	if (pass->visstate.node_visframes[node_id] != pass->visstate.vis_frame)
 		return 0;
 	return 1;
 }
@@ -1406,14 +1414,16 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		[QFV_bspDebug] = &bctx->debug_pass,
 	} [pass_ind];
 
-	if (pass_ind == QFV_bspMain || pass_ind == QFV_bspLightmap) {
-		pass->entqueue = Vulkan_Scene_EntQueue (ctx);
-		pass->position = r_refdef.frame.position;
-		pass->vis_frame = r_visstate.visframecount;
-	}
 	pass->brush = nullptr;
 	if (r_refdef.worldmodel) {
 		pass->brush = r_refdef.worldmodel->brush;
+	}
+	if (pass_ind == QFV_bspMain || pass_ind == QFV_bspLightmap) {
+		pass->entqueue = Vulkan_Scene_EntQueue (ctx);
+		pass->position = r_refdef.frame.position;
+		if (pass->brush) {
+			pass->visstate = *pass->brush->visstate;
+		}
 	}
 
 	if (pass->entqueue) {

@@ -755,9 +755,10 @@ visit_node (glslbspctx_t *bctx, mnode_t *node, int side)
 	// not all nodes have any surfaces to draw (purely a split plane)
 	if ((c = node->numsurfaces)) {
 		int         surf_id = node->firstsurface;
+		auto visstate = bctx->brush->visstate;
 		surf = bctx->brush->surfaces + surf_id;
 		for (; c; c--, surf++, surf_id++) {
-			if (r_visstate.face_visframes[surf_id] != r_visstate.visframecount)
+			if (visstate->face_visframes[surf_id] != visstate->vis_frame)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK
@@ -776,7 +777,8 @@ test_node (glslbspctx_t *bctx, int node_id)
 {
 	if (node_id < 0)
 		return 0;
-	if (r_visstate.node_visframes[node_id] != r_visstate.visframecount)
+	auto visstate = bctx->brush->visstate;
+	if (visstate->node_visframes[node_id] != visstate->vis_frame)
 		return 0;
 	mnode_t    *node = bctx->brush->nodes + node_id;
 	if (R_CullBox (r_refdef.frustum, node->minmaxs, node->minmaxs + 3))

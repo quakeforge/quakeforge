@@ -324,15 +324,9 @@ lighting_setup_shadow (const exprval_t **params, exprval_t *result,
 		Mod_LeafPVS_mix (brush->leafs + iter->element, brush, 0, &pvs);
 	}
 
-	visstate_t visstate = {
-		.node_visframes = pass->node_frames,
-		.leaf_visframes = pass->leaf_frames,
-		.face_visframes = pass->face_frames,
-		.visframecount = pass->vis_frame,
-		.brush = pass->brush,
-	};
+	visstate_t visstate = pass->visstate;
 	R_MarkLeavesPVS (&visstate, &pvs);
-	pass->vis_frame = visstate.visframecount;
+	pass->visstate.vis_frame = visstate.vis_frame;
 }
 
 static VkFramebuffer
@@ -3112,15 +3106,9 @@ update_shadow_descriptors (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 static void
 mark_leaves (bsp_pass_t *pass, set_t *pvs)
 {
-	visstate_t visstate = {
-		.node_visframes = pass->node_frames,
-		.leaf_visframes = pass->leaf_frames,
-		.face_visframes = pass->face_frames,
-		.visframecount = pass->vis_frame,
-		.brush = pass->brush,
-	};
+	visstate_t visstate = pass->visstate;
 	R_MarkLeavesPVS (&visstate, pvs);
-	pass->vis_frame = visstate.visframecount;
+	pass->visstate.vis_frame = visstate.vis_frame;
 }
 
 static void

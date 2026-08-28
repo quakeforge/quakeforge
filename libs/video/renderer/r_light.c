@@ -249,7 +249,7 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 {
 	const auto leaf_visframes = visstate->leaf_visframes;
 	const auto face_visframes = visstate->face_visframes;
-	const auto visframecount = visstate->visframecount;
+	const auto vis_frame = visstate->vis_frame;
 	const auto brush = visstate->brush;
 	const auto pvsleaf = Mod_PointInLeaf (lightorigin, brush);
 
@@ -281,7 +281,7 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 				mleaf_t *leaf  = &brush->leafs[leafnum + 1];
 				if (!(vis_bits & b))
 					continue;
-				if (leaf_visframes[leafnum + 1] != visframecount)
+				if (leaf_visframes[leafnum + 1] != vis_frame)
 					continue;
 				if (leaf->mins[0] > maxs[0] || leaf->maxs[0] < mins[0]
 					|| leaf->mins[1] > maxs[1] || leaf->maxs[1] < mins[1]
@@ -291,7 +291,7 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 				for (m = 0; m < leaf->nummarksurfaces; m++) {
 					msurface_t *surf = *msurf++;
 					int         surf_id = surf - brush->surfaces;
-					if (face_visframes[surf_id] != visframecount)
+					if (face_visframes[surf_id] != vis_frame)
 						continue;
 					mark_surfaces (surf, lightorigin, light, lightnum);
 				}
@@ -305,7 +305,7 @@ R_PushDlights (const vec3_t entorigin, const visstate_t *visstate)
 {
 	r_dlightframecount = r_framecount;
 
-	if (!r_dlight_lightmap)
+	if (!r_dlight_lightmap || !visstate)
 		return;
 
 	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];

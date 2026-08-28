@@ -51,17 +51,6 @@ struct psystem_s *sw_ParticleSystem (void);
 struct scene_s;
 void R_NewScene (struct scene_s *scene);
 
-typedef struct visstate_s {
-	const struct mleaf_s *viewleaf;
-	int         *node_visframes;
-	int         *leaf_visframes;
-	int         *face_visframes;
-	int          visframecount;
-	const struct mod_brush_s *brush;
-} visstate_t;
-
-extern visstate_t r_visstate;//FIXME
-
 // LordHavoc: relative bmodel lighting
 void R_PushDlights (const vec3_t entorigin, const visstate_t *visstate);
 void R_DrawWaterSurfaces (void);

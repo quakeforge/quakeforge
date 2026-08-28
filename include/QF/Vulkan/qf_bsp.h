@@ -291,12 +291,7 @@ typedef struct bsp_pass_s {
 	 * `vis_frame`, and adding an object to the PVS is done by setting its
 	 * current frame id to the current visibility frame id.
 	 */
-	///@{
-	int         vis_frame;			///< current visibility frame id
-	int        *face_frames;		///< per-face visibility frame ids
-	int        *leaf_frames;		///< per-leaf visibility frame ids
-	int        *node_frames;		///< per-node visibility frame ids
-	///@}
+	visstate_t  visstate;
 	bsp_instfaceset_t *face_queue;	///< per-texture face queues
 	regtexset_t *textures;			///< textures to bind when emitting calls
 	int         num_queues;			///< number of pipeline queues
