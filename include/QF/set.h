@@ -86,6 +86,9 @@ typedef uint32_t set_bits_t;
 #define SET_DEFER(name) \
 	__attribute__((cleanup(set_cleanup))) set_t *name = set_new ()
 
+#define SET_DEFER_SIZE(name, size) \
+	__attribute__((cleanup(set_cleanup))) set_t *name = set_new_size (size)
+
 /** Represent a set using a bitmap.
 
 	When \a inverted is zero, ones in the bitmap represent members, but when
