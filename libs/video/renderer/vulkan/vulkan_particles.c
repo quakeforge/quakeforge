@@ -400,7 +400,8 @@ particle_startup (exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	qfvPushDebug (ctx, "particles init");
 	auto pctx = ctx->particle_context;
-	pctx->psystem = &r_psystem;
+	pctx->psystem = &r_psystem;				//FIXME
+	pctx->psystem->palette_id = nullent;	//FIXME
 
 	size_t      frames = ctx->render_context->frames.size;
 	DARRAY_INIT (&pctx->frames, frames);
