@@ -285,15 +285,17 @@ typedef struct mod_brush_s {
 	texture_t **textures;
 	texture_t  *skytexture;
 
-	uint32_t    vis_clusters;
-	leafmap_t  *leaf_map;
-	uint32_t   *cluster_map;
-	uint32_t   *cluster_offs;// cluster offset into cluster_vis
-	mnode_t    *cluster_nodes;
-	int         cluster_depth;
-	byte       *cluster_vis;
-	uint32_t   *cluster_surfs;
-	cluster_t  *clusters;
+	uint32_t    vis_clusters;	///< number of visible clusters, not counting 0
+	leafmap_t  *leaf_map;		///< [cluster] leaf nodes in cluster
+	uint32_t   *cluster_map;	///< [leaf]    cluster containing leaf
+	uint32_t   *cluster_offs;	///< [cluster] offset into cluster_vis
+	mnode_t    *cluster_nodes;	///< [node]    node tree for clusters
+	int         cluster_depth;	///< maximum depth of cluster node tree
+	byte       *cluster_vis;	///< cluster based PVS (compressed)
+	uint32_t   *cluster_surfs;	///< indices of surfs on cluster
+	cluster_t  *clusters;		///< [cluster] cluster(leaf) nodes
+	int32_t    *cluster_heads;	///< [model] first node of submodel or
+								///< cluster if negative
 
 	int         lightmap_bytes;
 	byte       *visdata;

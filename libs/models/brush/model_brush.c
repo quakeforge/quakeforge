@@ -454,11 +454,11 @@ cluster_vis_task (task_t *task, int worker_id)
 	auto leaf_map = brush->leaf_map;
 	int i = task - cluster_data->tasks;
 
-	auto leaf = &bsp->leafs[leaf_map[i].first_leaf + 1];
-	byte *visdata = nullptr;
-	if (leaf->visofs >= 0) {
-		visdata = bsp->visdata + leaf->visofs;
+	auto leaf = &bsp->leafs[leaf_map[i].first_leaf];
+	if (leaf->visofs < 0) {
+		return;
 	}
+	byte *visdata = bsp->visdata + leaf->visofs;
 	Mod_DecompressVis_set (visdata, brush->visleafs, 0xff, vis);
 
 	set_empty (&base_pvs[i]);
@@ -513,20 +513,26 @@ Mod_LoadVisibility (mod_brush_ctx_t *brush_ctx)
 		brush->visdata = NULL;
 		return;
 	}
+	brush->visleafs = bsp->models[0].visleafs;
 	brush->visdata = Hunk_AllocName (hunk, bsp->visdatasize, mod->name);
 	memcpy (brush->visdata, bsp->visdata, bsp->visdatasize);
 
 	int64_t start = Sys_LongTime ();
 
-	uint32_t num_leafs = bsp->models[0].visleafs;
-	uint32_t num_clusters = 1;
+	// include solid leaf
+	uint32_t num_leafs = bsp->models[0].visleafs + 1;
+	// solid cluster + minimum of 1 vis cluster
+	uint32_t num_clusters = 2;
 	leafvis_t *leafvis = Hunk_TempAlloc (hunk, sizeof (leafvis_t[num_leafs]));
 	bool sorted = true;
 
-	for (uint32_t i = 0; i < num_leafs; i++) {
-		leafvis[i].visoffs = bsp->leafs[i + 1].visofs;
+	leafvis[0] = (leafvis_t) {
+		.visoffs = -1,
+	};
+	for (uint32_t i = 1; i < num_leafs; i++) {
+		leafvis[i].visoffs = bsp->leafs[i].visofs;
 		leafvis[i].leafnum = i;
-		if (i > 0) {
+		if (i > 1) {
 			num_clusters += leafvis[i].visoffs != leafvis[i - 1].visoffs;
 			if (leafvis[i].visoffs < leafvis[i - 1].visoffs) {
 				sorted = false;
@@ -541,20 +547,30 @@ Mod_LoadVisibility (mod_brush_ctx_t *brush_ctx)
 			num_clusters += leafvis[i].visoffs != leafvis[i - 1].visoffs;
 		}
 	}
-
-	printf ("leafs   : %u\n", num_leafs);
-	printf ("clusters: %u\n", num_clusters);
 	if (num_clusters == num_leafs) {
 		// no clusters to reconstruct
 		return;
 	}
 
-	size_t size = sizeof (leafmap_t[num_clusters])
-				+ sizeof (uint32_t[num_leafs])
-				+ sizeof (uint32_t[num_clusters]);
+	uint32_t extra_leafs = 0;
+	// the main model gets the computed clusters but all the submodels get
+	// one cluster each (they have no vis data)
+	uint32_t extra_clusters = bsp->nummodels - 1;
+	for (uint32_t i = 1; i < bsp->nummodels; i++) {
+		extra_leafs += bsp->models[i].visleafs;
+	}
+
+	printf ("leafs   : %u + %u\n", num_leafs, extra_leafs);
+	printf ("clusters: %u + %u\n", num_clusters, extra_clusters);
+
+	uint32_t leaf_count = num_leafs + extra_leafs;
+	uint32_t cluster_count = num_clusters + extra_clusters;
+	size_t size = sizeof (leafmap_t[cluster_count])
+				+ sizeof (uint32_t[leaf_count])
+				+ sizeof (uint32_t[cluster_count]);
 	brush->leaf_map = Hunk_AllocName (hunk, size, mod->name);
-	brush->cluster_map = (uint32_t *) &brush->leaf_map[num_clusters];
-	brush->cluster_offs = (uint32_t *) &brush->cluster_map[num_leafs];
+	brush->cluster_map = (uint32_t *) &brush->leaf_map[cluster_count];
+	brush->cluster_offs = (uint32_t *) &brush->cluster_map[leaf_count];
 	leafmap_t *leafmap = brush->leaf_map;
 	uint32_t *leafcluster = brush->cluster_map;
 
@@ -569,9 +585,22 @@ Mod_LoadVisibility (mod_brush_ctx_t *brush_ctx)
 		leafcluster[leafvis[i].leafnum] = lm - leafmap;
 		lm->num_leafs++;
 	}
+	extra_leafs = 0;
+	for (uint32_t i = 1; i < bsp->nummodels; i++) {
+		lm++;
+		*lm = (leafmap_t) {
+			.first_leaf = num_leafs + extra_leafs,
+			.num_leafs = bsp->models[i].visleafs,
+		};
+		extra_leafs += bsp->models[i].visleafs;
+		for (uint32_t j = 0; j < lm->num_leafs; j++) {
+			leafcluster[lm->first_leaf + j] = lm - leafmap;
+		}
+	}
 
-	brush->visleafs = bsp->models[0].visleafs;
-	uint32_t cluster_visbytes = (num_clusters + 7) / 8;
+	// vis_clusters does not include solid cluster
+	brush->vis_clusters = num_clusters - 1;
+	uint32_t cluster_visbytes = (brush->vis_clusters + 7) / 8;
 	uint32_t leaf_visbytes = (num_leafs + 7) / 8;
 	int num_workers = wssched_worker_count (brush_ctx->sched);
 	cluster_visbytes = (cluster_visbytes * 3) / 2 + 1;
@@ -647,7 +676,6 @@ Mod_LoadVisibility (mod_brush_ctx_t *brush_ctx)
 		total_bytes += vis_rows[i];
 	}
 
-	brush->vis_clusters = num_clusters;
 	brush->cluster_vis = Hunk_AllocName (hunk, total_bytes, mod->name);
 	uint32_t offset = 0;
 	for (uint32_t i = 0; i < num_clusters; i++) {
@@ -1004,12 +1032,17 @@ Mod_PropagateClusters (mod_brush_t *brush, int node_id, int32_t *node_cluster)
 	} else {
 		c2 = node_cluster[node->children[1]];
 	}
-	if (c1 == c2 || c2 == -1) {
+	node_cluster[node_id] = 0;
+	if (c1 == c2) {
 		node_cluster[node_id] = c1;
+	} else if (c2 == -1) {
+		if (c1 < 0 && brush->leaf_map[~c1].num_leafs > 1) {
+			node_cluster[node_id] = c1;
+		}
 	} else if (c1 == -1) {
-		node_cluster[node_id] = c2;
-	} else {
-		node_cluster[node_id] = 0;
+		if (c2 < 0 && brush->leaf_map[~c2].num_leafs > 1) {
+			node_cluster[node_id] = c2;
+		}
 	}
 	c += node_cluster[node_id] == 0;
 	return c;
@@ -1403,7 +1436,7 @@ Mod_BuildClusterNodes (mod_brush_t *brush, int node_id, int32_t *node_cluster,
 		*cluster_depth = depth;
 	}
 	if (node_id < 0) {
-		return node_id;
+		return ~brush->cluster_map[~node_id];
 	}
 	if (node_cluster[node_id] < 0) {
 		return node_cluster[node_id];
@@ -1434,7 +1467,90 @@ cluster_surf_cmp (const void *_sa, const void *_sb, void *_bsp)
 	if (surf_a->texinfo == surf_b->texinfo) {
 		return surf_id_a - surf_id_b;
 	}
-	return surf_a->texinfo - surf_b->texinfo;
+	auto texinfo_a = bsp->texinfo + surf_a->texinfo;
+	auto texinfo_b = bsp->texinfo + surf_b->texinfo;
+	if (texinfo_a->miptex == texinfo_b->miptex) {
+		return surf_a->texinfo - surf_b->texinfo;
+	}
+	return texinfo_a->miptex - texinfo_b->miptex;
+}
+
+static void
+cluster_collect_surfs (mod_brush_ctx_t *brush_ctx, int head)
+{
+	auto mod = brush_ctx->mod;
+	auto bsp = brush_ctx->bsp;
+	auto brush = brush_ctx->brush;
+	auto hunk = brush_ctx->hunk;
+
+	// keep track of surfaces seen for each cluster to avoid surfaces
+	// being drawn more than once for each cluster due to the surface being
+	// shared between leaf nodes in the cluster
+	SET_DEFER_SIZE (seen_surfs, brush->nummarksurfaces);
+	int added_surfs = 0;
+	int max_surfs = 0;
+	uint32_t cluster_count = brush->vis_clusters + bsp->nummodels;
+	for (uint32_t i = 0; i < cluster_count; i++) {
+		set_empty (seen_surfs);
+		auto leafmap = brush->leaf_map[i];
+		int count = 0;
+		for (uint32_t j = 0; j < leafmap.num_leafs; j++) {
+			auto leaf = bsp->leafs + leafmap.first_leaf + j;
+			for (uint32_t k = 0; k < leaf->nummarksurfaces; k++) {
+				int ind = leaf->firstmarksurface + k;
+				int surf_id = bsp->marksurfaces[ind];
+				if (!set_is_member (seen_surfs, surf_id)) {
+					set_add (seen_surfs, surf_id);
+					count++;
+				}
+			}
+		}
+		added_surfs += count;
+		if (count > max_surfs) {
+			max_surfs = count;
+		}
+	}
+	printf ("added_surfs: %d %d\n", added_surfs, max_surfs);
+
+	size_t size = sizeof (uint32_t[added_surfs])
+				+ sizeof (cluster_t[cluster_count])
+				+ sizeof (int32_t[bsp->nummodels]);
+	brush->cluster_surfs = Hunk_AllocName (hunk, size, mod->name);
+	brush->clusters = (cluster_t *) &brush->cluster_surfs[added_surfs];
+	brush->cluster_heads = (int32_t *) &brush->clusters[cluster_count];
+	added_surfs = 0;
+	for (uint32_t i = 0; i < cluster_count; i++) {
+		set_empty (seen_surfs);
+		auto leafmap = brush->leaf_map[i];
+		auto cluster = &brush->clusters[i];
+		cluster->firstsurface = added_surfs;
+		int count = 0;
+		for (uint32_t j = 0; j < leafmap.num_leafs; j++) {
+			auto leaf = bsp->leafs + leafmap.first_leaf + j;
+			for (uint32_t k = 0; k < leaf->nummarksurfaces; k++) {
+				int ind = leaf->firstmarksurface + k;
+				int surf_id = bsp->marksurfaces[ind];
+				if (!set_is_member (seen_surfs, surf_id)) {
+					set_add (seen_surfs, surf_id);
+					brush->cluster_surfs[added_surfs++] = surf_id;
+					count++;
+				}
+			}
+		}
+		cluster->numsurfaces = count;
+		if (count > 1) {
+			// sort the surface ids by texture so drawing can be batched
+			heapsort_r (brush->cluster_surfs + cluster->firstsurface,
+						count, sizeof (uint32_t), cluster_surf_cmp,
+						bsp);
+		}
+	}
+	brush->cluster_heads[0] = head;
+	int cluster = -brush->vis_clusters;
+	for (uint32_t i = 1; i < bsp->nummodels; i++) {
+		brush->cluster_heads[i] = cluster--;
+	}
+	printf ("cluster: %d\n", cluster);
 }
 
 static void
@@ -1457,112 +1573,77 @@ Mod_MakeClusters (mod_brush_ctx_t *brush_ctx)
 		int cluster_node_count = 0;
 		Mod_BuildClusterNodes (brush, 0, node_cluster, brush->cluster_nodes,
 							   &brush->cluster_depth, 1, &cluster_node_count);
-		printf ("num_cluster_nodes: %d %d\n", num_cluster_nodes,
-				cluster_node_count);
+		printf ("num_cluster_nodes: %d %d (%d)\n", num_cluster_nodes,
+				cluster_node_count, brush->cluster_depth);
 		if (cluster_node_count != num_cluster_nodes) {
 			Sys_Error ("taniwha can't count");
 		}
 
-		set_t *seen_surfs = set_new_size (brush->nummarksurfaces);
-		int added_surfs = 0;
-		int max_surfs = 0;
-		for (uint32_t i = 0; i < brush->vis_clusters; i++) {
-			set_empty (seen_surfs);
-			auto leafmap = brush->leaf_map[i];
-			int count = 0;
-			for (uint32_t j = 0; j < leafmap.num_leafs; j++) {
-				auto leaf = bsp->leafs + leafmap.first_leaf + j;
-				for (uint32_t k = 0; k < leaf->nummarksurfaces; k++) {
-					int ind = leaf->firstmarksurface + k;
-					int surf_id = bsp->marksurfaces[ind];
-					if (!set_is_member (seen_surfs, surf_id)) {
-						set_add (seen_surfs, surf_id);
-						count++;
-					}
-				}
-			}
-			added_surfs += count;
-			if (count > max_surfs) {
-				max_surfs = count;
-			}
-		}
-		printf ("added_surfs: %d %d\n", added_surfs, max_surfs);
-
-		size = sizeof (uint32_t[added_surfs])
-			 + sizeof (cluster_t[brush->vis_clusters]);
-		brush->cluster_surfs = Hunk_AllocName (hunk, size, mod->name);
-		brush->clusters = (cluster_t *) &brush->cluster_surfs[added_surfs];
-		added_surfs = 0;
-		for (uint32_t i = 0; i < brush->vis_clusters; i++) {
-			//set_empty (seen_surfs);
-			auto leafmap = brush->leaf_map[i];
-			auto cluster = &brush->clusters[i];
-			cluster->firstsurface = added_surfs;
-			int count = 0;
-			for (uint32_t j = 0; j < leafmap.num_leafs; j++) {
-				auto leaf = bsp->leafs + leafmap.first_leaf + j;
-				for (uint32_t k = 0; k < leaf->nummarksurfaces; k++) {
-					int ind = leaf->firstmarksurface + k;
-					int surf_id = bsp->marksurfaces[ind];
-					if (!set_is_member (seen_surfs, surf_id)) {
-						set_add (seen_surfs, surf_id);
-						brush->cluster_surfs[added_surfs++] = surf_id;
-						count++;
-					}
-				}
-			}
-			cluster->numsurfaces = count;
-			if (count > 1) {
-				// sort the surface ids by texture so drawing can be batched
-				heapsort_r (brush->cluster_surfs + cluster->firstsurface,
-							count, sizeof (uint32_t), cluster_surf_cmp,
-							bsp);
-			}
-		}
+		cluster_collect_surfs (brush_ctx, 0);
 	} else {
-		brush->vis_clusters = brush->visleafs;
-		brush->cluster_nodes = brush->nodes;
-		brush->cluster_depth = brush->depth;
-		brush->cluster_vis = brush->visdata;
+		int head = 0;
+		bool single = !brush->visdata || brush->visleafs < 64;
+		if (single) {
+			head = -1;
+			brush->vis_clusters = 1;
+		} else {
+			brush->vis_clusters = brush->visleafs;
+			brush->cluster_nodes = brush->nodes;
+			brush->cluster_depth = brush->depth;
+			brush->cluster_vis = brush->visdata;
+		}
 
-		int count = brush->visleafs + 1;
-		int surfs = brush->nummarksurfaces;
-		size_t size = sizeof (leafmap_t[count])		//leaf_map
-					+ sizeof (uint32_t[count])		//cluster_map
-					+ sizeof (uint32_t[count])		//cluster_offs
-					+ sizeof (uint32_t[surfs])		//cluster_surfs
-					+ sizeof (cluster_t[count]);	//clusters
+		int cluster_count = brush->vis_clusters + bsp->nummodels;
+		int leaf_count = brush->visleafs + 1;
+		for (uint32_t i = 1; i < bsp->nummodels; i++) {
+			leaf_count += bsp->models[i].visleafs;
+		}
+		size_t size = sizeof (leafmap_t[cluster_count])		//leaf_map
+					+ sizeof (uint32_t[leaf_count])			//cluster_map
+					+ sizeof (uint32_t[cluster_count]);		//cluster_offs
 		brush->leaf_map = Hunk_AllocName (hunk, size, mod->name);
-		brush->cluster_map = (uint32_t *) &brush->leaf_map[count];
-		brush->cluster_offs = (uint32_t *) &brush->cluster_map[count];
-		brush->cluster_surfs = (uint32_t *) &brush->cluster_offs[count];
-		brush->clusters = (cluster_t *) &brush->cluster_surfs[surfs];
-		memcpy (brush->cluster_surfs, bsp->marksurfaces,
-				sizeof (uint32_t[surfs]));
-		for (int i = 0; i < count; i++) {
-			brush->leaf_map[i] = (leafmap_t) {
-				.first_leaf = i,
+		brush->cluster_map = (uint32_t *) &brush->leaf_map[cluster_count];
+		brush->cluster_offs = (uint32_t *) &brush->cluster_map[leaf_count];
+		if (single) {
+			brush->leaf_map[0] = (leafmap_t) {
+				.first_leaf = 0,
 				.num_leafs = 1,
 			};
-			brush->cluster_map[i] = i;
-
-			auto leaf = brush->leafs + i;
-			brush->cluster_offs[i] = leaf->compressed_vis - brush->visdata;
-
-			auto cluster = brush->clusters + i;
-			*cluster = (cluster_t) {
-				.firstsurface = leaf->firstmarksurface,
-				.numsurfaces = leaf->nummarksurfaces,
+			brush->leaf_map[1] = (leafmap_t) {
+				.first_leaf = 1,
+				.num_leafs = bsp->models[0].visleafs,
 			};
-			if (cluster->numsurfaces > 1) {
-				// sort the surface ids by texinfo so drawing can be batched
-				// by texture
-				heapsort_r (brush->cluster_surfs + cluster->firstsurface,
-							cluster->numsurfaces, sizeof (uint32_t),
-							cluster_surf_cmp, bsp);
+			brush->cluster_map[0] = 0;
+			for (uint32_t i = 1; i < bsp->models[0].visleafs + 1; i++) {
+				brush->cluster_map[i] = 1;
+			}
+		} else {
+			for (uint32_t i = 0; i < brush->vis_clusters + 1; i++) {
+				brush->leaf_map[i] = (leafmap_t) {
+					.first_leaf = i,
+					.num_leafs = 1,
+				};
+				brush->cluster_map[i] = i;
+
+				auto leaf = brush->leafs + i;
+				brush->cluster_offs[i] = leaf->compressed_vis - brush->visdata;
 			}
 		}
+		auto lm = &brush->leaf_map[brush->vis_clusters + 1];
+		auto cm = &brush->cluster_map[brush->visleafs + 1];
+		for (uint32_t i = 1; i < bsp->nummodels; i++) {
+			*lm = (leafmap_t) {
+				.first_leaf = cm - brush->cluster_map,
+				.num_leafs = bsp->models[i].visleafs,
+			};
+			for (uint32_t j = 0; j < bsp->models[i].visleafs; j++) {
+				*cm++ = lm - brush->leaf_map;
+			}
+			lm++;
+		}
+		cluster_collect_surfs (brush_ctx, head);
 	}
+
 }
 
 void
