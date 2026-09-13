@@ -426,6 +426,9 @@ run_deletion_queue (vulkan_ctx_t *ctx)
 			break;
 		}
 		auto del = PQUEUE_REMOVE (&rctx->deletion_queue);
+		if (del.swapchain) {
+			dfunc->vkDestroySwapchainKHR (device->dev, del.swapchain, 0);
+		}
 		QFV_DestroyResource (device, del.resources);
 		if (del.framebuffer) {
 			dfunc->vkDestroyFramebuffer (device->dev, del.framebuffer, 0);
@@ -605,6 +608,18 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 		sp->inherit.framebuffer = framebuffer;
 	}
 	rp->framebuffer.update_frame = ctx->frameNumber;
+}
+
+void
+QFV_QueueSwapchainDelete (vulkan_ctx_t *ctx, VkSwapchainKHR swapchain)
+{
+	auto rctx = ctx->render_context;
+	uint32_t frames = rctx->frames.size;
+	qfv_delete_t del = {
+		.swapchain = swapchain,
+		.deletion_frame = ctx->frameNumber + frames,
+	};
+	PQUEUE_INSERT (&rctx->deletion_queue, del);
 }
 
 void

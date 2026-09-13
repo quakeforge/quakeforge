@@ -14,6 +14,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/swapchain.h"
 
 #include "vid_vulkan.h"
@@ -134,7 +135,7 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	dfuncs->vkCreateSwapchainKHR (dev, &createInfo, 0, &swapchain);
 
 	if (old_swapchain != swapchain) {
-		dfuncs->vkDestroySwapchainKHR (dev, old_swapchain, 0);
+		QFV_QueueSwapchainDelete (ctx, old_swapchain);
 	}
 
 	dfuncs->vkGetSwapchainImagesKHR (dev, swapchain, &numImages, 0);
