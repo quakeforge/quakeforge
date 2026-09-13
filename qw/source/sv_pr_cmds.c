@@ -505,9 +505,10 @@ PF_newcheckclient (progs_t *pr, int check)
 	vec4f_t     org;
 	VectorAdd (SVvector (ent, origin), SVvector (ent, view_ofs), org);
 	org[3] = 1;
-	leaf = Mod_PointInLeaf (org, sv.worldmodel->brush);
+	auto brush = sv.worldmodel->brush;
+	leaf = brush->leafs + Mod_PointInLeaf (org, brush);
 	if (!checkpvs) {
-		checkpvs = set_new_size (sv.worldmodel->brush->visleafs);
+		checkpvs = set_new_size (brush->visleafs);
 	}
 	Mod_LeafPVS_set (leaf, sv.worldmodel->brush, 0xff, checkpvs);
 
@@ -536,7 +537,6 @@ PF_checkclient (progs_t *pr, void *data)
 {
 	edict_t    *ent, *self;
 	int         l;
-	mleaf_t    *leaf;
 
 	// find a new check if on a new frame
 	if (sv.time - sv.lastchecktime >= 0.1) {
@@ -554,8 +554,7 @@ PF_checkclient (progs_t *pr, void *data)
 	vec4f_t     view;
 	VectorAdd (SVvector (self, origin), SVvector (self, view_ofs), view);
 	view[3] = 1;
-	leaf = Mod_PointInLeaf (view, sv.worldmodel->brush);
-	l = (leaf - sv.worldmodel->brush->leafs) - 1;
+	l = Mod_PointInLeaf (view, sv.worldmodel->brush) - 1;
 	if (!set_is_member (checkpvs, l)) {
 		c_notvis++;
 		RETURN_EDICT (pr, sv.edicts);

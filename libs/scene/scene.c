@@ -282,12 +282,13 @@ static dmodel_t empty_submodel[] = {
 
 static byte empty_visdata[] = { 0x01 };
 
+static uint32_t empty_leaf_offs[] = { ~0, 0 };
+
 static mleaf_t empty_leafs[] = {
 	[1] = {
 		.contents = CONTENTS_EMPTY,
 		.mins = {-INFINITY, -INFINITY, -INFINITY},
 		.maxs = { INFINITY,  INFINITY,  INFINITY},
-		.compressed_vis = empty_visdata,
 		.firstmarksurface = 0,
 		.nummarksurfaces = 1,
 	},
@@ -345,6 +346,7 @@ static mod_brush_t empty_brush = {
 		.numnodes = 1,
 		.nodes = empty_nodes,
 		.leafs = empty_leafs,
+		.leaf_offs = empty_leaf_offs,
 		.numsurfaces = 1,
 		.surfaces = empty_surfs,
 		.nummarksurfaces = 1,

@@ -689,14 +689,15 @@ CL_Frame (void)
 
 	// update audio
 	if (cls.state == ca_active) {
-		mleaf_t    *l;
-		byte       *asl = 0;
+		byte       *asl = nullptr;
 		vec4f_t     origin;
 
 		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
-		l = Mod_PointInLeaf (origin, cl_world.scene->worldmodel->brush);
-		if (l)
-			asl = l->ambient_sound_level;
+		auto brush = cl_world.scene->worldmodel->brush;
+		uint32_t leafnum = Mod_PointInLeaf (origin, brush);
+		if (leafnum != ~0u) {
+			asl = brush->leafs[leafnum].ambient_sound_level;
+		}
 		S_Update (cl.viewstate.camera_transform, asl);
 		Light_DecayLights (cl_world.scene->lights, host_frametime, cl.time);
 	} else

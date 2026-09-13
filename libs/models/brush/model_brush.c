@@ -62,7 +62,7 @@
 #include "compat.h"
 #include "mod_internal.h"
 
-VISIBLE mleaf_t *
+VISIBLE uint32_t
 Mod_PointInLeaf (vec4f_t p, const mod_brush_t *brush)
 {
 	qfZoneScoped (true);
@@ -74,13 +74,13 @@ Mod_PointInLeaf (vec4f_t p, const mod_brush_t *brush)
 	int         node_id = 0;
 	while (1) {
 		if (node_id < 0)
-			return brush->leafs + ~node_id;
+			return ~node_id;
 		mnode_t    *node = brush->nodes + node_id;
 		d = dotf (p, node->plane)[0];
 		node_id = node->children[d < 0];
 	}
 
-	return NULL;						// never reached
+	return ~0u;						// never reached
 }
 
 static inline uint32_t
@@ -191,7 +191,9 @@ Mod_LeafPVS_set (const mleaf_t *leaf, const mod_brush_t *brush, byte defvis,
 		out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 		return;
 	}
-	Mod_DecompressVis_set (leaf->compressed_vis, brush->visleafs, defvis, out);
+	uint32_t offset = brush->leaf_offs[leaf - brush->leafs];
+	auto compressed_vis = brush->visdata + offset;
+	Mod_DecompressVis_set (compressed_vis, brush->visleafs, defvis, out);
 	out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 }
 
@@ -212,7 +214,9 @@ Mod_LeafPVS_mix (const mleaf_t *leaf, const mod_brush_t *brush, byte defvis,
 		out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 		return;
 	}
-	Mod_DecompressVis_mix (leaf->compressed_vis, brush->visleafs, defvis, out);
+	uint32_t offset = brush->leaf_offs[leaf - brush->leafs];
+	auto compressed_vis = brush->visdata + offset;
+	Mod_DecompressVis_mix (compressed_vis, brush->visleafs, defvis, out);
 	out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 }
 
@@ -1148,6 +1152,8 @@ Mod_LoadLeafs (mod_brush_ctx_t *brush_ctx)
 	out = Hunk_AllocName (hunk, count * sizeof (*out), mod->name);
 
 	brush->leafs = out;
+	brush->leaf_offs = Hunk_AllocName (hunk, sizeof(uint32_t[count]),
+									   mod->name);
 	brush->modleafs = count;
 	for (i = 0; i < count; i++, in++, out++) {
 		for (j = 0; j < 3; j++) {
@@ -1161,11 +1167,7 @@ Mod_LoadLeafs (mod_brush_ctx_t *brush_ctx)
 		out->firstmarksurface = in->firstmarksurface;
 		out->nummarksurfaces = in->nummarksurfaces;
 
-		p = in->visofs;
-		if (p == -1)
-			out->compressed_vis = NULL;
-		else
-			out->compressed_vis = brush->visdata + p;
+		brush->leaf_offs[i] = in->visofs;
 
 		for (j = 0; j < 4; j++)
 			out->ambient_sound_level[j] = in->ambient_level[j];
@@ -1510,7 +1512,7 @@ cluster_collect_surfs (mod_brush_ctx_t *brush_ctx, int head)
 			max_surfs = count;
 		}
 	}
-	printf ("added_surfs: %d %d\n", added_surfs, max_surfs);
+	//printf ("added_surfs: %d %d\n", added_surfs, max_surfs);
 
 	size_t size = sizeof (uint32_t[added_surfs])
 				+ sizeof (cluster_t[cluster_count])
@@ -1550,7 +1552,7 @@ cluster_collect_surfs (mod_brush_ctx_t *brush_ctx, int head)
 	for (uint32_t i = 1; i < bsp->nummodels; i++) {
 		brush->cluster_heads[i] = cluster--;
 	}
-	printf ("cluster: %d\n", cluster);
+	//printf ("cluster: %d\n", cluster);
 }
 
 static void
@@ -1624,9 +1626,7 @@ Mod_MakeClusters (mod_brush_ctx_t *brush_ctx)
 					.num_leafs = 1,
 				};
 				brush->cluster_map[i] = i;
-
-				auto leaf = brush->leafs + i;
-				brush->cluster_offs[i] = leaf->compressed_vis - brush->visdata;
+				brush->cluster_offs[i] = brush->leaf_offs[i];
 			}
 		}
 		auto lm = &brush->leaf_map[brush->vis_clusters + 1];

@@ -335,7 +335,8 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs,
 		visstate = brush->visstate;
 		r_refdef.scene->viewleaf = 0;
 		vec4f_t     position = refdef->frame.position;
-		r_refdef.scene->viewleaf = Mod_PointInLeaf (position, brush);
+		uint32_t leafnum = Mod_PointInLeaf (position, brush);
+		r_refdef.scene->viewleaf = brush->leafs + leafnum;
 		r_dowarpold = r_dowarp;
 		if (r_waterwarp) {
 			r_dowarp = r_refdef.scene->viewleaf->contents <= CONTENTS_WATER;

@@ -251,16 +251,16 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 	const auto face_visframes = visstate->face_visframes;
 	const auto vis_frame = visstate->vis_frame;
 	const auto brush = visstate->brush;
-	const auto pvsleaf = Mod_PointInLeaf (lightorigin, brush);
+	uint32_t leaf_ind = Mod_PointInLeaf (lightorigin, brush);
 
-	if (!pvsleaf->compressed_vis) {
+	if (brush->leaf_offs[leaf_ind] == ~0u) {
 		int         node_id = brush->hulls[0].firstclipnode;
 		R_RecursiveMarkLights (brush, lightorigin, light, lightnum, node_id);
 	} else {
 		float       radius = light->radius;
 		vec3_t      mins, maxs;
 		unsigned    leafnum = 0;
-		byte       *in = pvsleaf->compressed_vis;
+		byte       *in = brush->visdata + brush->leaf_offs[leaf_ind];
 		byte        vis_bits;
 
 		mins[0] = lightorigin[0] - radius;

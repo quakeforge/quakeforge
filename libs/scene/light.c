@@ -107,9 +107,9 @@ link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 	uint32_t    leafnum = ~0u;
 	if (light->position[3]) {
 		// positional light
-		mleaf_t    *leaf = Mod_PointInLeaf (light->position, model->brush);
+		leafnum = Mod_PointInLeaf (light->position, model->brush);
+		mleaf_t    *leaf = model->brush->leafs + leafnum;
 		Mod_LeafPVS_set (leaf, model->brush, 0, pvs);
-		leafnum = leaf - model->brush->leafs;
 	} else if (DotProduct (light->axis, light->axis)) {
 		// directional light (sun)
 		pvs = ldata->sun_pvs;

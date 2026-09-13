@@ -193,9 +193,6 @@ typedef struct mleaf_s {
 	float		mins[3];
 	float		maxs[3];
 
-// leaf specific
-	byte		*compressed_vis;
-
 	int         firstmarksurface;
 	int			nummarksurfaces;
 	int			key;			// BSP sequence number for leaf's contents
@@ -252,6 +249,7 @@ typedef struct mod_brush_s {
 	unsigned    modleafs;		///< number of leafs in model, including 0
 	unsigned    visleafs;		///< number of visible leafs, not counting 0
 	mleaf_t    *leafs;
+	uint32_t   *leaf_offs;		///< [leaf] offset into visdata
 
 	unsigned    numvertexes;
 	mvertex_t  *vertexes;
@@ -406,7 +404,7 @@ model_t *Mod_ForName (const char *name, bool crash);
 void Mod_TouchModel (const char *name);
 void Mod_UnloadModel (model_t *model);
 // brush specific
-mleaf_t *Mod_PointInLeaf (vec4f_t p, const mod_brush_t *brush) __attribute__((pure));
+uint32_t Mod_PointInLeaf (vec4f_t p, const mod_brush_t *brush) __attribute__((pure));
 struct set_s;
 void Mod_LeafPVS_set (const mleaf_t *leaf, const mod_brush_t *brush,
 					  byte defvis, struct set_s *pvs);
