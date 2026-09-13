@@ -222,8 +222,8 @@ typedef struct {
 
 typedef struct {
 	// index into array of surface ids
-	uint32_t    firstsurface;
-	uint32_t    numsurfaces;
+	uint32_t    first;
+	uint32_t    count;
 } cluster_t;
 
 typedef struct visstate_s {

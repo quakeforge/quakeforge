@@ -1525,7 +1525,7 @@ cluster_collect_surfs (mod_brush_ctx_t *brush_ctx, int head)
 		set_empty (seen_surfs);
 		auto leafmap = brush->leaf_map[i];
 		auto cluster = &brush->clusters[i];
-		cluster->firstsurface = added_surfs;
+		cluster->first = added_surfs;
 		int count = 0;
 		for (uint32_t j = 0; j < leafmap.num_leafs; j++) {
 			auto leaf = bsp->leafs + leafmap.first_leaf + j;
@@ -1539,12 +1539,11 @@ cluster_collect_surfs (mod_brush_ctx_t *brush_ctx, int head)
 				}
 			}
 		}
-		cluster->numsurfaces = count;
+		cluster->count = count;
 		if (count > 1) {
 			// sort the surface ids by texture so drawing can be batched
-			heapsort_r (brush->cluster_surfs + cluster->firstsurface,
-						count, sizeof (uint32_t), cluster_surf_cmp,
-						bsp);
+			heapsort_r (brush->cluster_surfs + cluster->first, count,
+						sizeof (uint32_t), cluster_surf_cmp, bsp);
 		}
 	}
 	brush->cluster_heads[0] = head;
