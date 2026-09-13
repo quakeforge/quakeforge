@@ -282,6 +282,30 @@ static dmodel_t empty_submodel[] = {
 
 static byte empty_visdata[] = { 0x01 };
 
+static leafmap_t empty_leaf_map[] = {
+	[0] = {
+		.first_leaf = 0,
+		.num_leafs = 1,
+	},
+	[1] = {
+		.first_leaf = 1,
+		.num_leafs = 1,
+	},
+};
+
+static uint32_t empty_cluster_map[] = { 0, 1 };
+
+static uint32_t empty_cluster_surfs[] = { 0 };
+
+static cluster_t empty_clusters[] = {
+	[1] = {
+		.first = 0,
+		.count = 1,
+	},
+};
+
+static int32_t empty_cluster_heads[] = { 0 };
+
 static uint32_t empty_leaf_offs[] = { ~0, 0 };
 
 static mleaf_t empty_leafs[] = {
@@ -352,6 +376,17 @@ static mod_brush_t empty_brush = {
 		.nummarksurfaces = 1,
 		.marksurfaces = empty_marksurfaces,
 		.entities = empty_entities,
+
+		.vis_clusters = 1,
+		.leaf_map = empty_leaf_map,
+		.cluster_map = empty_cluster_map,
+		.cluster_offs = empty_leaf_offs,
+		.cluster_nodes = empty_nodes,
+		.cluster_vis = empty_visdata,
+		.cluster_surfs = empty_cluster_surfs,
+		.clusters = empty_clusters,
+		.cluster_heads = empty_cluster_heads,
+
 		.visdata = empty_visdata,
 		.node_parents = empty_node_parents,
 		.leaf_parents = empty_leaf_parents,
