@@ -132,7 +132,7 @@ link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 	for (auto li = set_first (pvs); li; li = set_next (li)) {
 		mleaf_t    *leaf = brush->leafs + li->element + 1;
 		if (test_light_leaf (light, leaf)) {
-			efrag = R_LinkEfrag (scene, leaf, ent, mod_light, efrag);
+			efrag = R_LinkEfrag (scene, li->element + 1, ent, mod_light, efrag);
 		}
 	}
 	Ent_SetComponent (ent.id, ent.base + scene_efrag, ent.reg, &efrag);
@@ -186,16 +186,17 @@ Light_EnableSun (lightingdata_t *ldata)
 {
 	scene_t    *scene = ldata->scene;
 	auto brush = scene->worldmodel->brush;
+	uint32_t    num_clusters = brush->cluster_vis.count + 1;
 
 	if (!ldata->sun_pvs) {
-		ldata->sun_pvs = set_new_size (brush->cluster_vis.count);
+		ldata->sun_pvs = set_new_size (num_clusters);
 	}
-	set_expand (ldata->sun_pvs, brush->cluster_vis.count);
+	set_expand (ldata->sun_pvs, num_clusters);
 	set_empty (ldata->sun_pvs);
 	// Any leaf with sky surfaces can potentially see the sun, thus put
 	// the sun "in" every leaf with a sky surface
 	// however, skip leaf 0 as it is the exterior solid leaf
-	for (unsigned l = 1; l < brush->modleafs; l++) {
+	for (unsigned l = 1; l < num_clusters; l++) {
 		if (brush->leaf_flags[l] & SURF_DRAWSKY) {
 			set_add (ldata->sun_pvs, l - 1); //pvs is 1-based
 		}
