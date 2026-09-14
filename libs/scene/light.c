@@ -17,11 +17,12 @@
 static void
 expand_pvs (set_t *pvs, mod_brush_t *brush)
 {
-	set_t       base_pvs = SET_STATIC_INIT (brush->visleafs, alloca);
+	auto vis = brush->cluster_vis;
+	set_t       base_pvs = SET_STATIC_INIT (vis.count, alloca);
 	set_assign (&base_pvs, pvs);
-	for (unsigned i = 0; i < brush->visleafs; i++) {
+	for (unsigned i = 0; i < vis.count; i++) {
 		if (set_is_member (&base_pvs, i)) {
-			Mod_LeafPVS_mix (brush->leafs + i + 1, brush, 0, pvs);
+			Mod_LeafPVS_mix (brush->cluster_offs[i], &vis, 0, pvs);
 		}
 	}
 }
@@ -100,25 +101,25 @@ link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 {
 	qfZoneScoped (true);
 	scene_t    *scene = ldata->scene;
-	model_t    *model = scene->worldmodel;
-
-	set_t       _pvs = SET_STATIC_INIT (model->brush->visleafs, alloca);
+	auto brush = scene->worldmodel->brush;
+	auto vis = brush->cluster_vis;
+	set_t       _pvs = SET_STATIC_INIT (vis.count, alloca);
 	set_t      *pvs = &_pvs;
-	uint32_t    leafnum = ~0u;
+	uint32_t    clusternum = ~0u;
 	if (light->position[3]) {
 		// positional light
-		leafnum = Mod_PointInLeaf (light->position, model->brush);
-		mleaf_t    *leaf = model->brush->leafs + leafnum;
-		Mod_LeafPVS_set (leaf, model->brush, 0, pvs);
+		uint32_t leafnum = Mod_PointInLeaf (light->position, brush);
+		clusternum = brush->cluster_map[leafnum];
+		Mod_LeafPVS_set (brush->cluster_offs[clusternum], &vis, 0, pvs);
 	} else if (DotProduct (light->axis, light->axis)) {
 		// directional light (sun)
 		pvs = ldata->sun_pvs;
-		leafnum = 0;
+		clusternum = 0;
 	} else {
 		// ambient light
-		Mod_LeafPVS_set (model->brush->leafs, model->brush, 0xff, pvs);
+		Mod_LeafPVS_set (~0u, &vis, 0xff, pvs);
 	}
-	Ent_SetComponent (ent.id, ent.base + scene_lightleaf, ent.reg, &leafnum);
+	Ent_SetComponent (ent.id, ent.base + scene_lightleaf, ent.reg, &clusternum);
 
 	//FIXME this costs about 8us on demo1 test_light_leaf itself is cheap
 	//enough per call, but at around 200 tests, that adds up. There might
@@ -129,7 +130,7 @@ link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 	}
 	uint32_t efrag = nullent;
 	for (auto li = set_first (pvs); li; li = set_next (li)) {
-		mleaf_t    *leaf = model->brush->leafs + li->element + 1;
+		mleaf_t    *leaf = brush->leafs + li->element + 1;
 		if (test_light_leaf (light, leaf)) {
 			efrag = R_LinkEfrag (scene, leaf, ent, mod_light, efrag);
 		}
@@ -187,9 +188,9 @@ Light_EnableSun (lightingdata_t *ldata)
 	auto brush = scene->worldmodel->brush;
 
 	if (!ldata->sun_pvs) {
-		ldata->sun_pvs = set_new_size (brush->visleafs);
+		ldata->sun_pvs = set_new_size (brush->cluster_vis.count);
 	}
-	set_expand (ldata->sun_pvs, brush->visleafs);
+	set_expand (ldata->sun_pvs, brush->cluster_vis.count);
 	set_empty (ldata->sun_pvs);
 	// Any leaf with sky surfaces can potentially see the sun, thus put
 	// the sun "in" every leaf with a sky surface

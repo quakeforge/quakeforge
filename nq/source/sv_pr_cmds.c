@@ -542,7 +542,6 @@ PF_newcheckclient (progs_t *pr, unsigned check)
 {
 	edict_t    *ent;
 	unsigned    i;
-	mleaf_t    *leaf;
 
 	// cycle to the next one
 	if (check < 1)
@@ -580,11 +579,12 @@ PF_newcheckclient (progs_t *pr, unsigned check)
 	VectorAdd (SVvector (ent, origin), SVvector (ent, view_ofs), org);
 	org[3] = 1;
 	auto brush = sv.worldmodel->brush;
-	leaf = brush->leafs + Mod_PointInLeaf (org, brush);
+	uint32_t    leafnum = Mod_PointInLeaf (org, brush);
 	if (!checkpvs) {
-		checkpvs = set_new_size (brush->visleafs);
+		checkpvs = set_new_size (brush->leaf_vis.count);
 	}
-	Mod_LeafPVS_set (leaf, brush, 0xff, checkpvs);
+	uint32_t    vis_offset = brush->leaf_offs[leafnum];
+	Mod_LeafPVS_set (vis_offset, &brush->leaf_vis, 0xff, checkpvs);
 
 	return i;
 }

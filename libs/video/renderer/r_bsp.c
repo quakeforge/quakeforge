@@ -83,7 +83,7 @@ R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
 {
 	qfZoneScoped (true);
 	auto brush = visstate->brush;
-	set_t        vis = SET_STATIC_INIT (brush->visleafs, alloca);
+	set_t        vis = SET_STATIC_INIT (brush->leaf_vis.count, alloca);
 
 	if (visstate->viewleaf == viewleaf && !r_novis)
 		return;
@@ -98,7 +98,8 @@ R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
 		// force use of default vis (full visibility)
 		viewleaf = brush->leafs;
 	}
-	Mod_LeafPVS_set (viewleaf, brush, 0xff, &vis);
+	uint32_t vis_offset = brush->leaf_offs[viewleaf - brush->leafs];
+	Mod_LeafPVS_set (vis_offset, &brush->leaf_vis, 0xff, &vis);
 	R_MarkLeavesPVS (visstate, &vis);
 }
 

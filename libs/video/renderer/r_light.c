@@ -260,7 +260,7 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 		float       radius = light->radius;
 		vec3_t      mins, maxs;
 		unsigned    leafnum = 0;
-		byte       *in = brush->visdata + brush->leaf_offs[leaf_ind];
+		byte       *in = brush->leaf_vis.data + brush->leaf_offs[leaf_ind];
 		byte        vis_bits;
 
 		mins[0] = lightorigin[0] - radius;
@@ -269,13 +269,13 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 		maxs[0] = lightorigin[0] + radius;
 		maxs[1] = lightorigin[1] + radius;
 		maxs[2] = lightorigin[2] + radius;
-		while (leafnum < brush->visleafs) {
+		while (leafnum < brush->leaf_vis.count) {
 			int         b;
 			if (!(vis_bits = *in++)) {
 				leafnum += (*in++) * 8;
 				continue;
 			}
-			for (b = 1; b < 256 && leafnum < brush->visleafs;
+			for (b = 1; b < 256 && leafnum < brush->leaf_vis.count;
 				 b <<= 1, leafnum++) {
 				int      m;
 				mleaf_t *leaf  = &brush->leafs[leafnum + 1];

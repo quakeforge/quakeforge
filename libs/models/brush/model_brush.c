@@ -178,35 +178,32 @@ Mod_DecompressVis_mix (const byte *in, uint32_t num_vis, byte defvis,
 }
 
 VISIBLE void
-Mod_LeafPVS_set (const mleaf_t *leaf, const mod_brush_t *brush, byte defvis,
+Mod_LeafPVS_set (uint32_t vis_offset, const visdata_t *vis, byte defvis,
 				 set_t *out)
 {
 	qfZoneScoped (true);
-	unsigned    numvis = brush->visleafs;
-	unsigned    excess = SET_SIZE (numvis) - numvis;
+	unsigned    excess = SET_SIZE (vis->count) - vis->count;
 
-	set_expand (out, numvis);
-	if (leaf == brush->leafs) {
+	set_expand (out, vis->count);
+	if (vis_offset == ~0u) {
 		memset (out->map, defvis, SET_WORDS (out) * sizeof (*out->map));
 		out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 		return;
 	}
-	uint32_t offset = brush->leaf_offs[leaf - brush->leafs];
-	auto compressed_vis = brush->visdata + offset;
-	Mod_DecompressVis_set (compressed_vis, brush->visleafs, defvis, out);
+	auto compressed_vis = vis->data + vis_offset;
+	Mod_DecompressVis_set (compressed_vis, vis->count, defvis, out);
 	out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 }
 
 VISIBLE void
-Mod_LeafPVS_mix (const mleaf_t *leaf, const mod_brush_t *brush, byte defvis,
+Mod_LeafPVS_mix (uint32_t vis_offset, const visdata_t *vis, byte defvis,
 				 set_t *out)
 {
 	qfZoneScoped (true);
-	unsigned    numvis = brush->visleafs;
-	unsigned    excess = SET_SIZE (numvis) - numvis;
+	unsigned    excess = SET_SIZE (vis->count) - vis->count;
 
-	set_expand (out, numvis);
-	if (leaf == brush->leafs) {
+	set_expand (out, vis->count);
+	if (vis_offset == ~0u) {
 		byte       *o = (byte *) out->map;
 		for (int i = SET_WORDS (out) * sizeof (*out->map); i-- > 0; ) {
 			*o++ |= defvis;
@@ -214,9 +211,8 @@ Mod_LeafPVS_mix (const mleaf_t *leaf, const mod_brush_t *brush, byte defvis,
 		out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 		return;
 	}
-	uint32_t offset = brush->leaf_offs[leaf - brush->leafs];
-	auto compressed_vis = brush->visdata + offset;
-	Mod_DecompressVis_mix (compressed_vis, brush->visleafs, defvis, out);
+	auto compressed_vis = vis->data + vis_offset;
+	Mod_DecompressVis_mix (compressed_vis, vis->count, defvis, out);
 	out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 }
 
@@ -463,7 +459,7 @@ cluster_vis_task (task_t *task, int worker_id)
 		return;
 	}
 	byte *visdata = bsp->visdata + leaf->visofs;
-	Mod_DecompressVis_set (visdata, brush->visleafs, 0xff, vis);
+	Mod_DecompressVis_set (visdata, brush->leaf_vis.count, 0xff, vis);
 
 	set_empty (&base_pvs[i]);
 	for (auto iter = set_first_r (set_pool, vis); iter;
@@ -514,12 +510,15 @@ Mod_LoadVisibility (mod_brush_ctx_t *brush_ctx)
 	auto brush = brush_ctx->brush;
 	auto hunk = brush_ctx->hunk;
 	if (!bsp->visdatasize) {
-		brush->visdata = NULL;
+		brush->leaf_vis = (visdata_t) {};
+		brush->cluster_vis = (visdata_t) {};
 		return;
 	}
-	brush->visleafs = bsp->models[0].visleafs;
-	brush->visdata = Hunk_AllocName (hunk, bsp->visdatasize, mod->name);
-	memcpy (brush->visdata, bsp->visdata, bsp->visdatasize);
+	brush->leaf_vis = (visdata_t) {
+		.data = Hunk_AllocName (hunk, bsp->visdatasize, mod->name),
+		.count = bsp->models[0].visleafs,
+	};
+	memcpy (brush->leaf_vis.data, bsp->visdata, bsp->visdatasize);
 
 	int64_t start = Sys_LongTime ();
 
@@ -603,8 +602,10 @@ Mod_LoadVisibility (mod_brush_ctx_t *brush_ctx)
 	}
 
 	// vis_clusters does not include solid cluster
-	brush->vis_clusters = num_clusters - 1;
-	uint32_t cluster_visbytes = (brush->vis_clusters + 7) / 8;
+	brush->cluster_vis = (visdata_t) {
+		.count = num_clusters - 1,
+	};
+	uint32_t cluster_visbytes = (brush->cluster_vis.count + 7) / 8;
 	uint32_t leaf_visbytes = (num_leafs + 7) / 8;
 	int num_workers = wssched_worker_count (brush_ctx->sched);
 	cluster_visbytes = (cluster_visbytes * 3) / 2 + 1;
@@ -680,10 +681,10 @@ Mod_LoadVisibility (mod_brush_ctx_t *brush_ctx)
 		total_bytes += vis_rows[i];
 	}
 
-	brush->cluster_vis = Hunk_AllocName (hunk, total_bytes, mod->name);
+	brush->cluster_vis.data = Hunk_AllocName (hunk, total_bytes, mod->name);
 	uint32_t offset = 0;
 	for (uint32_t i = 0; i < num_clusters; i++) {
-		memcpy (brush->cluster_vis + offset, base_pvs[i].map, vis_rows[i]);
+		memcpy (brush->cluster_vis.data + offset, base_pvs[i].map, vis_rows[i]);
 		brush->cluster_offs[i] = offset;
 		offset += vis_rows[i];
 	}
@@ -1491,7 +1492,7 @@ cluster_collect_surfs (mod_brush_ctx_t *brush_ctx, int head)
 	SET_DEFER_SIZE (seen_surfs, brush->nummarksurfaces);
 	int added_surfs = 0;
 	int max_surfs = 0;
-	uint32_t cluster_count = brush->vis_clusters + bsp->nummodels;
+	uint32_t cluster_count = brush->cluster_vis.count + bsp->nummodels;
 	for (uint32_t i = 0; i < cluster_count; i++) {
 		set_empty (seen_surfs);
 		auto leafmap = brush->leaf_map[i];
@@ -1547,7 +1548,7 @@ cluster_collect_surfs (mod_brush_ctx_t *brush_ctx, int head)
 		}
 	}
 	brush->cluster_heads[0] = head;
-	int cluster = -brush->vis_clusters;
+	int cluster = -brush->cluster_vis.count;
 	for (uint32_t i = 1; i < bsp->nummodels; i++) {
 		brush->cluster_heads[i] = cluster--;
 	}
@@ -1583,19 +1584,20 @@ Mod_MakeClusters (mod_brush_ctx_t *brush_ctx)
 		cluster_collect_surfs (brush_ctx, 0);
 	} else {
 		int head = 0;
-		bool single = !brush->visdata || brush->visleafs < 64;
+		bool single = !brush->leaf_vis.data || brush->leaf_vis.count < 64;
 		if (single) {
 			head = -1;
-			brush->vis_clusters = 1;
+			brush->cluster_vis = (visdata_t) {
+				.count = 1,
+			};
 		} else {
-			brush->vis_clusters = brush->visleafs;
 			brush->cluster_nodes = brush->nodes;
 			brush->cluster_depth = brush->depth;
-			brush->cluster_vis = brush->visdata;
+			brush->cluster_vis = brush->leaf_vis;
 		}
 
-		int cluster_count = brush->vis_clusters + bsp->nummodels;
-		int leaf_count = brush->visleafs + 1;
+		int cluster_count = brush->cluster_vis.count + bsp->nummodels;
+		int leaf_count = brush->cluster_vis.count + 1;
 		for (uint32_t i = 1; i < bsp->nummodels; i++) {
 			leaf_count += bsp->models[i].visleafs;
 		}
@@ -1619,7 +1621,7 @@ Mod_MakeClusters (mod_brush_ctx_t *brush_ctx)
 				brush->cluster_map[i] = 1;
 			}
 		} else {
-			for (uint32_t i = 0; i < brush->vis_clusters + 1; i++) {
+			for (uint32_t i = 0; i < brush->cluster_vis.count + 1; i++) {
 				brush->leaf_map[i] = (leafmap_t) {
 					.first_leaf = i,
 					.num_leafs = 1,
@@ -1628,8 +1630,8 @@ Mod_MakeClusters (mod_brush_ctx_t *brush_ctx)
 				brush->cluster_offs[i] = brush->leaf_offs[i];
 			}
 		}
-		auto lm = &brush->leaf_map[brush->vis_clusters + 1];
-		auto cm = &brush->cluster_map[brush->visleafs + 1];
+		auto lm = &brush->leaf_map[brush->cluster_vis.count + 1];
+		auto cm = &brush->cluster_map[brush->leaf_vis.count + 1];
 		for (uint32_t i = 1; i < bsp->nummodels; i++) {
 			*lm = (leafmap_t) {
 				.first_leaf = cm - brush->cluster_map,
@@ -1739,7 +1741,7 @@ Mod_LoadBrushModel (model_t *mod, void *buffer, wssched_t *sched,
 
 		m->radius = RadiusFromBounds (m->mins, m->maxs);
 
-		m->brush->visleafs = bm->visleafs;
+		m->brush->leaf_vis.count = bm->visleafs;
 		// The bsp file has leafs for all submodes and hulls, so update the
 		// leaf count for this model to be the correct number (which is one
 		// more than the number of visible leafs)

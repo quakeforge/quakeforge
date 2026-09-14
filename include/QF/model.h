@@ -235,6 +235,11 @@ typedef struct visstate_s {
 	const struct mod_brush_s *brush;
 } visstate_t;
 
+typedef struct visdata_s {
+	byte       *data;
+	uint32_t    count;			///< number of visible ares, not counting 0
+} visdata_t;
+
 typedef struct mod_brush_s {
 	unsigned    firstface;		///< index into main model's face list
 	unsigned    numfaces;
@@ -247,7 +252,6 @@ typedef struct mod_brush_s {
 	plane_t    *planes;
 
 	unsigned    modleafs;		///< number of leafs in model, including 0
-	unsigned    visleafs;		///< number of visible leafs, not counting 0
 	mleaf_t    *leafs;
 	uint32_t   *leaf_offs;		///< [leaf] offset into visdata
 
@@ -283,20 +287,19 @@ typedef struct mod_brush_s {
 	texture_t **textures;
 	texture_t  *skytexture;
 
-	uint32_t    vis_clusters;	///< number of visible clusters, not counting 0
 	leafmap_t  *leaf_map;		///< [cluster] leaf nodes in cluster
 	uint32_t   *cluster_map;	///< [leaf]    cluster containing leaf
 	uint32_t   *cluster_offs;	///< [cluster] offset into cluster_vis
 	mnode_t    *cluster_nodes;	///< [node]    node tree for clusters
 	int         cluster_depth;	///< maximum depth of cluster node tree
-	byte       *cluster_vis;	///< cluster based PVS (compressed)
 	uint32_t   *cluster_surfs;	///< indices of surfs on cluster
 	cluster_t  *clusters;		///< [cluster] cluster(leaf) nodes
 	int32_t    *cluster_heads;	///< [model] first node of submodel or
 								///< cluster if negative
 
 	int         lightmap_bytes;
-	byte       *visdata;
+	visdata_t   leaf_vis;
+	visdata_t   cluster_vis;
 	byte       *lightdata;
 	char       *entities;	//FIXME should not be here
 
@@ -406,9 +409,9 @@ void Mod_UnloadModel (model_t *model);
 // brush specific
 uint32_t Mod_PointInLeaf (vec4f_t p, const mod_brush_t *brush) __attribute__((pure));
 struct set_s;
-void Mod_LeafPVS_set (const mleaf_t *leaf, const mod_brush_t *brush,
+void Mod_LeafPVS_set (uint32_t vis_offset, const visdata_t *vis,
 					  byte defvis, struct set_s *pvs);
-void Mod_LeafPVS_mix (const mleaf_t *leaf, const mod_brush_t *brush,
+void Mod_LeafPVS_mix (uint32_t vis_offset, const visdata_t *vis,
 					  byte defvis, struct set_s *pvs);
 
 void Mod_Print (void);

@@ -261,7 +261,8 @@ SV_CalcPHS (void)
 	sv.pvs = sv_alloc_vis_array (num);
 	vcount = 0;
 	for (i = 0; i < num; i++) {
-		Mod_LeafPVS_set (brush->leafs + i, brush, 0xff, &sv.pvs[i]);
+		Mod_LeafPVS_set (brush->leaf_offs[i], &brush->leaf_vis,
+						 0xff, &sv.pvs[i]);
 		if (i == 0)
 			continue;
 		vcount += set_count (&sv.pvs[i]);
