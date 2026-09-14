@@ -111,7 +111,8 @@ typedef struct {
 	mat4f_t     camera_inverse;
 
 	int			ambientlight;
-	int			drawflat;
+	bool		drawflat;
+	bool        no_mark_leaves;
 
 	struct memhunk_s *hunk;
 	struct scene_s *scene;

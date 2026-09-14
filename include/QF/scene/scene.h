@@ -90,8 +90,9 @@ typedef struct scene_s {
 	entqueue_t *ent_queue;
 	efrag_db_t *efrag_db;
 	model_t    *worldmodel;
-	int         num_models;
 	model_t   **models;
+	int         num_models;
+	uint32_t    view_leafnum;
 	struct mleaf_s *viewleaf;
 	struct lightingdata_s *lights;
 

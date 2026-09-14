@@ -808,6 +808,7 @@ vulkan_vid_render_init (void)
 
 	vr_funcs = &vulkan_vid_render_funcs;
 	m_funcs = &model_funcs;
+	r_refdef.no_mark_leaves = true;
 }
 
 static void

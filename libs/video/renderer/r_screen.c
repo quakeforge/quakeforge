@@ -336,12 +336,15 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs,
 		r_refdef.scene->viewleaf = 0;
 		vec4f_t     position = refdef->frame.position;
 		uint32_t leafnum = Mod_PointInLeaf (position, brush);
+		r_refdef.scene->view_leafnum = leafnum;
 		r_refdef.scene->viewleaf = brush->leafs + leafnum;
 		r_dowarpold = r_dowarp;
 		if (r_waterwarp) {
 			r_dowarp = r_refdef.scene->viewleaf->contents <= CONTENTS_WATER;
 		}
-		R_MarkLeaves (visstate, r_refdef.scene->viewleaf);
+		if (!r_refdef.no_mark_leaves) {
+			R_MarkLeaves (visstate, r_refdef.scene->viewleaf);
+		}
 	}
 	r_framecount++;
 	if (r_refdef.scene) {
