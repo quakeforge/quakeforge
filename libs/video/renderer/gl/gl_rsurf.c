@@ -582,10 +582,10 @@ gl_R_DrawBrushModel (entity_t e)
 // WORLD MODEL ================================================================
 
 static inline void
-visit_leaf (mleaf_t *leaf)
+visit_leaf (uint32_t leafnum)
 {
 	// deal with model fragments in this leaf
-	R_StoreEfrags (r_refdef.scene, leaf);
+	R_StoreEfrags (r_refdef.scene, leafnum);
 }
 
 static inline int
@@ -671,7 +671,7 @@ R_VisitWorldNodes (glbspctx_t *bctx)
 			if (front < 0) {
 				mleaf_t    *leaf = bctx->brush->leafs + ~front;
 				if (leaf->contents != CONTENTS_SOLID) {
-					visit_leaf (leaf);
+					visit_leaf (~front);
 				}
 			}
 			visit_node (bctx, node, side);
@@ -680,7 +680,7 @@ R_VisitWorldNodes (glbspctx_t *bctx)
 		if (node_id < 0) {
 			mleaf_t    *leaf = bctx->brush->leafs + ~node_id;
 			if (leaf->contents != CONTENTS_SOLID) {
-				visit_leaf (leaf);
+				visit_leaf (~node_id);
 			}
 		}
 		if (node_ptr != node_stack) {

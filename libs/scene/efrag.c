@@ -311,12 +311,11 @@ R_AddEfrags (scene_t *scene, entity_t ent)
 }
 
 void
-R_StoreEfrags (scene_t *scene, mleaf_t *leaf)
+R_StoreEfrags (scene_t *scene, uint32_t cluster_num)
 {
 	qfZoneScoped (true);
-	uint32_t cluster = leaf - scene->worldmodel->brush->leafs;
 	auto db = scene->efrag_db;
-	auto frags = &db->clusters[cluster];
+	auto frags = &db->clusters[cluster_num];
 	for (uint32_t i = 0; i < frags->num_efrags; i++) {
 		auto efrag = &frags->efrags[i];
 		entity_t    ent = {
