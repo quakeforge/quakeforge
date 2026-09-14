@@ -61,9 +61,15 @@ typedef struct bsp_face_s {
  * Used for rendering non-world models.
  */
 typedef struct bsp_model_s {
-	uint32_t    first_face;
-	uint32_t    face_count;
+	uint32_t    first_cluster;
+	uint32_t    cluster_count;
 } bsp_model_t;
+
+typedef struct bsp_cluster_s {
+	uint32_t    first_index;
+	uint32_t    index_count;
+	uint32_t    tex_id;
+} bsp_cluster_t;
 
 #if 0
 typedef struct texname_s {
@@ -332,12 +338,10 @@ typedef enum {
 } QFV_BspPass;
 
 typedef struct bspframe_s {
-	uint32_t   *index_data;		// pointer into mega-buffer for this frame (c)
-	uint32_t    index_offset;	// offset of index_data within mega-buffer (c)
-	uint32_t    index_count;	// number if indices queued (d)
 	uint32_t   *entid_data;
 	uint32_t    entid_offset;
 	uint32_t    entid_count;
+	uint32_t    queue;
 } bspframe_t;
 
 typedef struct bspframeset_s
@@ -358,11 +362,7 @@ typedef struct bspctx_s {
 
 	unsigned    max_edges;
 	int         num_models;			///< number of loaded brush models
-	uint32_t    num_faces;
 	bsp_model_t *models;			///< all loaded brush models
-	bsp_face_t *faces;				///< all faces from all loaded brush models
-	msurface_t **surfaces;			///< all faces from all loaded brush models
-	uint32_t   *poly_indices;	///< face indices from all loaded brush models
 
 	regtexset_t registered_textures;///< textures for all loaded brush models
 	texdata_t   texdata;			///< texture animation data
@@ -395,8 +395,18 @@ typedef struct bspctx_s {
 	struct qfv_resource_s *bsp_resource;
 	size_t       vertex_buffer_size;
 	size_t       index_buffer_size;
+	size_t       command_buffer_size;
+	size_t       subcluster_buffer_size;
+	size_t       cluster_buffer_size;
+	size_t       clustermap_buffer_size;
+	size_t       queue_buffer_size;
 	VkBuffer     vertex_buffer;
 	VkBuffer     index_buffer;
+	VkBuffer     command_buffer;
+	VkBuffer     subcluster_buffer;
+	VkBuffer     cluster_buffer;
+	VkBuffer     clustermap_buffer;
+	VkBuffer     queue_buffer;
 	VkBuffer     entid_buffer;
 	uint32_t    *index_data;
 	uint32_t    *entid_data;
