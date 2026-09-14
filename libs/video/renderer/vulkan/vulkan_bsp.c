@@ -1188,6 +1188,22 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	if (pass->entqueue) {
 		EntQueue_Clear (pass->entqueue);
 	}
+	if (!pass->brush) {
+		return;
+	}
+	auto brush = pass->brush;
+
+	//FIXME r_refdef ref. scene from taskctx?
+	auto scene = r_refdef.scene;
+	uint32_t view_leafnum = scene->view_leafnum;
+	uint32_t cluster_num = brush->cluster_map[view_leafnum];
+
+	set_t pvs = SET_STATIC_INIT (brush->cluster_vis.count, alloca);
+	Mod_LeafPVS_set (brush->cluster_offs[cluster_num], &brush->cluster_vis,
+					 0, &pvs);
+	for (auto c = set_first (&pvs); c; c = set_next (c)) {
+		R_StoreEfrags (scene, c->element);
+	}
 }
 
 static void
