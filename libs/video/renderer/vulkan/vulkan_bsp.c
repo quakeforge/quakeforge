@@ -594,6 +594,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	bspctx_t   *bctx = ctx->bsp_context;
 	visstate_t *visstate = nullptr;
 
+	shutdown_pass_instances (&bctx->main_pass, bctx);
+	shutdown_pass_instances (&bctx->shadow_pass, bctx);
+	shutdown_pass_instances (&bctx->debug_pass, bctx);
+
 	bctx->num_models = 0;
 	for (int i = 0; i < num_models; i++) {
 		model_t    *m = models[i];
@@ -612,10 +616,6 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	uint32_t num_tex = bctx->registered_textures.size;
 	uint32_t tex_clusters[num_tex] = {};
-
-	shutdown_pass_instances (&bctx->main_pass, bctx);
-	shutdown_pass_instances (&bctx->shadow_pass, bctx);
-	shutdown_pass_instances (&bctx->debug_pass, bctx);
 
 	buildctx_t build = {
 		.bctx = bctx,
