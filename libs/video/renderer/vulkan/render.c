@@ -323,7 +323,8 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 	auto dfunc = device->funcs;
 	auto rctx = ctx->render_context;
 	auto frame = &rctx->frames.a[ctx->curFrame];
-	qftVkScopedZone (frame->qftVkCtx, cmd, "compute");
+	qftVkScopedZoneTransientC (frame->qftVkCtx, cmd,
+							   pipeline->label.name, pipeline->label.color32);
 	dfunc->vkCmdBindPipeline (cmd, pipeline->bindPoint, pipeline->pipeline);
 
 	qfv_taskctx_t tctx = *taskctx;
