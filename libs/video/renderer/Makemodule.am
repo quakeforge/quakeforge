@@ -305,6 +305,8 @@ quakebspv_c = $(vkshaderpath)/quakebsp.vert.spv
 quakebspf_src = $(vkshaderpath)/quakebsp.frag
 quakebspf_c = $(vkshaderpath)/quakebsp.frag.spv
 
+bsp_src = $(vkshaderpath)/bsp.r
+bsp_c = $(vkshaderpath)/bsp.r.spv
 bsp_depth_src = $(vkshaderpath)/bsp_depth.vert
 bsp_depth_c = $(vkshaderpath)/bsp_depth.vert.spv
 bsp_gbufv_src = $(vkshaderpath)/bsp_gbuf.vert
@@ -416,6 +418,8 @@ $(quakebspv_c): $(quakebspv_src) $(entity_h) $(matrices_h)
 
 $(quakebspf_c): $(quakebspf_src) $(fog_h)
 
+$(bsp_c): $(bsp_src)
+
 $(bsp_depth_c): $(bsp_depth_src) $(entity_h) $(matrices_h)
 
 $(bsp_gbufv_c): $(bsp_gbufv_src) $(entity_h) $(matrices_h)
@@ -495,6 +499,7 @@ vkshader_src_vert = \
 	$(sprite_depthv_src) \
 	$(twodv_src) \
 	$(quakebspv_src) \
+	$(bsp_src) \
 	$(bsp_depth_src) \
 	$(bsp_gbufv_src) \
 	$(bsp_shadow_src) \

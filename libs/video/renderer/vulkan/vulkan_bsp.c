@@ -78,6 +78,8 @@
 #define SKYBOX_SET 4
 #define SKYMAP_SET 5
 #define LIGHTMAP_SET 4
+//FIXME share
+#define workgoup_size 512
 
 static void
 add_texture (texture_t *tx, vulkan_ctx_t *ctx)
@@ -601,13 +603,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	// count sub-clusters, vertices and indices
 	model_loop (models, num_models, ctx, model_scan_surfaces, &build);
 
-	uint32_t sum = 0;
-	for (uint32_t i = 1; i < num_tex; i++) {
-		uint32_t temp = tex_clusters[i];
-		tex_clusters[i] = sum;
-		sum += temp;
-	}
-
+	free (bctx->command_offsets);
+	free (bctx->command_counts);
 	free (bctx->models);
 	uint32_t mod_clusters = build.mod_cluster_count;
 	uint32_t num_clusters = build.sub_cluster_count;
@@ -630,6 +627,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	}
 	size_t index_buffer_size = sizeof (uint32_t[index_count]);
 	size_t vertex_buffer_size = sizeof (bspvert_t[vertex_count]);
+	size_t command_counts_buffer_size = sizeof (uint32_t[num_tex]);
+	size_t command_offsets_buffer_size = sizeof (tex_clusters);
 	size_t command_buffer_size
 		= sizeof (VkDrawIndexedIndirectCommand[num_clusters]);
 	size_t subcluster_buffer_size = sizeof (bsp_cluster_t[num_clusters]);
@@ -637,8 +636,28 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t clustermap_buffer_size = sizeof (uint32_t[num_clusters]);
 	size_t queue_buffer_size = sizeof (uint32_t[num_clusters]);
 
+	bctx->command_offsets = malloc (command_offsets_buffer_size);
+	bctx->command_counts = malloc (command_offsets_buffer_size);
+
+	memcpy (bctx->command_counts, tex_clusters, sizeof (tex_clusters));
+	uint32_t sum = 0;
+	auto pass = &bctx->main_pass;
+	DARRAY_APPEND (&pass->draw_queues[QFV_bspSolid],
+					(bsp_draw_t) { .tex_id = 0 });
+	for (uint32_t i = 1; i < num_tex; i++) {
+		//FIXME this is broken
+		DARRAY_APPEND (&pass->draw_queues[QFV_bspSolid],
+						(bsp_draw_t) { .tex_id = i });
+		uint32_t temp = tex_clusters[i];
+		tex_clusters[i] = sum;
+		sum += temp;
+	}
+	memcpy (bctx->command_offsets, tex_clusters, sizeof (tex_clusters));
+
 	if (index_buffer_size > bctx->index_buffer_size
 		|| vertex_buffer_size > bctx->vertex_buffer_size
+		|| command_counts_buffer_size > bctx->command_counts_buffer_size
+		|| command_offsets_buffer_size > bctx->command_offsets_buffer_size
 		|| command_buffer_size > bctx->command_buffer_size
 		|| subcluster_buffer_size > bctx->subcluster_buffer_size
 		|| cluster_buffer_size > bctx->cluster_buffer_size
@@ -649,6 +668,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			size_t size = sizeof (qfv_resource_t)
 						+ sizeof (qfv_resobj_t[1])	// vertices
 						+ sizeof (qfv_resobj_t[1])	// indices
+						+ sizeof (qfv_resobj_t[1]) 	// command countss
+						+ sizeof (qfv_resobj_t[1]) 	// command offsets
 						+ sizeof (qfv_resobj_t[1]) 	// draw commands
 						+ sizeof (qfv_resobj_t[1])	// subclusters
 						+ sizeof (qfv_resobj_t[1])	// clusters
@@ -658,7 +679,9 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		}
 		auto vertices = (qfv_resobj_t *) &bctx->bsp_resource[1];
 		auto indices = (qfv_resobj_t *) &vertices[1];
-		auto commands = (qfv_resobj_t *) &indices[1];
+		auto command_counts = (qfv_resobj_t *) &indices[1];
+		auto command_offsets = (qfv_resobj_t *) &command_counts[1];
+		auto commands = (qfv_resobj_t *) &command_offsets[1];
 		auto subclusters = (qfv_resobj_t *) &commands[1];
 		auto clusters = (qfv_resobj_t *) &subclusters[1];
 		auto clustermap = (qfv_resobj_t *) &clusters[1];
@@ -668,7 +691,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.name = "bsp",
 			.va_ctx = ctx->va_ctx,
 			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			.num_objects = 7,
+			.num_objects = 9,
 			.objects = vertices,
 		};
 		*vertices = (qfv_resobj_t) {
@@ -689,13 +712,34 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						| VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 			},
 		};
+		*command_counts = (qfv_resobj_t) {
+			.name = "command_counts",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = command_counts_buffer_size,
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+						| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
+						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+			},
+		};
+		*command_offsets = (qfv_resobj_t) {
+			.name = "command_offsets",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = command_offsets_buffer_size,
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+						| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
+						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+			},
+		};
 		*commands = (qfv_resobj_t) {
 			.name = "command",
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = command_buffer_size,
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-						| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+						| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
+						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
 		*subclusters = (qfv_resobj_t) {
@@ -704,7 +748,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.buffer = {
 				.size = subcluster_buffer_size,
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
 		*clusters = (qfv_resobj_t) {
@@ -713,7 +758,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.buffer = {
 				.size = cluster_buffer_size,
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
 		*clustermap = (qfv_resobj_t) {
@@ -722,7 +768,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.buffer = {
 				.size = clustermap_buffer_size,
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
 		size_t frames = bctx->frames.size;
@@ -732,41 +779,60 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.buffer = {
 				.size = queue_buffer_size * frames,
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
 		QFV_CreateResource (ctx->device, bctx->bsp_resource);
 
 		bctx->vertex_buffer_size = vertex_buffer_size;
 		bctx->index_buffer_size = index_buffer_size;
+		bctx->command_counts_buffer_size = command_counts_buffer_size;
+		bctx->command_offsets_buffer_size = command_offsets_buffer_size;
 		bctx->command_buffer_size = command_buffer_size;
 		bctx->subcluster_buffer_size = subcluster_buffer_size;
 		bctx->cluster_buffer_size = cluster_buffer_size;
 		bctx->clustermap_buffer_size = clustermap_buffer_size;
+
 		bctx->vertex_buffer = vertices->buffer.buffer;
 		bctx->index_buffer = indices->buffer.buffer;
+		bctx->command_counts_buffer = command_counts->buffer.buffer;
+		bctx->command_offsets_buffer = command_offsets->buffer.buffer;
 		bctx->command_buffer = commands->buffer.buffer;
 		bctx->subcluster_buffer = subclusters->buffer.buffer;
 		bctx->cluster_buffer = clusters->buffer.buffer;
 		bctx->clustermap_buffer = clustermap->buffer.buffer;
 		bctx->queue_buffer = queue->buffer.buffer;
 
+		*bctx->command_counts_ptr = command_counts->buffer.address;
+		*bctx->command_offsets_ptr = command_offsets->buffer.address;
+		*bctx->commands_ptr = commands->buffer.address;
+		*bctx->subclusters_ptr = subclusters->buffer.address;
+		*bctx->clusters_ptr = clusters->buffer.address;
+		*bctx->cluster_map_ptr = clustermap->buffer.address;
+		bctx->queue_buffer_addr = queue->buffer.address;
+
 		for (size_t i = 0; i < frames; i++) {
 			bctx->frames.a[i].queue = queue_buffer_size * i;
 		}
 	}
+	*bctx->texture_count = num_tex;
 
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.build");
 	size_t packet_size = vertex_buffer_size
 					   + index_buffer_size
+					   + command_offsets_buffer_size
 					   + subcluster_buffer_size
 					   + cluster_buffer_size
 					   + clustermap_buffer_size;
 	build.vertices = (bspvert_t *) QFV_PacketExtend (packet, packet_size);
 	build.indices = (uint32_t *) &build.vertices[vertex_count];
-	build.subclusters = (bsp_cluster_t *) &build.indices[index_count];
+	uint32_t *command_offsets = (uint32_t *) &build.indices[index_count];
+	build.subclusters = (bsp_cluster_t *) &command_offsets[num_tex];
 	build.clusters = (cluster_t *) &build.subclusters[num_clusters];
 	build.clustermap = (uint32_t *) &build.clusters[mod_clusters];
+
+	memcpy (command_offsets, tex_clusters, sizeof (tex_clusters));
 	model_loop (models, num_models, ctx, model_build_surfaces, &build);
 
 	qfv_scatter_t vert_scatter = {
@@ -776,6 +842,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	qfv_scatter_t ind_scatter = {
 		.srcOffset = QFV_PacketOffset (packet, build.indices),
 		.length = index_buffer_size,
+	};
+	qfv_scatter_t ofs_scatter = {
+		.srcOffset = QFV_PacketOffset (packet, command_offsets),
+		.length = command_offsets_buffer_size,
 	};
 	qfv_scatter_t sub_scatter = {
 		.srcOffset = QFV_PacketOffset (packet, build.subclusters),
@@ -793,6 +863,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
 			&bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
 	QFV_PacketScatterBuffer (packet, bctx->index_buffer, 1, &ind_scatter,
+			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+			&bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
+	QFV_PacketScatterBuffer (packet, bctx->command_offsets_buffer,
+			1, &ofs_scatter,
 			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
 			&bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
 	QFV_PacketScatterBuffer (packet, bctx->subcluster_buffer, 1, &sub_scatter,
@@ -847,7 +921,7 @@ push_bspconst (uint16_t *matrix_base, QFV_BspQueue queue,
 
 static void
 draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
-			qfv_device_t *device, VkCommandBuffer cmd)
+			qfv_device_t *device, VkCommandBuffer cmd, bspctx_t *bctx)
 {
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -860,10 +934,45 @@ draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 		if (queue == QFV_bspBackground) {
 			dfunc->vkCmdDraw (cmd, 3, d.instance_count, 0, d.first_instance);
 		} else {
-			dfunc->vkCmdDrawIndexed (cmd, d.index_count, d.instance_count,
-									 d.first_index, 0, d.first_instance);
+			size_t cmd_size = sizeof (VkDrawIndexedIndirectCommand);
+			dfunc->vkCmdDrawIndexedIndirectCount (cmd,
+					bctx->command_buffer,
+					bctx->command_offsets[d.tex_id] * cmd_size,
+					bctx->command_counts_buffer,
+					d.tex_id * sizeof (uint32_t),
+					bctx->command_counts[d.tex_id],
+					cmd_size);
 		}
 	}
+}
+
+static void
+bsp_flush (vulkan_ctx_t *ctx)
+{
+	qfZoneScoped (true);
+	bspctx_t   *bctx = ctx->bsp_context;
+	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
+
+	Vulkan_Scene_Flush (ctx);
+
+	if (!bframe->entid_count) {
+		return;
+	}
+
+	qfv_packet_t *packet;
+	void *data;
+	size_t size;
+
+	packet = QFV_PacketAcquire (ctx->staging, "bsp.entid");
+	size = sizeof (uint32_t[bframe->entid_count]);
+	data = QFV_PacketExtend (packet, size);
+	memcpy (data, bframe->entid_data, size);
+	QFV_PacketCopyBuffer (packet, bctx->entid_buffer, bframe->entid_offset,
+					&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+					&bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
+	QFV_PacketSubmit (packet);
+
+	QFV_ScrapFlush (bctx->light_scrap);
 }
 
 static void
@@ -1081,6 +1190,21 @@ bsp_reset_queues (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 }
 
 static void
+bsp_clear_commands (const exprval_t **params, exprval_t *result,
+					exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto bctx = ctx->bsp_context;
+	int  num_tex = bctx->registered_textures.size;
+	auto pipeline = taskctx->pipeline;
+	pipeline->dispatch[0] = RUP (num_tex, workgoup_size);
+	pipeline->dispatch[1] = 1;
+	pipeline->dispatch[2] = 1;
+	pipeline->post_memory_barrier = true;
+}
+
+static void
 bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneScoped (true);
@@ -1093,6 +1217,10 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto layout = pipeline->layout;
 	auto cmd = taskctx->cmd;
 	uint16_t *matrix_base = taskctx->data;
+
+	if (!r_refdef.worldmodel) {
+		return;
+	}
 
 	// params are in reverse order
 	auto pass_ind = *(QFV_BspPass *) params[2]->value;
@@ -1154,7 +1282,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	pass->textures = textured ? &bctx->registered_textures : 0;
 	taskctx->subpass->call_count += pass->draw_queues[queue].size;
-	draw_queue (pass, queue, layout, device, cmd);
+	draw_queue (pass, queue, layout, device, cmd, bctx);
 }
 
 static void
@@ -1165,6 +1293,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	auto bctx = ctx->bsp_context;
 	auto pass_ind = *(QFV_BspPass *) params[0]->value;
+	auto frame = &bctx->frames.a[ctx->curFrame];
 
 	auto pass = (bsp_pass_t *[]) {
 		[QFV_bspMain] = &bctx->main_pass,
@@ -1193,17 +1322,50 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 	auto brush = pass->brush;
 
+	entity_t    worldent = nullentity;
+	int         world_id = Vulkan_Scene_AddEntity (ctx, worldent);
+	pass->ent_frame = 0;    // world is always frame 0
+	pass->inst_id = world_id;
+	if (pass->instances) {
+		DARRAY_APPEND (&pass->instances[world_id].entities, world_id);
+	}
+
 	//FIXME r_refdef ref. scene from taskctx?
 	auto scene = r_refdef.scene;
 	uint32_t view_leafnum = scene->view_leafnum;
 	uint32_t cluster_num = brush->cluster_map[view_leafnum];
 
 	set_t pvs = SET_STATIC_INIT (brush->cluster_vis.count, alloca);
-	Mod_LeafPVS_set (brush->cluster_offs[cluster_num], &brush->cluster_vis,
-					 0, &pvs);
-	for (auto c = set_first (&pvs); c; c = set_next (c)) {
-		R_StoreEfrags (scene, c->element);
+	uint32_t offset = cluster_num ? brush->cluster_offs[cluster_num] : ~0u;
+	Mod_LeafPVS_set (offset, &brush->cluster_vis, 0xff, &pvs);
+	unsigned count = set_count (&pvs);
+	if (!count) {
+		return;
 	}
+	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.queue");
+	uint32_t *queue = QFV_PacketExtend (packet, sizeof (uint32_t[count]));
+	for (auto c = set_first (&pvs); c; c = set_next (c)) {
+		uint32_t cluster = c->element + 1;
+		R_StoreEfrags (scene, cluster);
+		*queue++ = cluster;
+	}
+	QFV_PacketCopyBuffer (packet, bctx->queue_buffer, frame->queue,
+						  &bufferBarriers[qfv_BB_ShaderRO_to_TransferWrite],
+						  &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
+	QFV_PacketSubmit (packet);
+
+	*bctx->cluster_queue_ptr = bctx->queue_buffer_addr + frame->queue;
+	*bctx->cluster_count = count;
+
+	auto pipeline = taskctx->pipeline;
+	if (pipeline) {
+		pipeline->dispatch[0] = RUP (count, workgoup_size);
+		pipeline->dispatch[1] = 1;
+		pipeline->dispatch[2] = 1;
+		pipeline->post_memory_barrier = true;
+	}
+
+	bsp_flush (ctx);
 }
 
 static void
@@ -1219,13 +1381,35 @@ bsp_build_lightmaps (const exprval_t **params, exprval_t *result,
 }
 
 static void
+clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
+{
+	qfZoneScoped (true);
+	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
+		DARRAY_RESIZE (&pass->face_queue[i], 0);
+	}
+	for (int i = 0; i < pass->num_queues; i++) {
+		DARRAY_RESIZE (&pass->draw_queues[i], 0);
+	}
+	for (int i = 0; i < bctx->num_models; i++) {
+		pass->instances[i].first_instance = -1;
+		DARRAY_RESIZE (&pass->instances[i].entities, 0);
+	}
+	pass->index_count = 0;
+}
+
+static void
 bsp_build_display_lists (const exprval_t **params, exprval_t *result,
 						 exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
+	auto bctx = ctx->bsp_context;
 	auto scene = (scene_t *) taskctx->data;
+
+	clear_queues (bctx, &bctx->main_pass);
+	clear_queues (bctx, &bctx->shadow_pass);
+	clear_queues (bctx, &bctx->debug_pass);
 
 	Vulkan_BuildDisplayLists (scene->models, scene->num_models, ctx);
 }
@@ -1371,6 +1555,15 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.skybox_id   = nullent,
 		.skymap_id   = nullent,
 
+		.command_counts_ptr  = QFV_GetBlackboardVar (ctx, "command_counts"),
+		.command_offsets_ptr = QFV_GetBlackboardVar (ctx, "command_offsets"),
+		.commands_ptr        = QFV_GetBlackboardVar (ctx, "commands"),
+		.subclusters_ptr     = QFV_GetBlackboardVar (ctx, "subclusters"),
+		.clusters_ptr        = QFV_GetBlackboardVar (ctx, "clusters"),
+		.cluster_map_ptr     = QFV_GetBlackboardVar (ctx, "cluster_map"),
+		.cluster_queue_ptr   = QFV_GetBlackboardVar (ctx, "cluster_queue"),
+		.cluster_count       = QFV_GetBlackboardVar (ctx, "cluster_count"),
+		.texture_count       = QFV_GetBlackboardVar (ctx, "texture_count"),
 		.matrix_base = QFV_GetBlackboardVar (ctx, "MatrixBase"),
 		.fog         = QFV_GetBlackboardVar (ctx, "fog"),
 		.time        = QFV_GetBlackboardVar (ctx, "time"),
@@ -1448,6 +1641,10 @@ static exprfunc_t bsp_reset_queues_func[] = {
 	{ .func = bsp_reset_queues },
 	{}
 };
+static exprfunc_t bsp_clear_commands_func[] = {
+	{ .func = bsp_clear_commands },
+	{}
+};
 static exprfunc_t bsp_visit_world_func[] = {
 	{ 0, 1, bsp_visit_world_params, bsp_visit_world },
 	{}
@@ -1477,6 +1674,7 @@ static exprfunc_t bsp_init_func[] = {
 
 static exprsym_t bsp_task_syms[] = {
 	{ "bsp_reset_queues", &cexpr_function, bsp_reset_queues_func },
+	{ "bsp_clear_commands", &cexpr_function, bsp_clear_commands_func },
 	{ "bsp_visit_world", &cexpr_function, bsp_visit_world_func },
 	{ "bsp_draw_queue", &cexpr_function, bsp_draw_queue_func },
 

@@ -181,6 +181,7 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 		VkPhysicalDeviceVulkan12Features features12 = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
 			.pNext = &features13,
+			.drawIndirectCount = 1,
 			.hostQueryReset = 1,
 			.bufferDeviceAddress = 1,
 		};

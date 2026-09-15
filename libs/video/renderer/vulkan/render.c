@@ -299,6 +299,27 @@ run_renderpass (qfv_renderpass_t *rp, qfv_taskctx_t *taskctx)
 }
 
 static void
+memory_barrier (vulkan_ctx_t *ctx, VkCommandBuffer cmd)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto bb = bufferBarriers[qfv_BB_ShaderWrite_to_ShaderRW];
+	VkMemoryBarrier2 mb = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+		.srcStageMask = bb.srcStageMask,
+		.srcAccessMask = bb.srcAccessMask,
+		.dstStageMask = bb.dstStageMask,
+		.dstAccessMask = bb.dstAccessMask,
+	};
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.memoryBarrierCount = 1,
+		.pMemoryBarriers = &mb,
+	};
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
+}
+
+static void
 run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 					  qfv_taskctx_t *taskctx)
 {
@@ -316,12 +337,16 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 	qfv_taskctx_t tctx = *taskctx;
 	tctx.pipeline = pipeline,
 	tctx.cmd = cmd,
+	pipeline->post_memory_barrier = false;
 	run_tasks (pipeline->task_count, pipeline->tasks, &tctx);
 
 	vec4u_t     d = pipeline->dispatch;
 	if (d[0] && d[1] && d[2]) {
 		QFV_PushBlackboard (ctx, cmd, pipeline);
 		dfunc->vkCmdDispatch (cmd, d[0], d[1], d[2]);
+		if (pipeline->post_memory_barrier) {
+			memory_barrier (ctx, cmd);
+		}
 	}
 }
 

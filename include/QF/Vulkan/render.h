@@ -452,6 +452,7 @@ typedef struct qfv_label_s {
 typedef struct qfv_pipeline_s {
 	qfv_label_t label;
 	bool        disabled;
+	bool        post_memory_barrier;
 	VkPipelineBindPoint bindPoint;
 	vec4u_t     dispatch;
 	VkPipeline  pipeline;

@@ -390,18 +390,25 @@ typedef struct bspctx_s {
 	VkSampler    sampler;
 	VkSampler    equrect;
 
+	uint32_t    *command_offsets;
+	uint32_t    *command_counts;
 	struct qfv_resource_s *base_resource;
 	VkBuffer     default_verts;
 	struct qfv_resource_s *bsp_resource;
 	size_t       vertex_buffer_size;
 	size_t       index_buffer_size;
+	size_t       command_counts_buffer_size;
+	size_t       command_offsets_buffer_size;
 	size_t       command_buffer_size;
 	size_t       subcluster_buffer_size;
 	size_t       cluster_buffer_size;
 	size_t       clustermap_buffer_size;
 	size_t       queue_buffer_size;
+	VkDeviceAddress queue_buffer_addr;
 	VkBuffer     vertex_buffer;
 	VkBuffer     index_buffer;
+	VkBuffer     command_counts_buffer;
+	VkBuffer     command_offsets_buffer;
 	VkBuffer     command_buffer;
 	VkBuffer     subcluster_buffer;
 	VkBuffer     cluster_buffer;
@@ -412,6 +419,15 @@ typedef struct bspctx_s {
 	uint32_t    *entid_data;
 	bspframeset_t frames;
 
+	VkDeviceAddress *command_counts_ptr;
+	VkDeviceAddress *command_offsets_ptr;
+	VkDeviceAddress *commands_ptr;
+	VkDeviceAddress *subclusters_ptr;
+	VkDeviceAddress *clusters_ptr;
+	VkDeviceAddress *cluster_map_ptr;
+	VkDeviceAddress *cluster_queue_ptr;
+	uint32_t    *cluster_count;
+	uint32_t    *texture_count;
 	uint32_t    *matrix_base;
 	vec4f_t     *fog;
 	float       *time;

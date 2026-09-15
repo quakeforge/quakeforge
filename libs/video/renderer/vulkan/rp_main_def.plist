@@ -315,6 +315,35 @@ properties = {
 	};
 
 	brush = {
+		cluster = {
+			shader = {
+				clear = {
+					stage = compute;
+					name = cluster.clear;
+					module = $builtin/bsp.r;
+				};
+				main = {
+					stage = compute;
+					name = cluster.main;
+					module = $builtin/bsp.r;
+				};
+			};
+			layout = {
+				pushConstants = {
+					compute = {
+						command_counts = ptr;
+						command_offsets = ptr;
+						commands = ptr;
+						subclusters = ptr;
+						clusters = ptr;
+						cluster_map = ptr;
+						cluster_queue = ptr;
+						cluster_count = uint;
+						texture_count = uint;
+					};
+				};
+			};
+		};
 		shader = {
 			shadow_vertex = {
 				stage = vertex;
@@ -2318,9 +2347,37 @@ jobs = {
 					};
 				};
 			};
-			world = {
-				color = "[0.3, 0.4, 0.0]";
+			world_clear = {
 				dependencies = (start_frame);
+				compute = {
+					pipelines = {
+						clear = {
+							tasks = (
+								{ func = bsp_clear_commands; },
+							);
+							stage = $brush.cluster.shader.clear;
+							layout = $brush.cluster.layout;
+						};
+					};
+				};
+			};
+			world_enqueue = {
+				dependencies = (world_clear);
+				compute = {
+					pipelines = {
+						enqueue = {
+							tasks = (
+								{ func = bsp_visit_world; },
+							);
+							stage = $brush.cluster.shader.main;
+							layout = $brush.cluster.layout;
+						};
+					};
+				};
+			};
+			world = {
+				dependencies = (world_enqueue);
+				color = "[0.3, 0.4, 0.0]";
 				process = {
 					tasks = (
 						{ func = bsp_reset_queues; },

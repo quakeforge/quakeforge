@@ -190,7 +190,7 @@ Mod_LeafPVS_set (uint32_t vis_offset, const visdata_t *vis, byte defvis,
 		out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 		return;
 	}
-	auto compressed_vis = vis->data + vis_offset;
+	auto compressed_vis = vis->data ? vis->data + vis_offset : nullptr;
 	Mod_DecompressVis_set (compressed_vis, vis->count, defvis, out);
 	out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 }
@@ -211,7 +211,7 @@ Mod_LeafPVS_mix (uint32_t vis_offset, const visdata_t *vis, byte defvis,
 		out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 		return;
 	}
-	auto compressed_vis = vis->data + vis_offset;
+	auto compressed_vis = vis->data ? vis->data + vis_offset : nullptr;
 	Mod_DecompressVis_mix (compressed_vis, vis->count, defvis, out);
 	out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 }
@@ -1589,6 +1589,17 @@ Mod_MakeClusters (mod_brush_ctx_t *brush_ctx)
 			head = -1;
 			brush->cluster_vis = (visdata_t) {
 				.count = 1,
+			};
+			brush->cluster_nodes = Hunk_AllocName (hunk, sizeof (mnode_t),
+												   mod->name);
+			brush->cluster_nodes[0] = (mnode_t) {
+				.plane = { 0, 0, 0, -1 },
+				.type = 3,
+				.children = { ~0, ~1 },
+				.minmaxs = {-INFINITY, -INFINITY, -INFINITY,
+							INFINITY,  INFINITY,  INFINITY},
+				.firstsurface = 0,
+				.numsurfaces = 1,
 			};
 		} else {
 			brush->cluster_nodes = brush->nodes;
