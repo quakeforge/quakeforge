@@ -41,7 +41,7 @@ properties = {
 		};
 		dst = {
 			stage = color_attachment_output;
-			access = color_attachment_write;
+			access = color_attachment_read|color_attachment_write;
 		};
 	};
 	extcolor_outdep = {
@@ -968,33 +968,72 @@ output = {
 	format = r16g16b16a16_sfloat;
 	finalLayout = shader_read_only_optimal;
 };
+framebuffers = {
+	flat = {
+		width = $render_output.extent.width;
+		height = $render_output.extent.height;
+		layers = 1;
+		attachments = {
+			depth = {
+				@inherit = $depth_base;
+				format = $images.depth.format;
+				view = depth;
+			};
+			color = {
+				@inherit = $attachment_base;
+				format = $images.color.format;
+				finalLayout = color_attachment_optimal;
+				loadOp = clear;
+				storeOp = store;
+				view = color;
+			};
+			output = {
+				@inherit = $attachment_base;
+				format = $images.output.format;
+				loadOp = clear;
+				storeOp = store;
+				finalLayout = $render_output.finalLayout;
+				view = output;
+			};
+		};
+	};
+	cube = {
+		width = "min($render_output.extent.width,$render_output.extent.height)";
+		height = "min($render_output.extent.width,$render_output.extent.height)";
+		layers = 1;
+		attachments = {
+			depth = {
+				@inherit = $depth_base;
+				format = $images.cube_depth.format;
+				view = cube_depth;
+			};
+			color = {
+				@inherit = $attachment_base;
+				format = $images.cube_color.format;
+				finalLayout = color_attachment_optimal;
+				loadOp = clear;
+				storeOp = store;
+				view = cube_color;
+			};
+			output = {
+				@inherit = $attachment_base;
+				format = $images.cube_output.format;
+				loadOp = clear;
+				storeOp = store;
+				finalLayout = $render_output.finalLayout;
+				view = cube_output;
+			};
+		};
+	};
+};
 renderpasses = {
 	forward = {
 		color = "[0, 1, 0, 1]";
 		framebuffer = {
-			width = $render_output.extent.width;
-			height = $render_output.extent.height;
-			layers = 1;
+			use = flat;
 			attachments = {
-				depth = {
-					@inherit = $depth_base;
-					format = $images.depth.format;
-					view = depth;
-				};
-				color = {
-					@inherit = $attachment_base;
-					format = $images.color.format;
-					loadOp = clear;
-					view = color;
-				};
-				output = {
-					@inherit = $attachment_base;
-					format = $render_output.format;
-					loadOp = clear;
-					storeOp = store;
-					finalLayout = $render_output.finalLayout;
-					view = output;
-				};
+				depth = { };
+				color = { };
 			};
 		};
 		subpasses = {
@@ -1140,12 +1179,52 @@ renderpasses = {
 					};
 				};
 			};
+			$external = {
+				dependencies = {
+					solid = {
+						src = {
+							stage = color_attachment_output;
+							access = color_attachment_read|color_attachment_write;
+						};
+						dst = {
+							stage = color_attachment_output;
+							access = color_attachment_read|color_attachment_write;
+						};
+					};
+				}
+			}
+		};
+	};
+	forward_cube = {
+		@inherit = $renderpasses.forward;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x3fu, 0x3fu);
+		});
+		framebuffer = {
+			use = cube;
+			attachments = {
+				depth = { };
+				color = { };
+			};
+		};
+	};
+	compose = {
+		color = "[0, 1, 0, 1]";
+		framebuffer = {
+			use = flat;
+			attachments = {
+				color = {
+					loadOp = load;
+					initialLayout = color_attachment_optimal;
+				};
+				output = { };
+			};
+		};
+		subpasses = {
 			compose = {
 				color = "[ 0.7,  0.3,  0.3, 1]";
 				dependencies = (
-					{@inherit = $color_dependency; name = solid;},
-					{@inherit = $color_dependency; name = translucent;},
-					{@inherit = $depthread_dependency; name = solid;},
+					{@inherit = $extcolor_dependency; name = $external;},
 				);
 				attachments = {
 					input = {
@@ -1157,7 +1236,6 @@ renderpasses = {
 							blend = $additive_blend;
 						};
 					};
-					//preserve = (depth);
 				};
 				pipelines = {
 					compose = {
@@ -1229,35 +1307,19 @@ renderpasses = {
 		};
 		output = output;
 	};
-	forward_cube = {
-		@inherit = $renderpasses.forward;
+	compose_cube = {
+		@inherit = $renderpasses.compose;
 		@next = (VkRenderPassMultiviewCreateInfo, {
-			viewMasks   = (0x3fu, 0x3fu, 0x3fu);
+			viewMasks   = (0x3fu);
 		});
 		framebuffer = {
-			width = "min($render_output.extent.width,$render_output.extent.height)";
-			height = "min($render_output.extent.width,$render_output.extent.height)";
-			layers = 1;
+			use = cube;
 			attachments = {
-				depth = {
-					@inherit = $depth_base;
-					format = $images.cube_depth.format;
-					view = cube_depth;
-				};
 				color = {
-					@inherit = $attachment_base;
-					format = $images.cube_color.format;
-					loadOp = clear;
-					view = cube_color;
+					loadOp = load;
+					initialLayout = color_attachment_optimal;
 				};
-				output = {
-					@inherit = $attachment_base;
-					format = $images.cube_color.format;
-					loadOp = clear;
-					storeOp = store;
-					finalLayout = $render_output.finalLayout;
-					view = cube_output;
-				};
+				output = { };
 			};
 		};
 		output = cube_output;
@@ -1455,8 +1517,12 @@ jobs = {
 					tasks = (
 						{ func = output_select_renderpass;
 						  params = (main`main); },
+						{ func = output_select_renderpass;
+						  params = (main`compose); },
 						{ func = update_framebuffer;
 						  params = (main`main); },
+						{ func = update_framebuffer;
+						  params = (main`compose); },
 						{ func = clear_translucent;
 						  params = (main`main); },
 						{ func = compose_update; },
@@ -1473,6 +1539,23 @@ jobs = {
 					};
 				};
 			};
+			setup_compose = {
+				dependencies = (main);
+				process = {
+					tasks = (
+						{ func = sync_translucent; },
+					);
+				};
+			};
+			compose = {
+				dependencies = (setup_compose);
+				render = {
+					renderpasses = {
+						compose = $renderpasses.compose;
+						compose_cube = $renderpasses.compose_cube;
+					};
+				};
+			};
 			preoutput = {
 				dependencies = (main);
 				process = {
@@ -1481,7 +1564,7 @@ jobs = {
 						{ func = acquire_output;
 						  params = (main`output); },
 						{ func = update_input;
-						  params = (main`main); },
+						  params = (main`compose); },
 						{ func = output_select_pipeline;
 						  params = (main`output); },
 						{ func = flush_draw; },
