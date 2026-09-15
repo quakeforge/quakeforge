@@ -327,8 +327,17 @@ Mod_LoadTextures (mod_brush_ctx_t *brush_ctx)
 		// the pixels immediately follow the structures
 		memcpy (tx + 1, mt + 1, pixels);
 
-		if (!strncmp (mt->name, "sky", 3))
+		if (strncmp (tx->name, "sky", 3) == 0) {	// sky
+			tx->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
+		} else if (tx->name[0] == '*') {
+			// turbulent
+			tx->flags |= (SURF_DRAWTURB | SURF_DRAWTILED | SURF_LIGHTBOTHSIDES);
+		} else if (tx->name[0] == '{') {
+			tx->flags |= SURF_DRAWALPHA;
+		}
+		if (tx->flags & SURF_DRAWSKY) {
 			brush->skytexture = tx;
+		}
 	}
 	if (mod_funcs && mod_funcs->Mod_ProcessTexture) {
 		size_t      render_size = mod_funcs->texture_render_size;
@@ -967,33 +976,22 @@ Mod_LoadFaces (mod_brush_ctx_t *brush_ctx)
 			continue;
 		}
 
-		if (!strncmp (out->texinfo->texture->name, "sky", 3)) {	// sky
-			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
+		out->flags |= out->texinfo->texture->flags;
+		if (out->flags & SURF_DRAWSKY) {
 			if (brush_ctx->sky_divide) {
 				if (mod_funcs && mod_funcs->Mod_SubdivideSurface) {
 					mod_funcs->Mod_SubdivideSurface (mod, out, hunk);
 				}
 			}
-			continue;
-		}
-
-		switch (out->texinfo->texture->name[0]) {
-			case '*':	// turbulent
-				out->flags |= (SURF_DRAWTURB
-							   | SURF_DRAWTILED
-							   | SURF_LIGHTBOTHSIDES);
-				for (i = 0; i < 2; i++) {
-					out->extents[i] = 16384;
-					out->texturemins[i] = -8192;
-				}
-				if (mod_funcs && mod_funcs->Mod_SubdivideSurface) {
-					// cut up polygon for warps
-					mod_funcs->Mod_SubdivideSurface (mod, out, hunk);
-				}
-				break;
-			case '{':
-				out->flags |= SURF_DRAWALPHA;
-				break;
+		} else if (out->flags & (SURF_DRAWTURB | SURF_DRAWTILED)) {
+			for (i = 0; i < 2; i++) {
+				out->extents[i] = 16384;
+				out->texturemins[i] = -8192;
+			}
+			if (mod_funcs && mod_funcs->Mod_SubdivideSurface) {
+				// cut up polygon for warps
+				mod_funcs->Mod_SubdivideSurface (mod, out, hunk);
+			}
 		}
 	}
 	brush_ctx->max_edges = max_edges;

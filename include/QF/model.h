@@ -90,8 +90,9 @@ typedef struct texture_s {
 	void       *render;		// renderer specific data
 	int			anim_total;				// total tenths in sequence ( 0 = no)
 	int			anim_min, anim_max;		// time for this frame min <=time< max
+	unsigned    flags;					// SURF_DRAWSKY etc
 	struct texture_s *anim_next;		// in the animation sequence
-	struct texture_s *alternate_anims;	// bmodels in frmae 1 use these
+	struct texture_s *alternate_anims;	// bmodels in frame 1 use these
 	unsigned    offsets[MIPLEVELS];		// four mip maps stored
 } texture_t;
 
