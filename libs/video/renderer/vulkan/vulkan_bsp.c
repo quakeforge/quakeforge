@@ -93,6 +93,25 @@ add_texture (texture_t *tx, vulkan_ctx_t *ctx)
 		DARRAY_APPEND (&bctx->registered_textures, tex);
 		tex->descriptor = Vulkan_CreateCombinedImageSampler (ctx, tex->view,
 															 bctx->sampler);
+		QFV_BspQueue dq = QFV_bspSolid;
+		if (tx->flags & SURF_DRAWBACKGROUND) {
+			dq = QFV_bspBackground;
+		}
+		if (tx->flags & SURF_DRAWSKY) {
+			dq = QFV_bspSky;
+		}
+		if (tx->flags & SURF_DRAWALPHA) {
+			dq = QFV_bspTrans;
+		}
+		if (tx->flags & SURF_DRAWTURB) {
+			dq = QFV_bspTurb;
+		}
+		auto d = (bsp_draw_t) { .tex_id = tex->tex_id };
+		DARRAY_APPEND (&bctx->main_pass.draw_queues[dq], d);
+		if (dq != QFV_bspTrans) {
+			DARRAY_APPEND (&bctx->shadow_pass.draw_queues[dq], d);
+		}
+		DARRAY_APPEND (&bctx->debug_pass.draw_queues[dq], d);
 	}
 }
 
@@ -150,6 +169,9 @@ clear_pass_face_queues (bsp_pass_t *pass, const bspctx_t *bctx)
 		}
 		free (pass->face_queue);
 		pass->face_queue = 0;
+	}
+	for (int i = 0; i < pass->num_queues; i++) {
+		DARRAY_RESIZE (&pass->draw_queues[i], 0);
 	}
 }
 
@@ -228,7 +250,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	bctx->background_render = (vulktex_t) { .view = bctx->default_skysheet };
 	texture_t base_tx[] = {
 		{ .render = &bctx->notexture_render },
-		{ .render = &bctx->background_render },
+		{ .render = &bctx->background_render, .flags = SURF_DRAWBACKGROUND },
 	};
 	for (size_t i = 0; i < countof (base_tx); i++) {
 		add_texture (&base_tx[i], ctx);
@@ -641,13 +663,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	memcpy (bctx->command_counts, tex_clusters, sizeof (tex_clusters));
 	uint32_t sum = 0;
-	auto pass = &bctx->main_pass;
-	DARRAY_APPEND (&pass->draw_queues[QFV_bspSolid],
-					(bsp_draw_t) { .tex_id = 0 });
 	for (uint32_t i = 1; i < num_tex; i++) {
-		//FIXME this is broken
-		DARRAY_APPEND (&pass->draw_queues[QFV_bspSolid],
-						(bsp_draw_t) { .tex_id = i });
 		uint32_t temp = tex_clusters[i];
 		tex_clusters[i] = sum;
 		sum += temp;
@@ -1420,9 +1436,6 @@ clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
 	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
 		DARRAY_RESIZE (&pass->face_queue[i], 0);
 	}
-	for (int i = 0; i < pass->num_queues; i++) {
-		DARRAY_RESIZE (&pass->draw_queues[i], 0);
-	}
 	for (int i = 0; i < bctx->num_models; i++) {
 		pass->instances[i].first_instance = -1;
 		DARRAY_RESIZE (&pass->instances[i].entities, 0);
@@ -1470,13 +1483,13 @@ bsp_shutdown (exprctx_t *ectx)
 	auto device = ctx->device;
 	auto bctx = ctx->bsp_context;
 
+	clear_textures (ctx);
+	DARRAY_CLEAR (&bctx->registered_textures);
+
 	bctx->main_pass.entqueue = 0;	// owned by the scene
 	shutdown_pass_draw_queues (&bctx->main_pass);
 	shutdown_pass_draw_queues (&bctx->shadow_pass);
 	shutdown_pass_draw_queues (&bctx->debug_pass);
-
-	clear_textures (ctx);
-	DARRAY_CLEAR (&bctx->registered_textures);
 
 	free (bctx->models);
 
