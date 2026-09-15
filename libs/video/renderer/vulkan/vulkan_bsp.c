@@ -106,12 +106,11 @@ add_texture (texture_t *tx, vulkan_ctx_t *ctx)
 		if (tx->flags & SURF_DRAWTURB) {
 			dq = QFV_bspTurb;
 		}
-		auto d = (bsp_draw_t) { .tex_id = tex->tex_id };
-		DARRAY_APPEND (&bctx->main_pass.draw_queues[dq], d);
+		set_add (&bctx->main_pass.tex_set[dq], tex->tex_id);
 		if (dq != QFV_bspTrans) {
-			DARRAY_APPEND (&bctx->shadow_pass.draw_queues[dq], d);
+			set_add (&bctx->shadow_pass.tex_set[dq], tex->tex_id);
 		}
-		DARRAY_APPEND (&bctx->debug_pass.draw_queues[dq], d);
+		set_add (&bctx->debug_pass.tex_set[dq], tex->tex_id);
 	}
 }
 
@@ -170,8 +169,8 @@ clear_pass_face_queues (bsp_pass_t *pass, const bspctx_t *bctx)
 		free (pass->face_queue);
 		pass->face_queue = 0;
 	}
-	for (int i = 0; i < pass->num_queues; i++) {
-		DARRAY_RESIZE (&pass->draw_queues[i], 0);
+	for (int i = 0; i < QFV_bspNumPasses; i++) {
+		set_empty (&pass->tex_set[i]);
 	}
 }
 
@@ -179,10 +178,13 @@ static void
 shutdown_pass_draw_queues (bsp_pass_t *pass)
 {
 	EntQueue_Delete (pass->entqueue);
-	for (int i = 0; i < pass->num_queues; i++) {
-		DARRAY_CLEAR (&pass->draw_queues[i]);
+	for (int i = 0; i < QFV_bspNumPasses; i++) {
+		auto set = &pass->tex_set[i];
+		if (set->map != set->defmap) {
+			free (set->map);
+		}
 	}
-	free (pass->draw_queues);
+	free (pass->tex_set);
 }
 
 static void
@@ -208,10 +210,9 @@ setup_pass_instances (bsp_pass_t *pass, const bspctx_t *bctx)
 static void
 setup_pass_draw_queues (bsp_pass_t *pass)
 {
-	pass->num_queues = QFV_bspNumPasses;
-	pass->draw_queues = malloc (sizeof (bsp_drawset_t[pass->num_queues]));
-	for (int i = 0; i < pass->num_queues; i++) {
-		DARRAY_INIT (&pass->draw_queues[i], 64);
+	pass->tex_set = malloc (sizeof (set_t[QFV_bspNumPasses]));
+	for (int i = 0; i < QFV_bspNumPasses; i++) {
+		pass->tex_set[i] = SET_STATIC_DEFAULT (pass->tex_set[i]);
 	}
 }
 
@@ -941,22 +942,22 @@ draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 {
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	for (size_t i = 0; i < pass->draw_queues[queue].size; i++) {
-		auto d = pass->draw_queues[queue].a[i];
+	for (auto t = set_first (&pass->tex_set[queue]); t; t = set_next (t)) {
+		uint32_t tex_id = t->element;
 		if (pass->textures) {
-			vulktex_t  *tex = pass->textures->a[d.tex_id];
+			vulktex_t  *tex = pass->textures->a[tex_id];
 			bind_texture (tex, TEX_SET, layout, dfunc, cmd);
 		}
 		if (queue == QFV_bspBackground) {
-			dfunc->vkCmdDraw (cmd, 3, d.instance_count, 0, d.first_instance);
+			dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 		} else {
 			size_t cmd_size = sizeof (VkDrawIndexedIndirectCommand);
 			dfunc->vkCmdDrawIndexedIndirectCount (cmd,
 					bctx->command_buffer,
-					bctx->command_offsets[d.tex_id] * cmd_size,
+					bctx->command_offsets[tex_id] * cmd_size,
 					bctx->command_counts_buffer,
-					d.tex_id * sizeof (uint32_t),
-					bctx->command_counts[d.tex_id],
+					tex_id * sizeof (uint32_t),
+					bctx->command_counts[tex_id],
 					cmd_size);
 		}
 	}
@@ -1268,9 +1269,6 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		[QFV_bspShadow] = &bctx->shadow_pass,
 		[QFV_bspDebug] = &bctx->debug_pass,
 	} [pass_ind];
-	if (!pass->draw_queues[queue].size) {
-		return;
-	}
 
 	auto bframe = &bctx->frames.a[ctx->curFrame];
 	VkBuffer    buffers[] = { bctx->default_verts, bctx->entid_buffer };
@@ -1312,7 +1310,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 
 	pass->textures = textured ? &bctx->registered_textures : 0;
-	taskctx->subpass->call_count += pass->draw_queues[queue].size;
+	taskctx->subpass->call_count += set_count (&pass->tex_set[queue]);
 	draw_queue (pass, queue, layout, device, cmd, bctx);
 }
 

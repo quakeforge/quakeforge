@@ -39,6 +39,8 @@
 
 #include "QF/simd/types.h"
 
+typedef struct set_s set_t;
+
 /** \defgroup vulkan_bsp Brush model rendering
 	\ingroup vulkan
 */
@@ -300,8 +302,7 @@ typedef struct bsp_pass_s {
 	visstate_t  visstate;
 	bsp_instfaceset_t *face_queue;	///< per-texture face queues
 	regtexset_t *textures;			///< textures to bind when emitting calls
-	int         num_queues;			///< number of pipeline queues
-	bsp_drawset_t *draw_queues;		///< per-pipeline draw queues
+	set_t      *tex_set;			///< per-pipeline set of textures
 	uint32_t    inst_id;			///< render id of current model
 	bsp_instance_t *instances;		///< per-model entid lists
 	// FIXME There are several potential optimizations here:
