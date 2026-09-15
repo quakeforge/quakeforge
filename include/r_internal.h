@@ -56,7 +56,7 @@ void R_PushDlights (const vec3_t entorigin, const visstate_t *visstate);
 void R_DrawWaterSurfaces (void);
 
 void *D_SurfaceCacheAddress (void) __attribute__((pure));
-int D_SurfaceCacheForRes (int width, int height);
+int D_SurfaceCacheForRes (int width, int height) __attribute__((pure));
 void D_FlushCaches (void *data);
 void D_DeleteSurfaceCache (void);
 void D_InitCaches (void *buffer, int size);

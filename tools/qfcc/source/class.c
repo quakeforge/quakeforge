@@ -1810,7 +1810,7 @@ procollist_find_protocol (protocollist_t *protocollist, protocol_t *proto)
 	return 0;
 }
 
-static method_t *
+__attribute__((pure)) static method_t *
 protocol_find_method (protocol_t *protocol, selector_t *selector, int instance)
 {
 	method_t   *m = 0;
