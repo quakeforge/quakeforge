@@ -23,16 +23,6 @@
 
 [in("FragCoord")] vec4 gl_FragCoord;
 
-vec4
-fogBlend (vec4 color)
-{
-	float       az = fog.a * gl_FragCoord.z / gl_FragCoord.w;
-	vec3        fog_color = fog.rgb;
-	float       fog_factor = exp (-az * az);
-
-	return vec4 (mix (fog_color.rgb, color.rgb, fog_factor), color.a);
-}
-
 [shader(Fragment)]
 void
 main (void)
@@ -45,7 +35,7 @@ main (void)
 
 	c = texture (Texture, t_st) * color;
 	e = texture (Texture, e_st) * 2;//FIXME
-	frag_color = c;//fogBlend (c);
+	frag_color = c;
 	frag_orm = orm;
 	frag_normal = vec4 (normal, 0);
 	frag_emission = e;
