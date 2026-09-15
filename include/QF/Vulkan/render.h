@@ -452,6 +452,7 @@ typedef struct qfv_label_s {
 typedef struct qfv_pipeline_s {
 	qfv_label_t label;
 	bool        disabled;
+	bool        pre_memory_barrier;
 	bool        post_memory_barrier;
 	VkPipelineBindPoint bindPoint;
 	vec4u_t     dispatch;
@@ -468,6 +469,9 @@ typedef struct qfv_pipeline_s {
 
 	uint32_t    task_count;
 	qfv_taskinfo_t *tasks;
+
+	VkMemoryBarrier2 pre_mb;
+	VkMemoryBarrier2 post_mb;
 } qfv_pipeline_t;
 
 typedef struct qfv_subpass_s {

@@ -1201,7 +1201,22 @@ bsp_clear_commands (const exprval_t **params, exprval_t *result,
 	pipeline->dispatch[0] = RUP (num_tex, workgoup_size);
 	pipeline->dispatch[1] = 1;
 	pipeline->dispatch[2] = 1;
+	pipeline->pre_memory_barrier = true;
 	pipeline->post_memory_barrier = true;
+	pipeline->pre_mb = (VkMemoryBarrier2) {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+		.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
+		.srcAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+	};
+	pipeline->post_mb = (VkMemoryBarrier2) {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+	};
 }
 
 static void
@@ -1362,7 +1377,25 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		pipeline->dispatch[0] = RUP (count, workgoup_size);
 		pipeline->dispatch[1] = 1;
 		pipeline->dispatch[2] = 1;
+
+		pipeline->pre_memory_barrier = true;
 		pipeline->post_memory_barrier = true;
+		pipeline->pre_mb = (VkMemoryBarrier2) {
+			.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+			.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
+			.srcAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
+			.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+			.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
+						   | VK_ACCESS_2_SHADER_READ_BIT,
+		};
+		pipeline->post_mb = (VkMemoryBarrier2) {
+			.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+			.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+			.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
+						   | VK_ACCESS_2_SHADER_READ_BIT,
+			.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
+			.dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
+		};
 	}
 
 	bsp_flush (ctx);
