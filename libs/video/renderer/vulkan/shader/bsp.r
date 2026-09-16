@@ -1,31 +1,10 @@
 #include <GLSL/atomic.h>
 
+#include "bsp.h"
+
 @namespace cluster {
 
-#define workgroup_size 512
-
 [in("GlobalInvocationId")] uvec3 gl_GlobalInvocationID;
-
-//FIXME share structs
-
-typedef struct command_s {//FIXME use VkDrawIndexedIndirectCommand
-	uint        indexCount;
-	uint        instanceCount;
-	uint        firstIndex;
-	uint        vertexOffset;
-	uint        firstInstace;
-} command_t;
-
-typedef struct cluster_s {
-	uint        first;
-	uint        count;
-} cluster_t;
-
-typedef struct bsp_cluster_s {
-	uint        first_index;
-	uint        index_count;
-	uint        tex_id;
-} bsp_cluster_t;
 
 [push_constant] @block Params {
 	uint *command_counts;

@@ -74,12 +74,12 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
+#include "shader/bsp.h"
+
 #define TEX_SET 3
 #define SKYBOX_SET 4
 #define SKYMAP_SET 5
 #define LIGHTMAP_SET 4
-//FIXME share
-#define workgoup_size 512
 
 static void
 add_texture (texture_t *tx, vulkan_ctx_t *ctx)
@@ -1215,7 +1215,7 @@ bsp_clear_commands (const exprval_t **params, exprval_t *result,
 	auto bctx = ctx->bsp_context;
 	int  num_tex = bctx->registered_textures.size;
 	auto pipeline = taskctx->pipeline;
-	pipeline->dispatch[0] = RUP (num_tex, workgoup_size);
+	pipeline->dispatch[0] = RUP (num_tex, workgroup_size);
 	pipeline->dispatch[1] = 1;
 	pipeline->dispatch[2] = 1;
 	pipeline->pre_memory_barrier = true;
@@ -1388,7 +1388,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	auto pipeline = taskctx->pipeline;
 	if (pipeline) {
-		pipeline->dispatch[0] = RUP (count, workgoup_size);
+		pipeline->dispatch[0] = RUP (count, workgroup_size);
 		pipeline->dispatch[1] = 1;
 		pipeline->dispatch[2] = 1;
 

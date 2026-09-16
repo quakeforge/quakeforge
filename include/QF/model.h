@@ -221,7 +221,7 @@ typedef struct {
 	uint32_t    num_leafs;
 } leafmap_t;
 
-typedef struct {
+typedef struct cluster_s {
 	// index into array of surface ids
 	uint32_t    first;
 	uint32_t    count;

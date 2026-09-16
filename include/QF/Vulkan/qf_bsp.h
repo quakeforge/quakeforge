@@ -67,12 +67,6 @@ typedef struct bsp_model_s {
 	uint32_t    cluster_count;
 } bsp_model_t;
 
-typedef struct bsp_cluster_s {
-	uint32_t    first_index;
-	uint32_t    index_count;
-	uint32_t    tex_id;
-} bsp_cluster_t;
-
 #if 0
 typedef struct texname_s {
 	char        name[MIPTEXNAME];
