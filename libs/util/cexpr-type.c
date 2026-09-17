@@ -1507,11 +1507,11 @@ cexpr_enum_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 	return "";
 }
 
-BINOP(flag, and, int, &)
-BINOP(flag, or, int, |)
-BINOP(flag, xor, int, ^)
+BINOP(flag, and, uint, &)
+BINOP(flag, or, uint, |)
+BINOP(flag, xor, uint, ^)
 
-UNOP(flag, not, int, ~)
+UNOP(flag, not, uint, ~)
 
 binop_t cexpr_flag_binops[] = {
 	{ '&', 0, 0, flag_and },
@@ -1523,6 +1523,25 @@ binop_t cexpr_flag_binops[] = {
 
 unop_t cexpr_flag_unops[] = {
 	{ '~', 0, flag_not },
+	{}
+};
+
+BINOP(flag64, and, uint64_t, &)
+BINOP(flag64, or, uint64_t, |)
+BINOP(flag64, xor, uint64_t, ^)
+
+UNOP(flag64, not, uint64_t, ~)
+
+binop_t cexpr_flag64_binops[] = {
+	{ '&', 0, 0, flag64_and },
+	{ '|', 0, 0, flag64_or },
+	{ '^', 0, 0, flag64_xor },
+	{ '=', &cexpr_int, 0, ulong_cast_int },
+	{}
+};
+
+unop_t cexpr_flag64_unops[] = {
+	{ '~', 0, flag64_not },
 	{}
 };
 
@@ -1541,6 +1560,37 @@ cexpr_flags_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 		uint32_t    sym_flags = *(uint32_t *) sym->value;
 		// if there are duplicate values, choose the *later* value
 		if (sym[1].name && sym_flags == *(uint32_t *) sym[1].value) {
+			continue;
+		}
+		if ((flags & sym_flags) && !(sym_flags & ~flags)) {
+			if (val_str) {
+				val_str = vac (va_ctx, "%s | %s", val_str, sym->name);
+			} else {
+				val_str = sym->name;
+			}
+		}
+	}
+	if (!val_str) {
+		val_str = "0";
+	}
+	return val_str;
+}
+
+VISIBLE const char *
+cexpr_flags64_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	exprenum_t *enm = val->type->data;
+	exprsym_t  *symbols = enm->symtab->symbols;
+	const char *val_str = 0;
+
+	if (val->type->size != 4) {
+		Sys_Error ("cexpr_flags_get_string: only 32-bit values supported");
+	}
+	uint64_t    flags = *(uint64_t *) val->value;
+	for (exprsym_t *sym = symbols; sym->name; sym++) {
+		uint64_t    sym_flags = *(uint64_t *) sym->value;
+		// if there are duplicate values, choose the *later* value
+		if (sym[1].name && sym_flags == *(uint64_t *) sym[1].value) {
 			continue;
 		}
 		if ((flags & sym_flags) && !(sym_flags & ~flags)) {
