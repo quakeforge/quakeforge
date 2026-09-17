@@ -134,8 +134,8 @@ skip_value(string name)
 	fprintf (output_file, "\t.name = \"%s\",\n", [self name]);
 	fprintf (output_file, "\t.size = sizeof (int),\n");
 	if (flag_bits) {
-		fprintf (output_file, "\t.binops = flag_binops,\n");
-		fprintf (output_file, "\t.unops = flag_unops,\n");
+		fprintf (output_file, "\t.binops = cexpr_flag_binops,\n");
+		fprintf (output_file, "\t.unops = cexpr_flag_unops,\n");
 		fprintf (output_file, "\t.get_string = cexpr_flags_get_string,\n");
 	} else {
 		fprintf (output_file, "\t.binops = enum_binops,\n");

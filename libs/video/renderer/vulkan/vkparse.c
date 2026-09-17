@@ -69,45 +69,8 @@ typedef struct handleref_s {
 	uint64_t    handle;
 } handleref_t;
 
-static void flag_or (const exprval_t *val1, const exprval_t *val2,
-					 exprval_t *result, exprctx_t *ctx)
-{
-	*(int *) (result->value) = *(int *) (val1->value) | *(int *) (val2->value);
-}
-
-static void flag_and (const exprval_t *val1, const exprval_t *val2,
-					 exprval_t *result, exprctx_t *ctx)
-{
-	*(int *) (result->value) = *(int *) (val1->value) & *(int *) (val2->value);
-}
-
-static void flag_cast_int (const exprval_t *val1, const exprval_t *val2,
-						   exprval_t *result, exprctx_t *ctx)
-{
-	// FIXME should check value is valid
-	*(int *) (result->value) = *(int *) (val2->value);
-}
-
-static void flag_not (const exprval_t *val, exprval_t *result, exprctx_t *ctx)
-{
-	*(int *) (result->value) = ~(*(int *) (val->value));
-}
-
-binop_t flag_binops[] = {
-	{ '|', 0, 0, flag_or },
-	{ '&', 0, 0, flag_and },
-	{ '=', &cexpr_int, 0, flag_cast_int },
-	{ '=', &cexpr_plitem, 0, cexpr_cast_plitem },
-	{}
-};
-
 binop_t enum_binops[] = {
 	{ '=', &cexpr_plitem, 0, cexpr_cast_plitem },
-	{}
-};
-
-unop_t flag_unops[] = {
-	{ '~', 0, flag_not },
 	{}
 };
 
