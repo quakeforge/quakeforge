@@ -76,10 +76,7 @@ static string get_type_key (void *type, void *unused)
 		case ty_union:
 			return [[Struct alloc] initWithType: type];
 		case ty_alias:
-			if (type.alias.name) {
-				return [[Alias alloc] initWithType: type];
-			}
-			return [Type fromType: type.alias.full_type];
+			return [Alias forType: type];
 	}
 	return nil;
 }

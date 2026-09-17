@@ -47,7 +47,9 @@ typedef enum VkBool32 {
 	if (!(self = [super initWithType: type])) {
 		return nil;
 	}
-	[self process];
+	if ([self class] == [Enum class]) {
+		[self process];
+	}
 	return self;
 }
 
