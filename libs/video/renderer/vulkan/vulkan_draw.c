@@ -518,8 +518,10 @@ flush_draw_data (VkBuffer buffer, VkDeviceSize offset,
 						 {0.2, 0.8, 0.3, 1});
 	auto sb = bufferBarriers[qfv_BB_VertexAttrRead_to_TransferWrite];
 	auto db = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
-	sb.srcStageMask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-	db.dstStageMask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	sb.srcStageMask |= VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+	sb.srcAccessMask |= VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+	db.dstStageMask |= VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+	db.dstAccessMask |= VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
 	QFV_PacketCopyBuffer (packet, buffer, offset, &sb, &db);
 	QFV_duCmdEndLabel (ctx->device, packet->cmd);
 	QFV_PacketSubmit (packet);
