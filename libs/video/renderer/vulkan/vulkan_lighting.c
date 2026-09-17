@@ -246,30 +246,11 @@ lighting_init_shadow (const exprval_t **params, exprval_t *result,
 	};
 	auto rpinfo = rt->renderpasses;
 	auto rp = render->renderpasses;
-	uint32_t num_subpasses = rpinfo->num_subpasses;
-	if (num_subpasses > 0 && strcmp (rpinfo->subpasses[num_subpasses - 1].name,
-									 "$external") == 0) {
-		num_subpasses--;
-	}
-	VkRenderPassMultiviewCreateInfo *mv = cmemalloc (memsuper,
-			sizeof (VkRenderPassMultiviewCreateInfo[max_views]));
-	uint32_t *all_viewmasks = cmemalloc (memsuper,
-			sizeof (uint32_t[max_views * num_subpasses]));
 	for (uint32_t i = 0; i < max_views; i++) {
-		auto viewmasks = &all_viewmasks[i * num_subpasses];
-		mv[i] = (VkRenderPassMultiviewCreateInfo) {
-			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO,
-			.pNext = rpinfo->pNext,
-			.subpassCount = num_subpasses,
-			.pViewMasks = viewmasks,
-		};
 		rp[i] = *rpinfo;
-		rp[i].pNext = &mv[i];
 		rp[i].name = cmemstrdup (memsuper, vac (ctx->va_ctx, "%s:%d",
 												rpinfo->name, i + 1));
-		for (uint32_t j = 0; j < num_subpasses; j++) {
-			viewmasks[j] = ~0u >> (31 - i);
-		}
+		rp[i].viewMask = ~0u >> (31 - i);
 	}
 }
 

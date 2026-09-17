@@ -170,6 +170,7 @@ typedef struct qfv_attachmentrefinfo_s {
 	int         line;
 	VkImageLayout layout;
 	VkPipelineColorBlendAttachmentState blend;
+	VkImageAspectFlags aspectMask;
 } qfv_attachmentrefinfo_t;
 
 typedef struct qfv_attachmentsetinfo_s {
@@ -214,6 +215,7 @@ typedef struct qfv_subpassinfo_s {
 	const char *name;
 	int         line;
 	uint32_t    num_dependencies;
+	uint32_t    viewMask;
 	qfv_dependencyinfo_t *dependencies;
 	qfv_attachmentsetinfo_t *attachments;
 	qfv_pipelineinfo_t *base_pipeline;
@@ -238,9 +240,12 @@ typedef struct qfv_renderpassinfo_s {
 	const char *name;
 	void       *pNext;
 	qfv_framebufferinfo_t framebuffer;
+	uint32_t    viewMask;				// default for subpasses
 	uint32_t    num_subpasses;
 	qfv_subpassinfo_t *subpasses;
 	qfv_reference_t output;
+	uint32_t    num_correlated_views;
+	uint32_t   *correlated_views;
 } qfv_renderpassinfo_t;
 
 typedef struct qfv_computeinfo_s {

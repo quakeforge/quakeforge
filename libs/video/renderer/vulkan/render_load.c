@@ -885,12 +885,12 @@ setup_resources (qfv_resourceinfo_t *ri, vulkan_ctx_t *ctx)
 }
 
 typedef struct {
-	VkRenderPassCreateInfo *rpCreate;
-	VkAttachmentDescription *attach;
+	VkRenderPassCreateInfo2 *rpCreate;
+	VkAttachmentDescription2 *attach;
 	VkClearValue *clear;
-	VkSubpassDescription *subpass;
-	VkSubpassDependency *depend;
-	VkAttachmentReference *attachref;
+	VkSubpassDescription2 *subpass;
+	VkSubpassDependency2 *depend;
+	VkAttachmentReference2 *attachref;
 	VkPipelineColorBlendAttachmentState *cbAttach;
 	uint32_t   *preserve;
 	const char **rpName;
@@ -919,9 +919,9 @@ typedef struct {
 	qfv_jobinfo_t *jinfo;
 	exprtab_t  *symtab;
 	qfv_renderpassinfo_t *rpi;
-	VkRenderPassCreateInfo *rpc;
+	VkRenderPassCreateInfo2 *rpc;
 	qfv_subpassinfo_t *spi;
-	VkSubpassDescription *spc;
+	VkSubpassDescription2 *spc;
 	qfv_pipelineinfo_t *pli;
 	VkGraphicsPipelineCreateInfo *plc;
 } objstate_t;
@@ -1229,9 +1229,11 @@ init_arCreate (const qfv_attachmentrefinfo_t *ari, objstate_t *s)
 		.line = ari->line,
 	};
 
-	*arc = (VkAttachmentReference) {
+	*arc = (VkAttachmentReference2) {
+		.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
 		.attachment = find_attachment (&ref, s),
 		.layout = ari->layout,
+		.aspectMask = ari->aspectMask,
 	};
 }
 
@@ -1254,14 +1256,17 @@ init_spCreate (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
 
 	s->ptr.pl_counts[s->inds.num_renderpasses] += s->spi->num_pipelines;
 
-	*s->spc = (VkSubpassDescription) {
+	*s->spc = (VkSubpassDescription2) {
+		.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2,
 		.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+		.viewMask = s->spi->viewMask ? s->spi->viewMask : s->rpi->viewMask,
 	};
 	bool external = !strcmp (s->spi->name, "$external");
 	for (uint32_t i = 0; i < s->spi->num_dependencies; i++) {
 		__auto_type d = &s->spi->dependencies[i];
 		__auto_type dep = &s->ptr.depend[s->inds.num_dependencies++];
-		*dep = (VkSubpassDependency) {
+		*dep = (VkSubpassDependency2) {
+			.sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
 			.srcSubpass = find_subpass (d, index, s->rpi->subpasses),
 			.dstSubpass = external ? VK_SUBPASS_EXTERNAL : index,
 			.srcStageMask = d->src.stage,
@@ -1354,7 +1359,8 @@ init_atCreate (qfv_attachmentinfo_t *ati, objstate_t *s)
 					   ati->line, ati->name, ati->external);
 		}
 	}
-	*atc = (VkAttachmentDescription) {
+	*atc = (VkAttachmentDescription2) {
+		.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2,
 		.flags = ati->flags,
 		.format = ati->format,
 		.samples = ati->samples,
@@ -1456,8 +1462,8 @@ init_rpCreate (uint32_t index, const qfv_renderinfo_t *rinfo, objstate_t *s)
 	}
 	num_dependencies = s->inds.num_dependencies - num_dependencies;
 
-	*s->rpc = (VkRenderPassCreateInfo) {
-		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+	*s->rpc = (VkRenderPassCreateInfo2) {
+		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2,
 		.pNext = s->rpi->pNext,
 		.attachmentCount = s->rpi->framebuffer.num_attachments,
 		.pAttachments = attachments,
@@ -2145,12 +2151,12 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 	VkRenderPass renderpasses[counts->num_renderpasses + 1] = {};
 	VkPipeline pipelines[counts->num_graph_pipelines
 						 + counts->num_comp_pipelines + 1] = {};
-	VkRenderPassCreateInfo rpCreate[counts->num_renderpasses + 1] = {};
-	VkAttachmentDescription attach[counts->num_attachments + 1] = {};
+	VkRenderPassCreateInfo2 rpCreate[counts->num_renderpasses + 1] = {};
+	VkAttachmentDescription2 attach[counts->num_attachments + 1] = {};
 	VkClearValue clear[counts->num_attachments + 1] = {};
-	VkSubpassDescription subpass[counts->num_subpasses + 1] = {};
-	VkSubpassDependency depend[counts->num_dependencies + 1] = {};
-	VkAttachmentReference attachref[counts->num_attachmentrefs + 1] = {};
+	VkSubpassDescription2 subpass[counts->num_subpasses + 1] = {};
+	VkSubpassDependency2 depend[counts->num_dependencies + 1] = {};
+	VkAttachmentReference2 attachref[counts->num_attachmentrefs + 1] = {};
 	VkPipelineColorBlendAttachmentState
 		cbAttach[counts->num_colorblend + 1] = {};
 	uint32_t    preserve[counts->num_preserve + 1] = {};
@@ -2260,8 +2266,8 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	uint32_t    plInd = 0;
 	for (uint32_t i = 0; i < counts->num_renderpasses; i++) {
-		dfunc->vkCreateRenderPass (device->dev, &s.ptr.rpCreate[i], 0,
-								   &renderpasses[i]);
+		dfunc->vkCreateRenderPass2 (device->dev, &s.ptr.rpCreate[i], 0,
+								    &renderpasses[i]);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_RENDER_PASS,
 							 renderpasses[i],
 							 vac (ctx->va_ctx, "renderpass:%s", rpName[i]));

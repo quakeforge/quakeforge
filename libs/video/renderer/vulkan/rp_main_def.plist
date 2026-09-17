@@ -1402,6 +1402,7 @@ framebuffers = {
 renderpasses = {
 	depth = {
 		color = "[0, 1, 0, 1]";
+		viewMask = 0x01u;
 		framebuffer = {
 			use = flat;
 			attachments = {
@@ -1581,9 +1582,7 @@ renderpasses = {
 	};
 	depth_cube = {
 		@inherit = $renderpasses.depth;
-		@next = (VkRenderPassMultiviewCreateInfo, {
-			viewMasks   = (0x3fu, 0x3fu);
-		});
+		viewMask = 0x3fu;
 		framebuffer = {
 			use = cube;
 			attachments = {
@@ -1648,9 +1647,7 @@ renderpasses = {
 	};
 	occlusion_cube = {
 		@inherit = $renderpasses.occlusion;
-		@next = (VkRenderPassMultiviewCreateInfo, {
-			viewMasks   = (0x3fu);
-		});
+		viewMask = 0x3fu;
 		framebuffer = {
 			use = cube;
 			attachments = {
@@ -1663,6 +1660,7 @@ renderpasses = {
 	};
 	deferred = {
 		color = "[0, 1, 0, 1]";
+		viewMask = 0x01;
 		framebuffer = {
 			use = flat;
 			attachments = {
@@ -1819,10 +1817,22 @@ renderpasses = {
 				};
 				attachments = {
 					input = {
-						color = shader_read_only_optimal;
-						orm = shader_read_only_optimal;
-						normal = shader_read_only_optimal;
-						depth = shader_read_only_optimal;
+						color = {
+							layout = shader_read_only_optimal;
+							aspectMask = color;
+						};
+						orm = {
+							layout = shader_read_only_optimal;
+							aspectMask = color;
+						};
+						normal = {
+							layout = shader_read_only_optimal;
+							aspectMask = color;
+						};
+						depth = {
+							layout = shader_read_only_optimal;
+							aspectMask = depth;
+						};
 					};
 					color = {
 						light = {
@@ -1911,9 +1921,18 @@ renderpasses = {
 				};
 				attachments = {
 					input = {
-						light = shader_read_only_optimal;
-						emission = shader_read_only_optimal;
-						depth = shader_read_only_optimal;
+						light = {
+							layout = shader_read_only_optimal;
+							aspectMask = color;
+						};
+						emission = {
+							layout = shader_read_only_optimal;
+							aspectMask = color;
+						};
+						depth = {
+							layout = shader_read_only_optimal;
+							aspectMask = depth;
+						};
 					};
 					color = {
 						output = {
@@ -2071,9 +2090,7 @@ renderpasses = {
 	};
 	deferred_cube = {
 		@inherit = $renderpasses.deferred;
-		@next = (VkRenderPassMultiviewCreateInfo, {
-			viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
-		});
+		viewMask = 0x3fu;
 		framebuffer = {
 			use = cube;
 			attachments = {

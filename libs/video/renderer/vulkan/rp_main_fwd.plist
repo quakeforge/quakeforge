@@ -1036,6 +1036,7 @@ renderpasses = {
 				color = { };
 			};
 		};
+		viewMask = 0x01;
 		subpasses = {
 			solid = {
 				color = "[ 0.3,  0.7,  0.3, 1]";
@@ -1197,9 +1198,7 @@ renderpasses = {
 	};
 	forward_cube = {
 		@inherit = $renderpasses.forward;
-		@next = (VkRenderPassMultiviewCreateInfo, {
-			viewMasks   = (0x3fu, 0x3fu);
-		});
+		viewMask = 0x3fu;
 		framebuffer = {
 			use = cube;
 			attachments = {
@@ -1228,7 +1227,10 @@ renderpasses = {
 				);
 				attachments = {
 					input = {
-						color = shader_read_only_optimal;
+						color = {
+							layout = shader_read_only_optimal;
+							aspectMask = color;
+						};
 					};
 					color = {
 						output = {
@@ -1309,9 +1311,7 @@ renderpasses = {
 	};
 	compose_cube = {
 		@inherit = $renderpasses.compose;
-		@next = (VkRenderPassMultiviewCreateInfo, {
-			viewMasks   = (0x3fu);
-		});
+		viewMask = 0x3fu;
 		framebuffer = {
 			use = cube;
 			attachments = {
