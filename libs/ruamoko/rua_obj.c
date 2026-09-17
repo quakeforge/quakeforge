@@ -2336,6 +2336,23 @@ rua_PR_FindGlobal (progs_t *pr, void *data)
 		R_POINTER (pr) = def->ofs;
 }
 
+static void
+rua_PR_GlobalAtOfs (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	pr_ptr_t    offset = P_POINTER (pr, 0);
+	pr_def_t   *def;
+
+	R_PACKED (pr, ddef_t) = (ddef_t) {};
+	def = PR_GlobalAtOfs (pr, offset);
+	if (def) {
+		unsigned    ind = def - pr->pr_globaldefs;
+		auto progs = pr->progs;
+		auto ddefs = (ddef_t *) ((byte *) progs + progs->globaldefs.offset);
+		R_PACKED (pr, ddef_t) = ddefs[ind];
+	}
+}
+
 //====================================================================
 
 #define bi(x,np,params...) {#x, rua_##x, -1, np, {params}}
@@ -2408,6 +2425,7 @@ static builtin_t obj_methods [] = {
 	bi(_c_Object__conformsToProtocol_, 3, p(ptr), p(ptr), p(ptr)),
 
 	bi(PR_FindGlobal,                  1, p(string)),//FIXME
+	bi(PR_GlobalAtOfs,                 1, p(ptr)),//FIXME
 	{0}
 };
 
