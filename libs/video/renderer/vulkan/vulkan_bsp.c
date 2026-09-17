@@ -574,14 +574,23 @@ build_surfaces (mod_brush_t *brush, cluster_t *cluster, buildctx_t *build)
 static void
 model_build_surfaces (model_t *m, buildctx_t *build)
 {
+	auto bctx = build->bctx;
 	mod_brush_t *brush = m->brush;
 	// vis_clusters does not include the solid cluster 0
 	uint32_t num_clusters = brush->cluster_vis.count + 1;
+	bctx->models[m->render_id] = (bsp_model_t) {
+		.first_cluster = build->cluster_base,
+		.cluster_count = num_clusters,
+	};
 	for (uint32_t j = 0; j < num_clusters; j++) {
 		auto cluster = &brush->clusters[j];
 		build_surfaces (brush, cluster, build);
 	}
 	for (uint32_t j = 1; j < brush->numsubmodels; j++) {
+		bctx->models[m->render_id + j] = (bsp_model_t) {
+			.first_cluster = build->cluster_base,
+			.cluster_count = 1,
+		};
 		auto cluster = &brush->clusters[num_clusters + j - 1];
 		build_surfaces (brush, cluster, build);
 	}
@@ -657,7 +666,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t subcluster_buffer_size = sizeof (bsp_cluster_t[num_clusters]);
 	size_t cluster_buffer_size = sizeof (cluster_t[mod_clusters]);
 	size_t clustermap_buffer_size = sizeof (uint32_t[num_clusters]);
-	size_t queue_buffer_size = sizeof (uint32_t[num_clusters]);
+	size_t queue_buffer_size = sizeof (bsp_queue_t[num_clusters]);
 
 	bctx->command_offsets = malloc (command_offsets_buffer_size);
 	bctx->command_counts = malloc (command_offsets_buffer_size);
@@ -1314,6 +1323,35 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	draw_queue (pass, queue, layout, device, cmd, bctx);
 }
 
+static bool
+draw_brush_model (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
+{
+	qfZoneScoped (true);
+	auto renderer = Entity_GetRenderer (ent);
+	model_t    *model = renderer->model;
+
+	int render_id = Vulkan_Scene_AddEntity (ctx, ent);
+	if (render_id < 0) {
+		return false;
+	}
+	DARRAY_APPEND (&pass->instances[model->render_id].entities, render_id);
+	return true;
+}
+
+static void
+clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
+{
+	qfZoneScoped (true);
+	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
+		DARRAY_RESIZE (&pass->face_queue[i], 0);
+	}
+	for (int i = 0; i < bctx->num_models; i++) {
+		pass->instances[i].first_instance = -1;
+		DARRAY_RESIZE (&pass->instances[i].entities, 0);
+	}
+	pass->index_count = 0;
+}
+
 static void
 bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
@@ -1346,15 +1384,19 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	if (pass->entqueue) {
 		EntQueue_Clear (pass->entqueue);
 	}
+	clear_queues (bctx, pass);
 	if (!pass->brush) {
 		return;
 	}
 	auto brush = pass->brush;
 
+	pass->entid_data = frame->entid_data;
+	pass->entid_count = frame->entid_count;
+
 	entity_t    worldent = nullentity;
 	int         world_id = Vulkan_Scene_AddEntity (ctx, worldent);
 	pass->ent_frame = 0;    // world is always frame 0
-	pass->inst_id = world_id;
+	pass->entid_data[pass->entid_count++] = world_id;
 	if (pass->instances) {
 		DARRAY_APPEND (&pass->instances[world_id].entities, world_id);
 	}
@@ -1372,16 +1414,65 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		return;
 	}
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.queue");
-	uint32_t *queue = QFV_PacketExtend (packet, sizeof (uint32_t[count]));
+	bsp_queue_t *queue = QFV_PacketExtend (packet, sizeof (bsp_queue_t[count]));
 	for (auto c = set_first (&pvs); c; c = set_next (c)) {
 		uint32_t cluster = c->element + 1;
 		R_StoreEfrags (scene, cluster);
-		*queue++ = cluster;
+		*queue++ = (bsp_queue_t) { .cluster = cluster, .instance_count = 1 };
 	}
 	QFV_PacketCopyBuffer (packet, bctx->queue_buffer, frame->queue,
 						  &bufferBarriers[qfv_BB_ShaderRO_to_TransferWrite],
 						  &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
 	QFV_PacketSubmit (packet);
+
+	if (r_drawentities && bctx->num_models && pass->instances) {
+		auto entqueue = pass->entqueue;
+		uint32_t ent_count = entqueue->ent_queues[mod_brush].size;
+		for (size_t i = 0; i < ent_count; i++) {
+			entity_t    ent = entqueue->ent_queues[mod_brush].a[i];
+			if (!draw_brush_model (ent, pass, ctx)) {
+				Sys_Printf ("Too many entities!\n");
+				break;
+			}
+		}
+		uint32_t mod_count = 0;
+		for (int i = 1; i < bctx->num_models; i++) {
+			auto mod = &bctx->models[i];
+			auto inst = &pass->instances[i];
+			uint32_t num_ents = inst->entities.size;
+			if (num_ents) {
+				mod_count += mod->cluster_count;
+				inst->first_instance = pass->entid_count;
+				memcpy (pass->entid_data + pass->entid_count,
+						inst->entities.a, sizeof (uint32_t[num_ents]));
+				pass->entid_count += num_ents;
+			}
+		}
+		if (mod_count) {
+			packet = QFV_PacketAcquire (ctx->staging, "bsp.entqueue");
+			queue = QFV_PacketExtend (packet, sizeof (bsp_queue_t[mod_count]));
+			for (int i = 1; i < bctx->num_models; i++) {
+				auto mod = &bctx->models[i];
+				auto inst = &pass->instances[i];
+				uint32_t num_ents = inst->entities.size;
+				if (num_ents) {
+					for (uint32_t j = 0; j < mod->cluster_count; j++) {
+						*queue++ = (bsp_queue_t) {
+							.cluster = bctx->models[i].first_cluster + j,
+							.first_instance = inst->first_instance,
+							.instance_count = num_ents,
+						};
+					}
+				}
+			}
+			QFV_PacketCopyBuffer (packet, bctx->queue_buffer,
+							frame->queue + sizeof (bsp_queue_t[count]),
+							&bufferBarriers[qfv_BB_ShaderRO_to_TransferWrite],
+							&bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
+			QFV_PacketSubmit (packet);
+			count += mod_count;
+		}
+	}
 
 	*bctx->cluster_queue_ptr = bctx->queue_buffer_addr + frame->queue;
 	*bctx->cluster_count = count;
@@ -1412,6 +1503,8 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		};
 	}
 
+	frame->entid_count = pass->entid_count;
+
 	bsp_flush (ctx);
 }
 
@@ -1425,20 +1518,6 @@ bsp_build_lightmaps (const exprval_t **params, exprval_t *result,
 	auto scene = (scene_t *) taskctx->data;
 
 	Vulkan_BuildLightmaps (scene->models, scene->num_models, ctx);
-}
-
-static void
-clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
-{
-	qfZoneScoped (true);
-	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
-		DARRAY_RESIZE (&pass->face_queue[i], 0);
-	}
-	for (int i = 0; i < bctx->num_models; i++) {
-		pass->instances[i].first_instance = -1;
-		DARRAY_RESIZE (&pass->instances[i].entities, 0);
-	}
-	pass->index_count = 0;
 }
 
 static void

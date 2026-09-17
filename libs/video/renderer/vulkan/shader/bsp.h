@@ -22,4 +22,10 @@ typedef struct bsp_cluster_s {
 	uint        tex_id;
 } bsp_cluster_t;
 
+typedef struct bsp_queue_s {
+	uint        cluster;
+	uint        first_instance;
+	uint        instance_count;
+} bsp_queue_t;
+
 #endif//__shader_bsp_h

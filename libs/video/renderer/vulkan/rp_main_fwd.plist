@@ -1495,6 +1495,7 @@ jobs = {
 					pipelines = {
 						enqueue = {
 							tasks = (
+								{ func = bsp_reset_queues; },
 								{ func = bsp_visit_world; },
 							);
 							stage = $brush.cluster.shader.main;

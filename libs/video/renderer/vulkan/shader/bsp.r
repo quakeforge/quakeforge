@@ -13,7 +13,7 @@
 	bsp_cluster_t *subclusters;
 	cluster_t *clusters;
 	uint *cluster_map;
-	uint *cluster_queue;
+	bsp_queue_t *cluster_queue;
 	uint cluster_count;
 	uint texture_count;
 };
@@ -32,7 +32,8 @@ main ()
 	if (queue_index >= cluster_count) {
 		return;
 	}
-	auto cluster = clusters[cluster_queue[queue_index]];
+	auto queue = cluster_queue[queue_index];
+	auto cluster = clusters[queue.cluster];
 	for (uint i = 0; i < cluster.count; i++) {
 		uint subcluster_ind = cluster_map[cluster.first + i];
 		auto subcluster = subclusters[subcluster_ind];
@@ -40,10 +41,10 @@ main ()
 		command_ind += command_offsets[subcluster.tex_id];
 		commands[command_ind] = (command_t) {
 			.indexCount = subcluster.index_count,
-			.instanceCount = 1,
+			.instanceCount = queue.instance_count,
 			.firstIndex = subcluster.first_index,
 			.vertexOffset = 0,
-			.firstInstace = 0,
+			.firstInstace = queue.first_instance,
 		};
 	}
 }
