@@ -890,6 +890,7 @@ typedef struct {
 	VkClearValue *clear;
 	VkSubpassDescription2 *subpass;
 	VkSubpassDependency2 *depend;
+	VkMemoryBarrier2 *membarrier;
 	VkAttachmentReference2 *attachref;
 	VkPipelineColorBlendAttachmentState *cbAttach;
 	uint32_t   *preserve;
@@ -1264,16 +1265,22 @@ init_spCreate (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
 	bool external = !strcmp (s->spi->name, "$external");
 	for (uint32_t i = 0; i < s->spi->num_dependencies; i++) {
 		__auto_type d = &s->spi->dependencies[i];
-		__auto_type dep = &s->ptr.depend[s->inds.num_dependencies++];
+		uint32_t ind = s->inds.num_dependencies++;
+		__auto_type dep = &s->ptr.depend[ind];
+		__auto_type mem = &s->ptr.membarrier[ind];
 		*dep = (VkSubpassDependency2) {
 			.sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
+			.pNext = mem,
 			.srcSubpass = find_subpass (d, index, s->rpi->subpasses),
 			.dstSubpass = external ? VK_SUBPASS_EXTERNAL : index,
+			.dependencyFlags = d->flags,
+		};
+		*mem = (VkMemoryBarrier2) {
+			.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
 			.srcStageMask = d->src.stage,
 			.dstStageMask = d->dst.stage,
 			.srcAccessMask = d->src.access,
 			.dstAccessMask = d->dst.access,
-			.dependencyFlags = d->flags,
 		};
 	}
 
@@ -2156,6 +2163,7 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 	VkClearValue clear[counts->num_attachments + 1] = {};
 	VkSubpassDescription2 subpass[counts->num_subpasses + 1] = {};
 	VkSubpassDependency2 depend[counts->num_dependencies + 1] = {};
+	VkMemoryBarrier2 membarrier[counts->num_dependencies + 1] = {};
 	VkAttachmentReference2 attachref[counts->num_attachmentrefs + 1] = {};
 	VkPipelineColorBlendAttachmentState
 		cbAttach[counts->num_colorblend + 1] = {};
@@ -2180,6 +2188,7 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 			.clear     = clear,
 			.subpass   = subpass,
 			.depend    = depend,
+			.membarrier= membarrier,
 			.attachref = attachref,
 			.cbAttach  = cbAttach,
 			.preserve  = preserve,

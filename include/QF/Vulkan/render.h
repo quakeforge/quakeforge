@@ -127,8 +127,8 @@ typedef struct qfv_bufferviewinfo_s {
 } qfv_bufferviewinfo_t;
 
 typedef struct qfv_dependencymask_s {
-	VkPipelineStageFlags stage;
-	VkAccessFlags access;
+	VkPipelineStageFlags2 stage;
+	VkAccessFlags2 access;
 } qfv_dependencymask_t;
 
 typedef struct qfv_dependencyinfo_s {

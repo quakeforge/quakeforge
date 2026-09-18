@@ -1507,6 +1507,17 @@ renderpasses = {
 				color = "[ 0.25, 0.25, 0.6, 1]";
 				dependencies = {
 					depth = $depthtest_dependency;
+					translucent = {
+						src = {
+							stage = fragment_shader;
+							access = shader_storage_write;
+						};
+						dst = {
+							stage = fragment_shader;
+							access = shader_storage_write;
+						};
+						flags = by_region|view_local;
+					};
 				};
 				attachments = {
 					depth = {
@@ -2397,9 +2408,6 @@ jobs = {
 				color = "[0.3, 0.4, 0.0]";
 				process = {
 					tasks = (
-						{ func = bsp_reset_queues; },
-						{ func = bsp_visit_world;
-						  params = (main); },
 						{ func = scene_draw_viewmodel; },
 						{ func = lighting_update_lights; },
 						{ func = output_select_renderpass;

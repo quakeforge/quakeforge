@@ -946,6 +946,26 @@ push_bspconst (uint16_t *matrix_base, QFV_BspQueue queue,
 }
 
 static void
+trans_mem_barrier (qfv_devfuncs_t *dfunc, VkCommandBuffer cmd)
+{
+	static VkMemoryBarrier2 mb = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+		.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+		.srcAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+		.dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+	};
+	static VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.memoryBarrierCount = 1,
+		.pMemoryBarriers = &mb,
+		.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT
+						 | VK_DEPENDENCY_VIEW_LOCAL_BIT,
+	};
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
+}
+
+static void
 draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 			qfv_device_t *device, VkCommandBuffer cmd, bspctx_t *bctx)
 {
@@ -956,6 +976,9 @@ draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 		if (pass->textures) {
 			vulktex_t  *tex = pass->textures->a[tex_id];
 			bind_texture (tex, TEX_SET, layout, dfunc, cmd);
+		}
+		if (queue == QFV_bspTrans || queue == QFV_bspTurb) {
+			trans_mem_barrier (dfunc, cmd);
 		}
 		if (queue == QFV_bspBackground) {
 			dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
@@ -969,6 +992,9 @@ draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 					bctx->command_counts[tex_id],
 					cmd_size);
 		}
+	}
+	if (queue == QFV_bspTrans || queue == QFV_bspTurb) {
+		trans_mem_barrier (dfunc, cmd);
 	}
 }
 

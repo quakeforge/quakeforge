@@ -1136,6 +1136,17 @@ renderpasses = {
 				color = "[ 0.25, 0.25, 0.6, 1]";
 				dependencies = {
 					solid = $depthtest_dependency;
+					translucent = {
+						src = {
+							stage = fragment_shader;
+							access = shader_storage_write;
+						};
+						dst = {
+							stage = fragment_shader;
+							access = shader_storage_write;
+						};
+						flags = by_region|view_local;
+					};
 				};
 				attachments = {
 					depth = {
