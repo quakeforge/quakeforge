@@ -37,7 +37,7 @@ float DistributionGGX (vec3 N, vec3 H, float roughness)
 	float denom = (NdotH2 * (a2 - 1) + 1);
 	denom = PI * denom * denom;
 
-	return num / denom;
+	return denom > 0 ? num / denom : NdotH2 < 1 ? 0 : 1;
 }
 
 float GeometrySchlickGGX (float NdotV, float roughness)
@@ -47,7 +47,7 @@ float GeometrySchlickGGX (float NdotV, float roughness)
 
 	float num = NdotV;
 	float denom = NdotV * (1 - k) + k;
-
+	// denom can never be 0 for valid inputs (NdotV >= 0, 0 <= roughness <= 1)
 	return num / denom;
 }
 
@@ -68,8 +68,8 @@ spec_factor (vec3 N, vec3 V, vec3 L, vec3 H, float roughness)
 	float NDF = DistributionGGX (N, H, roughness);
 	float G   = GeometrySmith (N, V, L, roughness);
 	float numerator = NDF * G;
-	float denominator = 4 * max (N • V, 0) * max (N • L, 0) + 1e-4;
-	return numerator / denominator;
+	float denominator = 4 * max (N • V, 0) * max (N • L, 0);
+	return denominator > 0 ? numerator / denominator : 0;
 }
 
 vec3 fresnelSchlick (float cosTheta, vec3 F0)
@@ -111,9 +111,15 @@ main (void)
 	vec3        o_r_m = subpassLoad (orm).rgb;
 	float       roughness = o_r_m.g;
 	float       metalic = o_r_m.b;
-	vec3        n = normalize(subpassLoad (normal).rgb);
-	vec3        light = vec3 (0);
+	vec3        n = subpassLoad (normal).rgb;
 	float       d = subpassLoad (depth).x;
+	vec3        light = vec3 (0);
+	if (!n || !d) {
+		// nothing to light
+		frag_color = vec4 (light, 1);
+		return;
+	}
+	n = normalize(n);
 	vec4        invp = vec4 (
 					near_plane/Projection3d[0][0],
 					near_plane/Projection3d[1][1],
@@ -121,10 +127,6 @@ main (void)
 					1);
 	vec4        p = vec4 ((2 * uv - 1), 1, d) * invp;
 	p = InvView[gl_ViewIndex] * p;
-	if (!p.w) {
-		frag_color = vec4 (light, 1);
-		return;
-	}
 	p /= p.w;
 	vec3 V = normalize (InvView[gl_ViewIndex][3].xyz - p.xyz);
 	p.w = d;
