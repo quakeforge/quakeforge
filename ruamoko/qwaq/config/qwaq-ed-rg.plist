@@ -516,6 +516,35 @@ render_graph = {
 		};
 
 		brush = {
+			cluster = {
+				shader = {
+					clear = {
+						stage = compute;
+						name = cluster.clear;
+						module = $builtin/bsp.r;
+					};
+					main = {
+						stage = compute;
+						name = cluster.main;
+						module = $builtin/bsp.r;
+					};
+				};
+				layout = {
+					pushConstants = {
+						compute = {
+							command_counts = ptr;
+							command_offsets = ptr;
+							commands = ptr;
+							subclusters = ptr;
+							clusters = ptr;
+							cluster_map = ptr;
+							cluster_queue = ptr;
+							cluster_count = uint;
+							texture_count = uint;
+						};
+					};
+				};
+			};
 			shader = {
 				shadow_vertex = {
 					stage = vertex;
@@ -1891,6 +1920,7 @@ render_graph = {
 	renderpasses = {
 		depth = {
 			color = "[0, 1, 0, 1]";
+			viewMask = 1;
 			framebuffer = {
 				use = flat;
 				attachments = {
@@ -1999,6 +2029,17 @@ render_graph = {
 					color = "[ 0.25, 0.25, 0.6, 1]";
 					dependencies = {
 						depth = $depthtest_dependency;
+						translucent = {
+							src = {
+								stage = fragment_shader;
+								access = shader_storage_write;
+							};
+							dst = {
+								stage = fragment_shader;
+								access = shader_storage_write;
+							};
+							flags = by_region|view_local;
+						};
 					};
 					attachments = {
 						depth = {
@@ -2075,9 +2116,7 @@ render_graph = {
 		};
 		depth_cube = {
 			@inherit = $renderpasses.depth;
-			@next = (VkRenderPassMultiviewCreateInfo, {
-				viewMasks   = (0x3fu, 0x3fu);
-			});
+			viewMask = 0x3fu;
 			framebuffer = {
 				use = cube;
 				attachments = {
@@ -2090,6 +2129,7 @@ render_graph = {
 		};
 		occlusion = {
 			color = "[0.8, 0.6, 0, 1]";
+			viewMask = 1;
 			framebuffer = {
 				use = flat;
 				attachments = {
@@ -2142,9 +2182,7 @@ render_graph = {
 		};
 		occlusion_cube = {
 			@inherit = $renderpasses.occlusion;
-			@next = (VkRenderPassMultiviewCreateInfo, {
-				viewMasks   = (0x3fu);
-			});
+			viewMask = 0x3fu;
 			framebuffer = {
 				use = cube;
 				attachments = {
@@ -2157,6 +2195,7 @@ render_graph = {
 		};
 		gizmo = {
 			color = "[0, 1, 0, 1]";
+			viewMask = 1;
 			framebuffer = {
 				width = "($render_output.extent.width + 7u) / 8u";
 				height = "($render_output.extent.height + 7u) / 8u";
@@ -2198,9 +2237,7 @@ render_graph = {
 		};
 		gizmo_cube = {
 			@inherit = $renderpasses.gizmo;
-			@next = (VkRenderPassMultiviewCreateInfo, {
-				viewMasks   = (0x3fu);
-			});
+			viewMask = 0x3fu;
 			framebuffer = {
 				width = "(min($render_output.extent.width,$render_output.extent.height) + 7u) / 8u";
 				height = "(min($render_output.extent.width,$render_output.extent.height) + 7u) / 8u";
@@ -2211,6 +2248,7 @@ render_graph = {
 		};
 		deferred = {
 			color = "[0, 1, 0, 1]";
+			viewMask = 1;
 			framebuffer = {
 				use = flat;
 				attachments = {
@@ -2243,7 +2281,10 @@ render_graph = {
 							};
 						};
 						depth = {
-							depth = depth_stencil_read_only_optimal;
+							depth = {
+								layout = depth_stencil_read_only_optimal;
+								aspectMask = depth;
+							};
 						};
 						preserve = (color, normal, output);
 					};
@@ -2412,10 +2453,22 @@ render_graph = {
 					};
 					attachments = {
 						input = {
-							color = shader_read_only_optimal;
-							orm = shader_read_only_optimal;
-							normal = shader_read_only_optimal;
-							depth = shader_read_only_optimal;
+							color = {
+								layout = shader_read_only_optimal;
+								aspectMask = color;
+							};
+							orm = {
+								layout = shader_read_only_optimal;
+								aspectMask = color;
+							};
+							normal = {
+								layout = shader_read_only_optimal;
+								aspectMask = color;
+							};
+							depth = {
+								layout = shader_read_only_optimal;
+								aspectMask = depth;
+							};
 						};
 						color = {
 							light = {
@@ -2506,9 +2559,18 @@ render_graph = {
 					};
 					attachments = {
 						input = {
-							light = shader_read_only_optimal;
-							emission = shader_read_only_optimal;
-							depth = shader_read_only_optimal;
+							light = {
+								layout = shader_read_only_optimal;
+								aspectMask = color;
+							};
+							emission = {
+								layout = shader_read_only_optimal;
+								aspectMask = color;
+							};
+							depth = {
+								layout = shader_read_only_optimal;
+								aspectMask = depth;
+							};
 						};
 						color = {
 							compo = {
@@ -2632,8 +2694,14 @@ render_graph = {
 					};
 					attachments = {
 						input = {
-							compo = shader_read_only_optimal;
-							depth = shader_read_only_optimal;
+							compo = {
+								layout = shader_read_only_optimal;
+								aspectMask = color;
+							};
+							depth = {
+								layout = shader_read_only_optimal;
+								aspectMask = depth;
+							};
 						};
 						color = {
 							output = {
@@ -2736,9 +2804,7 @@ render_graph = {
 		};
 		deferred_cube = {
 			@inherit = $renderpasses.deferred;
-			@next = (VkRenderPassMultiviewCreateInfo, {
-				viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
-			});
+			viewMask = 0x3fu;
 			framebuffer = {
 				use = cube;
 				attachments = {
@@ -3033,14 +3099,39 @@ render_graph = {
 						};
 					};
 				};
+				world_clear = {
+					dependencies = (start_frame);
+					compute = {
+						pipelines = {
+							clear = {
+								tasks = (
+									{ func = bsp_clear_commands; },
+								);
+								stage = $brush.cluster.shader.clear;
+								layout = $brush.cluster.layout;
+							};
+						};
+					};
+				};
+				world_enqueue = {
+					dependencies = (world_clear);
+					compute = {
+						pipelines = {
+							clear = {
+								tasks = (
+									{ func = bsp_visit_world; },
+								);
+								stage = $brush.cluster.shader.main;
+								layout = $brush.cluster.layout;
+							};
+						};
+					};
+				};
 				world = {
 					color = "[0.3, 0.4, 0.0]";
-					dependencies = (start_frame);
+					dependencies = (enqueue);
 					process = {
 						tasks = (
-							{ func = bsp_reset_queues; },
-							{ func = bsp_visit_world;
-							  params = (main); },
 							{ func = scene_draw_viewmodel; },
 							{ func = lighting_update_lights; },
 							{ func = output_select_renderpass;
