@@ -227,7 +227,7 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, qfv_taskctx_t *taskctx,
 	auto rctx = ctx->render_context;
 	auto frame = &rctx->frames.a[ctx->curFrame];
 
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	qftVkScopedZoneTransientC (frame->qftVkCtx, cmd, rp->label.name, rp->label.color32);
 
 	QFV_duCmdBeginLabel (device, cmd, rp->label.name,
@@ -423,7 +423,7 @@ void
 QFV_RunRenderPass (qfv_taskctx_t *taskctx, qfv_renderpass_t *renderpass,
 				   uint32_t width, uint32_t height)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	qfv_output_t output = {
 		.extent = {
 			.width = width,
@@ -437,7 +437,7 @@ QFV_RunRenderPass (qfv_taskctx_t *taskctx, qfv_renderpass_t *renderpass,
 static void
 run_deletion_queue (vulkan_ctx_t *ctx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto rctx = ctx->render_context;
@@ -466,7 +466,7 @@ run_deletion_queue (vulkan_ctx_t *ctx)
 void
 QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
 	auto frame = &rctx->frames.a[ctx->curFrame];
@@ -682,7 +682,7 @@ QFV_QueueFramebufferDelete (vulkan_ctx_t *ctx, VkFramebuffer framebuffer)
 static void
 wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -706,7 +706,7 @@ static void
 update_framebuffer (const exprval_t **params, exprval_t *result,
 					exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto rctx = ctx->render_context;
@@ -759,7 +759,7 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 static void
 fullscreen_pass (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -779,7 +779,7 @@ fullscreen_pass (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 submit_depth (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto job = taskctx->job;
@@ -799,7 +799,7 @@ submit_depth (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto rctx = ctx->render_context;
@@ -824,7 +824,7 @@ submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 set_dispatch (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto pipeline = taskctx->pipeline;
 	pipeline->dispatch[0] = *(uint32_t *) params[2]->value;
