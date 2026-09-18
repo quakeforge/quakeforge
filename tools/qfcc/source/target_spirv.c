@@ -3843,13 +3843,7 @@ spirv_test_expr (const expr_t *expr)
 		auto test = typed_binary_expr (bool_type (type), QC_NE, expr, zero);
 		expr = test;
 	}
-	type = get_type (expr);
-	if (is_scalar (type)) {
-		return expr;
-	}
-	type = base_type (type);
-	auto test = new_horizontal_expr ('|', expr, type);
-	return test;
+	return ruamoko_test_expr (expr);
 }
 
 static const expr_t *
