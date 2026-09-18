@@ -175,8 +175,11 @@ vec4 sampleEnv (vec3 dir, float lod)
 		dir = dir.xzy;
 
 		vec3 rid = -dir;
-		float x1 = atan (dir.y, dir.x);
-		float x2 = atan (rid.y, rid.x);
+		float x1 = 0, x2 = 0;
+		if (dir.xy) {
+			x1 = atan (dir.y, dir.x);
+			x2 = atan (rid.y, rid.x);
+		}
 		float y = atan (dir.z, length(dir.xy));
 		vec2 uv1 = vec2 (x1, y) * conv + vec2(0.5, 0.5);
 		vec2 uv2 = vec2 (x2, y) * conv + vec2(0.0, 0.5);

@@ -42,7 +42,9 @@ vec3 importanceSample_GGX (vec2 Xi, float roughness, vec3 normal)
 	float alpha = roughness * roughness;
 	float phi = 2 * PI * Xi.x + random (normal.xz) * 0.1;
 	float cosTheta = sqrt ((1 - Xi.y) / (1 + (alpha * alpha - 1) * Xi.y));
-	float sinTheta = sqrt (1 - cosTheta * cosTheta);
+	// There appears to be a driver/gpu bug (nvidia 580.178.04, gtx 1080)
+	// that results in 0xb4000000 (-1.1920928955078125e-07)
+	float sinTheta = cosTheta == 1 ? 0 : sqrt (1 - cosTheta * cosTheta);
 
 	return spherical (vec2 (cosTheta, sinTheta), phi, normal);
 }
