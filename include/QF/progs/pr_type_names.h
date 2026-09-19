@@ -46,5 +46,8 @@ EV_TYPE(double)
 EV_TYPE(long)
 EV_TYPE(ulong)
 EV_TYPE(ushort)			// value is embedded in the opcode
+EV_TYPE(sbyte)
+EV_TYPE(ubyte)
+EV_TYPE(half)
 
 #undef EV_TYPE

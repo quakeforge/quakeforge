@@ -93,7 +93,7 @@ type_t      type_auto = {
 		.type = ev_##base_type, \
 		.name = #type_name, \
 		.alignment = PR_ALIGNOF(type_name), \
-		.width = PR_SIZEOF(type_name) / PR_SIZEOF (base_type), \
+		.width = sizeof(pr_##type_name##_t) / sizeof (pr_##base_type##_t), \
 		.columns = 1, \
 		.meta = ty_basic, \
 	};
@@ -395,6 +395,9 @@ free_type (type_t *type)
 		case ev_short:
 		case ev_ushort:
 		case ev_double:
+		case ev_sbyte:
+		case ev_ubyte:
+		case ev_half:
 			break;
 		case ev_field:
 		case ev_ptr:
@@ -439,6 +442,9 @@ copy_chain (type_t *type, type_t *append)
 					case ev_short:
 					case ev_ushort:
 					case ev_double:
+					case ev_sbyte:
+					case ev_ubyte:
+					case ev_half:
 						internal_error (0, "copy basic type");
 					case ev_field:
 					case ev_ptr:
@@ -497,6 +503,9 @@ append_type (const type_t *type, const type_t *new)
 					case ev_short:
 					case ev_ushort:
 					case ev_double:
+					case ev_sbyte:
+					case ev_ubyte:
+					case ev_half:
 						internal_error (0, "append to basic type");
 					case ev_field:
 					case ev_ptr:
@@ -1317,6 +1326,9 @@ print_type_str (dstring_t *str, const type_t *type)
 				case ev_short:
 				case ev_ushort:
 				case ev_double:
+				case ev_sbyte:
+				case ev_ubyte:
+				case ev_half:
 					{
 						const char *name = pr_type_name[type->type];
 						int width = type->width;
@@ -1606,6 +1618,15 @@ encode_type (dstring_t *encoding, const type_t *type)
 					return;
 				case ev_ushort:
 					dasprintf (encoding, "S");
+					return;
+				case ev_sbyte:
+					dasprintf (encoding, "c");
+					return;
+				case ev_ubyte:
+					dasprintf (encoding, "C");
+					return;
+				case ev_half:
+					dasprintf (encoding, "h");
 					return;
 				case ev_invalid:
 				case ev_type_count:

@@ -1632,7 +1632,52 @@ pr_debug_short_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%04x", (short)PR_PTR (int, value));
+	dasprintf (dstr, "%04x", PR_PTR (short, value));
+}
+
+static void
+pr_debug_print_sbyte (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	dasprintf (dstr, "%" PRIx8, PR_PTR (sbyte, value));
+}
+
+static void
+pr_debug_sbyte_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	pr_debug_print_matrix (type, value, _data, 1, pr_debug_print_sbyte);
+}
+
+static void
+pr_debug_print_ubyte (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	dasprintf (dstr, "%02" PRIx8, PR_PTR (ubyte, value));
+}
+
+static void
+pr_debug_ubyte_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	pr_debug_print_matrix (type, value, _data, 1, pr_debug_print_ubyte);
+}
+
+static void
+pr_debug_print_half (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	if (data->pr->progs->version == PROG_ID_VERSION
+		&& ISDENORM (PR_PTR (int, value))
+		&& PR_PTR (uint, value) != 0x80000000) {
+		dasprintf (dstr, "<%04x>", PR_PTR (ushort, value));
+	} else {
+		dasprintf (dstr, "%.5g", (double) PR_PTR (half, value));
+	}
+}
+
+static void
+pr_debug_half_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	pr_debug_print_matrix (type, value, _data, 1, pr_debug_print_half);
 }
 
 static void
@@ -1680,7 +1725,7 @@ pr_debug_ushort_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%04x", (pr_ushort_t)PR_PTR (int, value));
+	dasprintf (dstr, "%04x", PR_PTR (ushort, value));
 }
 
 static void

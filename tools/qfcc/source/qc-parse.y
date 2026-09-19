@@ -3442,6 +3442,11 @@ static keyword_t qf_keywords[] = {
 	{"signed",		QC_TYPE_SPEC, .spec = { .is_signed = true } },
 	{"long",		QC_TYPE_SPEC, .spec = { .is_long = true } },
 	{"short",		QC_TYPE_SPEC, .spec = { .is_short = true } },
+	{"ushort",		QC_TYPE_SPEC, .spec = { .type = &type_ushort } },
+	{"sbyte",		QC_TYPE_SPEC, .spec = { .type = &type_sbyte } },
+	{"byte",		QC_TYPE_SPEC, .spec = { .type = &type_ubyte } },
+	{"ubyte",		QC_TYPE_SPEC, .spec = { .type = &type_ubyte } },
+	{"half",		QC_TYPE_SPEC, .spec = { .type = &type_half } },
 
 	{"true",        QC_TRUE },
 	{"false",       QC_FALSE},

@@ -512,6 +512,69 @@ _get_value_string (const ex_value_t *value, const type_t *type, bool print_name)
 					break;
 			}
 			return va ("%s %s", type->name, str);
+		case ev_sbyte:
+			switch (type_width (type)) {
+				case 1:
+					str = va ("%x", value->sbyte_val);
+					break;
+				case 2:
+					str = va ("[%x, %x]",
+							  VEC2_EXP (value->sbvec2_val));
+					break;
+				case 3:
+					str = va ("[%x, %x, %x]",
+							  VectorExpand (value->sbvec3_val));
+					break;
+				case 4:
+					str = va ("[%x, %x, %x, %x]",
+							  VEC4_EXP (value->sbvec4_val));
+					break;
+			}
+			return va ("%s %s", type->name, str);
+		case ev_ubyte:
+			switch (type_width (type)) {
+				case 1:
+					str = va ("%02x", value->ubyte_val);
+					break;
+				case 2:
+					str = va ("[%02x, %02x]",
+							  VEC2_EXP (value->ubvec2_val));
+					break;
+				case 3:
+					str = va ("[%02x, %02x, %02x]",
+							  VectorExpand (value->ubvec3_val));
+					break;
+				case 4:
+					str = va ("[%02x, %02x, %02x, %02x]",
+							  VEC4_EXP (value->ubvec4_val));
+					break;
+			}
+			return va ("%s %s", type->name, str);
+		case ev_half:
+			switch (type_width (type)) {
+				case 1:
+					str = va ("%.5g", (double) value->half_val);
+					break;
+				case 2:
+					str = va ("[%.5g, %.5g]",
+							  (double) value->hvec2_val[0],
+							  (double) value->hvec2_val[1]);
+					break;
+				case 3:
+					str = va ("[%.5g, %.5g, %.5g]",
+							  (double) value->hvec3_val[0],
+							  (double) value->hvec3_val[1],
+							  (double) value->hvec3_val[2]);
+					break;
+				case 4:
+					str = va ("[%.5g, %.5g, %.5g, %.5g]",
+							  (double) value->hvec4_val[0],
+							  (double) value->hvec4_val[1],
+							  (double) value->hvec4_val[2],
+							  (double) value->hvec4_val[3]);
+					break;
+			}
+			return va ("%s %s", type->name, str);
 		case ev_void:
 			return "<void>";
 		case ev_invalid:

@@ -266,6 +266,9 @@ typedef struct ex_value_s {
 		unsigned    uint_val;			///< unsigned int constant
 		int16_t     short_val;			///< short constant
 		uint16_t    ushort_val;			///< unsigned short constant
+		int8_t      sbyte_val;			///< signed byte constant
+		uint8_t     ubyte_val;			///< byte constant
+		_Float16    half_val;			///< 16-bit float constant
 #define VEC_TYPE(type_name, base_type) pr_##type_name##_t type_name##_val;
 #include "tools/qfcc/include/vec_types.h"
 #define MAT_TYPE(type_name, base_type, cols, alignas) \

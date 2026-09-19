@@ -308,6 +308,9 @@ v6_test_expr (const expr_t *expr)
 		case ev_void:
 		case ev_invalid:
 		case ev_type_count:
+		case ev_sbyte:
+		case ev_ubyte:
+		case ev_half:
 			break;
 	}
 	return error (expr, "cannot convert to bool");
@@ -367,6 +370,9 @@ v6p_test_expr (const expr_t *expr)
 		case ev_long:
 		case ev_ulong:
 		case ev_void:
+		case ev_sbyte:
+		case ev_ubyte:
+		case ev_half:
 		case ev_invalid:
 		case ev_type_count:
 			break;

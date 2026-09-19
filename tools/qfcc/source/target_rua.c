@@ -447,6 +447,9 @@ ruamoko_test_expr (const expr_t *expr)
 		case ev_double:
 		case ev_short:
 		case ev_ushort:
+		case ev_sbyte:
+		case ev_ubyte:
+		case ev_half:
 		{
 			// short and ushort handled with the same code as float/double
 			// because they have no backing type and thus constants, which

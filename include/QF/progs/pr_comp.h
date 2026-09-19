@@ -38,6 +38,9 @@ typedef double    pr_double_t        __attribute__((aligned(8)));
 typedef int64_t   pr_long_t          __attribute__((aligned(8)));
 typedef uint64_t  pr_ulong_t         __attribute__((aligned(8)));
 typedef uint16_t  pr_ushort_t        __attribute__((aligned(2)));;
+typedef int8_t    pr_sbyte_t         __attribute__((aligned(1)));;
+typedef uint8_t   pr_ubyte_t         __attribute__((aligned(1)));;
+typedef _Float16  pr_half_t          __attribute__((aligned(2)));;
 
 #define PR_PTR(t, p)	(*(pr_##t##_t *) (p))
 
@@ -67,6 +70,18 @@ PR_VEC_TYPE (pr_ulong_t, pr_ulvec4_t, 4);
 PR_VEC_TYPE (double, pr_dvec2_t, 2);
 typedef pr_double_t pr_dvec3_t[3];
 PR_VEC_TYPE (double, pr_dvec4_t, 4);
+
+PR_VEC_TYPE (pr_sbyte_t, pr_sbvec2_t, 2);
+typedef pr_sbyte_t pr_sbvec3_t[3];
+PR_VEC_TYPE (pr_sbyte_t, pr_sbvec4_t, 4);
+
+PR_VEC_TYPE (pr_ubyte_t, pr_ubvec2_t, 2);
+typedef pr_ubyte_t pr_ubvec3_t[3];
+PR_VEC_TYPE (pr_ubyte_t, pr_ubvec4_t, 4);
+
+PR_VEC_TYPE (pr_half_t, pr_hvec2_t, 2);
+typedef pr_half_t pr_hvec3_t[3];
+PR_VEC_TYPE (pr_half_t, pr_hvec4_t, 4);
 
 
 #define EV_TYPE(type) ev_##type,
