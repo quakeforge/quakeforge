@@ -189,10 +189,6 @@ qfo_encode_struct (const type_t *type, defspace_t *space)
 
 	size = offsetof (qfot_struct_t, fields[num_fields]);
 	def = qfo_new_encoding (type, size, space);
-	enc = D_POINTER (qfot_type_t, def);
-	strct = &enc->strct;
-	ENC_STR (strct->tag, type->name);
-	strct->num_fields = num_fields;
 
 	type_encodings.a[type->id] = def;	// avoid infinite recursion
 
@@ -211,6 +207,10 @@ qfo_encode_struct (const type_t *type, defspace_t *space)
 		i++;
 	}
 
+	enc = D_POINTER (qfot_type_t, def);
+	strct = &enc->strct;
+	ENC_STR (strct->tag, type->name);
+	strct->num_fields = num_fields;
 	for (i = 0, sym = type->symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy)
 			continue;
