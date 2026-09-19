@@ -1613,19 +1613,39 @@ encode_type (dstring_t *encoding, const type_t *type)
 					}
 					return;
 				case ev_short:
-					dasprintf (encoding, "s");
+					if (type->width > 1) {
+						dasprintf (encoding, "s%d", type->width);
+					} else {
+						dasprintf (encoding, "s");
+					}
 					return;
 				case ev_ushort:
-					dasprintf (encoding, "S");
+					if (type->width > 1) {
+						dasprintf (encoding, "S%d", type->width);
+					} else {
+						dasprintf (encoding, "S");
+					}
 					return;
 				case ev_sbyte:
-					dasprintf (encoding, "c");
+					if (type->width > 1) {
+						dasprintf (encoding, "c%d", type->width);
+					} else {
+						dasprintf (encoding, "c");
+					}
 					return;
 				case ev_ubyte:
-					dasprintf (encoding, "C");
+					if (type->width > 1) {
+						dasprintf (encoding, "C%d", type->width);
+					} else {
+						dasprintf (encoding, "C");
+					}
 					return;
 				case ev_half:
-					dasprintf (encoding, "h");
+					if (type->width > 1) {
+						dasprintf (encoding, "h%d", type->width);
+					} else {
+						dasprintf (encoding, "h");
+					}
 					return;
 				case ev_invalid:
 				case ev_type_count:
@@ -1709,7 +1729,7 @@ bool
 is_signed (const type_t *type)
 {
 	type = unalias_type (type);
-	if (is_int (type) || is_long (type) || is_short (type)) {
+	if (is_int (type) || is_long (type) || is_short (type) || is_sbyte (type)) {
 		return true;
 	}
 	return false;
@@ -1719,7 +1739,8 @@ bool
 is_unsigned (const type_t *type)
 {
 	type = unalias_type (type);
-	if (is_uint (type) || is_ulong (type) || is_ushort (type)) {
+	if (is_uint (type) || is_ulong (type) || is_ushort (type)
+		|| is_ubyte (type)) {
 		return true;
 	}
 	return false;
@@ -1737,17 +1758,13 @@ bool
 is_real (const type_t *type)
 {
 	type = unalias_type (type);
-	return is_float (type) || is_double (type);
+	return is_half (type) || is_float (type) || is_double (type);
 }
 
 bool
 is_scalar (const type_t *type)
 {
 	type = unalias_type (type);
-	if (is_short (type) || is_ushort (type)) {
-		// shorts have width 0
-		return true;
-	}
 	if (type->width != 1) {
 		return false;
 	}
@@ -2355,6 +2372,9 @@ chain_basic_types (void)
 			chain_type (&type_long);
 			chain_type (&type_ulong);
 			chain_type (&type_ushort);
+			chain_type (&type_sbyte);
+			chain_type (&type_ubyte);
+			chain_type (&type_half);
 #define VEC_TYPE(name, type) chain_type (&type_##name);
 #include "tools/qfcc/include/vec_types.h"
 #define MAT_TYPE(name, type, cols, align_as) chain_type (&type_##name);
