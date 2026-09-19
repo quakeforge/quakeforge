@@ -449,6 +449,12 @@ spirv_TypeVoid (spirvctx_t *ctx)
 static unsigned
 spirv_TypeInt (unsigned bitwidth, bool is_signed, spirvctx_t *ctx)
 {
+	if (bitwidth == 8) {
+		ctx->module->int8 = true;
+	}
+	if (bitwidth == 16) {
+		ctx->module->int16 = true;
+	}
 	auto globals = ctx->module->globals;
 	auto insn = spirv_new_insn (SpvOpTypeInt, 4, globals, ctx);
 	INSN (insn, 1) = spirv_id (ctx);
@@ -460,6 +466,9 @@ spirv_TypeInt (unsigned bitwidth, bool is_signed, spirvctx_t *ctx)
 static unsigned
 spirv_TypeFloat (unsigned bitwidth, spirvctx_t *ctx)
 {
+	if (bitwidth == 16) {
+		ctx->module->float16 = true;
+	}
 	auto globals = ctx->module->globals;
 	auto insn = spirv_new_insn (SpvOpTypeFloat, 3, globals, ctx);
 	INSN (insn, 1) = spirv_id (ctx);
@@ -778,6 +787,14 @@ spirv_Type (const type_t *type, spirvctx_t *ctx)
 		if (is_boolean (type)) {
 			spirv_mirror_bool (type, id, ctx);
 		}
+	} else if (is_sbyte (type)) {
+		id = spirv_TypeInt (8, true, ctx);
+	} else if (is_ubyte (type)) {
+		id = spirv_TypeInt (8, false, ctx);
+	} else if (is_short (type)) {
+		id = spirv_TypeInt (16, true, ctx);
+	} else if (is_ushort (type)) {
+		id = spirv_TypeInt (16, false, ctx);
 	} else if (is_int (type)) {
 		id = spirv_TypeInt (32, true, ctx);
 	} else if (is_uint (type)) {
@@ -786,6 +803,8 @@ spirv_Type (const type_t *type, spirvctx_t *ctx)
 		id = spirv_TypeInt (64, true, ctx);
 	} else if (is_ulong (type)) {
 		id = spirv_TypeInt (64, false, ctx);
+	} else if (is_half (type)) {
+		id = spirv_TypeFloat (16, ctx);
 	} else if (is_float (type)) {
 		id = spirv_TypeFloat (32, ctx);
 	} else if (is_double (type)) {
@@ -3181,6 +3200,18 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	}
 
 	auto mod = pr->module;
+	//spirv_add_capability (mod, SpvCapabilityFloat16);
+	if (mod->int8) {
+		spirv_add_capability (mod, SpvCapabilityInt8);
+		spirv_add_capability (mod, SpvCapabilityStorageBuffer8BitAccess);
+	}
+	if (mod->int16) {
+		spirv_add_capability (mod, SpvCapabilityInt16);
+	}
+	if (mod->float16 || mod->int16) {
+		spirv_add_capability (mod, SpvCapabilityStorageBuffer16BitAccess);
+	}
+	//spirv_add_capability (mod, SpvCapabilityInt64);
 	for (auto cap = pr->module->capabilities.head; cap; cap = cap->next) {
 		spirv_Capability (expr_uint (cap->expr), space, &ctx);
 	}

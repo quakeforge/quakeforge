@@ -180,10 +180,10 @@ do_cast (const type_t *dstType, const expr_t *e, bool value)
 		dstType = dereference_type (dstType);
 		return edag_add_expr (address_expr (e, dstType));
 	}
-	if (is_short (srcType)) {
+	if (is_short (srcType) && is_constant (e)) {
 		e = new_int_expr (expr_short (e), false);
 		srcType = &type_int;
-	} else if (is_ushort (srcType)) {
+	} else if (is_ushort (srcType) && is_constant (e)) {
 		e = new_int_expr (expr_ushort (e), false);
 		srcType = &type_int;
 	}

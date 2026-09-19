@@ -304,7 +304,7 @@ iface_block_type (const type_t *type, const char *pre_tag)
 		}
 		nt->symtab->type = type->symtab->type;
 		nt->symtab->count = type->symtab->count;
-		nt->symtab->size = type->symtab->size;
+		nt->symtab->size = RUP (offset, alignment);
 		nt->symtab->data = type->symtab->data;
 		((type_t *)nt)->alignment = alignment;
 		((type_t *)nt)->source = type;
