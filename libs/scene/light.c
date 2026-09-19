@@ -65,23 +65,23 @@ Light_ClearLights (lightingdata_t *ldata)
 }
 
 static bool
-test_light_leaf (const light_t *light, const mleaf_t *leaf)
+test_light_bounds (const light_t *light, const ent_aabb_t *aabb)
 {
 	qfZoneScoped (true);
 	// FIXME directional lights should check the direction against the
-	// leaf's portals (need to find the portals first, though)
+	// cluster's portals (need to find the portals first, though)
 	if (!light->position[3] || !light->attenuation[3]) {
 		// non-positional lights or lights with infinite radius always light
 		// the leafs they can see
 		return true;
 	}
-	// use Minkowski difference to see if the light hits the leaf's bounding
-	// box (thanks to Nick Alger:
+	// use Minkowski difference to see if the light hits the bounding box
+	// (thanks to Nick Alger:
 	// https://stackoverflow.com/questions/5122228/box-to-sphere-collision)
 	float r = 1/light->attenuation[3];
 	vec4f_t c = light->position / light->position[3];
-	vec4f_t mins = loadvec3f (leaf->mins);
-	vec4f_t maxs = loadvec3f (leaf->maxs);
+	vec4f_t mins = loadvec3f (aabb->mins);
+	vec4f_t maxs = loadvec3f (aabb->maxs);
 	vec4i_t tmin = c < mins;
 	vec4i_t tmax = maxs < c;
 	vec4i_t tcen = ~tmin & ~tmax;
@@ -121,7 +121,7 @@ link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 	}
 	Ent_SetComponent (ent.id, ent.base + scene_lightleaf, ent.reg, &clusternum);
 
-	//FIXME this costs about 8us on demo1 test_light_leaf itself is cheap
+	//FIXME this costs about 8us on demo1 test_light_bounds itself is cheap
 	//enough per call, but at around 200 tests, that adds up. There might
 	//be a better way of knowing which leaf nodes to test, or even a better
 	//way to cull lights.
@@ -130,8 +130,8 @@ link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 	}
 	uint32_t efrag = nullent;
 	for (auto li = set_first (pvs); li; li = set_next (li)) {
-		mleaf_t    *leaf = brush->leafs + li->element + 1;
-		if (test_light_leaf (light, leaf)) {
+		ent_aabb_t *aabb = brush->cluster_aabb + li->element + 1;
+		if (test_light_bounds (light, aabb)) {
 			efrag = R_LinkEfrag (scene, li->element + 1, ent, mod_light, efrag);
 		}
 	}
