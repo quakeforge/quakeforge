@@ -67,7 +67,7 @@ create_param (symtab_t *parameters, symbol_t *param)
 	defspace_t *space = parameters->space;
 	def_t      *def = new_def (param->name, 0, space, sc_param);
 	int         size = type_size (param->type);
-	int         alignment = param->type->alignment;
+	int         alignment = type_align (param->type);
 	if (alignment < 4) {
 		alignment = 4;
 	}

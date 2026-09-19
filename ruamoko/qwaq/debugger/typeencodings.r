@@ -278,7 +278,7 @@ error:
 			}
 			break;
 	}
-	return size;
+	return size / sizeof (int);//FIXME
 }
 
 @end

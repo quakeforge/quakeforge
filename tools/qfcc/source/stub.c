@@ -42,8 +42,8 @@ void algebra_encode_type (struct dstring_s *encoding,
 		                          const struct type_s *type){}
 __attribute__((const)) int algebra_low_level_type (const struct type_s *type);
 int algebra_low_level_type (const struct type_s *type){return ev_invalid;}
-__attribute__((const)) int algebra_type_size (const struct type_s *type);
-int algebra_type_size (const struct type_s *type){return 0;}
+__attribute__((const)) int algebra_type_byte_size (const struct type_s *type);
+int algebra_type_byte_size (const struct type_s *type){return 0;}
 __attribute__((const)) int algebra_type_width (const struct type_s *type);
 int algebra_type_width (const struct type_s *type){return 0;}
 __attribute__((const)) bool algebra_type_assignable (const type_t *dst, const type_t *src);

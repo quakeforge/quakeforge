@@ -275,7 +275,7 @@ create_image_type (image_t *image, const type_t *htype)
 	type_t type = {
 		.type = ev_int,
 		.name = save_string (va ("hnd %s", htype->name)),
-		.alignment = 1,
+		.alignment = PR_ALIGNOF (int),
 		.width = 1,
 		.columns = 1,
 		.meta = ty_handle,

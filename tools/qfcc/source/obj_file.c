@@ -799,7 +799,7 @@ get_type_alignment_log (qfo_t *qfo, pr_ptr_t type)
 		case ty_bool:
 			// field, pointer and function types store their basic type in
 			// the same location.
-			return qfo_log2 (ev_types[type_def->type]->alignment);
+			return qfo_log2 (type_align (ev_types[type_def->type]));
 		case ty_struct:
 		case ty_union:
 			for (i = alignment = 0; i < type_def->strct.num_fields; i++) {
@@ -812,7 +812,7 @@ get_type_alignment_log (qfo_t *qfo, pr_ptr_t type)
 			}
 			return alignment;
 		case ty_enum:
-			return qfo_log2 (ev_types[ev_int]->alignment);
+			return qfo_log2 (type_align (ev_types[ev_int]));
 		case ty_array:
 			return get_type_alignment_log (qfo, type_def->array.type);
 		case ty_class:
@@ -1004,7 +1004,7 @@ qfo_count_globals (qfo_t *qfo, dprograms_t *progs, int word_align)
 
 	info.type_encodings_start = info.globals_size;
 	info.globals_size += qfo->spaces[qfo_type_space].data_size;
-	info.globals_size = RUP (info.globals_size, type_xdef.alignment);
+	info.globals_size = RUP (info.globals_size, type_align (&type_xdef));
 
 	info.xdefs_start = info.globals_size;
 	info.xdefs_size = progs->globaldefs.count + progs->fielddefs.count;

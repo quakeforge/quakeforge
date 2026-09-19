@@ -108,7 +108,7 @@ struct symtab_s *algebra_scope (struct symtab_s *curscope, void *data);
 algebra_t *algebra_context (const type_t *type) __attribute__((pure));
 void algebra_print_type_str (struct dstring_s *str, const type_t *type);
 void algebra_encode_type (struct dstring_s *encoding, const type_t *type);
-int algebra_type_size (const type_t *type) __attribute__((pure));
+int algebra_type_byte_size (const type_t *type) __attribute__((pure));
 int algebra_type_width (const type_t *type) __attribute__((pure));
 
 int metric_apply (const metric_t *metric, pr_uint_t a, pr_uint_t b) __attribute__((pure));

@@ -764,11 +764,11 @@ algebra_encode_type (dstring_t *encoding, const type_t *type)
 }
 
 int
-algebra_type_size (const type_t *type)
+algebra_type_byte_size (const type_t *type)
 {
 	if (type->type == ev_invalid) {
 		auto a = type->algebra;
-		return a->num_components * type_size (a->type);
+		return a->num_components * type_byte_size (a->type);
 	} else if (type->type == ev_float || type->type == ev_double) {
 		auto m = type->multivec;
 		int  size = 0;
@@ -776,9 +776,9 @@ algebra_type_size (const type_t *type)
 			if (!m->mvec_sym) {
 				internal_error (nullptr, "multi group multivec missing struct");
 			}
-			size = type_size (m->mvec_sym->type);
+			size = type_byte_size (m->mvec_sym->type);
 		} else {
-			size = m->num_components * type_size (m->algebra->type);
+			size = m->num_components * type_byte_size (m->algebra->type);
 		}
 		return size;
 	} else {

@@ -325,7 +325,7 @@ spirv_DecorateLiteral (unsigned id, SpvDecoration decoration, void *literal,
 	if (type != ev_int) {
 		internal_error (0, "unexpected type");
 	}
-	int size = pr_type_size[type];
+	int size = type_words (pr_type_size[type]);
 	auto decorations = ctx->module->decorations;
 	auto insn = spirv_new_insn (SpvOpDecorate, 3 + size, decorations, ctx);
 	INSN (insn, 1) = id;
@@ -354,7 +354,7 @@ spirv_MemberDecorateLiteral (unsigned id, unsigned member,
 	if (type != ev_int) {
 		internal_error (0, "unexpected type");
 	}
-	int size = pr_type_size[type];
+	int size = type_words (pr_type_size[type]);
 	auto decorations = ctx->module->decorations;
 	auto insn = spirv_new_insn (SpvOpMemberDecorate, 4 + size,
 								decorations, ctx);
@@ -1439,7 +1439,7 @@ spirv_generate_load (const expr_t *e, spirvctx_t *ctx)
 	auto ptr_type = get_type (ptr);
 	unsigned align = 0;
 	if (ptr_type->fldptr.tag == SpvStorageClassPhysicalStorageBuffer) {
-		align = type_align (res_type) * sizeof (pr_type_t);
+		align = type_byte_align (res_type);
 	}
 
 	unsigned ptr_id = spirv_emit_expr (ptr, ctx);
@@ -1921,7 +1921,8 @@ spirv_vector_value (const ex_value_t *value, spirvctx_t *ctx)
 	int width = type_width (value->type);
 	ex_value_t *comp_vals[width];
 	auto val = &value->raw_value;
-	if (type_size (base) < 1 || type_size (base) > 2) {
+	if (type_size (base) < type_size (&type_int)
+		|| type_size (base) > type_size (&type_long)) {
 		internal_error (nullptr, "invalid vector component size");
 	}
 	for (int i = 0; i < width; i++) {
@@ -2006,10 +2007,10 @@ spirv_value (const expr_t *e, spirvctx_t *ctx)
 			op = value->int_val ? SpvOpConstantTrue : SpvOpConstantFalse;
 			val_size = 0;
 		} else {
-			if (type_size (value->type) == 1) {
+			if (type_size (value->type) == type_size (&type_uint)) {
 				val = value->uint_val;
 				val_size = 1;
-			} else if (type_size (value->type) == 2) {
+			} else if (type_size (value->type) == type_size (&type_ulong)) {
 				val = value->ulong_val;
 				val_size = 2;
 			} else {
@@ -2283,7 +2284,7 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 		if (is_pointer (type)) {
 			ptr_id = spirv_emit_expr (ptr, ctx);
 			id = ptr_id;
-			align = type_align (type) * sizeof (pr_type_t);
+			align = type_byte_align (type);
 			base_type = type;
 			storage = base_type->fldptr.tag;
 		}
@@ -2393,13 +2394,13 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 			internal_error (e, "access type is not a pointer or reference");
 		}
 		if (acc_type->fldptr.tag == SpvStorageClassPhysicalStorageBuffer) {
-			align = type_align (res_type) * sizeof (pr_type_t);
+			align = type_byte_align (res_type);
 		}
 	} else if (is_deref (dst_expr)) {
 		auto ptr = dst_expr->expr.e1;
 		auto ptr_type = get_type (ptr);
 		if (is_pointer (ptr_type)) {
-			align = type_align (ptr_type) * sizeof (pr_type_t);
+			align = type_byte_align (ptr_type);
 		}
 		dst = spirv_emit_expr (ptr, ctx);
 	} else if (dst_expr->type == ex_xvalue && dst_expr->xvalue.lvalue) {
@@ -2781,7 +2782,7 @@ spirv_field_array (const expr_t *e, spirvctx_t *ctx)
 		// base is a pointer or reference so load the value
 		unsigned align = 0;
 		if (is_pointer (acc_type)) {
-			align = type_align (res_type) * sizeof (pr_type_t);
+			align = type_byte_align (res_type);
 		}
 		id = spirv_ptr_load (res_type, id, align, ctx);
 	}
@@ -3017,7 +3018,7 @@ spirv_ptroffset (const expr_t *e, spirvctx_t *ctx)
 	auto ptr = e->ptroffset.ptr;
 	auto offs = e->ptroffset.offset;
 	ptr = cast_expr (&type_uvec2, ptr);
-	if (type_size (get_type (offs)) != 1) {
+	if (type_size (get_type (offs)) != type_size (&type_uint)) {
 		error (offs, "64-bit offset not supported (yet)");
 		return 0;
 	}
@@ -3800,6 +3801,8 @@ spirv_shift_op (int op, const expr_t *e1, const expr_t *e2)
 static bool __attribute__((pure))
 spirv_types_logically_match (const type_t *dst, const type_t *src)
 {
+	dst = unalias_type (dst);
+	src = unalias_type (src);
 	if (type_same (dst, src)) {
 		return true;
 	}
@@ -4166,5 +4169,5 @@ target_t spirv_target = {
 	.short_circuit = true,
 	.pointer_type = spirv_pointer_type,
 	.pointer_scale = 4,
-	.pointer_size = 2,	// internal sizes are in ints rather than bytes
+	.pointer_size = sizeof(uint64_t),
 };

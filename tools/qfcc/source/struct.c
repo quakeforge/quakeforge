@@ -485,10 +485,12 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 	if (su == 's') {
 		symtab->size = state.offset;
 	}
+	symtab->size *= sizeof (pr_type_t);
 	symtab->count = state.index;
 	if (!type)
 		sym->type = find_type (sym->type);	// checks the tag, not the symtab
 	((type_t *) sym->type)->symtab = symtab;
+	state.alignment *= sizeof (pr_type_t);
 	if (state.alignment > sym->type->alignment) {
 		((type_t *) sym->type)->alignment = state.alignment;
 	}
@@ -526,7 +528,7 @@ start_enum (symbol_t *sym)
 		sym = find_enum (nullptr, nullptr);
 	}
 	((type_t *) sym->type)->symtab = new_symtab (current_symtab, stab_enum);
-	((type_t *) sym->type)->alignment = 1;
+	((type_t *) sym->type)->alignment = PR_ALIGNOF (int);
 	((type_t *) sym->type)->width = 1;
 	((type_t *) sym->type)->columns = 1;
 	return sym->type->symtab;

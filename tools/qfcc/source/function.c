@@ -553,7 +553,7 @@ parse_params (const type_t *return_type, param_t *parms, rua_ctx_t *ctx)
 
 	new = new_type ();
 	new->type = ev_func;
-	new->alignment = 1;
+	new->alignment = PR_ALIGNOF (func);
 	new->width = 1;
 	new->columns = 1;
 	new->func.ret_type = return_type;
@@ -631,7 +631,7 @@ set_func_type_attrs (const type_t *func_type, attribute_t **attr_list,
 	func_type = unalias_type (func_type);
 	type_t new = {
 		.type = ev_func,
-		.alignment = 1,
+		.alignment = PR_ALIGNOF (func),
 		.width = 1,
 		.columns = 1,
 		.meta = ty_basic,
@@ -872,7 +872,7 @@ create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype,
 
 	type_t ftype = {
 		.type = ev_func,
-		.alignment = 1,
+		.alignment = PR_ALIGNOF (func),
 		.width = 1,
 		.columns = 1,
 		.func = {

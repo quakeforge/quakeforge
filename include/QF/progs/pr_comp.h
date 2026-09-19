@@ -91,8 +91,8 @@ typedef enum {
 	ev_type_count		// not a type, gives number of types
 } etype_t;
 
-#define PR_SIZEOF(type) (sizeof (pr_##type##_t) / (sizeof (pr_int_t)))
-#define PR_ALIGNOF(type) (__alignof__ (pr_##type##_t) / __alignof__ (pr_int_t))
+#define PR_SIZEOF(type) (sizeof (pr_##type##_t))
+#define PR_ALIGNOF(type) (__alignof__ (pr_##type##_t))
 
 extern const pr_ushort_t pr_type_size[ev_type_count];
 extern const pr_ushort_t pr_type_alignment[ev_type_count];

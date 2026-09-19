@@ -205,7 +205,6 @@ iface_block_array_property (const type_t *type, const attribute_t *attr,
 const type_t *
 iface_block_type (const type_t *type, const char *pre_tag)
 {
-	unsigned uint = sizeof (uint32_t);
 	if (is_array (type)) {
 		type = unalias_type (type);
 		auto ele_type = iface_block_type (type->array.type, pre_tag);
@@ -221,7 +220,7 @@ iface_block_type (const type_t *type, const char *pre_tag)
 			.attributes = type->attributes,
 			.property = iface_block_array_property,
 		};
-		int stride = type_aligned_size (ele_type) * uint;
+		int stride = type_byte_aligned_size (ele_type);
 		add_attribute (&new.attributes,
 					   new_attrfunc ("ArrayStride", new_uint_expr (stride)));
 		return find_type (&new);
@@ -252,7 +251,7 @@ iface_block_type (const type_t *type, const char *pre_tag)
 		}
 		((type_t *)nt)->symtab = new_symtab (type->symtab->parent, stab_struct);
 		unsigned offset = 0;
-		int alignment = 1;
+		size_t alignment = 1;
 		for (auto s = type->symtab->symbols; s; s = s->next) {
 			if (s->sy_type != sy_offset && s->sy_type != sy_convert) {
 				continue;
@@ -279,10 +278,10 @@ iface_block_type (const type_t *type, const char *pre_tag)
 			if (s->offset >= 0 && type->symtab->type == stab_block) {
 				offset = s->offset;
 			}
-			if (type_align (ftype) > alignment) {
-				alignment = type_align (ftype);
+			if (type_byte_align (ftype) > alignment) {
+				alignment = type_byte_align (ftype);
 			}
-			offset = RUP (offset, type_align (ftype) * uint);
+			offset = RUP (offset, type_byte_align (ftype));
 			if (s->sy_type == sy_convert) {
 				sym->convert = s->convert;
 			} else {
@@ -290,11 +289,11 @@ iface_block_type (const type_t *type, const char *pre_tag)
 			}
 			add_attribute (&sym->attributes,
 						   new_attrfunc ("Offset", new_uint_expr (offset)));
-			offset += type_size (ftype) * uint;
+			offset += type_byte_size (ftype);
 
 			auto mt = block_matrix_type (ftype);
 			if (mt) {
-				int stride = type_size (column_type (mt)) * uint;
+				int stride = type_byte_size (column_type (mt));
 				add_attribute (&sym->attributes,
 							   new_attrfunc ("MatrixStride",
 											  new_uint_expr (stride)));
@@ -377,7 +376,7 @@ declare_block_instance (specifier_t spec, iface_block_t *block,
 	type_t type = {
 		.type = ev_invalid,
 		.name = save_string (va ("%s %s", tag, block->name->name)),
-		.alignment = 4,
+		.alignment = PR_ALIGNOF (vec4),
 		.width = 1,
 		.columns = 1,
 		.meta = ty_struct,

@@ -207,7 +207,7 @@ type_t      type_param = {
 };
 static type_t type_param_pointer = {
 	.type = ev_ptr,
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -220,18 +220,18 @@ type_t      type_zero = {
 type_t      type_type_encodings = {
 	.type = ev_invalid,
 	.name = "@type_encodings",
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.meta = ty_struct,
 };
 type_t      type_xdef = {
 	.type = ev_invalid,
 	.name = "@xdef",
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.meta = ty_struct,
 };
 type_t      type_xdef_pointer = {
 	.type = ev_ptr,
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -240,14 +240,14 @@ type_t      type_xdef_pointer = {
 type_t      type_xdefs = {
 	.type = ev_invalid,
 	.name = "@xdefs",
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.meta = ty_struct,
 };
 
 type_t      type_floatfield = {
 	.type = ev_field,
 	.name = ".float",
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (field),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -510,13 +510,13 @@ append_type (const type_t *type, const type_t *new)
 					case ev_field:
 					case ev_ptr:
 						t = (const type_t **) &(*t)->fldptr.type;
-						((type_t *) type)->alignment = 1;
+						((type_t *) type)->alignment = PR_ALIGNOF (ptr);
 						((type_t *) type)->width = 1;
 						((type_t *) type)->columns = 1;
 						break;
 					case ev_func:
 						t = (const type_t **) &(*t)->func.ret_type;
-						((type_t *) type)->alignment = 1;
+						((type_t *) type)->alignment = PR_ALIGNOF (func);
 						((type_t *) type)->width = 1;
 						((type_t *) type)->columns = 1;
 						break;
@@ -834,7 +834,7 @@ field_type (const type_t *aux)
 	else
 		new = new_type ();
 	new->type = ev_field;
-	new->alignment = 1;
+	new->alignment = PR_ALIGNOF (field);
 	new->width = 1;
 	new->columns = 1;
 	if (aux) {
@@ -854,7 +854,7 @@ tagged_pointer_type (unsigned tag, const type_t *aux)
 	else
 		new = new_type ();
 	new->type = ev_ptr;
-	new->alignment = 1;
+	new->alignment = PR_ALIGNOF (ptr);
 	new->width = 1;
 	new->columns = 1;
 	new->fldptr.tag = tag;
@@ -889,7 +889,7 @@ tagged_reference_type (unsigned tag, const type_t *aux)
 		new = new_type ();
 	}
 	new->type = ev_ptr;
-	new->alignment = 1;
+	new->alignment = PR_ALIGNOF (ptr);
 	new->width = 1;
 	new->columns = 1;
 	new->fldptr.tag = tag;
@@ -1004,9 +1004,9 @@ int_type (const type_t *base)
 	if (!base) {
 		return nullptr;
 	}
-	if (type_size (base) == 1) {
+	if (type_size (base) == type_size (&type_int)) {
 		base = &type_int;
-	} else if (type_size (base) == 2) {
+	} else if (type_size (base) == type_size (&type_long)) {
 		base = &type_long;
 	}
 	return vector_type (base, width);
@@ -1020,9 +1020,9 @@ uint_type (const type_t *base)
 	if (!base) {
 		return nullptr;
 	}
-	if (type_size (base) == 1) {
+	if (type_size (base) == type_size (&type_uint)) {
 		base = &type_uint;
-	} else if (type_size (base) == 2) {
+	} else if (type_size (base) == type_size (&type_ulong)) {
 		base = &type_ulong;
 	}
 	return vector_type (base, width);
@@ -1036,9 +1036,9 @@ bool_type (const type_t *base)
 	if (!base) {
 		return nullptr;
 	}
-	if (type_size (base) == 1) {
+	if (type_size (base) == type_size (&type_bool)) {
 		base = &type_bool;
-	} else if (type_size (base) == 2) {
+	} else if (type_size (base) == type_size (&type_lbool)) {
 		base = &type_lbool;
 	}
 	return vector_type (base, width);
@@ -1052,9 +1052,9 @@ float_type (const type_t *base)
 	if (!base) {
 		return nullptr;
 	}
-	if (type_size (base) == 1) {
+	if (type_size (base) == type_size (&type_float)) {
 		base = &type_float;
-	} else if (type_size (base) == 2) {
+	} else if (type_size (base) == type_size (&type_double)) {
 		base = &type_double;
 	}
 	return vector_type (base, width);
@@ -1171,7 +1171,6 @@ type_set_attrs (type_t *type, attribute_t **attributes)
 					   " and at least 4 (alignment is in bytes)");
 				return;
 			}
-			alignment /= sizeof (pr_int_t);
 			if (alignment < type->alignment) {
 				warning (val, "cannot reduce alignment");
 				alignment = type->alignment;
@@ -2102,11 +2101,12 @@ bool
 type_move_assign (const type_t *type)
 {
 	return (is_structural (type) || is_matrix (type) || type->width > 4
-			|| (is_algebra (type) && type_size (type) > 4));
+			|| (is_algebra (type)
+				&& type_size (type) > type_size (&type_vec4)));
 }
 
-int
-type_size (const type_t *type)
+size_t
+type_byte_size (const type_t *type)
 {
 	switch (type->meta) {
 		case ty_handle:
@@ -2128,9 +2128,9 @@ type_size (const type_t *type)
 		case ty_enum:
 			if (!type->symtab)
 				return 0;
-			return type_size (&type_int);
+			return type_byte_size (&type_int);
 		case ty_array:
-			return type->array.count * type_aligned_size (type->array.type);
+			return type->array.count * type_byte_aligned_size (type->array.type);
 		case ty_class:
 			{
 				class_t    *class = type->class;
@@ -2139,13 +2139,13 @@ type_size (const type_t *type)
 					return 0;
 				size = class->ivars->size;
 				if (class->super_class)
-					size += type_size (class->super_class->type);
+					size += type_byte_size (class->super_class->type);
 				return size;
 			}
 		case ty_alias:
-			return type_size (type->alias.aux_type);
+			return type_byte_size (type->alias.aux_type);
 		case ty_algebra:
-			return algebra_type_size (type);
+			return algebra_type_byte_size (type);
 		case ty_meta_count:
 			break;
 	}
@@ -2153,13 +2153,32 @@ type_size (const type_t *type)
 }
 
 int
-type_align (const type_t *type)
+type_words (size_t bytes)
+{
+	//return (bytes + sizeof (pr_type_t) - 1) / sizeof (pr_type_t);
+	return bytes / sizeof (pr_type_t);
+}
+
+int
+type_size (const type_t *type)
+{
+	return type_words (type_byte_size (type));
+}
+
+size_t
+type_byte_align (const type_t *type)
 {
 	type = unalias_type (type);
 	if (is_ptr (type) && current_target.pointer_size) {
 		return current_target.pointer_size;
 	}
 	return type->alignment;
+}
+
+int
+type_align (const type_t *type)
+{
+	return type_words (type_byte_align (type));
 }
 
 int
@@ -2267,6 +2286,14 @@ type_rows (const type_t *type)
 }
 
 int
+type_byte_aligned_size (const type_t *type)
+{
+	int         size = type_byte_size (type);
+	int         alignment = type_byte_align (type);
+	return RUP (size, alignment);
+}
+
+int
 type_aligned_size (const type_t *type)
 {
 	int         size = type_size (type);
@@ -2299,7 +2326,7 @@ chain_basic_types (void)
 
 	type_entity.symtab = pr.entity_fields;
 	if (options.code.progsversion == PROG_VERSION) {
-		type_quaternion.alignment = 4;
+		type_quaternion.alignment = PR_ALIGNOF (vec4);
 	}
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		type_bool.type = ev_float;

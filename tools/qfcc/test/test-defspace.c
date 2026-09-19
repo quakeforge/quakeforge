@@ -10,6 +10,7 @@
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/type.h"
 
 #include "tools/qfcc/test/test-defspace.h"
 
@@ -17,6 +18,8 @@ options_t   options;
 pr_info_t   pr;
 function_t *current_func;
 class_type_t *current_class;
+
+int type_align (const type_t *type){return type->alignment;}
 
 void
 free_def (def_t *def)

@@ -89,7 +89,7 @@ cast_math (const type_t *dstType, const type_t *srcType, const expr_t *expr)
 static const expr_t * __attribute__((pure))
 ptr_cast_special (const type_t *ptr_type, const expr_t *src)
 {
-	if (type_size (ptr_type) > 1) {
+	if (type_size (ptr_type) > type_size (&type_uint)) {
 		auto uint_cast = new_alias_expr (&type_uint, src);
 		auto intptr_type = int_type (ptr_type);
 		src = typed_unary_expr (intptr_type, 'C', uint_cast);
