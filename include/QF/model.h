@@ -36,6 +36,8 @@
 
 #include "QF/simd/types.h"
 
+typedef struct ent_aabb_s ent_aabb_t;
+
 extern struct vid_model_funcs_s *mod_funcs;
 
 /*
@@ -292,6 +294,7 @@ typedef struct mod_brush_s {
 	uint32_t   *cluster_map;	///< [leaf]    cluster containing leaf
 	uint32_t   *cluster_offs;	///< [cluster] offset into cluster_vis
 	mnode_t    *cluster_nodes;	///< [node]    node tree for clusters
+	ent_aabb_t *cluster_aabb;	///< [cluster] bounding box for cluster
 	int         cluster_depth;	///< maximum depth of cluster node tree
 	uint32_t   *cluster_surfs;	///< indices of surfs on cluster
 	cluster_t  *clusters;		///< [cluster] cluster(leaf) nodes

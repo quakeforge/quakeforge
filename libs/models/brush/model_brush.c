@@ -1563,6 +1563,30 @@ cluster_collect_surfs (mod_brush_ctx_t *brush_ctx, int head)
 }
 
 static void
+cluster_compute_bounds (mod_brush_ctx_t *brush_ctx)
+{
+	auto brush = brush_ctx->brush;
+	uint32_t num_clusters = brush->cluster_vis.count + brush->numsubmodels;
+
+	for (uint32_t i = 0; i < num_clusters; i++) {
+		auto lm = brush->leaf_map[i];
+		if (!lm.num_leafs) {
+			continue;
+		}
+		auto leaf = &brush->leafs[lm.first_leaf];
+		ent_aabb_t aabb = {
+			.mins = { VectorExpand (leaf->mins) },
+			.maxs = { VectorExpand (leaf->maxs) },
+		};
+		for (uint32_t j = 0; j < lm.num_leafs; j++, leaf++) {
+			VectorCompMin (leaf->mins, aabb.mins, aabb.mins);
+			VectorCompMax (leaf->maxs, aabb.maxs, aabb.maxs);
+		};
+		brush->cluster_aabb[i] = aabb;
+	}
+}
+
+static void
 Mod_MakeClusters (mod_brush_ctx_t *brush_ctx)
 {
 	qfZoneScoped (true);
@@ -1576,9 +1600,13 @@ Mod_MakeClusters (mod_brush_ctx_t *brush_ctx)
 		int32_t *node_cluster = Hunk_TempAlloc (hunk, size);
 		int num_cluster_nodes = Mod_PropagateClusters (brush, 0, node_cluster);
 
+		int cluster_count = brush->cluster_vis.count + bsp->nummodels;
 		brush->cluster_depth = 0;
-		size = sizeof (mnode_t[num_cluster_nodes]);
+		size = sizeof (mnode_t[num_cluster_nodes])
+			 + sizeof (ent_aabb_t[cluster_count]);
 		brush->cluster_nodes = Hunk_AllocName (hunk, size, mod->name);
+		brush->cluster_aabb
+			= (ent_aabb_t*) &brush->cluster_nodes[num_cluster_nodes];
 		int cluster_node_count = 0;
 		Mod_BuildClusterNodes (brush, 0, node_cluster, brush->cluster_nodes,
 							   &brush->cluster_depth, 1, &cluster_node_count);
@@ -1621,10 +1649,12 @@ Mod_MakeClusters (mod_brush_ctx_t *brush_ctx)
 		}
 		size_t size = sizeof (leafmap_t[cluster_count])		//leaf_map
 					+ sizeof (uint32_t[leaf_count])			//cluster_map
-					+ sizeof (uint32_t[cluster_count]);		//cluster_offs
+					+ sizeof (uint32_t[cluster_count])		//cluster_offs
+					+ sizeof (ent_aabb_t[cluster_count]);	//cluster_aabb
 		brush->leaf_map = Hunk_AllocName (hunk, size, mod->name);
 		brush->cluster_map = (uint32_t *) &brush->leaf_map[cluster_count];
 		brush->cluster_offs = (uint32_t *) &brush->cluster_map[leaf_count];
+		brush->cluster_aabb = (ent_aabb_t*) &brush->cluster_offs[cluster_count];
 		if (single) {
 			brush->leaf_map[0] = (leafmap_t) {
 				.first_leaf = 0,
@@ -1662,7 +1692,7 @@ Mod_MakeClusters (mod_brush_ctx_t *brush_ctx)
 		}
 		cluster_collect_surfs (brush_ctx, head);
 	}
-
+	cluster_compute_bounds (brush_ctx);
 }
 
 static void
