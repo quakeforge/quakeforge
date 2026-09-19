@@ -110,7 +110,7 @@ typedef struct texanim_s {
  * entity's frame (0 or non-0). When the entity's frame is 0, group 0 is used,
  * otherwise group 1 is used. If there is no alternate (group 1) animation
  * data for the texture, then the texture's group 0 data is copied to group 1
- * in order to avoid coplications in selecting which texture a face is to use.
+ * in order to avoid complications in selecting which texture a face is to use.
  *
  * As all of a group's frames are together, `frame_map` is used to get the
  * actual texture id for the frame.
