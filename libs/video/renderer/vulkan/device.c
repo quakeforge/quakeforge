@@ -182,12 +182,19 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
 			.pNext = &features13,
 			.drawIndirectCount = 1,
+			.storageBuffer8BitAccess = 1,
+			.shaderFloat16 = 0,	//FIXME not supported on 1080
+			.shaderInt8 = 0,	//FIXME not yet
 			.hostQueryReset = 1,
 			.bufferDeviceAddress = 1,
 		};
 		VkPhysicalDeviceVulkan11Features features11 = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
 			.pNext = &features12,
+			.storageBuffer16BitAccess = 1,
+			.uniformAndStorageBuffer16BitAccess = 1,
+			.storagePushConstant16 = 1,
+			//.storageInputOutput16 = 1,
 			.multiview = 1,
 			.multiviewGeometryShader = 1,
 		};
@@ -202,6 +209,8 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 				.samplerAnisotropy = 1,
 				.fragmentStoresAndAtomics = 1,
 				.fillModeNonSolid = 1,
+				.shaderInt64 = 0,//FIXME not yet
+				.shaderInt16 = 1,
 			},
 		};
 		VkDeviceCreateInfo dCreateInfo = {
