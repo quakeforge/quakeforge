@@ -782,43 +782,44 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	}
 	memcpy (bctx->command_offsets, tex_clusters, sizeof (tex_clusters));
 
-	if (index_buffer_size > bctx->index_buffer_size
-		|| model_buffer_size > bctx->model_buffer_size
-		|| tex_id_buffer_size > bctx->tex_id_buffer_size
-		|| vertex_buffer_size > bctx->vertex_buffer_size
-		|| command_counts_buffer_size > bctx->command_counts_buffer_size
-		|| command_offsets_buffer_size > bctx->command_offsets_buffer_size
-		|| command_buffer_size > bctx->command_buffer_size
-		|| subcluster_buffer_size > bctx->subcluster_buffer_size
-		|| cluster_buffer_size > bctx->cluster_buffer_size
-		|| clustermap_buffer_size > bctx->clustermap_buffer_size
-		|| queue_buffer_size > bctx->queue_buffer_size) {
+#define CHECK_SIZE(b) (b##_buffer_size > bctx->b##_buffer.size)
+	if (CHECK_SIZE (index)
+		|| CHECK_SIZE (model)
+		|| CHECK_SIZE (tex_id)
+		|| CHECK_SIZE (vertex)
+		|| CHECK_SIZE (command_counts)
+		|| CHECK_SIZE (command_offsets)
+		|| CHECK_SIZE (command)
+		|| CHECK_SIZE (subcluster)
+		|| CHECK_SIZE (cluster)
+		|| CHECK_SIZE (clustermap)
+		|| CHECK_SIZE (queue)) {
 		QFV_DestroyResource (ctx->device, bctx->bsp_resource);
 		if (!bctx->bsp_resource) {
 			size_t size = sizeof (qfv_resource_t)
-						+ sizeof (qfv_resobj_t[1])	// models
-						+ sizeof (qfv_resobj_t[1])	// tex_ids
-						+ sizeof (qfv_resobj_t[1])	// vertices
-						+ sizeof (qfv_resobj_t[1])	// indices
+						+ sizeof (qfv_resobj_t[1])	// model
+						+ sizeof (qfv_resobj_t[1])	// tex_id
+						+ sizeof (qfv_resobj_t[1])	// vertex
+						+ sizeof (qfv_resobj_t[1])	// index
 						+ sizeof (qfv_resobj_t[1]) 	// command countss
 						+ sizeof (qfv_resobj_t[1]) 	// command offsets
-						+ sizeof (qfv_resobj_t[1]) 	// draw commands
-						+ sizeof (qfv_resobj_t[1])	// subclusters
-						+ sizeof (qfv_resobj_t[1])	// clusters
+						+ sizeof (qfv_resobj_t[1]) 	// command
+						+ sizeof (qfv_resobj_t[1])	// subcluster
+						+ sizeof (qfv_resobj_t[1])	// cluster
 						+ sizeof (qfv_resobj_t[1])	// clustermap
 						+ sizeof (qfv_resobj_t[1]);	// queue
 			bctx->bsp_resource = malloc (size);
 		}
-		auto models = (qfv_resobj_t *) &bctx->bsp_resource[1];
-		auto tex_ids = (qfv_resobj_t *) &models[1];
-		auto vertices = (qfv_resobj_t *) &tex_ids[1];
-		auto indices = (qfv_resobj_t *) &vertices[1];
-		auto command_counts = (qfv_resobj_t *) &indices[1];
+		auto model = (qfv_resobj_t *) &bctx->bsp_resource[1];
+		auto tex_id = (qfv_resobj_t *) &model[1];
+		auto vertex = (qfv_resobj_t *) &tex_id[1];
+		auto index = (qfv_resobj_t *) &vertex[1];
+		auto command_counts = (qfv_resobj_t *) &index[1];
 		auto command_offsets = (qfv_resobj_t *) &command_counts[1];
-		auto commands = (qfv_resobj_t *) &command_offsets[1];
-		auto subclusters = (qfv_resobj_t *) &commands[1];
-		auto clusters = (qfv_resobj_t *) &subclusters[1];
-		auto clustermap = (qfv_resobj_t *) &clusters[1];
+		auto command = (qfv_resobj_t *) &command_offsets[1];
+		auto subcluster = (qfv_resobj_t *) &command[1];
+		auto cluster = (qfv_resobj_t *) &subcluster[1];
+		auto clustermap = (qfv_resobj_t *) &cluster[1];
 		auto queue = (qfv_resobj_t *) &clustermap[1];
 
 		*bctx->bsp_resource = (qfv_resource_t) {
@@ -826,9 +827,9 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.va_ctx = ctx->va_ctx,
 			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			.num_objects = 11,
-			.objects = models,
+			.objects = model,
 		};
-		*models = (qfv_resobj_t) {
+		*model = (qfv_resobj_t) {
 			.name = "model",
 			.type = qfv_res_buffer,
 			.buffer = {
@@ -838,7 +839,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
-		*tex_ids = (qfv_resobj_t) {
+		*tex_id = (qfv_resobj_t) {
 			.name = "tex_id",
 			.type = qfv_res_buffer,
 			.buffer = {
@@ -848,7 +849,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
-		*vertices = (qfv_resobj_t) {
+		*vertex = (qfv_resobj_t) {
 			.name = "vertex",
 			.type = qfv_res_buffer,
 			.buffer = {
@@ -857,7 +858,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 			},
 		};
-		*indices = (qfv_resobj_t) {
+		*index = (qfv_resobj_t) {
 			.name = "index",
 			.type = qfv_res_buffer,
 			.buffer = {
@@ -886,7 +887,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
-		*commands = (qfv_resobj_t) {
+		*command = (qfv_resobj_t) {
 			.name = "command",
 			.type = qfv_res_buffer,
 			.buffer = {
@@ -896,7 +897,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
-		*subclusters = (qfv_resobj_t) {
+		*subcluster = (qfv_resobj_t) {
 			.name = "subcluster",
 			.type = qfv_res_buffer,
 			.buffer = {
@@ -906,7 +907,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
-		*clusters = (qfv_resobj_t) {
+		*cluster = (qfv_resobj_t) {
 			.name = "cluster",
 			.type = qfv_res_buffer,
 			.buffer = {
@@ -939,38 +940,32 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		};
 		QFV_CreateResource (ctx->device, bctx->bsp_resource);
 
-		bctx->model_buffer_size = model_buffer_size;
-		bctx->tex_id_buffer_size = tex_id_buffer_size;
-		bctx->vertex_buffer_size = vertex_buffer_size;
-		bctx->index_buffer_size = index_buffer_size;
-		bctx->command_counts_buffer_size = command_counts_buffer_size;
-		bctx->command_offsets_buffer_size = command_offsets_buffer_size;
-		bctx->command_buffer_size = command_buffer_size;
-		bctx->subcluster_buffer_size = subcluster_buffer_size;
-		bctx->cluster_buffer_size = cluster_buffer_size;
-		bctx->clustermap_buffer_size = clustermap_buffer_size;
+#define BUFFER(b) \
+		bctx->b##_buffer = (bsp_buffer_t) { \
+			.buffer = b->buffer.buffer, \
+			.size = b->buffer.size, \
+			.addr = b->buffer.address, \
+		};
+		BUFFER (model);
+		BUFFER (tex_id);
+		BUFFER (vertex);
+		BUFFER (index);
+		BUFFER (command_counts);
+		BUFFER (command_offsets);
+		BUFFER (command);
+		BUFFER (subcluster);
+		BUFFER (cluster);
+		BUFFER (clustermap);
+		BUFFER (queue);
 
-		bctx->model_buffer = models->buffer.buffer;
-		bctx->tex_id_buffer = tex_ids->buffer.buffer;
-		bctx->vertex_buffer = vertices->buffer.buffer;
-		bctx->index_buffer = indices->buffer.buffer;
-		bctx->command_counts_buffer = command_counts->buffer.buffer;
-		bctx->command_offsets_buffer = command_offsets->buffer.buffer;
-		bctx->command_buffer = commands->buffer.buffer;
-		bctx->subcluster_buffer = subclusters->buffer.buffer;
-		bctx->cluster_buffer = clusters->buffer.buffer;
-		bctx->clustermap_buffer = clustermap->buffer.buffer;
-		bctx->queue_buffer = queue->buffer.buffer;
-
-		*bctx->model_ptr = models->buffer.address;
-		*bctx->tex_id_ptr = tex_ids->buffer.address;
-		*bctx->command_counts_ptr = command_counts->buffer.address;
-		*bctx->command_offsets_ptr = command_offsets->buffer.address;
-		*bctx->commands_ptr = commands->buffer.address;
-		*bctx->subclusters_ptr = subclusters->buffer.address;
-		*bctx->clusters_ptr = clusters->buffer.address;
-		*bctx->cluster_map_ptr = clustermap->buffer.address;
-		bctx->queue_buffer_addr = queue->buffer.address;
+		*bctx->models = bctx->model_buffer.addr;
+		*bctx->tex_ids = bctx->tex_id_buffer.addr;
+		*bctx->command_counts_ptr = bctx->command_counts_buffer.addr;
+		*bctx->command_offsets_ptr = bctx->command_offsets_buffer.addr;
+		*bctx->commands_ptr = bctx->command_buffer.addr;
+		*bctx->subclusters_ptr = bctx->subcluster_buffer.addr;
+		*bctx->clusters_ptr = bctx->cluster_buffer.addr;
+		*bctx->cluster_map_ptr = bctx->clustermap_buffer.addr;
 
 		for (size_t i = 0; i < frames; i++) {
 			bctx->frames.a[i].queue = queue_buffer_size * i;
@@ -1034,29 +1029,36 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		.srcOffset = QFV_PacketOffset (packet, build.clustermap),
 		.length = clustermap_buffer_size,
 	};
-	QFV_PacketScatterBuffer (packet, bctx->model_buffer, 1, &mod_scatter,
+	QFV_PacketScatterBuffer (packet, bctx->model_buffer.buffer,
+			1, &mod_scatter,
+			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+			&bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
+	QFV_PacketScatterBuffer (packet, bctx->tex_id_buffer.buffer,
+			1, &tex_scatter,
+			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+			&bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
+	QFV_PacketScatterBuffer (packet, bctx->vertex_buffer.buffer,
+			1, &vert_scatter,
 			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
 			&bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
-	QFV_PacketScatterBuffer (packet, bctx->tex_id_buffer, 1, &tex_scatter,
-			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-			&bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
-	QFV_PacketScatterBuffer (packet, bctx->vertex_buffer, 1, &vert_scatter,
-			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-			&bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
-	QFV_PacketScatterBuffer (packet, bctx->index_buffer, 1, &ind_scatter,
+	QFV_PacketScatterBuffer (packet, bctx->index_buffer.buffer,
+			1, &ind_scatter,
 			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
 			&bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
-	QFV_PacketScatterBuffer (packet, bctx->command_offsets_buffer,
+	QFV_PacketScatterBuffer (packet, bctx->command_offsets_buffer.buffer,
 			1, &ofs_scatter,
 			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
 			&bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
-	QFV_PacketScatterBuffer (packet, bctx->subcluster_buffer, 1, &sub_scatter,
+	QFV_PacketScatterBuffer (packet, bctx->subcluster_buffer.buffer,
+			1, &sub_scatter,
 			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
 			&bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
-	QFV_PacketScatterBuffer (packet, bctx->cluster_buffer, 1, &cls_scatter,
+	QFV_PacketScatterBuffer (packet, bctx->cluster_buffer.buffer,
+			1, &cls_scatter,
 			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
 			&bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
-	QFV_PacketScatterBuffer (packet, bctx->clustermap_buffer, 1, &map_scatter,
+	QFV_PacketScatterBuffer (packet, bctx->clustermap_buffer.buffer,
+			1, &map_scatter,
 			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
 			&bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
 	QFV_PacketSubmit (packet);
@@ -1140,9 +1142,9 @@ draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 		} else {
 			size_t cmd_size = sizeof (VkDrawIndexedIndirectCommand);
 			dfunc->vkCmdDrawIndexedIndirectCount (cmd,
-					bctx->command_buffer,
+					bctx->command_buffer.buffer,
 					bctx->command_offsets[tex_id] * cmd_size,
-					bctx->command_counts_buffer,
+					bctx->command_counts_buffer.buffer,
 					tex_id * sizeof (uint32_t),
 					bctx->command_counts[tex_id],
 					cmd_size);
@@ -1174,7 +1176,8 @@ bsp_flush (vulkan_ctx_t *ctx)
 	size = sizeof (uint32_t[bframe->entid_count]);
 	data = QFV_PacketExtend (packet, size);
 	memcpy (data, bframe->entid_data, size);
-	QFV_PacketCopyBuffer (packet, bctx->entid_buffer, bframe->entid_offset,
+	QFV_PacketCopyBuffer (packet, bctx->entid_buffer.buffer,
+					bframe->entid_offset,
 					&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
 					&bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
 	QFV_PacketSubmit (packet);
@@ -1366,7 +1369,11 @@ create_base_resources (vulkan_ctx_t *ctx)
 	bctx->default_skybox = views[2].image_view.view;
 	bctx->default_skymap = views[3].image_view.view;
 	bctx->default_verts = verts->buffer.buffer;
-	bctx->entid_buffer = entid->buffer.buffer;
+	bctx->entid_buffer = (bsp_buffer_t) {
+		.buffer = entid->buffer.buffer,
+		.size = entid->buffer.size,
+		.addr = entid->buffer.address,
+	};
 
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.base");
 	create_notexture (ctx, packet, &images[0]);
@@ -1478,7 +1485,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto queue = *(QFV_BspQueue *) params[1]->value;
 	auto textured = *(int *) params[0]->value;
 
-	if (queue != QFV_bspBackground && !bctx->vertex_buffer) {
+	if (queue != QFV_bspBackground && !bctx->vertex_buffer.buffer) {
 		return;
 	}
 
@@ -1490,13 +1497,13 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	} [pass_ind];
 
 	auto bframe = &bctx->frames.a[ctx->curFrame];
-	VkBuffer    buffers[] = { bctx->default_verts, bctx->entid_buffer };
-	if (bctx->vertex_buffer) {
-		buffers[0] = bctx->vertex_buffer;
+	VkBuffer    buffers[] = { bctx->default_verts, bctx->entid_buffer.buffer };
+	if (bctx->vertex_buffer.buffer) {
+		buffers[0] = bctx->vertex_buffer.buffer;
 	}
 	VkDeviceSize offsets[] = { 0, bframe->entid_offset };
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 2, buffers, offsets);
-	dfunc->vkCmdBindIndexBuffer (cmd, bctx->index_buffer, 0,
+	dfunc->vkCmdBindIndexBuffer (cmd, bctx->index_buffer.buffer, 0,
 								 VK_INDEX_TYPE_UINT32);
 
 	if (matrix_base) {
@@ -1627,7 +1634,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		R_StoreEfrags (scene, cluster);
 		*queue++ = (bsp_queue_t) { .cluster = cluster, .instance_count = 1 };
 	}
-	QFV_PacketCopyBuffer (packet, bctx->queue_buffer, frame->queue,
+	QFV_PacketCopyBuffer (packet, bctx->queue_buffer.buffer, frame->queue,
 						  &bufferBarriers[qfv_BB_ShaderRO_to_TransferWrite],
 						  &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
 	QFV_PacketSubmit (packet);
@@ -1672,7 +1679,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 					}
 				}
 			}
-			QFV_PacketCopyBuffer (packet, bctx->queue_buffer,
+			QFV_PacketCopyBuffer (packet, bctx->queue_buffer.buffer,
 							frame->queue + sizeof (bsp_queue_t[count]),
 							&bufferBarriers[qfv_BB_ShaderRO_to_TransferWrite],
 							&bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
@@ -1681,7 +1688,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		}
 	}
 
-	*bctx->cluster_queue_ptr = bctx->queue_buffer_addr + frame->queue;
+	*bctx->cluster_queue_ptr = bctx->queue_buffer.addr + frame->queue;
 	*bctx->cluster_count = count;
 
 	auto pipeline = taskctx->pipeline;
@@ -1888,8 +1895,6 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.skybox_id   = nullent,
 		.skymap_id   = nullent,
 
-		.model_ptr           = QFV_GetBlackboardVar (ctx, "models"),
-		.tex_id_ptr          = QFV_GetBlackboardVar (ctx, "tex_ids"),
 		.command_counts_ptr  = QFV_GetBlackboardVar (ctx, "command_counts"),
 		.command_offsets_ptr = QFV_GetBlackboardVar (ctx, "command_offsets"),
 		.commands_ptr        = QFV_GetBlackboardVar (ctx, "commands"),

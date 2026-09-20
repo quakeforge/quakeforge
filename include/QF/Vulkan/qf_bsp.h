@@ -267,6 +267,12 @@ typedef struct bspframe_s {
 typedef struct bspframeset_s
     DARRAY_TYPE (bspframe_t) bspframeset_t;
 
+typedef struct bsp_buffer_s {
+	VkBuffer    buffer;
+	size_t      size;
+	VkDeviceAddress addr;
+} bsp_buffer_t;
+
 /** Main BSP context structure
  *
  * This holds all the state and resources needed for rendering brush models.
@@ -308,43 +314,33 @@ typedef struct bspctx_s {
 	VkSampler    sampler;
 	VkSampler    equrect;
 
+	// for vkCmdDrawIndexedIndirectCount
 	uint32_t    *command_offsets;
 	uint32_t    *command_counts;
+
 	qfv_resource_t *base_resource;
 	qfv_resource_t *tex_resource;
 	uint32_t     num_tex_anim;
 	VkBuffer     default_verts;
 	qfv_resource_t *bsp_resource;
-	size_t       model_buffer_size;
-	size_t       tex_id_buffer_size;
-	size_t       vertex_buffer_size;
-	size_t       index_buffer_size;
-	size_t       command_counts_buffer_size;
-	size_t       command_offsets_buffer_size;
-	size_t       command_buffer_size;
-	size_t       subcluster_buffer_size;
-	size_t       cluster_buffer_size;
-	size_t       clustermap_buffer_size;
-	size_t       queue_buffer_size;
-	VkDeviceAddress queue_buffer_addr;
-	VkBuffer     model_buffer;
-	VkBuffer     tex_id_buffer;
-	VkBuffer     vertex_buffer;
-	VkBuffer     index_buffer;
-	VkBuffer     command_counts_buffer;
-	VkBuffer     command_offsets_buffer;
-	VkBuffer     command_buffer;
-	VkBuffer     subcluster_buffer;
-	VkBuffer     cluster_buffer;
-	VkBuffer     clustermap_buffer;
-	VkBuffer     queue_buffer;
-	VkBuffer     entid_buffer;
-	uint32_t    *index_data;
+
+	bsp_buffer_t model_buffer;
+	bsp_buffer_t tex_id_buffer;
+	bsp_buffer_t entid_buffer;
+
+	bsp_buffer_t vertex_buffer;
+	bsp_buffer_t index_buffer;
+	bsp_buffer_t command_counts_buffer;
+	bsp_buffer_t command_offsets_buffer;
+	bsp_buffer_t command_buffer;
+	bsp_buffer_t subcluster_buffer;
+	bsp_buffer_t cluster_buffer;
+	bsp_buffer_t clustermap_buffer;
+	bsp_buffer_t queue_buffer;
+
 	uint32_t    *entid_data;
 	bspframeset_t frames;
 
-	VkDeviceAddress *model_ptr;
-	VkDeviceAddress *tex_id_ptr;
 	VkDeviceAddress *command_counts_ptr;
 	VkDeviceAddress *command_offsets_ptr;
 	VkDeviceAddress *commands_ptr;
