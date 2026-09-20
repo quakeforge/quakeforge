@@ -184,7 +184,7 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 			.drawIndirectCount = 1,
 			.storageBuffer8BitAccess = 1,
 			.shaderFloat16 = 0,	//FIXME not supported on 1080
-			.shaderInt8 = 0,	//FIXME not yet
+			.shaderInt8 = 1,
 			.hostQueryReset = 1,
 			.bufferDeviceAddress = 1,
 		};

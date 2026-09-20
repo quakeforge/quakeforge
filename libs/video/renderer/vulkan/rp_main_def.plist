@@ -344,6 +344,38 @@ properties = {
 				};
 			};
 		};
+		ent = {
+			shader = {
+				clear = {
+					stage = compute;
+					name = ent.clear;
+					module = $builtin/bsp.r;
+				};
+				count = {
+					stage = compute;
+					name = ent.count;
+					module = $builtin/bsp.r;
+				};
+			};
+			layout = {
+				pushConstants = {
+					compute = {
+						ent_count = uint;
+						anim_index = uint;
+						ent_ids = ptr;
+						entities = ptr;
+						models = ptr;
+						tex_ids = ptr;
+						anim_main = ptr;
+						anim_alt = ptr;
+						frame_map = ptr;
+
+						tex_counts = ptr;
+						num_tex = uint;
+					};
+				};
+			};
+		};
 		shader = {
 			shadow_vertex = {
 				stage = vertex;
@@ -2379,12 +2411,19 @@ jobs = {
 				dependencies = (start_frame);
 				compute = {
 					pipelines = {
-						clear = {
+						clear_commands = {
 							tasks = (
 								{ func = bsp_clear_commands; },
 							);
 							stage = $brush.cluster.shader.clear;
 							layout = $brush.cluster.layout;
+						};
+						clear_ent = {
+							tasks = (
+								{ func = bsp_clear_ent; },
+							);
+							stage = $brush.ent.shader.clear;
+							layout = $brush.ent.layout;
 						};
 					};
 				};

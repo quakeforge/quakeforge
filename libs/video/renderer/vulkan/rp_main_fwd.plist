@@ -317,6 +317,38 @@ properties = {
 				};
 			};
 		};
+		ent = {
+			shader = {
+				clear = {
+					stage = compute;
+					name = ent.clear;
+					module = $builtin/bsp.r;
+				};
+				count = {
+					stage = compute;
+					name = ent.count;
+					module = $builtin/bsp.r;
+				};
+			};
+			layout = {
+				pushConstants = {
+					compute = {
+						ent_count = uint;
+						anim_index = uint;
+						ent_ids = ptr;
+						entities = ptr;
+						models = ptr;
+						tex_ids = ptr;
+						anim_main = ptr;
+						anim_alt = ptr;
+						frame_map = ptr;
+
+						tex_counts = ptr;
+						num_tex = uint;
+					};
+				};
+			};
+		};
 		shader = {
 			vertex = {
 				stage = vertex;

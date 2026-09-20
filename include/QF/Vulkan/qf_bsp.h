@@ -40,69 +40,14 @@
 #include "QF/simd/types.h"
 
 typedef struct set_s set_t;
+typedef struct qfv_resource_s qfv_resource_t;
 
 /** \defgroup vulkan_bsp Brush model rendering
 	\ingroup vulkan
 */
 
-/** Represent a single face (polygon) of a brush model.
- *
- * There is one of these for each face in the bsp (brush) model, built at run
- * time when the model is loaded (actually, after all models are loaded but
- * before rendering begins).
- */
-typedef struct bsp_face_s {
-	uint32_t    first_index;	///< index of first index in poly_indices
-	uint32_t    index_count;	///< includes primitive restart
-	uint32_t    tex_id;			///< texture bound to this face (maybe animated)
-	uint32_t    flags;			///< face drawing (alpha, side, sky, turb)
-} bsp_face_t;
-
-/** Represent a brush model, both main and sub-model.
- *
- * Used for rendering non-world models.
- */
-typedef struct bsp_model_s {
-	uint32_t    first_cluster;
-	uint32_t    cluster_count;
-} bsp_model_t;
-
-#if 0
-typedef struct texname_s {
-	char        name[MIPTEXNAME];
-} texname_t;
-
-typedef struct texmip_s {
-	uint32_t    width;
-	uint32_t    height;
-	uint32_t    offsets[MIPLEVELS];
-} texmip_t;
-#endif
-/** \defgroup vulkan_bsp_texanim Animated Textures
- * \ingroup vulkan_bsp
- *
- * Brush models support texture animations. For general details, see
- * \ref bsp_texture_animation. These structures allow for quick lookup
- * of the correct texture to use in an animation cycle, or even whether there
- * is an animation cycle.
- */
-///@{
-/** Represent a texture's animation group.
- *
- * Every texture is in an animation group, even when not animated. When the
- * texture is not animated, `count` is 1, otherwise `count` is the number of
- * frames in the group, thus every texture has at least one frame.
- *
- * Each texture in a particular group shares the same `base` frame, with
- * `offset` giving the texture's relative frame number within the group.
- * The current frame is given by `base + (anim_index + offset) % count` where
- * `anim_index` is the global time-based texture animation frame.
- */
-typedef struct texanim_s {
-	uint16_t    base;		///< first frame in group
-	byte        offset;		///< relative frame in group
-	byte        count;		///< number of frames in group
-} texanim_t;
+typedef struct bsp_model_s bsp_model_t;
+typedef struct bsp_texanim_s bsp_texanim_t;
 
 /** Holds texture animation data for brush models.
  *
@@ -116,12 +61,9 @@ typedef struct texanim_s {
  * actual texture id for the frame.
  */
 typedef struct texdata_s {
-//	texname_t  *names;
-//	texmip_t  **mips;
-	texanim_t  *anim_main;	///< group 0 animations
-	texanim_t  *anim_alt;	///< group 1 animations
+	bsp_texanim_t *anim_main;	///< group 0 animations
+	bsp_texanim_t *anim_alt;	///< group 1 animations
 	uint16_t   *frame_map;	///< map from texture frame to texture id
-//	int         num_tex;
 } texdata_t;
 ///@}
 
@@ -238,22 +180,6 @@ typedef struct bsp_drawset_s
     DARRAY_TYPE (bsp_draw_t) bsp_drawset_t;
 ///@}
 
-/** Tag models that are to be queued for translucent drawing.
- */
-#define INST_ALPHA (1u<<31)
-
-/** Representation of a single face queued for drawing.
- */
-///@{
-typedef struct instface_s {
-	uint32_t    inst_id;		///< model render id owning this face
-	uint32_t    face;			///< index of face in context array
-} instface_t;
-
-typedef struct bsp_instfaceset_s
-    DARRAY_TYPE (instface_t) bsp_instfaceset_t;
-///@}
-
 /** Track entities using a model.
  */
 ///@{
@@ -294,7 +220,6 @@ typedef struct bsp_pass_s {
 	 * current frame id to the current visibility frame id.
 	 */
 	visstate_t  visstate;
-	bsp_instfaceset_t *face_queue;	///< per-texture face queues
 	regtexset_t *textures;			///< textures to bind when emitting calls
 	set_t      *tex_set;			///< per-pipeline set of textures
 	uint32_t    inst_id;			///< render id of current model
@@ -357,11 +282,9 @@ typedef struct bspctx_s {
 
 	unsigned    max_edges;
 	int         num_models;			///< number of loaded brush models
-	bsp_model_t *models;			///< all loaded brush models
+	bsp_model_t *_models;			///< all loaded brush models
 
 	regtexset_t registered_textures;///< textures for all loaded brush models
-	texdata_t   texdata;			///< texture animation data
-	int         anim_index;			///< texture animation frame (5fps)
 	VkImageView default_skysheet;
 	VkImageView skysheet_tex;	///< scrolling sky texture for current map
 
@@ -387,9 +310,13 @@ typedef struct bspctx_s {
 
 	uint32_t    *command_offsets;
 	uint32_t    *command_counts;
-	struct qfv_resource_s *base_resource;
+	qfv_resource_t *base_resource;
+	qfv_resource_t *tex_resource;
+	uint32_t     num_tex_anim;
 	VkBuffer     default_verts;
-	struct qfv_resource_s *bsp_resource;
+	qfv_resource_t *bsp_resource;
+	size_t       model_buffer_size;
+	size_t       tex_id_buffer_size;
 	size_t       vertex_buffer_size;
 	size_t       index_buffer_size;
 	size_t       command_counts_buffer_size;
@@ -400,6 +327,8 @@ typedef struct bspctx_s {
 	size_t       clustermap_buffer_size;
 	size_t       queue_buffer_size;
 	VkDeviceAddress queue_buffer_addr;
+	VkBuffer     model_buffer;
+	VkBuffer     tex_id_buffer;
 	VkBuffer     vertex_buffer;
 	VkBuffer     index_buffer;
 	VkBuffer     command_counts_buffer;
@@ -414,6 +343,8 @@ typedef struct bspctx_s {
 	uint32_t    *entid_data;
 	bspframeset_t frames;
 
+	VkDeviceAddress *model_ptr;
+	VkDeviceAddress *tex_id_ptr;
 	VkDeviceAddress *command_counts_ptr;
 	VkDeviceAddress *command_offsets_ptr;
 	VkDeviceAddress *commands_ptr;
@@ -421,14 +352,26 @@ typedef struct bspctx_s {
 	VkDeviceAddress *clusters_ptr;
 	VkDeviceAddress *cluster_map_ptr;
 	VkDeviceAddress *cluster_queue_ptr;
-	uint32_t    *cluster_count;
-	uint32_t    *texture_count;
-	uint32_t    *matrix_base;
-	vec4f_t     *fog;
-	float       *time;
-	float       *alpha;
-	float       *turb_scale;
-	uint32_t    *control;
+	uint32_t   *cluster_count;
+	uint32_t   *texture_count;
+	uint32_t   *matrix_base;
+	vec4f_t    *fog;
+	float      *time;
+	float      *alpha;
+	float      *turb_scale;
+	uint32_t   *control;
+
+	uint32_t   *ent_count;
+	uint32_t   *anim_index;
+	VkDeviceAddress *ent_ids;
+	VkDeviceAddress *entities;
+	VkDeviceAddress *models;
+	VkDeviceAddress *tex_ids;
+	VkDeviceAddress *anim_main;
+	VkDeviceAddress *anim_alt;
+	VkDeviceAddress *frame_map;
+	VkDeviceAddress *tex_counts;
+	uint32_t   *num_tex;
 } bspctx_t;
 
 struct vulkan_ctx_s;
