@@ -2279,7 +2279,7 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 			}
 			type = obj->array.type;
 			auto base = new_int_expr (base_ind, false);
-			int size = type_aligned_size (type) * sizeof (pr_type_t);
+			int size = type_byte_aligned_size (type);
 			auto scale = new_int_expr (size, false);
 			auto index = binary_expr ('*', obj->array.index, scale);
 			offset = binary_expr ('*', base, scale);
