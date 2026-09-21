@@ -34,8 +34,16 @@ main ()
 	uint loc_ind0 = gl_LocalInvocationID.x * 2 + 0;
 	uint loc_ind1 = gl_LocalInvocationID.x * 2 + 1;
 
-	local_data[loc_ind0] = (ext_ind0 < count) ? in_data[ext_ind0] : 0;
-	local_data[loc_ind1] = (ext_ind1 < count) ? in_data[ext_ind1] : 0;
+	if (ext_ind0 < count) {
+		local_data[loc_ind0] = in_data[ext_ind0];
+	} else {
+		local_data[loc_ind0] = 0;
+	}
+	if (ext_ind1 < count) {
+		local_data[loc_ind1] = in_data[ext_ind1];
+	} else {
+		local_data[loc_ind1] = 0;
+	}
 	barrier ();
 
 	// inclusive prefix sum using Blelloch
