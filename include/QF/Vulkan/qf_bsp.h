@@ -287,8 +287,6 @@ typedef struct bspctx_s {
 	VkDescriptorSet lightmap_descriptor;
 
 	unsigned    max_edges;
-	int         num_models;			///< number of loaded brush models
-	bsp_model_t *_models;			///< all loaded brush models
 
 	regtexset_t registered_textures;///< textures for all loaded brush models
 	VkImageView default_skysheet;
@@ -325,8 +323,11 @@ typedef struct bspctx_s {
 	qfv_resource_t *bsp_resource;
 
 	bsp_buffer_t model_buffer;
+	bsp_buffer_t mod_counts_buffer;
+	bsp_buffer_t mod_offsets_buffer;
 	bsp_buffer_t tex_id_buffer;
 	bsp_buffer_t entid_buffer;
+	bsp_buffer_t instid_buffer;
 
 	bsp_buffer_t vertex_buffer;
 	bsp_buffer_t index_buffer;
@@ -348,7 +349,6 @@ typedef struct bspctx_s {
 	VkDeviceAddress *clusters_ptr;
 	VkDeviceAddress *cluster_map_ptr;
 	VkDeviceAddress *cluster_queue_ptr;
-	uint32_t   *cluster_count;
 	uint32_t   *texture_count;
 	uint32_t   *matrix_base;
 	vec4f_t    *fog;
@@ -360,14 +360,21 @@ typedef struct bspctx_s {
 	uint32_t   *ent_count;
 	uint32_t   *anim_index;
 	VkDeviceAddress *ent_ids;
+	VkDeviceAddress *inst_ids;
 	VkDeviceAddress *entities;
 	VkDeviceAddress *models;
 	VkDeviceAddress *tex_ids;
 	VkDeviceAddress *anim_main;
 	VkDeviceAddress *anim_alt;
 	VkDeviceAddress *frame_map;
-	VkDeviceAddress *tex_counts;
-	uint32_t   *num_tex;
+	VkDeviceAddress *mod_counts;
+	VkDeviceAddress *mod_offsets;
+	uint32_t   *num_models;
+
+	VkDeviceAddress *in_data;
+	VkDeviceAddress *out_data;
+	VkDeviceAddress *sum_data;
+	uint32_t   *count;
 } bspctx_t;
 
 struct vulkan_ctx_s;

@@ -330,6 +330,7 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 	qfv_taskctx_t tctx = *taskctx;
 	tctx.pipeline = pipeline,
 	tctx.cmd = cmd,
+	pipeline->pre_memory_barrier = false;
 	pipeline->post_memory_barrier = false;
 	run_tasks (pipeline->task_count, pipeline->tasks, &tctx);
 

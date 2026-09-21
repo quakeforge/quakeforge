@@ -7,6 +7,12 @@ typedef struct Entity Entity;//FIXME eliminate glsl uses
 
 [in("GlobalInvocationId")] uvec3 gl_GlobalInvocationID;
 
+typedef struct cluster_queue_s {
+	uint        count;
+	uint        x, y, z;
+	bsp_queue_t queue[1];//not really FIXME need to decorate with run time array
+} cluster_queue_t;
+
 @namespace cluster {
 
 [push_constant] @block Params {
@@ -16,9 +22,15 @@ typedef struct Entity Entity;//FIXME eliminate glsl uses
 	bsp_cluster_t *subclusters;
 	cluster_t *clusters;
 	uint *cluster_map;
-	bsp_queue_t *cluster_queue;
-	uint cluster_count;
+	cluster_queue_t *cluster_queue;
 	uint texture_count;
+
+	bsp_model_t *models;
+	uint       *tex_ids;
+
+	bsp_texanim_t *anim_main;	///< group 0 animations
+	bsp_texanim_t *anim_alt;	///< group 1 animations
+	ushort     *frame_map;		///< map from texture frame to texture id
 };
 
 uint
@@ -32,10 +44,10 @@ void
 main ()
 {
 	uint queue_index = gl_GlobalInvocationID.x;
-	if (queue_index >= cluster_count) {
+	if (queue_index >= cluster_queue.count) {
 		return;
 	}
-	auto queue = cluster_queue[queue_index];
+	auto queue = cluster_queue.queue[queue_index];
 	auto cluster = clusters[queue.cluster];
 	for (uint i = 0; i < cluster.count; i++) {
 		uint subcluster_ind = cluster_map[cluster.first + i];
@@ -71,54 +83,97 @@ clear ()
 	uint        ent_count;
 	uint        anim_index;
 	uint       *ent_ids;
+	uint       *inst_ids;
 	Entity     *entities;
+	cluster_queue_t *cluster_queue;
 	bsp_model_t *models;
-	uint       *tex_ids;
 
-	bsp_texanim_t *anim_main;	///< group 0 animations
-	bsp_texanim_t *anim_alt;	///< group 1 animations
-	ushort     *frame_map;		///< map from texture frame to texture id
-
-	uint       *tex_counts;
-	uint        num_tex;
+	uint       *mod_counts;
+	uint       *mod_offsets;
+	uint        num_models;
 };
+
+[shader(GLCompute, LocalSize=[1,1,1])]
+void
+set_dispatch ()
+{
+	if (cluster_queue) {
+		cluster_queue.x = (cluster_queue.count + workgroup_size - 1)
+						/ workgroup_size;
+	}
+}
+
+[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+void
+distribute ()
+{
+	uint ent_ind = gl_GlobalInvocationID.x;
+	if (ent_ind < 1 || ent_ind >= ent_count) {
+		return;
+	}
+	uint ent_id = ent_ids[ent_ind];
+
+	uint mod_id = entities[ent_id].model;
+	uint mod_base = entities[ent_id].color[3] < 1 ? num_models : 0;
+
+	uint inst_ind = atomicAdd (mod_offsets[mod_base + mod_id], 1);
+	inst_ids[inst_ind] = ent_id;
+}
+
+[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+void
+enqueue ()
+{
+	uint mod_id = gl_GlobalInvocationID.x;
+	if (mod_id >= num_models) {
+		return;
+	}
+	auto mod = models[mod_id];
+
+	for (uint j = 0; j < 2; j++) {
+		uint mod_base = j * num_models;
+		uint first_instance = mod_offsets[mod_base + mod_id];
+		uint instance_count = mod_counts[mod_base + mod_id];
+
+		if (instance_count) {
+			for (uint i = 0; i < mod.cluster_count; i++) {
+				uint index = atomicAdd (cluster_queue.count, 1);
+				bsp_queue_t q = {
+					.cluster = mod.first_cluster + i,
+					.first_instance = first_instance,
+					.instance_count = instance_count,
+				};
+				cluster_queue.queue[index] = q;
+			}
+		}
+	}
+}
 
 [shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 void
 count ()
 {
 	uint ent_ind = gl_GlobalInvocationID.x;
-	if (ent_ind >= ent_count) {
+	if (ent_ind < 1 || ent_ind >= ent_count) {
+		mod_counts[0] = 1;
 		return;
 	}
 	uint ent_id = ent_ids[ent_ind];
 
 	uint mod_id = entities[ent_id].model;
 	uint frame = entities[ent_id].frame;
-	uint tex_base = entities[ent_id].color[3] < 1 ? num_tex : 0;
+	uint mod_base = entities[ent_id].color[3] < 1 ? num_models : 0;
 
-	uint first_texture = models[mod_id].first_texture;
-	uint texture_count = models[mod_id].texture_count;
-
-	auto texanim = frame ? anim_alt : anim_main;
-
-	for (uint i = 0; i < texture_count; i++) {
-		uint tex_id = tex_ids[i];
-		auto anim = texanim[tex_id];
-		uint frame_ind = anim.base + (anim_index + anim.offset) % anim.count;
-		tex_id = frame_map[frame_ind];
-
-		atomicAdd (tex_counts[tex_base + tex_id], 1);
-	}
+	atomicAdd (mod_counts[mod_base + mod_id], 1);
 }
 
 [shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 void
 clear ()
 {
-	uint tex_id = gl_GlobalInvocationID.x;
-	if (tex_id < num_tex * 2) {
-		tex_counts[tex_id] = 0;
+	uint mod_id = gl_GlobalInvocationID.x;
+	if (mod_id < num_models * 2) {
+		mod_counts[mod_id] = 0;
 	}
 }
 
