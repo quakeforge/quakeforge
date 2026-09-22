@@ -125,7 +125,7 @@ void
 enqueue ()
 {
 	uint mod_id = gl_GlobalInvocationID.x;
-	if (mod_id >= num_models) {
+	if (mod_id < 1 || mod_id >= num_models) {
 		return;
 	}
 	auto mod = models[mod_id];
