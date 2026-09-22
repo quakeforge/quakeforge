@@ -184,16 +184,6 @@ shutdown_pass_draw_queues (bsp_pass_t *pass)
 }
 
 static void
-shutdown_pass_instances (bsp_pass_t *pass, const bspctx_t *bctx)
-{
-}
-
-static void
-setup_pass_instances (bsp_pass_t *pass, const bspctx_t *bctx)
-{
-}
-
-static void
 setup_pass_draw_queues (bsp_pass_t *pass)
 {
 	pass->tex_set = malloc (sizeof (set_t[QFV_bspNumPasses]));
@@ -682,10 +672,6 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	bspctx_t   *bctx = ctx->bsp_context;
 	visstate_t *visstate = nullptr;
 
-	shutdown_pass_instances (&bctx->main_pass, bctx);
-	shutdown_pass_instances (&bctx->shadow_pass, bctx);
-	shutdown_pass_instances (&bctx->debug_pass, bctx);
-
 	*bctx->num_models = 0;
 	for (int i = 0; i < num_models; i++) {
 		model_t    *m = models[i];
@@ -720,9 +706,6 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	uint32_t mod_clusters = build.mod_cluster_count;
 	uint32_t num_clusters = build.sub_cluster_count;
 
-	setup_pass_instances (&bctx->main_pass, bctx);
-	setup_pass_instances (&bctx->shadow_pass, bctx);
-	setup_pass_instances (&bctx->debug_pass, bctx);
 	// All vertices from all brush models go into one giant vbo.
 	uint32_t    vertex_count = build.vert_count;
 	uint32_t    index_count = build.ind_count;
@@ -1743,13 +1726,6 @@ draw_brush_model (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 }
 
 static void
-clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
-{
-	qfZoneScoped (true);
-	pass->index_count = 0;
-}
-
-static void
 bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneScoped (true);
@@ -1781,7 +1757,6 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	if (pass->entqueue) {
 		EntQueue_Clear (pass->entqueue);
 	}
-	clear_queues (bctx, pass);
 	if (!pass->brush) {
 		return;
 	}
@@ -1792,11 +1767,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	entity_t    worldent = nullentity;
 	int         world_id = Vulkan_Scene_AddEntity (ctx, worldent);
-	pass->ent_frame = 0;    // world is always frame 0
 	pass->entid_data[pass->entid_count++] = world_id;
-	if (pass->instances) {
-		DARRAY_APPEND (&pass->instances[world_id].entities, world_id);
-	}
 
 	//FIXME r_refdef ref. scene from taskctx?
 	auto scene = r_refdef.scene;
@@ -1930,12 +1901,7 @@ bsp_build_display_lists (const exprval_t **params, exprval_t *result,
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto bctx = ctx->bsp_context;
 	auto scene = (scene_t *) taskctx->data;
-
-	clear_queues (bctx, &bctx->main_pass);
-	clear_queues (bctx, &bctx->shadow_pass);
-	clear_queues (bctx, &bctx->debug_pass);
 
 	Vulkan_BuildDisplayLists (scene->models, scene->num_models, ctx);
 }
@@ -1970,10 +1936,6 @@ bsp_shutdown (exprctx_t *ectx)
 	shutdown_pass_draw_queues (&bctx->main_pass);
 	shutdown_pass_draw_queues (&bctx->shadow_pass);
 	shutdown_pass_draw_queues (&bctx->debug_pass);
-
-	shutdown_pass_instances (&bctx->main_pass, bctx);
-	shutdown_pass_instances (&bctx->shadow_pass, bctx);
-	shutdown_pass_instances (&bctx->debug_pass, bctx);
 
 	free (bctx->frames.a);
 

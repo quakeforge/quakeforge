@@ -80,120 +80,6 @@ typedef struct vulktex_s {
 typedef struct regtexset_s
     DARRAY_TYPE (vulktex_t *) regtexset_t;
 
-/** Represent a single draw call.
- *
- * For each texture that has faces to be rendered, one or more draw calls is
- * made. Normally, only one call per texture is made, but if different models
- * use the same texture, then a separate draw call is made for each model.
- * When multiple entities use the same model, instanced rendering is used to
- * draw all the faces sharing a texture for all the entities using that model.
- * Thus when there are multiple draw calls for a single texture, they are
- * grouped together so there is only one bind per texture.
- *
- * The index buffer is populated every frame with the vertex indices of the
- * faces to be rendered for the current frame, grouped by texture and instance
- * id (model render id).
- *
- * The model render id is assigned after models are loaded but before rendering
- * begins and remains constant until the next time models are loaded (level
- * change).
- *
- * The entid buffer is also populated every frame with the render id of the
- * entities to be drawn that frame, It is used to map gl_InstanceIndex to
- * entity id so as to look up the entity's transform and color (and any other
- * data in the future).
- *
- * \dot
- * digraph vulkan_bsp_draw_call {
- *     layout=dot; rankdir=LR; compound=true; nodesep=1.0;
- *     vertices [shape=none,label=< <table border="1" cellborder="1">
- *                  <tr><td>vertex</td></tr>
- *                  <tr><td>vertex</td></tr>
- *                  <tr><td>...</td></tr>
- *                  <tr><td port="p">vertex</td></tr>
- *                  <tr><td>vertex</td></tr>
- *              </table> >];
- *     indices  [shape=none,label=< <table border="1" cellborder="1">
- *                  <tr><td>index</td></tr>
- *                  <tr><td>index</td></tr>
- *                  <tr><td>...</td></tr>
- *                  <tr><td port="p">index</td></tr>
- *                  <tr><td>index</td></tr>
- *              </table> >];
- *     entids   [shape=none,label=< <table border="1" cellborder="1">
- *                  <tr><td>entid</td></tr>
- *                  <tr><td>...</td></tr>
- *                  <tr><td port="p">entid</td></tr>
- *                  <tr><td>entid</td></tr>
- *                  <tr><td>...</td></tr>
- *                  <tr><td>entid</td></tr>
- *              </table> >];
- *     entdata  [shape=none,label=< <table border="1" cellborder="1">
- *                  <tr><td>transform</td><td>color</td></tr>
- *                  <tr><td>transform</td><td>color</td></tr>
- *                  <tr><td colspan="2">...</td></tr>
- *                  <tr><td port="p">transform</td><td>color</td></tr>
- *                  <tr><td colspan="2">...</td></tr>
- *                  <tr><td>transform</td><td>color</td></tr>
- *              </table> >];
- *     drawcall [shape=none,label=< <table border="1" cellborder="1">
- *                  <tr><td port="tex" >tex_id</td></tr>
- *                  <tr><td            >inst_id</td></tr>
- *                  <tr><td port="ind" >first_index</td></tr>
- *                  <tr><td            >index_count</td></tr>
- *                  <tr><td port="inst">first_instance</td></tr>
- *                  <tr><td            >instance_count</td></tr>
- *              </table> >];
- *     textures [shape=none,label=< <table border="1" cellborder="1">
- *                  <tr><td>texture</td></tr>
- *                  <tr><td>texture</td></tr>
- *                  <tr><td port="p">texture</td></tr>
- *                  <tr><td>...</td></tr>
- *                  <tr><td>texture</td></tr>
- *              </table> >];
- *     vertex   [label="vertex shader"];
- *     fragment [label="fragment shader"];
- *     drawcall:tex -> textures:p;
- *     drawcall:ind -> indices:p;
- *     drawcall:inst -> entids:p;
- *     entids:p -> entdata:p;
- *     indices:p -> vertices:p;
- *     vertex -> entdata [label="storage buffer"];
- *     vertex -> entids [label="per instance"];
- *     vertex -> indices [label="index buffer"];
- *     vertex -> vertices [label="per vertex"];
- *     fragment -> textures [label="per call"];
- * }
- * \enddot
- */
-///@{
-typedef struct bsp_draw_s {
-	uint32_t    tex_id;			///< texture to bind for this draw call
-	uint32_t    inst_id;		///< model render id owning this draw call
-	uint32_t    index_count;	///< number of indices for this draw call
-	uint32_t    instance_count;	///< number of instances to draw
-	uint32_t    first_index;	///< index into index buffer
-	uint32_t    first_instance;	///< index into entid buffer
-} bsp_draw_t;
-
-typedef struct bsp_drawset_s
-    DARRAY_TYPE (bsp_draw_t) bsp_drawset_t;
-///@}
-
-/** Track entities using a model.
- */
-///@{
-typedef struct bsp_modelentset_s
-	DARRAY_TYPE (uint32_t) bsp_modelentset_t;
-
-/** Represent a single model and the entities using it.
- */
-typedef struct bsp_instance_s {
-	int         first_instance;	///< index into entid buffer
-	bsp_modelentset_t entities;	///< list of entity render ids using this model
-} bsp_instance_t;
-///@}
-
 typedef struct bsp_pass_s {
 	vec4f_t     position;			///< view position
 	const vec4f_t *transform;		///< transform for current model
@@ -202,13 +88,11 @@ typedef struct bsp_pass_s {
 	struct entqueue_s *entqueue;	///< entities to render this pass
 	/** \name GPU data
 	 *
-	 * The indices to be drawn and the entity ids associated with each draw
+	 * The entity ids associated with each draw
 	 * instance are updated each frame. The pointers are to the per-frame
 	 * mapped buffers for the respective data.
 	 */
 	///@{
-	uint32_t   *indices;			///< polygon vertex indices
-	uint32_t    index_count;		///< number of indices written to buffer
 	uint32_t   *entid_data;			///< instance id to entity id map
 	uint32_t    entid_count;		///< number of entids written to buffer
 	///@}
@@ -222,17 +106,6 @@ typedef struct bsp_pass_s {
 	visstate_t  visstate;
 	regtexset_t *textures;			///< textures to bind when emitting calls
 	set_t      *tex_set;			///< per-pipeline set of textures
-	uint32_t    inst_id;			///< render id of current model
-	bsp_instance_t *instances;		///< per-model entid lists
-	// FIXME There are several potential optimizations here:
-	// 1) ent_frame could be forced to be 0 or 1 and then used to index a
-	// two-element array of texanim pointers
-	// 2) ent_frame could be a pointer to the correct texanim array
-	// 3) could update a tex_id map each frame and unconditionally index that
-	//
-	// As the texture id is used for selecting the face queue, 3 could be used
-	// for mapping all textures to 1 or two queues for shadow rendering
-	int         ent_frame;			///< animation frame of current entity
 } bsp_pass_t;
 ///@}
 
