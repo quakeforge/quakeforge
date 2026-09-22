@@ -326,17 +326,15 @@ const VkBufferMemoryBarrier2 bufferBarriers[] = {
 		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 	},
 	[qfv_BB_TransferWrite_to_UniformRead] = {
-		// note: not necessarily optimal as it uses vertex shader for dst
 		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
 		.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
 		.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT
-					  | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
-					  | VK_PIPELINE_STAGE_2_COPY_BIT,
+					  | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
+					  | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
 		.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
 		.dstAccessMask = VK_ACCESS_2_UNIFORM_READ_BIT
 					   | VK_ACCESS_2_SHADER_STORAGE_READ_BIT
-					   | VK_ACCESS_2_SHADER_READ_BIT
-					   | VK_ACCESS_2_TRANSFER_WRITE_BIT,
+					   | VK_ACCESS_2_SHADER_READ_BIT,
 		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 	},
