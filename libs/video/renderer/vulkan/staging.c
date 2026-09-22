@@ -420,6 +420,7 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage, const char *name)
 		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, 0,
 	};
 	dfunc->vkBeginCommandBuffer (packet->cmd, &beginInfo);
+	QFV_duCmdBeginLabel (device, packet->cmd, name, {0.8, 0.7, 0.5, 1});
 
 	return packet;
 }
@@ -444,6 +445,7 @@ QFV_PacketSubmit (qfv_packet_t *packet)
 		QFV_FlushStagingBuffer (stage, packet->offset, packet->length);
 	}
 
+	QFV_duCmdEndLabel (device, packet->cmd);
 	dfunc->vkEndCommandBuffer (packet->cmd);
 	//XXX it may become necessary to pass in semaphores etc (maybe add to
 	//packet?)
