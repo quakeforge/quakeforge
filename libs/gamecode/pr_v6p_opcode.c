@@ -1542,7 +1542,7 @@ check_global (progs_t *pr, dstatement_t *st, const v6p_opcode_t *op, etype_t typ
 			}
 			break;
 		default:
-			if (operand + (unsigned) pr_type_size[type]
+			if (operand + pr_type_size[type] / sizeof (pr_type_t)
 				> pr->progs->globals.count) {
 				if (operand >= pr->progs->globals.count
 					|| !is_vector_parameter_store (pr, st, operand)) {

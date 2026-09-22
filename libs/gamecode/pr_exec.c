@@ -374,7 +374,8 @@ PR_BoundsCheckSize (progs_t *pr, pr_ptr_t addr, unsigned size)
 VISIBLE void
 PR_BoundsCheck (progs_t *pr, int addr, etype_t type)
 {
-	PR_BoundsCheckSize (pr, addr, pr_type_size[type]);
+	unsigned size = pr_type_size[type] / sizeof (pr_type_t);
+	PR_BoundsCheckSize (pr, addr, size);
 }
 
 #define OPA(type) (*((pr_##type##_t *) (op_a)))
