@@ -323,6 +323,9 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 	auto dfunc = device->funcs;
 	auto rctx = ctx->render_context;
 	auto frame = &rctx->frames.a[ctx->curFrame];
+
+	QFV_duCmdBeginLabel (device, cmd, pipeline->label.name,
+						 {VEC4_EXP (pipeline->label.color)});
 	qftVkScopedZoneTransientC (frame->qftVkCtx, cmd,
 							   pipeline->label.name, pipeline->label.color32);
 	dfunc->vkCmdBindPipeline (cmd, pipeline->bindPoint, pipeline->pipeline);
@@ -345,6 +348,7 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 			memory_barrier (ctx, cmd, &pipeline->post_mb);
 		}
 	}
+	QFV_duCmdEndLabel (device, cmd);
 }
 
 static void
