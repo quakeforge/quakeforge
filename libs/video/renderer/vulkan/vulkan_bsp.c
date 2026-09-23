@@ -278,9 +278,6 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						+ sizeof (qfv_resobj_t)		// anim_alt
 						+ sizeof (qfv_resobj_t); 	// frame_map
 			bctx->tex_resource = malloc (size);
-			auto anim_main = (qfv_resobj_t *) &bctx->tex_resource[1];
-			auto anim_alt  = &anim_main[1];
-			auto frame_map = &anim_alt[1];
 			*bctx->tex_resource = (qfv_resource_t) {
 				.name = "bsp:tex",
 				.va_ctx = ctx->va_ctx,
@@ -288,41 +285,41 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 				.num_objects = 3,
 				.objects = (qfv_resobj_t *)&bctx->tex_resource[1],
 			};
-			*anim_main = (qfv_resobj_t) {
-				.name = "anim_main",
-				.type = qfv_res_buffer,
-				.buffer = {
-					.size = sizeof (bsp_texanim_t[num_tex_anim]),
-					.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-						   | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
-						   | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-				},
-			};
-			*anim_alt = (qfv_resobj_t) {
-				.name = "anim_alt",
-				.type = qfv_res_buffer,
-				.buffer = {
-					.size = sizeof (bsp_texanim_t[num_tex_anim]),
-					.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-						   | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
-						   | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-				},
-			};
-			*frame_map = (qfv_resobj_t) {
-				.name = "frame_map",
-				.type = qfv_res_buffer,
-				.buffer = {
-					.size = sizeof (uint16_t[num_tex_anim]),
-					.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-						   | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
-						   | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-				},
-			};
 		}
-		QFV_CreateResource (ctx->device, bctx->tex_resource);
 		auto anim_main = (qfv_resobj_t *) &bctx->tex_resource[1];
 		auto anim_alt  = &anim_main[1];
 		auto frame_map = &anim_alt[1];
+		*anim_main = (qfv_resobj_t) {
+			.name = "anim_main",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = sizeof (bsp_texanim_t[num_tex_anim]),
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					   | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					   | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+			},
+		};
+		*anim_alt = (qfv_resobj_t) {
+			.name = "anim_alt",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = sizeof (bsp_texanim_t[num_tex_anim]),
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					   | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					   | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+			},
+		};
+		*frame_map = (qfv_resobj_t) {
+			.name = "frame_map",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = sizeof (uint16_t[num_tex_anim]),
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					   | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					   | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+			},
+		};
+		QFV_CreateResource (ctx->device, bctx->tex_resource);
 		*bctx->anim_main  = anim_main->buffer.address;
 		*bctx->anim_alt   = anim_alt->buffer.address;
 		*bctx->frame_map  = frame_map->buffer.address;
