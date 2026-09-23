@@ -3922,6 +3922,8 @@ static SpvCapability spirv_base_capabilities[] = {
 	SpvCapabilityDeviceGroup,
 	SpvCapabilityShaderNonUniform,
 	SpvCapabilityPhysicalStorageBufferAddresses,
+	SpvCapabilityVulkanMemoryModel,
+	SpvCapabilityVulkanMemoryModelDeviceScope,
 };
 
 static const char *
@@ -3944,8 +3946,7 @@ spirv_init (void)
 	//FIXME unhardcode
 	spirv_set_addressing_model (pr.module,
 								SpvAddressingModelPhysicalStorageBuffer64);
-	//FIXME look into Vulkan, or even configurable
-	spirv_set_memory_model (pr.module, SpvMemoryModelGLSL450);
+	spirv_set_memory_model (pr.module, SpvMemoryModelVulkan);
 
 	for (size_t i = 0; i < countof (spirv_base_capabilities); i++) {
 		auto cap = spirv_base_capabilities[i];

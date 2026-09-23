@@ -3,7 +3,7 @@ typedef struct QueueData {
 	uint        next;
 } QueueData;
 
-[buffer, set(1), binding(0), coherent]
+[buffer, set(1), binding(0)]
 @block QueueCount {
 	uint        numObjects;
 	uint        maxObjects;
@@ -14,5 +14,5 @@ typedef struct QueueData {
 	QueueData   queue[];
 };
 
-[uniform, set(1), binding(2), coherent]
+[uniform, set(1), binding(2)]
 @image(uint, 2D, Array, Storage, R32ui) queue_heads;

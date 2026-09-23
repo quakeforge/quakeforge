@@ -13,7 +13,7 @@ typedef struct FragData {
 	int         next;
 } FragData;
 
-[buffer, set(OIT_SET), binding(0), coherent]
+[buffer, set(OIT_SET), binding(0)]
 @block FragCount {
 	int         numFragments;
 	int         maxFragments;
@@ -24,7 +24,7 @@ typedef struct FragData {
 	FragData    fragments[];
 };
 
-[uniform, set(OIT_SET), binding(2), coherent]
+[uniform, set(OIT_SET), binding(2)]
 @image(int, 2D, Array, Storage, R32i) heads;
 
 #else
@@ -35,7 +35,7 @@ struct FragData {
 	int         next;
 };
 
-layout (set = OIT_SET, binding = 0) coherent buffer FragCount {
+layout (set = OIT_SET, binding = 0) buffer FragCount {
 	int         numFragments;
 	int         maxFragments;
 };
@@ -44,7 +44,7 @@ layout (set = OIT_SET, binding = 1) buffer Fragments {
 	FragData    fragments[];
 };
 
-layout (set = OIT_SET, binding = 2, r32i) coherent uniform iimage2DArray heads;
+layout (set = OIT_SET, binding = 2, r32i) uniform iimage2DArray heads;
 #endif
 
 #endif//__oit_h
