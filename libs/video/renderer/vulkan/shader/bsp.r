@@ -5,6 +5,9 @@
 #include "entity.h"
 typedef struct Entity Entity;//FIXME eliminate glsl uses
 
+void printf (string fmt, ...)
+	= @intrinsic(OpExtInst, "NonSemantic.DebugPrintf", DebugPrintf);
+
 [in("GlobalInvocationId")] uvec3 gl_GlobalInvocationID;
 
 typedef struct cluster_queue_s {
@@ -33,12 +36,6 @@ typedef struct cluster_queue_s {
 	ushort     *frame_map;		///< map from texture frame to texture id
 };
 
-uint
-alloc_command (const uint tex_id)
-{
-	return atomicAdd (command_counts[tex_id], 1);
-}
-
 [shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 void
 main ()
@@ -53,7 +50,7 @@ main ()
 		uint subcluster_ind = cluster_map[cluster.first + i];
 		auto subcluster = subclusters[subcluster_ind];
 		uint tex_id = subcluster.tex_id;
-		uint command_ind = alloc_command (tex_id);
+		uint command_ind = atomicAdd (command_counts[tex_id], 1);
 		command_ind += command_offsets[tex_id];
 		commands[command_ind] = (command_t) {
 			.indexCount = subcluster.index_count,
@@ -103,6 +100,29 @@ set_dispatch ()
 	}
 }
 
+[shader(GLCompute, LocalSize=[1,1,1])]
+void
+copy_offset ()
+{
+	if (num_models) {
+		uint end = num_models - 1;
+		uint total = mod_offsets[end] + mod_counts[end];
+		mod_offsets[num_models] = total;
+		mod_counts[num_models] -= total;
+	}
+}
+
+[shader(GLCompute, LocalSize=[1,1,1])]
+void
+copy_total ()
+{
+	if (num_models) {
+		uint end = num_models - 1;
+		uint total = mod_offsets[end] + mod_counts[end];
+		mod_counts[num_models] += total;
+	}
+}
+
 [shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 void
 distribute ()
@@ -114,7 +134,8 @@ distribute ()
 	uint ent_id = ent_ids[ent_ind];
 
 	uint mod_id = entities[ent_id].model;
-	uint mod_base = entities[ent_id].color[3] < 1 ? num_models : 0;
+	//FIXME alpha entities
+	uint mod_base = 0;//entities[ent_id].color[3] < 1 ? num_models : 0;
 
 	uint inst_ind = atomicAdd (mod_offsets[mod_base + mod_id], 1);
 	inst_ids[inst_ind] = ent_id;
@@ -162,7 +183,8 @@ count ()
 
 	uint mod_id = entities[ent_id].model;
 	uint frame = entities[ent_id].frame;
-	uint mod_base = entities[ent_id].color[3] < 1 ? num_models : 0;
+	//FIXME alpha entities
+	uint mod_base = 0;//entities[ent_id].color[3] < 1 ? num_models : 0;
 
 	atomicAdd (mod_counts[mod_base + mod_id], 1);
 }

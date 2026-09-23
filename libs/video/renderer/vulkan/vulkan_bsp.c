@@ -75,6 +75,7 @@
 #include "vid_vulkan.h"
 
 #include "shader/bsp.h"
+#define block_size (workgroup_size * 2)
 
 #define TEX_SET 3
 #define SKYBOX_SET 4
@@ -722,6 +723,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t index_buffer_size = sizeof (uint32_t[index_count]);
 	size_t model_buffer_size = sizeof (bsp_model_t[mod_count]);
 	size_t mod_counts_buffer_size = sizeof (uint32_t[2 * mod_count]);
+	size_t mod_tmp_buffer_size = sizeof (uint32_t[2 * mod_count]);
+	size_t mod_sums_buffer_size = sizeof (uint32_t[1024+1]);
 	size_t mod_offsets_buffer_size = sizeof (uint32_t[2 * mod_count]);
 	size_t tex_id_buffer_size = sizeof (uint32_t[build.num_tex_ids]);
 	size_t vertex_buffer_size = sizeof (bspvert_t[vertex_count]);
@@ -751,6 +754,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	if (CHECK_SIZE (index)
 		|| CHECK_SIZE (model)
 		|| CHECK_SIZE (mod_counts)
+		|| CHECK_SIZE (mod_tmp)
+		|| CHECK_SIZE (mod_sums)
 		|| CHECK_SIZE (mod_offsets)
 		|| CHECK_SIZE (tex_id)
 		|| CHECK_SIZE (vertex)
@@ -766,6 +771,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			size_t size = sizeof (qfv_resource_t)
 						+ sizeof (qfv_resobj_t[1])	// model
 						+ sizeof (qfv_resobj_t[1])	// mod_counts
+						+ sizeof (qfv_resobj_t[1])	// mod_tmp
+						+ sizeof (qfv_resobj_t[1])	// mod_sums
 						+ sizeof (qfv_resobj_t[1])	// mod_offsets
 						+ sizeof (qfv_resobj_t[1])	// tex_id
 						+ sizeof (qfv_resobj_t[1])	// vertex
@@ -781,7 +788,9 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		}
 		auto model = (qfv_resobj_t *) &bctx->bsp_resource[1];
 		auto mod_counts = &model[1];
-		auto mod_offsets = &mod_counts[1];
+		auto mod_tmp = &mod_counts[1];
+		auto mod_sums = &mod_tmp[1];
+		auto mod_offsets = &mod_sums[1];
 		auto tex_id = (qfv_resobj_t *) &mod_offsets[1];
 		auto vertex = (qfv_resobj_t *) &tex_id[1];
 		auto index = (qfv_resobj_t *) &vertex[1];
@@ -797,7 +806,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.name = "bsp:mdl",
 			.va_ctx = ctx->va_ctx,
 			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			.num_objects = 13,
+			.num_objects = 15,
 			.objects = model,
 		};
 		*model = (qfv_resobj_t) {
@@ -815,6 +824,26 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = mod_counts_buffer_size,
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+			},
+		};
+		*mod_tmp = (qfv_resobj_t) {
+			.name = "mod_tmp",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = mod_tmp_buffer_size,
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+			},
+		};
+		*mod_sums = (qfv_resobj_t) {
+			.name = "mod_sums",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = mod_sums_buffer_size,
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -940,6 +969,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		};
 		BUFFER (model);
 		BUFFER (mod_counts);
+		BUFFER (mod_tmp);
+		BUFFER (mod_sums);
 		BUFFER (mod_offsets);
 		BUFFER (tex_id);
 		BUFFER (vertex);
@@ -1376,7 +1407,7 @@ create_base_resources (vulkan_ctx_t *ctx)
 		.name = "instid",
 		.type = qfv_res_buffer,
 		.buffer = {
-			.size = sizeof (uint32_t[2 * entid_count]),
+			.size = sizeof (uint32_t[entid_count]),
 			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 					| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
 					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -1533,8 +1564,8 @@ bsp_distribute_insts (const exprval_t **params, exprval_t *result,
 		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
 		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
 					   | VK_ACCESS_2_SHADER_READ_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT,
-		.dstAccessMask = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
+		.dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
 	};
 }
 
@@ -1590,6 +1621,67 @@ bsp_clear_commands (const exprval_t **params, exprval_t *result,
 		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
 		.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
 	};
+}
+
+static void
+bsp_draw_barrier (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto bctx = ctx->bsp_context;
+
+	if (!r_refdef.worldmodel) {
+		return;
+	}
+
+	auto cmd = QFV_GetCmdBuffer (ctx, false);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 vac (ctx->va_ctx, "cmd:bsp_draw_barrier:%zd",
+							  ctx->frameNumber));
+	VkCommandBufferBeginInfo beginInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+	QFV_duCmdBeginLabel (device, cmd,
+						 vac (ctx->va_ctx, "bsp_draw_barrier:%zd",
+							  ctx->frameNumber),
+						 { 1, 0.0, 1, 1 });
+
+	VkBufferMemoryBarrier2 bb[2] = {
+		{
+			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+			.srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+			.dstStageMask = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+			.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
+			.dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
+			.buffer = bctx->command_buffer.buffer,
+			.offset = 0,
+			.size = VK_WHOLE_SIZE,
+		},
+		{
+			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+			.srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+			.dstStageMask = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+			.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
+			.dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
+			.buffer = bctx->command_counts_buffer.buffer,
+			.offset = 0,
+			.size = VK_WHOLE_SIZE,
+		},
+	};
+	dfunc->vkCmdPipelineBarrier2 (cmd, &(VkDependencyInfo) {
+				.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+				.bufferMemoryBarrierCount = countof (bb), bb,
+			});
+
+	QFV_duCmdEndLabel(device, cmd);
+	dfunc->vkEndCommandBuffer (cmd);
+
+	QFV_AppendCmdBuffer (taskctx->job, cmd);
 }
 
 static void
@@ -1680,15 +1772,50 @@ bsp_sum_mod_insts (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	auto bctx = ctx->bsp_context;
 	auto pipeline = taskctx->pipeline;
+	auto stage = *(int *) params[0]->value;
 
+	*bctx->in_data = 0;
+	*bctx->out_data = 0;
+	*bctx->sum_data = 0;
 	uint32_t count = *bctx->num_models;
-
-	*bctx->in_data = *bctx->mod_counts;
-	*bctx->out_data = *bctx->mod_offsets;
-	*bctx->sum_data = 0;//FIXME assumes never more than 1024 models
+	uint32_t offset = sizeof (uint32_t[count]);
+	switch (stage) {
+		case 0:
+			*bctx->in_data = *bctx->mod_counts;
+			*bctx->out_data = bctx->mod_tmp_buffer.addr;
+			*bctx->sum_data = *bctx->mod_offsets;// tmp buffer for sums
+			break;
+		case 1:
+			*bctx->in_data = *bctx->mod_offsets;
+			*bctx->out_data = bctx->mod_sums_buffer.addr;
+			*bctx->sum_data = *bctx->out_data + sizeof(uint32_t[1024]);
+			count = RUP (count, block_size) / block_size;
+			break;
+		case 2:
+			*bctx->in_data = bctx->mod_tmp_buffer.addr;
+			*bctx->out_data = *bctx->mod_offsets;
+			*bctx->sum_data = bctx->mod_sums_buffer.addr;
+			break;
+		case 3:
+			*bctx->in_data = *bctx->mod_counts + offset;
+			*bctx->out_data = bctx->mod_tmp_buffer.addr;
+			*bctx->sum_data = *bctx->mod_offsets + offset;// tmp buffer for sums
+			break;
+		case 4:
+			*bctx->in_data = *bctx->mod_offsets + offset;
+			*bctx->out_data = bctx->mod_sums_buffer.addr;
+			*bctx->sum_data = *bctx->out_data + sizeof(uint32_t[1024]);
+			count = RUP (count, block_size) / block_size;
+			break;
+		case 5:
+			*bctx->in_data = bctx->mod_tmp_buffer.addr;
+			*bctx->out_data = *bctx->mod_offsets + offset;
+			*bctx->sum_data = bctx->mod_sums_buffer.addr;
+			break;
+	}
 	*bctx->count = count;
 
-	pipeline->dispatch[0] = RUP (count, workgroup_size) / workgroup_size;
+	pipeline->dispatch[0] = RUP (count, block_size) / block_size;
 	pipeline->dispatch[1] = 1;
 	pipeline->dispatch[2] = 1;
 
@@ -1795,8 +1922,8 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		*queue++ = (bsp_queue_t) { .cluster = cluster, .instance_count = 1 };
 	}
 	QFV_PacketCopyBuffer (packet, bctx->queue_buffer.buffer, frame->queue,
-						  &bufferBarriers[qfv_BB_ShaderRO_to_TransferWrite],
-						  &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
+						  &bufferBarriers[qfv_BB_ShaderRW_to_TransferWrite],
+						  &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRW]);
 	QFV_PacketSubmit (packet);
 
 	uint32_t ent_count = 0;
@@ -2144,6 +2271,10 @@ static exprtype_t *bsp_draw_queue_params[] = {
 	&bsp_pass_type,
 };
 
+static exprtype_t *bsp_sum_mod_insts_params[] = {
+	&cexpr_int,
+};
+
 static exprfunc_t bsp_reset_queues_func[] = {
 	{ .func = bsp_reset_queues },
 	{}
@@ -2172,13 +2303,17 @@ static exprfunc_t bsp_visit_world_func[] = {
 	{ 0, 1, bsp_visit_world_params, bsp_visit_world },
 	{}
 };
+static exprfunc_t bsp_draw_barrier_func[] = {
+	{ .func = bsp_draw_barrier },
+	{}
+};
 static exprfunc_t bsp_draw_queue_func[] = {
 	{ 0, 3, bsp_draw_queue_params, bsp_draw_queue },
 	{}
 };
 
 static exprfunc_t bsp_sum_mod_insts_func[] = {
-	{ .func = bsp_sum_mod_insts },
+	{ .func = bsp_sum_mod_insts, .num_params = 1, bsp_sum_mod_insts_params },
 	{}
 };
 
@@ -2208,6 +2343,7 @@ static exprsym_t bsp_task_syms[] = {
 	{ "bsp_distribute_insts", &cexpr_function, bsp_distribute_insts_func },
 	{ "bsp_queue_clusters", &cexpr_function, bsp_queue_clusters_func },
 	{ "bsp_visit_world", &cexpr_function, bsp_visit_world_func },
+	{ "bsp_draw_barrier", &cexpr_function, bsp_draw_barrier_func },
 	{ "bsp_draw_queue", &cexpr_function, bsp_draw_queue_func },
 
 	{ "bsp_sum_mod_insts", &cexpr_function, bsp_sum_mod_insts_func },

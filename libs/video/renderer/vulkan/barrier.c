@@ -341,10 +341,14 @@ const VkBufferMemoryBarrier2 bufferBarriers[] = {
 	[qfv_BB_TransferWrite_to_ShaderRW] = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
 		.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
+					  | VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT
+					  | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
+					  | VK_PIPELINE_STAGE_2_COPY_BIT,
 		.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
 		.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT
-					   | VK_ACCESS_2_SHADER_WRITE_BIT,
+					   | VK_ACCESS_2_SHADER_WRITE_BIT
+					   | VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
 		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 	},
@@ -385,6 +389,16 @@ const VkBufferMemoryBarrier2 bufferBarriers[] = {
 		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
 		.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
 		.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+	},
+	[qfv_BB_ShaderRW_to_TransferWrite] = {
+		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+		.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT
+					   | VK_ACCESS_2_SHADER_WRITE_BIT,
+		.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
 		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 	},

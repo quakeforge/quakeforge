@@ -197,6 +197,8 @@ typedef struct bspctx_s {
 
 	bsp_buffer_t model_buffer;
 	bsp_buffer_t mod_counts_buffer;
+	bsp_buffer_t mod_tmp_buffer;
+	bsp_buffer_t mod_sums_buffer;
 	bsp_buffer_t mod_offsets_buffer;
 	bsp_buffer_t tex_id_buffer;
 	bsp_buffer_t entid_buffer;

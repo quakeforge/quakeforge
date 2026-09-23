@@ -36,6 +36,7 @@ typedef enum qfv_bufferbarrier_t {
 	qfv_BB_TransferWrite_to_ShaderRO,
 	qfv_BB_ShaderRW_to_ShaderRO,
 	qfv_BB_ShaderRW_to_ShaderRO_VA,
+	qfv_BB_ShaderRW_to_TransferWrite,
 	qfv_BB_ShaderRO_to_ShaderWrite,
 	qfv_BB_ShaderRO_to_TransferWrite,
 	qfv_BB_ShaderRO_VA_to_ShaderWrite,
