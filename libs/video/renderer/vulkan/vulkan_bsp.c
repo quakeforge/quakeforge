@@ -662,6 +662,34 @@ model_build_surfaces (model_t *m, buildctx_t *build)
 	}
 }
 
+static void
+check_cluster (const buildctx_t *build, uint32_t cluster_num)
+{
+	auto brush = r_refdef.worldmodel->brush;
+	SET_DEFER (pvs);
+	uint32_t offset = cluster_num ? brush->cluster_offs[cluster_num] : ~0u;
+	Mod_LeafPVS_set (offset, &brush->cluster_vis, 0xff, pvs);
+	unsigned count = set_count (pvs);
+	printf (ONG"%d %d"DFL"\n", cluster_num, count);
+	count = 0;
+	for (auto ci = set_first (pvs); ci; ci = set_next (ci)) {
+		auto cluster = build->clusters[ci->element + 1];
+		int has_9 = 0;
+		for (uint32_t i = 0; i < cluster.count; i++) {
+			auto sc = build->subclusters[build->clustermap[cluster.first + i]];
+			if (sc.tex_id == 9) {
+				//printf ("      %d %d %d %d\n", cluster.first + i,
+				//		build->clustermap[cluster.first + i],
+				//		sc.first_index, sc.index_count);
+				count++;
+				has_9++;
+			}
+		}
+		if (has_9) printf ("%d %d %d %d\n", ci->element + 1, cluster.first, cluster.count, has_9);
+	}
+	printf ("    %d\n", count);
+}
+
 void
 Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
@@ -1018,6 +1046,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	memcpy (command_offsets, tex_clusters, sizeof (tex_clusters));
 	build.num_tex_ids = 0;
 	model_loop (models, num_models, ctx, model_build_surfaces, &build);
+
+	if(0)check_cluster (&build, 2168);
 
 	qfv_scatter_t mod_scatter = {
 		.srcOffset = QFV_PacketOffset (packet, build.models),
