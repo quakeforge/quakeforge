@@ -163,7 +163,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token				NAMESPACE PROPERTY
 %token	<op>		STRUCT BLOCK
 %token				HANDLE INTRINSIC
-%token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL
+%token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL INOUT
 %token	<spec>		OBJECT_NAME
 %token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
 %token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
@@ -187,7 +187,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		declspecs_sc_ts declspecs_sc_nots defspecs
 %type	<spec>		declarator notype_declarator after_type_declarator
 %type	<spec>		param_declarator param_declarator_starttypename
-%type	<spec>		param_declarator_nostarttypename
+%type	<spec>		param_declarator_nostarttypename seldecl
 %type	<spec>		absdecl absdecl1 direct_absdecl typename ptr_spec copy_spec
 %type	<mut_expr>	struct_defs component_decl_list
 %type	<expr>	component_declarator component_notype_declarator
@@ -1496,6 +1496,7 @@ storage_class
 	: EXTERN					{ $$ = storage_spec (sc_extern); }
 	| STATIC					{ $$ = storage_spec (sc_static); }
 	| SYSTEM					{ $$ = storage_spec (sc_system); }
+	| INOUT						{ $$ = $1; }
 	| TYPEDEF					{ $$ = typedef_spec (); }
 	| OVERLOAD					{ $$ = overload_spec (); }
 	| GENERIC '('				{ $<spec>$ = generic_spec (ctx); }
@@ -3206,8 +3207,13 @@ reserved_word
 	| TYPEDEF					{ $$ = new_symbol (qc_yytext); }
 	;
 
+seldecl
+	: typename					{ $$ = $1; }
+	| INOUT typename			{ $$ = spec_merge ($1, $2); }
+	;
+
 keyworddecl
-	: selector[sel] ':' '(' typename[spec] ')' identifier[id]
+	: selector[sel] ':' '(' seldecl[spec] ')' identifier[id]
 		{
 			auto spec = resolve_type_spec ($spec, ctx);
 			$$ = make_selector (spec, $sel->name, spec.type, $id->name);
@@ -3217,7 +3223,7 @@ keyworddecl
 			specifier_t spec = { .storage = sc_param };
 			$$ = make_selector (spec, $sel->name, &type_id, $id->name);
 		}
-	| ':' '(' typename[spec] ')' identifier[id]
+	| ':' '(' seldecl[spec] ')' identifier[id]
 		{
 			auto spec = resolve_type_spec ($spec, ctx);
 			$$ = make_selector (spec, "", spec.type, $id->name);
@@ -3455,9 +3461,9 @@ static keyword_t qf_keywords[] = {
 	{"@va_list",	QC_TYPE_SPEC, .spec = { .type = &type_va_list } 	},
 	{"@param",		QC_TYPE_SPEC, .spec = { .type = &type_param } 		},
 	{"@return",     QC_AT_RETURN,		},
-	{"@in",			QC_TYPE_QUAL, .spec = { .storage = sc_in } },
-	{"@out",		QC_TYPE_QUAL, .spec = { .storage = sc_out } },
-	{"@inout",		QC_TYPE_QUAL, .spec = { .storage = sc_inout } },
+	{"@in",			QC_INOUT,		.spec = { .storage = sc_in } },
+	{"@out",		QC_INOUT,		.spec = { .storage = sc_out } },
+	{"@inout",		QC_INOUT,		.spec = { .storage = sc_inout } },
 
 	{"@hadamard",	QC_HADAMARD,	},
 	{"@cross",		QC_CROSS,		},
