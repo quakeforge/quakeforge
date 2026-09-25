@@ -171,7 +171,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token				GENERIC CONSTRUCT
 %token				AT_FUNCTION AT_FIELD AT_POINTER AT_ARRAY
 %token				AT_BASE AT_WIDTH AT_VECTOR AT_ROWS AT_COLS AT_MATRIX
-%token				AT_INT AT_UINT AT_BOOL AT_FLOAT
+%token				AT_INT AT_UINT AT_BOOL AT_FLOAT AT_VOLATILE AT_CONST
 %token				HORIZ
 
 %type	<spec>		storage_class save_storage
@@ -383,6 +383,25 @@ spec_type (specifier_t spec)
 }
 
 static specifier_t
+qual_spec (specifier_t spec, specifier_t qual)
+{
+	auto qual_list = new_list_expr (nullptr);
+	if (!qual.is_const && !qual.is_volatile) {
+		internal_error (0, "invalid qualifiers");
+	}
+	if (qual.is_const) {
+		auto qual = new_type_function (QC_AT_CONST, nullptr);
+		expr_append_expr (qual_list, qual);
+	}
+	if (qual.is_volatile) {
+		auto qual = new_type_function (QC_AT_VOLATILE, nullptr);
+		expr_append_expr (qual_list, qual);
+	}
+	spec.ptr_quals = qual_list;
+	return spec;
+}
+
+static specifier_t
 spec_merge (specifier_t spec, specifier_t new)
 {
 	if (spec_type (new)) {
@@ -512,12 +531,14 @@ static specifier_t
 pointer_spec (specifier_t quals, specifier_t spec)
 {
 	// referenced type will be filled in when building the final type
-	auto type_expr = new_type_function (QC_AT_POINTER, nullptr);
-	if (spec.type_list) {
-		expr_append_expr (spec.type_list, type_expr);
-	} else {
-		spec.type_list = new_list_expr (type_expr);
+	if (!spec.type_list) {
+		spec.type_list = new_list_expr (nullptr);
 	}
+	if (quals.ptr_quals) {
+		expr_append_list (spec.type_list, &quals.ptr_quals->list);
+	}
+	auto type_expr = new_type_function (QC_AT_POINTER, nullptr);
+	expr_append_expr (spec.type_list, type_expr);
 	return spec;
 }
 
@@ -1193,6 +1214,11 @@ copy_spec
 
 ptr_spec
 	: copy_spec	// for when no qualifiers are present
+	| TYPE_QUAL
+		{
+			auto spec = qual_spec ($<spec>-1, $1);
+			$$ = spec;
+		}
 	;
 
 // does not reuse a typedef or class name
@@ -1561,6 +1587,8 @@ type_func
 	| AT_UINT					{ $$ = QC_AT_UINT; }
 	| AT_BOOL					{ $$ = QC_AT_BOOL; }
 	| AT_FLOAT					{ $$ = QC_AT_FLOAT; }
+	| AT_VOLATILE				{ $$ = QC_AT_VOLATILE; }
+	| AT_CONST					{ $$ = QC_AT_CONST; }
 	;
 
 type_op
@@ -3432,6 +3460,7 @@ static keyword_t at_keywords[] = {
 	{"not",			QC_NOT		},
 	{"auto",		QC_TYPE_SPEC, .spec = { .type = &type_auto } },
 	{"const",		QC_TYPE_QUAL, .spec = { .is_const = true } },
+	{"volatile",	QC_TYPE_QUAL, .spec = { .is_volatile = true } },
 };
 
 // These keywords require the QuakeForge VM to be of any use. ie, they cannot
@@ -3500,6 +3529,8 @@ static keyword_t qf_keywords[] = {
 	{"@uint",		QC_AT_UINT,		},
 	{"@bool",		QC_AT_BOOL,		},
 	{"@float",		QC_AT_FLOAT,	},
+	{"@volatile",   QC_AT_VOLATILE, },
+	{"@const",      QC_AT_CONST, },
 };
 
 // These keywors are always available. Other than the @ keywords, they

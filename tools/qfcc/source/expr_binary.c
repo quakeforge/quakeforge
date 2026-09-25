@@ -1109,6 +1109,8 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		t1 = pointer_type (dereference_type (t2));
 		e2 = cast_expr (t2, e2);
 	}
+	t1 = core_type (t1);
+	t2 = core_type (t2);
 
 	if ((unsigned) op > countof (expr_types)) {
 		internal_error (e1, "invalid operator: %s", get_op_string (op));

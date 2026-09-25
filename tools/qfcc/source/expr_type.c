@@ -490,6 +490,26 @@ resolve_float (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 	return type;
 }
 
+static const type_t *
+resolve_volatile (int arg_count, const expr_t **args, rua_ctx_t *ctx)
+{
+	auto type = resolve_type (args[0], ctx);
+	if (type) {
+		type = volatile_type (type);
+	}
+	return type;
+}
+
+static const type_t *
+resolve_const (int arg_count, const expr_t **args, rua_ctx_t *ctx)
+{
+	auto type = resolve_type (args[0], ctx);
+	if (type) {
+		type = const_type (type);
+	}
+	return type;
+}
+
 static const type_t **
 expand_vector (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
@@ -705,8 +725,28 @@ compute_float (int arg_count, const expr_t **args, comp_ctx_t *ctx)
 {
 	auto type = compute_type (args[0], ctx);
 	auto res = compute_tmp (ctx);
-	C (OP_STORE_A_1, ctx->args[0],        nullptr, type);
+	C (OP_STORE_A_1, ctx->args[0],         nullptr, type);
 	C (OP_CALL_B,    ctx->funcs[tf_float], nullptr, res);
+	return res;
+}
+
+static def_t *
+compute_volatile (int arg_count, const expr_t **args, comp_ctx_t *ctx)
+{
+	auto type = compute_type (args[0], ctx);
+	auto res = compute_tmp (ctx);
+	C (OP_STORE_A_1, ctx->args[0],            nullptr, type);
+	C (OP_CALL_B,    ctx->funcs[tf_volatile], nullptr, res);
+	return res;
+}
+
+static def_t *
+compute_const (int arg_count, const expr_t **args, comp_ctx_t *ctx)
+{
+	auto type = compute_type (args[0], ctx);
+	auto res = compute_tmp (ctx);
+	C (OP_STORE_A_1, ctx->args[0],         nullptr, type);
+	C (OP_CALL_B,    ctx->funcs[tf_const], nullptr, res);
 	return res;
 }
 
@@ -877,6 +917,18 @@ static type_func_t type_funcs[] = {
 		.check_params = single_type,
 		.resolve = resolve_float,
 		.compute = compute_float,
+	},
+	[QC_AT_VOLATILE] = {
+		.name = "@volatile",
+		.check_params = single_type,
+		.resolve = resolve_volatile,
+		.compute = compute_volatile,
+	},
+	[QC_AT_CONST] = {
+		.name = "@const",
+		.check_params = single_type,
+		.resolve = resolve_const,
+		.compute = compute_const,
 	},
 };
 

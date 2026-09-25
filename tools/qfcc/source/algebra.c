@@ -313,7 +313,7 @@ algebra_init (algebra_t *a)
 bool
 is_algebra (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	return type->meta == ty_algebra;
 }
 
@@ -405,6 +405,7 @@ algebra_subtype (const type_t *type, const attribute_t *attr)
 	if (!is_algebra (type)) {
 		internal_error (nullptr, "unexpected type");
 	}
+	type = core_type (type);
 	auto algebra = algebra_get (type);
 	if (strcmp (attr->name, "group_mask") == 0) {
 		if (!attr->params || attr->params->list.head->next) {
@@ -680,7 +681,7 @@ algebra_get (const type_t *type)
 	if (!is_algebra (type)) {
 		return nullptr;
 	}
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->type == ev_invalid) {
 		return type->algebra;
 	} else {
@@ -691,7 +692,7 @@ algebra_get (const type_t *type)
 etype_t
 algebra_low_level_type (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 
 	if (type->type == ev_invalid) {
 		//FIXME ev_invalid causes an ICE for return. which is correct?
@@ -855,6 +856,7 @@ algebra_type_assignable (const type_t *dst, const type_t *src)
 const type_t *
 algebra_base_type (const type_t *type)
 {
+	type = core_type (type);
 	if (type->type == ev_invalid) {
 		return type->algebra->type;
 	}
@@ -864,6 +866,8 @@ algebra_base_type (const type_t *type)
 const type_t *
 algebra_struct_type (const type_t *type)
 {
+	type = core_type (type);
+
 	symbol_t   *sym = nullptr;
 
 	if (type->type == ev_invalid) {
@@ -951,6 +955,7 @@ algebra_get_grade (const type_t *type)
 	if (!is_algebra (type)) {
 		return 0;
 	}
+	type = core_type (type);
 	if (type->type == ev_invalid) {
 		return -1;
 	}

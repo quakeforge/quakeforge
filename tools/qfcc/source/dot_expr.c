@@ -109,7 +109,8 @@ get_op_string (int op)
 		case QC_DUAL:		return "@dual";
 		case QC_UNDUAL:		return "@undual";
 		case QC_BITCAST:	return "<bitcast>";
-		case QC_ATTRIBUTE:  return ".property";
+		case QC_ATTRIBUTE:  return ".attribute";
+		case QC_PROPERTY:   return ".property";
 		case QC_AT_FUNCTION:return "@function";
 		case QC_AT_FIELD:	return "@field";
 		case QC_AT_POINTER:	return "@pointer";
@@ -124,6 +125,8 @@ get_op_string (int op)
 		case QC_AT_UINT:	return "@uint";
 		case QC_AT_BOOL:	return "@bool";
 		case QC_AT_FLOAT:	return "@float";
+		case QC_AT_VOLATILE:return "@volatile";
+		case QC_AT_CONST:	return "@const";
 		default:
 			return "unknown";
 	}

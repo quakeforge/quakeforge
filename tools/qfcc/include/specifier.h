@@ -64,6 +64,7 @@ typedef struct specifier_s {
 	const expr_t *type_expr;
 	expr_t     *type_list;
 	const expr_t *state_expr;
+	const expr_t *ptr_quals;
 	attribute_t *attributes;
 	param_t    *params;
 	symbol_t   *sym;
@@ -76,6 +77,7 @@ typedef struct specifier_s {
 			bool        multi_type:1;
 			bool        multi_store:1;
 			bool        multi_generic:1;
+			bool        is_volatile:1;
 			bool        is_const:1;
 			bool        is_signed:1;
 			bool        is_unsigned:1;

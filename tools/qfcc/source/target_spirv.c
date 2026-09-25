@@ -595,7 +595,7 @@ spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
 	auto symtab = type_symtab (type);
 	unsigned id = spirv_emit_symtab (symtab, ctx);
 
-	spirv_Name (id, unalias_type (type)->name + 4, ctx);
+	spirv_Name (id, core_type (type)->name + 4, ctx);
 	return id;
 }
 
@@ -733,7 +733,7 @@ spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 static unsigned
 spirv_Type (const type_t *type, spirvctx_t *ctx)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (spirv_type_id (type, ctx)) {
 		return spirv_type_id (type, ctx);
 	}
@@ -816,6 +816,8 @@ spirv_Type (const type_t *type, spirvctx_t *ctx)
 		id = spirv_TypeStruct (type, ctx);
 	} else if (is_boolean (type)) {
 		id = spirv_TypeBool (type, ctx);
+	} else if (is_qual (type)) {
+		return spirv_Type (type->qual.type, ctx);
 	} else if (is_enum (type)) {
 		// type->type will be one of the integer types
 		id = spirv_Type (ev_types[type->type], ctx);
@@ -1307,6 +1309,9 @@ spirv_ptr_load (const type_t *res_type, unsigned ptr_id, unsigned align,
 	INSN (insn, 3) = ptr_id;
 	if (align) {
 		INSN (insn, 4) = SpvMemoryAccessAlignedMask;
+		if (is_volatile (res_type)) {
+			INSN (insn, 4) |= SpvMemoryAccessNonPrivatePointerMask;
+		}
 		INSN (insn, 5) = align;
 	}
 	return id;
@@ -1603,6 +1608,8 @@ static spvop_t spv_ops[] = {
 static const spvop_t *
 spirv_find_op (const char *op_name, const type_t *type1, const type_t *type2)
 {
+	type1 = type1 ? core_type (type1) : nullptr;
+	type2 = type2 ? core_type (type2) : nullptr;
 	constexpr int num_ops = sizeof (spv_ops) / sizeof (spv_ops[0]);
 	etype_t t1 = type1->type;
 	etype_t t2 = type2 ? type2->type : ev_void;
@@ -2387,6 +2394,7 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 	unsigned src = spirv_emit_expr (src_expr, ctx);
 	unsigned dst = 0;
 	unsigned align = 0;	// default to not emitting Aligned
+	bool is_vol = false;
 
 	if (is_temp (dst_expr)) {
 		// spir-v uses SSA, so temps cannot be assigned to directly, so instead
@@ -2414,12 +2422,14 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 		}
 		if (acc_type->fldptr.tag == SpvStorageClassPhysicalStorageBuffer) {
 			align = type_byte_align (res_type);
+			is_vol = is_volatile (res_type);
 		}
 	} else if (is_deref (dst_expr)) {
 		auto ptr = dst_expr->expr.e1;
 		auto ptr_type = get_type (ptr);
 		if (is_pointer (ptr_type)) {
 			align = type_byte_align (ptr_type);
+			is_vol = is_volatile (ptr_type);
 		}
 		dst = spirv_emit_expr (ptr, ctx);
 	} else if (dst_expr->type == ex_xvalue && dst_expr->xvalue.lvalue) {
@@ -2441,6 +2451,9 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 	INSN (insn, 2) = src;
 	if (align) {
 		INSN (insn, 3) = SpvMemoryAccessAlignedMask;
+		if (is_vol) {
+			INSN (insn, 3) |= SpvMemoryAccessNonPrivatePointerMask;
+		}
 		INSN (insn, 4) = align;
 	}
 	return 0;
@@ -3832,8 +3845,8 @@ spirv_shift_op (int op, const expr_t *e1, const expr_t *e2)
 static bool __attribute__((pure))
 spirv_types_logically_match (const type_t *dst, const type_t *src)
 {
-	dst = unalias_type (dst);
-	src = unalias_type (src);
+	dst = core_type (dst);
+	src = core_type (src);
 	if (type_same (dst, src)) {
 		return true;
 	}

@@ -281,7 +281,7 @@ static hashtab_t *type_tab;
 etype_t
 low_level_type (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->type > ev_type_count)
 		internal_error (0, "invalid type");
 	if (type->type == ev_type_count)
@@ -301,7 +301,7 @@ low_level_type (const type_t *type)
 int
 type_cast_map (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	int cast = type_cast_map_data[type->type];
 	if (is_boolean (type)) {
 		// unsigned | float/double -> boolean
@@ -348,8 +348,11 @@ new_type (void)
 {
 	type_t     *type;
 	ALLOC (1024, type_t, types, type);
-	type->freeable = true;
-	type->allocated = true;
+	*type = (type_t) {
+		.type = ev_invalid,
+		.freeable = true,
+		.allocated = true,
+	};
 	return type;
 }
 
@@ -464,6 +467,10 @@ copy_chain (type_t *type, type_t *append)
 				n = (type_t **) &(*n)->array.type;
 				type = (type_t *) type->array.type;
 				break;
+			case ty_qual:
+				n = (type_t **) &(*n)->qual.type;
+				type = (type_t *) type->qual.type;
+				break;
 			case ty_struct:
 			case ty_union:
 			case ty_enum:
@@ -527,6 +534,12 @@ append_type (const type_t *type, const type_t *new)
 				break;
 			case ty_array:
 				t = (const type_t **) &(*t)->array.type;
+				((type_t *) type)->alignment = new->alignment;
+				((type_t *) type)->width = new->width;
+				((type_t *) type)->columns = new->columns;
+				break;
+			case ty_qual:
+				t = (const type_t **) &(*t)->qual.type;
 				((type_t *) type)->alignment = new->alignment;
 				((type_t *) type)->width = new->width;
 				((type_t *) type)->columns = new->columns;
@@ -620,6 +633,14 @@ default_type (specifier_t spec, const symbol_t *sym)
 					 type_default->name);
 		}
 	}
+	if (spec.is_const) {
+		spec.type = const_type (spec.type);
+		spec.is_const = false;
+	}
+	if (spec.is_volatile) {
+		spec.type = volatile_type (spec.type);
+		spec.is_volatile = false;
+	}
 	return spec;
 }
 
@@ -628,8 +649,9 @@ types_same (const type_t *a, const type_t *b)
 {
 	int         i, count;
 
-	if (a->type != b->type || a->meta != b->meta)
+	if (a->type != b->type || a->meta != b->meta) {
 		return false;
+	}
 	switch (a->meta) {
 		case ty_basic:
 			switch (a->type) {
@@ -685,6 +707,9 @@ types_same (const type_t *a, const type_t *b)
 			return a->algebra == b->algebra;
 		case ty_bool:
 			return a->type == b->type;
+		case ty_qual:
+			return a->qual.is_const == b->qual.is_const
+				&& a->qual.is_volatile && b->qual.is_volatile;
 		case ty_meta_count:
 			break;
 	}
@@ -748,6 +773,9 @@ find_type (const type_t *type)
 			case ty_handle:
 				break;
 			case ty_algebra:
+				break;
+			case ty_qual:
+				((type_t *) type)->qual.type = find_type (type->qual.type);
 				break;
 			case ty_meta_count:
 				break;
@@ -906,10 +934,58 @@ reference_type (const type_t *aux)
 	return tagged_reference_type (0, aux);
 }
 
+const type_t *
+volatile_type (const type_t *type)
+{
+	if (is_array (type) || is_reference (type)) {
+		internal_error (0, "applying volatile to array or reference");
+	}
+	if (is_volatile (type)) {
+		return type;
+	}
+	if (is_qual (type)) {
+		auto ctype = copy_type (type);
+		ctype->qual.is_volatile = true;
+		return find_type (ctype);
+	}
+	auto new = new_type ();
+	new->meta = ty_qual;
+	new->alignment = type->alignment;
+	new->width = type->width;
+	new->columns = type->columns;
+	new->qual.type = type;
+	new->qual.is_volatile = true;
+	return new;
+}
+
+const type_t *
+const_type (const type_t *type)
+{
+	if (is_array (type) || is_reference (type)) {
+		internal_error (0, "applying const to array or reference");
+	}
+	if (is_const (type)) {
+		return type;
+	}
+	if (is_qual (type)) {
+		auto ctype = copy_type (type);
+		ctype->qual.is_const = true;
+		return find_type (ctype);
+	}
+	auto new = new_type ();
+	new->meta = ty_qual;
+	new->alignment = type->alignment;
+	new->width = type->width;
+	new->columns = type->columns;
+	new->qual.type = type;
+	new->qual.is_const = true;
+	return new;
+}
+
 unsigned
 pointer_tag (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (!is_ptr (type)) {
 		internal_error (0, "not a pointer or reference");
 	}
@@ -993,6 +1069,7 @@ base_type (const type_t *vec_type)
 	if (is_enum (vec_type)) {//FIXME enum should use valid ev_type
 		return type_default;
 	}
+	vec_type = core_type (vec_type);
 	return ev_types[vec_type->type];
 }
 
@@ -1265,6 +1342,15 @@ print_type_str (dstring_t *str, const type_t *type)
 					   type->width > 1 ? va ("{%d}", type->width)
 									   : "");
 			return;
+		case ty_qual:
+			if (type->qual.is_volatile) {
+				dasprintf (str, " volatile");
+			}
+			if (type->qual.is_const) {
+				dasprintf (str, " const");
+			}
+			print_type_str (str, type->array.type);
+			return;
 		case ty_basic:
 			switch (type->type) {
 				case ev_field:
@@ -1394,7 +1480,7 @@ encode_params (const type_t *type)
 		if (type->func.param_quals[i] != pq_in) {
 			dasprintf (encoding, "%c", "c_Oo"[type->func.param_quals[i]]);
 		}
-		encode_type (encoding, unalias_type (type->func.param_types[i]));
+		encode_type (encoding, core_type (type->func.param_types[i]));
 	}
 	if (type->func.num_params < 0)
 		dasprintf (encoding, ".");
@@ -1464,8 +1550,9 @@ encode_enum (dstring_t *encoding, const type_t *type)
 void
 encode_type (dstring_t *encoding, const type_t *type)
 {
-	if (!type)
+	if (!type) {
 		return;
+	}
 	if (type->attributes || (is_func (type) && type->func.attribute_bits)) {
 		dstring_appendstr (encoding, "%");
 	}
@@ -1515,6 +1602,15 @@ encode_type (dstring_t *encoding, const type_t *type)
 			} else {
 				dasprintf (encoding, "%c", bool_char);
 			}
+			return;
+		case ty_qual:
+			if (type->qual.is_const) {
+				dstring_appendstr (encoding, "r");
+			}
+			if (type->qual.is_volatile) {
+				dstring_appendstr (encoding, "%");
+			}
+			encode_type (encoding, type->qual.type);
 			return;
 		case ty_basic:
 			switch (type->type) {
@@ -1656,10 +1752,26 @@ encode_type (dstring_t *encoding, const type_t *type)
 	internal_error (0, "bad type meta:type %d:%d", type->meta, type->type);
 }
 
+const type_t *
+core_type (const type_t *type)
+{
+	while (true) {
+		if (type->meta == ty_alias) {
+			type = type->alias.aux_type;
+			continue;
+		}
+		if (type->meta == ty_qual) {
+			type = type->qual.type;
+			continue;
+		}
+		return type;
+	}
+}
+
 #define EV_TYPE(t) \
 bool is_##t (const type_t *type) \
 { \
-	type = unalias_type (type); \
+	type = core_type (type); \
 	if (type->meta != ty_basic && type->meta != ty_algebra) { \
 		return false; \
 	} \
@@ -1676,21 +1788,21 @@ is_auto (const type_t *type)
 bool
 is_pointer (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	return is_ptr (type) && !type->fldptr.deref;
 }
 
 bool
 is_reference (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	return is_ptr (type) && type->fldptr.deref;
 }
 
 bool
 is_enum (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if ((type->type == ev_int || type->type == ev_uint
 		 || type->type == ev_long || type->type == ev_ulong)
 		&& type->meta == ty_enum) {
@@ -1702,7 +1814,7 @@ is_enum (const type_t *type)
 bool
 is_bool (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->meta != ty_bool) {
 		return false;
 	}
@@ -1712,7 +1824,7 @@ is_bool (const type_t *type)
 bool
 is_lbool (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->meta != ty_bool) {
 		return false;
 	}
@@ -1728,7 +1840,7 @@ is_boolean (const type_t *type)
 bool
 is_signed (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (is_int (type) || is_long (type) || is_short (type) || is_sbyte (type)) {
 		return true;
 	}
@@ -1738,7 +1850,7 @@ is_signed (const type_t *type)
 bool
 is_unsigned (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (is_uint (type) || is_ulong (type) || is_ushort (type)
 		|| is_ubyte (type)) {
 		return true;
@@ -1757,14 +1869,14 @@ is_integral (const type_t *type)
 bool
 is_real (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	return is_half (type) || is_float (type) || is_double (type);
 }
 
 bool
 is_scalar (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->width != 1) {
 		return false;
 	}
@@ -1783,7 +1895,7 @@ is_matrix (const type_t *type)
 bool
 is_nonscalar (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (is_vector (type) || is_quaternion (type)) {
 		return true;
 	}
@@ -1801,7 +1913,7 @@ is_nonscalar (const type_t *type)
 bool
 is_math (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 
 	if (is_vector (type) || is_quaternion (type)) {
 		return true;
@@ -1815,7 +1927,7 @@ is_math (const type_t *type)
 bool
 is_struct (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->type == ev_invalid && type->meta == ty_struct)
 		return true;
 	return false;
@@ -1824,7 +1936,7 @@ is_struct (const type_t *type)
 bool
 is_handle (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->meta == ty_handle)
 		return true;
 	return false;
@@ -1833,7 +1945,7 @@ is_handle (const type_t *type)
 bool
 is_union (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->type == ev_invalid && type->meta == ty_union)
 		return true;
 	return false;
@@ -1842,16 +1954,43 @@ is_union (const type_t *type)
 bool
 is_array (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->type == ev_invalid && type->meta == ty_array)
 		return true;
 	return false;
 }
 
 bool
-is_structural (const type_t *type)
+is_qual (const type_t *type)
 {
 	type = unalias_type (type);
+	return type->meta == ty_qual;
+}
+
+bool
+is_const (const type_t *type)
+{
+	type = unalias_type (type);
+	if (type->meta != ty_qual) {
+		return false;
+	}
+	return type->qual.is_const;
+}
+
+bool
+is_volatile (const type_t *type)
+{
+	type = unalias_type (type);
+	if (type->meta != ty_qual) {
+		return false;
+	}
+	return type->qual.is_volatile;
+}
+
+bool
+is_structural (const type_t *type)
+{
+	type = core_type (type);
 	return is_struct (type) || is_union (type) || is_array (type);
 }
 
@@ -1879,14 +2018,42 @@ type_compatible (const type_t *dst, const type_t *src)
 }
 
 bool
+type_bindable (const type_t *ref, const type_t *src)
+{
+	if (!is_reference (ref)) {
+		return false;
+	}
+	auto dst = dereference_type (ref);
+	//FIXME copies type_same because I'm not sure how I want type_same to
+	//behave
+	if (core_type (dst) != core_type (src)) {
+		return false;
+	}
+	// strip off only alias, not qualifiers
+	dst = unalias_type (dst);
+	src = unalias_type (src);
+	if (!is_qual (dst) && !is_qual (src)) {
+		return true;
+	}
+	if (!is_const (dst) && is_const (src)) {
+		// non-const reference, const var
+		return false;
+	}
+	if (!is_volatile (dst) && is_volatile (src)) {
+		return false;
+	}
+	return true;
+}
+
+bool
 type_assignable (const type_t *dst, const type_t *src)
 {
 	if (!dst || !src) {
 		return false;
 	}
 
-	dst = unalias_type (dst);
-	src = unalias_type (src);
+	dst = core_type (dst);
+	src = core_type (src);
 	// same type
 	if (dst == src)
 		return true;
@@ -1984,8 +2151,8 @@ type_promotes (const type_t *dst, const type_t *src)
 		return false;
 	}
 
-	dst = unalias_type (dst);
-	src = unalias_type (src);
+	dst = core_type (dst);
+	src = core_type (src);
 	if ((is_image (dst) || is_sampled_image (dst))
 		&& (is_image (src) || is_sampled_image (src))) {
 		return image_type_promotes (dst, src);
@@ -2037,8 +2204,8 @@ type_demotes (const type_t *dst, const type_t *src)
 		return false;
 	}
 
-	dst = unalias_type (dst);
-	src = unalias_type (src);
+	dst = core_type (dst);
+	src = core_type (src);
 	if ((is_image (dst) || is_sampled_image (dst))
 		&& (is_image (src) || is_sampled_image (src))) {
 		return image_type_demotes (dst, src);
@@ -2075,8 +2242,8 @@ type_compares (const type_t *dst, const type_t *src)
 		return false;
 	}
 
-	dst = unalias_type (dst);
-	src = unalias_type (src);
+	dst = core_type (dst);
+	src = core_type (src);
 	if (dst == src) {
 		return true;
 	}
@@ -2109,8 +2276,8 @@ type_compares (const type_t *dst, const type_t *src)
 bool
 type_same (const type_t *dst, const type_t *src)
 {
-	dst = unalias_type (dst);
-	src = unalias_type (src);
+	dst = core_type (dst);
+	src = core_type (src);
 
 	return dst == src;
 }
@@ -2147,8 +2314,11 @@ type_byte_size (const type_t *type)
 			if (!type->symtab)
 				return 0;
 			return type_byte_size (&type_int);
+		case ty_qual:
+			return type_byte_size (type->qual.type);
 		case ty_array:
-			return type->array.count * type_byte_aligned_size (type->array.type);
+			return type->array.count
+				 * type_byte_aligned_size (type->array.type);
 		case ty_class:
 			{
 				class_t    *class = type->class;
@@ -2186,7 +2356,7 @@ type_size (const type_t *type)
 size_t
 type_byte_align (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (is_ptr (type) && current_target.pointer_size) {
 		return current_target.pointer_size;
 	}
@@ -2225,6 +2395,8 @@ type_count (const type_t *type)
 			return type_count (type->alias.aux_type);
 		case ty_algebra:
 			return algebra_type_count (type);
+		case ty_qual:
+			return type_count (type->qual.type);
 		case ty_meta_count:
 			break;
 	}
@@ -2237,6 +2409,7 @@ type_width (const type_t *type)
 	switch (type->meta) {
 		case ty_bool:
 		case ty_basic:
+		case ty_qual:
 			if (type->type == ev_vector) {
 				return 3;
 			}
@@ -2272,6 +2445,7 @@ type_cols (const type_t *type)
 	switch (type->meta) {
 		case ty_bool:
 		case ty_basic:
+		case ty_qual:
 			return type->columns;
 		case ty_handle:
 		case ty_struct:
@@ -2322,7 +2496,7 @@ type_aligned_size (const type_t *type)
 symtab_t *
 type_symtab (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (is_algebra (type)) {
 		return get_mvec_struct (type);
 	}

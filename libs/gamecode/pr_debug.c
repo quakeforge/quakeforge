@@ -258,6 +258,9 @@ pr_debug_type_base (const progs_t *pr, const qfot_type_t *type)
 		case ty_alias:
 			aux_type = &G_STRUCT (pr, qfot_type_t, type->alias.aux_type);
 			return pr_debug_type_base (pr, aux_type);
+		case ty_qual:
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->qual.type);
+			return pr_debug_type_base (pr, aux_type);
 		case ty_algebra:
 			//FIXME wip
 			return type->algebra.type;
@@ -304,6 +307,9 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 			return 1;	//FIXME or should it return sizeof class struct?
 		case ty_alias:
 			aux_type = &G_STRUCT (pr, qfot_type_t, type->alias.aux_type);
+			return pr_debug_type_size (pr, aux_type);
+		case ty_qual:
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->qual.type);
 			return pr_debug_type_size (pr, aux_type);
 		case ty_algebra:
 			//FIXME wip
@@ -1210,6 +1216,10 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 			type = &G_STRUCT (data->pr, qfot_type_t, type->alias.aux_type);
 			value_string (data, type, value);
 			break;
+		case ty_qual:
+			type = &G_STRUCT (data->pr, qfot_type_t, type->qual.type);
+			value_string (data, type, value);
+			break;
 		case ty_meta_count:
 			break;
 	}
@@ -1787,7 +1797,7 @@ pr_debug_array_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	dstring_appendstr (dstr, "{");
 	int offset = 0;
 	for (int i = 0; i < array->count; i++, offset += val_size) {
-		pr_type_t  *val = value + offset;
+		pr_type_t  *val = (pr_type_t*) ((byte *) value + offset);
 		dasprintf (dstr, "[%d]=", array->base + i);
 		value_string (data, val_type, val);
 		if (i < array->count - 1) {

@@ -161,6 +161,20 @@ qfo_encode_basic (const type_t *type, defspace_t *space)
 }
 
 static def_t *
+qfo_encode_qual (const type_t *type, defspace_t *space)
+{
+	qfot_type_t *enc;
+	def_t      *def;
+
+	auto type_def = qfo_encode_type (type->alias.aux_type, space);
+	def = qfo_new_encoding (type, sizeof (enc->handle), space);
+	enc = D_POINTER (qfot_type_t, def);
+	ENC_DEF (enc->qual.type, type_def);
+	enc->qual.bits = type->qual.bits;
+	return def;
+}
+
+static def_t *
 qfo_encode_struct (const type_t *type, defspace_t *space)
 {
 	sy_type_e   sy;
@@ -333,6 +347,7 @@ qfo_encode_type (const type_t *type, defspace_t *space)
 		[ty_handle]  = qfo_encode_handle,
 		[ty_algebra] = qfo_encode_algebra,
 		[ty_bool]    = qfo_encode_basic,
+		[ty_qual]    = qfo_encode_qual,
 	};
 
 	auto type_def = &type_encodings.a[type->id];

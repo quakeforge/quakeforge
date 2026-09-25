@@ -573,6 +573,11 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 				printf (" %s[%d] %5x %d\n",
 						get_ev_type_name (type->type), type->algebra.width,
 						type->algebra.algebra, type->algebra.element);
+			case ty_qual:
+				printf (" %s%s%5x\n", type->qual.is_const ? "c " : "",
+						type->qual.is_volatile ? "v " : "",
+						type->qual.type);
+				break;
 			case ty_meta_count:
 				break;
 		}

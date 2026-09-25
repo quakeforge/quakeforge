@@ -143,7 +143,7 @@ check_arg_types (const expr_t **arguments, const type_t **arg_types,
 				if (!is_lvalue (e)) {
 					err = error (e, "cannot pass non-lvalue by reference");
 				}
-				if (!err && dereference_type (param_type) != t) {
+				if (!err && !type_bindable (param_type, t)) {
 					err = reference_error (e, param_type, t);
 				}
 			} else if (!is_reference (param_type) && is_reference (t)) {

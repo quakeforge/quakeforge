@@ -712,6 +712,8 @@ get_def_type (qfo_t *qfo, pr_ptr_t type)
 			// field, pointer and function types store their basic type in
 			// the same location.
 			return type_def->type;
+		case ty_qual:
+			return get_def_type (qfo, type_def->qual.type);
 		case ty_struct:
 		case ty_union:
 			return ev_invalid;
@@ -745,6 +747,8 @@ get_type_size (qfo_t *qfo, pr_ptr_t type)
 			// field, pointer and function types store their basic type in
 			// the same location.
 			return pr_type_size[type_def->type];
+		case ty_qual:
+			return get_type_size (qfo, type_def->qual.type);
 		case ty_struct:
 			for (i = size = 0; i < type_def->strct.num_fields; i++)
 				size += get_type_size (qfo, type_def->strct.fields[i].type);
@@ -800,6 +804,8 @@ get_type_alignment_log (qfo_t *qfo, pr_ptr_t type)
 			// field, pointer and function types store their basic type in
 			// the same location.
 			return qfo_log2 (type_align (ev_types[type_def->type]));
+		case ty_qual:
+			return get_type_alignment_log (qfo, type_def->qual.type);
 		case ty_struct:
 		case ty_union:
 			for (i = alignment = 0; i < type_def->strct.num_fields; i++) {
