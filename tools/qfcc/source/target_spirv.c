@@ -498,6 +498,17 @@ spirv_TypeMatrix (unsigned col_type, unsigned columns, spirvctx_t *ctx)
 	return INSN (insn, 1);
 }
 
+static const type_t *
+strip_qualifiers (const type_t *type)
+{
+	type = core_type (type);
+	if (is_ptr (type)) {
+		auto aux = strip_qualifiers (type->fldptr.type);
+		type = tagged_pointer_type (type->fldptr.tag, aux);
+	}
+	return type;
+}
+
 static unsigned
 spirv_TypePointer (const type_t *type, spirvctx_t *ctx)
 {
@@ -733,7 +744,7 @@ spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 static unsigned
 spirv_Type (const type_t *type, spirvctx_t *ctx)
 {
-	type = core_type (type);
+	type = strip_qualifiers (type);
 	if (spirv_type_id (type, ctx)) {
 		return spirv_type_id (type, ctx);
 	}
