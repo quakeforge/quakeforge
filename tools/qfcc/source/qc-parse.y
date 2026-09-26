@@ -601,7 +601,7 @@ make_ellipsis (void)
 static param_t *
 set_param_qual (specifier_t spec, param_t *param)
 {
-	if (spec.is_const) {
+	if (spec.is_const || (spec.type && is_const (spec.type))) {
 		if (spec.storage == sc_out) {
 			error (0, "cannot use const with @out");
 		} else if (spec.storage == sc_inout) {
