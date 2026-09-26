@@ -499,14 +499,9 @@ vkshader_src_vert = \
 	$(sprite_depthv_src) \
 	$(twodv_src) \
 	$(quakebspv_src) \
-	$(bsp_src) \
 	$(bsp_depth_src) \
 	$(bsp_gbufv_src) \
 	$(bsp_shadow_src) \
-	$(light_entid_src) \
-	$(light_splatv_src) \
-	$(mesh_src) \
-	$(mesh_shadow_src) \
 	$(passthrough_src) \
 	$(fstriangle_src) \
 	$(fstrianglest_src)
@@ -514,47 +509,55 @@ vkshader_src_vert = \
 vkshader_src_geom =
 
 vkshader_src_frag = \
-	$(expand_src) \
-	$(queueobj_src) \
-	$(gizmo_src) \
 	$(linef_src) \
 	$(particlef_src) \
-	$(painter_src) \
 	$(spritef_src) \
 	$(sprite_gbuff_src) \
 	$(sprite_depthf_src) \
 	$(twodf_src) \
 	$(twod_depthf_src) \
 	$(quakebspf_src) \
-	$(bsp_gbuff_src) \
 	$(bsp_skyf_src) \
 	$(bsp_turbf_src) \
 	$(debug_src) \
 	$(entid_src) \
-	$(light_debug_src) \
-	$(light_oit_src) \
-	$(lighting_cascadef_src) \
-	$(lighting_cubef_src) \
-	$(lighting_nonef_src) \
-	$(lighting_planef_src) \
-	$(composef_src) \
-	$(compose_fwdf_src) \
 	$(qskin_fwdf_src) \
-	$(qskin_gbuf_src) \
 	$(output_src) \
 	$(gridplane_src) \
 	$(pushcolor_src) \
 	$(fisheye_src) \
 	$(waterwarp_src)
 
-vkshader_src_comp = \
+vkshader_src_comp =
+
+vkshader_src_r = \
+	$(bsp_src) \
+	$(bsp_gbuff_src) \
+	$(composef_src) \
+	$(compose_fwdf_src) \
+	$(expand_src) \
+	$(gizmo_src) \
+	$(light_debug_src) \
+	$(light_entid_src) \
+	$(light_oit_src) \
+	$(light_splatv_src) \
+	$(lighting_cascadef_src) \
+	$(lighting_cubef_src) \
+	$(lighting_nonef_src) \
+	$(lighting_planef_src) \
+	$(mesh_src) \
+	$(mesh_shadow_src) \
+	$(painter_src) \
 	$(particles_src) \
-	$(prefixsum_src)
+	$(prefixsum_src) \
+	$(qskin_gbuf_src) \
+	$(queueobj_src)
 
 vkshader_c_vert=$(call spvautoc,$(vkshader_src_vert))
 vkshader_c_geom=$(call spvautoc,$(vkshader_src_geom))
 vkshader_c_frag=$(call spvautoc,$(vkshader_src_frag))
 vkshader_c_comp=$(call spvautoc,$(vkshader_src_comp))
+vkshader_c_r=$(call spvautoc,$(vkshader_src_r))
 
 vkshader_h = \
 	$(entity_h) \
@@ -571,13 +574,27 @@ vkshader_h = \
 	$(oit_store) \
 	$(queueobj_h)
 vkshader_src = $(vkshader_src_vert) $(vkshader_src_geom) $(vkshader_src_frag) \
-			   $(vkshader_src_comp)
+			   $(vkshader_src_comp) $(vkshader_src_r)
 vkshader_dep = $(call spvautodep, $(vkshader_src))
 include $(vkshader_dep) # am--include-marker
 spv_depfiles_remade += $(vkshader_dep)
 
 vkshader_c = $(vkshader_c_vert) $(vkshader_c_geom) $(vkshader_c_frag) \
-			 $(vkshader_c_comp)
+			 $(vkshader_c_comp) $(vkshader_c_r)
+
+spirv_test_run_deps = libs/video/renderer/vulkan/shader/build-run
+
+%.spv.run: $(spirv_test_run_deps)
+	$(top_srcdir)/libs/video/renderer/vulkan/shader/build-run $@
+
+#if run_tools_qfcc_tests
+TESTS += $(vkshader_src_vert:.vert=.vert.spv.run)
+TESTS += $(vkshader_src_geom:.geom=.geom.spv.run)
+TESTS += $(vkshader_src_frag:.frag=.frag.spv.run)
+TESTS += $(vkshader_src_comp:.comp=.comp.spv.run)
+TESTS += $(vkshader_src_r:.r=.r.spv.run)
+#check_PROGRAMS += $(vkshader_c)
+#endif
 
 V_VKGEN = $(V_VKGEN_@AM_V@)
 V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)
