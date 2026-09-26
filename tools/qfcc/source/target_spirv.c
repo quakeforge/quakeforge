@@ -707,7 +707,7 @@ spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 	unsigned param_types[num_params + 1];
 	num_params = 0;
 	for (auto p = fsym->params; p; p = p->next) {
-		auto ptype = p->type;
+		auto ptype = core_type (p->type);
 		if (is_void (p->type)) {
 			break;
 		}
@@ -1124,7 +1124,7 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 	spirv_Name (func_id, GETSTR (func->s_name), ctx);
 
 	for (auto p = func->sym->params; p; p = p->next) {
-		auto ptype = p->type;
+		auto ptype = core_type (p->type);
 		if (is_void (ptype)) {
 			break;
 		}
@@ -2481,7 +2481,7 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 		} else {
 			scoped_src_loc (a);
 			auto psym = new_symbol ("param");
-			auto arg_type = get_type (a);
+			auto arg_type = core_type (get_type (a));
 			if (is_reference (arg_type)) {
 				psym->type = arg_type;
 			} else {
