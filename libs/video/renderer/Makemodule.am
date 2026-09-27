@@ -587,14 +587,18 @@ spirv_test_run_deps = libs/video/renderer/vulkan/shader/build-run
 %.spv.run: $(spirv_test_run_deps)
 	$(top_srcdir)/libs/video/renderer/vulkan/shader/build-run $@
 
-#if run_tools_qfcc_tests
+if run_tools_qfcc_tests
 TESTS += $(vkshader_src_vert:.vert=.vert.spv.run)
 TESTS += $(vkshader_src_geom:.geom=.geom.spv.run)
 TESTS += $(vkshader_src_frag:.frag=.frag.spv.run)
 TESTS += $(vkshader_src_comp:.comp=.comp.spv.run)
 TESTS += $(vkshader_src_r:.r=.r.spv.run)
-#check_PROGRAMS += $(vkshader_c)
-#endif
+#check_PROGRAMS += $(vkshader_src_vert:.vert=.vert.spv)
+#check_PROGRAMS += $(vkshader_src_geom:.geom=.geom.spv)
+#check_PROGRAMS += $(vkshader_src_frag:.frag=.frag.spv)
+#check_PROGRAMS += $(vkshader_src_comp:.comp=.comp.spv)
+#check_PROGRAMS += $(vkshader_src_r:.r=.r.spv)
+endif
 
 V_VKGEN = $(V_VKGEN_@AM_V@)
 V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)

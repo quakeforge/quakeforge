@@ -42,6 +42,11 @@ spv_depfiles_remade += $(qwaqshader_dep)
 
 qwaqshader_r = $(call spvautoc,$(qwaqshader_src))
 
+if run_tools_qfcc_tests
+TESTS += $(qwaqshader_src:.r=.r.spv.run)
+#check_PROGRAMS += $(qwaqshader_src:.r=.r.spv)
+endif
+
 libui=ruamoko/qwaq/libui.a
 libmisc=ruamoko/qwaq/libmisc.a
 libedit=ruamoko/qwaq/libedit.a
