@@ -2262,7 +2262,12 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 			}
 			index = sym->id;
 		} else if (obj->type == ex_array) {
-			if (is_pointer (get_type (obj->array.base))) {
+			if (i == 0 && is_pointer (base_type)) {
+				unsigned storage = base_type->fldptr.tag;
+				auto arr_type = array_type (obj->array.type, 0);
+				arr_type = iface_block_type (arr_type, "@bda");
+				ptr_cast = tagged_pointer_type (storage, arr_type);
+			} else if (is_pointer (get_type (obj->array.base))) {
 				unsigned storage = base_type->fldptr.tag;
 				base_type = get_type (obj->array.base);
 				ptr_access = tagged_pointer_type (storage, base_type);
@@ -2289,11 +2294,11 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 			unsigned id = spirv_gen_access (op, ptr_access, base_id,
 											num_ind, ind_id, ctx);
 			base_id = spirv_ptr_load (base_type, id, 8, ctx);
-			if (ptr_cast) {
-				scoped_src_loc (obj);
-				base_id = spirv_gen_bitcast (ptr_cast, base_id, ctx);
-			}
 			num_ind = 0;
+		}
+		if (ptr_cast) {
+			scoped_src_loc (obj);
+			base_id = spirv_gen_bitcast (ptr_cast, base_id, ctx);
 		}
 		if (literal_ind || direct_ind) {
 			ind_id[num_ind++] = index;
