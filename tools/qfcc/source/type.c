@@ -2343,6 +2343,7 @@ type_byte_size (const type_t *type)
 int
 type_words (size_t bytes)
 {
+	//FIXME get short/byte working properly
 	//return (bytes + sizeof (pr_type_t) - 1) / sizeof (pr_type_t);
 	return bytes / sizeof (pr_type_t);
 }

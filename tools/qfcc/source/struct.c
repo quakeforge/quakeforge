@@ -196,14 +196,15 @@ append_symbol (struct_state_t *state, symbol_t *s)
 static void
 struct_offset (struct_state_t *state, symbol_t *s)
 {
-	int         alignment = type_align (s->type);
+	//FIXME get short/byte working properly
+	int         alignment = type_byte_align (s->type);
 	if (state->su == 's') {
 		int offset = state->offset + state->base;
 		offset = RUP (offset, alignment) - state->base;
-		s->offset = offset;
-		state->offset = offset + type_size (s->type);
+		s->offset = type_words (offset);
+		state->offset = offset + type_byte_size (s->type);
 	} else {
-		int         size = type_size (s->type);
+		int         size = type_byte_size (s->type);
 		s->offset = 0;
 		if (size > state->symtab->size) {
 			state->symtab->size = RUP (size, alignment);
@@ -485,12 +486,10 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 	if (su == 's') {
 		symtab->size = state.offset;
 	}
-	symtab->size *= sizeof (pr_type_t);
 	symtab->count = state.index;
 	if (!type)
 		sym->type = find_type (sym->type);	// checks the tag, not the symtab
 	((type_t *) sym->type)->symtab = symtab;
-	state.alignment *= sizeof (pr_type_t);
 	if (state.alignment > sym->type->alignment) {
 		((type_t *) sym->type)->alignment = state.alignment;
 	}
