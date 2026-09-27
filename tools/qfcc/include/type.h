@@ -247,7 +247,7 @@ const type_t *array_type (const type_t *aux, int size);
 const type_t *based_array_type (const type_t *aux, int base, int top);
 const type_t *alias_type (const type_t *type, const type_t *alias_chain,
 						  const char *name);
-const type_t *core_type (const type_t *type);
+const type_t *core_type (const type_t *type) __attribute__((pure));
 const type_t *unalias_type (const type_t *type) __attribute__((pure));
 const type_t *dereference_type (const type_t *type) __attribute__((pure));
 void print_type_str (struct dstring_s *str, const type_t *type);
@@ -285,7 +285,7 @@ bool is_const (const type_t *type) __attribute__ ((pure));
 bool is_volatile (const type_t *type) __attribute__ ((pure));
 bool is_structural (const type_t *type) __attribute__((pure));
 bool type_compatible (const type_t *dst, const type_t *src) __attribute__((pure));
-bool type_bindable (const type_t *ref, const type_t *src);
+bool type_bindable (const type_t *ref, const type_t *src) __attribute__((pure));
 bool type_assignable (const type_t *dst, const type_t *src);
 bool type_promotes (const type_t *dst, const type_t *src) __attribute__((pure));
 bool type_demotes (const type_t *dst, const type_t *src) __attribute__((pure));
