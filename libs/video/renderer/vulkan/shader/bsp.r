@@ -8,6 +8,9 @@ typedef struct Entity Entity;//FIXME eliminate glsl uses
 void printf (string fmt, ...)
 	= @intrinsic(OpExtInst, "NonSemantic.DebugPrintf", DebugPrintf);
 
+uint subgroup_max (uint x) = @intrinsic(OpGroupNonUniformUMax)
+	[Scope.Subgroup, =GroupOperation.Reduce, x];
+
 [in("GlobalInvocationId")] uvec3 gl_GlobalInvocationID;
 
 typedef struct cluster_queue_s {
@@ -35,30 +38,38 @@ typedef struct cluster_queue_s {
 	bsp_texanim_t *anim_alt;	///< group 1 animations
 	ushort     *frame_map;		///< map from texture frame to texture id
 };
-
+[capability(GroupNonUniformArithmetic)]
 [shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 void
 main ()
 {
 	uint queue_index = gl_GlobalInvocationID.x;
-	if (queue_index >= cluster_queue.count) {
-		return;
+	bsp_queue_t *queue = nil;
+	cluster_t *cluster = nil;
+	if (queue_index < cluster_queue.count) {
+		queue = &cluster_queue.queue[queue_index];
+		cluster = &clusters[queue.cluster];
 	}
-	auto queue = cluster_queue.queue[queue_index];
-	auto cluster = clusters[queue.cluster];
-	for (uint i = 0; i < cluster.count; i++) {
-		uint subcluster_ind = cluster_map[cluster.first + i];
-		auto subcluster = subclusters[subcluster_ind];
-		uint tex_id = subcluster.tex_id;
-		uint command_ind = atomicAdd (command_counts[tex_id], 1);
-		command_ind += command_offsets[tex_id];
-		commands[command_ind] = (command_t) {
-			.indexCount = subcluster.index_count,
-			.instanceCount = queue.instance_count,
-			.firstIndex = subcluster.first_index,
-			.vertexOffset = 0,
-			.firstInstace = queue.first_instance,
-		};
+	uint count = 0;
+	if (cluster) {
+		count = cluster.count;
+	}
+	uint maxCount = subgroup_max (count);
+	for (uint i = 0; i < maxCount; i++) {
+		if (i < count) {
+			uint subcluster_ind = cluster_map[cluster.first + i];
+			auto subcluster = subclusters[subcluster_ind];
+			uint tex_id = subcluster.tex_id;
+			uint command_ind = atomicAdd (command_counts[tex_id], 1);
+			command_ind += command_offsets[tex_id];
+			commands[command_ind] = (command_t) {
+				.indexCount = subcluster.index_count,
+				.instanceCount = queue.instance_count,
+				.firstIndex = subcluster.first_index,
+				.vertexOffset = 0,
+				.firstInstace = queue.first_instance,
+			};
+		}
 	}
 }
 
@@ -146,25 +157,29 @@ void
 enqueue ()
 {
 	uint mod_id = gl_GlobalInvocationID.x;
-	if (mod_id < 1 || mod_id >= num_models) {
-		return;
+	bsp_model_t mod = nil;
+	if (mod_id >= 1 && mod_id < num_models) {
+		mod = models[mod_id];
 	}
-	auto mod = models[mod_id];
 
-	for (uint j = 0; j < 2; j++) {
+	for (uint j = 0; mod.cluster_count && j < 2; j++) {
 		uint mod_base = j * num_models;
 		uint first_instance = mod_offsets[mod_base + mod_id];
 		uint instance_count = mod_counts[mod_base + mod_id];
 
 		if (instance_count) {
-			for (uint i = 0; i < mod.cluster_count; i++) {
-				uint index = atomicAdd (cluster_queue.count, 1);
-				bsp_queue_t q = {
-					.cluster = mod.first_cluster + i,
-					.first_instance = first_instance,
-					.instance_count = instance_count,
-				};
-				cluster_queue.queue[index] = q;
+			uint count = mod.cluster_count;
+			uint maxCount = subgroup_max (count);
+			for (uint i = 0; i < maxCount; i++) {
+				if (i < count) {
+					uint index = atomicAdd (cluster_queue.count, 1);
+					bsp_queue_t q = {
+						.cluster = mod.first_cluster + i,
+						.first_instance = first_instance,
+						.instance_count = instance_count,
+					};
+					cluster_queue.queue[index] = q;
+				}
 			}
 		}
 	}
