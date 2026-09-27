@@ -98,6 +98,8 @@ typedef struct spirvphi_s {
 } spirvphi_t;
 
 static unsigned spirv_value (const expr_t *e, spirvctx_t *ctx);
+static unsigned spirv_gen_bitcast (const type_t *type, unsigned src_id,
+								   spirvctx_t *ctx);
 
 static unsigned
 spirv_id (spirvctx_t *ctx)
@@ -2012,6 +2014,12 @@ spirv_matrix_value (const ex_value_t *value, spirvctx_t *ctx)
 static unsigned
 spirv_nil (const expr_t *e, spirvctx_t *ctx)
 {
+	if (is_pointer (e->nil)) {
+		// not allowed null pointer constants
+		auto fake_nil = new_zero_expr (&type_uvec2);
+		unsigned id = spirv_emit_expr (fake_nil, ctx);
+		return spirv_gen_bitcast (e->nil, id, ctx);
+	}
 	unsigned tid = spirv_Type (e->nil, ctx);
 	unsigned id = spirv_id (ctx);
 	auto globals = ctx->module->globals;
