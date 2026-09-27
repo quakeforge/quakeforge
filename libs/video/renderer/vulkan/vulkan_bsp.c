@@ -747,10 +747,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	uint32_t mod_count = *bctx->num_models;
 	size_t index_buffer_size = sizeof (uint32_t[index_count]);
 	size_t model_buffer_size = sizeof (bsp_model_t[mod_count]);
-	size_t mod_counts_buffer_size = sizeof (uint32_t[2 * mod_count]);
-	size_t mod_tmp_buffer_size = sizeof (uint32_t[2 * mod_count]);
+	size_t mod_counts_buffer_size = sizeof (uint32_t[mod_queues * mod_count]);
+	size_t mod_tmp_buffer_size = sizeof (uint32_t[mod_queues * mod_count]);
 	size_t mod_sums_buffer_size = sizeof (uint32_t[1024+1]);
-	size_t mod_offsets_buffer_size = sizeof (uint32_t[2 * mod_count]);
+	size_t mod_offsets_buffer_size = sizeof (uint32_t[mod_queues * mod_count]);
 	size_t tex_id_buffer_size = sizeof (uint32_t[build.num_tex_ids]);
 	size_t vertex_buffer_size = sizeof (bspvert_t[vertex_count]);
 	size_t command_counts_buffer_size = sizeof (uint32_t[num_tex]);
@@ -1495,7 +1495,7 @@ bsp_clear_ent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto bctx = ctx->bsp_context;
 	auto pipeline = taskctx->pipeline;
 
-	uint32_t count = 2 * *bctx->num_models;
+	uint32_t count = mod_queues * *bctx->num_models;
 
 	pipeline->dispatch[0] = RUP (count, workgroup_size) / workgroup_size;
 	pipeline->dispatch[1] = 1;
@@ -1806,8 +1806,7 @@ bsp_sum_mod_insts (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	*bctx->in_data = 0;
 	*bctx->out_data = 0;
 	*bctx->sum_data = 0;
-	uint32_t count = *bctx->num_models;
-	uint32_t offset = sizeof (uint32_t[count]);
+	uint32_t count = *bctx->num_models * mod_queues;
 	switch (stage) {
 		case 0:
 			*bctx->in_data = *bctx->mod_counts;
@@ -1825,22 +1824,8 @@ bsp_sum_mod_insts (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			*bctx->out_data = *bctx->mod_offsets;
 			*bctx->sum_data = bctx->mod_sums_buffer.addr;
 			break;
-		case 3:
-			*bctx->in_data = *bctx->mod_counts + offset;
-			*bctx->out_data = bctx->mod_tmp_buffer.addr;
-			*bctx->sum_data = *bctx->mod_offsets + offset;// tmp buffer for sums
-			break;
-		case 4:
-			*bctx->in_data = *bctx->mod_offsets + offset;
-			*bctx->out_data = bctx->mod_sums_buffer.addr;
-			*bctx->sum_data = *bctx->out_data + sizeof(uint32_t[1024]);
-			count = RUP (count, block_size) / block_size;
-			break;
-		case 5:
-			*bctx->in_data = bctx->mod_tmp_buffer.addr;
-			*bctx->out_data = *bctx->mod_offsets + offset;
-			*bctx->sum_data = bctx->mod_sums_buffer.addr;
-			break;
+		default:
+			Sys_Error ("invalid bsp_sum_mod_insts stage: %d\n", stage);
 	}
 	*bctx->count = count;
 

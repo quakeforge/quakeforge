@@ -38,6 +38,7 @@ typedef struct cluster_queue_s {
 	bsp_texanim_t *anim_alt;	///< group 1 animations
 	ushort     *frame_map;		///< map from texture frame to texture id
 };
+
 [capability(GroupNonUniformArithmetic)]
 [shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 void
@@ -162,7 +163,7 @@ enqueue ()
 		mod = models[mod_id];
 	}
 
-	for (uint j = 0; mod.cluster_count && j < 2; j++) {
+	for (uint j = 0; j < mod_queues && mod.cluster_count; j++) {
 		uint mod_base = j * num_models;
 		uint first_instance = mod_offsets[mod_base + mod_id];
 		uint instance_count = mod_counts[mod_base + mod_id];
@@ -209,7 +210,7 @@ void
 clear ()
 {
 	uint mod_id = gl_GlobalInvocationID.x;
-	if (mod_id < num_models * 2) {
+	if (mod_id < num_models * mod_queues) {
 		mod_counts[mod_id] = 0;
 	}
 }

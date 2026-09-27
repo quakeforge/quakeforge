@@ -380,16 +380,6 @@ properties = {
 					name = ent.enqueue;
 					module = $builtin/bsp.r;
 				};
-				copy_offset = {
-					stage = compute;
-					name = ent.copy_offset;
-					module = $builtin/bsp.r;
-				};
-				copy_total = {
-					stage = compute;
-					name = ent.copy_total;
-					module = $builtin/bsp.r;
-				};
 				distribute = {
 					stage = compute;
 					name = ent.distribute;
@@ -2499,41 +2489,6 @@ jobs = {
 							);
 							stage = $prefixsum.shader.offset;
 							layout = $prefixsum.layout;
-						};
-						copy_total = {
-							tasks = (
-								{ func = set_dispatch; params = (1, 1, 1); },
-							);
-							stage = $brush.ent.shader.copy_total;
-							layout = $brush.ent.layout;
-						};
-						ent_block_prefix1 = {
-							tasks = (
-								{ func = bsp_sum_mod_insts; params = (3); },
-							);
-							stage = $prefixsum.shader.main;
-							layout = $prefixsum.layout;
-						};
-						ent_offset_sum1 = {
-							tasks = (
-								{ func = bsp_sum_mod_insts; params = (4); },
-							);
-							stage = $prefixsum.shader.main;
-							layout = $prefixsum.layout;
-						};
-						ent_sum1 = {
-							tasks = (
-								{ func = bsp_sum_mod_insts; params = (5); },
-							);
-							stage = $prefixsum.shader.offset;
-							layout = $prefixsum.layout;
-						};
-						copy_offset = {
-							tasks = (
-								{ func = set_dispatch; params = (1, 1, 1); },
-							);
-							stage = $brush.ent.shader.copy_offset;
-							layout = $brush.ent.layout;
 						};
 						ent_instances = {
 							tasks = (

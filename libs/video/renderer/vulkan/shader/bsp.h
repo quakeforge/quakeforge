@@ -2,6 +2,7 @@
 #define __shader_bsp_h
 
 #define workgroup_size 512
+#define mod_queues 2
 
 typedef struct command_s {//FIXME use VkDrawIndexedIndirectCommand
 	uint        indexCount;
