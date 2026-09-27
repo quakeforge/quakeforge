@@ -1638,8 +1638,10 @@ bsp_clear_commands (const exprval_t **params, exprval_t *result,
 		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
 		.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
 		.srcAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
+					  | VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
+		.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
+					   | VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
 	};
 	pipeline->post_mb = (VkMemoryBarrier2) {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
