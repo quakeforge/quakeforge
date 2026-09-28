@@ -48,25 +48,17 @@ main ()
 	uint queue_index = gl_GlobalInvocationID.x;
 	bsp_queue_t *queue = nil;
 	cluster_t *cluster = nil;
-	bool debug = false;
 	if (queue_index < cluster_queue.count) {
 		queue = &cluster_queue.queue[queue_index];
 		cluster = &clusters[queue.cluster];
-		debug = queue.cluster == 1172;
 	}
 	uint count = 0;
 	uint trans = 0;
 	bsp_texanim_t *frame_anim = anim_main;
 	if (cluster) {
 		count = cluster.count;
-		//frame_anim = cluster.frame ? anim_alt : anim_main;
-		//trans = cluster.trans * texture_count;
-	}
-	if (debug) {
-		printf ("qi:%d {%d %d %d %d %d}\n", queue_index, queue.cluster,
-				queue.first_instance, queue.instance_count,
-				queue.frame, queue.trans);
-		printf ("cl {%d %d}\n", cluster.first, cluster.count);
+		frame_anim = queue.frame ? anim_alt : anim_main;
+		//trans = queue.trans * texture_count;
 	}
 	uint maxCount = subgroup_max (count);
 	for (uint i = 0; i < maxCount; i++) {
@@ -75,10 +67,8 @@ main ()
 			auto subcluster = subclusters[subcluster_ind];
 			uint tex_id = subcluster.tex_id;
 			auto anim = frame_anim[tex_id];
-			if (debug) printf ("tex_id: %d anim: %d %d %d\n", tex_id, anim.base, anim.offset, anim.count);
 			uint anim_ind = (anim_index + anim.offset) % anim.count;
 			tex_id = frame_map[anim.base + anim_ind] + trans;
-			if (debug) printf ("anim_ind: %d tex_id: %d\n", anim_ind, tex_id);
 			uint command_ind = atomicAdd (command_counts[tex_id], 1);
 			command_ind += command_offsets[tex_id];
 			commands[command_ind] = (command_t) {

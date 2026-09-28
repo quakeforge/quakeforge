@@ -445,8 +445,10 @@ typedef struct bspvert_s {
 typedef struct {
 	bspctx_t   *bctx;
 	set_t      *seen_tex_ids;
+	set_t      *anim_tex_ids;
 	uint32_t    num_tex_ids;
 	uint32_t   *tex_clusters;
+	uint32_t   *tex_commands;
 	uint32_t    mod_cluster_count;
 	uint32_t    sub_cluster_count;
 	uint32_t    vert_count;
@@ -561,9 +563,32 @@ surf_tex_id (const msurface_t *surf, const bspctx_t *bctx)
 }
 
 static void
+visit_animations (uint32_t tex_id, buildctx_t *build)
+{
+	auto anim_tex_ids = build->anim_tex_ids;
+	auto texdata = build->bctx->texdata;
+	set_empty (anim_tex_ids);
+	set_add (anim_tex_ids, tex_id);
+
+#define scan_anim(a) \
+	do { \
+		auto anim = a; \
+		for (uint32_t i = 0; i < anim.count; i++) { \
+			uint32_t frame = anim.base + i; \
+			uint32_t id = texdata.frame_map[frame]; \
+			set_add (anim_tex_ids, id); \
+		} \
+	} while (false)
+	scan_anim (texdata.anim_main[tex_id]);
+	scan_anim (texdata.anim_alt[tex_id]);
+#undef scan_anim
+}
+
+static void
 scan_surfaces (mod_brush_t *brush, cluster_t *cluster, buildctx_t *build)
 {
 	texture_t *cur_tex = nullptr;
+	auto anim_tex_ids = build->anim_tex_ids;
 	build->mod_cluster_count++;
 	for (uint32_t i = 0; i < cluster->count; i++) {
 		uint32_t ind = cluster->first + i;
@@ -571,6 +596,10 @@ scan_surfaces (mod_brush_t *brush, cluster_t *cluster, buildctx_t *build)
 		if (cur_tex != surf->texinfo->texture) {
 			cur_tex = surf->texinfo->texture;
 			uint32_t tex_id = surf_tex_id (surf, build->bctx);
+			visit_animations (tex_id, build);
+			for (auto t = set_first (anim_tex_ids); t; t = set_next (t)) {
+				build->tex_commands[t->element]++;
+			}
 			build->tex_clusters[tex_id]++;
 			build->sub_cluster_count++;
 			set_add (build->seen_tex_ids, tex_id);
@@ -697,6 +726,18 @@ check_cluster (const buildctx_t *build, uint32_t cluster_num)
 	printf ("    %d\n", count);
 }
 
+static uint32_t
+bsp_prefixsum (uint32_t *array, uint32_t count)
+{
+	uint32_t sum = 0;
+	for (uint32_t i = 1; i < count; i++) {
+		uint32_t temp = array[i];
+		array[i] = sum;
+		sum += temp;
+	}
+	return sum;
+}
+
 void
 Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
@@ -723,12 +764,16 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	uint32_t num_tex = bctx->registered_textures.size;
 	uint32_t tex_clusters[num_tex] = {};
+	uint32_t tex_commands[num_tex] = {};
 
 	SET_DEFER (seen_tex_ids);
+	SET_DEFER (anim_tex_ids);
 	buildctx_t build = {
 		.bctx = bctx,
 		.seen_tex_ids = seen_tex_ids,
+		.anim_tex_ids = anim_tex_ids,
 		.tex_clusters = tex_clusters,
+		.tex_commands = tex_commands,
 	};
 
 	// count sub-clusters, vertices and indices
@@ -761,7 +806,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t tex_id_buffer_size = sizeof (uint32_t[build.num_tex_ids]);
 	size_t vertex_buffer_size = sizeof (bspvert_t[vertex_count]);
 	size_t command_counts_buffer_size = sizeof (uint32_t[num_tex]);
-	size_t command_offsets_buffer_size = sizeof (tex_clusters);
+	size_t command_offsets_buffer_size = sizeof (tex_commands);
 	size_t command_buffer_size
 		= sizeof (VkDrawIndexedIndirectCommand[num_clusters]);
 	size_t subcluster_buffer_size = sizeof (bsp_cluster_t[num_clusters]);
@@ -773,14 +818,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	bctx->command_offsets = malloc (command_offsets_buffer_size);
 	bctx->command_counts = malloc (command_offsets_buffer_size);
 
-	memcpy (bctx->command_counts, tex_clusters, sizeof (tex_clusters));
-	uint32_t sum = 0;
-	for (uint32_t i = 1; i < num_tex; i++) {
-		uint32_t temp = tex_clusters[i];
-		tex_clusters[i] = sum;
-		sum += temp;
-	}
-	memcpy (bctx->command_offsets, tex_clusters, sizeof (tex_clusters));
+	memcpy (bctx->command_counts, tex_commands, sizeof (tex_commands));
+	bsp_prefixsum (tex_commands, num_tex);
+	bsp_prefixsum (tex_clusters, num_tex);
+	memcpy (bctx->command_offsets, tex_commands, sizeof (tex_commands));
 
 #define CHECK_SIZE(b) (b##_buffer_size > bctx->b##_buffer.size)
 	if (CHECK_SIZE (index)
@@ -1050,7 +1091,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	build.clusters = (cluster_t *) &build.subclusters[num_clusters];
 	build.clustermap = (uint32_t *) &build.clusters[mod_clusters];
 
-	memcpy (command_offsets, tex_clusters, sizeof (tex_clusters));
+	memcpy (command_offsets, tex_commands, sizeof (tex_commands));
 	build.num_tex_ids = 0;
 	model_loop (models, num_models, ctx, model_build_surfaces, &build);
 
@@ -1219,6 +1260,7 @@ draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 	auto bctx = ctx->bsp_context;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
+	//puts (set_as_string (&pass->tex_set[queue]));
 	for (auto t = set_first (&pass->tex_set[queue]); t; t = set_next (t)) {
 		uint32_t tex_id = t->element;
 		vulktex_t *tex = bctx->registered_textures.a[tex_id];
@@ -1985,6 +2027,14 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	*bctx->entities = Vulkan_Scene_EntBufferAddr (ctx);
 
 	*bctx->anim_index = vr_data.realtime * 5;
+
+	//printf ("command_counts: %zx\n", *bctx->command_counts_ptr);
+	//printf ("command_offsets: %zx\n", *bctx->command_offsets_ptr);
+	//printf ("commands: %zx\n", *bctx->commands_ptr);
+	//printf ("subclusters: %zx\n", *bctx->subclusters_ptr);
+	//printf ("clusters: %zx\n", *bctx->clusters_ptr);
+	//printf ("cluster_map: %zx\n", *bctx->cluster_map_ptr);
+	//printf ("cluster_queue: %zx\n", *bctx->cluster_queue_ptr);
 
 	//printf ("ent_count: %d\n", *bctx->ent_count);
 	//printf ("anim_index: %d\n", *bctx->anim_index);
