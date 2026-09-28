@@ -85,6 +85,7 @@ typedef struct {
 	int         pointer_scale;
 	int         pointer_size;
 	bool        pointer_direct_cast;
+	const type_t *pointer_cast;
 } target_t;
 
 extern target_t current_target;

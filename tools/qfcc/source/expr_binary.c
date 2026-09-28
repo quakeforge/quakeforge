@@ -191,11 +191,11 @@ pointer_compare (int op, const expr_t *e1, const expr_t *e2)
 	if (options.code.progsversion < PROG_VERSION) {
 		e = new_binary_expr (op, e1, e2);
 	} else {
-		e = new_binary_expr (op, cast_expr (&type_int, e1),
-							 cast_expr (&type_int, e2));
+		e = new_binary_expr (op, cast_expr (current_target.pointer_cast, e1),
+							 cast_expr (current_target.pointer_cast, e2));
 	}
-	e->expr.type = &type_bool;
-	return e;
+	e->expr.type = bool_type (current_target.pointer_cast);
+	return test_expr (edag_add_expr (e));
 }
 
 static const expr_t *

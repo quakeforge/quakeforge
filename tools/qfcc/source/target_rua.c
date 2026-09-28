@@ -565,4 +565,5 @@ target_t ruamoko_target = {
 	.zero_memory = true,
 	.pointer_scale = 1,
 	.pointer_direct_cast = true,
+	.pointer_cast = &type_int,
 };

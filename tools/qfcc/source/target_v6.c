@@ -400,6 +400,7 @@ target_t v6_target = {
 	.short_circuit = true,
 	.pointer_scale = 1,
 	.pointer_direct_cast = true,
+	.pointer_cast = &type_int,
 };
 
 target_t v6p_target = {
@@ -423,4 +424,5 @@ target_t v6p_target = {
 	.zero_memory = true,
 	.pointer_scale = 1,
 	.pointer_direct_cast = true,
+	.pointer_cast = &type_int,
 };

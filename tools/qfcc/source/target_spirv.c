@@ -4220,4 +4220,5 @@ target_t spirv_target = {
 	.pointer_type = spirv_pointer_type,
 	.pointer_scale = 4,
 	.pointer_size = sizeof(uint64_t),
+	.pointer_cast = &type_uvec2,
 };
