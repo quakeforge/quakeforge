@@ -246,9 +246,9 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		register_textures (brush, ctx);
 	}
 
-	uint32_t    num_tex_anim = bctx->registered_textures.size;
+	uint32_t    num_tex = bctx->registered_textures.size;
 
-	texture_t *textures[num_tex_anim];
+	texture_t *textures[num_tex];
 	for (uint32_t i = 0; i < countof (base_tx); i++) {
 		textures[i] = &base_tx[i];
 	}
@@ -269,9 +269,63 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		}
 	}
 
-	if (num_tex_anim > bctx->num_tex_anim) {
+	size_t texdata_size = sizeof (bsp_texanim_t[num_tex])
+						+ sizeof (bsp_texanim_t[num_tex])
+						+ sizeof (uint16_t[num_tex]);
+	bsp_texanim_t *texdata = Hunk_AllocName (r_refdef.hunk, texdata_size,
+											 "texdata");
+	bctx->texdata.anim_main = texdata;
+	bctx->texdata.anim_alt = texdata + num_tex;
+	bctx->texdata.frame_map = (uint16_t *) (texdata + 2 * num_tex);
+	int16_t     map_index = 0;
+	for (uint32_t i = 0; i < num_tex; i++) {
+		auto anim = bctx->texdata.anim_main + i;
+		if (anim->count) {
+			// already done as part of an animation group
+			continue;
+		}
+		*anim = (bsp_texanim_t) { .base = map_index, .offset = 0, .count = 1 };
+		bctx->texdata.frame_map[anim->base] = i;
+
+		if (textures[i]->anim_total > 1) {
+			// bsp loader multiplies anim_total by ANIM_CYCLE to slow the
+			// frame rate
+			anim->count = textures[i]->anim_total / ANIM_CYCLE;
+			texture_t  *tx = textures[i]->anim_next;
+			for (int j = 1; j < anim->count; j++) {
+				if (!tx) {
+					Sys_Error ("broken cycle");
+				}
+				vulktex_t  *vtex = tx->render;
+				auto a = bctx->texdata.anim_main + vtex->tex_id;
+				if (a->count) {
+					Sys_Error ("crossed cycle");
+				}
+				*a = *anim;
+				a->offset = j;
+				bctx->texdata.frame_map[a->base + a->offset] = vtex->tex_id;
+				tx = tx->anim_next;
+			}
+			if (tx != textures[i]) {
+				Sys_Error ("infinite cycle");
+			}
+		}
+		map_index += bctx->texdata.anim_main[i].count;
+	}
+	for (uint32_t i = 0; i < num_tex; i++) {
+		auto alt = bctx->texdata.anim_alt + i;
+		if (textures[i]->alternate_anims) {
+			texture_t  *tx = textures[i]->alternate_anims;
+			vulktex_t  *vtex = tx->render;
+			*alt = bctx->texdata.anim_main[vtex->tex_id];
+		} else {
+			*alt = bctx->texdata.anim_main[i];
+		}
+	}
+
+	if (num_tex > bctx->num_tex_anim) {
 		QFV_DestroyResource (ctx->device, bctx->tex_resource);
-		bctx->num_tex_anim = num_tex_anim;
+		bctx->num_tex_anim = num_tex;
 		if (!bctx->tex_resource) {
 			size_t size = sizeof (qfv_resource_t)
 						+ sizeof (qfv_resobj_t)		// anim_main
@@ -293,7 +347,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.name = "anim_main",
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = sizeof (bsp_texanim_t[num_tex_anim]),
+				.size = sizeof (bsp_texanim_t[num_tex]),
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 					   | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 					   | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -303,7 +357,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.name = "anim_alt",
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = sizeof (bsp_texanim_t[num_tex_anim]),
+				.size = sizeof (bsp_texanim_t[num_tex]),
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 					   | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 					   | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -313,7 +367,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.name = "frame_map",
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = sizeof (uint16_t[num_tex_anim]),
+				.size = sizeof (uint16_t[num_tex]),
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 					   | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 					   | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -326,71 +380,23 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	}
 
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.tex");
-	size_t packet_size = sizeof (bsp_texanim_t[num_tex_anim])	// anim_main
-					   + sizeof (bsp_texanim_t[num_tex_anim])	// anim_alt
-					   + sizeof (uint16_t[num_tex_anim]);		// frame_map
-	auto anim_main = (bsp_texanim_t *) QFV_PacketExtend (packet, packet_size);
-	auto anim_alt  = &anim_main[num_tex_anim];
-	auto frame_map = (uint16_t *) &anim_alt[num_tex_anim];
-	memset (anim_main, 0, packet_size);
-
-	int16_t     map_index = 0;
-	for (uint16_t i = 0; i < num_tex_anim; i++) {
-		bsp_texanim_t *anim = anim_main + i;
-		if (anim->count) {
-			// already done as part of an animation group
-			continue;
-		}
-		*anim = (bsp_texanim_t) { .base = map_index, .offset = 0, .count = 1 };
-		frame_map[anim->base] = i;
-
-		if (textures[i]->anim_total > 1) {
-			// bsp loader multiplies anim_total by ANIM_CYCLE to slow the
-			// frame rate
-			anim->count = textures[i]->anim_total / ANIM_CYCLE;
-			texture_t  *tx = textures[i]->anim_next;
-			for (int j = 1; j < anim->count; j++) {
-				if (!tx) {
-					Sys_Error ("broken cycle");
-				}
-				vulktex_t  *vtex = tx->render;
-				bsp_texanim_t *a = anim_main + vtex->tex_id;
-				if (a->count) {
-					Sys_Error ("crossed cycle");
-				}
-				*a = *anim;
-				a->offset = j;
-				frame_map[a->base + a->offset] = vtex->tex_id;
-				tx = tx->anim_next;
-			}
-			if (tx != textures[i]) {
-				Sys_Error ("infinite cycle");
-			}
-		}
-		map_index += anim_main[i].count;
-	}
-	for (uint16_t i = 0; i < num_tex_anim; i++) {
-		bsp_texanim_t *alt = anim_alt + i;
-		if (textures[i]->alternate_anims) {
-			texture_t  *tx = textures[i]->alternate_anims;
-			vulktex_t  *vtex = tx->render;
-			*alt = anim_main[vtex->tex_id];
-		} else {
-			*alt = anim_main[i];
-		}
-	}
+	auto data = QFV_PacketExtend (packet, texdata_size);
+	memcpy (data, bctx->texdata.anim_main, texdata_size);
+	auto anim_main = (bsp_texanim_t *) data;
+	auto anim_alt  = &anim_main[num_tex];
+	auto frame_map = (uint16_t *) &anim_alt[num_tex];
 
 	qfv_scatter_t main_scatter = {
 		.srcOffset = QFV_PacketOffset (packet, anim_main),
-		.length = sizeof (bsp_texanim_t[num_tex_anim]),
+		.length = sizeof (bsp_texanim_t[num_tex]),
 	};
 	qfv_scatter_t alt_scatter = {
 		.srcOffset = QFV_PacketOffset (packet, anim_alt),
-		.length = sizeof (bsp_texanim_t[num_tex_anim]),
+		.length = sizeof (bsp_texanim_t[num_tex]),
 	};
 	qfv_scatter_t map_scatter = {
 		.srcOffset = QFV_PacketOffset (packet, frame_map),
-		.length = sizeof (uint16_t[num_tex_anim]),
+		.length = sizeof (uint16_t[num_tex]),
 	};
 	auto anim_main_buffer = bctx->tex_resource->objects[0].buffer.buffer;
 	auto anim_alt_buffer  = bctx->tex_resource->objects[1].buffer.buffer;

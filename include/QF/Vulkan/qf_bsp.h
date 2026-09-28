@@ -165,6 +165,8 @@ typedef struct bspctx_s {
 	VkImageView default_skysheet;
 	VkImageView skysheet_tex;	///< scrolling sky texture for current map
 
+	texdata_t   texdata;
+
 	VkImageView default_skybox;
 	struct qfv_tex_s *skybox_tex;		///< sky box texture for current map
 	VkDescriptorSet skybox_descriptor;
