@@ -363,6 +363,7 @@ properties = {
 						cluster_map = ptr;
 						cluster_queue = ptr;
 						texture_count = uint;
+						anim_index = uint;
 
 						models = ptr;
 						tex_ids = ptr;
@@ -404,8 +405,6 @@ properties = {
 			layout = {
 				pushConstants = {
 					compute = {
-						ent_count = uint;
-						anim_index = uint;
 						ent_ids = ptr;
 						inst_ids = ptr;
 						entities = ptr;
@@ -414,6 +413,7 @@ properties = {
 
 						mod_counts = ptr;
 						mod_offsets = ptr;
+						ent_count = uint;
 						num_models = uint;
 					};
 				};

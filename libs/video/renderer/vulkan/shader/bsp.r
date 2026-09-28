@@ -16,20 +16,21 @@ uint subgroup_max (uint x) = @intrinsic(OpGroupNonUniformUMax)
 typedef struct cluster_queue_s {
 	uint        count;
 	uint        x, y, z;
-	bsp_queue_t queue[1];//not really FIXME need to decorate with run time array
+	bsp_queue_t queue[];//not really FIXME need to decorate with run time array
 } cluster_queue_t;
 
 @namespace cluster {
 
 [push_constant] @block Params {
-	uint *command_counts;
-	uint *command_offsets;
-	command_t *commands;
+	uint       *command_counts;
+	uint       *command_offsets;
+	command_t  *commands;
 	bsp_cluster_t *subclusters;
-	cluster_t *clusters;
-	uint *cluster_map;
+	cluster_t  *clusters;
+	uint       *cluster_map;
 	cluster_queue_t *cluster_queue;
-	uint texture_count;
+	uint        texture_count;
+	uint        anim_index;
 
 	bsp_model_t *models;
 	uint       *tex_ids;
@@ -47,13 +48,25 @@ main ()
 	uint queue_index = gl_GlobalInvocationID.x;
 	bsp_queue_t *queue = nil;
 	cluster_t *cluster = nil;
+	bool debug = false;
 	if (queue_index < cluster_queue.count) {
 		queue = &cluster_queue.queue[queue_index];
 		cluster = &clusters[queue.cluster];
+		debug = queue.cluster == 1172;
 	}
 	uint count = 0;
+	uint trans = 0;
+	bsp_texanim_t *frame_anim = anim_main;
 	if (cluster) {
 		count = cluster.count;
+		//frame_anim = cluster.frame ? anim_alt : anim_main;
+		//trans = cluster.trans * texture_count;
+	}
+	if (debug) {
+		printf ("qi:%d {%d %d %d %d %d}\n", queue_index, queue.cluster,
+				queue.first_instance, queue.instance_count,
+				queue.frame, queue.trans);
+		printf ("cl {%d %d}\n", cluster.first, cluster.count);
 	}
 	uint maxCount = subgroup_max (count);
 	for (uint i = 0; i < maxCount; i++) {
@@ -61,6 +74,11 @@ main ()
 			uint subcluster_ind = cluster_map[cluster.first + i];
 			auto subcluster = subclusters[subcluster_ind];
 			uint tex_id = subcluster.tex_id;
+			auto anim = frame_anim[tex_id];
+			if (debug) printf ("tex_id: %d anim: %d %d %d\n", tex_id, anim.base, anim.offset, anim.count);
+			uint anim_ind = (anim_index + anim.offset) % anim.count;
+			tex_id = frame_map[anim.base + anim_ind] + trans;
+			if (debug) printf ("anim_ind: %d tex_id: %d\n", anim_ind, tex_id);
 			uint command_ind = atomicAdd (command_counts[tex_id], 1);
 			command_ind += command_offsets[tex_id];
 			commands[command_ind] = (command_t) {
@@ -89,8 +107,6 @@ clear ()
 @namespace ent {
 
 [push_constant] @block Params {
-	uint        ent_count;
-	uint        anim_index;
 	uint       *ent_ids;
 	uint       *inst_ids;
 	Entity     *entities;
@@ -99,6 +115,7 @@ clear ()
 
 	uint       *mod_counts;
 	uint       *mod_offsets;
+	uint        ent_count;
 	uint        num_models;
 };
 
@@ -146,8 +163,9 @@ distribute ()
 	uint ent_id = ent_ids[ent_ind];
 
 	uint mod_id = entities[ent_id].model;
-	//FIXME alpha entities
-	uint mod_base = 0;//entities[ent_id].color[3] < 1 ? num_models : 0;
+	uint frame = entities[ent_id].frame & 1;
+	uint trans = entities[ent_id].color[3] < 1 ? 2 : 0;
+	uint mod_base = (frame + trans) * num_models;
 
 	uint inst_ind = atomicAdd (mod_offsets[mod_base + mod_id], 1);
 	inst_ids[inst_ind] = ent_id;
@@ -178,6 +196,10 @@ enqueue ()
 						.cluster = mod.first_cluster + i,
 						.first_instance = first_instance,
 						.instance_count = instance_count,
+						//FIXME qfcc doesn't warn (produces bad spir-v
+						//without cast)
+						.frame = (ushort) (j & 1),
+						.trans = (ushort) ((j >> 1) & 1),
 					};
 					cluster_queue.queue[index] = q;
 				}
@@ -198,9 +220,9 @@ count ()
 	uint ent_id = ent_ids[ent_ind];
 
 	uint mod_id = entities[ent_id].model;
-	uint frame = entities[ent_id].frame;
-	//FIXME alpha entities
-	uint mod_base = 0;//entities[ent_id].color[3] < 1 ? num_models : 0;
+	uint frame = entities[ent_id].frame & 1;
+	uint trans = entities[ent_id].color[3] < 1 ? 2 : 0;
+	uint mod_base = (frame + trans) * num_models;
 
 	atomicAdd (mod_counts[mod_base + mod_id], 1);
 }

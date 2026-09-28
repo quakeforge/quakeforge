@@ -2,7 +2,9 @@
 #define __shader_bsp_h
 
 #define workgroup_size 512
-#define mod_queues 2
+// frame 0, frame 1 solid
+// frame 0, fraem 1 trans
+#define mod_queues 4
 
 typedef struct command_s {//FIXME use VkDrawIndexedIndirectCommand
 	uint        indexCount;
@@ -38,6 +40,8 @@ typedef struct bsp_queue_s {
 	uint        cluster;
 	uint        first_instance;
 	uint        instance_count;
+	ushort      frame;
+	ushort      trans;
 } bsp_queue_t;
 
 /** \defgroup vulkan_bsp_texanim Animated Textures

@@ -1975,6 +1975,8 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	*bctx->ent_count = ent_count + 1;
 	*bctx->entities = Vulkan_Scene_EntBufferAddr (ctx);
 
+	*bctx->anim_index = vr_data.realtime * 5;
+
 	//printf ("ent_count: %d\n", *bctx->ent_count);
 	//printf ("anim_index: %d\n", *bctx->anim_index);
 	//printf ("ent_ids: %zx\n", *bctx->ent_ids);
