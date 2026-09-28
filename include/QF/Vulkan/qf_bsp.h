@@ -75,6 +75,7 @@ typedef struct vulktex_s {
 	VkImageView view;
 	VkDescriptorSet descriptor;
 	int         tex_id;
+	const char *name;
 } vulktex_t;
 
 typedef struct regtexset_s

@@ -91,6 +91,7 @@ add_texture (texture_t *tx, vulkan_ctx_t *ctx)
 	vulktex_t  *tex = tx->render;
 	if (tex->view) {
 		tex->tex_id = bctx->registered_textures.size;
+		tex->name = tx->name;
 		DARRAY_APPEND (&bctx->registered_textures, tex);
 		tex->descriptor = Vulkan_CreateCombinedImageSampler (ctx, tex->view,
 															 bctx->sampler);
@@ -1220,8 +1221,10 @@ draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 
 	for (auto t = set_first (&pass->tex_set[queue]); t; t = set_next (t)) {
 		uint32_t tex_id = t->element;
+		vulktex_t *tex = bctx->registered_textures.a[tex_id];
 		QFV_duCmdBeginLabel (device, cmd,
-							 vac (ctx->va_ctx, "tex_id:%d", tex_id),
+							 vac (ctx->va_ctx, "tex_id:%d %s",
+								  tex_id, tex->name),
 							 { 0.6, 0.6, 0.5, 1 });
 		if (pass->textures) {
 			vulktex_t  *tex = pass->textures->a[tex_id];
