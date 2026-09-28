@@ -450,7 +450,6 @@ typedef struct {
 	uint32_t   *tex_clusters;
 	uint32_t   *tex_commands;
 	uint32_t    mod_cluster_count;
-	uint32_t    sub_cluster_count;
 	uint32_t    vert_count;
 	uint32_t    ind_count;
 	bspvert_t  *vertices;
@@ -601,7 +600,6 @@ scan_surfaces (mod_brush_t *brush, cluster_t *cluster, buildctx_t *build)
 				build->tex_commands[t->element]++;
 			}
 			build->tex_clusters[tex_id]++;
-			build->sub_cluster_count++;
 			set_add (build->seen_tex_ids, tex_id);
 		}
 		if (surf->flags & SURF_DRAWBACKGROUND) {
@@ -781,8 +779,14 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	free (bctx->command_offsets);
 	free (bctx->command_counts);
+	bctx->command_offsets = malloc (sizeof (tex_commands));
+	bctx->command_counts = malloc (sizeof (tex_commands));
+	memcpy (bctx->command_counts, tex_commands, sizeof (tex_commands));
+	uint32_t num_commands = bsp_prefixsum (tex_commands, num_tex);
+	memcpy (bctx->command_offsets, tex_commands, sizeof (tex_commands));
+
+	uint32_t num_clusters = bsp_prefixsum (tex_clusters, num_tex);
 	uint32_t mod_clusters = build.mod_cluster_count;
-	uint32_t num_clusters = build.sub_cluster_count;
 
 	// All vertices from all brush models go into one giant vbo.
 	uint32_t    vertex_count = build.vert_count;
@@ -808,20 +812,12 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t command_counts_buffer_size = sizeof (uint32_t[num_tex]);
 	size_t command_offsets_buffer_size = sizeof (tex_commands);
 	size_t command_buffer_size
-		= sizeof (VkDrawIndexedIndirectCommand[num_clusters]);
+		= sizeof (VkDrawIndexedIndirectCommand[num_commands]);
 	size_t subcluster_buffer_size = sizeof (bsp_cluster_t[num_clusters]);
 	size_t cluster_buffer_size = sizeof (cluster_t[mod_clusters]);
 	size_t clustermap_buffer_size = sizeof (uint32_t[num_clusters]);
 	size_t queue_buffer_size = sizeof (bsp_queue_t[num_clusters])
 							 + sizeof (uint32_t[4]);
-
-	bctx->command_offsets = malloc (command_offsets_buffer_size);
-	bctx->command_counts = malloc (command_offsets_buffer_size);
-
-	memcpy (bctx->command_counts, tex_commands, sizeof (tex_commands));
-	bsp_prefixsum (tex_commands, num_tex);
-	bsp_prefixsum (tex_clusters, num_tex);
-	memcpy (bctx->command_offsets, tex_commands, sizeof (tex_commands));
 
 #define CHECK_SIZE(b) (b##_buffer_size > bctx->b##_buffer.size)
 	if (CHECK_SIZE (index)
