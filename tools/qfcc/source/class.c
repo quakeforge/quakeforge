@@ -1388,7 +1388,7 @@ build_ivars (class_t *class, symtab_t *ivars, expr_t *ivar_decls,
 
 	int base = 0;
 	if (class->super_class) {
-		base = type_size (class->super_class->type);
+		base = type_byte_size (class->super_class->type);
 	}
 	auto parent = ivars->parent;	// preserve the ivars inheritance chain
 	build_struct ('s', 0, ivars, 0, base);
