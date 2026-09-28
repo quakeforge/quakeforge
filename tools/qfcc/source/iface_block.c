@@ -128,6 +128,11 @@ create_block (symbol_t *block_sym)
 static void
 add_attribute (attribute_t **attributes, attribute_t *attr)
 {
+	for (auto a = *attributes; a; a = a->next) {
+		if (strcmp (a->name, attr->name) == 0) {
+			return;
+		}
+	}
 	attr->next = *attributes;
 	*attributes = attr;
 }
@@ -261,6 +266,14 @@ iface_block_type (const type_t *type, const char *pre_tag)
 				ftype = iface_block_type (s->type, pre_tag);
 			} else {
 				ftype = iface_block_type (s->type, tag);
+			}
+			if (is_array (ftype) && !type_byte_size (ftype)) {
+				// runtime array
+				if (s->next) {
+					error (0, "runtime array must be at end of struct");
+				}
+				add_attribute (&((type_t *) nt)->attributes,
+							   new_attrfunc ("Block", nullptr));
 			}
 			auto sym = new_symbol_type (s->name, ftype);
 			sym->sy_type = s->sy_type;
