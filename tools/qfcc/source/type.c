@@ -1113,9 +1113,9 @@ bool_type (const type_t *base)
 	if (!base) {
 		return nullptr;
 	}
-	if (type_size (base) == type_size (&type_bool)) {
+	if (type_byte_size (base) <= type_byte_size (&type_bool)) {
 		base = &type_bool;
-	} else if (type_size (base) == type_size (&type_lbool)) {
+	} else if (type_byte_size (base) == type_byte_size (&type_lbool)) {
 		base = &type_lbool;
 	}
 	return vector_type (base, width);

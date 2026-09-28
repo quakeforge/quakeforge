@@ -1507,10 +1507,12 @@ spirv_generate_ptrcmp (const expr_t *e, spirvctx_t *ctx)
 #define SPV_type(m,t) ((unsigned)((1<<((m)+16))|(1<<(t))))
 #define SPV_type_cmp(a,b) (((a) & (b)) == (b))
 #define SPV_BOOL  (SPV_type(ty_bool, ev_int)   |SPV_type(ty_bool, ev_long))
+#define SPV_SSHORT (SPV_type(ty_basic, ev_sbyte)  |SPV_type(ty_basic, ev_short))
+#define SPV_USHORT (SPV_type(ty_basic, ev_ubyte) |SPV_type(ty_basic, ev_ushort))
 #define SPV_SINT  (SPV_type(ty_basic, ev_int)  |SPV_type(ty_basic, ev_long))
 #define SPV_UINT  (SPV_type(ty_basic, ev_uint) |SPV_type(ty_basic, ev_ulong))
 #define SPV_FLOAT (SPV_type(ty_basic, ev_float)|SPV_type(ty_basic, ev_double))
-#define SPV_INT   (SPV_SINT|SPV_UINT)
+#define SPV_INT   (SPV_SINT|SPV_UINT|SPV_SSHORT|SPV_USHORT)
 #define SPV_PTR   (SPV_type(ty_basic, ev_ptr))
 #define SPV_QUAT  (SPV_type(ty_basic, ev_quaternion))
 #define SPV_VEC   (SPV_type(ty_basic, ev_vector))
@@ -2052,12 +2054,19 @@ spirv_value (const expr_t *e, spirvctx_t *ctx)
 			op = value->int_val ? SpvOpConstantTrue : SpvOpConstantFalse;
 			val_size = 0;
 		} else {
-			if (type_size (value->type) == type_size (&type_uint)) {
+#define CHECK_SIZE(vt, tt) type_byte_size (vt) == type_byte_size (tt)
+			if (CHECK_SIZE (value->type, &type_uint)) {
 				val = value->uint_val;
 				val_size = 1;
-			} else if (type_size (value->type) == type_size (&type_ulong)) {
+			} else if (CHECK_SIZE (value->type, &type_ulong)) {
 				val = value->ulong_val;
 				val_size = 2;
+			} else if (CHECK_SIZE (value->type, &type_ushort)) {
+				val = value->ushort_val;
+				val_size = 1;
+			} else if (CHECK_SIZE (value->type, &type_ubyte)) {
+				val = value->ubyte_val;
+				val_size = 1;
 			} else {
 				internal_error (e, "not implemented");
 			}

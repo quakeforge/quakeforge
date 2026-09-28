@@ -794,7 +794,9 @@ new_value_expr (ex_value_t *value, bool implicit)
 const expr_t *
 new_zero_expr (const type_t *type)
 {
-	pr_type_t zero[type_size (type)] = {};
+	//FIXME size
+	unsigned size = type_byte_size (type);
+	pr_type_t zero[RUP (size, sizeof (pr_type_t)) / sizeof (pr_type_t)] = {};
 	return new_value_expr (new_type_value (type, zero), false);
 }
 
