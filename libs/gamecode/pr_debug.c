@@ -1637,12 +1637,16 @@ pr_debug_uint_view (qfot_type_t *type, pr_type_t *value, void *_data)
 }
 
 static void
+pr_debug_print_short (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	dasprintf (dstr, "%" PRIi16, *(int16_t *)value);
+}
+
+static void
 pr_debug_short_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
-	__auto_type data = (pr_debug_data_t *) _data;
-	dstring_t  *dstr = data->dstr;
-
-	dasprintf (dstr, "%04x", PR_PTR (short, value));
+	pr_debug_print_matrix (type, value, _data, 1, pr_debug_print_short);
 }
 
 static void
@@ -1730,12 +1734,16 @@ pr_debug_ulong_view (qfot_type_t *type, pr_type_t *value, void *_data)
 }
 
 static void
+pr_debug_print_ushort (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	dasprintf (dstr, "%04" PRIx16, *(uint16_t *)value);
+}
+
+static void
 pr_debug_ushort_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
-	__auto_type data = (pr_debug_data_t *) _data;
-	dstring_t  *dstr = data->dstr;
-
-	dasprintf (dstr, "%04x", PR_PTR (ushort, value));
+	pr_debug_print_matrix (type, value, _data, 1, pr_debug_print_ushort);
 }
 
 static void

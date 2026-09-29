@@ -79,6 +79,14 @@ PR_VEC_TYPE (pr_ubyte_t, pr_ubvec2_t, 2);
 typedef pr_ubyte_t pr_ubvec3_t[3];
 PR_VEC_TYPE (pr_ubyte_t, pr_ubvec4_t, 4);
 
+PR_VEC_TYPE (pr_short_t, pr_svec2_t, 2);
+typedef pr_short_t pr_svec3_t[3];
+PR_VEC_TYPE (pr_short_t, pr_svec4_t, 4);
+
+PR_VEC_TYPE (pr_ushort_t, pr_usvec2_t, 2);
+typedef pr_ushort_t pr_usvec3_t[3];
+PR_VEC_TYPE (pr_ushort_t, pr_usvec4_t, 4);
+
 PR_VEC_TYPE (pr_half_t, pr_hvec2_t, 2);
 typedef pr_half_t pr_hvec3_t[3];
 PR_VEC_TYPE (pr_half_t, pr_hvec4_t, 4);
