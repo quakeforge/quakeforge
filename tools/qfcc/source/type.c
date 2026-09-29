@@ -2132,10 +2132,11 @@ type_assignable (const type_t *dst, const type_t *src)
 
 #define P(type) (1 << ev_##type)
 static unsigned promote_masks[ev_type_count] = {
-	[ev_float] = P(int) | P(uint) | P(half),
+	[ev_float] = P(sbyte) | P(ubyte) | P(short) | P(ushort)
+				| P(int) | P(uint) | P(half),
 	[ev_int] = P(short) | P(ushort) | P(sbyte) | P(ubyte),
 	[ev_uint] = P(int) | P(short) | P(ushort) | P(sbyte) | P(ubyte),
-	[ev_double] = P(float) | P(half) | P(ulong) | P(long)
+	[ev_double] = P(float) | P(half) | P(ulong) | P(long) | P(sbyte) | P(ubyte)
 				| P(int) | P(uint) | P(short) | P(ushort),
 	[ev_long] = P(int) | P(uint) | P(short) | P(ushort) | P(sbyte) | P(ubyte),
 	[ev_ulong] = P(long) | P(int) | P(uint) | P(short) | P(ushort)
