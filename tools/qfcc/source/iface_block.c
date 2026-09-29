@@ -233,6 +233,10 @@ iface_block_type (const type_t *type, const char *pre_tag)
 	// union not supported
 	if (is_struct (type)) {
 		type = unalias_type (type);
+		bool no_offset = false;
+		if (strncmp (type->name, "obk ", 4) == 0) {
+			no_offset = true;
+		}
 		auto name = type->name + 4;	// skip over "tag "
 		auto tag = name;
 		if (pre_tag) {
@@ -300,8 +304,10 @@ iface_block_type (const type_t *type, const char *pre_tag)
 			} else {
 				sym->offset = offset;
 			}
-			add_attribute (&sym->attributes,
-						   new_attrfunc ("Offset", new_uint_expr (offset)));
+			if (!no_offset) {
+				auto offs = new_attrfunc ("Offset", new_uint_expr (offset));
+				add_attribute (&sym->attributes, offs);
+			}
 			offset += type_byte_size (ftype);
 
 			auto mt = block_matrix_type (ftype);
