@@ -118,6 +118,7 @@ typedef enum {
 	QFV_bspSky,
 	QFV_bspTrans,	// texture translucency
 	QFV_bspTurb,	// also translucent via r_wateralpha
+	QFV_bspTransEnt,// translucent entities
 
 	QFV_bspNumPasses
 } QFV_BspQueue;

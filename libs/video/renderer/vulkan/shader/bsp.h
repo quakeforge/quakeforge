@@ -6,13 +6,13 @@
 // frame 0, fraem 1 trans
 #define mod_queues 4
 
-typedef struct command_s {//FIXME use VkDrawIndexedIndirectCommand
+typedef struct bsp_command_s {// matches VkDrawIndexedIndirectCommand
 	uint        indexCount;
 	uint        instanceCount;
 	uint        firstIndex;
 	uint        vertexOffset;
 	uint        firstInstace;
-} command_t;
+} bsp_command_t;
 
 typedef struct cluster_s {//FIXME dup in model.h
 	uint        first;

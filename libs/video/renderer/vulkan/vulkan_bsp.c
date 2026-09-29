@@ -75,6 +75,7 @@
 #include "vid_vulkan.h"
 
 #include "shader/bsp.h"
+static_assert (sizeof (bsp_command_t) == sizeof (VkDrawIndexedIndirectCommand));
 #define block_size (workgroup_size * 2)
 
 #define TEX_SET 3
@@ -246,6 +247,9 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		brush->numsubmodels = 1; // no support for submodels in non-world model
 		register_textures (brush, ctx);
 	}
+
+	set_assign (&bctx->main_pass.tex_set[QFV_bspTransEnt],
+				&bctx->main_pass.tex_set[QFV_bspSolid]);
 
 	uint32_t    num_tex = bctx->registered_textures.size;
 
@@ -779,11 +783,17 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	free (bctx->command_offsets);
 	free (bctx->command_counts);
-	bctx->command_offsets = malloc (sizeof (tex_commands));
+	bctx->command_offsets = malloc (2 * sizeof (tex_commands));
 	bctx->command_counts = malloc (sizeof (tex_commands));
 	memcpy (bctx->command_counts, tex_commands, sizeof (tex_commands));
+
 	uint32_t num_commands = bsp_prefixsum (tex_commands, num_tex);
 	memcpy (bctx->command_offsets, tex_commands, sizeof (tex_commands));
+	for (uint32_t i = 0; i < num_tex; i++) {
+		auto dst = &bctx->command_offsets[i + num_tex];
+		auto src = &bctx->command_offsets[i];
+		*dst = *src + num_commands;
+	}
 
 	uint32_t num_clusters = bsp_prefixsum (tex_clusters, num_tex);
 	uint32_t mod_clusters = build.mod_cluster_count;
@@ -809,15 +819,15 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t mod_offsets_buffer_size = sizeof (uint32_t[mod_queues * mod_count]);
 	size_t tex_id_buffer_size = sizeof (uint32_t[build.num_tex_ids]);
 	size_t vertex_buffer_size = sizeof (bspvert_t[vertex_count]);
-	size_t command_counts_buffer_size = sizeof (uint32_t[num_tex]);
-	size_t command_offsets_buffer_size = sizeof (tex_commands);
-	size_t command_buffer_size
-		= sizeof (VkDrawIndexedIndirectCommand[num_commands]);
 	size_t subcluster_buffer_size = sizeof (bsp_cluster_t[num_clusters]);
 	size_t cluster_buffer_size = sizeof (cluster_t[mod_clusters]);
 	size_t clustermap_buffer_size = sizeof (uint32_t[num_clusters]);
 	size_t queue_buffer_size = sizeof (bsp_queue_t[num_clusters])
 							 + sizeof (uint32_t[4]);
+	// two sets of commands: first for solid entities, second for transparent
+	size_t command_buffer_size = 2 * sizeof (bsp_command_t[num_commands]);
+	size_t command_counts_buffer_size = 2 * sizeof (tex_commands);
+	size_t command_offsets_buffer_size = 2 * sizeof (tex_commands);
 
 #define CHECK_SIZE(b) (b##_buffer_size > bctx->b##_buffer.size)
 	if (CHECK_SIZE (index)
@@ -1083,11 +1093,12 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	build.vertices = (bspvert_t *) &build.models[build.num_tex_ids];
 	build.indices = (uint32_t *) &build.vertices[vertex_count];
 	uint32_t *command_offsets = (uint32_t *) &build.indices[index_count];
-	build.subclusters = (bsp_cluster_t *) &command_offsets[num_tex];
+	build.subclusters = (bsp_cluster_t *) &command_offsets[2 * num_tex];
 	build.clusters = (cluster_t *) &build.subclusters[num_clusters];
 	build.clustermap = (uint32_t *) &build.clusters[mod_clusters];
 
-	memcpy (command_offsets, tex_commands, sizeof (tex_commands));
+	memcpy (command_offsets, bctx->command_offsets,
+			command_offsets_buffer_size);
 	build.num_tex_ids = 0;
 	model_loop (models, num_models, ctx, model_build_surfaces, &build);
 
@@ -1268,8 +1279,13 @@ draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 			vulktex_t  *tex = pass->textures->a[tex_id];
 			bind_texture (tex, TEX_SET, layout, dfunc, cmd);
 		}
-		if (queue == QFV_bspTrans || queue == QFV_bspTurb) {
+		if (queue == QFV_bspTrans || queue == QFV_bspTurb
+			|| queue == QFV_bspTransEnt) {
 			trans_mem_barrier (dfunc, cmd);
+		}
+		uint32_t trans = 0;
+		if (queue == QFV_bspTransEnt) {
+			trans = *bctx->texture_count;
 		}
 		if (queue == QFV_bspBackground) {
 			dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
@@ -1277,9 +1293,9 @@ draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 			size_t cmd_size = sizeof (VkDrawIndexedIndirectCommand);
 			dfunc->vkCmdDrawIndexedIndirectCount (cmd,
 					bctx->command_buffer.buffer,
-					bctx->command_offsets[tex_id] * cmd_size,
+					bctx->command_offsets[tex_id + trans] * cmd_size,
 					bctx->command_counts_buffer.buffer,
-					tex_id * sizeof (uint32_t),
+					(tex_id + trans) * sizeof (uint32_t),
 					bctx->command_counts[tex_id],
 					cmd_size);
 		}
@@ -1674,9 +1690,9 @@ bsp_clear_commands (const exprval_t **params, exprval_t *result,
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto bctx = ctx->bsp_context;
-	int  num_tex = bctx->registered_textures.size;
+	int  count = 2 * bctx->registered_textures.size;
 	auto pipeline = taskctx->pipeline;
-	pipeline->dispatch[0] = RUP (num_tex, workgroup_size) / workgroup_size;
+	pipeline->dispatch[0] = RUP (count, workgroup_size) / workgroup_size;
 	pipeline->dispatch[1] = 1;
 	pipeline->dispatch[2] = 1;
 	pipeline->pre_memory_barrier = true;
@@ -2317,6 +2333,7 @@ static int bsp_queue_values[] = {
 	QFV_bspSky,
 	QFV_bspTrans,
 	QFV_bspTurb,
+	QFV_bspTransEnt,
 };
 static exprsym_t bsp_queue_symbols[] = {
 	{"solid",       &bsp_queue_type, bsp_queue_values + 0},
@@ -2324,6 +2341,7 @@ static exprsym_t bsp_queue_symbols[] = {
 	{"sky",         &bsp_queue_type, bsp_queue_values + 2},
 	{"translucent", &bsp_queue_type, bsp_queue_values + 3},
 	{"turbulent",   &bsp_queue_type, bsp_queue_values + 4},
+	{"trans_ent",   &bsp_queue_type, bsp_queue_values + 5},
 	{}
 };
 static exprtab_t bsp_queue_symtab = { .symbols = bsp_queue_symbols };

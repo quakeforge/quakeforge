@@ -24,7 +24,7 @@ typedef struct cluster_queue_s {
 [push_constant] @block Params {
 	uint       *command_counts;
 	uint       *command_offsets;
-	command_t  *commands;
+	bsp_command_t *commands;
 	bsp_cluster_t *subclusters;
 	cluster_t  *clusters;
 	uint       *cluster_map;
@@ -58,7 +58,7 @@ main ()
 	if (cluster) {
 		count = cluster.count;
 		frame_anim = queue.frame ? anim_alt : anim_main;
-		//trans = queue.trans * texture_count;
+		trans = queue.trans * texture_count;
 	}
 	uint maxCount = subgroup_max (count);
 	for (uint i = 0; i < maxCount; i++) {
@@ -71,7 +71,7 @@ main ()
 			tex_id = frame_map[anim.base + anim_ind] + trans;
 			uint command_ind = atomicAdd (command_counts[tex_id], 1);
 			command_ind += command_offsets[tex_id];
-			commands[command_ind] = (command_t) {
+			commands[command_ind] = (bsp_command_t) {
 				.indexCount = subcluster.index_count,
 				.instanceCount = queue.instance_count,
 				.firstIndex = subcluster.first_index,
@@ -87,7 +87,7 @@ void
 clear ()
 {
 	uint tex_id = gl_GlobalInvocationID.x;
-	if (tex_id < texture_count) {
+	if (tex_id < 2 * texture_count) {
 		command_counts[tex_id] = 0;
 	}
 }
