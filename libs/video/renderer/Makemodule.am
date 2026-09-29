@@ -585,7 +585,7 @@ vkshader_c = $(vkshader_c_vert) $(vkshader_c_geom) $(vkshader_c_frag) \
 spirv_test_run_deps = libs/video/renderer/vulkan/shader/build-run
 
 %.spv.run: $(spirv_test_run_deps)
-	$(top_srcdir)/libs/video/renderer/vulkan/shader/build-run $@
+	@$(top_srcdir)/libs/video/renderer/vulkan/shader/build-run $@
 
 if run_tools_qfcc_tests
 TESTS += $(vkshader_src_vert:.vert=.vert.spv.run)
