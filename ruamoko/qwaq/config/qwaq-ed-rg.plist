@@ -192,8 +192,8 @@ render_graph = {
 				access = color_attachment_write;
 			};
 			dst = {
-				stage = fragment_shader;
-				access = input_attachment_read;
+				stage = fragment_shader|color_attachment_output;
+				access = input_attachment_read|color_attachment_write;
 			};
 			flags = by_region|view_local;
 		};
@@ -220,11 +220,11 @@ render_graph = {
 		depthtest_dependency = {
 			src = {
 				stage = early_fragment_tests|late_fragment_tests;
-				access = depth_stencil_attachment_write|depth_stencil_attachment_read;
+				access = depth_stencil_attachment_write;
 			};
 			dst = {
 				stage = fragment_shader|early_fragment_tests|late_fragment_tests;
-				access = depth_stencil_attachment_read|depth_stencil_attachment_write;
+				access = depth_stencil_attachment_write;
 			};
 			flags = by_region|view_local;
 		};

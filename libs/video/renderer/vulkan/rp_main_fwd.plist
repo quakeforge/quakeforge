@@ -61,7 +61,7 @@ properties = {
 		};
 		dst = {
 			stage = early_fragment_tests|late_fragment_tests;
-			access = depth_stencil_attachment_read;
+			access = depth_stencil_attachment_write;
 		};
 		flags = by_region|view_local;
 	};
