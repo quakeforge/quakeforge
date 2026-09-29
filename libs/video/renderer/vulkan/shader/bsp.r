@@ -16,7 +16,7 @@ uint subgroup_max (uint x) = @intrinsic(OpGroupNonUniformUMax)
 typedef struct cluster_queue_s {
 	uint        count;
 	uint        x, y, z;
-	bsp_queue_t queue[];//not really FIXME need to decorate with run time array
+	bsp_queue_t queue[];
 } cluster_queue_t;
 
 @namespace cluster {
