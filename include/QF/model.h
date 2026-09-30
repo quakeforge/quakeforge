@@ -301,7 +301,8 @@ typedef struct mod_brush_s {
 	int32_t    *cluster_heads;	///< [model] first node of submodel or
 								///< cluster if negative
 
-	int         lightmap_bytes;
+	uint32_t    lightmap_size;	///< luxels in lightmap data
+	uint32_t    luxel_bytes;	///< bytes per luxel (1 or 3)
 	visdata_t   leaf_vis;
 	visdata_t   cluster_vis;
 	byte       *lightdata;

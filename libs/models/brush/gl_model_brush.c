@@ -166,11 +166,11 @@ gl_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 	size_t      i;
 	int         ver;
 	QFile      *lit_file;
-	int lightmap_bytes = brush->lightmap_bytes;
+	int luxel_bytes = brush->luxel_bytes;
 
 	dstring_copystr (litfilename, mod->path);
 	brush->lightdata = NULL;
-	if (lightmap_bytes > 1) {
+	if (luxel_bytes > 1) {
 		// LordHavoc: check for a .lit file to load
 		QFS_StripExtension (litfilename->str, litfilename->str);
 		dstring_appendstr (litfilename, ".lit");
@@ -205,13 +205,12 @@ gl_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 		dstring_delete (litfilename);
 		return;
 	}
-	brush->lightdata = Hunk_AllocName (hunk,
-									   bsp->lightdatasize * lightmap_bytes,
+	brush->lightdata = Hunk_AllocName (hunk, bsp->lightdatasize * luxel_bytes,
 									   litfilename->str);
 	in = bsp->lightdata;
 	out = brush->lightdata;
 
-	if (lightmap_bytes > 1)
+	if (luxel_bytes > 1)
 		for (i = 0; i < bsp->lightdatasize ; i++) {
 			d = vid.gammatable[*in++];
 			*out++ = d;
@@ -359,5 +358,5 @@ void
 gl_Mod_BrushContext (mod_brush_ctx_t *brush_ctx)
 {
 	brush_ctx->sky_divide = gl_sky_divide;
-	brush_ctx->brush->lightmap_bytes = r_lightmap_components == 1 ? 1 : 3;
+	brush_ctx->brush->luxel_bytes = r_lightmap_components == 1 ? 1 : 3;
 }

@@ -394,7 +394,7 @@ Vulkan_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx, vulkan_ctx_t *ctx)
 	auto bsp = brush_ctx->bsp;
 	auto hunk = brush_ctx->hunk;
 
-	brush->lightmap_bytes = 3;
+	brush->luxel_bytes = 3;
 	if (!bsp->lightdatasize) {
 		brush->lightdata = NULL;
 		return;
@@ -407,7 +407,7 @@ Vulkan_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx, vulkan_ctx_t *ctx)
 	QFile      *lit_file;
 
 	brush->lightdata = 0;
-	if (brush->lightmap_bytes > 1) {
+	if (brush->luxel_bytes > 1) {
 		// LordHavoc: check for a .lit file to load
 		dstring_t  *litfilename = dstring_new ();
 		dstring_copystr (litfilename, mod->name);

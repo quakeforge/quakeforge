@@ -977,7 +977,7 @@ Mod_LoadFaces (mod_brush_ctx_t *brush_ctx)
 		if (i == -1)
 			out->samples = NULL;
 		else
-			out->samples = brush->lightdata + (i * brush->lightmap_bytes);
+			out->samples = brush->lightdata + (i * brush->luxel_bytes);
 
 		// set the drawing flags flag
 		if (!out->texinfo->texture) {
@@ -1780,6 +1780,7 @@ Mod_LoadBrushModel (model_t *mod, void *buffer, wssched_t *sched,
 	Mod_LoadEdges (&brush_ctx);
 	Mod_LoadSurfedges (&brush_ctx);
 	Mod_LoadTextures (&brush_ctx);
+	brush_ctx.brush->lightmap_size = brush_ctx.bsp->lightdatasize;
 	if (mod_funcs && mod_funcs->Mod_LoadLighting) {
 		mod_funcs->Mod_LoadLighting (&brush_ctx);
 	}

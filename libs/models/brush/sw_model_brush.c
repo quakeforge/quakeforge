@@ -47,7 +47,7 @@ sw_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 	auto bsp = brush_ctx->bsp;
 	auto hunk = brush_ctx->hunk;
 	auto brush = mod->brush;
-	brush->lightmap_bytes = 1;
+	brush->luxel_bytes = 1;
 	if (!bsp->lightdatasize) {
 		brush->lightdata = NULL;
 		return;
