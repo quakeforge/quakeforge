@@ -2329,7 +2329,9 @@ static unsigned
 spirv_address (const expr_t *e, spirvctx_t *ctx)
 {
 	auto lvalue = e->address.lvalue;
-	if (lvalue->type != ex_field && lvalue->type != ex_array) {
+	if (is_deref (lvalue)) {
+		return spirv_emit_expr (lvalue->expr.e1, ctx);
+	} else if (lvalue->type != ex_field && lvalue->type != ex_array) {
 		internal_error (e, "not field or array");
 	}
 	if (e->address.offset) {
