@@ -1,5 +1,5 @@
 /*
-	glsl_model_alais.c
+	glsl_model_alias.c
 
 	Alias model processing for GLSL
 
