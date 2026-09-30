@@ -216,9 +216,9 @@ typedef struct bspctx_s {
 	bsp_buffer_t subcluster_buffer;
 	bsp_buffer_t cluster_buffer;
 	bsp_buffer_t clustermap_buffer;
-	bsp_buffer_t queue_buffer;
+	bsp_buffer_t instance_queue_buffer;
+	bsp_buffer_t cluster_queue_buffer;
 
-	uint32_t    *entid_data;
 	bspframeset_t frames;
 
 	VkDeviceAddress *command_counts_ptr;
@@ -227,6 +227,7 @@ typedef struct bspctx_s {
 	VkDeviceAddress *subclusters_ptr;
 	VkDeviceAddress *clusters_ptr;
 	VkDeviceAddress *cluster_map_ptr;
+	VkDeviceAddress *instance_queue_ptr;
 	VkDeviceAddress *cluster_queue_ptr;
 	uint32_t   *texture_count;
 	uint32_t   *matrix_base;

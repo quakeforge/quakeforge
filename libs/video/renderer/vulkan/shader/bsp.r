@@ -5,6 +5,8 @@
 #include "entity.h"
 typedef struct Entity Entity;//FIXME eliminate glsl uses
 
+#define DISPATCH(x) (((x) + workgroup_size - 1) / workgroup_size)
+
 void printf (string fmt, ...)
 	= @intrinsic(OpExtInst, "NonSemantic.DebugPrintf", DebugPrintf);
 
@@ -13,10 +15,16 @@ uint subgroup_max (uint x) = @intrinsic(OpGroupNonUniformUMax)
 
 [in("GlobalInvocationId")] uvec3 gl_GlobalInvocationID;
 
-typedef struct cluster_queue_s {
+typedef struct instance_queue_s {
 	uint        count;
 	uint        x, y, z;
 	bsp_queue_t queue[];
+} instance_queue_t;
+
+typedef struct cluster_queue_s {
+	uint        count;
+	uint        x, y, z;
+	uint        queue[];
 } cluster_queue_t;
 
 @namespace cluster {
@@ -28,7 +36,7 @@ typedef struct cluster_queue_s {
 	bsp_cluster_t *subclusters;
 	cluster_t  *clusters;
 	uint       *cluster_map;
-	cluster_queue_t *cluster_queue;
+	instance_queue_t *instance_queue;
 	uint        texture_count;
 	uint        anim_index;
 
@@ -48,8 +56,8 @@ main ()
 	uint queue_index = gl_GlobalInvocationID.x;
 	bsp_queue_t *queue = nil;
 	cluster_t *cluster = nil;
-	if (queue_index < cluster_queue.count) {
-		queue = &cluster_queue.queue[queue_index];
+	if (queue_index < instance_queue.count) {
+		queue = &instance_queue.queue[queue_index];
 		cluster = &clusters[queue.cluster];
 	}
 	uint count = 0;
@@ -100,6 +108,7 @@ clear ()
 	uint       *ent_ids;
 	uint       *inst_ids;
 	Entity     *entities;
+	instance_queue_t *instance_queue;
 	cluster_queue_t *cluster_queue;
 	bsp_model_t *models;
 
@@ -111,34 +120,19 @@ clear ()
 
 [shader(GLCompute, LocalSize=[1,1,1])]
 void
+inst_set_dispatch ()
+{
+	if (instance_queue) {
+		instance_queue.x = DISPATCH(instance_queue.count);
+	}
+}
+
+[shader(GLCompute, LocalSize=[1,1,1])]
+void
 set_dispatch ()
 {
 	if (cluster_queue) {
-		cluster_queue.x = (cluster_queue.count + workgroup_size - 1)
-						/ workgroup_size;
-	}
-}
-
-[shader(GLCompute, LocalSize=[1,1,1])]
-void
-copy_offset ()
-{
-	if (num_models) {
-		uint end = num_models - 1;
-		uint total = mod_offsets[end] + mod_counts[end];
-		mod_offsets[num_models] = total;
-		mod_counts[num_models] -= total;
-	}
-}
-
-[shader(GLCompute, LocalSize=[1,1,1])]
-void
-copy_total ()
-{
-	if (num_models) {
-		uint end = num_models - 1;
-		uint total = mod_offsets[end] + mod_counts[end];
-		mod_counts[num_models] += total;
+		cluster_queue.x = DISPATCH(cluster_queue.count);
 	}
 }
 
@@ -179,9 +173,10 @@ enqueue ()
 		if (instance_count) {
 			uint count = mod.cluster_count;
 			uint maxCount = subgroup_max (count);
+			uint first = atomicAdd (cluster_queue.count, count);
 			for (uint i = 0; i < maxCount; i++) {
 				if (i < count) {
-					uint index = atomicAdd (cluster_queue.count, 1);
+					uint index = atomicAdd (instance_queue.count, 1);
 					bsp_queue_t q = {
 						.cluster = mod.first_cluster + i,
 						.first_instance = first_instance,
@@ -191,7 +186,9 @@ enqueue ()
 						.frame = (ushort) (j & 1),
 						.trans = (ushort) ((j >> 1) & 1),
 					};
-					cluster_queue.queue[index] = q;
+					instance_queue.queue[index] = q;
+
+					cluster_queue.queue[first + i] = q.cluster;
 				}
 			}
 		}
@@ -215,6 +212,22 @@ count ()
 	uint mod_base = (frame + trans) * num_models;
 
 	atomicAdd (mod_counts[mod_base + mod_id], 1);
+}
+
+[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+void
+world_instance ()
+{
+	uint ind = gl_GlobalInvocationID.x;
+	if (ind < cluster_queue.count) {
+		instance_queue.queue[ind] = {
+			.cluster = cluster_queue.queue[ind],
+			.instance_count = 1,
+		};
+	}
+	if (ind == 0) {
+		instance_queue.count = cluster_queue.count;
+	}
 }
 
 [shader(GLCompute, LocalSize=[workgroup_size,1,1])]

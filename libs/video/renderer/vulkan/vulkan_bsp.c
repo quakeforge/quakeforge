@@ -822,8 +822,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t subcluster_buffer_size = sizeof (bsp_cluster_t[num_clusters]);
 	size_t cluster_buffer_size = sizeof (cluster_t[mod_clusters]);
 	size_t clustermap_buffer_size = sizeof (uint32_t[num_clusters]);
-	size_t queue_buffer_size = sizeof (bsp_queue_t[num_clusters])
-							 + sizeof (uint32_t[4]);
+	size_t instance_queue_buffer_size = sizeof (bsp_cluster_t[num_clusters])
+									  + sizeof (uint32_t[4]);//count+ind disp
+	// 4 for count + indirect dispatch
+	size_t cluster_queue_buffer_size = sizeof (uint32_t[4 + num_clusters]);
 	// two sets of commands: first for solid entities, second for transparent
 	size_t command_buffer_size = 2 * sizeof (bsp_command_t[num_commands]);
 	size_t command_counts_buffer_size = 2 * sizeof (tex_commands);
@@ -844,7 +846,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		|| CHECK_SIZE (subcluster)
 		|| CHECK_SIZE (cluster)
 		|| CHECK_SIZE (clustermap)
-		|| CHECK_SIZE (queue)) {
+		|| CHECK_SIZE (instance_queue)
+		|| CHECK_SIZE (cluster_queue)) {
 		QFV_DestroyResource (ctx->device, bctx->bsp_resource);
 		if (!bctx->bsp_resource) {
 			size_t size = sizeof (qfv_resource_t)
@@ -862,7 +865,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						+ sizeof (qfv_resobj_t[1])	// subcluster
 						+ sizeof (qfv_resobj_t[1])	// cluster
 						+ sizeof (qfv_resobj_t[1])	// clustermap
-						+ sizeof (qfv_resobj_t[1]);	// queue
+						+ sizeof (qfv_resobj_t[1])	// instance_queue
+						+ sizeof (qfv_resobj_t[1]);	// cluster_queue
 			bctx->bsp_resource = malloc (size);
 		}
 		auto model = (qfv_resobj_t *) &bctx->bsp_resource[1];
@@ -879,13 +883,14 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		auto subcluster = (qfv_resobj_t *) &command[1];
 		auto cluster = (qfv_resobj_t *) &subcluster[1];
 		auto clustermap = (qfv_resobj_t *) &cluster[1];
-		auto queue = (qfv_resobj_t *) &clustermap[1];
+		auto instance_queue = (qfv_resobj_t *) &clustermap[1];
+		auto cluster_queue = (qfv_resobj_t *) &instance_queue[1];
 
 		*bctx->bsp_resource = (qfv_resource_t) {
 			.name = "bsp:mdl",
 			.va_ctx = ctx->va_ctx,
 			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			.num_objects = 15,
+			.num_objects = 16,
 			.objects = model,
 		};
 		*model = (qfv_resobj_t) {
@@ -1026,12 +1031,23 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
-		size_t frames = bctx->frames.size;
-		*queue = (qfv_resobj_t) {
-			.name = "queue",
+		*instance_queue = (qfv_resobj_t) {
+			.name = "instance_queue",
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = queue_buffer_size * frames,
+				.size = instance_queue_buffer_size,
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
+						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+			},
+		};
+		size_t frames = bctx->frames.size;
+		*cluster_queue = (qfv_resobj_t) {
+			.name = "cluster_queue",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = cluster_queue_buffer_size * frames,
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 						| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
@@ -1060,7 +1076,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		BUFFER (subcluster);
 		BUFFER (cluster);
 		BUFFER (clustermap);
-		BUFFER (queue);
+		BUFFER (instance_queue);
+		BUFFER (cluster_queue);
 
 		*bctx->models = bctx->model_buffer.addr;
 		*bctx->mod_counts = bctx->mod_counts_buffer.addr;
@@ -1072,9 +1089,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		*bctx->subclusters_ptr = bctx->subcluster_buffer.addr;
 		*bctx->clusters_ptr = bctx->cluster_buffer.addr;
 		*bctx->cluster_map_ptr = bctx->clustermap_buffer.addr;
+		*bctx->instance_queue_ptr = bctx->instance_queue_buffer.addr;
 
 		for (size_t i = 0; i < frames; i++) {
-			bctx->frames.a[i].queue = queue_buffer_size * i;
+			bctx->frames.a[i].queue = cluster_queue_buffer_size * i;
 		}
 	}
 	*bctx->texture_count = num_tex;
@@ -1527,12 +1545,9 @@ create_base_resources (vulkan_ctx_t *ctx)
 	create_default_skys (ctx, packet, &images[1]);
 	QFV_PacketSubmit (packet);
 
-	bctx->entid_data = malloc (sizeof (uint32_t[entid_count]));
 	for (size_t i = 0; i < frames; i++) {
 		auto bframe = &bctx->frames.a[i];
-		bframe->entid_data = bctx->entid_data;
-		bframe->entid_offset = 0;
-		bframe->entid_count = 0;
+		bframe->entid_offset = i * entid_count;
 	}
 }
 
@@ -1548,6 +1563,38 @@ bsp_reset_queues (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	bframe->entid_count = 0;
 
 	Vulkan_Scene_Clear (ctx);
+}
+
+static void
+bsp_count_ent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto bctx = ctx->bsp_context;
+	auto pipeline = taskctx->pipeline;
+
+	uint32_t count = *bctx->ent_count;
+
+	pipeline->dispatch[0] = RUP (count, workgroup_size) / workgroup_size;
+	pipeline->dispatch[1] = 1;
+	pipeline->dispatch[2] = 1;
+
+	pipeline->pre_memory_barrier = true;
+	pipeline->post_memory_barrier = true;
+	pipeline->pre_mb = (VkMemoryBarrier2) {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+	};
+	pipeline->post_mb = (VkMemoryBarrier2) {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+	};
 }
 
 static void
@@ -1678,7 +1725,7 @@ bsp_queue_clusters (const exprval_t **params, exprval_t *result,
 	auto cmd = taskctx->cmd;
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 	queue_mem_barrier (dfunc, cmd, false);
-	dfunc->vkCmdDispatchIndirect (cmd, bctx->queue_buffer.buffer,
+	dfunc->vkCmdDispatchIndirect (cmd, bctx->cluster_queue_buffer.buffer,
 								  frame->queue + sizeof (uint32_t));
 	queue_mem_barrier (dfunc, cmd, true);
 }
@@ -1970,8 +2017,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	pass->entid_count = frame->entid_count;
 
 	entity_t    worldent = nullentity;
-	int         world_id = Vulkan_Scene_AddEntity (ctx, worldent);
-	pass->entid_data[pass->entid_count++] = world_id;
+	Vulkan_Scene_AddEntity (ctx, worldent);
 
 	//FIXME r_refdef ref. scene from taskctx?
 	auto scene = r_refdef.scene;
@@ -1987,18 +2033,18 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.queue");
 	size_t packet_size = sizeof (uint32_t[4]) + sizeof (bsp_queue_t[count]);
-	uint32_t *queue_c = QFV_PacketExtend (packet, packet_size);
-	*queue_c++ = count;
-	*queue_c++ = 1;
-	*queue_c++ = 1;
-	*queue_c++ = 1;
-	auto queue = (bsp_queue_t *) queue_c;
+	uint32_t *queue = QFV_PacketExtend (packet, packet_size);
+	*queue++ = count;
+	*queue++ = 1;
+	*queue++ = 1;
+	*queue++ = 1;
 	for (auto c = set_first (&pvs); c; c = set_next (c)) {
 		uint32_t cluster = c->element + 1;
 		R_StoreEfrags (scene, cluster);
-		*queue++ = (bsp_queue_t) { .cluster = cluster, .instance_count = 1 };
+		*queue++ = cluster;
 	}
-	QFV_PacketCopyBuffer (packet, bctx->queue_buffer.buffer, frame->queue,
+	QFV_PacketCopyBuffer (packet, bctx->cluster_queue_buffer.buffer,
+						  frame->queue,
 						  &bufferBarriers[qfv_BB_ShaderRW_to_TransferWrite],
 						  &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRW]);
 	QFV_PacketSubmit (packet);
@@ -2031,7 +2077,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 					&bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
 	QFV_PacketSubmit (packet);
 
-	*bctx->cluster_queue_ptr = bctx->queue_buffer.addr + frame->queue;
+	*bctx->cluster_queue_ptr = bctx->cluster_queue_buffer.addr + frame->queue;
 
 	*bctx->ent_ids = bctx->entid_buffer.addr + frame->entid_offset;
 	*bctx->inst_ids = bctx->instid_buffer.addr;
@@ -2264,6 +2310,7 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.subclusters_ptr     = QFV_GetBlackboardVar (ctx, "subclusters"),
 		.clusters_ptr        = QFV_GetBlackboardVar (ctx, "clusters"),
 		.cluster_map_ptr     = QFV_GetBlackboardVar (ctx, "cluster_map"),
+		.instance_queue_ptr  = QFV_GetBlackboardVar (ctx, "instance_queue"),
 		.cluster_queue_ptr   = QFV_GetBlackboardVar (ctx, "cluster_queue"),
 		.texture_count       = QFV_GetBlackboardVar (ctx, "texture_count"),
 		.matrix_base = QFV_GetBlackboardVar (ctx, "MatrixBase"),
@@ -2372,6 +2419,10 @@ static exprfunc_t bsp_clear_commands_func[] = {
 	{ .func = bsp_clear_commands },
 	{}
 };
+static exprfunc_t bsp_count_ent_func[] = {
+	{ .func = bsp_count_ent },
+	{}
+};
 static exprfunc_t bsp_clear_ent_func[] = {
 	{ .func = bsp_clear_ent },
 	{}
@@ -2427,6 +2478,7 @@ static exprfunc_t bsp_init_func[] = {
 static exprsym_t bsp_task_syms[] = {
 	{ "bsp_reset_queues", &cexpr_function, bsp_reset_queues_func },
 	{ "bsp_clear_commands", &cexpr_function, bsp_clear_commands_func },
+	{ "bsp_count_ent", &cexpr_function, bsp_count_ent_func },
 	{ "bsp_clear_ent", &cexpr_function, bsp_clear_ent_func },
 	{ "bsp_queue_insts", &cexpr_function, bsp_queue_insts_func },
 	{ "bsp_distribute_insts", &cexpr_function, bsp_distribute_insts_func },

@@ -361,7 +361,7 @@ properties = {
 						subclusters = ptr;
 						clusters = ptr;
 						cluster_map = ptr;
-						cluster_queue = ptr;
+						instance_queue = ptr;
 						texture_count = uint;
 						anim_index = uint;
 

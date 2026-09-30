@@ -837,6 +837,30 @@ set_dispatch (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	pipeline->dispatch[2] = *(uint32_t *) params[0]->value;
 }
 
+static void
+indirect_dispatch_barrier (const exprval_t **params, exprval_t *result,
+						   exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto cmd = taskctx->cmd;
+
+	static VkMemoryBarrier2 indirect_barrier = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
+					   | VK_ACCESS_2_SHADER_READ_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT
+					  | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT
+					   | VK_ACCESS_2_SHADER_WRITE_BIT
+					   | VK_ACCESS_2_SHADER_READ_BIT,
+	};
+
+	memory_barrier (ctx, cmd, &indirect_barrier);
+}
+
 static VkBuffer
 get_buffer_by_name (vulkan_ctx_t *ctx, const char *name)
 {
@@ -1140,6 +1164,10 @@ static exprfunc_t set_dispatch_func[] = {
 	{ .func = set_dispatch, .num_params = 3, set_dispatch_params },
 	{}
 };
+static exprfunc_t indirect_dispatch_barrier_func[] = {
+	{ .func = indirect_dispatch_barrier },
+	{}
+};
 
 static exprtype_t *buffer_barrier_params[] = {
 	&qfv_bufferbarrier_t_type,
@@ -1234,6 +1262,8 @@ static exprsym_t render_task_syms[] = {
 	{ "submit_render", &cexpr_function, submit_render_func },
 
 	{ "set_dispatch", &cexpr_function, set_dispatch_func },
+	{ "indirect_dispatch_barrier", &cexpr_function,
+		indirect_dispatch_barrier_func },
 
 	{ "buffer_barrier", &cexpr_function, buffer_barrier_func },
 	{ "image_barrier", &cexpr_function, image_barrier_func },
