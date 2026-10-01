@@ -1460,6 +1460,7 @@ exprtype_t cexpr_voidptr = {
 
 binop_t cexpr_enum_binops[] = {
 	{ '=', &cexpr_plitem, 0, cexpr_cast_plitem },
+	{}
 };
 
 VISIBLE binop_t *
