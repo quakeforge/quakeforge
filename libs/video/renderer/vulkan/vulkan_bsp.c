@@ -250,6 +250,10 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	set_assign (&bctx->main_pass.tex_set[QFV_bspTransEnt],
 				&bctx->main_pass.tex_set[QFV_bspSolid]);
+	//Textures that normally go into Trans will wind up in TransEnt if the
+	//entity's alpha is reduced
+	set_union (&bctx->main_pass.tex_set[QFV_bspTransEnt],
+			   &bctx->main_pass.tex_set[QFV_bspTrans]);
 
 	uint32_t    num_tex = bctx->registered_textures.size;
 
