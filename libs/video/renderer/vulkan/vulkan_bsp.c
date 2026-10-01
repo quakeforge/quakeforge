@@ -218,13 +218,12 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	bctx->notexture_render = (vulktex_t) { .view = bctx->notexture };
 	bctx->background_render = (vulktex_t) { .view = bctx->default_skysheet };
-	texture_t base_tx[] = {
-		{ .name = "notexture", .render = &bctx->notexture_render },
-		{ .name = "background", .render = &bctx->background_render,
-		  .flags = SURF_DRAWBACKGROUND },
+	texture_t *base_tx[] = {
+		&bctx->notexture_tex,
+		&bctx->background_tex,
 	};
 	for (size_t i = 0; i < countof (base_tx); i++) {
-		add_texture (&base_tx[i], ctx);
+		add_texture (base_tx[i], ctx);
 	}
 	{
 		// FIXME make worldmodel non-special. needs smarter handling of
@@ -259,7 +258,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	texture_t *textures[num_tex];
 	for (uint32_t i = 0; i < countof (base_tx); i++) {
-		textures[i] = &base_tx[i];
+		textures[i] = base_tx[i];
 	}
 	for (int i = 0, t = countof (base_tx); i < num_models; i++) {
 		model_t    *m = models[i];
@@ -2326,6 +2325,15 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 		.skybox_id   = nullent,
 		.skymap_id   = nullent,
+		.notexture_tex = {
+			.name = "notexture",
+			.render = &bctx->notexture_render,
+		},
+		.background_tex = {
+			.name = "background",
+			.render = &bctx->background_render,
+			.flags = SURF_DRAWBACKGROUND,
+		},
 
 		.command_counts_ptr  = QFV_GetBlackboardVar (ctx, "command_counts"),
 		.command_offsets_ptr = QFV_GetBlackboardVar (ctx, "command_offsets"),

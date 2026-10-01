@@ -176,6 +176,8 @@ typedef struct bspctx_s {
 
 	vulktex_t   notexture_render;
 	vulktex_t   background_render;
+	texture_t   notexture_tex;
+	texture_t   background_tex;
 
 	VkImageView default_skymap;
 	struct qfv_tex_s *skymap_tex;		///< sky eqrec map for current map
