@@ -57,16 +57,17 @@ main ()
 		barrier ();
 	}
 
-	if (ext_ind0 < *count) {
-		// output data converting to exclusive prefix sum
-		if (id < workgroup_size - 1) {
-			out_data[ext_ind0 + 1] = local_data[loc_ind0];
-			out_data[ext_ind1 + 1] = local_data[loc_ind1];
-		} else {
-			out_data[ext_ind0 & ~(block_size - 1)] = 0;
-			out_data[ext_ind1] = local_data[loc_ind0];
-			sum_data[ext_ind0 / block_size] = local_data[loc_ind1];
-		}
+	// output data converting to exclusive prefix sum
+	if (ext_ind0 + 1 < *count) {
+		out_data[ext_ind0 + 1] = local_data[loc_ind0];
+	}
+	if (ext_ind1 + 1 < *count && loc_ind1 + 1 < block_size) {
+		out_data[ext_ind1 + 1] = local_data[loc_ind1];
+	}
+	if (id == workgroup_size - 1) {
+		out_data[ext_ind0 & ~(block_size - 1)] = 0;
+		out_data[ext_ind1] = local_data[loc_ind0];
+		sum_data[ext_ind0 / block_size] = local_data[loc_ind1];
 	}
 }
 
