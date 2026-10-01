@@ -620,10 +620,10 @@ Mod_LoadVisibility (mod_brush_ctx_t *brush_ctx)
 	brush->cluster_vis = (visdata_t) {
 		.count = num_clusters - 1,
 	};
-	uint32_t cluster_visbytes = (brush->cluster_vis.count + 7) / 8;
-	uint32_t leaf_visbytes = (num_leafs + 7) / 8;
+	uint32_t cluster_visbytes = SET_SAFE_SIZE (brush->cluster_vis.count) / 8;
+	uint32_t leaf_visbytes = SET_SAFE_SIZE (num_leafs) / 8;
 	int num_workers = wssched_worker_count (brush_ctx->sched);
-	cluster_visbytes = (cluster_visbytes * 3) / 2 + 1;
+	cluster_visbytes = RUP ((cluster_visbytes * 3) / 2 + 1, 8);
 	size = sizeof (set_t[num_clusters])
 		 + sizeof (set_t[num_workers])
 		 + sizeof (set_pool_t[num_workers])
