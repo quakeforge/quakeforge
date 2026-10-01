@@ -333,7 +333,7 @@ properties = {
 					in_data = ptr;
 					out_data = ptr;
 					sum_data = ptr;
-					count = uint;
+					count = ptr;
 				};
 			};
 		};
@@ -391,6 +391,21 @@ properties = {
 					name = ent.set_dispatch;
 					module = $builtin/bsp.r;
 				};
+				world_instance = {
+					stage = compute;
+					name = ent.world_instance;
+					module = $builtin/bsp.r;
+				};
+				inst_set_dispatch = {
+					stage = compute;
+					name = ent.inst_set_dispatch;
+					module = $builtin/bsp.r;
+				};
+				world_instance = {
+					stage = compute;
+					name = ent.world_instance;
+					module = $builtin/bsp.r;
+				};
 				clear = {
 					stage = compute;
 					name = ent.clear;
@@ -408,6 +423,7 @@ properties = {
 						ent_ids = ptr;
 						inst_ids = ptr;
 						entities = ptr;
+						instance_queue = ptr;
 						cluster_queue = ptr;
 						models = ptr;
 
@@ -415,6 +431,8 @@ properties = {
 						mod_offsets = ptr;
 						ent_count = uint;
 						num_models = uint;
+
+						prefixsum_counts = ptr;
 					};
 				};
 			};
@@ -2465,10 +2483,33 @@ jobs = {
 							stage = $brush.ent.shader.clear;
 							layout = $brush.ent.layout;
 						};
-						ent_count = {
+						ent_world_instance = {
+							tasks = (
+								{ func = bsp_ent_world_instance; },
+							);
+							stage = $brush.ent.shader.world_instance;
+							layout = $brush.ent.layout;
+						};
+						ent_world_instance = {
 							tasks = (
 								{ func = bsp_reset_queues; },
 								{ func = bsp_visit_world; },
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_queue_clusters; },
+							);
+							stage = $brush.ent.shader.world_instance;
+							layout = $brush.ent.layout;
+						};
+						cluster_set_dispatch = {
+							tasks = (
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.ent.shader.set_dispatch;
+							layout = $brush.ent.layout;
+						};
+						ent_count = {
+							tasks = (
+								{ func = bsp_count_ent; },
 							);
 							stage = $brush.ent.shader.count;
 							layout = $brush.ent.layout;
@@ -2512,7 +2553,7 @@ jobs = {
 							tasks = (
 								{ func = set_dispatch; params = (1, 1, 1); },
 							);
-							stage = $brush.ent.shader.set_dispatch;
+							stage = $brush.ent.shader.inst_set_dispatch;
 							layout = $brush.ent.layout;
 						};
 						clear_commands = {
@@ -2524,6 +2565,7 @@ jobs = {
 						};
 						enqueue = {
 							tasks = (
+								{ func = indirect_dispatch_barrier; },
 								{ func = bsp_queue_clusters; },
 							);
 							stage = $brush.cluster.shader.main;

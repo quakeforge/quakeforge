@@ -6,7 +6,7 @@
 					in_data = ptr;
 					out_data = ptr;
 					sum_data = ptr;
-					count = uint;
+					count = ptr;
 				};
 			};
 		};
@@ -33,6 +33,10 @@
 				size = 4*1048576;// 1M uints
 				usage = transfer_dst|transfer_src|shader_device_address|storage_buffer;
 			};
+			count = {
+				size = 4*2;//uint[2]
+				usage = transfer_dst|transfer_src|shader_device_address|storage_buffer;
+			};
 		};
 	};
 	jobs = {
@@ -43,6 +47,8 @@
 						tasks = (
 							{ func = initialize_base_data;
 							  params = ("\"base_data\"", 1048576); },
+							{ func = set_counts;
+							  params = ("\"count\"", 1048576); },
 						);
 					};
 				};
@@ -61,8 +67,9 @@
 									{ func = blackboard_set_bufferptr;
 									  params = ("\"sum_data\"",
 												"\"block_sum\""); },
-									{ func = blackboard_set_uint;
-									  params = ("\"count\"", 1048576); },
+									{ func = blackboard_set_bufferptr_offset;
+									  params = ("\"count\"",
+												"\"count\"", 0); },
 									{ func = set_dispatch;
 									  params = (1024, 1, 1); },
 								);
@@ -92,9 +99,11 @@
 												"\"block_prefix_sum\""); },
 									{ func = blackboard_set_bufferptr_offset;
 									  params = ("\"sum_data\"",
-												"\"block_prefix_sum\"", 4*1024); },
-									{ func = blackboard_set_uint;
-									  params = ("\"count\"", 1024); },
+												"\"block_prefix_sum\"",
+												4*1024); },
+									{ func = blackboard_set_bufferptr_offset;
+									  params = ("\"count\"",
+												"\"count\"", 4); },
 									{ func = set_dispatch;
 									  params = (1, 1, 1); },
 								);
@@ -128,8 +137,9 @@
 									{ func = blackboard_set_bufferptr;
 									  params = ("\"sum_data\"",
 												"\"block_prefix_sum\""); },
-									{ func = blackboard_set_uint;
-									  params = ("\"count\"", 1048576); },
+									{ func = blackboard_set_bufferptr_offset;
+									  params = ("\"count\"",
+												"\"count\"", 0); },
 									{ func = set_dispatch;
 									  params = (1024, 1, 1); },
 								);

@@ -826,6 +826,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 									  + sizeof (uint32_t[4]);//count+ind disp
 	// 4 for count + indirect dispatch
 	size_t cluster_queue_buffer_size = sizeof (uint32_t[4 + num_clusters]);
+	size_t prefixsum_counts_buffer_size = sizeof (uint32_t[4]);
 	// two sets of commands: first for solid entities, second for transparent
 	size_t command_buffer_size = 2 * sizeof (bsp_command_t[num_commands]);
 	size_t command_counts_buffer_size = 2 * sizeof (tex_commands);
@@ -847,7 +848,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		|| CHECK_SIZE (cluster)
 		|| CHECK_SIZE (clustermap)
 		|| CHECK_SIZE (instance_queue)
-		|| CHECK_SIZE (cluster_queue)) {
+		|| CHECK_SIZE (cluster_queue)
+		|| CHECK_SIZE (prefixsum_counts)) {
 		QFV_DestroyResource (ctx->device, bctx->bsp_resource);
 		if (!bctx->bsp_resource) {
 			size_t size = sizeof (qfv_resource_t)
@@ -866,7 +868,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						+ sizeof (qfv_resobj_t[1])	// cluster
 						+ sizeof (qfv_resobj_t[1])	// clustermap
 						+ sizeof (qfv_resobj_t[1])	// instance_queue
-						+ sizeof (qfv_resobj_t[1]);	// cluster_queue
+						+ sizeof (qfv_resobj_t[1])	// cluster_queue
+						+ sizeof (qfv_resobj_t[1]);	// prefixsum_counts
 			bctx->bsp_resource = malloc (size);
 		}
 		auto model = (qfv_resobj_t *) &bctx->bsp_resource[1];
@@ -885,12 +888,13 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		auto clustermap = (qfv_resobj_t *) &cluster[1];
 		auto instance_queue = (qfv_resobj_t *) &clustermap[1];
 		auto cluster_queue = (qfv_resobj_t *) &instance_queue[1];
+		auto prefixsum_counts = (qfv_resobj_t *) &cluster_queue[1];
 
 		*bctx->bsp_resource = (qfv_resource_t) {
 			.name = "bsp:mdl",
 			.va_ctx = ctx->va_ctx,
 			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			.num_objects = 16,
+			.num_objects = 17,
 			.objects = model,
 		};
 		*model = (qfv_resobj_t) {
@@ -1054,6 +1058,17 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
+		*prefixsum_counts = (qfv_resobj_t) {
+			.name = "prefixsum_counts",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = prefixsum_counts_buffer_size,
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
+						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+			},
+		};
 		QFV_CreateResource (ctx->device, bctx->bsp_resource);
 
 #define BUFFER(b) \
@@ -1078,6 +1093,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		BUFFER (clustermap);
 		BUFFER (instance_queue);
 		BUFFER (cluster_queue);
+		BUFFER (prefixsum_counts);
 
 		*bctx->models = bctx->model_buffer.addr;
 		*bctx->mod_counts = bctx->mod_counts_buffer.addr;
@@ -1090,6 +1106,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		*bctx->clusters_ptr = bctx->cluster_buffer.addr;
 		*bctx->cluster_map_ptr = bctx->clustermap_buffer.addr;
 		*bctx->instance_queue_ptr = bctx->instance_queue_buffer.addr;
+		*bctx->prefixsum_counts = bctx->prefixsum_counts_buffer.addr;
 
 		for (size_t i = 0; i < frames; i++) {
 			bctx->frames.a[i].queue = cluster_queue_buffer_size * i;
@@ -1917,6 +1934,7 @@ bsp_sum_mod_insts (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	*bctx->out_data = 0;
 	*bctx->sum_data = 0;
 	uint32_t count = *bctx->num_models * mod_queues;
+	uint32_t sum_offset = 0;
 	switch (stage) {
 		case 0:
 			*bctx->in_data = *bctx->mod_counts;
@@ -1928,6 +1946,7 @@ bsp_sum_mod_insts (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			*bctx->out_data = bctx->mod_sums_buffer.addr;
 			*bctx->sum_data = *bctx->out_data + sizeof(uint32_t[1024]);
 			count = RUP (count, block_size) / block_size;
+			sum_offset = sizeof (uint32_t);
 			break;
 		case 2:
 			*bctx->in_data = bctx->mod_tmp_buffer.addr;
@@ -1937,7 +1956,7 @@ bsp_sum_mod_insts (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		default:
 			Sys_Error ("invalid bsp_sum_mod_insts stage: %d\n", stage);
 	}
-	*bctx->count = count;
+	*bctx->count = *bctx->prefixsum_counts + sum_offset;
 
 	pipeline->dispatch[0] = RUP (count, block_size) / block_size;
 	pipeline->dispatch[1] = 1;
@@ -2032,7 +2051,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		return;
 	}
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.queue");
-	size_t packet_size = sizeof (uint32_t[4]) + sizeof (bsp_queue_t[count]);
+	size_t packet_size = sizeof (uint32_t[4]) + sizeof (uint32_t[count]);
 	uint32_t *queue = QFV_PacketExtend (packet, packet_size);
 	*queue++ = count;
 	*queue++ = 1;
@@ -2338,6 +2357,7 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.out_data = QFV_GetBlackboardVar (ctx, "out_data"),
 		.sum_data = QFV_GetBlackboardVar (ctx, "sum_data"),
 		.count = QFV_GetBlackboardVar (ctx, "count"),
+		.prefixsum_counts = QFV_GetBlackboardVar (ctx, "prefixsum_counts"),
 	};
 }
 

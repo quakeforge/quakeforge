@@ -306,7 +306,7 @@ properties = {
 					in_data = ptr;
 					out_data = ptr;
 					sum_data = ptr;
-					count = uint;
+					count = ptr;
 				};
 			};
 		};
@@ -399,6 +399,8 @@ properties = {
 						mod_offsets = ptr;
 						ent_count = uint;
 						num_models = uint;
+
+						prefixsum_counts = ptr;
 					};
 				};
 			};

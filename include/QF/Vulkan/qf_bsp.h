@@ -219,6 +219,8 @@ typedef struct bspctx_s {
 	bsp_buffer_t instance_queue_buffer;
 	bsp_buffer_t cluster_queue_buffer;
 
+	bsp_buffer_t prefixsum_counts_buffer;
+
 	bspframeset_t frames;
 
 	VkDeviceAddress *command_counts_ptr;
@@ -251,10 +253,12 @@ typedef struct bspctx_s {
 	VkDeviceAddress *mod_offsets;
 	uint32_t   *num_models;
 
+	VkDeviceAddress *prefixsum_counts;
+
 	VkDeviceAddress *in_data;
 	VkDeviceAddress *out_data;
 	VkDeviceAddress *sum_data;
-	uint32_t   *count;
+	VkDeviceAddress *count;
 } bspctx_t;
 
 struct vulkan_ctx_s;

@@ -13,7 +13,7 @@ void printf (string fmt, ...)
 	uint *in_data;
 	uint *out_data;
 	uint *sum_data;
-	uint count;
+	uint *count;		// single value
 };
 
 [in("GlobalInvocationId")] uvec3 gl_GlobalInvocationID;
@@ -34,12 +34,12 @@ main ()
 	uint loc_ind0 = gl_LocalInvocationID.x * 2 + 0;
 	uint loc_ind1 = gl_LocalInvocationID.x * 2 + 1;
 
-	if (ext_ind0 < count) {
+	if (ext_ind0 < *count) {
 		local_data[loc_ind0] = in_data[ext_ind0];
 	} else {
 		local_data[loc_ind0] = 0;
 	}
-	if (ext_ind1 < count) {
+	if (ext_ind1 < *count) {
 		local_data[loc_ind1] = in_data[ext_ind1];
 	} else {
 		local_data[loc_ind1] = 0;
@@ -57,7 +57,7 @@ main ()
 		barrier ();
 	}
 
-	if (ext_ind0 < count) {
+	if (ext_ind0 < *count) {
 		// output data converting to exclusive prefix sum
 		if (id < workgroup_size - 1) {
 			out_data[ext_ind0 + 1] = local_data[loc_ind0];
@@ -77,10 +77,10 @@ offset ()
 	uint ext_ind0 = gl_GlobalInvocationID.x * 2 + 0;
 	uint ext_ind1 = gl_GlobalInvocationID.x * 2 + 1;
 	uint sum_ind = ext_ind0 / block_size;
-	if (ext_ind0 < count) {
+	if (ext_ind0 < *count) {
 		out_data[ext_ind0] = in_data[ext_ind0] + sum_data[sum_ind];
 	}
-	if (ext_ind1 < count) {
+	if (ext_ind1 < *count) {
 		out_data[ext_ind1] = in_data[ext_ind1] + sum_data[sum_ind];
 	}
 }

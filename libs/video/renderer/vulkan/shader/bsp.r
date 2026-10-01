@@ -6,6 +6,7 @@
 typedef struct Entity Entity;//FIXME eliminate glsl uses
 
 #define DISPATCH(x) (((x) + workgroup_size - 1) / workgroup_size)
+#define BLOCKDISP(x) (((x) + (2 * workgroup_size) - 1) / (2 * workgroup_size))
 
 void printf (string fmt, ...)
 	= @intrinsic(OpExtInst, "NonSemantic.DebugPrintf", DebugPrintf);
@@ -116,6 +117,8 @@ clear ()
 	uint       *mod_offsets;
 	uint        ent_count;
 	uint        num_models;
+
+	uint       *prefixsum_counts;
 };
 
 [shader(GLCompute, LocalSize=[1,1,1])]
@@ -200,6 +203,12 @@ void
 count ()
 {
 	uint ent_ind = gl_GlobalInvocationID.x;
+	if (ent_ind == 0) {
+		uint count = num_models * mod_queues;
+		uint sum_count = BLOCKDISP (count);
+		prefixsum_counts[0] = count;
+		prefixsum_counts[1] = sum_count;
+	}
 	if (ent_ind < 1 || ent_ind >= ent_count) {
 		mod_counts[0] = 1;
 		return;
