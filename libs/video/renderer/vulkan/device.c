@@ -185,6 +185,7 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 			.storageBuffer8BitAccess = 1,
 			.shaderFloat16 = 0,	//FIXME not supported on 1080
 			.shaderInt8 = 1,
+			.scalarBlockLayout = 1,
 			.hostQueryReset = 1,
 			.bufferDeviceAddress = 1,
 			.vulkanMemoryModel = 1,
