@@ -48,8 +48,9 @@ struct wssched_s {
 static void
 wssched_task_complete (worker_t *worker, task_t *task)
 {
-	task_t     *ready_tasks[task->child_count];
+	task_t     *ready_tasks[task->child_count + 1];
 	task_t    **ready = ready_tasks;
+	ready_tasks[task->child_count] = nullptr;
 	for (unsigned i = 0; i < task->child_count; i++) {
 		task_t     *t = task->children[i];
 		if (atomic_dec (&t->dependency_count) == 0) {
