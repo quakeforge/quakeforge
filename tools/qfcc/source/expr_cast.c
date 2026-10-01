@@ -75,8 +75,9 @@ static const expr_t *
 cast_math (const type_t *dstType, const type_t *srcType, const expr_t *expr)
 {
 #define ALIGN [[gnu::aligned(alignof(pr_lvec4_t))]]
-	pr_type_t   src_value[type_size (srcType)] ALIGN;
-	pr_type_t   dst_value[type_size (dstType)] ALIGN;
+	//FIXME type_size rounds down, should be up, but causes problems
+	pr_type_t   src_value[type_size (srcType) + 1] ALIGN;
+	pr_type_t   dst_value[type_size (dstType) + 1] ALIGN;
 
 	value_store (src_value, srcType, expr);
 
