@@ -615,10 +615,16 @@ default_type (specifier_t spec, const symbol_t *sym)
 			} else {
 				spec.type = type_long_int;
 			}
+		} else if (spec.is_short) {
+			if (spec.is_unsigned) {
+				spec.type = &type_ushort;
+			} else {
+				spec.type = &type_short;
+			}
 		} else {
 			if (spec.is_unsigned) {
 				spec.type = &type_uint;
-			} else if (spec.is_signed || spec.is_short) {
+			} else if (spec.is_signed) {
 				spec.type = &type_int;
 			}
 		}
