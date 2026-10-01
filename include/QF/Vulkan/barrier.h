@@ -16,6 +16,8 @@ typedef enum qfv_imagebarrier_t {
 	qfv_LT_TransferDst_to_ShaderReadOnly,
 	qfv_LT_TransferDst_to_StorageReadOnly,
 	qfv_LT_TransferSrc_to_ShaderReadOnly,
+	qfv_LT_ShaderReadOnly_to_StorageWrite,
+	qfv_LT_StorageWrite_to_ShaderReadOnly,
 	qfv_LT_ShaderReadOnly_to_TransferDst,
 	qfv_LT_StorageAtomic_to_StorageReadOnly,
 	qfv_LT_ColorAttach_to_ShaderReadOnly,
