@@ -15,6 +15,7 @@ size_t QFV_ScrapSize (scrap_t *scrap) __attribute__((pure));
 void QFV_ScrapClear (scrap_t *scrap);
 void QFV_DestroyScrap (scrap_t *scrap);
 VkImageView QFV_ScrapImageView (scrap_t *scrap) __attribute__((pure));
+VkImage QFV_ScrapImage (scrap_t *scrap) __attribute__((pure));
 struct subpic_s *QFV_ScrapSubpic (scrap_t *scrap, int width, int height);
 void QFV_SubpicDelete (struct subpic_s *subpic);
 

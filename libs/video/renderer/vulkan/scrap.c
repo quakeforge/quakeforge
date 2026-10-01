@@ -105,6 +105,7 @@ QFV_CreateScrap (qfv_device_t *device, const char *name, int size,
 	scrap->image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D, fmt,
 									extent, 1, 1, VK_SAMPLE_COUNT_1_BIT,
 									VK_IMAGE_USAGE_TRANSFER_DST_BIT
+									| VK_IMAGE_USAGE_STORAGE_BIT
 									| VK_IMAGE_USAGE_SAMPLED_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, scrap->image,
 						 dsprintf (str, "image:scrap:%s", name));
@@ -198,6 +199,12 @@ VkImageView
 QFV_ScrapImageView (scrap_t *scrap)
 {
 	return scrap->view;
+}
+
+VkImage
+QFV_ScrapImage (scrap_t *scrap)
+{
+	return scrap->image;
 }
 
 subpic_t *
