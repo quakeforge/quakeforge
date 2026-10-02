@@ -534,7 +534,7 @@ render_graph = {
 						in_data = ptr;
 						out_data = ptr;
 						sum_data = ptr;
-						count = uint;
+						count = ptr;
 					};
 				};
 			};
@@ -562,6 +562,7 @@ render_graph = {
 							subclusters = ptr;
 							clusters = ptr;
 							cluster_map = ptr;
+							instance_queue = ptr;
 							cluster_queue = ptr;
 							texture_count = uint;
 							anim_index = uint;
@@ -577,20 +578,27 @@ render_graph = {
 			};
 			ent = {
 				shader = {
-					enqueue = {
-						stage = compute;
-						name = ent.enqueue;
-						module = $builtin/bsp.r;
-					};
 					distribute = {
 						stage = compute;
 						name = ent.distribute;
 						module = $builtin/bsp.r;
 					};
-					set_dispatch = {
+					instances = {
 						stage = compute;
-						name = ent.set_dispatch;
+						name = ent.instances;
 						module = $builtin/bsp.r;
+					};
+					set_dispatch = {
+						cluster = {
+							stage = compute;
+							name = ent.set_dispatch.cluster;
+							module = $builtin/bsp.r;
+						};
+						inst = {
+							stage = compute;
+							name = ent.set_dispatch.inst;
+							module = $builtin/bsp.r;
+						};
 					};
 					clear = {
 						stage = compute;
@@ -609,6 +617,7 @@ render_graph = {
 							ent_ids = ptr;
 							inst_ids = ptr;
 							entities = ptr;
+							instance_queue = ptr;
 							cluster_queue = ptr;
 							models = ptr;
 
@@ -616,6 +625,8 @@ render_graph = {
 							mod_offsets = ptr;
 							ent_count = uint;
 							num_models = uint;
+
+							prefixsum_counts = ptr;
 						};
 					};
 				};
@@ -3182,14 +3193,14 @@ render_graph = {
 					dependencies = (start_frame);
 					compute = {
 						pipelines = {
-							clear_ent = {
+							ent:clear = {
 								tasks = (
 									{ func = bsp_clear_ent; },
 								);
 								stage = $brush.ent.shader.clear;
 								layout = $brush.ent.layout;
 							};
-							ent_count = {
+							ent:count = {
 								tasks = (
 									{ func = bsp_reset_queues; },
 									{ func = bsp_visit_world; },
@@ -3197,56 +3208,56 @@ render_graph = {
 								stage = $brush.ent.shader.count;
 								layout = $brush.ent.layout;
 							};
-							ent_block_prefix0 = {
+							ent:block_prefix = {
 								tasks = (
 									{ func = bsp_sum_mod_insts; params = (0); },
 								);
 								stage = $prefixsum.shader.main;
 								layout = $prefixsum.layout;
 							};
-							ent_offset_sum0 = {
+							ent:offset_sum = {
 								tasks = (
 									{ func = bsp_sum_mod_insts; params = (1); },
 								);
 								stage = $prefixsum.shader.main;
 								layout = $prefixsum.layout;
 							};
-							ent_sum0 = {
+							ent:sum = {
 								tasks = (
 									{ func = bsp_sum_mod_insts; params = (2); },
 								);
 								stage = $prefixsum.shader.offset;
 								layout = $prefixsum.layout;
 							};
-							ent_instances = {
+							ent:instances = {
 								tasks = (
 									{ func = bsp_queue_insts; },
 								);
-								stage = $brush.ent.shader.enqueue;
+								stage = $brush.ent.shader.instances;
 								layout = $brush.ent.layout;
 							};
-							ent_distribute = {
+							ent:distribute = {
 								tasks = (
 									{ func = bsp_distribute_insts; },
 								);
 								stage = $brush.ent.shader.distribute;
 								layout = $brush.ent.layout;
 							};
-							set_dispatch = {
+							ent:inst:set_dispatch = {
 								tasks = (
 									{ func = set_dispatch; params = (1, 1, 1); },
 								);
-								stage = $brush.ent.shader.set_dispatch;
+								stage = $brush.ent.shader.set_dispatch.inst;
 								layout = $brush.ent.layout;
 							};
-							clear_commands = {
+							cluster:clear_commands = {
 								tasks = (
 									{ func = bsp_clear_commands; },
 								);
 								stage = $brush.cluster.shader.clear;
 								layout = $brush.cluster.layout;
 							};
-							enqueue = {
+							cluster:enqueue = {
 								tasks = (
 									{ func = bsp_queue_clusters; },
 								);
