@@ -137,6 +137,7 @@ typedef struct bspframe_s {
 	uint32_t    entid_offset;
 	uint32_t    entid_count;
 	uint32_t    queue;
+	uint32_t    style_offset;
 } bspframe_t;
 
 typedef struct bspframeset_s
@@ -224,6 +225,7 @@ typedef struct bspctx_s {
 	bsp_buffer_t instance_queue_buffer;
 	bsp_buffer_t cluster_queue_buffer;
 
+	bsp_buffer_t light_style_buffer;
 	bsp_buffer_t light_queue_buffer;
 	bsp_buffer_t light_queue_tmp_buffer;
 

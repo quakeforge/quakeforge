@@ -46,6 +46,7 @@
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/barrier.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
@@ -316,6 +317,7 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	bspctx_t   *bctx = ctx->bsp_context;
+	uint32_t    frames = ctx->render_context->frames.size;
 
 	QFV_ScrapClear (bctx->light_scrap);
 
@@ -381,7 +383,7 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		.name = "style_data",
 		.type = qfv_res_buffer,
 		.buffer = {
-			.size = sizeof (d_lightstylevalue),
+			.size = sizeof (d_lightstylevalue) * frames,
 			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -461,6 +463,11 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	*bctx->light_queue_offs = queue_offs->buffer.address;
 	*bctx->light_queue_inds = queue_inds->buffer.address;
 	*bctx->light_clusters = light_clusters->buffer.address;
+	bctx->light_style_buffer = (bsp_buffer_t) {
+		.buffer = style_data->buffer.buffer,
+		.size = style_data->buffer.size,
+		.addr = style_data->buffer.address,
+	};
 	bctx->light_queue_buffer = (bsp_buffer_t) {
 		.buffer = light_queue->buffer.buffer,
 		.size = light_queue->buffer.size,
@@ -512,7 +519,12 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	*bctx->num_lightmaps = num_lightmaps;
 
-	memcpy (lmap.style_data, d_lightstylevalue, sizeof (d_lightstylevalue));
+	for (uint32_t i = 0; i < frames; i++) {
+		uint32_t offset = i * sizeof (d_lightstylevalue);
+		memcpy (lmap.style_data + offset, d_lightstylevalue,
+				sizeof (d_lightstylevalue));
+		bctx->frames.a[i].style_offset = offset;
+	}
 
 	qfv_scatter_t li_scatter = {
 		.srcOffset = QFV_PacketOffset (packet, lmap.lightinfo),

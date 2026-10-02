@@ -2150,6 +2150,17 @@ bsp_light_update (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		return;
 	}
 
+	auto frame = &bctx->frames.a[ctx->curFrame];
+	uint32_t style_offset = frame->style_offset;
+	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.light_update");
+	auto data = QFV_PacketExtend (packet, sizeof (d_lightstylevalue));
+	memcpy (data, d_lightstylevalue, sizeof (d_lightstylevalue));
+	QFV_PacketCopyBuffer (packet, bctx->light_style_buffer.buffer, style_offset,
+						  &bufferBarriers[qfv_BB_ShaderRO_to_TransferWrite],
+						  &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
+	QFV_PacketSubmit (packet);
+	*bctx->light_style_values = bctx->light_style_buffer.addr + style_offset;
+
 	auto cmd = taskctx->cmd;
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 	VkDescriptorSet sets[] = {
