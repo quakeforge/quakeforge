@@ -345,7 +345,7 @@ queue_surfs ()
 	auto cluster = light_clusters[clusterid];
 	//FIXME don't queue all visible lightmaps, only those that need to be
 	//updated (need to cache previous style values)
-	uint first = atomicAdd (light_queue.count, cluster.count);
+	uint first = atomicAdd (light_queue[0].count, cluster.count);
 	for (uint i = 0; i < cluster.count; i++) {
 		auto li = &lightinfo[cluster.first + i];
 		light_queue_offs[first + i] = (uint) li.size.x * (uint) li.size.y;
