@@ -36,374 +36,361 @@ typedef struct light_queue_s {
 } light_queue_t;;
 
 @namespace cluster {
+	[push_constant] @block Params {
+		uint       *command_counts;
+		uint       *command_offsets;
+		bsp_command_t *commands;
+		bsp_cluster_t *subclusters;
+		cluster_t  *clusters;
+		uint       *cluster_map;
+		instance_queue_t *instance_queue;
+		uint        texture_count;
+		uint        anim_index;
 
-[push_constant] @block Params {
-	uint       *command_counts;
-	uint       *command_offsets;
-	bsp_command_t *commands;
-	bsp_cluster_t *subclusters;
-	cluster_t  *clusters;
-	uint       *cluster_map;
-	instance_queue_t *instance_queue;
-	uint        texture_count;
-	uint        anim_index;
+		bsp_model_t *models;
+		uint       *tex_ids;
 
-	bsp_model_t *models;
-	uint       *tex_ids;
+		bsp_texanim_t *anim_main;	///< group 0 animations
+		bsp_texanim_t *anim_alt;	///< group 1 animations
+		ushort     *frame_map;		///< map from texture frame to texture id
+	};
 
-	bsp_texanim_t *anim_main;	///< group 0 animations
-	bsp_texanim_t *anim_alt;	///< group 1 animations
-	ushort     *frame_map;		///< map from texture frame to texture id
-};
-
-[capability(GroupNonUniformArithmetic)]
-[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
-void
-main ()
-{
-	uint queue_index = gl_GlobalInvocationID.x;
-	bsp_queue_t *queue = nil;
-	cluster_t *cluster = nil;
-	if (queue_index < instance_queue.count) {
-		queue = &instance_queue.queue[queue_index];
-		cluster = &clusters[queue.cluster];
+	[capability(GroupNonUniformArithmetic)]
+	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+	void main ()
+	{
+		uint queue_index = gl_GlobalInvocationID.x;
+		bsp_queue_t *queue = nil;
+		cluster_t *cluster = nil;
+		if (queue_index < instance_queue.count) {
+			queue = &instance_queue.queue[queue_index];
+			cluster = &clusters[queue.cluster];
+		}
+		uint count = 0;
+		uint trans = 0;
+		bsp_texanim_t *frame_anim = anim_main;
+		if (cluster) {
+			count = cluster.count;
+			frame_anim = queue.frame ? anim_alt : anim_main;
+			trans = queue.trans * texture_count;
+		}
+		uint maxCount = subgroup_max (count);
+		for (uint i = 0; i < maxCount; i++) {
+			if (i < count) {
+				uint subcluster_ind = cluster_map[cluster.first + i];
+				auto subcluster = subclusters[subcluster_ind];
+				uint tex_id = subcluster.tex_id;
+				auto anim = frame_anim[tex_id];
+				uint anim_ind = (anim_index + anim.offset) % anim.count;
+				tex_id = frame_map[anim.base + anim_ind] + trans;
+				uint command_ind = atomicAdd (command_counts[tex_id], 1);
+				command_ind += command_offsets[tex_id];
+				commands[command_ind] = (bsp_command_t) {
+					.indexCount = subcluster.index_count,
+					.instanceCount = queue.instance_count,
+					.firstIndex = subcluster.first_index,
+					.vertexOffset = 0,
+					.firstInstace = queue.first_instance,
+				};
+			}
+		}
 	}
-	uint count = 0;
-	uint trans = 0;
-	bsp_texanim_t *frame_anim = anim_main;
-	if (cluster) {
-		count = cluster.count;
-		frame_anim = queue.frame ? anim_alt : anim_main;
-		trans = queue.trans * texture_count;
-	}
-	uint maxCount = subgroup_max (count);
-	for (uint i = 0; i < maxCount; i++) {
-		if (i < count) {
-			uint subcluster_ind = cluster_map[cluster.first + i];
-			auto subcluster = subclusters[subcluster_ind];
-			uint tex_id = subcluster.tex_id;
-			auto anim = frame_anim[tex_id];
-			uint anim_ind = (anim_index + anim.offset) % anim.count;
-			tex_id = frame_map[anim.base + anim_ind] + trans;
-			uint command_ind = atomicAdd (command_counts[tex_id], 1);
-			command_ind += command_offsets[tex_id];
-			commands[command_ind] = (bsp_command_t) {
-				.indexCount = subcluster.index_count,
-				.instanceCount = queue.instance_count,
-				.firstIndex = subcluster.first_index,
-				.vertexOffset = 0,
-				.firstInstace = queue.first_instance,
-			};
+
+	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+	void clear ()
+	{
+		uint tex_id = gl_GlobalInvocationID.x;
+		if (tex_id < 2 * texture_count) {
+			command_counts[tex_id] = 0;
 		}
 	}
 }
 
-[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
-void
-clear ()
-{
-	uint tex_id = gl_GlobalInvocationID.x;
-	if (tex_id < 2 * texture_count) {
-		command_counts[tex_id] = 0;
-	}
-}
-
-}
-
 @namespace ent {
+	[push_constant] @block Params {
+		uint       *ent_ids;
+		uint       *inst_ids;
+		Entity     *entities;
+		instance_queue_t *instance_queue;
+		cluster_queue_t *cluster_queue;
+		bsp_model_t *models;
 
-[push_constant] @block Params {
-	uint       *ent_ids;
-	uint       *inst_ids;
-	Entity     *entities;
-	instance_queue_t *instance_queue;
-	cluster_queue_t *cluster_queue;
-	bsp_model_t *models;
+		uint       *mod_counts;
+		uint       *mod_offsets;
+		uint        ent_count;
+		uint        num_models;
 
-	uint       *mod_counts;
-	uint       *mod_offsets;
-	uint        ent_count;
-	uint        num_models;
+		uint       *prefixsum_counts;
+	};
 
-	uint       *prefixsum_counts;
-};
+	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+	void distribute ()
+	{
+		uint ent_ind = gl_GlobalInvocationID.x;
+		if (ent_ind < 1 || ent_ind >= ent_count) {
+			return;
+		}
+		uint ent_id = ent_ids[ent_ind];
 
-[shader(GLCompute, LocalSize=[1,1,1])]
-void
-inst_set_dispatch ()
-{
-	if (instance_queue) {
-		instance_queue.x = DISPATCH(instance_queue.count);
-	}
-}
+		uint mod_id = entities[ent_id].model;
+		uint frame = entities[ent_id].frame & 1;
+		uint trans = entities[ent_id].color[3] < 1 ? 2 : 0;
+		uint mod_base = (frame + trans) * num_models;
 
-[shader(GLCompute, LocalSize=[1,1,1])]
-void
-set_dispatch ()
-{
-	if (cluster_queue) {
-		cluster_queue.x = DISPATCH(cluster_queue.count);
-	}
-}
-
-[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
-void
-distribute ()
-{
-	uint ent_ind = gl_GlobalInvocationID.x;
-	if (ent_ind < 1 || ent_ind >= ent_count) {
-		return;
-	}
-	uint ent_id = ent_ids[ent_ind];
-
-	uint mod_id = entities[ent_id].model;
-	uint frame = entities[ent_id].frame & 1;
-	uint trans = entities[ent_id].color[3] < 1 ? 2 : 0;
-	uint mod_base = (frame + trans) * num_models;
-
-	uint inst_ind = atomicAdd (mod_offsets[mod_base + mod_id], 1);
-	inst_ids[inst_ind] = ent_id;
-}
-
-[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
-void
-enqueue ()
-{
-	uint mod_id = gl_GlobalInvocationID.x;
-	bsp_model_t mod = nil;
-	if (mod_id >= 1 && mod_id < num_models) {
-		mod = models[mod_id];
+		uint inst_ind = atomicAdd (mod_offsets[mod_base + mod_id], 1);
+		inst_ids[inst_ind] = ent_id;
 	}
 
-	for (uint j = 0; j < mod_queues && mod.cluster_count; j++) {
-		uint mod_base = j * num_models;
-		uint first_instance = mod_offsets[mod_base + mod_id];
-		uint instance_count = mod_counts[mod_base + mod_id];
+	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+	void instances ()
+	{
+		uint mod_id = gl_GlobalInvocationID.x;
+		bsp_model_t mod = nil;
+		if (mod_id >= 1 && mod_id < num_models) {
+			mod = models[mod_id];
+		}
 
-		if (instance_count) {
-			uint count = mod.cluster_count;
-			uint maxCount = subgroup_max (count);
-			uint first = atomicAdd (cluster_queue.count, count);
-			for (uint i = 0; i < maxCount; i++) {
-				if (i < count) {
-					uint index = atomicAdd (instance_queue.count, 1);
-					bsp_queue_t q = {
-						.cluster = mod.first_cluster + i,
-						.first_instance = first_instance,
-						.instance_count = instance_count,
-						//FIXME qfcc doesn't warn (produces bad spir-v
-						//without cast)
-						.frame = (ushort) (j & 1),
-						.trans = (ushort) ((j >> 1) & 1),
-					};
-					instance_queue.queue[index] = q;
+		for (uint j = 0; j < mod_queues && mod.cluster_count; j++) {
+			uint mod_base = j * num_models;
+			uint first_instance = mod_offsets[mod_base + mod_id];
+			uint instance_count = mod_counts[mod_base + mod_id];
 
-					cluster_queue.queue[first + i] = q.cluster;
+			if (instance_count) {
+				uint count = mod.cluster_count;
+				uint maxCount = subgroup_max (count);
+				uint first = atomicAdd (cluster_queue.count, count);
+				for (uint i = 0; i < maxCount; i++) {
+					if (i < count) {
+						uint index = atomicAdd (instance_queue.count, 1);
+						bsp_queue_t q = {
+							.cluster = mod.first_cluster + i,
+							.first_instance = first_instance,
+							.instance_count = instance_count,
+							//FIXME qfcc doesn't warn (produces bad spir-v
+							//without cast)
+							.frame = (ushort) (j & 1),
+							.trans = (ushort) ((j >> 1) & 1),
+						};
+						instance_queue.queue[index] = q;
+
+						cluster_queue.queue[first + i] = q.cluster;
+					}
 				}
 			}
 		}
 	}
-}
 
-[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
-void
-count ()
-{
-	uint ent_ind = gl_GlobalInvocationID.x;
-	if (ent_ind == 0) {
-		uint count = num_models * mod_queues;
-		uint sum_count = BLOCKDISP (count);
-		prefixsum_counts[0] = count;
-		prefixsum_counts[1] = sum_count;
+	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+	void count ()
+	{
+		uint ent_ind = gl_GlobalInvocationID.x;
+		if (ent_ind == 0) {
+			uint count = num_models * mod_queues;
+			uint sum_count = BLOCKDISP (count);
+			prefixsum_counts[0] = count;
+			prefixsum_counts[1] = sum_count;
+		}
+		if (ent_ind < 1 || ent_ind >= ent_count) {
+			mod_counts[0] = 1;
+			return;
+		}
+		uint ent_id = ent_ids[ent_ind];
+
+		uint mod_id = entities[ent_id].model;
+		uint frame = entities[ent_id].frame & 1;
+		uint trans = entities[ent_id].color[3] < 1 ? 2 : 0;
+		uint mod_base = (frame + trans) * num_models;
+
+		atomicAdd (mod_counts[mod_base + mod_id], 1);
 	}
-	if (ent_ind < 1 || ent_ind >= ent_count) {
-		mod_counts[0] = 1;
-		return;
+
+	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+	void world_instance ()
+	{
+		uint ind = gl_GlobalInvocationID.x;
+		if (ind < cluster_queue.count) {
+			instance_queue.queue[ind] = {
+				.cluster = cluster_queue.queue[ind],
+				.instance_count = 1,
+			};
+		}
+		if (ind == 0) {
+			instance_queue.count = cluster_queue.count;
+		}
 	}
-	uint ent_id = ent_ids[ent_ind];
 
-	uint mod_id = entities[ent_id].model;
-	uint frame = entities[ent_id].frame & 1;
-	uint trans = entities[ent_id].color[3] < 1 ? 2 : 0;
-	uint mod_base = (frame + trans) * num_models;
-
-	atomicAdd (mod_counts[mod_base + mod_id], 1);
-}
-
-[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
-void
-world_instance ()
-{
-	uint ind = gl_GlobalInvocationID.x;
-	if (ind < cluster_queue.count) {
-		instance_queue.queue[ind] = {
-			.cluster = cluster_queue.queue[ind],
-			.instance_count = 1,
-		};
+	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+	void clear ()
+	{
+		uint mod_id = gl_GlobalInvocationID.x;
+		if (mod_id < num_models * mod_queues) {
+			mod_counts[mod_id] = 0;
+		}
 	}
-	if (ind == 0) {
-		instance_queue.count = cluster_queue.count;
-	}
-}
 
-[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
-void
-clear ()
-{
-	uint mod_id = gl_GlobalInvocationID.x;
-	if (mod_id < num_models * mod_queues) {
-		mod_counts[mod_id] = 0;
-	}
-}
+	@namespace set_dispatch {
 
+		[shader(GLCompute, LocalSize=[1,1,1])]
+		void inst ()
+		{
+			if (instance_queue) {
+				instance_queue.x = DISPATCH(instance_queue.count);
+			}
+		}
+
+		[shader(GLCompute, LocalSize=[1,1,1])]
+		void cluster ()
+		{
+			if (cluster_queue) {
+				cluster_queue.x = DISPATCH(cluster_queue.count);
+			}
+		}
+
+	}
 }
 
 @namespace lightmap {
+	uint
+	fbsearch (const uint key, uint *array, const uint count)
+	{
+		uint left = 0;
+		uint right = count - 1;
+		uint mid;
 
-uint
-fbsearch (const uint key, uint *array, const uint count)
-{
-	uint left = 0;
-	uint right = count - 1;
-	uint mid;
-
-	if (!count) {
-		return ~0;
+		if (!count) {
+			return ~0;
+		}
+		while (left != right) {
+			mid = (left + right + 1) / 2;
+			if (key < array[mid]) {
+				right = mid - 1;
+			} else {
+				left = mid;
+			}
+		}
+		return (key >= array[left]) ? left : ~0;
 	}
-	while (left != right) {
-		mid = (left + right + 1) / 2;
-		if (key < array[mid]) {
-			right = mid - 1;
+
+	[push_constant] @block Params {
+		bsp_lightinfo_t *lightinfo;
+		bsp_surfinfo_t *surfinfo;
+		short      *light_style_values;
+		byte       *lightmap_data;
+		uint       *light_queue_offs;
+		uint       *light_queue_inds;
+		cluster_t  *light_clusters;
+		cluster_queue_t *cluster_queue;
+		light_queue_t *light_queue;
+
+		uint       *prefixsum_counts;
+		uint        num_lightmaps;
+	};
+
+	[uniform, set(0), binding(0)]
+	@image(float, 2D, Storage, Rgba32f) light_image;
+
+	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+	void main ()
+	{
+		uint luxelid = gl_GlobalInvocationID.x;
+		if (luxelid >= light_queue[2].count) {
+			return;
+		}
+		uint ind = fbsearch (luxelid, light_queue_offs, light_queue[0].count);
+		uint luxel = luxelid - light_queue_offs[ind];
+		auto li = &lightinfo[light_queue_inds[ind]];
+		if (!li.size.x || !li.size.y) {
+			// no subpic was allocated
+			printf ("unallocated subpic: %d\n", light_queue_inds[ind]);
+			return;
+		}
+		auto xy = ivec2 (luxel % li.size.x, luxel / li.size.x) + ivec2 (li.pos);
+		auto light = vec3 (0);
+		if (li.data == ~0u) {
+			light = vec3 (1);
+		} else if (li.data == 0xdeadbeef) {
+			light = vec3 (1, 0, 1);
 		} else {
-			left = mid;
+			auto _data = &lightmap_data[li.data];
+			auto data = (ubvec3*)_data;
+			uint stride = li.size.x * li.size.y;
+			for (uint i = 0; i < 4 && li.styles[i] != byte(0xff); i++) {
+				float scale = light_style_values[li.styles[i]] / 65536.0f;
+				light += vec3 (data[i * stride + luxel]) * scale;
+			}
+		}
+		imageStore (light_image, xy, vec4 (light, 1));
+	}
+
+	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+	void queue_surfs ()
+	{
+		uint ind = gl_GlobalInvocationID.x;
+		if (ind >= cluster_queue.count) {
+			return;
+		}
+		uint clusterid = cluster_queue.queue[ind];
+		auto cluster = light_clusters[clusterid];
+		//FIXME don't queue all visible lightmaps, only those that need to be
+		//updated (need to cache previous style values)
+		uint first = atomicAdd (light_queue[0].count, cluster.count);
+		for (uint i = 0; i < cluster.count; i++) {
+			auto li = &lightinfo[cluster.first + i];
+			light_queue_offs[first + i] = (uint) li.size.x * (uint) li.size.y;
+			light_queue_inds[first + i] = cluster.first + i;
 		}
 	}
-	return (key >= array[left]) ? left : ~0;
-}
 
-[push_constant] @block Params {
-	bsp_lightinfo_t *lightinfo;
-	bsp_surfinfo_t *surfinfo;
-	short      *light_style_values;
-	byte       *lightmap_data;
-	uint       *light_queue_offs;
-	uint       *light_queue_inds;
-	cluster_t  *light_clusters;
-	cluster_queue_t *cluster_queue;
-	light_queue_t *light_queue;
-
-	uint       *prefixsum_counts;
-	uint        num_lightmaps;
-};
-
-[uniform, set(0), binding(0)]
-@image(float, 2D, Storage, Rgba32f) light_image;
-
-[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
-void
-main ()
-{
-	uint luxelid = gl_GlobalInvocationID.x;
-	if (luxelid >= light_queue[2].count) {
-		return;
-	}
-	uint ind = fbsearch (luxelid, light_queue_offs, light_queue[0].count);
-	uint luxel = luxelid - light_queue_offs[ind];
-	auto li = &lightinfo[light_queue_inds[ind]];
-	if (!li.size.x || !li.size.y) {
-		// no subpic was allocated
-		printf ("unallocated subpic: %d\n", light_queue_inds[ind]);
-		return;
-	}
-	auto xy = ivec2 (luxel % li.size.x, luxel / li.size.x) + ivec2 (li.pos);
-	auto light = vec3 (0);
-	if (li.data == ~0u) {
-		light = vec3 (1);
-	} else if (li.data == 0xdeadbeef) {
-		light = vec3 (1, 0, 1);
-	} else {
-		auto _data = &lightmap_data[li.data];
-		auto data = (ubvec3*)_data;
-		uint stride = li.size.x * li.size.y;
-		for (uint i = 0; i < 4 && li.styles[i] != byte(0xff); i++) {
-			float scale = light_style_values[li.styles[i]] / 65536.0f;
-			light += vec3 (data[i * stride + luxel]) * scale;
+	[shader(GLCompute, LocalSize=[1,1,1])]
+	void clear ()
+	{
+		if (light_queue) {
+			light_queue[0].count = 0;
+			light_queue[1].count = 0;
+			light_queue[2].count = 0;
 		}
 	}
-	imageStore (light_image, xy, vec4 (light, 1));
-}
 
-[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
-void
-queue_surfs ()
-{
-	uint ind = gl_GlobalInvocationID.x;
-	if (ind >= cluster_queue.count) {
-		return;
+	@namespace set_dispatch {
+
+		[shader(GLCompute, LocalSize=[1,1,1])]
+		void cluster ()
+		{
+			if (cluster_queue) {
+				cluster_queue.x = DISPATCH(cluster_queue.count);
+			}
+		}
+
+		[shader(GLCompute, LocalSize=[1,1,1])]
+		void surf ()
+		{
+			if (light_queue) {
+				uint count = light_queue[0].count;
+				uint sum_count = BLOCKDISP (count);
+				light_queue[0].x = BLOCKDISP(count);
+				light_queue[0].y = 1;
+				light_queue[0].z = 1;
+				light_queue[1].count = sum_count;
+				//FIXME light_queue[1].x = BLOCKDISP(BLOCKDISP (count));
+				light_queue[1].x = BLOCKDISP(sum_count);
+				light_queue[1].y = 1;
+				light_queue[1].z = 1;
+
+				prefixsum_counts[0] = count;
+				prefixsum_counts[1] = sum_count;
+			}
+		}
+
+		[shader(GLCompute, LocalSize=[1,1,1])]
+		void update ()
+		{
+			if (light_queue) {
+				uint count = light_queue[2].count;
+				light_queue[2].x = DISPATCH(count);
+				light_queue[2].y = 1;
+				light_queue[2].z = 1;
+			}
+		}
+
 	}
-	uint clusterid = cluster_queue.queue[ind];
-	auto cluster = light_clusters[clusterid];
-	//FIXME don't queue all visible lightmaps, only those that need to be
-	//updated (need to cache previous style values)
-	uint first = atomicAdd (light_queue[0].count, cluster.count);
-	for (uint i = 0; i < cluster.count; i++) {
-		auto li = &lightinfo[cluster.first + i];
-		light_queue_offs[first + i] = (uint) li.size.x * (uint) li.size.y;
-		light_queue_inds[first + i] = cluster.first + i;
-	}
-}
-
-[shader(GLCompute, LocalSize=[1,1,1])]
-void
-clear ()
-{
-	if (light_queue) {
-		light_queue[0].count = 0;
-		light_queue[1].count = 0;
-		light_queue[2].count = 0;
-	}
-}
-
-[shader(GLCompute, LocalSize=[1,1,1])]
-void
-update_set_dispatch ()
-{
-	if (light_queue) {
-		uint count = light_queue[2].count;
-		light_queue[2].x = DISPATCH(count);
-		light_queue[2].y = 1;
-		light_queue[2].z = 1;
-	}
-}
-
-[shader(GLCompute, LocalSize=[1,1,1])]
-void
-surf_set_dispatch ()
-{
-	if (light_queue) {
-		uint count = light_queue[0].count;
-		uint sum_count = BLOCKDISP (count);
-		light_queue[0].x = BLOCKDISP(count);
-		light_queue[0].y = 1;
-		light_queue[0].z = 1;
-		light_queue[1].count = sum_count;
-		//FIXME light_queue[1].x = BLOCKDISP(BLOCKDISP (count));
-		light_queue[1].x = BLOCKDISP(sum_count);
-		light_queue[1].y = 1;
-		light_queue[1].z = 1;
-
-		prefixsum_counts[0] = count;
-		prefixsum_counts[1] = sum_count;
-	}
-}
-
-[shader(GLCompute, LocalSize=[1,1,1])]
-void
-set_dispatch ()
-{
-	if (cluster_queue) {
-		cluster_queue.x = DISPATCH(cluster_queue.count);
-	}
-}
-
 }
