@@ -1,4 +1,5 @@
 #include <GLSL/atomic.h>
+#include <GLSL/image.h>
 
 #include "bsp.h"
 
@@ -27,6 +28,12 @@ typedef struct cluster_queue_s {
 	uint        x, y, z;
 	uint        queue[];
 } cluster_queue_t;
+
+typedef struct light_queue_s {
+	uint        count;
+	uint        x, y, z;
+	// queue data is separate
+} light_queue_t;;
 
 @namespace cluster {
 
@@ -246,6 +253,156 @@ clear ()
 	uint mod_id = gl_GlobalInvocationID.x;
 	if (mod_id < num_models * mod_queues) {
 		mod_counts[mod_id] = 0;
+	}
+}
+
+}
+
+@namespace lightmap {
+
+uint
+fbsearch (const uint key, uint *array, const uint count)
+{
+	uint left = 0;
+	uint right = count - 1;
+	uint mid;
+
+	if (!count) {
+		return ~0;
+	}
+	while (left != right) {
+		mid = (left + right + 1) / 2;
+		if (key < array[mid]) {
+			right = mid - 1;
+		} else {
+			left = mid;
+		}
+	}
+	return (key >= array[left]) ? left : ~0;
+}
+
+[push_constant] @block Params {
+	bsp_lightinfo_t *lightinfo;
+	bsp_surfinfo_t *surfinfo;
+	short      *light_style_values;
+	byte       *lightmap_data;
+	uint       *light_queue_offs;
+	uint       *light_queue_inds;
+	cluster_t  *light_clusters;
+	cluster_queue_t *cluster_queue;
+	light_queue_t *light_queue;
+
+	uint       *prefixsum_counts;
+	uint        num_lightmaps;
+};
+
+[uniform, set(0), binding(0)]
+@image(float, 2D, Storage, Rgba32f) light_image;
+
+[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+void
+main ()
+{
+	uint luxelid = gl_GlobalInvocationID.x;
+	if (luxelid >= light_queue[2].count) {
+		return;
+	}
+	uint ind = fbsearch (luxelid, light_queue_offs, light_queue[0].count);
+	uint luxel = luxelid - light_queue_offs[ind];
+	auto li = &lightinfo[light_queue_inds[ind]];
+	if (!li.size.x || !li.size.y) {
+		// no subpic was allocated
+		printf ("unallocated subpic: %d\n", light_queue_inds[ind]);
+		return;
+	}
+	auto xy = ivec2 (luxel % li.size.x, luxel / li.size.x) + ivec2 (li.pos);
+	auto light = vec3 (0);
+	if (li.data == ~0u) {
+		light = vec3 (1);
+	} else if (li.data == 0xdeadbeef) {
+		light = vec3 (1, 0, 1);
+	} else {
+		auto _data = &lightmap_data[li.data];
+		auto data = (ubvec3*)_data;
+		uint stride = li.size.x * li.size.y;
+		for (uint i = 0; i < 4 && li.styles[i] != byte(0xff); i++) {
+			float scale = light_style_values[li.styles[i]] / 65536.0f;
+			light += vec3 (data[i * stride + luxel]) * scale;
+		}
+	}
+	imageStore (light_image, xy, vec4 (light, 1));
+}
+
+[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+void
+queue_surfs ()
+{
+	uint ind = gl_GlobalInvocationID.x;
+	if (ind >= cluster_queue.count) {
+		return;
+	}
+	uint clusterid = cluster_queue.queue[ind];
+	auto cluster = light_clusters[clusterid];
+	//FIXME don't queue all visible lightmaps, only those that need to be
+	//updated (need to cache previous style values)
+	uint first = atomicAdd (light_queue.count, cluster.count);
+	for (uint i = 0; i < cluster.count; i++) {
+		auto li = &lightinfo[cluster.first + i];
+		light_queue_offs[first + i] = (uint) li.size.x * (uint) li.size.y;
+		light_queue_inds[first + i] = cluster.first + i;
+	}
+}
+
+[shader(GLCompute, LocalSize=[1,1,1])]
+void
+clear ()
+{
+	if (light_queue) {
+		light_queue[0].count = 0;
+		light_queue[1].count = 0;
+		light_queue[2].count = 0;
+	}
+}
+
+[shader(GLCompute, LocalSize=[1,1,1])]
+void
+update_set_dispatch ()
+{
+	if (light_queue) {
+		uint count = light_queue[2].count;
+		light_queue[2].x = DISPATCH(count);
+		light_queue[2].y = 1;
+		light_queue[2].z = 1;
+	}
+}
+
+[shader(GLCompute, LocalSize=[1,1,1])]
+void
+surf_set_dispatch ()
+{
+	if (light_queue) {
+		uint count = light_queue[0].count;
+		uint sum_count = BLOCKDISP (count);
+		light_queue[0].x = BLOCKDISP(count);
+		light_queue[0].y = 1;
+		light_queue[0].z = 1;
+		light_queue[1].count = sum_count;
+		//FIXME light_queue[1].x = BLOCKDISP(BLOCKDISP (count));
+		light_queue[1].x = BLOCKDISP(sum_count);
+		light_queue[1].y = 1;
+		light_queue[1].z = 1;
+
+		prefixsum_counts[0] = count;
+		prefixsum_counts[1] = sum_count;
+	}
+}
+
+[shader(GLCompute, LocalSize=[1,1,1])]
+void
+set_dispatch ()
+{
+	if (cluster_queue) {
+		cluster_queue.x = DISPATCH(cluster_queue.count);
 	}
 }
 

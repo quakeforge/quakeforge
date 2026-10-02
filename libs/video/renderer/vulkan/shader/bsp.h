@@ -1,6 +1,11 @@
 #ifndef __shader_bsp_h
 #define __shader_bsp_h
 
+#ifndef __QFCC__
+QF_VEC_TYPE (ushort, usvec2, 2);
+QF_VEC_TYPE (float, vec2, 2);
+#endif
+
 #define workgroup_size 512
 // frame 0, frame 1 solid
 // frame 0, fraem 1 trans
@@ -69,5 +74,18 @@ typedef struct bsp_texanim_s {
 	byte        offset;		///< relative frame in group
 	byte        count;		///< number of frames in group
 } bsp_texanim_t;
+
+typedef struct bsp_lightinfo_s {
+	usvec2      pos;		///< position of atlas subimage
+	usvec2      size;		///< size of atlas subimage
+	byte        styles[4];
+	uint        data;
+} bsp_lightinfo_t;
+
+typedef struct bsp_surfinfo_s {
+	uint        plane;
+	uint        tex;
+	vec2        mins;
+} bsp_surfinfo_t;
 
 #endif//__shader_bsp_h

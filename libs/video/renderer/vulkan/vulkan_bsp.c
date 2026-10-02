@@ -62,6 +62,7 @@
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
@@ -2057,7 +2058,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	size_t packet_size = sizeof (uint32_t[4]) + sizeof (uint32_t[count]);
 	uint32_t *queue = QFV_PacketExtend (packet, packet_size);
 	*queue++ = count;
-	*queue++ = 1;
+	*queue++ = RUP (count, workgroup_size) / workgroup_size;
 	*queue++ = 1;
 	*queue++ = 1;
 	for (auto c = set_first (&pvs); c; c = set_next (c)) {
@@ -2129,39 +2130,123 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	//printf ("mod_offsets: %zx\n", *bctx->mod_offsets);
 	//printf ("num_models: %d\n", *bctx->num_models);
 
-	auto pipeline = taskctx->pipeline;
-	if (pipeline) {
-		pipeline->dispatch[0] = RUP (count, workgroup_size) / workgroup_size;
-		pipeline->dispatch[1] = 1;
-		pipeline->dispatch[2] = 1;
-
-		pipeline->pre_memory_barrier = true;
-		pipeline->post_memory_barrier = true;
-		pipeline->pre_mb = (VkMemoryBarrier2) {
-			.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-			.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT
-						  | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-			.srcAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT
-						   | VK_ACCESS_2_SHADER_WRITE_BIT
-						   | VK_ACCESS_2_SHADER_READ_BIT,
-			.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-			.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
-						   | VK_ACCESS_2_SHADER_READ_BIT,
-		};
-		pipeline->post_mb = (VkMemoryBarrier2) {
-			.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-			.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-			.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
-						   | VK_ACCESS_2_SHADER_READ_BIT,
-			.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-			.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT
-						   | VK_ACCESS_2_SHADER_WRITE_BIT,
-		};
-	}
-
 	frame->entid_count = pass->entid_count;
 
 	bsp_flush (ctx);
+}
+
+static void
+bsp_light_update (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto bctx = ctx->bsp_context;
+	auto pipeline = taskctx->pipeline;
+	auto layout = pipeline->layout;
+
+	if (!r_refdef.worldmodel) {
+		return;
+	}
+
+	auto cmd = taskctx->cmd;
+	QFV_PushBlackboard (ctx, cmd, pipeline);
+	VkDescriptorSet sets[] = {
+		bctx->lightmap_image,
+	};
+	auto sb = imageBarriers[qfv_LT_ShaderReadOnly_to_StorageWrite];
+	auto db = imageBarriers[qfv_LT_StorageWrite_to_ShaderReadOnly];
+	auto image = QFV_ScrapImage (bctx->light_scrap);
+	sb.image = image;
+	db.image = image;
+	dfunc->vkCmdPipelineBarrier2 (cmd, &(VkDependencyInfo) {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &sb
+	});
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+									layout, 0, countof (sets), sets, 0, 0);
+	dfunc->vkCmdDispatchIndirect (cmd, bctx->light_queue_buffer.buffer,
+								  2 * sizeof (uint32_t[4])
+									+ sizeof (uint32_t));
+	dfunc->vkCmdPipelineBarrier2 (cmd, &(VkDependencyInfo) {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &db
+	});
+}
+
+static void
+bsp_light_sum (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto bctx = ctx->bsp_context;
+	auto pipeline = taskctx->pipeline;
+	auto stage = *(int *) params[0]->value;
+
+	if (!r_refdef.worldmodel) {
+		return;
+	}
+
+	*bctx->in_data = 0;
+	*bctx->out_data = 0;
+	*bctx->sum_data = 0;
+	uint32_t offset = sizeof (uint32_t);
+	uint32_t sum_offset = 0;
+	switch (stage) {
+		case 0:
+			*bctx->in_data = *bctx->light_queue_offs;
+			*bctx->out_data = bctx->light_queue_tmp_buffer.addr;
+			*bctx->sum_data = *bctx->mod_offsets;// tmp buffer for sums
+			break;
+		case 1:
+			*bctx->in_data = *bctx->mod_offsets;
+			*bctx->out_data = bctx->mod_sums_buffer.addr;
+			*bctx->sum_data = bctx->light_queue_buffer.addr
+							+ sizeof(uint32_t[8]);
+			offset += sizeof (uint32_t[4]);
+			sum_offset = sizeof (uint32_t);
+			break;
+		case 2:
+			*bctx->in_data = bctx->light_queue_tmp_buffer.addr;
+			*bctx->out_data = *bctx->light_queue_offs;
+			*bctx->sum_data = bctx->mod_sums_buffer.addr;
+			break;
+		default:
+			Sys_Error ("invalid bsp_light_sum stage: %d\n", stage);
+	}
+	*bctx->count = *bctx->prefixsum_counts + sum_offset;
+
+	auto cmd = taskctx->cmd;
+	QFV_PushBlackboard (ctx, cmd, pipeline);
+	dfunc->vkCmdDispatchIndirect (cmd, bctx->light_queue_buffer.buffer, offset);
+}
+
+static void
+bsp_light_queue_surfs (const exprval_t **params, exprval_t *result,
+					   exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto bctx = ctx->bsp_context;
+	auto frame = &bctx->frames.a[ctx->curFrame];
+	auto pipeline = taskctx->pipeline;
+
+	if (!r_refdef.worldmodel) {
+		return;
+	}
+
+	auto cmd = taskctx->cmd;
+	QFV_PushBlackboard (ctx, cmd, pipeline);
+	dfunc->vkCmdDispatchIndirect (cmd, bctx->cluster_queue_buffer.buffer,
+								  frame->queue + sizeof (uint32_t));
 }
 
 static void
@@ -2222,6 +2307,7 @@ bsp_shutdown (exprctx_t *ectx)
 	free (bctx->frames.a);
 
 	QFV_DestroyScrap (bctx->light_scrap);
+	QFV_DestroyResource (device, bctx->lightmap_resource);
 
 	if (bctx->base_resource) {
 		QFV_DestroyResource (device, bctx->base_resource);
@@ -2253,6 +2339,7 @@ bsp_startup (exprctx_t *ectx)
 	auto bctx = ctx->bsp_context;
 
 	auto device = ctx->device;
+	auto dfunc = device->funcs;
 
 	bctx->main_pass.bsp_context = bctx;
 	bctx->shadow_pass.bsp_context = bctx;
@@ -2279,6 +2366,22 @@ bsp_startup (exprctx_t *ectx)
 	bctx->frames.grow = 0;
 
 	create_base_resources (ctx);
+
+	bctx->dsmanager = QFV_Render_DSManager (ctx, "lightmap_set");
+	if (bctx->dsmanager) {
+		bctx->lightmap_image = QFV_DSManager_AllocSet (bctx->dsmanager);
+		dfunc->vkUpdateDescriptorSets (device->dev, 1,
+			&(VkWriteDescriptorSet) {
+				.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstSet = bctx->lightmap_image,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+				.pImageInfo = &(VkDescriptorImageInfo) {
+					.imageView = Vulkan_LightmapImageView (ctx),
+					.imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+				},
+			}, 0, 0);
+	}
 
 	bctx->lightmap_descriptor
 		= Vulkan_CreateCombinedImageSampler (ctx,
@@ -2370,6 +2473,17 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.sum_data = QFV_GetBlackboardVar (ctx, "sum_data"),
 		.count = QFV_GetBlackboardVar (ctx, "count"),
 		.prefixsum_counts = QFV_GetBlackboardVar (ctx, "prefixsum_counts"),
+
+		.lightinfo          = QFV_GetBlackboardVar (ctx, "lightinfo"),
+		.surfinfo           = QFV_GetBlackboardVar (ctx, "surfinfo"),
+		.light_style_values = QFV_GetBlackboardVar (ctx, "light_style_values"),
+		.lightmap_data      = QFV_GetBlackboardVar (ctx, "lightmap_data"),
+		.light_clusters     = QFV_GetBlackboardVar (ctx, "light_clusters"),
+		.light_cluster_queue= QFV_GetBlackboardVar (ctx, "light_cluster_queue"),
+		.light_queue_offs   = QFV_GetBlackboardVar (ctx, "light_queue_offs"),
+		.light_queue_inds   = QFV_GetBlackboardVar (ctx, "light_queue_inds"),
+		.light_queue        = QFV_GetBlackboardVar (ctx, "light_queue"),
+		.num_lightmaps      = QFV_GetBlackboardVar (ctx, "num_lightmaps"),
 	};
 }
 
@@ -2439,7 +2553,7 @@ static exprtype_t *bsp_draw_queue_params[] = {
 	&bsp_pass_type,
 };
 
-static exprtype_t *bsp_sum_mod_insts_params[] = {
+static exprtype_t *bsp_sum_params[] = {
 	&cexpr_int,
 };
 
@@ -2485,10 +2599,22 @@ static exprfunc_t bsp_draw_queue_func[] = {
 };
 
 static exprfunc_t bsp_sum_mod_insts_func[] = {
-	{ .func = bsp_sum_mod_insts, .num_params = 1, bsp_sum_mod_insts_params },
+	{ .func = bsp_sum_mod_insts, .num_params = 1, bsp_sum_params },
 	{}
 };
 
+static exprfunc_t bsp_light_update_func[] = {
+	{ .func = bsp_light_update },
+	{}
+};
+static exprfunc_t bsp_light_sum_func[] = {
+	{ .func = bsp_light_sum, .num_params = 1, bsp_sum_params },
+	{}
+};
+static exprfunc_t bsp_light_queue_surfs_func[] = {
+	{ .func = bsp_light_queue_surfs },
+	{}
+};
 static exprfunc_t bsp_build_lightmaps_func[] = {
 	{ .func = bsp_build_lightmaps },
 	{}
@@ -2521,6 +2647,9 @@ static exprsym_t bsp_task_syms[] = {
 
 	{ "bsp_sum_mod_insts", &cexpr_function, bsp_sum_mod_insts_func },
 
+	{ "bsp_light_update", &cexpr_function, bsp_light_update_func },
+	{ "bsp_light_sum", &cexpr_function, bsp_light_sum_func },
+	{ "bsp_light_queue_surfs", &cexpr_function, bsp_light_queue_surfs_func },
 	{ "bsp_build_lightmaps", &cexpr_function, bsp_build_lightmaps_func },
 	{ "bsp_build_display_lists", &cexpr_function,
 		bsp_build_display_lists_func },

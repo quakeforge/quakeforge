@@ -45,7 +45,10 @@
 #include "QF/sys.h"
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lightmap.h"
+#include "QF/Vulkan/barrier.h"
+#include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/scrap.h"
+#include "QF/Vulkan/staging.h"
 
 #include "QF/scene/entity.h"
 
@@ -53,8 +56,41 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
+#include "shader/bsp.h"
+#define block_size (workgroup_size * 2)
+
 #define s_dynlight (r_refdef.scene->base + scene_dynlight)
 #define LUXEL_SIZE 4
+
+typedef struct lmapctx_s {
+	vulkan_ctx_t *ctx;
+	bspctx_t   *bctx;
+	mod_brush_t *brush;
+	uint32_t    num_lightmaps;
+	uint32_t    lightmap_luxels;
+	uint32_t    num_clusters;
+
+	bsp_lightinfo_t *lightinfo;
+	bsp_surfinfo_t *surfinfo;
+	int16_t    *style_data;
+	byte       *lightmap_data;
+	cluster_t  *clusters;
+} lmapctx_t;
+
+static void
+lmap_model_loop (model_t **models, int num_models,
+				 void (*func)(model_t *, lmapctx_t *), lmapctx_t *lmap)
+{
+	for (int i = 0; i < num_models; i++) {
+		model_t    *m = models[i];
+		// sub-models are done as part of the main model
+		// and non-bsp models don't have surfaces.
+		if (!m || m->type != mod_brush || *m->path == '*') {
+			continue;
+		}
+		func (m, lmap);
+	}
+}
 
 static inline void
 add_dynamic_lights (const vec4f_t *transform, msurface_t *surf, vec4f_t *block)
@@ -131,70 +167,142 @@ add_dynamic_lights (const vec4f_t *transform, msurface_t *surf, vec4f_t *block)
 }
 
 static void
-vulkan_build_lightmap (const mod_brush_t *brush, msurface_t *surf,
-					   vec4f_t *block)
+vulkan_create_surf_lightmap (cluster_t *cluster, lmapctx_t *lmap)
 {
 	qfZoneScoped (true);
-	int         smax = (surf->extents[0] >> 4) + 1;
-	int         tmax = (surf->extents[1] >> 4) + 1;
-	int         size = smax * tmax;
+	auto brush = lmap->brush;
 
-	if (!brush->lightdata) {
-		for (int i = 0; i < size; i++) {
-			block[i] = (vec4f_t) {1, 1, 1, 1};
+	for (uint32_t j = 0; j < cluster->count; j++) {
+		uint32_t surfind = brush->cluster_surfs[cluster->first + j];
+		msurface_t *surf = brush->surfaces + surfind;
+		surf->lightpic = nullptr;     // paranoia
+		lmap->num_lightmaps++;
+		if (surf->flags & SURF_DRAWTURB) {
+			continue;
 		}
-		return;
-	}
-
-	for (int i = 0; i < size; i++) {
-		block[i] = (vec4f_t) {0, 0, 0, 1};
-	}
-	if (surf->samples) {
-		byte       *lightmap = surf->samples;
-		for (int map = 0; map < MAXLIGHTMAPS && surf->styles[map] != 255;
-			 map++) {
-			surf->cached_light[map] = d_lightstylevalue[surf->styles[map]];
-			float scale = surf->cached_light[map] / 65536.0;
-			auto bl = block;
-			for (int i = 0; i < size; i++) {
-				vec4f_t val = { VectorExpand (lightmap), 0 };
-				val *= scale;
-				lightmap += 3;
-				*bl++ += val;
-			}
+		if (surf->flags & SURF_DRAWSKY) {
+			continue;
 		}
-	}
-}
 
-void
-Vulkan_BuildLightMap (const vec4f_t *transform, const mod_brush_t *brush,
-					  msurface_t *surf, vulkan_ctx_t *ctx)
-{
-	qfZoneScoped (true);
+		bspctx_t   *bctx = lmap->bctx;
+		int         smax, tmax;
 
-	surf->cached_dlight = (surf->dlightframe == r_framecount);
+		smax = (surf->extents[0] >> 4) + 1;
+		tmax = (surf->extents[1] >> 4) + 1;
 
-	vec4f_t *block = QFV_SubpicBatch (surf->lightpic, ctx->staging);
-	vulkan_build_lightmap (brush, surf, block);
+		int i;
+		for (i = 0; i < 4 && surf->styles[i] != 0xff; i++) continue;
 
-	// add all the dynamic lights
-	if (surf->dlightframe == r_framecount) {
-		add_dynamic_lights (transform, surf, block);
+		lmap->lightmap_luxels += smax * tmax * i;
+
+		surf->lightpic = QFV_ScrapSubpic (bctx->light_scrap, smax, tmax);
+		if (!surf->lightpic) {
+			Sys_Error ("FIXME taniwha is being lazy");
+		}
 	}
 }
 
 static void
-vulkan_create_surf_lightmap (msurface_t *surf, vulkan_ctx_t *ctx)
+vulkan_create_surfs (model_t *m, lmapctx_t *lmap)
 {
-	bspctx_t   *bctx = ctx->bsp_context;
-	int         smax, tmax;
+	auto brush = m->brush;
+	lmap->brush = brush;
+	// vis_clusters does not include the solid cluster 0
+	uint32_t num_clusters = brush->cluster_vis.count + 1;
+	for (uint32_t i = 0; i < num_clusters; i++) {
+		auto cluster = &brush->clusters[i];
+		vulkan_create_surf_lightmap (cluster, lmap);
+	}
+	lmap->num_clusters += num_clusters;
+	for (uint32_t i = 1; i < brush->numsubmodels; i++) {
+		auto cluster = &brush->clusters[num_clusters + i - 1];
+		vulkan_create_surf_lightmap (cluster, lmap);
+		lmap->num_clusters++;
+	}
+}
 
-	smax = (surf->extents[0] >> 4) + 1;
-	tmax = (surf->extents[1] >> 4) + 1;
+static void
+vulkan_init_lightmap (uint32_t surfind, lmapctx_t *lmap)
+{
+	auto brush = lmap->brush;
+	auto lightinfo = lmap->lightinfo;
+	auto surfinfo = lmap->surfinfo;
+	auto lightmap_data = lmap->lightmap_data;
+	auto surf = brush->surfaces + surfind;
 
-	surf->lightpic = QFV_ScrapSubpic (bctx->light_scrap, smax, tmax);
-	if (!surf->lightpic) {
-		Sys_Error ("FIXME taniwha is being lazy");
+	uint ind = lmap->num_lightmaps++;
+	if (surf->lightpic) {
+		auto r = *surf->lightpic->rect;
+		lightinfo[ind] = (bsp_lightinfo_t) {
+			.pos = { r.x, r.y },
+			.size = { r.width, r.height },
+			.styles = { VEC4_EXP (surf->styles) },
+			.data = lmap->lightmap_luxels * 3,
+		};
+		surfinfo[ind] = (bsp_surfinfo_t) {
+			//FIXME
+		};
+
+		uint32_t samples = r.width * r.height;
+		if (surf->samples) {
+			byte *dst = lightmap_data + lightinfo[ind].data;
+			byte *src = surf->samples;
+			for (int j = 0; j < 4 && surf->styles[j] != 0xff; j++) {
+				memcpy (dst, src, samples * 3);
+				dst += samples * 3;
+				src += samples * 3;
+				lmap->lightmap_luxels += samples;
+			}
+		}
+	} else {
+		lightinfo[ind] = (bsp_lightinfo_t) {
+			.styles[0] = 0xff,
+			.data = ~0,
+		};
+		surfinfo[ind] = (bsp_surfinfo_t) {
+			.plane = ~0,
+			.tex = ~0,
+		};
+	}
+}
+
+static void
+vulkan_build_light_cluster (cluster_t *cluster, lmapctx_t *lmap)
+{
+	auto brush = lmap->brush;
+	for (uint32_t j = 0; j < cluster->count; j++) {
+		uint32_t surfind = brush->cluster_surfs[cluster->first + j];
+		vulkan_init_lightmap (surfind, lmap);
+	}
+}
+
+static void
+vulkan_build_lightmaps (model_t *m, lmapctx_t *lmap)
+{
+	auto brush = m->brush;
+	lmap->brush = brush;
+
+	// vis_clusters does not include the solid cluster 0
+	uint32_t num_clusters = brush->cluster_vis.count + 1;
+	for (uint32_t i = 0; i < num_clusters; i++) {
+		auto cluster = &brush->clusters[i];
+		uint32_t first = lmap->num_lightmaps;
+		vulkan_build_light_cluster (cluster, lmap);
+		lmap->clusters[lmap->num_clusters + i] = (cluster_t) {
+			.first = first,
+			.count = cluster->count,
+		};
+	}
+	lmap->num_clusters += num_clusters;
+	for (uint32_t i = 1; i < brush->numsubmodels; i++) {
+		auto cluster = &brush->clusters[num_clusters + i - 1];
+		uint32_t first = lmap->num_lightmaps;
+		vulkan_build_light_cluster (cluster, lmap);
+		lmap->clusters[lmap->num_clusters] = (cluster_t) {
+			.first = first,
+			.count = cluster->count,
+		};
+		lmap->num_clusters++;
 	}
 }
 
@@ -206,61 +314,253 @@ vulkan_create_surf_lightmap (msurface_t *surf, vulkan_ctx_t *ctx)
 void
 Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	bspctx_t   *bctx = ctx->bsp_context;
 
 	QFV_ScrapClear (bctx->light_scrap);
 
 	r_framecount = 1;					// no dlightcache
+	lmapctx_t lmap = {
+		.ctx = ctx,
+		.bctx = bctx,
+	};
+	lmap_model_loop (models, num_models, vulkan_create_surfs, &lmap);
 
-	for (int j = 1; j < num_models; j++) {
-		auto m = models[j];
-		if (!m)
-			break;
-		if (m->path[0] == '*' || m->type != mod_brush) {
-			// sub model surfaces are processed as part of the main model
-			continue;
-		}
-		auto brush = m->brush;
-		// non-bsp models don't have surfaces.
-		for (uint32_t i = 0; i < brush->numsurfaces; i++) {
-			msurface_t *surf = brush->surfaces + i;
-			surf->lightpic = 0;     // paranoia
-			if (surf->flags & SURF_DRAWTURB) {
-				continue;
-			}
-			if (surf->flags & SURF_DRAWSKY) {
-				continue;
-			}
-			vulkan_create_surf_lightmap (surf, ctx);
-			vec4f_t    *block = QFV_SubpicBatch (surf->lightpic, ctx->staging);
-			vulkan_build_lightmap (brush, surf, block);
+	QFV_DestroyResource (ctx->device, bctx->lightmap_resource);
+	if (!bctx->lightmap_resource) {
+		size_t size = sizeof (qfv_resource_t)
+					+ sizeof (qfv_resobj_t)		// lightinfo
+					+ sizeof (qfv_resobj_t)		// surfinfo
+					+ sizeof (qfv_resobj_t)		// style data
+					+ sizeof (qfv_resobj_t)		// lightmap data
+					+ sizeof (qfv_resobj_t)		// queue offs
+					+ sizeof (qfv_resobj_t)		// queue inds
+					+ sizeof (qfv_resobj_t)		// queue tmp
+					+ sizeof (qfv_resobj_t)		// light clusters
+					+ sizeof (qfv_resobj_t);	// light queue
+		bctx->lightmap_resource = malloc (size);
+		*bctx->lightmap_resource = (qfv_resource_t) {
+			.name = "bsp:lightmap",
+			.va_ctx = ctx->va_ctx,
+			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			.num_objects = 9,
+			.objects = (qfv_resobj_t *)&bctx->lightmap_resource[1],
+		};
+	};
+	auto lightinfo = &bctx->lightmap_resource->objects[0];
+	auto surfinfo = &lightinfo[1];
+	auto style_data = &surfinfo[1];
+	auto lightmap_data = &style_data[1];
+	auto queue_offs = &lightmap_data[1];
+	auto queue_inds = &queue_offs[1];
+	auto queue_tmp = &queue_inds[1];
+	auto light_clusters = &queue_tmp[1];
+	auto light_queue = &light_clusters[1];
+
+	*lightinfo = (qfv_resobj_t) {
+		.name = "lightinfo",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (bsp_lightinfo_t[lmap.num_lightmaps]),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		},
+	};
+	*surfinfo = (qfv_resobj_t) {
+		.name = "surfinfo",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (bsp_surfinfo_t[lmap.num_lightmaps]),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		},
+	};
+	*style_data = (qfv_resobj_t) {
+		.name = "style_data",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (d_lightstylevalue),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		},
+	};
+	*lightmap_data = (qfv_resobj_t) {
+		.name = "lightmap_data",
+		.type = qfv_res_buffer,
+		.buffer = {
+			// always loaded as rgb
+			.size = lmap.lightmap_luxels * 3,
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		},
+	};
+	*queue_offs = (qfv_resobj_t) {
+		.name = "queue_offs",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (uint32_t[lmap.num_lightmaps]),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		},
+	};
+	*queue_inds = (qfv_resobj_t) {
+		.name = "queue_inds",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (uint32_t[lmap.num_lightmaps]),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		},
+	};
+	*queue_tmp = (qfv_resobj_t) {
+		.name = "queue_tmp",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (uint32_t[lmap.num_lightmaps]),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		},
+	};
+	*light_clusters = (qfv_resobj_t) {
+		.name = "light_clusters",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (cluster_t[lmap.num_clusters]),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		},
+	};
+	*light_queue = (qfv_resobj_t) {
+		.name = "light_queue",
+		.type = qfv_res_buffer,
+		.buffer = {
+			// 4 for count and indirect dispatch, three blocks
+			// 2 for prefix sums,
+			// 1 for actual lightmap update
+			.size = 3 * sizeof (uint32_t[4]),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		},
+	};
+	QFV_CreateResource (ctx->device, bctx->lightmap_resource);
+
+	*bctx->lightinfo = lightinfo->buffer.address;
+	*bctx->surfinfo = surfinfo->buffer.address;
+	*bctx->light_style_values = style_data->buffer.address;
+	*bctx->lightmap_data = lightmap_data->buffer.address;
+	*bctx->light_queue_offs = queue_offs->buffer.address;
+	*bctx->light_queue_inds = queue_inds->buffer.address;
+	*bctx->light_clusters = light_clusters->buffer.address;
+	bctx->light_queue_buffer = (bsp_buffer_t) {
+		.buffer = light_queue->buffer.buffer,
+		.size = light_queue->buffer.size,
+		.addr = light_queue->buffer.address,
+	};
+	*bctx->light_queue = bctx->light_queue_buffer.addr;
+	bctx->light_queue_tmp_buffer = (bsp_buffer_t) {
+		.buffer = queue_tmp->buffer.buffer,
+		.size = queue_tmp->buffer.size,
+		.addr = queue_tmp->buffer.address,
+	};
+
+	size_t size = lightinfo->buffer.size
+				+ surfinfo->buffer.size
+				+ light_clusters->buffer.size
+				+ style_data->buffer.size
+				+ lightmap_data->buffer.size;
+	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.lightmap");
+	lmap.lightinfo = QFV_PacketExtend (packet, size);
+	lmap.surfinfo = (bsp_surfinfo_t *) &lmap.lightinfo[lmap.num_lightmaps];
+	lmap.clusters = (cluster_t*) &lmap.surfinfo[lmap.num_lightmaps];
+	lmap.style_data = (int16_t *) &lmap.clusters[lmap.num_clusters];
+	lmap.lightmap_data = (byte *) &lmap.style_data[countof (d_lightstylevalue)];
+
+	for (uint32_t i = 0; i < size / 4; i++) {
+		((uint32_t *)lmap.lightinfo)[i] = 0xdeadbeef;
+	}
+	printf ("lightmap pixels: %d, %d lightmaps, average: %g clusters: %d\n",
+			lmap.lightmap_luxels, lmap.num_lightmaps,
+			(double) lmap.lightmap_luxels / lmap.num_lightmaps,
+			lmap.num_clusters);
+
+	uint32_t num_lightmaps = lmap.num_lightmaps;
+	lmap.num_lightmaps = 0;
+	lmap.lightmap_luxels = 0;
+	lmap.num_clusters = 0;
+
+	lmap_model_loop (models, num_models, vulkan_build_lightmaps, &lmap);
+	bool bad_lightmap = num_lightmaps != lmap.num_lightmaps;
+	for (uint32_t i = 0; i < lmap.num_clusters; i++) {
+		if (lmap.lightinfo[i].data == 0xdeadbeef) {
+			printf ("bad lightmap: %d\n", i);
+			bad_lightmap = true;
 		}
 	}
-
-	for (int j = 1; j < num_models; j++) {
-		auto m = models[j];
-		if (!m) {
-			break;
-		}
-		if (m->path[0] == '*' || m->type != mod_brush) {
-			// sub model surfaces are processed as part of the main model
-			continue;
-		}
-		auto brush = m->brush;
-		// non-bsp models don't have surfaces.
-		for (uint32_t i = 0; i < brush->numsurfaces; i++) {
-			msurface_t *surf = brush->surfaces + i;
-			if (surf->lightpic) {
-				Vulkan_BuildLightMap (nullptr, brush, surf, ctx);
-			}
-		}
+	if (bad_lightmap) {
+		Sys_Error ("lightmap data incorrect");
 	}
-	QFV_ScrapFlush (bctx->light_scrap);
+
+	*bctx->num_lightmaps = num_lightmaps;
+
+	memcpy (lmap.style_data, d_lightstylevalue, sizeof (d_lightstylevalue));
+
+	qfv_scatter_t li_scatter = {
+		.srcOffset = QFV_PacketOffset (packet, lmap.lightinfo),
+		.length = lightinfo->buffer.size,
+	};
+	qfv_scatter_t si_scatter = {
+		.srcOffset = QFV_PacketOffset (packet, lmap.surfinfo),
+		.length = surfinfo->buffer.size,
+	};
+	qfv_scatter_t st_scatter = {
+		.srcOffset = QFV_PacketOffset (packet, lmap.style_data),
+		.length = style_data->buffer.size,
+	};
+	qfv_scatter_t ld_scatter = {
+		.srcOffset = QFV_PacketOffset (packet, lmap.lightmap_data),
+		.length = lightmap_data->buffer.size,
+	};
+	qfv_scatter_t cl_scatter = {
+		.srcOffset = QFV_PacketOffset (packet, lmap.clusters),
+		.length = light_clusters->buffer.size,
+	};
+	QFV_PacketScatterBuffer (packet, lightinfo->buffer.buffer,
+							 1, &li_scatter,
+							 &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+							 &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
+	QFV_PacketScatterBuffer (packet, surfinfo->buffer.buffer,
+							 1, &si_scatter,
+							 &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+							 &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
+	QFV_PacketScatterBuffer (packet, style_data->buffer.buffer,
+							 1, &st_scatter,
+							 &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+							 &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
+	QFV_PacketScatterBuffer (packet, lightmap_data->buffer.buffer,
+							 1, &ld_scatter,
+							 &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+							 &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
+	QFV_PacketScatterBuffer (packet, light_clusters->buffer.buffer,
+							 1, &cl_scatter,
+							 &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
+							 &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
+	QFV_PacketSubmit (packet);
 }
 
 VkImageView
 Vulkan_LightmapImageView (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	bspctx_t   *bctx = ctx->bsp_context;
 	return QFV_ScrapImageView (bctx->light_scrap);
 }
@@ -268,6 +568,7 @@ Vulkan_LightmapImageView (vulkan_ctx_t *ctx)
 void
 Vulkan_FlushLightmaps (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	bspctx_t   *bctx = ctx->bsp_context;
 	QFV_ScrapFlush (bctx->light_scrap);
 }

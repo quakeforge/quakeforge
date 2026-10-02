@@ -312,6 +312,59 @@ properties = {
 		};
 	};
 	brush = {
+		lightmap = {
+			shader = {
+				main = {
+					stage = compute;
+					name = lightmap.main;
+					module = $builtin/bsp.r;
+				};
+				queue_surfs = {
+					stage = compute;
+					name = lightmap.queue_surfs;
+					module = $builtin/bsp.r;
+				};
+				update_set_dispatch = {
+					stage = compute;
+					name = lightmap.update_set_dispatch;
+					module = $builtin/bsp.r;
+				};
+				surf_set_dispatch = {
+					stage = compute;
+					name = lightmap.surf_set_dispatch;
+					module = $builtin/bsp.r;
+				};
+				set_dispatch = {
+					stage = compute;
+					name = lightmap.set_dispatch;
+					module = $builtin/bsp.r;
+				};
+				clear = {
+					stage = compute;
+					name = lightmap.clear;
+					module = $builtin/bsp.r;
+				};
+			};
+			layout = {
+				descriptorSets = (lightmap_set);
+				pushConstants = {
+					compute = {
+						lightinfo = ptr;
+						surfinfo = ptr;
+						light_style_values = ptr;
+						lightmap_data = ptr;
+						light_queue_offs = ptr;
+						light_queue_inds = ptr;
+						light_clusters = ptr;
+						cluster_queue = ptr;
+						light_queue = ptr;
+
+						prefixsum_counts = ptr;
+						num_lightmaps = uint;
+					};
+				};
+			};
+		};
 		cluster = {
 			shader = {
 				clear = {
@@ -815,6 +868,16 @@ descriptorSetLayouts = {
 				descriptorType = combined_image_sampler;
 				descriptorCount = 1;
 				stageFlags = fragment|vertex;
+			},
+		);
+	};
+	lightmap_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = storage_image;
+				descriptorCount = 1;
+				stageFlags = compute;
 			},
 		);
 	};
@@ -1601,6 +1664,7 @@ jobs = {
 						};
 						cluster_set_dispatch = {
 							tasks = (
+								{ func = indirect_dispatch_barrier; },
 								{ func = set_dispatch; params = (1, 1, 1); },
 							);
 							stage = $brush.ent.shader.set_dispatch;
@@ -1608,6 +1672,7 @@ jobs = {
 						};
 						ent_count = {
 							tasks = (
+								{ func = indirect_dispatch_barrier; },
 								{ func = bsp_count_ent; },
 							);
 							stage = $brush.ent.shader.count;
@@ -1615,6 +1680,7 @@ jobs = {
 						};
 						ent_block_prefix0 = {
 							tasks = (
+								{ func = indirect_dispatch_barrier; },
 								{ func = bsp_sum_mod_insts; params = (0); },
 							);
 							stage = $prefixsum.shader.main;
@@ -1636,6 +1702,7 @@ jobs = {
 						};
 						ent_instances = {
 							tasks = (
+								{ func = indirect_dispatch_barrier; },
 								{ func = bsp_queue_insts; },
 							);
 							stage = $brush.ent.shader.enqueue;
@@ -1643,6 +1710,7 @@ jobs = {
 						};
 						ent_distribute = {
 							tasks = (
+								{ func = indirect_dispatch_barrier; },
 								{ func = bsp_distribute_insts; },
 							);
 							stage = $brush.ent.shader.distribute;
@@ -1650,6 +1718,7 @@ jobs = {
 						};
 						set_dispatch = {
 							tasks = (
+								{ func = indirect_dispatch_barrier; },
 								{ func = set_dispatch; params = (1, 1, 1); },
 							);
 							stage = $brush.ent.shader.inst_set_dispatch;
@@ -1657,6 +1726,7 @@ jobs = {
 						};
 						clear_commands = {
 							tasks = (
+								{ func = indirect_dispatch_barrier; },
 								{ func = bsp_clear_commands; },
 							);
 							stage = $brush.cluster.shader.clear;
@@ -1669,6 +1739,88 @@ jobs = {
 							);
 							stage = $brush.cluster.shader.main;
 							layout = $brush.cluster.layout;
+						};
+
+						light_clear = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.lightmap.shader.clear;
+							layout = $brush.lightmap.layout;
+						};
+						light_set_dispatch = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.lightmap.shader.set_dispatch;
+							layout = $brush.lightmap.layout;
+						};
+						light_queue_surfs = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_light_queue_surfs; },
+							);
+							stage = $brush.lightmap.shader.queue_surfs;
+							layout = $brush.lightmap.layout;
+						};
+						surf_set_dispatch = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.lightmap.shader.surf_set_dispatch;
+							layout = $brush.lightmap.layout;
+						};
+						light_block_prefix0 = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_light_sum; params = (0); },
+							);
+							stage = $prefixsum.shader.main;
+							layout = $prefixsum.layout;
+						};
+						light_offset_sum0 = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_light_sum; params = (1); },
+							);
+							stage = $prefixsum.shader.main;
+							layout = $prefixsum.layout;
+						};
+						light_sum0 = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_light_sum; params = (2); },
+							);
+							stage = $prefixsum.shader.offset;
+							layout = $prefixsum.layout;
+						};
+						update_set_dispatch = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.lightmap.shader.update_set_dispatch;
+							layout = $brush.lightmap.layout;
+						};
+						light_update = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_light_update; },
+							);
+							stage = $brush.lightmap.shader.main;
+							layout = $brush.lightmap.layout;
 						};
 					};
 				};
