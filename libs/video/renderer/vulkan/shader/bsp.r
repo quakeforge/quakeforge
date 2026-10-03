@@ -405,8 +405,13 @@ typedef struct light_queue_s {
 	{
 		if (light_queue) {
 			light_queue[0].count = 0;	// prefixsum main+offset
+			light_queue[0].x = 0;
 			light_queue[1].count = 0;	// prefixsum sums
+			light_queue[1].x = 0;
 			light_queue[2].count = 0;	// per luxel update
+			light_queue[2].x = 0;
+			light_queue[3].count = 0;
+			light_queue[3].x = 0;
 		}
 	}
 
