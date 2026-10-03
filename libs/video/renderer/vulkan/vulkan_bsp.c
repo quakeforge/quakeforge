@@ -2189,6 +2189,57 @@ bsp_light_update (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 }
 
 static void
+bsp_light_surf_sum (const exprval_t **params, exprval_t *result,
+					exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto bctx = ctx->bsp_context;
+	auto pipeline = taskctx->pipeline;
+	auto stage = *(int *) params[0]->value;
+
+	if (!r_refdef.worldmodel) {
+		return;
+	}
+
+	*bctx->in_data = 0;
+	*bctx->out_data = 0;
+	*bctx->sum_data = 0;
+	uint32_t offset = sizeof (uint32_t);
+	uint32_t sum_offset = 0;
+	switch (stage) {
+		case 0:
+			*bctx->in_data = *bctx->light_cluster_surfs;
+			*bctx->out_data = bctx->light_cluster_tmp_buffer.addr;
+			*bctx->sum_data = *bctx->mod_offsets;// tmp buffer for sums
+			break;
+		case 1:
+			*bctx->in_data = *bctx->mod_offsets;
+			*bctx->out_data = bctx->mod_sums_buffer.addr;
+			*bctx->sum_data = bctx->light_queue_buffer.addr
+							+ sizeof(uint32_t[12]);
+			offset += sizeof (uint32_t[4]);
+			sum_offset = sizeof (uint32_t);
+			break;
+		case 2:
+			*bctx->in_data = bctx->light_cluster_tmp_buffer.addr;
+			*bctx->out_data = *bctx->light_cluster_surfs;
+			*bctx->sum_data = bctx->mod_sums_buffer.addr;
+			break;
+		default:
+			Sys_Error ("invalid bsp_light_surf_sum stage: %d\n", stage);
+	}
+	*bctx->count = *bctx->prefixsum_counts + sum_offset;
+
+	auto cmd = taskctx->cmd;
+	QFV_PushBlackboard (ctx, cmd, pipeline);
+	dfunc->vkCmdDispatchIndirect (cmd, bctx->light_queue_buffer.buffer, offset);
+}
+
+static void
 bsp_light_sum (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneScoped (true);
@@ -2258,6 +2309,28 @@ bsp_light_queue_surfs (const exprval_t **params, exprval_t *result,
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 	dfunc->vkCmdDispatchIndirect (cmd, bctx->cluster_queue_buffer.buffer,
 								  frame->queue + sizeof (uint32_t));
+}
+
+static void
+bsp_light_queue_luxels (const exprval_t **params, exprval_t *result,
+						exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto bctx = ctx->bsp_context;
+	auto pipeline = taskctx->pipeline;
+
+	if (!r_refdef.worldmodel) {
+		return;
+	}
+
+	auto cmd = taskctx->cmd;
+	QFV_PushBlackboard (ctx, cmd, pipeline);
+	dfunc->vkCmdDispatchIndirect (cmd, bctx->light_queue_buffer.buffer,
+								  3 * sizeof (uint32_t[4])
+									+ sizeof (uint32_t));
 }
 
 static void
@@ -2490,7 +2563,7 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.light_style_values = QFV_GetBlackboardVar (ctx, "light_style_values"),
 		.lightmap_data      = QFV_GetBlackboardVar (ctx, "lightmap_data"),
 		.light_clusters     = QFV_GetBlackboardVar (ctx, "light_clusters"),
-		.light_cluster_queue= QFV_GetBlackboardVar (ctx, "light_cluster_queue"),
+		.light_cluster_surfs= QFV_GetBlackboardVar (ctx, "light_cluster_surfs"),
 		.light_queue_offs   = QFV_GetBlackboardVar (ctx, "light_queue_offs"),
 		.light_queue_inds   = QFV_GetBlackboardVar (ctx, "light_queue_inds"),
 		.light_queue        = QFV_GetBlackboardVar (ctx, "light_queue"),
@@ -2618,12 +2691,20 @@ static exprfunc_t bsp_light_update_func[] = {
 	{ .func = bsp_light_update },
 	{}
 };
+static exprfunc_t bsp_light_surf_sum_func[] = {
+	{ .func = bsp_light_surf_sum, .num_params = 1, bsp_sum_params },
+	{}
+};
 static exprfunc_t bsp_light_sum_func[] = {
 	{ .func = bsp_light_sum, .num_params = 1, bsp_sum_params },
 	{}
 };
 static exprfunc_t bsp_light_queue_surfs_func[] = {
 	{ .func = bsp_light_queue_surfs },
+	{}
+};
+static exprfunc_t bsp_light_queue_luxels_func[] = {
+	{ .func = bsp_light_queue_luxels },
 	{}
 };
 static exprfunc_t bsp_build_lightmaps_func[] = {
@@ -2659,8 +2740,10 @@ static exprsym_t bsp_task_syms[] = {
 	{ "bsp_sum_mod_insts", &cexpr_function, bsp_sum_mod_insts_func },
 
 	{ "bsp_light_update", &cexpr_function, bsp_light_update_func },
+	{ "bsp_light_surf_sum", &cexpr_function, bsp_light_surf_sum_func },
 	{ "bsp_light_sum", &cexpr_function, bsp_light_sum_func },
 	{ "bsp_light_queue_surfs", &cexpr_function, bsp_light_queue_surfs_func },
+	{ "bsp_light_queue_luxels", &cexpr_function, bsp_light_queue_luxels_func },
 	{ "bsp_build_lightmaps", &cexpr_function, bsp_build_lightmaps_func },
 	{ "bsp_build_display_lists", &cexpr_function,
 		bsp_build_display_lists_func },

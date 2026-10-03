@@ -269,16 +269,16 @@ typedef struct light_queue_s {
 		[shader(GLCompute, LocalSize=[1,1,1])]
 		void cluster ()
 		{
-			if (cluster_queue) {
-				cluster_queue.x = DISPATCH(cluster_queue.count);
-			}
+			//if (cluster_queue) {
+			//	cluster_queue.x = DISPATCH(cluster_queue.count);
+			//}
 		}
 	}
 }
 
 @namespace lightmap {
 	// Find the largest index of the array with a value <= key.
-	// Entries in the array must be sorted (and unique?)
+	// Entries in the array must be sorted (returns last of duplicates)
 	uint fbsearch (const uint key, uint *array, const uint count)
 	{
 		uint left = 0;
@@ -307,6 +307,7 @@ typedef struct light_queue_s {
 		uint       *light_queue_offs;
 		uint       *light_queue_inds;
 		cluster_t  *light_clusters;
+		uint       *light_cluster_surfs;
 		cluster_queue_t *cluster_queue;
 		light_queue_t *light_queue;
 
@@ -349,10 +350,12 @@ typedef struct light_queue_s {
 			auto data = (ubvec3*)_data;
 			uint stride = li.size.x * li.size.y;
 			// style 0xff marks the premature end of the array
-			// FIXME make uniform (need to confirm later entries are 0xff)
-			for (uint i = 0; i < 4 && li.styles[i] != byte(0xff); i++) {
-				float scale = light_style_values[li.styles[i]] / 65536.0f;
-				light += vec3 (data[i * stride + luxel]) * scale;
+			for (uint i = 0; i < 4; i++) {
+				uint style = li.styles[i];
+				if (style != 255) {
+					float scale = light_style_values[style] / 65536.0f;
+					light += vec3 (data[i * stride + luxel]) * scale;
+				}
 			}
 		}
 		imageStore (light_image, xy, vec4 (light, 1));
@@ -370,15 +373,30 @@ typedef struct light_queue_s {
 			return;
 		}
 		uint clusterid = cluster_queue.queue[ind];
+		light_cluster_surfs[ind] = light_clusters[clusterid].count;
+		if (ind == 0) {
+			light_queue[0].count = cluster_queue.count;
+		}
+	}
+
+	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+	void luxels ()
+	{
+		uint surfid = gl_GlobalInvocationID.x;
+		if (surfid >= light_queue[3].count) {
+			return;
+		}
+		uint ind = fbsearch (surfid, light_cluster_surfs, cluster_queue.count);
+		uint clusterid = cluster_queue.queue[ind];
 		auto cluster = light_clusters[clusterid];
 		//FIXME don't queue all visible lightmaps, only those that need to be
 		//updated (need to cache previous style values)
-		//FIXME make uniform (see lightmap)
-		uint first = atomicAdd (light_queue[0].count, cluster.count);
-		for (uint i = 0; i < cluster.count; i++) {
-			auto li = &lightinfo[cluster.first + i];
-			light_queue_offs[first + i] = (uint) li.size.x * (uint) li.size.y;
-			light_queue_inds[first + i] = cluster.first + i;
+		uint surf = cluster.first + surfid - light_cluster_surfs[ind];
+		auto li = &lightinfo[surf];
+		light_queue_offs[surfid] = (uint) li.size.x * (uint) li.size.y;
+		light_queue_inds[surfid] = surf;
+		if (surfid == 0) {
+			light_queue[0].count = light_queue[3].count;
 		}
 	}
 
@@ -398,6 +416,19 @@ typedef struct light_queue_s {
 		{
 			if (cluster_queue) {
 				cluster_queue.x = DISPATCH(cluster_queue.count);
+				//printf ("set_dispatch.cluster: %d\n", cluster_queue.count);
+			}
+		}
+
+		[shader(GLCompute, LocalSize=[1,1,1])]
+		void luxel ()
+		{
+			if (light_queue) {
+				uint count = light_queue[3].count;
+				light_queue[3].x = DISPATCH(count);
+				light_queue[3].y = 1;
+				light_queue[3].z = 1;
+				//printf ("set_dispatch.luxel: %d\n", count);
 			}
 		}
 
@@ -418,6 +449,7 @@ typedef struct light_queue_s {
 
 				prefixsum_counts[0] = count;
 				prefixsum_counts[1] = sum_count;
+				//printf ("set_dispatch.surf:%d %d\n", count, sum_count);
 			}
 		}
 
@@ -429,6 +461,7 @@ typedef struct light_queue_s {
 				light_queue[2].x = DISPATCH(count);
 				light_queue[2].y = 1;
 				light_queue[2].z = 1;
+				//printf ("set_dispatch.update %d\n", count);
 			}
 		}
 	}

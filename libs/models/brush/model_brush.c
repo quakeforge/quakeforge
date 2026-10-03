@@ -970,9 +970,16 @@ Mod_LoadFaces (mod_brush_ctx_t *brush_ctx)
 		CalcSurfaceExtents (mod, out);
 
 		// lighting info
-
-		for (i = 0; i < MAXLIGHTMAPS; i++)
-			out->styles[i] = in->styles[i];
+		bool styles_ended = false;
+		for (i = 0; i < MAXLIGHTMAPS; i++) {
+			// copy styles while ensuring all styles after the end marker
+			// are also "no style"
+			if (styles_ended) {
+				out->styles[i] = 255;
+			} else if ((out->styles[i] = in->styles[i]) == 255) {
+				styles_ended = true;
+			}
+		}
 		i = in->lightofs;
 		if (i == -1)
 			out->samples = NULL;

@@ -228,6 +228,7 @@ typedef struct bspctx_s {
 	bsp_buffer_t light_style_buffer;
 	bsp_buffer_t light_queue_buffer;
 	bsp_buffer_t light_queue_tmp_buffer;
+	bsp_buffer_t light_cluster_tmp_buffer;
 
 	bsp_buffer_t prefixsum_counts_buffer;
 
@@ -278,7 +279,7 @@ typedef struct bspctx_s {
 	VkDeviceAddress *light_queue_inds;
 	VkDeviceAddress *light_queue_tmp;
 	VkDeviceAddress *light_clusters;
-	VkDeviceAddress *light_cluster_queue;
+	VkDeviceAddress *light_cluster_surfs;
 	VkDeviceAddress *light_queue;
 	uint32_t   *num_lightmaps;
 } bspctx_t;

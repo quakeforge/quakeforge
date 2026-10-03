@@ -339,13 +339,15 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 					+ sizeof (qfv_resobj_t)		// queue inds
 					+ sizeof (qfv_resobj_t)		// queue tmp
 					+ sizeof (qfv_resobj_t)		// light clusters
-					+ sizeof (qfv_resobj_t);	// light queue
+					+ sizeof (qfv_resobj_t) 	// light queue
+					+ sizeof (qfv_resobj_t)		// light cluster surfs
+					+ sizeof (qfv_resobj_t);	// light cluster tmp
 		bctx->lightmap_resource = malloc (size);
 		*bctx->lightmap_resource = (qfv_resource_t) {
 			.name = "bsp:lightmap",
 			.va_ctx = ctx->va_ctx,
 			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			.num_objects = 9,
+			.num_objects = 11,
 			.objects = (qfv_resobj_t *)&bctx->lightmap_resource[1],
 		};
 	};
@@ -358,6 +360,8 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	auto queue_tmp = &queue_inds[1];
 	auto light_clusters = &queue_tmp[1];
 	auto light_queue = &light_clusters[1];
+	auto light_cluster_surfs = &light_queue[1];
+	auto light_cluster_tmp = &light_cluster_surfs[1];
 
 	*lightinfo = (qfv_resobj_t) {
 		.name = "lightinfo",
@@ -444,12 +448,33 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		.name = "light_queue",
 		.type = qfv_res_buffer,
 		.buffer = {
-			// 4 for count and indirect dispatch, three blocks
+			// 4 for count and indirect dispatch, four blocks
 			// 2 for prefix sums,
 			// 1 for actual lightmap update
-			.size = 3 * sizeof (uint32_t[4]),
+			// 1 for actual surface update
+			.size = 4 * sizeof (uint32_t[4]),
 			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 					| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		},
+	};
+	*light_cluster_surfs = (qfv_resobj_t) {
+		.name = "light_cluster_surfs",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (cluster_t[lmap.num_clusters]),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		},
+	};
+	*light_cluster_tmp = (qfv_resobj_t) {
+		.name = "light_cluster_tmp",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (cluster_t[lmap.num_clusters]),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 		},
@@ -463,6 +488,7 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	*bctx->light_queue_offs = queue_offs->buffer.address;
 	*bctx->light_queue_inds = queue_inds->buffer.address;
 	*bctx->light_clusters = light_clusters->buffer.address;
+	*bctx->light_cluster_surfs = light_cluster_surfs->buffer.address;
 	bctx->light_style_buffer = (bsp_buffer_t) {
 		.buffer = style_data->buffer.buffer,
 		.size = style_data->buffer.size,
@@ -478,6 +504,11 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		.buffer = queue_tmp->buffer.buffer,
 		.size = queue_tmp->buffer.size,
 		.addr = queue_tmp->buffer.address,
+	};
+	bctx->light_cluster_tmp_buffer = (bsp_buffer_t) {
+		.buffer = light_cluster_tmp->buffer.buffer,
+		.size = light_cluster_tmp->buffer.size,
+		.addr = light_cluster_tmp->buffer.address,
 	};
 
 	size_t size = lightinfo->buffer.size

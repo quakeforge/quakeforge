@@ -319,6 +319,11 @@ properties = {
 					name = lightmap.main;
 					module = $builtin/bsp.r;
 				};
+				luxels = {
+					stage = compute;
+					name = lightmap.luxels;
+					module = $builtin/bsp.r;
+				};
 				queue_surfs = {
 					stage = compute;
 					name = lightmap.queue_surfs;
@@ -333,6 +338,11 @@ properties = {
 					surf = {
 						stage = compute;
 						name = lightmap.set_dispatch.surf;
+						module = $builtin/bsp.r;
+					};
+					luxel = {
+						stage = compute;
+						name = lightmap.set_dispatch.luxel;
 						module = $builtin/bsp.r;
 					};
 					cluster = {
@@ -358,6 +368,7 @@ properties = {
 						light_queue_offs = ptr;
 						light_queue_inds = ptr;
 						light_clusters = ptr;
+						light_cluster_surfs = ptr;
 						cluster_queue = ptr;
 						light_queue = ptr;
 
@@ -1770,6 +1781,60 @@ jobs = {
 								{ func = bsp_light_queue_surfs; },
 							);
 							stage = $brush.lightmap.shader.queue_surfs;
+							layout = $brush.lightmap.layout;
+						};
+						light:clust:set_dispatch = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.lightmap.shader.set_dispatch.surf;
+							layout = $brush.lightmap.layout;
+						};
+						light:surf:block_prefix = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_light_surf_sum; params = (0); },
+							);
+							stage = $prefixsum.shader.main;
+							layout = $prefixsum.layout;
+						};
+						light:surf:offset_sum = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_light_surf_sum; params = (1); },
+							);
+							stage = $prefixsum.shader.main;
+							layout = $prefixsum.layout;
+						};
+						light:surf:sum = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_light_surf_sum; params = (2); },
+							);
+							stage = $prefixsum.shader.offset;
+							layout = $prefixsum.layout;
+						};
+						light:luxel:set_dispatch = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.lightmap.shader.set_dispatch.luxel;
+							layout = $brush.lightmap.layout;
+						};
+						light:cluster:luxels = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_light_queue_luxels; },
+							);
+							stage = $brush.lightmap.shader.luxels;
 							layout = $brush.lightmap.layout;
 						};
 						light:surf:set_dispatch = {
