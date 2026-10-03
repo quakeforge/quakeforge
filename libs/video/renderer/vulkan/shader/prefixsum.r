@@ -66,7 +66,6 @@ main ()
 	}
 	if (id == workgroup_size - 1) {
 		out_data[ext_ind0 & ~(block_size - 1)] = 0;
-		out_data[ext_ind1] = local_data[loc_ind0];
 		sum_data[ext_ind0 / block_size] = local_data[loc_ind1];
 	}
 }
