@@ -257,7 +257,7 @@ vulkan_init_lightmap (uint32_t surfind, lmapctx_t *lmap)
 		}
 	} else {
 		lightinfo[ind] = (bsp_lightinfo_t) {
-			.styles[0] = 0xff,
+			.styles = { VEC4_EXP (surf->styles) },
 			.data = ~0,
 		};
 		surfinfo[ind] = (bsp_surfinfo_t) {
@@ -521,7 +521,7 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	lmap.surfinfo = (bsp_surfinfo_t *) &lmap.lightinfo[lmap.num_lightmaps];
 	lmap.clusters = (cluster_t*) &lmap.surfinfo[lmap.num_lightmaps];
 	lmap.style_data = (int16_t *) &lmap.clusters[lmap.num_clusters];
-	lmap.lightmap_data = (byte *) &lmap.style_data[countof (d_lightstylevalue)];
+	lmap.lightmap_data = (byte *) &lmap.style_data[frames * countof (d_lightstylevalue)];
 
 	for (uint32_t i = 0; i < size / 4; i++) {
 		((uint32_t *)lmap.lightinfo)[i] = 0xdeadbeef;
@@ -537,24 +537,33 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	lmap.num_clusters = 0;
 
 	lmap_model_loop (models, num_models, vulkan_build_lightmaps, &lmap);
+
+	*bctx->num_lightmaps = num_lightmaps;
+
+	for (uint32_t i = 0; i < frames; i++) {
+		uint32_t offset = i * sizeof (d_lightstylevalue);
+		memcpy ((byte *) lmap.style_data + offset, d_lightstylevalue,
+				sizeof (d_lightstylevalue));
+		bctx->frames.a[i].style_offset = offset;
+	}
+
 	bool bad_lightmap = num_lightmaps != lmap.num_lightmaps;
 	for (uint32_t i = 0; i < lmap.num_clusters; i++) {
 		if (lmap.lightinfo[i].data == 0xdeadbeef) {
 			printf ("bad lightmap: %d\n", i);
 			bad_lightmap = true;
 		}
+		if (lmap.clusters[i].count > lmap.num_clusters) {
+			printf ("what the what?!?: %d %d\n", i, lmap.clusters[i].count);
+			bad_lightmap = true;
+		}
+		if (lmap.surfinfo[i].plane == 0xdeadbeef) {
+			printf ("bad surfinfo: %d\n", i);
+			bad_lightmap = true;
+		}
 	}
 	if (bad_lightmap) {
 		Sys_Error ("lightmap data incorrect");
-	}
-
-	*bctx->num_lightmaps = num_lightmaps;
-
-	for (uint32_t i = 0; i < frames; i++) {
-		uint32_t offset = i * sizeof (d_lightstylevalue);
-		memcpy (lmap.style_data + offset, d_lightstylevalue,
-				sizeof (d_lightstylevalue));
-		bctx->frames.a[i].style_offset = offset;
 	}
 
 	qfv_scatter_t li_scatter = {
