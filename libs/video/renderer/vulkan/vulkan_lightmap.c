@@ -503,6 +503,21 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	BUFFER (light_queue);
 #undef BUFFER
 
+	bctx->light_surfs = (bsp_prefixsum_t) {
+		.in = bctx->light_cluster_surfs_buffer.addr,
+		.out = bctx->light_cluster_surfs_buffer.addr,
+		.tmp = bctx->light_cluster_tmp_buffer.addr,
+		.total = bctx->light_queue_buffer.addr + sizeof (uint32_t[12]),
+		.invoke = bctx->light_queue_buffer.buffer,
+	};
+	bctx->light_luxels = (bsp_prefixsum_t) {
+		.in = bctx->light_queue_offs_buffer.addr,
+		.out = bctx->light_queue_offs_buffer.addr,
+		.tmp = bctx->light_queue_tmp_buffer.addr,
+		.total = bctx->light_queue_buffer.addr + sizeof (uint32_t[8]),
+		.invoke = bctx->light_queue_buffer.buffer,
+	};
+
 	size_t size = lightinfo->buffer.size
 				+ surfinfo->buffer.size
 				+ light_clusters->buffer.size
@@ -532,7 +547,9 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	lmap_model_loop (models, num_models, vulkan_build_lightmaps, &lmap);
 
-	*bctx->num_lightmaps = num_lightmaps;
+	if (bctx->num_lightmaps) {
+		*bctx->num_lightmaps = num_lightmaps;
+	}
 
 	for (uint32_t i = 0; i < frames; i++) {
 		uint32_t offset = i * sizeof (d_lightstylevalue);

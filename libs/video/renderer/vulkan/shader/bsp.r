@@ -29,12 +29,6 @@ typedef struct cluster_queue_s {
 	uint        queue[];
 } cluster_queue_t;
 
-typedef struct light_queue_s {
-	uint        count;
-	uint        x, y, z;
-	// queue data is separate
-} light_queue_t;;
-
 @namespace cluster {
 	[push_constant] @block Params {
 		uint       *command_counts;
@@ -134,6 +128,7 @@ typedef struct light_queue_s {
 		uint       *mod_offsets;
 		uint        ent_count;
 		uint        num_models;
+		bsp_invoke_t *mod_invoke;
 
 		uint       *prefixsum_counts;
 	};
@@ -207,12 +202,6 @@ typedef struct light_queue_s {
 	void count ()
 	{
 		uint ent_ind = gl_GlobalInvocationID.x;
-		if (ent_ind == 0) {
-			uint count = num_models * mod_queues;
-			uint sum_count = BLOCKDISP (count);
-			prefixsum_counts[0] = count;
-			prefixsum_counts[1] = sum_count;
-		}
 		if (ent_ind < 1 || ent_ind >= ent_count) {
 			mod_counts[0] = 1;
 			return;
@@ -266,6 +255,29 @@ typedef struct light_queue_s {
 		}
 
 		[shader(GLCompute, LocalSize=[1,1,1])]
+		void model ()
+		{
+			if (mod_invoke) {
+				uint count = num_models * mod_queues;
+				uint sum_count = BLOCKDISP (count);
+				mod_invoke[0] = {
+					.count = count,
+					.x = BLOCKDISP(count),
+					.y = 1,
+					.z = 1,
+				};
+				mod_invoke[1] = {
+					.count = sum_count,
+					.x = BLOCKDISP(sum_count),
+					.y = 1,
+					.z = 1,
+				};
+				prefixsum_counts[0] = count;
+				prefixsum_counts[1] = sum_count;
+			}
+		}
+
+		[shader(GLCompute, LocalSize=[1,1,1])]
 		void cluster ()
 		{
 			//if (cluster_queue) {
@@ -308,7 +320,7 @@ typedef struct light_queue_s {
 		cluster_t  *light_clusters;
 		uint       *light_cluster_surfs;
 		cluster_queue_t *cluster_queue;
-		light_queue_t *light_queue;
+		bsp_invoke_t *light_queue;
 
 		uint       *prefixsum_counts;
 		uint        num_lightmaps;

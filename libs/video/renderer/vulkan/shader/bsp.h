@@ -11,6 +11,11 @@ QF_VEC_TYPE (float, vec2, 2);
 // frame 0, fraem 1 trans
 #define mod_queues 4
 
+typedef struct bsp_invoke_s {
+	uint        count;
+	uint        x, y, z;
+} bsp_invoke_t;
+
 typedef struct bsp_command_s {// matches VkDrawIndexedIndirectCommand
 	uint        indexCount;
 	uint        instanceCount;

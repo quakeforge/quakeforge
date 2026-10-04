@@ -14,18 +14,19 @@ void printf (string fmt, ...)
 	uint *out_data;
 	uint *sum_data;
 	uint *count;		// single value
+	uint  mode;
 };
 
 [in("GlobalInvocationId")] uvec3 gl_GlobalInvocationID;
 [in("LocalInvocationId")] uvec3 gl_LocalInvocationID;
+//[in("NumWorkgroups")] uvec3 gl_NumWorkgroups;
 
 void barrier () = @intrinsic(OpControlBarrier)
 	[Scope.Workgroup, Scope.Workgroup,
 	 (MemorySemantics.AcquireRelease | MemorySemantics.WorkgroupMemory)];
 
-[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 void
-main ()
+do_main ()
 {
 	const uint num_steps = BITOP_LOG2(workgroup_size) + 1;
 	uint ext_ind0 = gl_GlobalInvocationID.x * 2 + 0;
@@ -72,7 +73,13 @@ main ()
 
 [shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 void
-offset ()
+main ()
+{
+	do_main ();
+}
+
+void
+do_offset ()
 {
 	uint ext_ind0 = gl_GlobalInvocationID.x * 2 + 0;
 	uint ext_ind1 = gl_GlobalInvocationID.x * 2 + 1;
@@ -82,5 +89,23 @@ offset ()
 	}
 	if (ext_ind1 < *count) {
 		out_data[ext_ind1] = in_data[ext_ind1] + sum_data[sum_ind];
+	}
+}
+
+[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+void
+offset ()
+{
+	do_offset ();
+}
+
+[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+void
+modal ()
+{
+	if (mode) {
+		do_offset ();
+	} else {
+		do_main ();
 	}
 }

@@ -150,6 +150,14 @@ typedef struct bsp_buffer_s {
 	VkDeviceAddress *bb;
 } bsp_buffer_t;
 
+typedef struct bsp_prefixsum_s {
+	VkDeviceAddress in;
+	VkDeviceAddress out;
+	VkDeviceAddress tmp;
+	VkDeviceAddress total;
+	VkBuffer    invoke;		// bsp_invoke_t [2]
+} bsp_prefixsum_t;
+
 /** Main BSP context structure
  *
  * This holds all the state and resources needed for rendering brush models.
@@ -208,8 +216,11 @@ typedef struct bspctx_s {
 
 	bspframeset_t frames;
 
+	bsp_prefixsum_t mod_offsets;
+	bsp_prefixsum_t light_surfs;
+	bsp_prefixsum_t light_luxels;
+
 	bsp_buffer_t mod_tmp_buffer;
-	bsp_buffer_t mod_sums_buffer;
 #define BB_buffer(name) bsp_buffer_t name##_buffer
 	BB_buffer (index);
 	BB_buffer (vertex);
@@ -238,6 +249,8 @@ typedef struct bspctx_s {
 	BB_buffer (tex_ids);//XXX not used
 	BB_buffer (mod_counts);
 	BB_buffer (mod_offsets);
+	BB_buffer (mod_clusters);
+	BB_buffer (mod_invoke);
 	uint32_t   *ent_count;
 	uint32_t   *num_models;
 
@@ -255,13 +268,16 @@ typedef struct bspctx_s {
 	BB_buffer (light_queue);
 	uint32_t   *num_lightmaps;
 
-	BB_buffer (prefixsum_counts);
-
 	//prefixsum
-	VkDeviceAddress *in_data;
-	VkDeviceAddress *out_data;
-	VkDeviceAddress *sum_data;
-	VkDeviceAddress *count;
+	struct {
+		VkDeviceAddress *in_data;
+		VkDeviceAddress *out_data;
+		VkDeviceAddress *sum_data;
+		VkDeviceAddress *count;
+		uint32_t   *mode;
+	}           psum;
+	BB_buffer (prefixsum_counts);
+	BB_buffer (block_sums);
 
 	//render
 	uint32_t   *MatrixBase;
