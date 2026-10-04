@@ -824,7 +824,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t subclusters_buffer_size = sizeof (bsp_cluster_t[num_clusters]);
 	size_t clusters_buffer_size = sizeof (cluster_t[mod_clusters]);
 	size_t cluster_map_buffer_size = sizeof (uint32_t[num_clusters]);
-	size_t instance_queue_buffer_size = sizeof (bsp_cluster_t[num_clusters])
+	size_t instance_queue_buffer_size = sizeof (bsp_queue_t[num_clusters])
 									  + sizeof (uint32_t[4]);//count+ind disp
 	// 4 for count + indirect dispatch
 	size_t cluster_queue_buffer_size = sizeof (uint32_t[4 + num_clusters]);
