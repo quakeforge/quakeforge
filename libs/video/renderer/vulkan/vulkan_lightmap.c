@@ -73,9 +73,9 @@ typedef struct lmapctx_s {
 
 	bsp_lightinfo_t *lightinfo;
 	bsp_surfinfo_t *surfinfo;
-	int16_t    *style_data;
+	int16_t    *light_style_values;
 	byte       *lightmap_data;
-	cluster_t  *clusters;
+	cluster_t  *light_clusters;
 } lmapctx_t;
 
 static void
@@ -289,7 +289,7 @@ vulkan_build_lightmaps (model_t *m, lmapctx_t *lmap)
 		auto cluster = &brush->clusters[i];
 		uint32_t first = lmap->num_lightmaps;
 		vulkan_build_light_cluster (cluster, lmap);
-		lmap->clusters[lmap->num_clusters + i] = (cluster_t) {
+		lmap->light_clusters[lmap->num_clusters + i] = (cluster_t) {
 			.first = first,
 			.count = cluster->count,
 		};
@@ -299,7 +299,7 @@ vulkan_build_lightmaps (model_t *m, lmapctx_t *lmap)
 		auto cluster = &brush->clusters[num_clusters + i - 1];
 		uint32_t first = lmap->num_lightmaps;
 		vulkan_build_light_cluster (cluster, lmap);
-		lmap->clusters[lmap->num_clusters] = (cluster_t) {
+		lmap->light_clusters[lmap->num_clusters] = (cluster_t) {
 			.first = first,
 			.count = cluster->count,
 		};
@@ -335,9 +335,9 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 					+ sizeof (qfv_resobj_t)		// surfinfo
 					+ sizeof (qfv_resobj_t)		// style data
 					+ sizeof (qfv_resobj_t)		// lightmap data
-					+ sizeof (qfv_resobj_t)		// queue offs
-					+ sizeof (qfv_resobj_t)		// queue inds
-					+ sizeof (qfv_resobj_t)		// queue tmp
+					+ sizeof (qfv_resobj_t)		// light queue offs
+					+ sizeof (qfv_resobj_t)		// light queue inds
+					+ sizeof (qfv_resobj_t)		// light queue tmp
 					+ sizeof (qfv_resobj_t)		// light clusters
 					+ sizeof (qfv_resobj_t) 	// light queue
 					+ sizeof (qfv_resobj_t)		// light cluster surfs
@@ -353,12 +353,12 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	};
 	auto lightinfo = &bctx->lightmap_resource->objects[0];
 	auto surfinfo = &lightinfo[1];
-	auto style_data = &surfinfo[1];
-	auto lightmap_data = &style_data[1];
-	auto queue_offs = &lightmap_data[1];
-	auto queue_inds = &queue_offs[1];
-	auto queue_tmp = &queue_inds[1];
-	auto light_clusters = &queue_tmp[1];
+	auto light_style_values = &surfinfo[1];
+	auto lightmap_data = &light_style_values[1];
+	auto light_queue_offs = &lightmap_data[1];
+	auto light_queue_inds = &light_queue_offs[1];
+	auto light_queue_tmp = &light_queue_inds[1];
+	auto light_clusters = &light_queue_tmp[1];
 	auto light_queue = &light_clusters[1];
 	auto light_cluster_surfs = &light_queue[1];
 	auto light_cluster_tmp = &light_cluster_surfs[1];
@@ -383,8 +383,8 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 		},
 	};
-	*style_data = (qfv_resobj_t) {
-		.name = "style_data",
+	*light_style_values = (qfv_resobj_t) {
+		.name = "light_style_values",
 		.type = qfv_res_buffer,
 		.buffer = {
 			.size = sizeof (d_lightstylevalue) * frames,
@@ -404,8 +404,8 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 		},
 	};
-	*queue_offs = (qfv_resobj_t) {
-		.name = "queue_offs",
+	*light_queue_offs = (qfv_resobj_t) {
+		.name = "light_queue_offs",
 		.type = qfv_res_buffer,
 		.buffer = {
 			.size = sizeof (uint32_t[lmap.num_lightmaps]),
@@ -414,8 +414,8 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 		},
 	};
-	*queue_inds = (qfv_resobj_t) {
-		.name = "queue_inds",
+	*light_queue_inds = (qfv_resobj_t) {
+		.name = "light_queue_inds",
 		.type = qfv_res_buffer,
 		.buffer = {
 			.size = sizeof (uint32_t[lmap.num_lightmaps]),
@@ -424,8 +424,8 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 		},
 	};
-	*queue_tmp = (qfv_resobj_t) {
-		.name = "queue_tmp",
+	*light_queue_tmp = (qfv_resobj_t) {
+		.name = "light_queue_tmp",
 		.type = qfv_res_buffer,
 		.buffer = {
 			.size = sizeof (uint32_t[lmap.num_lightmaps]),
@@ -481,47 +481,41 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	};
 	QFV_CreateResource (ctx->device, bctx->lightmap_resource);
 
-	*bctx->lightinfo = lightinfo->buffer.address;
-	*bctx->surfinfo = surfinfo->buffer.address;
-	*bctx->light_style_values = style_data->buffer.address;
-	*bctx->lightmap_data = lightmap_data->buffer.address;
-	*bctx->light_queue_offs = queue_offs->buffer.address;
-	*bctx->light_queue_inds = queue_inds->buffer.address;
-	*bctx->light_clusters = light_clusters->buffer.address;
-	*bctx->light_cluster_surfs = light_cluster_surfs->buffer.address;
-	bctx->light_style_buffer = (bsp_buffer_t) {
-		.buffer = style_data->buffer.buffer,
-		.size = style_data->buffer.size,
-		.addr = style_data->buffer.address,
-	};
-	bctx->light_queue_buffer = (bsp_buffer_t) {
-		.buffer = light_queue->buffer.buffer,
-		.size = light_queue->buffer.size,
-		.addr = light_queue->buffer.address,
-	};
-	*bctx->light_queue = bctx->light_queue_buffer.addr;
-	bctx->light_queue_tmp_buffer = (bsp_buffer_t) {
-		.buffer = queue_tmp->buffer.buffer,
-		.size = queue_tmp->buffer.size,
-		.addr = queue_tmp->buffer.address,
-	};
-	bctx->light_cluster_tmp_buffer = (bsp_buffer_t) {
-		.buffer = light_cluster_tmp->buffer.buffer,
-		.size = light_cluster_tmp->buffer.size,
-		.addr = light_cluster_tmp->buffer.address,
-	};
+#define BUFFER(b) \
+		do { \
+			bctx->b##_buffer.buffer = b->buffer.buffer; \
+			bctx->b##_buffer.size = b->buffer.size; \
+			bctx->b##_buffer.addr = b->buffer.address; \
+			if (bctx->b##_buffer.bb) { \
+				*bctx->b##_buffer.bb = bctx->b##_buffer.addr; \
+			} \
+		} while (0)
+	BUFFER (lightinfo);
+	BUFFER (surfinfo);
+	BUFFER (light_style_values);
+	BUFFER (lightmap_data);
+	BUFFER (light_queue_offs);
+	BUFFER (light_queue_inds);
+	BUFFER (light_queue_tmp);
+	BUFFER (light_clusters);
+	BUFFER (light_cluster_surfs);
+	BUFFER (light_cluster_tmp);
+	BUFFER (light_queue);
+#undef BUFFER
 
 	size_t size = lightinfo->buffer.size
 				+ surfinfo->buffer.size
 				+ light_clusters->buffer.size
-				+ style_data->buffer.size
+				+ light_style_values->buffer.size
 				+ lightmap_data->buffer.size;
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.lightmap");
 	lmap.lightinfo = QFV_PacketExtend (packet, size);
 	lmap.surfinfo = (bsp_surfinfo_t *) &lmap.lightinfo[lmap.num_lightmaps];
-	lmap.clusters = (cluster_t*) &lmap.surfinfo[lmap.num_lightmaps];
-	lmap.style_data = (int16_t *) &lmap.clusters[lmap.num_clusters];
-	lmap.lightmap_data = (byte *) &lmap.style_data[frames * countof (d_lightstylevalue)];
+	lmap.light_clusters = (cluster_t*) &lmap.surfinfo[lmap.num_lightmaps];
+	lmap.light_style_values
+		= (int16_t *) &lmap.light_clusters[lmap.num_clusters];
+	lmap.lightmap_data
+		= (byte*) &lmap.light_style_values[frames * countof(d_lightstylevalue)];
 
 	for (uint32_t i = 0; i < size / 4; i++) {
 		((uint32_t *)lmap.lightinfo)[i] = 0xdeadbeef;
@@ -542,7 +536,7 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	for (uint32_t i = 0; i < frames; i++) {
 		uint32_t offset = i * sizeof (d_lightstylevalue);
-		memcpy ((byte *) lmap.style_data + offset, d_lightstylevalue,
+		memcpy ((byte *) lmap.light_style_values + offset, d_lightstylevalue,
 				sizeof (d_lightstylevalue));
 		bctx->frames.a[i].style_offset = offset;
 	}
@@ -553,8 +547,9 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			printf ("bad lightmap: %d\n", i);
 			bad_lightmap = true;
 		}
-		if (lmap.clusters[i].count > lmap.num_clusters) {
-			printf ("what the what?!?: %d %d\n", i, lmap.clusters[i].count);
+		if (lmap.light_clusters[i].count > lmap.num_clusters) {
+			printf ("what the what?!?: %d %d\n", i,
+					lmap.light_clusters[i].count);
 			bad_lightmap = true;
 		}
 		if (lmap.surfinfo[i].plane == 0xdeadbeef) {
@@ -566,46 +561,23 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		Sys_Error ("lightmap data incorrect");
 	}
 
-	qfv_scatter_t li_scatter = {
-		.srcOffset = QFV_PacketOffset (packet, lmap.lightinfo),
-		.length = lightinfo->buffer.size,
-	};
-	qfv_scatter_t si_scatter = {
-		.srcOffset = QFV_PacketOffset (packet, lmap.surfinfo),
-		.length = surfinfo->buffer.size,
-	};
-	qfv_scatter_t st_scatter = {
-		.srcOffset = QFV_PacketOffset (packet, lmap.style_data),
-		.length = style_data->buffer.size,
-	};
-	qfv_scatter_t ld_scatter = {
-		.srcOffset = QFV_PacketOffset (packet, lmap.lightmap_data),
-		.length = lightmap_data->buffer.size,
-	};
-	qfv_scatter_t cl_scatter = {
-		.srcOffset = QFV_PacketOffset (packet, lmap.clusters),
-		.length = light_clusters->buffer.size,
-	};
-	QFV_PacketScatterBuffer (packet, lightinfo->buffer.buffer,
-							 1, &li_scatter,
-							 &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-							 &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
-	QFV_PacketScatterBuffer (packet, surfinfo->buffer.buffer,
-							 1, &si_scatter,
-							 &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-							 &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
-	QFV_PacketScatterBuffer (packet, style_data->buffer.buffer,
-							 1, &st_scatter,
-							 &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-							 &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
-	QFV_PacketScatterBuffer (packet, lightmap_data->buffer.buffer,
-							 1, &ld_scatter,
-							 &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-							 &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
-	QFV_PacketScatterBuffer (packet, light_clusters->buffer.buffer,
-							 1, &cl_scatter,
-							 &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-							 &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
+#define PACKET_SCATTER(n) \
+	do { \
+		qfv_scatter_t n##_scatter = { \
+			.srcOffset = QFV_PacketOffset (packet, lmap.n), \
+			.length = bctx->n##_buffer.size, \
+		}; \
+		QFV_PacketScatterBuffer (packet, bctx->n##_buffer.buffer, \
+				1, &n##_scatter, \
+				&bufferBarriers[qfv_BB_Unknown_to_TransferWrite], \
+				&bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]); \
+	} while (0)
+	PACKET_SCATTER (lightinfo);
+	PACKET_SCATTER (surfinfo);
+	PACKET_SCATTER (light_style_values);
+	PACKET_SCATTER (lightmap_data);
+	PACKET_SCATTER (light_clusters);
+#undef PACKET_SCATTER
 	QFV_PacketSubmit (packet);
 }
 

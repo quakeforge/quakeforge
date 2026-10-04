@@ -405,7 +405,6 @@ properties = {
 						anim_index = uint;
 
 						models = ptr;
-						tex_ids = ptr;
 						anim_main = ptr;
 						anim_alt = ptr;
 						frame_map = ptr;

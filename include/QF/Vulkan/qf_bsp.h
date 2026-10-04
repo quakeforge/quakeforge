@@ -147,6 +147,7 @@ typedef struct bsp_buffer_s {
 	VkBuffer    buffer;
 	size_t      size;
 	VkDeviceAddress addr;
+	VkDeviceAddress *bb;
 } bsp_buffer_t;
 
 /** Main BSP context structure
@@ -205,83 +206,72 @@ typedef struct bspctx_s {
 	VkBuffer     default_verts;
 	qfv_resource_t *bsp_resource;
 
-	bsp_buffer_t model_buffer;
-	bsp_buffer_t mod_counts_buffer;
-	bsp_buffer_t mod_tmp_buffer;
-	bsp_buffer_t mod_sums_buffer;
-	bsp_buffer_t mod_offsets_buffer;
-	bsp_buffer_t tex_id_buffer;
-	bsp_buffer_t entid_buffer;
-	bsp_buffer_t instid_buffer;
-
-	bsp_buffer_t vertex_buffer;
-	bsp_buffer_t index_buffer;
-	bsp_buffer_t command_counts_buffer;
-	bsp_buffer_t command_offsets_buffer;
-	bsp_buffer_t command_buffer;
-	bsp_buffer_t subcluster_buffer;
-	bsp_buffer_t cluster_buffer;
-	bsp_buffer_t clustermap_buffer;
-	bsp_buffer_t instance_queue_buffer;
-	bsp_buffer_t cluster_queue_buffer;
-
-	bsp_buffer_t light_style_buffer;
-	bsp_buffer_t light_queue_buffer;
-	bsp_buffer_t light_queue_tmp_buffer;
-	bsp_buffer_t light_cluster_tmp_buffer;
-
-	bsp_buffer_t prefixsum_counts_buffer;
-
 	bspframeset_t frames;
 
-	VkDeviceAddress *command_counts_ptr;
-	VkDeviceAddress *command_offsets_ptr;
-	VkDeviceAddress *commands_ptr;
-	VkDeviceAddress *subclusters_ptr;
-	VkDeviceAddress *clusters_ptr;
-	VkDeviceAddress *cluster_map_ptr;
-	VkDeviceAddress *instance_queue_ptr;
-	VkDeviceAddress *cluster_queue_ptr;
+	bsp_buffer_t mod_tmp_buffer;
+	bsp_buffer_t mod_sums_buffer;
+#define BB_buffer(name) bsp_buffer_t name##_buffer
+	BB_buffer (index);
+	BB_buffer (vertex);
+
+	//cluster (both realtime lights and lightmap)
+	BB_buffer (command_counts);
+	BB_buffer (command_offsets);
+	BB_buffer (commands);
+	BB_buffer (subclusters);
+	BB_buffer (clusters);
+	BB_buffer (cluster_map);
+	BB_buffer (anim_main);
+	BB_buffer (anim_alt);
+	BB_buffer (frame_map);
+
 	uint32_t   *texture_count;
-	uint32_t   *matrix_base;
+	uint32_t   *anim_index;
+
+	//ent (both realtime lights and lightmap)
+	BB_buffer (ent_ids);
+	BB_buffer (inst_ids);
+	VkDeviceAddress *entities;
+	BB_buffer (instance_queue);
+	BB_buffer (cluster_queue);
+	BB_buffer (models);
+	BB_buffer (tex_ids);//XXX not used
+	BB_buffer (mod_counts);
+	BB_buffer (mod_offsets);
+	uint32_t   *ent_count;
+	uint32_t   *num_models;
+
+	//lightmap
+	BB_buffer (lightinfo);
+	BB_buffer (surfinfo);
+	BB_buffer (light_style_values);
+	BB_buffer (lightmap_data);
+	BB_buffer (light_queue_offs);
+	BB_buffer (light_queue_inds);
+	BB_buffer (light_queue_tmp);
+	BB_buffer (light_clusters);
+	BB_buffer (light_cluster_surfs);
+	BB_buffer (light_cluster_tmp);
+	BB_buffer (light_queue);
+	uint32_t   *num_lightmaps;
+
+	BB_buffer (prefixsum_counts);
+
+	//prefixsum
+	VkDeviceAddress *in_data;
+	VkDeviceAddress *out_data;
+	VkDeviceAddress *sum_data;
+	VkDeviceAddress *count;
+
+	//render
+	uint32_t   *MatrixBase;
 	vec4f_t    *fog;
 	float      *time;
 	float      *alpha;
 	float      *turb_scale;
 	uint32_t   *control;
 
-	uint32_t   *ent_count;
-	uint32_t   *anim_index;
-	VkDeviceAddress *ent_ids;
-	VkDeviceAddress *inst_ids;
-	VkDeviceAddress *entities;
-	VkDeviceAddress *models;
-	VkDeviceAddress *tex_ids;
-	VkDeviceAddress *anim_main;
-	VkDeviceAddress *anim_alt;
-	VkDeviceAddress *frame_map;
-	VkDeviceAddress *mod_counts;
-	VkDeviceAddress *mod_offsets;
-	uint32_t   *num_models;
-
-	VkDeviceAddress *prefixsum_counts;
-
-	VkDeviceAddress *in_data;
-	VkDeviceAddress *out_data;
-	VkDeviceAddress *sum_data;
-	VkDeviceAddress *count;
-
-	VkDeviceAddress *lightinfo;
-	VkDeviceAddress *surfinfo;
-	VkDeviceAddress *light_style_values;
-	VkDeviceAddress *lightmap_data;
-	VkDeviceAddress *light_queue_offs;
-	VkDeviceAddress *light_queue_inds;
-	VkDeviceAddress *light_queue_tmp;
-	VkDeviceAddress *light_clusters;
-	VkDeviceAddress *light_cluster_surfs;
-	VkDeviceAddress *light_queue;
-	uint32_t   *num_lightmaps;
+#undef BB_buffer
 } bspctx_t;
 
 struct vulkan_ctx_s;

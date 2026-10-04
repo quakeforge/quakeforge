@@ -48,7 +48,6 @@ typedef struct light_queue_s {
 		uint        anim_index;
 
 		bsp_model_t *models;
-		uint       *tex_ids;
 
 		bsp_texanim_t *anim_main;	///< group 0 animations
 		bsp_texanim_t *anim_alt;	///< group 1 animations

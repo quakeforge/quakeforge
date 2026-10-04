@@ -383,9 +383,9 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			},
 		};
 		QFV_CreateResource (ctx->device, bctx->tex_resource);
-		*bctx->anim_main  = anim_main->buffer.address;
-		*bctx->anim_alt   = anim_alt->buffer.address;
-		*bctx->frame_map  = frame_map->buffer.address;
+		*bctx->anim_main_buffer.bb  = anim_main->buffer.address;
+		*bctx->anim_alt_buffer.bb   = anim_alt->buffer.address;
+		*bctx->frame_map_buffer.bb  = frame_map->buffer.address;
 	}
 
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.tex");
@@ -457,20 +457,20 @@ typedef struct {
 	uint32_t    num_tex_ids;
 	uint32_t   *tex_clusters;
 	uint32_t   *tex_commands;
+	uint32_t   *command_offsets;
 	uint32_t    mod_cluster_count;
 	uint32_t    vert_count;
 	uint32_t    ind_count;
-	bspvert_t  *vertices;
-	uint32_t   *indices;
+	bspvert_t  *vertex;
+	uint32_t   *index;
 	bsp_model_t *models;
-	uint32_t   *tex_ids;
 	bsp_cluster_t *subclusters;
 	cluster_t  *clusters;
-	uint32_t   *clustermap;
+	uint32_t   *cluster_map;
 	uint32_t    vertex_base;
 	uint32_t    index_base;
 	uint32_t    cluster_base;
-	uint32_t    clustermap_base;
+	uint32_t    cluster_map_base;
 } buildctx_t;
 
 static vec_t *
@@ -498,11 +498,11 @@ build_surf_vertices (const msurface_t *surf, const mod_brush_t *brush,
 	uint32_t    first_index = build->index_base;
 	build->index_base += numverts + 1;
 	for (int i = 0; i < numverts; i++) {
-		build->indices[first_index + i] = build->vertex_base + i;
+		build->index[first_index + i] = build->vertex_base + i;
 	}
-	build->indices[first_index + numverts] = ~0u;	// primitive restart
+	build->index[first_index + numverts] = ~0u;	// primitive restart
 
-	bspvert_t  *verts = build->vertices + build->vertex_base;
+	bspvert_t  *verts = build->vertex + build->vertex_base;
 	build->vertex_base += numverts;
 	mtexinfo_t *texinfo = surf->texinfo;
 	int        *surfedges = brush->surfedges;
@@ -645,7 +645,7 @@ build_surfaces (mod_brush_t *brush, cluster_t *cluster, buildctx_t *build)
 	bsp_cluster_t *sc = nullptr;
 	cluster_t *c = &build->clusters[build->cluster_base++];
 	*c = (cluster_t) {
-		.first = build->clustermap_base,
+		.first = build->cluster_map_base,
 	};
 	for (uint32_t i = 0; i < cluster->count; i++) {
 		uint32_t ind = cluster->first + i;
@@ -659,9 +659,8 @@ build_surfaces (mod_brush_t *brush, cluster_t *cluster, buildctx_t *build)
 				.first_index = build->index_base,
 				.tex_id = tex_id,
 			};
-			build->clustermap[c->first + c->count++] = sub_cluster_ind;
+			build->cluster_map[c->first + c->count++] = sub_cluster_ind;
 			if (!set_is_member (build->seen_tex_ids, tex_id)) {
-				build->tex_ids[build->num_tex_ids++] = tex_id;
 				set_add (build->seen_tex_ids, tex_id);
 			}
 		}
@@ -670,7 +669,7 @@ build_surfaces (mod_brush_t *brush, cluster_t *cluster, buildctx_t *build)
 			sc->index_count += build_surf_vertices (surf, brush, build);
 		}
 	}
-	build->clustermap_base += c->count;
+	build->cluster_map_base += c->count;
 }
 
 static void
@@ -718,10 +717,10 @@ check_cluster (const buildctx_t *build, uint32_t cluster_num)
 		auto cluster = build->clusters[ci->element + 1];
 		int has_9 = 0;
 		for (uint32_t i = 0; i < cluster.count; i++) {
-			auto sc = build->subclusters[build->clustermap[cluster.first + i]];
+			auto sc = build->subclusters[build->cluster_map[cluster.first + i]];
 			if (sc.tex_id == 9) {
 				//printf ("      %d %d %d %d\n", cluster.first + i,
-				//		build->clustermap[cluster.first + i],
+				//		build->cluster_map[cluster.first + i],
 				//		sc.first_index, sc.index_count);
 				count++;
 				has_9++;
@@ -816,81 +815,77 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	}
 	uint32_t mod_count = *bctx->num_models;
 	size_t index_buffer_size = sizeof (uint32_t[index_count]);
-	size_t model_buffer_size = sizeof (bsp_model_t[mod_count]);
+	size_t models_buffer_size = sizeof (bsp_model_t[mod_count]);
 	size_t mod_counts_buffer_size = sizeof (uint32_t[mod_queues * mod_count]);
 	size_t mod_tmp_buffer_size = sizeof (uint32_t[mod_queues * mod_count]);
 	size_t mod_sums_buffer_size = sizeof (uint32_t[1024+1]);
 	size_t mod_offsets_buffer_size = sizeof (uint32_t[mod_queues * mod_count]);
-	size_t tex_id_buffer_size = sizeof (uint32_t[build.num_tex_ids]);
 	size_t vertex_buffer_size = sizeof (bspvert_t[vertex_count]);
-	size_t subcluster_buffer_size = sizeof (bsp_cluster_t[num_clusters]);
-	size_t cluster_buffer_size = sizeof (cluster_t[mod_clusters]);
-	size_t clustermap_buffer_size = sizeof (uint32_t[num_clusters]);
+	size_t subclusters_buffer_size = sizeof (bsp_cluster_t[num_clusters]);
+	size_t clusters_buffer_size = sizeof (cluster_t[mod_clusters]);
+	size_t cluster_map_buffer_size = sizeof (uint32_t[num_clusters]);
 	size_t instance_queue_buffer_size = sizeof (bsp_cluster_t[num_clusters])
 									  + sizeof (uint32_t[4]);//count+ind disp
 	// 4 for count + indirect dispatch
 	size_t cluster_queue_buffer_size = sizeof (uint32_t[4 + num_clusters]);
 	size_t prefixsum_counts_buffer_size = sizeof (uint32_t[4]);
 	// two sets of commands: first for solid entities, second for transparent
-	size_t command_buffer_size = 2 * sizeof (bsp_command_t[num_commands]);
+	size_t commands_buffer_size = 2 * sizeof (bsp_command_t[num_commands]);
 	size_t command_counts_buffer_size = 2 * sizeof (tex_commands);
 	size_t command_offsets_buffer_size = 2 * sizeof (tex_commands);
 
 #define CHECK_SIZE(b) (b##_buffer_size > bctx->b##_buffer.size)
 	if (CHECK_SIZE (index)
-		|| CHECK_SIZE (model)
+		|| CHECK_SIZE (models)
 		|| CHECK_SIZE (mod_counts)
 		|| CHECK_SIZE (mod_tmp)
 		|| CHECK_SIZE (mod_sums)
 		|| CHECK_SIZE (mod_offsets)
-		|| CHECK_SIZE (tex_id)
 		|| CHECK_SIZE (vertex)
 		|| CHECK_SIZE (command_counts)
 		|| CHECK_SIZE (command_offsets)
-		|| CHECK_SIZE (command)
-		|| CHECK_SIZE (subcluster)
-		|| CHECK_SIZE (cluster)
-		|| CHECK_SIZE (clustermap)
+		|| CHECK_SIZE (commands)
+		|| CHECK_SIZE (subclusters)
+		|| CHECK_SIZE (clusters)
+		|| CHECK_SIZE (cluster_map)
 		|| CHECK_SIZE (instance_queue)
 		|| CHECK_SIZE (cluster_queue)
 		|| CHECK_SIZE (prefixsum_counts)) {
 		QFV_DestroyResource (ctx->device, bctx->bsp_resource);
 		if (!bctx->bsp_resource) {
 			size_t size = sizeof (qfv_resource_t)
-						+ sizeof (qfv_resobj_t[1])	// model
+						+ sizeof (qfv_resobj_t[1])	// models
 						+ sizeof (qfv_resobj_t[1])	// mod_counts
 						+ sizeof (qfv_resobj_t[1])	// mod_tmp
 						+ sizeof (qfv_resobj_t[1])	// mod_sums
 						+ sizeof (qfv_resobj_t[1])	// mod_offsets
-						+ sizeof (qfv_resobj_t[1])	// tex_id
 						+ sizeof (qfv_resobj_t[1])	// vertex
 						+ sizeof (qfv_resobj_t[1])	// index
 						+ sizeof (qfv_resobj_t[1]) 	// command countss
 						+ sizeof (qfv_resobj_t[1]) 	// command offsets
-						+ sizeof (qfv_resobj_t[1]) 	// command
-						+ sizeof (qfv_resobj_t[1])	// subcluster
-						+ sizeof (qfv_resobj_t[1])	// cluster
-						+ sizeof (qfv_resobj_t[1])	// clustermap
+						+ sizeof (qfv_resobj_t[1]) 	// commands
+						+ sizeof (qfv_resobj_t[1])	// subclusters
+						+ sizeof (qfv_resobj_t[1])	// clusters
+						+ sizeof (qfv_resobj_t[1])	// cluster_map
 						+ sizeof (qfv_resobj_t[1])	// instance_queue
 						+ sizeof (qfv_resobj_t[1])	// cluster_queue
 						+ sizeof (qfv_resobj_t[1]);	// prefixsum_counts
 			bctx->bsp_resource = malloc (size);
 		}
-		auto model = (qfv_resobj_t *) &bctx->bsp_resource[1];
-		auto mod_counts = &model[1];
+		auto models = (qfv_resobj_t *) &bctx->bsp_resource[1];
+		auto mod_counts = &models[1];
 		auto mod_tmp = &mod_counts[1];
 		auto mod_sums = &mod_tmp[1];
 		auto mod_offsets = &mod_sums[1];
-		auto tex_id = (qfv_resobj_t *) &mod_offsets[1];
-		auto vertex = (qfv_resobj_t *) &tex_id[1];
+		auto vertex = (qfv_resobj_t *) &mod_offsets[1];
 		auto index = (qfv_resobj_t *) &vertex[1];
 		auto command_counts = (qfv_resobj_t *) &index[1];
 		auto command_offsets = (qfv_resobj_t *) &command_counts[1];
-		auto command = (qfv_resobj_t *) &command_offsets[1];
-		auto subcluster = (qfv_resobj_t *) &command[1];
-		auto cluster = (qfv_resobj_t *) &subcluster[1];
-		auto clustermap = (qfv_resobj_t *) &cluster[1];
-		auto instance_queue = (qfv_resobj_t *) &clustermap[1];
+		auto commands = (qfv_resobj_t *) &command_offsets[1];
+		auto subclusters = (qfv_resobj_t *) &commands[1];
+		auto clusters = (qfv_resobj_t *) &subclusters[1];
+		auto cluster_map = (qfv_resobj_t *) &clusters[1];
+		auto instance_queue = (qfv_resobj_t *) &cluster_map[1];
 		auto cluster_queue = (qfv_resobj_t *) &instance_queue[1];
 		auto prefixsum_counts = (qfv_resobj_t *) &cluster_queue[1];
 
@@ -898,14 +893,14 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.name = "bsp:mdl",
 			.va_ctx = ctx->va_ctx,
 			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			.num_objects = 17,
-			.objects = model,
+			.num_objects = 16,
+			.objects = models,
 		};
-		*model = (qfv_resobj_t) {
-			.name = "model",
+		*models = (qfv_resobj_t) {
+			.name = "models",
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = model_buffer_size,
+				.size = models_buffer_size,
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -951,16 +946,6 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
-		*tex_id = (qfv_resobj_t) {
-			.name = "tex_id",
-			.type = qfv_res_buffer,
-			.buffer = {
-				.size = tex_id_buffer_size,
-				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
-						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-			},
-		};
 		*vertex = (qfv_resobj_t) {
 			.name = "vertex",
 			.type = qfv_res_buffer,
@@ -999,41 +984,41 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
-		*command = (qfv_resobj_t) {
-			.name = "command",
+		*commands = (qfv_resobj_t) {
+			.name = "commands",
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = command_buffer_size,
+				.size = commands_buffer_size,
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 						| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
-		*subcluster = (qfv_resobj_t) {
-			.name = "subcluster",
+		*subclusters = (qfv_resobj_t) {
+			.name = "subclusters",
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = subcluster_buffer_size,
+				.size = subclusters_buffer_size,
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
-		*cluster = (qfv_resobj_t) {
-			.name = "cluster",
+		*clusters = (qfv_resobj_t) {
+			.name = "clusters",
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = cluster_buffer_size,
+				.size = clusters_buffer_size,
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
-		*clustermap = (qfv_resobj_t) {
-			.name = "clustermap",
+		*cluster_map = (qfv_resobj_t) {
+			.name = "cluster_map",
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = clustermap_buffer_size,
+				.size = cluster_map_buffer_size,
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -1076,41 +1061,31 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		QFV_CreateResource (ctx->device, bctx->bsp_resource);
 
 #define BUFFER(b) \
-		bctx->b##_buffer = (bsp_buffer_t) { \
-			.buffer = b->buffer.buffer, \
-			.size = b->buffer.size, \
-			.addr = b->buffer.address, \
-		};
-		BUFFER (model);
+		do { \
+			bctx->b##_buffer.buffer = b->buffer.buffer; \
+			bctx->b##_buffer.size = b->buffer.size; \
+			bctx->b##_buffer.addr = b->buffer.address; \
+			if (bctx->b##_buffer.bb) { \
+				*bctx->b##_buffer.bb = bctx->b##_buffer.addr; \
+			} \
+		} while (0)
+		BUFFER (models);
 		BUFFER (mod_counts);
 		BUFFER (mod_tmp);
 		BUFFER (mod_sums);
 		BUFFER (mod_offsets);
-		BUFFER (tex_id);
 		BUFFER (vertex);
 		BUFFER (index);
 		BUFFER (command_counts);
 		BUFFER (command_offsets);
-		BUFFER (command);
-		BUFFER (subcluster);
-		BUFFER (cluster);
-		BUFFER (clustermap);
+		BUFFER (commands);
+		BUFFER (subclusters);
+		BUFFER (clusters);
+		BUFFER (cluster_map);
 		BUFFER (instance_queue);
 		BUFFER (cluster_queue);
 		BUFFER (prefixsum_counts);
-
-		*bctx->models = bctx->model_buffer.addr;
-		*bctx->mod_counts = bctx->mod_counts_buffer.addr;
-		*bctx->mod_offsets = bctx->mod_offsets_buffer.addr;
-		*bctx->tex_ids = bctx->tex_id_buffer.addr;
-		*bctx->command_counts_ptr = bctx->command_counts_buffer.addr;
-		*bctx->command_offsets_ptr = bctx->command_offsets_buffer.addr;
-		*bctx->commands_ptr = bctx->command_buffer.addr;
-		*bctx->subclusters_ptr = bctx->subcluster_buffer.addr;
-		*bctx->clusters_ptr = bctx->cluster_buffer.addr;
-		*bctx->cluster_map_ptr = bctx->clustermap_buffer.addr;
-		*bctx->instance_queue_ptr = bctx->instance_queue_buffer.addr;
-		*bctx->prefixsum_counts = bctx->prefixsum_counts_buffer.addr;
+#undef BUFFER
 
 		for (size_t i = 0; i < frames; i++) {
 			bctx->frames.a[i].queue = cluster_queue_buffer_size * i;
@@ -1119,94 +1094,48 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	*bctx->texture_count = num_tex;
 
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.build");
-	size_t packet_size = model_buffer_size
-					   + tex_id_buffer_size
+	size_t packet_size = models_buffer_size
 					   + vertex_buffer_size
 					   + index_buffer_size
 					   + command_offsets_buffer_size
-					   + subcluster_buffer_size
-					   + cluster_buffer_size
-					   + clustermap_buffer_size;
+					   + subclusters_buffer_size
+					   + clusters_buffer_size
+					   + cluster_map_buffer_size;
 	build.models = (bsp_model_t *) QFV_PacketExtend (packet, packet_size);
-	build.tex_ids = (uint32_t *) &build.models[*bctx->num_models];
-	build.vertices = (bspvert_t *) &build.models[build.num_tex_ids];
-	build.indices = (uint32_t *) &build.vertices[vertex_count];
-	uint32_t *command_offsets = (uint32_t *) &build.indices[index_count];
-	build.subclusters = (bsp_cluster_t *) &command_offsets[2 * num_tex];
+	build.vertex = (bspvert_t *) &build.models[build.num_tex_ids];
+	build.index = (uint32_t *) &build.vertex[vertex_count];
+	build.command_offsets = (uint32_t *) &build.index[index_count];
+	build.subclusters = (bsp_cluster_t *) &build.command_offsets[2 * num_tex];
 	build.clusters = (cluster_t *) &build.subclusters[num_clusters];
-	build.clustermap = (uint32_t *) &build.clusters[mod_clusters];
+	build.cluster_map = (uint32_t *) &build.clusters[mod_clusters];
 
-	memcpy (command_offsets, bctx->command_offsets,
+	memcpy (build.command_offsets, bctx->command_offsets,
 			command_offsets_buffer_size);
 	build.num_tex_ids = 0;
 	model_loop (models, num_models, ctx, model_build_surfaces, &build);
 
 	if(0)check_cluster (&build, 2168);
 
-	qfv_scatter_t mod_scatter = {
-		.srcOffset = QFV_PacketOffset (packet, build.models),
-		.length = model_buffer_size,
-	};
-	qfv_scatter_t tex_scatter = {
-		.srcOffset = QFV_PacketOffset (packet, build.tex_ids),
-		.length = tex_id_buffer_size,
-	};
-	qfv_scatter_t vert_scatter = {
-		.srcOffset = QFV_PacketOffset (packet, build.vertices),
-		.length = vertex_buffer_size,
-	};
-	qfv_scatter_t ind_scatter = {
-		.srcOffset = QFV_PacketOffset (packet, build.indices),
-		.length = index_buffer_size,
-	};
-	qfv_scatter_t ofs_scatter = {
-		.srcOffset = QFV_PacketOffset (packet, command_offsets),
-		.length = command_offsets_buffer_size,
-	};
-	qfv_scatter_t sub_scatter = {
-		.srcOffset = QFV_PacketOffset (packet, build.subclusters),
-		.length = subcluster_buffer_size,
-	};
-	qfv_scatter_t cls_scatter = {
-		.srcOffset = QFV_PacketOffset (packet, build.clusters),
-		.length = cluster_buffer_size,
-	};
-	qfv_scatter_t map_scatter = {
-		.srcOffset = QFV_PacketOffset (packet, build.clustermap),
-		.length = clustermap_buffer_size,
-	};
-	QFV_PacketScatterBuffer (packet, bctx->model_buffer.buffer,
-			1, &mod_scatter,
-			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-			&bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
-	QFV_PacketScatterBuffer (packet, bctx->tex_id_buffer.buffer,
-			1, &tex_scatter,
-			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-			&bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
-	QFV_PacketScatterBuffer (packet, bctx->vertex_buffer.buffer,
-			1, &vert_scatter,
-			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-			&bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
-	QFV_PacketScatterBuffer (packet, bctx->index_buffer.buffer,
-			1, &ind_scatter,
-			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-			&bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
-	QFV_PacketScatterBuffer (packet, bctx->command_offsets_buffer.buffer,
-			1, &ofs_scatter,
-			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-			&bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
-	QFV_PacketScatterBuffer (packet, bctx->subcluster_buffer.buffer,
-			1, &sub_scatter,
-			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-			&bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
-	QFV_PacketScatterBuffer (packet, bctx->cluster_buffer.buffer,
-			1, &cls_scatter,
-			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-			&bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
-	QFV_PacketScatterBuffer (packet, bctx->clustermap_buffer.buffer,
-			1, &map_scatter,
-			&bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-			&bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
+#define PACKET_SCATTER(n) \
+	do { \
+		qfv_scatter_t n##_scatter = { \
+			.srcOffset = QFV_PacketOffset (packet, build.n), \
+			.length = n##_buffer_size, \
+		}; \
+		QFV_PacketScatterBuffer (packet, bctx->n##_buffer.buffer, \
+				1, &n##_scatter, \
+				&bufferBarriers[qfv_BB_Unknown_to_TransferWrite], \
+				&bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]); \
+	} while (0)
+
+	PACKET_SCATTER (models);
+	PACKET_SCATTER (vertex);
+	PACKET_SCATTER (index);
+	PACKET_SCATTER (command_offsets);
+	PACKET_SCATTER (subclusters);
+	PACKET_SCATTER (clusters);
+	PACKET_SCATTER (cluster_map);
+#undef PACKET_SCATTER
 	QFV_PacketSubmit (packet);
 }
 
@@ -1227,7 +1156,7 @@ push_bspconst (uint16_t *matrix_base, QFV_BspQueue queue,
 			   VkCommandBuffer cmd, bspctx_t *bctx)
 {
 	if (matrix_base) {
-		*bctx->matrix_base = *matrix_base;
+		*bctx->MatrixBase = *matrix_base;
 	} else {
 		uint32_t control = 0;
 		if (bctx->skymap_tex || bctx->skymap_id != nullent) {
@@ -1331,7 +1260,7 @@ draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 		} else {
 			size_t cmd_size = sizeof (VkDrawIndexedIndirectCommand);
 			dfunc->vkCmdDrawIndexedIndirectCount (cmd,
-					bctx->command_buffer.buffer,
+					bctx->commands_buffer.buffer,
 					bctx->command_offsets[tex_id + trans] * cmd_size,
 					bctx->command_counts_buffer.buffer,
 					(tex_id + trans) * sizeof (uint32_t),
@@ -1480,14 +1409,14 @@ create_base_resources (vulkan_ctx_t *ctx)
 				+ sizeof (qfv_resobj_t[4])	//images
 				+ sizeof (qfv_resobj_t[4]) 	//views
 				+ sizeof (qfv_resobj_t[1])	//default vertices
-				+ sizeof (qfv_resobj_t[1])	//entid
-				+ sizeof (qfv_resobj_t[1]);	//instid
+				+ sizeof (qfv_resobj_t[1])	//ent_ids
+				+ sizeof (qfv_resobj_t[1]);	//inst_ids
 	bctx->base_resource = malloc (size);
 	auto images = (qfv_resobj_t *) &bctx->base_resource[1];
 	auto views = (qfv_resobj_t *) &images[4];
 	auto verts = (qfv_resobj_t *) &views[4];
-	auto entid = (qfv_resobj_t *) &verts[1];
-	auto instid = (qfv_resobj_t *) &entid[1];
+	auto ent_ids = (qfv_resobj_t *) &verts[1];
+	auto inst_ids = (qfv_resobj_t *) &ent_ids[1];
 	*bctx->base_resource = (qfv_resource_t) {
 		.name = "bsp:dfl",
 		.va_ctx = ctx->va_ctx,
@@ -1522,8 +1451,8 @@ create_base_resources (vulkan_ctx_t *ctx)
 		},
 	};
 	size_t      entid_count = Vulkan_Scene_MaxEntities (ctx);
-	*entid = (qfv_resobj_t) {
-		.name = "entid",
+	*ent_ids = (qfv_resobj_t) {
+		.name = "ent_ids",
 		.type = qfv_res_buffer,
 		.buffer = {
 			.size = sizeof (uint32_t[entid_count * frames]),
@@ -1532,8 +1461,8 @@ create_base_resources (vulkan_ctx_t *ctx)
 					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 		},
 	};
-	*instid = (qfv_resobj_t) {
-		.name = "instid",
+	*inst_ids = (qfv_resobj_t) {
+		.name = "inst_ids",
 		.type = qfv_res_buffer,
 		.buffer = {
 			.size = sizeof (uint32_t[entid_count]),
@@ -1550,16 +1479,18 @@ create_base_resources (vulkan_ctx_t *ctx)
 	bctx->default_skybox = views[2].image_view.view;
 	bctx->default_skymap = views[3].image_view.view;
 	bctx->default_verts = verts->buffer.buffer;
-	bctx->entid_buffer = (bsp_buffer_t) {
-		.buffer = entid->buffer.buffer,
-		.size = entid->buffer.size,
-		.addr = entid->buffer.address,
-	};
-	bctx->instid_buffer = (bsp_buffer_t) {
-		.buffer = instid->buffer.buffer,
-		.size = instid->buffer.size,
-		.addr = instid->buffer.address,
-	};
+#define BUFFER(b) \
+		do { \
+			bctx->b##_buffer.buffer = b->buffer.buffer; \
+			bctx->b##_buffer.size = b->buffer.size; \
+			bctx->b##_buffer.addr = b->buffer.address; \
+			if (bctx->b##_buffer.bb) { \
+				*bctx->b##_buffer.bb = bctx->b##_buffer.addr; \
+			} \
+		} while (0)
+	BUFFER (ent_ids);
+	BUFFER (inst_ids);
+#undef BUFFER
 
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.base");
 	create_notexture (ctx, packet, &images[0]);
@@ -1818,7 +1749,7 @@ bsp_draw_barrier (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			.dstStageMask = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
 			.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
 			.dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
-			.buffer = bctx->command_buffer.buffer,
+			.buffer = bctx->commands_buffer.buffer,
 			.offset = 0,
 			.size = VK_WHOLE_SIZE,
 		},
@@ -1880,7 +1811,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	VkBuffer    buffers[] = {
 		bctx->default_verts,
-		bctx->instid_buffer.buffer,
+		bctx->inst_ids_buffer.buffer,
 	};
 	if (bctx->vertex_buffer.buffer) {
 		buffers[0] = bctx->vertex_buffer.buffer;
@@ -1941,12 +1872,12 @@ bsp_sum_mod_insts (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	uint32_t sum_offset = 0;
 	switch (stage) {
 		case 0:
-			*bctx->in_data = *bctx->mod_counts;
+			*bctx->in_data = bctx->mod_counts_buffer.addr;
 			*bctx->out_data = bctx->mod_tmp_buffer.addr;
-			*bctx->sum_data = *bctx->mod_offsets;// tmp buffer for sums
+			*bctx->sum_data = bctx->mod_offsets_buffer.addr;// tmp for sums
 			break;
 		case 1:
-			*bctx->in_data = *bctx->mod_offsets;
+			*bctx->in_data = bctx->mod_offsets_buffer.addr;
 			*bctx->out_data = bctx->mod_sums_buffer.addr;
 			*bctx->sum_data = *bctx->out_data + sizeof(uint32_t[1024]);
 			count = RUP (count, block_size) / block_size;
@@ -1954,13 +1885,13 @@ bsp_sum_mod_insts (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			break;
 		case 2:
 			*bctx->in_data = bctx->mod_tmp_buffer.addr;
-			*bctx->out_data = *bctx->mod_offsets;
+			*bctx->out_data = bctx->mod_offsets_buffer.addr;
 			*bctx->sum_data = bctx->mod_sums_buffer.addr;
 			break;
 		default:
 			Sys_Error ("invalid bsp_sum_mod_insts stage: %d\n", stage);
 	}
-	*bctx->count = *bctx->prefixsum_counts + sum_offset;
+	*bctx->count = bctx->prefixsum_counts_buffer.addr + sum_offset;
 
 	pipeline->dispatch[0] = RUP (count, block_size) / block_size;
 	pipeline->dispatch[1] = 1;
@@ -2094,16 +2025,17 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		auto renderer = Entity_GetRenderer (ent);
 		ent_ids[i + 1] = renderer->render_id;
 	}
-	QFV_PacketCopyBuffer (packet, bctx->entid_buffer.buffer,
+	QFV_PacketCopyBuffer (packet, bctx->ent_ids_buffer.buffer,
 					frame->entid_offset,
 					&bufferBarriers[qfv_BB_ShaderRO_to_TransferWrite],
 					&bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
 	QFV_PacketSubmit (packet);
 
-	*bctx->cluster_queue_ptr = bctx->cluster_queue_buffer.addr + frame->queue;
+	*bctx->cluster_queue_buffer.bb
+		= bctx->cluster_queue_buffer.addr + frame->queue;
 
-	*bctx->ent_ids = bctx->entid_buffer.addr + frame->entid_offset;
-	*bctx->inst_ids = bctx->instid_buffer.addr;
+	*bctx->ent_ids_buffer.bb = bctx->ent_ids_buffer.addr + frame->entid_offset;
+	*bctx->inst_ids_buffer.bb = bctx->inst_ids_buffer.addr;
 	*bctx->ent_count = ent_count + 1;
 	*bctx->entities = Vulkan_Scene_EntBufferAddr (ctx);
 
@@ -2122,7 +2054,6 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	//printf ("ent_ids: %zx\n", *bctx->ent_ids);
 	//printf ("entities: %zx\n", *bctx->entities);
 	//printf ("models: %zx\n", *bctx->models);
-	//printf ("tex_ids: %zx\n", *bctx->tex_ids);
 	//printf ("anim_main: %zx\n", *bctx->anim_main);
 	//printf ("anim_alt: %zx\n", *bctx->anim_alt);
 	//printf ("frame_map: %zx\n", *bctx->frame_map);
@@ -2155,11 +2086,13 @@ bsp_light_update (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.light_update");
 	auto data = QFV_PacketExtend (packet, sizeof (d_lightstylevalue));
 	memcpy (data, d_lightstylevalue, sizeof (d_lightstylevalue));
-	QFV_PacketCopyBuffer (packet, bctx->light_style_buffer.buffer, style_offset,
+	QFV_PacketCopyBuffer (packet, bctx->light_style_values_buffer.buffer,
+						  style_offset,
 						  &bufferBarriers[qfv_BB_ShaderRO_to_TransferWrite],
 						  &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
 	QFV_PacketSubmit (packet);
-	*bctx->light_style_values = bctx->light_style_buffer.addr + style_offset;
+	*bctx->light_style_values_buffer.bb
+		= bctx->light_style_values_buffer.addr + style_offset;
 
 	auto cmd = taskctx->cmd;
 	QFV_PushBlackboard (ctx, cmd, pipeline);
@@ -2212,12 +2145,12 @@ bsp_light_surf_sum (const exprval_t **params, exprval_t *result,
 	uint32_t sum_offset = 0;
 	switch (stage) {
 		case 0:
-			*bctx->in_data = *bctx->light_cluster_surfs;
+			*bctx->in_data = bctx->light_cluster_surfs_buffer.addr;
 			*bctx->out_data = bctx->light_cluster_tmp_buffer.addr;
-			*bctx->sum_data = *bctx->mod_offsets;// tmp buffer for sums
+			*bctx->sum_data = bctx->mod_offsets_buffer.addr;// tmp for sums
 			break;
 		case 1:
-			*bctx->in_data = *bctx->mod_offsets;
+			*bctx->in_data = bctx->mod_offsets_buffer.addr;
 			*bctx->out_data = bctx->mod_sums_buffer.addr;
 			*bctx->sum_data = bctx->light_queue_buffer.addr
 							+ sizeof(uint32_t[12]);
@@ -2226,13 +2159,13 @@ bsp_light_surf_sum (const exprval_t **params, exprval_t *result,
 			break;
 		case 2:
 			*bctx->in_data = bctx->light_cluster_tmp_buffer.addr;
-			*bctx->out_data = *bctx->light_cluster_surfs;
+			*bctx->out_data = bctx->light_cluster_surfs_buffer.addr;
 			*bctx->sum_data = bctx->mod_sums_buffer.addr;
 			break;
 		default:
 			Sys_Error ("invalid bsp_light_surf_sum stage: %d\n", stage);
 	}
-	*bctx->count = *bctx->prefixsum_counts + sum_offset;
+	*bctx->count = bctx->prefixsum_counts_buffer.addr + sum_offset;
 
 	auto cmd = taskctx->cmd;
 	QFV_PushBlackboard (ctx, cmd, pipeline);
@@ -2262,12 +2195,12 @@ bsp_light_sum (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	uint32_t sum_offset = 0;
 	switch (stage) {
 		case 0:
-			*bctx->in_data = *bctx->light_queue_offs;
+			*bctx->in_data = bctx->light_queue_offs_buffer.addr;
 			*bctx->out_data = bctx->light_queue_tmp_buffer.addr;
-			*bctx->sum_data = *bctx->mod_offsets;// tmp buffer for sums
+			*bctx->sum_data = bctx->mod_offsets_buffer.addr;// tmp for sums
 			break;
 		case 1:
-			*bctx->in_data = *bctx->mod_offsets;
+			*bctx->in_data = bctx->mod_offsets_buffer.addr;
 			*bctx->out_data = bctx->mod_sums_buffer.addr;
 			*bctx->sum_data = bctx->light_queue_buffer.addr
 							+ sizeof(uint32_t[8]);
@@ -2276,13 +2209,13 @@ bsp_light_sum (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			break;
 		case 2:
 			*bctx->in_data = bctx->light_queue_tmp_buffer.addr;
-			*bctx->out_data = *bctx->light_queue_offs;
+			*bctx->out_data = bctx->light_queue_offs_buffer.addr;
 			*bctx->sum_data = bctx->mod_sums_buffer.addr;
 			break;
 		default:
 			Sys_Error ("invalid bsp_light_sum stage: %d\n", stage);
 	}
-	*bctx->count = *bctx->prefixsum_counts + sum_offset;
+	*bctx->count = bctx->prefixsum_counts_buffer.addr + sum_offset;
 
 	auto cmd = taskctx->cmd;
 	QFV_PushBlackboard (ctx, cmd, pipeline);
@@ -2522,52 +2455,58 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			.flags = SURF_DRAWBACKGROUND,
 		},
 
-		.command_counts_ptr  = QFV_GetBlackboardVar (ctx, "command_counts"),
-		.command_offsets_ptr = QFV_GetBlackboardVar (ctx, "command_offsets"),
-		.commands_ptr        = QFV_GetBlackboardVar (ctx, "commands"),
-		.subclusters_ptr     = QFV_GetBlackboardVar (ctx, "subclusters"),
-		.clusters_ptr        = QFV_GetBlackboardVar (ctx, "clusters"),
-		.cluster_map_ptr     = QFV_GetBlackboardVar (ctx, "cluster_map"),
-		.instance_queue_ptr  = QFV_GetBlackboardVar (ctx, "instance_queue"),
-		.cluster_queue_ptr   = QFV_GetBlackboardVar (ctx, "cluster_queue"),
-		.texture_count       = QFV_GetBlackboardVar (ctx, "texture_count"),
-		.matrix_base = QFV_GetBlackboardVar (ctx, "MatrixBase"),
-		.fog         = QFV_GetBlackboardVar (ctx, "fog"),
-		.time        = QFV_GetBlackboardVar (ctx, "time"),
-		.alpha       = QFV_GetBlackboardVar (ctx, "alpha"),
-		.turb_scale  = QFV_GetBlackboardVar (ctx, "turb_scale"),
-		.control     = QFV_GetBlackboardVar (ctx, "control"),
+#define BB_buffer(name) .name##_buffer.bb = QFV_GetBlackboardVar (ctx, #name)
+#define BB_var(name) .name = QFV_GetBlackboardVar (ctx, #name)
+		BB_buffer (command_counts),
+		BB_buffer (command_offsets),
+		BB_buffer (commands),
+		BB_buffer (subclusters),
+		BB_buffer (clusters),
+		BB_buffer (cluster_map),
+		BB_buffer (anim_main),
+		BB_buffer (anim_alt),
+		BB_buffer (frame_map),
 
-		.ent_count  = QFV_GetBlackboardVar (ctx, "ent_count"),
-		.anim_index = QFV_GetBlackboardVar (ctx, "anim_index"),
-		.ent_ids    = QFV_GetBlackboardVar (ctx, "ent_ids"),
-		.inst_ids   = QFV_GetBlackboardVar (ctx, "inst_ids"),
-		.entities   = QFV_GetBlackboardVar (ctx, "entities"),
-		.models     = QFV_GetBlackboardVar (ctx, "models"),
-		.tex_ids    = QFV_GetBlackboardVar (ctx, "tex_ids"),
-		.anim_main  = QFV_GetBlackboardVar (ctx, "anim_main"),
-		.anim_alt   = QFV_GetBlackboardVar (ctx, "anim_alt"),
-		.frame_map  = QFV_GetBlackboardVar (ctx, "frame_map"),
-		.mod_counts = QFV_GetBlackboardVar (ctx, "mod_counts"),
-		.mod_offsets = QFV_GetBlackboardVar (ctx, "mod_offsets"),
-		.num_models = QFV_GetBlackboardVar (ctx, "num_models"),
+		BB_var (texture_count),
+		BB_var (anim_index),
 
-		.in_data = QFV_GetBlackboardVar (ctx, "in_data"),
-		.out_data = QFV_GetBlackboardVar (ctx, "out_data"),
-		.sum_data = QFV_GetBlackboardVar (ctx, "sum_data"),
-		.count = QFV_GetBlackboardVar (ctx, "count"),
-		.prefixsum_counts = QFV_GetBlackboardVar (ctx, "prefixsum_counts"),
+		BB_buffer (ent_ids),
+		BB_buffer (inst_ids),
+		BB_var (entities),
+		BB_buffer (instance_queue),
+		BB_buffer (cluster_queue),
+		BB_buffer (models),
+		BB_buffer (mod_counts),
+		BB_buffer (mod_offsets),
+		BB_var (num_models),
+		BB_var (ent_count),
 
-		.lightinfo          = QFV_GetBlackboardVar (ctx, "lightinfo"),
-		.surfinfo           = QFV_GetBlackboardVar (ctx, "surfinfo"),
-		.light_style_values = QFV_GetBlackboardVar (ctx, "light_style_values"),
-		.lightmap_data      = QFV_GetBlackboardVar (ctx, "lightmap_data"),
-		.light_clusters     = QFV_GetBlackboardVar (ctx, "light_clusters"),
-		.light_cluster_surfs= QFV_GetBlackboardVar (ctx, "light_cluster_surfs"),
-		.light_queue_offs   = QFV_GetBlackboardVar (ctx, "light_queue_offs"),
-		.light_queue_inds   = QFV_GetBlackboardVar (ctx, "light_queue_inds"),
-		.light_queue        = QFV_GetBlackboardVar (ctx, "light_queue"),
-		.num_lightmaps      = QFV_GetBlackboardVar (ctx, "num_lightmaps"),
+		BB_buffer (lightinfo),
+		BB_buffer (surfinfo),
+		BB_buffer (light_style_values),
+		BB_buffer (lightmap_data),
+		BB_buffer (light_queue_offs),
+		BB_buffer (light_queue_inds),
+		BB_buffer (light_clusters),
+		BB_buffer (light_cluster_surfs),
+		BB_buffer (light_queue),
+		BB_var (num_lightmaps),
+
+		BB_buffer (prefixsum_counts),
+
+		BB_var (in_data),
+		BB_var (out_data),
+		BB_var (sum_data),
+		BB_var (count),
+
+		BB_var (MatrixBase),
+		BB_var (fog),
+		BB_var (time),
+		BB_var (alpha),
+		BB_var (turb_scale),
+		BB_var (control),
+#undef BB_buffer
+#undef BB_var
 	};
 }
 
