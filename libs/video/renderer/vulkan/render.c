@@ -1711,6 +1711,62 @@ QFV_UpdateBuffer (vulkan_ctx_t *ctx, const char *name, uint32_t offset,
 	QFV_PacketSubmit (packet);
 }
 
+typedef struct bbctx_s {
+	qfv_push_constants_t *pc;
+	byte       *data;
+	uint32_t    num_pc;
+} bbctx_t;
+
+static void
+qfv_bb_print_sym (void *ele, void *data)
+{
+	qfv_pushconstantinfo_t *pc = ele;
+	bbctx_t *bbctx = data;
+	byte *pc_data = bbctx->data + pc->offset;
+	for (uint32_t i = 0; i < bbctx->num_pc; i++) {
+		if (bbctx->pc[i].data == pc_data) {
+			printf ("%s:%d %d [%d %d] [%d %d]%d:",
+					pc->name, pc->line, pc->type,
+					pc->offset, pc->size,
+					bbctx->pc[i].offset, bbctx->pc[i].size,
+					bbctx->pc[i].stageFlags);
+			switch (pc->type) {
+				case qfv_uint:
+					printf (" %u\n", *(uint32_t *) (bbctx->data + pc->offset));
+					break;
+				case qfv_ptr:
+					printf (" 0x%"PRIx64"\n",
+							*(VkDeviceSize *) (bbctx->data + pc->offset));
+					break;
+				default:
+					for (uint32_t i = 0; i < pc->size; i++) {
+						printf (" %02x", bbctx->data[pc->offset + i]);
+					}
+					printf ("\n");
+					break;
+			}
+		}
+	}
+}
+
+static void __attribute__((used))
+qfv_print_blackboard (vulkan_ctx_t *ctx, qfv_pipeline_t *pipeline)
+{
+	auto rctx = ctx->render_context;
+	auto blackboard = &rctx->blackboard;
+	auto first = pipeline->first_push_constant;
+	auto count = pipeline->num_push_constants;
+	auto push_constants = blackboard->push_constants + first;
+
+	bbctx_t bbctx = {
+		.pc = push_constants,
+		.num_pc = count,
+		.data = blackboard->data,
+	};
+	printf (GRN"%s"DFL"\n", pipeline->label.name);
+	Hash_ForEach (blackboard->symbols, qfv_bb_print_sym, &bbctx);
+}
+
 void
 QFV_PushBlackboard (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
 					qfv_pipeline_t *pipeline)
