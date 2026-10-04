@@ -3373,7 +3373,7 @@ render_graph = {
 							{ func = sync_translucent; },
 							{ func = gizmo_flush; },
 							{ func = blackboard_set_bufferptr;
-							  params = ("\"planetary\"", "\"planetary\"") },
+							  params = (planetary, planetary) },
 						);
 					};
 				};
@@ -3459,10 +3459,9 @@ render_graph = {
 								color = "[0.3, 0.8, 0.9]";
 								tasks = (
 									{ func = blackboard_set_uvec2;
-									  params = ("\"brdf_size\"",
-												"'256 256'u"); },
+									  params = (brdf_size, "'256 256'u"); },
 									{ func = blackboard_set_bufferptr;
-									  params = ("\"brdf_data\"", "\"brdf\""); },
+									  params = (brdf_data, brdf); },
 									{ func = set_dispatch;
 									  params = (16, 16, 1); },
 								);
@@ -3481,17 +3480,15 @@ render_graph = {
 					process = {
 						tasks = (
 							{ func = buffer_barrier;
-							  params = ("\"brdf\"",
+							  params = (brdf,
 										bb_shaderwrite_to_transferread); },
 							{ func = image_barrier;
-							  params = ("\"brdf\"",
-										lt_undefined_to_transferdst); },
+							  params = (brdf, lt_undefined_to_transferdst); },
 							{ func = copy_buffer_to_image;
-							  params = ("\"brdf\"", 0, 0, 0,
-										"\"brdf\"", "'0 0 0'u",
-													"'256 256 1'u"); },
+							  params = (brdf, 0, 0, 0,
+										brdf, "'0 0 0'u", "'256 256 1'u"); },
 							{ func = image_barrier;
-							  params = ("\"brdf\"",
+							  params = (brdf,
 										lt_transferdst_to_shaderreadonly); },
 							{ func = submit_depth; },
 						);
@@ -3508,16 +3505,19 @@ render_graph = {
 				conv_process = {
 					color = "[0.6, 0.8, 0.9]";
 					init = { func = miploop_init_loop;
-							 params = ("\"diff_cube\"", 6,
+							 params = (diff_cube, 6,
 										((pbr_cube_id, pbr_cube_set),
 										 (pbr_env_id, pbr_env_set))); };
 					process = {
 						tasks = (
-							{ func = blackboard_set_int; params = ("\"distribution\"", 0); },
+							{ func = blackboard_set_int;
+							  params = (distribution, 0); },
 							{ func = miploop_draw; params = (0); },
-							{ func = blackboard_set_int; params = ("\"distribution\"", 1); },
+							{ func = blackboard_set_int;
+							  params = (distribution, 1); },
 							{ func = miploop_draw; params = (6); },
-							{ func = blackboard_set_int; params = ("\"distribution\"", 2); },
+							{ func = blackboard_set_int;
+							  params = (distribution, 2); },
 							{ func = miploop_draw; params = (12); },
 							{ func = submit_depth; },
 						);
@@ -3582,7 +3582,7 @@ render_graph = {
 					process = {
 						tasks = (
 							{ func = image_barrier;
-							  params = ("\"diff_cube\"",
+							  params = (diff_cube,
 										lt_colorattach_to_shaderreadonly); },
 						);
 					};
