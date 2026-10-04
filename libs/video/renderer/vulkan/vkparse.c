@@ -995,6 +995,10 @@ parse_task_params (const plitem_t *item, void **data,
 			*(plitem_t **) param->value = paramitm;
 			continue;
 		}
+		if (param->type == &cexpr_string && paramstr && *paramstr != '"') {
+			*(char **) param->value = vkstrdup (pctx, paramstr);
+			continue;
+		}
 		if (param->type->data) {
 			ectx.parent = pctx->ectx;
 			ectx.symtab = ((exprenum_t *) param->type->data)->symtab;
