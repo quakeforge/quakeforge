@@ -7,6 +7,7 @@
 					out_data = ptr;
 					sum_data = ptr;
 					count = ptr;
+					mode = uint;
 				};
 			};
 		};
