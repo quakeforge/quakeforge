@@ -6,6 +6,6 @@ shift
 
 cat > $script <<EOF
 #! /bin/sh
-spirv-val --target-env vulkan1.4 $spv $@
+spirv-val --scalar-block-layout --target-env vulkan1.4 $spv $@
 EOF
 chmod +x $script
