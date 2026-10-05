@@ -29,6 +29,28 @@ typedef struct cluster_queue_s {
 	uint        queue[];
 } cluster_queue_t;
 
+// Find the largest index of the array with a value <= key.
+// Entries in the array must be sorted (returns last of duplicates)
+uint fbsearch (const uint key, uint *array, const uint count)
+{
+	uint left = 0;
+	uint right = count - 1;
+	uint mid;
+
+	if (!count) {
+		return ~0;
+	}
+	while (left != right) {
+		mid = (left + right + 1) / 2;
+		if (key < array[mid]) {
+			right = mid - 1;
+		} else {
+			left = mid;
+		}
+	}
+	return (key >= array[left]) ? left : ~0;
+}
+
 @namespace cluster {
 	[push_constant] @block Params {
 		uint       *command_counts;
@@ -127,6 +149,7 @@ typedef struct cluster_queue_s {
 
 		uint       *mod_counts;
 		uint       *mod_offsets;
+		uint       *mod_clusters;
 		uint        ent_count;
 		uint        num_models;
 		bsp_invoke_t *mod_invoke;
@@ -154,47 +177,64 @@ typedef struct cluster_queue_s {
 		inst_ids[inst_ind] = ent_id;
 	}
 
-	// Set up the instance queue entries for all the models except world.
+	// Count the clusters for all the models except world.
 	// The world model (0) was handled by world_instance() as its clusters
 	// are controlled by the PVS for the camera cluster.
-	// per model, direct dispatch
+	// per model*queue, direct dispatch
 	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
-	void instances ()
+	void model_count ()
 	{
-		uint mod_id = gl_GlobalInvocationID.x;
-		bsp_model_t mod = nil;
-		if (mod_id >= 1 && mod_id < num_models) {
-			mod = models[mod_id];
+		uint queue_mod_id = gl_GlobalInvocationID.x;
+		if (queue_mod_id == 0) {
+			// copy world model cluster count so it offsets the model clusters
+			// when prefix-summed
+			mod_clusters[0] = instance_queue.count;
 		}
-
-		for (uint j = 0; j < mod_queues && mod.cluster_count; j++) {
-			uint mod_base = j * num_models;
-			uint first_instance = mod_offsets[mod_base + mod_id];
-			uint instance_count = mod_counts[mod_base + mod_id];
-
-			if (instance_count) {
-				uint count = mod.cluster_count;
-				uint maxCount = subgroup_max (count);
-				uint first = atomicAdd (cluster_queue.count, count);
-				for (uint i = 0; i < maxCount; i++) {
-					if (i < count) {
-						uint index = atomicAdd (instance_queue.count, 1);
-						bsp_queue_t q = {
-							.cluster = mod.first_cluster + i,
-							.first_instance = first_instance,
-							.instance_count = instance_count,
-							//FIXME qfcc doesn't warn (produces bad spir-v
-							//without cast)
-							.frame = (ushort) (j & 1),
-							.trans = (ushort) ((j >> 1) & 1),
-						};
-						instance_queue.queue[index] = q;
-
-						cluster_queue.queue[first + i] = q.cluster;
-					}
-				}
-			}
+		uint mod_id = queue_mod_id % num_models;
+		if (mod_id < 1 || queue_mod_id >= num_models * mod_queues) {
+			return;
 		}
+		auto mod = models[mod_id];
+		bool vis = mod_counts[mod_id] > 0;
+		mod_clusters[mod_id] = vis ? mod.cluster_count : 0;
+	}
+
+	// Set up the instance queue entries for all the models except world (see
+	// model_count).
+	// per cluster, indirect dispatch (cluster_queue)
+	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+	void model_instances ()
+	{
+		uint cluster_id = gl_GlobalInvocationID.x;
+		if (cluster_id == 0) {
+			instance_queue.count = cluster_queue.count;
+		}
+		// skip world model clusters
+		if (cluster_id < instance_queue.count
+			|| cluster_id >= cluster_queue.count) {
+			return;
+		}
+		uint count = num_models * mod_queues;
+		uint queue_mod_id = fbsearch (cluster_id, mod_clusters, count);
+		uint first_instance = mod_offsets[queue_mod_id];
+		uint instance_count = mod_counts[queue_mod_id];
+
+		uint rel_cluster = cluster_id - mod_clusters[queue_mod_id];
+		uint queue = queue_mod_id / num_models;
+		uint mod_id = queue_mod_id % num_models;
+		auto mod = &models[mod_id];
+		uint cluster = mod.first_cluster + rel_cluster;
+		bsp_queue_t q = {
+			.cluster = cluster,
+			.first_instance = first_instance,
+			.instance_count = instance_count,
+			//FIXME qfcc doesn't warn (produces bad spir-v
+			//without cast)
+			.frame = (ushort) (queue & 1),
+			.trans = (ushort) ((queue >> 1) & 1),
+		};
+		instance_queue.queue[cluster_id] = q;
+		cluster_queue.queue[cluster_id] = cluster;
 	}
 
 	// Count the entity instances on each model
@@ -236,20 +276,21 @@ typedef struct cluster_queue_s {
 		}
 	}
 
-	// Reset the model instance counts
-	// per model, direct dispatch
+	// Reset the model instance and cluster counts
+	// per model*queue, direct dispatch
 	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 	void clear ()
 	{
 		uint mod_id = gl_GlobalInvocationID.x;
 		if (mod_id < num_models * mod_queues) {
 			mod_counts[mod_id] = 0;
+			mod_clusters[mod_id] = 0;
 		}
 	}
 
 	@namespace set_dispatch {
 		[shader(GLCompute, LocalSize=[1,1,1])]
-		void inst ()
+		void instance ()
 		{
 			if (instance_queue) {
 				instance_queue.x = DISPATCH(instance_queue.count);
@@ -282,36 +323,16 @@ typedef struct cluster_queue_s {
 		[shader(GLCompute, LocalSize=[1,1,1])]
 		void cluster ()
 		{
-			//if (cluster_queue) {
-			//	cluster_queue.x = DISPATCH(cluster_queue.count);
-			//}
+			if (cluster_queue) {
+				cluster_queue.x = DISPATCH(cluster_queue.count);
+				cluster_queue.y = 1;
+				cluster_queue.z = 1;
+			}
 		}
 	}
 }
 
 @namespace lightmap {
-	// Find the largest index of the array with a value <= key.
-	// Entries in the array must be sorted (returns last of duplicates)
-	uint fbsearch (const uint key, uint *array, const uint count)
-	{
-		uint left = 0;
-		uint right = count - 1;
-		uint mid;
-
-		if (!count) {
-			return ~0;
-		}
-		while (left != right) {
-			mid = (left + right + 1) / 2;
-			if (key < array[mid]) {
-				right = mid - 1;
-			} else {
-				left = mid;
-			}
-		}
-		return (key >= array[left]) ? left : ~0;
-	}
-
 	[push_constant] @block Params {
 		bsp_lightinfo_t *lightinfo;
 		bsp_surfinfo_t *surfinfo;

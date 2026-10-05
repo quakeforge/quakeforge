@@ -217,6 +217,7 @@ typedef struct bspctx_s {
 	bspframeset_t frames;
 
 	bsp_prefixsum_t mod_offsets;
+	bsp_prefixsum_t mod_clusters;
 	bsp_prefixsum_t light_surfs;
 	bsp_prefixsum_t light_luxels;
 

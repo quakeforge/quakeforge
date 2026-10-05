@@ -1094,6 +1094,13 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.total = bctx->block_sums_buffer.addr + sizeof (uint32_t[2048]),
 			.invoke = bctx->mod_invoke_buffer.buffer,
 		};
+		bctx->mod_clusters = (bsp_prefixsum_t) {
+			.in = bctx->mod_clusters_buffer.addr,
+			.out = bctx->mod_clusters_buffer.addr,
+			.tmp = bctx->mod_tmp_buffer.addr,
+			.total = bctx->cluster_queue_buffer.addr,
+			.invoke = bctx->mod_invoke_buffer.buffer,
+		};
 
 		for (size_t i = 0; i < frames; i++) {
 			bctx->frames.a[i].queue = cluster_queue_buffer_size * i;
@@ -1575,7 +1582,7 @@ bsp_reset_queues (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 }
 
 static void
-bsp_count_ent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+bsp_entity_invoke (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
@@ -1587,59 +1594,10 @@ bsp_count_ent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	pipeline->dispatch[0] = RUP (count, workgroup_size) / workgroup_size;
 	pipeline->dispatch[1] = 1;
 	pipeline->dispatch[2] = 1;
-
-	pipeline->pre_memory_barrier = true;
-	pipeline->post_memory_barrier = true;
-	pipeline->pre_mb = (VkMemoryBarrier2) {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-	};
-	pipeline->post_mb = (VkMemoryBarrier2) {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
-	};
 }
 
 static void
-bsp_clear_ent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
-{
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto bctx = ctx->bsp_context;
-	auto pipeline = taskctx->pipeline;
-
-	uint32_t count = mod_queues * *bctx->num_models;
-
-	pipeline->dispatch[0] = RUP (count, workgroup_size) / workgroup_size;
-	pipeline->dispatch[1] = 1;
-	pipeline->dispatch[2] = 1;
-
-	pipeline->pre_memory_barrier = true;
-	pipeline->post_memory_barrier = true;
-	pipeline->pre_mb = (VkMemoryBarrier2) {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-	};
-	pipeline->post_mb = (VkMemoryBarrier2) {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
-	};
-}
-
-static void
-bsp_queue_insts (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+bsp_model_invoke (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
@@ -1651,68 +1609,48 @@ bsp_queue_insts (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		return;
 	}
 
-	uint32_t count = *bctx->num_models;
+	uint32_t count = *bctx->num_models * mod_queues;
 
 	pipeline->dispatch[0] = RUP (count, workgroup_size) / workgroup_size;
 	pipeline->dispatch[1] = 1;
 	pipeline->dispatch[2] = 1;
-
-	pipeline->pre_memory_barrier = true;
-	pipeline->post_memory_barrier = true;
-	pipeline->pre_mb = (VkMemoryBarrier2) {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
-					   | VK_ACCESS_2_SHADER_READ_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
-					   | VK_ACCESS_2_SHADER_READ_BIT,
-	};
-	pipeline->post_mb = (VkMemoryBarrier2) {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
-					   | VK_ACCESS_2_SHADER_READ_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
-					   | VK_ACCESS_2_SHADER_READ_BIT,
-	};
 }
 
 static void
-bsp_distribute_insts (const exprval_t **params, exprval_t *result,
-					  exprctx_t *ectx)
+bsp_update_mod_clusters (const exprval_t **params, exprval_t *result,
+						 exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto bctx = ctx->bsp_context;
+	auto frame = &bctx->frames.a[ctx->curFrame];
+
+	if (!r_refdef.worldmodel) {
+		return;
+	}
+	bctx->mod_clusters.total = bctx->cluster_queue_buffer.addr + frame->queue;
+}
+
+static void
+bsp_cluster_invoke (const exprval_t **params, exprval_t *result,
+					  exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto bctx = ctx->bsp_context;
+	auto frame = &bctx->frames.a[ctx->curFrame];
 	auto pipeline = taskctx->pipeline;
 
-	uint32_t count = *bctx->ent_count;
+	if (!r_refdef.worldmodel) {
+		return;
+	}
 
-	pipeline->dispatch[0] = RUP (count, workgroup_size) / workgroup_size;
-	pipeline->dispatch[1] = 1;
-	pipeline->dispatch[2] = 1;
-
-	pipeline->pre_memory_barrier = true;
-	pipeline->post_memory_barrier = true;
-	pipeline->pre_mb = (VkMemoryBarrier2) {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
-					   | VK_ACCESS_2_SHADER_READ_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
-					   | VK_ACCESS_2_SHADER_READ_BIT,
-	};
-	pipeline->post_mb = (VkMemoryBarrier2) {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
-					   | VK_ACCESS_2_SHADER_READ_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
-		.dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
-	};
+	auto cmd = taskctx->cmd;
+	QFV_PushBlackboard (ctx, cmd, pipeline);
+	dfunc->vkCmdDispatchIndirect (cmd, bctx->cluster_queue_buffer.buffer,
+								  frame->queue + sizeof (uint32_t));
 }
 
 static void
@@ -2127,6 +2065,8 @@ bsp_prefixsum (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		bsp_prefixsum_t *psum = nullptr;
 		if (strcmp (name, "mod_offsets") == 0) {
 			psum = &bctx->mod_offsets;
+		} else if (strcmp (name, "mod_clusters") == 0) {
+			psum = &bctx->mod_clusters;
 		} else if (strcmp (name, "light_surfs") == 0) {
 			psum = &bctx->light_surfs;
 		} else if (strcmp (name, "light_luxels") == 0) {
@@ -2558,20 +2498,20 @@ static exprfunc_t bsp_clear_commands_func[] = {
 	{ .func = bsp_clear_commands },
 	{}
 };
-static exprfunc_t bsp_count_ent_func[] = {
-	{ .func = bsp_count_ent },
+static exprfunc_t bsp_entity_invoke_func[] = {
+	{ .func = bsp_entity_invoke },
 	{}
 };
-static exprfunc_t bsp_clear_ent_func[] = {
-	{ .func = bsp_clear_ent },
+static exprfunc_t bsp_model_invoke_func[] = {
+	{ .func = bsp_model_invoke },
 	{}
 };
-static exprfunc_t bsp_queue_insts_func[] = {
-	{ .func = bsp_queue_insts },
+static exprfunc_t bsp_update_mod_clusters_func[] = {
+	{ .func = bsp_update_mod_clusters },
 	{}
 };
-static exprfunc_t bsp_distribute_insts_func[] = {
-	{ .func = bsp_distribute_insts },
+static exprfunc_t bsp_cluster_invoke_func[] = {
+	{ .func = bsp_cluster_invoke },
 	{}
 };
 static exprfunc_t bsp_queue_clusters_func[] = {
@@ -2629,10 +2569,11 @@ static exprfunc_t bsp_init_func[] = {
 static exprsym_t bsp_task_syms[] = {
 	{ "bsp_reset_queues", &cexpr_function, bsp_reset_queues_func },
 	{ "bsp_clear_commands", &cexpr_function, bsp_clear_commands_func },
-	{ "bsp_count_ent", &cexpr_function, bsp_count_ent_func },
-	{ "bsp_clear_ent", &cexpr_function, bsp_clear_ent_func },
-	{ "bsp_queue_insts", &cexpr_function, bsp_queue_insts_func },
-	{ "bsp_distribute_insts", &cexpr_function, bsp_distribute_insts_func },
+	{ "bsp_entity_invoke", &cexpr_function, bsp_entity_invoke_func },
+	{ "bsp_model_invoke", &cexpr_function, bsp_model_invoke_func },
+	{ "bsp_update_mod_clusters", &cexpr_function,
+		bsp_update_mod_clusters_func },
+	{ "bsp_cluster_invoke", &cexpr_function, bsp_cluster_invoke_func },
 	{ "bsp_queue_clusters", &cexpr_function, bsp_queue_clusters_func },
 	{ "bsp_visit_world", &cexpr_function, bsp_visit_world_func },
 	{ "bsp_draw_barrier", &cexpr_function, bsp_draw_barrier_func },

@@ -386,9 +386,14 @@ properties = {
 					name = ent.distribute;
 					module = $builtin/bsp.r;
 				};
-				instances = {
+				model_count = {
 					stage = compute;
-					name = ent.instances;
+					name = ent.model_count;
+					module = $builtin/bsp.r;
+				};
+				model_instances = {
+					stage = compute;
+					name = ent.model_instances;
 					module = $builtin/bsp.r;
 				};
 				set_dispatch = {
@@ -402,9 +407,9 @@ properties = {
 						name = ent.set_dispatch.model;
 						module = $builtin/bsp.r;
 					};
-					inst = {
+					instance = {
 						stage = compute;
-						name = ent.set_dispatch.inst;
+						name = ent.set_dispatch.instance;
 						module = $builtin/bsp.r;
 					};
 				};
@@ -437,6 +442,7 @@ properties = {
 
 						mod_counts = ptr;
 						mod_offsets = ptr;
+						mod_clusters = ptr;
 						ent_count = uint;
 						num_models = uint;
 						mod_invoke = ptr;
@@ -2487,7 +2493,7 @@ jobs = {
 					pipelines = {
 						ent:clear = {
 							tasks = (
-								{ func = bsp_clear_ent; },
+								{ func = bsp_model_invoke; },
 							);
 							stage = $brush.ent.shader.clear;
 							layout = $brush.ent.layout;
@@ -2502,18 +2508,10 @@ jobs = {
 							stage = $brush.ent.shader.world_instance;
 							layout = $brush.ent.layout;
 						};
-						ent:cluster:set_dispatch = {
-							tasks = (
-								{ func = indirect_dispatch_barrier; },
-								{ func = set_dispatch; params = (1, 1, 1); },
-							);
-							stage = $brush.ent.shader.set_dispatch.cluster;
-							layout = $brush.ent.layout;
-						};
 						ent:count = {
 							tasks = (
 								{ func = indirect_dispatch_barrier; },
-								{ func = bsp_count_ent; },
+								{ func = bsp_entity_invoke; },
 							);
 							stage = $brush.ent.shader.count;
 							layout = $brush.ent.layout;
@@ -2535,28 +2533,54 @@ jobs = {
 							stage = $prefixsum.shader.modal;
 							layout = $prefixsum.layout;
 						};
-						ent:instances = {
-							tasks = (
-								{ func = indirect_dispatch_barrier; },
-								{ func = bsp_queue_insts; },
-							);
-							stage = $brush.ent.shader.instances;
-							layout = $brush.ent.layout;
-						};
 						ent:distribute = {
 							tasks = (
 								{ func = indirect_dispatch_barrier; },
-								{ func = bsp_distribute_insts; },
+								{ func = bsp_entity_invoke; },
 							);
 							stage = $brush.ent.shader.distribute;
 							layout = $brush.ent.layout;
 						};
-						ent:inst:set_dispatch = {
+						ent:model_count = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_model_invoke; },
+							);
+							stage = $brush.ent.shader.model_count;
+							layout = $brush.ent.layout;
+						};
+						ent:cluster:set_dispatch = {
 							tasks = (
 								{ func = indirect_dispatch_barrier; },
 								{ func = set_dispatch; params = (1, 1, 1); },
 							);
-							stage = $brush.ent.shader.set_dispatch.inst;
+							stage = $brush.ent.shader.set_dispatch.model;
+							layout = $brush.ent.layout;
+						};
+						ent:cluster:prefixsum = {
+							tasks = (
+								{ func = bsp_update_mod_clusters; },
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_prefixsum;
+								  params = (mod_clusters); },
+							);
+							stage = $prefixsum.shader.modal;
+							layout = $prefixsum.layout;
+						};
+						ent:model_instances = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_cluster_invoke; },
+							);
+							stage = $brush.ent.shader.model_instances;
+							layout = $brush.ent.layout;
+						};
+						ent:instance:set_dispatch = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.ent.shader.set_dispatch.instance;
 							layout = $brush.ent.layout;
 						};
 						cluster:clear_commands = {
