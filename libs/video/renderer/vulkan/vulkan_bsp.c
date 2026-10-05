@@ -1428,6 +1428,7 @@ create_base_resources (vulkan_ctx_t *ctx)
 				+ sizeof (qfv_resobj_t[4]) 	//views
 				+ sizeof (qfv_resobj_t[1])	//default vertices
 				+ sizeof (qfv_resobj_t[1])	//ent_ids
+				+ sizeof (qfv_resobj_t[1])	//ent_rel
 				+ sizeof (qfv_resobj_t[1])	//inst_ids
 				+ sizeof (qfv_resobj_t[1])	//prefixsum_counts
 				+ sizeof (qfv_resobj_t[1]);	//block_sums
@@ -1436,14 +1437,15 @@ create_base_resources (vulkan_ctx_t *ctx)
 	auto views = (qfv_resobj_t *) &images[4];
 	auto verts = (qfv_resobj_t *) &views[4];
 	auto ent_ids = (qfv_resobj_t *) &verts[1];
-	auto inst_ids = (qfv_resobj_t *) &ent_ids[1];
+	auto ent_rel = (qfv_resobj_t *) &ent_ids[1];
+	auto inst_ids = (qfv_resobj_t *) &ent_rel[1];
 	auto prefixsum_counts = (qfv_resobj_t *) &inst_ids[1];
 	auto block_sums = (qfv_resobj_t *) &prefixsum_counts[1];
 	*bctx->base_resource = (qfv_resource_t) {
 		.name = "bsp:dfl",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = 4 + 4 + 1 + 1 + 1 + 1 + 1,
+		.num_objects = 4 + 4 + 6,
 		.objects = images,
 	};
 	QFV_ResourceInitTexImage (&images[0], "notexture", true,
@@ -1483,13 +1485,21 @@ create_base_resources (vulkan_ctx_t *ctx)
 					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 		},
 	};
+	*ent_rel = (qfv_resobj_t) {
+		.name = "ent_rel",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (uint32_t[entid_count]),
+			.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		},
+	};
 	*inst_ids = (qfv_resobj_t) {
 		.name = "inst_ids",
 		.type = qfv_res_buffer,
 		.buffer = {
 			.size = sizeof (uint32_t[entid_count]),
-			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-					| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+			.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
 					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 		},
 	};
@@ -1498,8 +1508,7 @@ create_base_resources (vulkan_ctx_t *ctx)
 		.type = qfv_res_buffer,
 		.buffer = {
 			.size = sizeof (uint32_t[4]),
-			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+			.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 					| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
 					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 		},
@@ -1509,8 +1518,7 @@ create_base_resources (vulkan_ctx_t *ctx)
 		.type = qfv_res_buffer,
 		.buffer = {
 			.size = sizeof (uint32_t[1024 * 2 + 1]),
-			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+			.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 		},
 	};
@@ -1532,6 +1540,7 @@ create_base_resources (vulkan_ctx_t *ctx)
 			} \
 		} while (0)
 	BUFFER (ent_ids);
+	BUFFER (ent_rel);
 	BUFFER (inst_ids);
 	BUFFER (prefixsum_counts);
 	BUFFER (block_sums);
@@ -2429,6 +2438,7 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		BB_var (anim_index),
 
 		BB_buffer (ent_ids),
+		BB_buffer (ent_rel),
 		BB_buffer (inst_ids),
 		BB_var (entities),
 		BB_buffer (instance_queue),

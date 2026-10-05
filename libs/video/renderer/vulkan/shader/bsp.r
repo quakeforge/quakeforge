@@ -118,6 +118,7 @@ typedef struct cluster_queue_s {
 @namespace ent {
 	[push_constant] @block Params {
 		uint       *ent_ids;
+		uint       *ent_rel;
 		uint       *inst_ids;
 		Entity     *entities;
 		instance_queue_t *instance_queue;
@@ -149,7 +150,7 @@ typedef struct cluster_queue_s {
 		uint trans = entities[ent_id].color[3] < 1 ? 2 : 0;
 		uint mod_base = (frame + trans) * num_models;
 
-		uint inst_ind = atomicAdd (mod_offsets[mod_base + mod_id], 1);
+		uint inst_ind = mod_offsets[mod_base + mod_id] + ent_rel[ent_id];
 		inst_ids[inst_ind] = ent_id;
 	}
 
@@ -213,7 +214,8 @@ typedef struct cluster_queue_s {
 		uint trans = entities[ent_id].color[3] < 1 ? 2 : 0;
 		uint mod_base = (frame + trans) * num_models;
 
-		atomicAdd (mod_counts[mod_base + mod_id], 1);
+		uint offs = atomicAdd (mod_counts[mod_base + mod_id], 1);
+		ent_rel[ent_id] = offs;
 	}
 
 	// Set up the instance queue entries for the visible world clusters

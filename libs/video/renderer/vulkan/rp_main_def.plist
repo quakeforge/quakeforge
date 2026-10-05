@@ -428,6 +428,7 @@ properties = {
 				pushConstants = {
 					compute = {
 						ent_ids = ptr;
+						ent_rel = ptr;
 						inst_ids = ptr;
 						entities = ptr;
 						instance_queue = ptr;

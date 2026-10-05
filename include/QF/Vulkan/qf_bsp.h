@@ -241,6 +241,7 @@ typedef struct bspctx_s {
 
 	//ent (both realtime lights and lightmap)
 	BB_buffer (ent_ids);
+	BB_buffer (ent_rel);
 	BB_buffer (inst_ids);
 	VkDeviceAddress *entities;
 	BB_buffer (instance_queue);
