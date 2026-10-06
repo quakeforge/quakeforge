@@ -1160,7 +1160,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 					   + clusters_buffer_size
 					   + cluster_map_buffer_size;
 	build.models = (bsp_model_t *) QFV_PacketExtend (packet, packet_size);
-	build.vertex = (bspvert_t *) &build.models[build.num_tex_ids];
+	build.vertex = (bspvert_t *) &build.models[mod_count];
 	build.index = (uint32_t *) &build.vertex[vertex_count];
 	build.command_offsets = (uint32_t *) &build.index[index_count];
 	build.subclusters = (bsp_cluster_t *) &build.command_offsets[2 * num_tex];
