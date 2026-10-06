@@ -265,8 +265,8 @@ uint fbsearch (const uint key, uint *array, const uint count)
 			return;
 		}
 		auto mod = models[mod_id];
-		bool vis = mod_counts[mod_id] > 0;
-		mod_clusters[mod_id] = vis ? mod.cluster_count : 0;
+		bool vis = mod_counts[queue_mod_id] > 0;
+		mod_clusters[queue_mod_id] = vis ? mod.cluster_count : 0;
 	}
 
 	// Set up the instance queue entries for all the models except world (see
