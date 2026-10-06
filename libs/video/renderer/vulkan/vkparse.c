@@ -592,8 +592,10 @@ void
 QFV_AddHandle (hashtab_t *tab, const char *name, uint64_t handle)
 {
 	handleref_t *hr = malloc (sizeof (handleref_t));
-	hr->name = strdup (name);
-	hr->handle = handle;
+	*hr = (handleref_t) {
+		.name = strdup (name),
+		.handle = handle,
+	};
 	Hash_Add (tab, hr);
 }
 

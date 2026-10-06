@@ -140,15 +140,17 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 
 	dfuncs->vkGetSwapchainImagesKHR (dev, swapchain, &numImages, 0);
 	qfv_swapchain_t *sc = malloc (sizeof (qfv_swapchain_t));
-	sc->device = ctx->device;
-	sc->surface = ctx->surface;
-	sc->swapchain = swapchain;
-	sc->format = useFormat.format;
-	sc->extent = imageSize;
-	sc->numImages = numImages;
-	sc->usage = imageUsage;
-	sc->images = DARRAY_ALLOCFIXED (qfv_imageset_t, numImages, malloc);
-	sc->imageViews = DARRAY_ALLOCFIXED (qfv_imageviewset_t, numImages, malloc);
+	*sc = (qfv_swapchain_t) {
+		.device = ctx->device,
+		.surface = ctx->surface,
+		.swapchain = swapchain,
+		.format = useFormat.format,
+		.extent = imageSize,
+		.numImages = numImages,
+		.usage = imageUsage,
+		.images = DARRAY_ALLOCFIXED (qfv_imageset_t, numImages, malloc),
+		.imageViews = DARRAY_ALLOCFIXED (qfv_imageviewset_t, numImages, malloc),
+	};
 	dfuncs->vkGetSwapchainImagesKHR (dev, swapchain, &numImages, sc->images->a);
 	for (uint32_t i = 0; i < numImages; i++) {
 		QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_IMAGE,

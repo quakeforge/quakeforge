@@ -201,14 +201,16 @@ capture_finalize (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	tex_t      *tex = malloc (sizeof (tex_t) + count * 3);
 
 	if (tex) {
-		tex->data = (byte *) (tex + 1);
-		tex->flagbits = 0;
-		tex->width = cap->extent.width;
-		tex->height = cap->extent.height;
-		tex->format = tex_rgb;
-		tex->palette = 0;
-		tex->flagbits = 0;
-		tex->loaded = true;
+		*tex = (tex_t) {
+			.data = (byte *) (tex + 1),
+			.flagbits = 0,
+			.width = cap->extent.width,
+			.height = cap->extent.height,
+			.format = tex_rgb,
+			.palette = 0,
+			.flagbits = 0,
+			.loaded = true,
+		};
 
 		if (is_bgr (ctx->swapchain->format)) {
 			tex->bgr = true;
