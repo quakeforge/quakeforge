@@ -475,7 +475,8 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job)
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
 	auto frame = &rctx->frames.a[ctx->curFrame];
-	int64_t start = Sys_LongTime ();
+
+	job->start_time = Sys_LongTime ();
 
 	run_deletion_queue (ctx);
 
@@ -512,7 +513,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job)
 	if (++ctx->curFrame >= rctx->frames.size) {
 		ctx->curFrame = 0;
 	}
-	update_time (&job->time, start, Sys_LongTime ());
+	update_time (&job->time, job->start_time, Sys_LongTime ());
 }
 
 static qfv_imageviewinfo_t * __attribute__((pure))
@@ -716,6 +717,7 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 	auto ctx = taskctx->ctx;
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
+	auto job = taskctx->job;
 
 	VkExtent2D *extent = nullptr;
 	if (graph->num_framebuffers) {
@@ -733,7 +735,7 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 	int64_t size_time = rctx->size_time;
 	if ((output.extent.width != extent->width
 		|| output.extent.height != extent->height)
-		&& (size_time < 0 || Sys_LongTime () - size_time > 2*1000*1000)) {
+		&& (size_time < 0 || job->start_time - size_time > 2*1000*1000)) {
 		if (step) {
 			auto render = step->render;
 			auto rp = render->active;

@@ -1834,6 +1834,7 @@ create_graph (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 		auto fbi = &graphinfo->framebuffers[i];
 		auto fbr = &graph->framebuffer_resources[i];
 		*fb = (qfv_framebuffer_t) {
+			.name = fbi->name,
 			.layers = fbi->layers,
 			.num_attachments = fbi->num_attachments,
 			.views = &av[s->inds.num_attachments],

@@ -497,6 +497,7 @@ typedef struct qfv_subpassinput_s {
 } qfv_subpassinput_t;
 
 typedef struct qfv_framebuffer_s {
+	const char *name;
 	VkExtent2D  extent;
 	uint32_t    layers;
 	uint32_t    num_attachments;
@@ -566,6 +567,7 @@ typedef struct qfv_job_s {
 	uint32_t    num_steps;
 	qfv_step_t *steps;
 	qfv_time_t  time;
+	int64_t     start_time;
 
 	qfv_blackboard_t blackboard;
 	qfv_cmdbufferset_t commands;
