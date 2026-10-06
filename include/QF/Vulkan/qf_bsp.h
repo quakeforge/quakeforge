@@ -220,6 +220,7 @@ typedef struct bspctx_s {
 	bsp_prefixsum_t mod_clusters;
 	bsp_prefixsum_t light_surfs;
 	bsp_prefixsum_t light_luxels;
+	bsp_prefixsum_t subclusters;
 
 	bsp_buffer_t mod_tmp_buffer;
 #define BB_buffer(name) bsp_buffer_t name##_buffer
@@ -245,6 +246,8 @@ typedef struct bspctx_s {
 	BB_buffer (ent_rel);
 	BB_buffer (inst_ids);
 	VkDeviceAddress *entities;
+	BB_buffer (subcluster_queue);
+	BB_buffer (subcluster_tmp);
 	BB_buffer (instance_queue);
 	BB_buffer (cluster_queue);
 	BB_buffer (models);

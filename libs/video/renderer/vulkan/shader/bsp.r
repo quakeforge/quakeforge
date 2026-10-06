@@ -17,6 +17,12 @@ uint subgroup_max (uint x) = @intrinsic(OpGroupNonUniformUMax)
 
 [in("GlobalInvocationId")] uvec3 gl_GlobalInvocationID;
 
+typedef struct subcluster_queue_s {
+	uint        count;
+	uint        x, y, z;
+	uint        queue[];
+} subcluster_queue_t;
+
 typedef struct instance_queue_s {
 	uint        count;
 	uint        x, y, z;
@@ -59,6 +65,8 @@ uint fbsearch (const uint key, uint *array, const uint count)
 		bsp_cluster_t *subclusters;
 		cluster_t  *clusters;
 		uint       *cluster_map;
+		subcluster_queue_t *subcluster_queue;
+		uint       *subcluster_tmp;
 		instance_queue_t *instance_queue;
 		uint        texture_count;
 		uint        anim_index;
@@ -68,7 +76,20 @@ uint fbsearch (const uint key, uint *array, const uint count)
 		bsp_texanim_t *anim_main;	///< group 0 animations
 		bsp_texanim_t *anim_alt;	///< group 1 animations
 		ushort     *frame_map;		///< map from texture frame to texture id
+
+		bsp_invoke_t *mod_invoke;
+
+		uint       *prefixsum_counts;
 	};
+
+	uint map_tex_id (uint tex_id, uint frame, uint trans)
+	{
+		auto frame_anim = frame ? anim_alt : anim_main;
+		trans *= texture_count;
+		auto anim = frame_anim[tex_id];
+		uint anim_ind = (anim_index + anim.offset) % anim.count;
+		return frame_map[anim.base + anim_ind] + trans;
+	}
 
 	// Write VkDrawIndexedIndirectCommand (aliased as bsp_command_t) entries
 	// for each subcluster for vkCmdDrawIndexedIndirectCount, incrementing
@@ -81,48 +102,61 @@ uint fbsearch (const uint key, uint *array, const uint count)
 	// the instance id range.
 	//
 	// per queued cluster, indirect dispatch (cluster_queue/instance_queue)
-	// FIXME something is very wrong here: CPU uses cluster_queue to invoke,
-	// this refers to instance_queue, but changing the cpu code breaks things.
-	// FIXME make properly uniform (see lightmap)
 	[capability(GroupNonUniformArithmetic)]
 	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
-	void main ()
+	void queue_textures ()
 	{
-		uint queue_index = gl_GlobalInvocationID.x;
-		bsp_queue_t *queue = nil;
-		cluster_t *cluster = nil;
-		if (queue_index < instance_queue.count) {
-			queue = &instance_queue.queue[queue_index];
-			cluster = &clusters[queue.cluster];
+		uint sc_id = gl_GlobalInvocationID.x;
+		if (sc_id >= subcluster_queue.count) {
+			return;
 		}
-		uint count = 0;
-		uint trans = 0;
-		bsp_texanim_t *frame_anim = anim_main;
-		if (cluster) {
-			count = cluster.count;
-			frame_anim = queue.frame ? anim_alt : anim_main;
-			trans = queue.trans * texture_count;
+		uint count = instance_queue.count;
+		//FIXME (qfcc) passing array[] to ptr
+		uint ind = fbsearch (sc_id, &subcluster_queue.queue[0], count);
+		auto queue = &instance_queue.queue[ind];
+		auto cluster = &clusters[queue.cluster];
+		uint sc_ind = cluster.first + sc_id - subcluster_queue.queue[ind];
+		auto sc = &subclusters[cluster_map[sc_ind]];
+		uint tex_id = map_tex_id (sc.tex_id, queue.frame, queue.trans);
+
+		uint command_ind = subcluster_tmp[sc_id];
+		command_ind += command_offsets[tex_id];
+		commands[command_ind] = (bsp_command_t) {
+			.indexCount = sc.index_count,
+			.instanceCount = queue.instance_count,
+			.firstIndex = sc.first_index,
+			.vertexOffset = 0,
+			.firstInstace = queue.first_instance,
+		};
+	}
+
+	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+	void alloc_textures ()
+	{
+		uint sc_id = gl_GlobalInvocationID.x;
+		if (sc_id >= subcluster_queue.count) {
+			return;
 		}
-		uint maxCount = subgroup_max (count);
-		for (uint i = 0; i < maxCount; i++) {
-			if (i < count) {
-				uint subcluster_ind = cluster_map[cluster.first + i];
-				auto subcluster = subclusters[subcluster_ind];
-				uint tex_id = subcluster.tex_id;
-				auto anim = frame_anim[tex_id];
-				uint anim_ind = (anim_index + anim.offset) % anim.count;
-				tex_id = frame_map[anim.base + anim_ind] + trans;
-				uint command_ind = atomicAdd (command_counts[tex_id], 1);
-				command_ind += command_offsets[tex_id];
-				commands[command_ind] = (bsp_command_t) {
-					.indexCount = subcluster.index_count,
-					.instanceCount = queue.instance_count,
-					.firstIndex = subcluster.first_index,
-					.vertexOffset = 0,
-					.firstInstace = queue.first_instance,
-				};
-			}
+		uint count = instance_queue.count;
+		//FIXME (qfcc) passing array[] to ptr
+		uint ind = fbsearch (sc_id, &subcluster_queue.queue[0], count);
+		auto queue = &instance_queue.queue[ind];
+		auto cluster = &clusters[queue.cluster];
+		uint sc_ind = cluster.first + sc_id - subcluster_queue.queue[ind];
+		auto sc = &subclusters[cluster_map[sc_ind]];
+		uint tex_id = map_tex_id (sc.tex_id, queue.frame, queue.trans);
+		subcluster_tmp[sc_id] = atomicAdd (command_counts[tex_id], 1);
+	}
+
+	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+	void count_subclusters ()
+	{
+		uint ind = gl_GlobalInvocationID.x;
+		if (ind >= instance_queue.count) {
+			return;
 		}
+		uint cluster_ind = instance_queue.queue[ind].cluster;
+		subcluster_queue.queue[ind] = clusters[cluster_ind].count;
 	}
 
 	// Reset the command counts for all per-texture cluster queues
@@ -133,6 +167,42 @@ uint fbsearch (const uint key, uint *array, const uint count)
 		uint tex_id = gl_GlobalInvocationID.x;
 		if (tex_id < 2 * texture_count) {
 			command_counts[tex_id] = 0;
+		}
+	}
+
+	@namespace set_dispatch {
+		[shader(GLCompute, LocalSize=[1,1,1])]
+		void subcluster ()
+		{
+			if (mod_invoke) {
+				uint count = instance_queue.count;
+				uint sum_count = BLOCKDISP (count);
+				mod_invoke[0] = {
+					.count = count,
+					.x = BLOCKDISP(count),
+					.y = 1,
+					.z = 1,
+				};
+				mod_invoke[1] = {
+					.count = sum_count,
+					.x = BLOCKDISP(sum_count),
+					.y = 1,
+					.z = 1,
+				};
+				prefixsum_counts[0] = count;
+				prefixsum_counts[1] = sum_count;
+			}
+		}
+
+		[shader(GLCompute, LocalSize=[1,1,1])]
+		void texture ()
+		{
+			if (subcluster_queue) {
+				uint count = subcluster_queue.count;
+				subcluster_queue.x = DISPATCH(count);
+				subcluster_queue.y = 1;
+				subcluster_queue.z = 1;
+			}
 		}
 	}
 }
@@ -294,6 +364,8 @@ uint fbsearch (const uint key, uint *array, const uint count)
 		{
 			if (instance_queue) {
 				instance_queue.x = DISPATCH(instance_queue.count);
+				instance_queue.y = 1;
+				instance_queue.z = 1;
 			}
 		}
 

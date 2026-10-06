@@ -391,10 +391,32 @@ properties = {
 					name = cluster.clear;
 					module = $builtin/bsp.r;
 				};
-				main = {
+				count_subclusters = {
 					stage = compute;
-					name = cluster.main;
+					name = cluster.count_subclusters;
 					module = $builtin/bsp.r;
+				};
+				alloc_textures = {
+					stage = compute;
+					name = cluster.alloc_textures;
+					module = $builtin/bsp.r;
+				};
+				queue_textures = {
+					stage = compute;
+					name = cluster.queue_textures;
+					module = $builtin/bsp.r;
+				};
+				set_dispatch = {
+					subcluster = {
+						stage = compute;
+						name = cluster.set_dispatch.subcluster;
+						module = $builtin/bsp.r;
+					};
+					texture = {
+						stage = compute;
+						name = cluster.set_dispatch.texture;
+						module = $builtin/bsp.r;
+					};
 				};
 			};
 			layout = {
@@ -406,6 +428,8 @@ properties = {
 						subclusters = ptr;
 						clusters = ptr;
 						cluster_map = ptr;
+						subcluster_queue = ptr;
+						subcluster_tmp = ptr;
 						instance_queue = ptr;
 						texture_count = uint;
 						anim_index = uint;
@@ -414,6 +438,9 @@ properties = {
 						anim_main = ptr;
 						anim_alt = ptr;
 						frame_map = ptr;
+
+						mod_invoke = ptr;
+						prefixsum_counts = ptr;
 					};
 				};
 			};
@@ -1690,7 +1717,7 @@ jobs = {
 								{ func = bsp_reset_queues; },
 								{ func = bsp_visit_world; },
 								{ func = indirect_dispatch_barrier; },
-								{ func = bsp_queue_clusters; },
+								{ func = bsp_cluster_invoke; },
 							);
 							stage = $brush.ent.shader.world_instance;
 							layout = $brush.ent.layout;
@@ -1773,17 +1800,61 @@ jobs = {
 						cluster:clear_commands = {
 							tasks = (
 								{ func = indirect_dispatch_barrier; },
-								{ func = bsp_clear_commands; },
+								{ func = bsp_command_invoke; },
 							);
 							stage = $brush.cluster.shader.clear;
 							layout = $brush.cluster.layout;
 						};
-						cluster:enqueue = {
+						cluster:count_subclusters = {
 							tasks = (
 								{ func = indirect_dispatch_barrier; },
-								{ func = bsp_queue_clusters; },
+								{ func = bsp_instance_invoke; },
 							);
-							stage = $brush.cluster.shader.main;
+							stage = $brush.cluster.shader.count_subclusters;
+							layout = $brush.cluster.layout;
+						};
+						cluster:subcluster:set_dispatch = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.cluster.shader.set_dispatch.subcluster;
+							layout = $brush.cluster.layout;
+						};
+						cluster:prefixsum = {
+							tasks = (
+								{ func = bsp_update_mod_clusters; },
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_prefixsum;
+								  params = (subclusters); },
+							);
+							stage = $prefixsum.shader.modal;
+							layout = $prefixsum.layout;
+						};
+						cluster:texture:set_dispatch = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.cluster.shader.set_dispatch.texture;
+							layout = $brush.cluster.layout;
+						};
+						cluster:alloc_textures = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_subcluster_invoke; },
+							);
+							stage = $brush.cluster.shader.alloc_textures;
+							layout = $brush.cluster.layout;
+						};
+						cluster:queue_textures = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_subcluster_invoke; },
+							);
+							stage = $brush.cluster.shader.queue_textures;
 							layout = $brush.cluster.layout;
 						};
 
@@ -1809,7 +1880,7 @@ jobs = {
 							color = "[0.8, 0.7, 0.4]";
 							tasks = (
 								{ func = indirect_dispatch_barrier; },
-								{ func = bsp_light_queue_surfs; },
+								{ func = bsp_cluster_invoke; },
 							);
 							stage = $brush.lightmap.shader.queue_surfs;
 							layout = $brush.lightmap.layout;

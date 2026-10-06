@@ -825,10 +825,16 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t subclusters_buffer_size = sizeof (bsp_cluster_t[num_clusters]);
 	size_t clusters_buffer_size = sizeof (cluster_t[mod_clusters]);
 	size_t cluster_map_buffer_size = sizeof (uint32_t[num_clusters]);
+	// num_commands always >= num_clusters because num_clusters is just the
+	// total subclusters across the models, but num_commands includes the
+	// extra subclusters needed for texture animations
+	size_t subcluster_queue_buffer_size = 2 * sizeof (uint32_t[num_commands])
+									  + sizeof (bsp_invoke_t);
+	size_t subcluster_tmp_buffer_size = 2 * sizeof (uint32_t[num_commands]);
 	size_t instance_queue_buffer_size = sizeof (bsp_queue_t[num_clusters])
-									  + sizeof (uint32_t[4]);//count+ind disp
-	// 4 for count + indirect dispatch
-	size_t cluster_queue_buffer_size = sizeof (uint32_t[4 + num_clusters]);
+									  + sizeof (bsp_invoke_t);
+	size_t cluster_queue_buffer_size = sizeof (uint32_t[num_clusters])
+									 + sizeof (bsp_invoke_t);
 	// two sets of commands: first for solid entities, second for transparent
 	size_t commands_buffer_size = 2 * sizeof (bsp_command_t[num_commands]);
 	size_t command_counts_buffer_size = 2 * sizeof (tex_commands);
@@ -849,6 +855,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		|| CHECK_SIZE (subclusters)
 		|| CHECK_SIZE (clusters)
 		|| CHECK_SIZE (cluster_map)
+		|| CHECK_SIZE (subcluster_queue)
+		|| CHECK_SIZE (subcluster_tmp)
 		|| CHECK_SIZE (instance_queue)
 		|| CHECK_SIZE (cluster_queue)) {
 		QFV_DestroyResource (ctx->device, bctx->bsp_resource);
@@ -868,6 +876,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						+ sizeof (qfv_resobj_t[1])	// subclusters
 						+ sizeof (qfv_resobj_t[1])	// clusters
 						+ sizeof (qfv_resobj_t[1])	// cluster_map
+						+ sizeof (qfv_resobj_t[1])	// subcluster_queue
+						+ sizeof (qfv_resobj_t[1])	// subcluster_tmp
 						+ sizeof (qfv_resobj_t[1])	// instance_queue
 						+ sizeof (qfv_resobj_t[1]);	// cluster_queue
 			bctx->bsp_resource = malloc (size);
@@ -886,14 +896,16 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		auto subclusters = (qfv_resobj_t *) &commands[1];
 		auto clusters = (qfv_resobj_t *) &subclusters[1];
 		auto cluster_map = (qfv_resobj_t *) &clusters[1];
-		auto instance_queue = (qfv_resobj_t *) &cluster_map[1];
+		auto subcluster_queue = (qfv_resobj_t *) &cluster_map[1];
+		auto subcluster_tmp = (qfv_resobj_t *) &subcluster_queue[1];
+		auto instance_queue = (qfv_resobj_t *) &subcluster_tmp[1];
 		auto cluster_queue = (qfv_resobj_t *) &instance_queue[1];
 
 		*bctx->bsp_resource = (qfv_resource_t) {
 			.name = "bsp:mdl",
 			.va_ctx = ctx->va_ctx,
 			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			.num_objects = 16,
+			.num_objects = 18,
 			.objects = models,
 		};
 		*models = (qfv_resobj_t) {
@@ -1035,6 +1047,28 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 			},
 		};
+		*subcluster_queue = (qfv_resobj_t) {
+			.name = "subcluster_queue",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = subcluster_queue_buffer_size,
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
+						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+			},
+		};
+		*subcluster_tmp = (qfv_resobj_t) {
+			.name = "subcluster_tmp",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = subcluster_tmp_buffer_size,
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
+						| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+			},
+		};
 		*instance_queue = (qfv_resobj_t) {
 			.name = "instance_queue",
 			.type = qfv_res_buffer,
@@ -1083,6 +1117,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		BUFFER (subclusters);
 		BUFFER (clusters);
 		BUFFER (cluster_map);
+		BUFFER (subcluster_queue);
+		BUFFER (subcluster_tmp);
 		BUFFER (instance_queue);
 		BUFFER (cluster_queue);
 #undef BUFFER
@@ -1099,6 +1135,13 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.out = bctx->mod_clusters_buffer.addr,
 			.tmp = bctx->mod_tmp_buffer.addr,
 			.total = bctx->cluster_queue_buffer.addr,
+			.invoke = bctx->mod_invoke_buffer.buffer,
+		};
+		bctx->subclusters = (bsp_prefixsum_t) {
+			.in = bctx->subcluster_queue_buffer.addr + sizeof (bsp_invoke_t),
+			.out = bctx->subcluster_queue_buffer.addr + sizeof (bsp_invoke_t),
+			.tmp = bctx->subcluster_tmp_buffer.addr,
+			.total = bctx->subcluster_queue_buffer.addr,
 			.invoke = bctx->mod_invoke_buffer.buffer,
 		};
 
@@ -1218,37 +1261,6 @@ trans_mem_barrier (qfv_devfuncs_t *dfunc, VkCommandBuffer cmd)
 		.pMemoryBarriers = &mb,
 		.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT
 						 | VK_DEPENDENCY_VIEW_LOCAL_BIT,
-	};
-	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
-}
-
-static void
-queue_mem_barrier (qfv_devfuncs_t *dfunc, VkCommandBuffer cmd, bool draw)
-{
-	static VkMemoryBarrier2 cmb = {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
-					   | VK_ACCESS_2_SHADER_READ_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT
-					   | VK_ACCESS_2_SHADER_WRITE_BIT,
-	};
-	static VkMemoryBarrier2 dmb = {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
-					   | VK_ACCESS_2_SHADER_READ_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT
-					  | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT
-					   | VK_ACCESS_2_SHADER_WRITE_BIT
-					   | VK_ACCESS_2_SHADER_READ_BIT,
-	};
-	VkDependencyInfo dep = {
-		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-		.memoryBarrierCount = 1,
-		.pMemoryBarriers = draw ? &dmb : &cmb,
 	};
 	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
 }
@@ -1632,53 +1644,62 @@ bsp_update_mod_clusters (const exprval_t **params, exprval_t *result,
 }
 
 static void
+bsp_indirect_invoke (VkBuffer invoke, uint32_t offset, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto pipeline = taskctx->pipeline;
+
+	if (!r_refdef.worldmodel) {
+		return;
+	}
+
+	auto cmd = taskctx->cmd;
+	QFV_PushBlackboard (ctx, cmd, pipeline);
+	dfunc->vkCmdDispatchIndirect (cmd, invoke, offset);
+}
+
+static void
 bsp_cluster_invoke (const exprval_t **params, exprval_t *result,
 					  exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
 	auto bctx = ctx->bsp_context;
 	auto frame = &bctx->frames.a[ctx->curFrame];
-	auto pipeline = taskctx->pipeline;
 
-	if (!r_refdef.worldmodel) {
-		return;
-	}
-
-	auto cmd = taskctx->cmd;
-	QFV_PushBlackboard (ctx, cmd, pipeline);
-	dfunc->vkCmdDispatchIndirect (cmd, bctx->cluster_queue_buffer.buffer,
-								  frame->queue + sizeof (uint32_t));
+	bsp_indirect_invoke (bctx->cluster_queue_buffer.buffer,
+						 frame->queue + offsetof (bsp_invoke_t, x), ectx);
 }
 
 static void
-bsp_queue_clusters (const exprval_t **params, exprval_t *result,
-					exprctx_t *ectx)
+bsp_instance_invoke (const exprval_t **params, exprval_t *result,
+					 exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
 	auto bctx = ctx->bsp_context;
-	auto frame = &bctx->frames.a[ctx->curFrame];
-	auto pipeline = taskctx->pipeline;
 
-	if (!r_refdef.worldmodel) {
-		return;
-	}
-
-	auto cmd = taskctx->cmd;
-	QFV_PushBlackboard (ctx, cmd, pipeline);
-	queue_mem_barrier (dfunc, cmd, false);
-	dfunc->vkCmdDispatchIndirect (cmd, bctx->cluster_queue_buffer.buffer,
-								  frame->queue + sizeof (uint32_t));
-	queue_mem_barrier (dfunc, cmd, true);
+	bsp_indirect_invoke (bctx->instance_queue_buffer.buffer,
+						 offsetof (bsp_invoke_t, x), ectx);
 }
 
 static void
-bsp_clear_commands (const exprval_t **params, exprval_t *result,
+bsp_subcluster_invoke (const exprval_t **params, exprval_t *result,
+					   exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto bctx = ctx->bsp_context;
+
+	bsp_indirect_invoke (bctx->subcluster_queue_buffer.buffer,
+						 offsetof (bsp_invoke_t, x), ectx);
+}
+
+static void
+bsp_command_invoke (const exprval_t **params, exprval_t *result,
 					exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
@@ -1689,24 +1710,6 @@ bsp_clear_commands (const exprval_t **params, exprval_t *result,
 	pipeline->dispatch[0] = RUP (count, workgroup_size) / workgroup_size;
 	pipeline->dispatch[1] = 1;
 	pipeline->dispatch[2] = 1;
-	pipeline->pre_memory_barrier = true;
-	pipeline->post_memory_barrier = true;
-	pipeline->pre_mb = (VkMemoryBarrier2) {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-		.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
-		.srcAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
-					  | VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
-		.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
-					   | VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
-	};
-	pipeline->post_mb = (VkMemoryBarrier2) {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
-	};
 }
 
 static void
@@ -2023,9 +2026,9 @@ bsp_light_update (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	});
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
 									layout, 0, countof (sets), sets, 0, 0);
-	dfunc->vkCmdDispatchIndirect (cmd, bctx->light_queue_buffer.buffer,
-								  2 * sizeof (uint32_t[4])
-									+ sizeof (uint32_t));
+	bsp_indirect_invoke (bctx->light_queue_buffer.buffer,
+						 sizeof (bsp_invoke_t[2])
+						 + offsetof (bsp_invoke_t, x), ectx);
 	dfunc->vkCmdPipelineBarrier2 (cmd, &(VkDependencyInfo) {
 		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 		.imageMemoryBarrierCount = 1,
@@ -2067,6 +2070,8 @@ bsp_prefixsum (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			psum = &bctx->mod_offsets;
 		} else if (strcmp (name, "mod_clusters") == 0) {
 			psum = &bctx->mod_clusters;
+		} else if (strcmp (name, "subclusters") == 0) {
+			psum = &bctx->subclusters;
 		} else if (strcmp (name, "light_surfs") == 0) {
 			psum = &bctx->light_surfs;
 		} else if (strcmp (name, "light_luxels") == 0) {
@@ -2130,47 +2135,15 @@ bsp_prefixsum (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 }
 
 static void
-bsp_light_queue_surfs (const exprval_t **params, exprval_t *result,
-					   exprctx_t *ectx)
-{
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto bctx = ctx->bsp_context;
-	auto frame = &bctx->frames.a[ctx->curFrame];
-	auto pipeline = taskctx->pipeline;
-
-	if (!r_refdef.worldmodel) {
-		return;
-	}
-
-	auto cmd = taskctx->cmd;
-	QFV_PushBlackboard (ctx, cmd, pipeline);
-	dfunc->vkCmdDispatchIndirect (cmd, bctx->cluster_queue_buffer.buffer,
-								  frame->queue + sizeof (uint32_t));
-}
-
-static void
 bsp_light_queue_luxels (const exprval_t **params, exprval_t *result,
 						exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
 	auto bctx = ctx->bsp_context;
-	auto pipeline = taskctx->pipeline;
-
-	if (!r_refdef.worldmodel) {
-		return;
-	}
-
-	auto cmd = taskctx->cmd;
-	QFV_PushBlackboard (ctx, cmd, pipeline);
-	dfunc->vkCmdDispatchIndirect (cmd, bctx->light_queue_buffer.buffer,
-								  3 * sizeof (uint32_t[4])
-									+ sizeof (uint32_t));
+	bsp_indirect_invoke (bctx->light_queue_buffer.buffer,
+						 sizeof (bsp_invoke_t[3])
+						 + offsetof (bsp_invoke_t, x), ectx);
 }
 
 static void
@@ -2381,6 +2354,8 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		BB_buffer (ent_rel),
 		BB_buffer (inst_ids),
 		BB_var (entities),
+		BB_buffer (subcluster_queue),
+		BB_buffer (subcluster_tmp),
 		BB_buffer (instance_queue),
 		BB_buffer (cluster_queue),
 		BB_buffer (models),
@@ -2494,8 +2469,8 @@ static exprfunc_t bsp_reset_queues_func[] = {
 	{ .func = bsp_reset_queues },
 	{}
 };
-static exprfunc_t bsp_clear_commands_func[] = {
-	{ .func = bsp_clear_commands },
+static exprfunc_t bsp_command_invoke_func[] = {
+	{ .func = bsp_command_invoke },
 	{}
 };
 static exprfunc_t bsp_entity_invoke_func[] = {
@@ -2514,8 +2489,12 @@ static exprfunc_t bsp_cluster_invoke_func[] = {
 	{ .func = bsp_cluster_invoke },
 	{}
 };
-static exprfunc_t bsp_queue_clusters_func[] = {
-	{ .func = bsp_queue_clusters },
+static exprfunc_t bsp_instance_invoke_func[] = {
+	{ .func = bsp_instance_invoke },
+	{}
+};
+static exprfunc_t bsp_subcluster_invoke_func[] = {
+	{ .func = bsp_subcluster_invoke },
 	{}
 };
 static exprfunc_t bsp_visit_world_func[] = {
@@ -2538,10 +2517,6 @@ static exprfunc_t bsp_prefixsum_func[] = {
 
 static exprfunc_t bsp_light_update_func[] = {
 	{ .func = bsp_light_update },
-	{}
-};
-static exprfunc_t bsp_light_queue_surfs_func[] = {
-	{ .func = bsp_light_queue_surfs },
 	{}
 };
 static exprfunc_t bsp_light_queue_luxels_func[] = {
@@ -2568,13 +2543,14 @@ static exprfunc_t bsp_init_func[] = {
 
 static exprsym_t bsp_task_syms[] = {
 	{ "bsp_reset_queues", &cexpr_function, bsp_reset_queues_func },
-	{ "bsp_clear_commands", &cexpr_function, bsp_clear_commands_func },
+	{ "bsp_command_invoke", &cexpr_function, bsp_command_invoke_func },
 	{ "bsp_entity_invoke", &cexpr_function, bsp_entity_invoke_func },
 	{ "bsp_model_invoke", &cexpr_function, bsp_model_invoke_func },
 	{ "bsp_update_mod_clusters", &cexpr_function,
 		bsp_update_mod_clusters_func },
 	{ "bsp_cluster_invoke", &cexpr_function, bsp_cluster_invoke_func },
-	{ "bsp_queue_clusters", &cexpr_function, bsp_queue_clusters_func },
+	{ "bsp_instance_invoke", &cexpr_function, bsp_instance_invoke_func },
+	{ "bsp_subcluster_invoke", &cexpr_function, bsp_subcluster_invoke_func },
 	{ "bsp_visit_world", &cexpr_function, bsp_visit_world_func },
 	{ "bsp_draw_barrier", &cexpr_function, bsp_draw_barrier_func },
 	{ "bsp_draw_queue", &cexpr_function, bsp_draw_queue_func },
@@ -2582,7 +2558,6 @@ static exprsym_t bsp_task_syms[] = {
 	{ "bsp_prefixsum", &cexpr_function, bsp_prefixsum_func },
 
 	{ "bsp_light_update", &cexpr_function, bsp_light_update_func },
-	{ "bsp_light_queue_surfs", &cexpr_function, bsp_light_queue_surfs_func },
 	{ "bsp_light_queue_luxels", &cexpr_function, bsp_light_queue_luxels_func },
 	{ "bsp_build_lightmaps", &cexpr_function, bsp_build_lightmaps_func },
 	{ "bsp_build_display_lists", &cexpr_function,
