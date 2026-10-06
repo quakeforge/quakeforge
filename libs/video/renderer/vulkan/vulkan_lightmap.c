@@ -307,6 +307,15 @@ vulkan_build_lightmaps (model_t *m, lmapctx_t *lmap)
 	}
 }
 
+static bool
+bounds_check_cluster (const cluster_t *cluster, uint32_t max)
+{
+	if (cluster->first >= max || cluster->first + cluster->count > max) {
+		return false;
+	}
+	return true;
+}
+
 /*
   GL_BuildLightmaps
 
@@ -559,18 +568,23 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	}
 
 	bool bad_lightmap = num_lightmaps != lmap.num_lightmaps;
-	for (uint32_t i = 0; i < lmap.num_clusters; i++) {
+	for (uint32_t i = 0; i < lmap.num_lightmaps; i++) {
 		if (lmap.lightinfo[i].data == 0xdeadbeef) {
 			printf ("bad lightmap: %d\n", i);
 			bad_lightmap = true;
 		}
-		if (lmap.light_clusters[i].count > lmap.num_clusters) {
-			printf ("what the what?!?: %d %d\n", i,
-					lmap.light_clusters[i].count);
-			bad_lightmap = true;
-		}
 		if (lmap.surfinfo[i].plane == 0xdeadbeef) {
 			printf ("bad surfinfo: %d\n", i);
+			bad_lightmap = true;
+		}
+	}
+	for (uint32_t i = 0; i < lmap.num_clusters; i++) {
+		if (!bounds_check_cluster (&lmap.light_clusters[i],
+								   lmap.num_lightmaps)) {
+			printf ("what the what?!?: %d %d %d / %d\n", i,
+					lmap.light_clusters[i].first,
+					lmap.light_clusters[i].count,
+					lmap.num_clusters);
 			bad_lightmap = true;
 		}
 	}
