@@ -532,6 +532,12 @@ spirv_TypePointer (const type_t *type, spirvctx_t *ctx)
 	INSN (insn, 2) = type->fldptr.tag;
 	INSN (insn, 3) = rid;
 	spirv_decorate_id (id, type->attributes, ctx);
+	if (type->fldptr.tag == SpvStorageClassPhysicalStorageBuffer) {
+		int stride = type_byte_aligned_size (rtype);
+		// FIXME need to make sure there's only one ArrayStride decoration
+		auto attr = new_attrfunc ("ArrayStride", new_uint_expr (stride));
+		spirv_decorate_id (id, attr, ctx);
+	}
 	return id;
 }
 
@@ -2254,7 +2260,7 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 	for (int i = 0; i < num_obj; i++) {
 		auto obj = ind_expr[i];
 		bool direct_ind = false;
-		const type_t *ptr_cast = nullptr;
+		bool use_ptr = false;
 		const type_t *ptr_access = nullptr;
 		unsigned index;
 		if (obj->type == ex_field) {
@@ -2272,10 +2278,9 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 			index = sym->id;
 		} else if (obj->type == ex_array) {
 			if (i == 0 && is_pointer (base_type)) {
-				unsigned storage = base_type->fldptr.tag;
 				auto arr_type = array_type (obj->array.type, 0);
 				arr_type = iface_block_type (arr_type, "@bda");
-				ptr_cast = tagged_pointer_type (storage, arr_type);
+				use_ptr = true;
 			} else if (is_pointer (get_type (obj->array.base))) {
 				unsigned storage = base_type->fldptr.tag;
 				base_type = get_type (obj->array.base);
@@ -2283,7 +2288,7 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 				auto arr_type = array_type (obj->array.type, 0);
 				arr_type = iface_block_type (arr_type, "@bda");
 				storage = base_type->fldptr.tag;
-				ptr_cast = tagged_pointer_type (storage, arr_type);
+				use_ptr = true;
 				*acc_type = tagged_pointer_type (storage, *res_type);
 			}
 			auto ind = obj->array.index;
@@ -2305,9 +2310,8 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 			base_id = spirv_ptr_load (base_type, id, 8, ctx);
 			num_ind = 0;
 		}
-		if (ptr_cast) {
-			scoped_src_loc (obj);
-			base_id = spirv_gen_bitcast (ptr_cast, base_id, ctx);
+		if (use_ptr) {
+			op = SpvOpPtrAccessChain;
 		}
 		if (literal_ind || direct_ind) {
 			ind_id[num_ind++] = index;
