@@ -2014,8 +2014,8 @@ bsp_light_update (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	VkDescriptorSet sets[] = {
 		bctx->lightmap_image,
 	};
-	auto sb = imageBarriers[qfv_LT_ShaderReadOnly_to_StorageWrite];
-	auto db = imageBarriers[qfv_LT_StorageWrite_to_ShaderReadOnly];
+	auto sb = imageBarriers[qfv_LT_ShaderSampled_to_StorageWrite];
+	auto db = imageBarriers[qfv_LT_StorageWrite_to_ShaderSampled];
 	auto image = QFV_ScrapImage (bctx->light_scrap);
 	sb.image = image;
 	db.image = image;
