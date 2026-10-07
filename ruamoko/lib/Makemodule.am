@@ -109,6 +109,7 @@ include $(ruamoko_lib_libcsqc_a_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_lib_libcsqc_a_dep)
 
 CLEANFILES += \
+	ruamoko/lib/*.a \
 	ruamoko/lib/*.dat \
 	ruamoko/lib/*.sym
 DISTCLEANFILES += \

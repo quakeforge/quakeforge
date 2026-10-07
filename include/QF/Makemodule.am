@@ -184,6 +184,7 @@ include_qf_thread = \
 include_qf_ui = \
 	include/QF/ui/canvas.h \
 	include/QF/ui/font.h \
+	include/QF/ui/glyphcache.h \
 	include/QF/ui/imui.h \
 	include/QF/ui/inputline.h \
 	include/QF/ui/node.h \

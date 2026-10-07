@@ -306,6 +306,7 @@ quakebspf_src = $(vkshaderpath)/quakebsp.frag
 quakebspf_c = $(vkshaderpath)/quakebsp.frag.spv
 
 bsp_src = $(vkshaderpath)/bsp.r
+bsp_h = $(vkshaderpath)/bsp.h
 bsp_c = $(vkshaderpath)/bsp.r.spv
 bsp_depth_src = $(vkshaderpath)/bsp_depth.vert
 bsp_depth_c = $(vkshaderpath)/bsp_depth.vert.spv
@@ -560,6 +561,7 @@ vkshader_c_comp=$(call spvautoc,$(vkshader_src_comp))
 vkshader_c_r=$(call spvautoc,$(vkshader_src_r))
 
 vkshader_h = \
+	$(bsp_h) \
 	$(entity_h) \
 	$(fog) \
 	$(gizmo_h) \
@@ -613,8 +615,7 @@ $(vkparse_cinc) $(vkparse_hinc)&: $(vkgen) $(qwaq_cmd) $(vkparse_plist)
 CLEANFILES += \
 	libs/video/renderer/glsl/*.vc \
 	libs/video/renderer/glsl/*.fc \
-	libs/video/renderer/vulkan/shader/*.spv \
-	libs/video/renderer/vulkan/shader/*.spvc \
+	libs/video/renderer/vulkan/shader/*.spv* \
 	vkgen.sym \
 	$(vkparse_src)
 
@@ -624,6 +625,7 @@ CLEANFILES += \
 
 EXTRA_DIST += \
 	$(shader_src) \
+	libs/video/renderer/vulkan/shader/build-run \
 	libs/video/renderer/vulkan/vkparse.plist \
 	libs/video/renderer/vulkan/vkparse.h \
 	$(rp_main_def_src) \

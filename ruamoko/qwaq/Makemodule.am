@@ -356,17 +356,15 @@ EXTRA_DIST += \
 	ruamoko/qwaq/gui/filewindow.h \
 	ruamoko/qwaq/gui/listview.h \
 	ruamoko/qwaq/gui/nodepanel.h \
+	ruamoko/qwaq/gui/slider.h \
 	ruamoko/qwaq/gui/ui_object.h \
 	ruamoko/qwaq/gui/virtinput.h \
 	ruamoko/qwaq/gui/window.h \
-	ruamoko/qwaq/input-app.h \
-	ruamoko/qwaq/mainmenu.h \
-	ruamoko/qwaq/physics.h \
-	ruamoko/qwaq/qwaq-app.h \
-	ruamoko/qwaq/qwaq-ed.h \
-	ruamoko/qwaq/qwaq-input.h \
-	ruamoko/qwaq/qwaq.h \
-	ruamoko/qwaq/threading.h \
+	ruamoko/qwaq/orrery/grandorrery.h \
+	ruamoko/qwaq/orrery/orbit.h \
+	ruamoko/qwaq/orrery/body.h \
+	ruamoko/qwaq/orrery/physorbit.h \
+	ruamoko/qwaq/orrery/orbiter.h \
 	ruamoko/qwaq/ui/button.h \
 	ruamoko/qwaq/ui/color.h \
 	ruamoko/qwaq/ui/curses.h \
@@ -386,7 +384,9 @@ EXTRA_DIST += \
 	ruamoko/qwaq/ui/view.h \
 	ruamoko/qwaq/ui/window.h \
 	ruamoko/qwaq/shader/atmosphere.r \
+	ruamoko/qwaq/shader/common.h \
 	ruamoko/qwaq/shader/conic.r \
+	ruamoko/qwaq/shader/conic.h \
 	ruamoko/qwaq/shader/pbr_brdf.r \
 	ruamoko/qwaq/shader/pbr_conv.r \
 	ruamoko/qwaq/shader/pixpal.r \
@@ -394,14 +394,25 @@ EXTRA_DIST += \
 	ruamoko/qwaq/shader/planetary.h \
 	ruamoko/qwaq/armature.h \
 	ruamoko/qwaq/camera.h \
+	ruamoko/qwaq/camerasystem.h \
 	ruamoko/qwaq/gizmo.h \
+	ruamoko/qwaq/input-app.h \
+	ruamoko/qwaq/mainmenu.h \
 	ruamoko/qwaq/pga3d.h \
+	ruamoko/qwaq/physics.h \
 	ruamoko/qwaq/player.h \
 	ruamoko/qwaq/playercam.h \
+	ruamoko/qwaq/qwaq-app.h \
+	ruamoko/qwaq/qwaq-ed.h \
+	ruamoko/qwaq/qwaq-input.h \
+	ruamoko/qwaq/qwaq.h \
+	ruamoko/qwaq/threading.h \
+	ruamoko/qwaq/config/orrery.plist \
 	ruamoko/qwaq/config/qwaq-ed-in.cfg \
 	ruamoko/qwaq/config/qwaq-ed-rg.plist
 CLEANFILES += \
 	ruamoko/qwaq/qwaq-curses.log \
+	ruamoko/qwaq/*.a \
 	ruamoko/qwaq/*.dat \
 	ruamoko/qwaq/*.sym \
-	ruamoko/qwaq/shader/*.spv
+	ruamoko/qwaq/shader/*.spv*

@@ -55,6 +55,7 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/vkgen/vkalias.h \
 	libs/video/renderer/vulkan/vkgen/vkbool.h \
 	libs/video/renderer/vulkan/vkgen/vkenum.h \
+	libs/video/renderer/vulkan/vkgen/vkflags64.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldarray.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldauto.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldcustom.h \

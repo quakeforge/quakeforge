@@ -99,3 +99,9 @@ libs_models_libmodels_vulkan_la_LDFLAGS=
 libs_models_libmodels_vulkan_la_LIBADD=			$(vulkan_libs)
 libs_models_libmodels_vulkan_la_DEPENDENCIES=	$(vulkan_libs)
 libs_models_libmodels_vulkan_la_SOURCES=		$(vulkan_sources)
+
+CLEANFILES += \
+	libs/models/libmodels_sw.la \
+	libs/models/libmodels_vulkan.la \
+	libs/models/libmodels_glsl.la \
+	libs/models/libmodels_gl.la
