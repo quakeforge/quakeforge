@@ -85,6 +85,7 @@
 #define vec3 vec3f_t
 #define vec4 vec4f_t
 #define uint uint32_t
+#define ushort uint16_t
 #include "shader/lighting.h"
 #undef uint
 #undef vec3

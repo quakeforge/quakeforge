@@ -266,7 +266,7 @@ ruamoko_qwaq_qwaq_wl_DEPENDENCIES= $(qwaq_wl_libs) $(QWAQ_DEPS)
 ruamoko_qwaq_qwaq_app_dat_SOURCES=$(qwaq_app_dat_src)
 ruamoko_qwaq_qwaq_app_obj=$(ruamoko_qwaq_qwaq_app_dat_SOURCES:.r=.o)
 ruamoko_qwaq_qwaq_app_dep=$(call qcautodep,$(ruamoko_qwaq_qwaq_app_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/qwaq-app.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_app_obj) $(QFCC_DEP) $(libdbg) $(libedit) $(libui) $(libmisc) ruamoko/lib/libr.a
+ruamoko/qwaq/qwaq-app.dat: $(ruamoko_qwaq_qwaq_app_obj) $(QFCC_DEP) $(libdbg) $(libedit) $(libui) $(libmisc) ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_app_obj) $(libdbg) $(libedit) $(libui) $(libmisc) -lr
 include $(ruamoko_qwaq_qwaq_app_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_app_dep)
@@ -277,14 +277,14 @@ r_depfiles_remade += $(qwaq_core_dep)
 ruamoko_qwaq_qwaq_dbg_dat_SOURCES=$(qwaq_core_src) $(qwaq_dbg_dat_src)
 ruamoko_qwaq_qwaq_dbg_obj=$(ruamoko_qwaq_qwaq_dbg_dat_SOURCES:.r=.o)
 ruamoko_qwaq_qwaq_dbg_dep=$(call qcautodep,$(qwaq_dbg_dat_src:.o=.Qo))
-ruamoko/qwaq/qwaq-dbg.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_dbg_obj) $(QFCC_DEP) $(libdbg) $(libedit) $(libmisc) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
+ruamoko/qwaq/qwaq-dbg.dat: $(ruamoko_qwaq_qwaq_dbg_obj) $(QFCC_DEP) $(libdbg) $(libedit) $(libmisc) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_dbg_obj) $(libdbg) $(libedit) $(libmisc) -lcsqc -lr
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_dbg_dep)
 
 ruamoko_qwaq_qwaq_ed_dat_SOURCES=$(qwaq_core_src) $(qwaq_ed_dat_src)
 ruamoko_qwaq_qwaq_ed_obj=$(ruamoko_qwaq_qwaq_ed_dat_SOURCES:.r=.o)
 ruamoko_qwaq_qwaq_ed_dep=$(call qcautodep,$(qwaq_ed_dat_src:.o=.Qo))
-ruamoko/qwaq/qwaq-ed.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_ed_obj) $(QFCC_DEP) $(libedit) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
+ruamoko/qwaq/qwaq-ed.dat: $(ruamoko_qwaq_qwaq_ed_obj) $(QFCC_DEP) $(libedit) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_ed_obj) $(libedit) -lcsqc -lr
 include $(qwaq_core_dep) $(ruamoko_qwaq_qwaq_dbg_dep) $(ruamoko_qwaq_qwaq_ed_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_ed_dep)
@@ -292,7 +292,7 @@ r_depfiles_remade += $(ruamoko_qwaq_qwaq_ed_dep)
 ruamoko_qwaq_input_app_dat_SOURCES=$(qwaq_input_app_dat_src)
 ruamoko_qwaq_input_app_obj=$(ruamoko_qwaq_input_app_dat_SOURCES:.r=.o)
 ruamoko_qwaq_input_app_dep=$(call qcautodep,$(ruamoko_qwaq_input_app_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/input-app.dat$(EXEEXT): $(ruamoko_qwaq_input_app_obj) $(QFCC_DEP) $(libui) $(libmisc) ruamoko/lib/libr.a
+ruamoko/qwaq/input-app.dat: $(ruamoko_qwaq_input_app_obj) $(QFCC_DEP) $(libui) $(libmisc) ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_input_app_obj) $(libui) $(libmisc) -lr
 include $(ruamoko_qwaq_input_app_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_input_app_dep)
@@ -300,7 +300,7 @@ r_depfiles_remade += $(ruamoko_qwaq_input_app_dep)
 ruamoko_qwaq_gcd_dat_SOURCES=ruamoko/qwaq/gcd.r
 ruamoko_qwaq_gcd_obj=$(ruamoko_qwaq_gcd_dat_SOURCES:.r=.o)
 ruamoko_qwaq_gcd_dep=$(call qcautodep,$(ruamoko_qwaq_gcd_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/gcd.dat$(EXEEXT): $(ruamoko_qwaq_gcd_obj) $(QFCC_DEP) ruamoko/lib/libr.a
+ruamoko/qwaq/gcd.dat: $(ruamoko_qwaq_gcd_obj) $(QFCC_DEP) ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_gcd_obj) -lr
 include $(ruamoko_qwaq_gcd_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_gcd_dep)
@@ -308,7 +308,7 @@ r_depfiles_remade += $(ruamoko_qwaq_gcd_dep)
 ruamoko_qwaq_z_transform_dat_SOURCES=ruamoko/qwaq/z-transform.r
 ruamoko_qwaq_z_transform_obj=$(ruamoko_qwaq_z_transform_dat_SOURCES:.r=.o)
 ruamoko_qwaq_z_transform_dep=$(call qcautodep,$(ruamoko_qwaq_z_transform_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/z-transform.dat$(EXEEXT): $(ruamoko_qwaq_z_transform_obj) $(QFCC_DEP) ruamoko/lib/libr.a
+ruamoko/qwaq/z-transform.dat: $(ruamoko_qwaq_z_transform_obj) $(QFCC_DEP) ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_z_transform_obj) -lr
 include $(ruamoko_qwaq_z_transform_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_z_transform_dep)

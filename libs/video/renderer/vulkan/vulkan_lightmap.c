@@ -57,6 +57,8 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
+#define ushort uint16_t
+#define uint uint32_t
 #include "shader/bsp.h"
 #define block_size (workgroup_size * 2)
 

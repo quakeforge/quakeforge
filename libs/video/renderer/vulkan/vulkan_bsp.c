@@ -75,6 +75,8 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
+#define ushort uint16_t
+#define uint uint32_t
 #include "shader/bsp.h"
 static_assert (sizeof (bsp_command_t) == sizeof (VkDrawIndexedIndirectCommand));
 #define block_size (workgroup_size * 2)
