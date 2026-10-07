@@ -186,6 +186,12 @@ else
 			;;
 	esac
 fi
+if test "x$enable_simd" = xyes \
+		-a "x$unalign" = xyes \
+		-a "x$leave_cflags_alone" != "xyes"; then
+echo $enable_simd $unalign $leave_cflags_alone
+	QF_CC_OPTION([[-Wa,-muse-unaligned-vector-move]])
+fi
 
 AC_MSG_CHECKING(for optimization)
 if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
