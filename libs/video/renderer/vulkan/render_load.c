@@ -1867,7 +1867,8 @@ create_graph (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 }
 
 static void
-init_graph (vulkan_ctx_t *ctx, objcount_t *counts, graphptr_t gp, objstate_t *s)
+init_graph (vulkan_ctx_t *ctx, objcount_t *counts, graphptr_t *gp,
+			objstate_t *s)
 {
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
@@ -1886,7 +1887,7 @@ init_graph (vulkan_ctx_t *ctx, objcount_t *counts, graphptr_t gp, objstate_t *s)
 	for (uint32_t i = s->inds.num_layouts; i < counts->num_layouts; i++) {
 		graph->layouts[i] = nullptr;
 	}
-	auto cv = gp.clearvalues;
+	auto cv = gp->clearvalues;
 	memcpy (cv, s->ptr.clear, sizeof (VkClearValue [counts->num_attachments]));
 
 	for (uint32_t i = 0; i < graph->num_dsmanagers; i++) {
@@ -1894,7 +1895,7 @@ init_graph (vulkan_ctx_t *ctx, objcount_t *counts, graphptr_t gp, objstate_t *s)
 		graph->dsmanager[i] = QFV_DSManager_Create (layoutInfo, 16, ctx);
 	}
 	for (uint32_t i = 0; i < graph->num_jobs; i++) {
-		init_job (i, &gp, s);
+		init_job (i, gp, s);
 	}
 
 	graph->resources = setup_resources (&graphinfo->resources, ctx);
@@ -2060,7 +2061,7 @@ create_layouts (vulkan_ctx_t *ctx, objstate_t *s)
 }
 
 static void
-create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, graphptr_t gp,
+create_blackboard (vulkan_ctx_t *ctx, const objcount_t *counts, graphptr_t *gp,
 				   objstate_t *s)
 {
 	auto rctx = ctx->render_context;
@@ -2225,9 +2226,7 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 	s.inds.num_ds_indices = 0;
 
 	auto gp = create_graph (ctx, counts, &s);
-
-	create_blackboard (ctx, counts, gp, &s);
-
+	create_blackboard (ctx, counts, &gp, &s);
 	auto graph = rctx->graph;
 	init_tasks (&graph->newscene_task_count, &graph->newscene_tasks,
 			    ginfo->newscene_num_tasks, ginfo->newscene_tasks,
@@ -2309,7 +2308,7 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts, VkPipelineCache cache)
 	s.inds = (objcount_t) {};
 	s.inds.num_layouts = num_layouts;
 	s.inds.num_tasks = num_tasks;
-	init_graph (ctx, counts, gp, &s);
+	init_graph (ctx, counts, &gp, &s);
 
 	uint32_t num_subpass_inputs = counts->num_subpass_inputs;
 	for (size_t i = 0; i < rctx->frames.size; i++) {
