@@ -264,6 +264,7 @@ typedef struct bspctx_s {
 	BB_buffer (surfinfo);
 	BB_buffer (light_style_values);
 	BB_buffer (lightmap_data);
+	BB_buffer (light_cache);
 	BB_buffer (light_queue_offs);
 	BB_buffer (light_queue_inds);
 	BB_buffer (light_queue_tmp);

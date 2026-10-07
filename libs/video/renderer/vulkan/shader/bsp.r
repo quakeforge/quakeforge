@@ -408,6 +408,7 @@ uint fbsearch (const uint key, uint *array, const uint count)
 	[push_constant] @block Params {
 		bsp_lightinfo_t *lightinfo;
 		bsp_surfinfo_t *surfinfo;
+		bsp_lightcache_t *light_cache;
 		short      *light_style_values;
 		byte       *lightmap_data;
 		uint       *light_queue_offs;
@@ -499,7 +500,22 @@ uint fbsearch (const uint key, uint *array, const uint count)
 		//updated (need to cache previous style values)
 		uint surf = cluster.first + surfid - light_cluster_surfs[ind];
 		auto li = &lightinfo[surf];
-		light_queue_offs[surfid] = (uint) li.size.x * (uint) li.size.y;
+		auto vals = svec4 (
+			light_style_values[li.styles[0]],
+			light_style_values[li.styles[1]],
+			light_style_values[li.styles[2]],
+			light_style_values[li.styles[3]]
+		);
+		auto cached = svec4 (
+			light_cache[surf].vals[0],
+			light_cache[surf].vals[1],
+			light_cache[surf].vals[2],
+			light_cache[surf].vals[3]
+		);
+		bool changed = @horiz (| vals != cached);
+		light_cache[surf].vals = {vals[0], vals[1], vals[2], vals[3]};
+		uint size = changed ? (uint) li.size.x * (uint) li.size.y : 0;
+		light_queue_offs[surfid] = size;
 		light_queue_inds[surfid] = surf;
 		if (surfid == 0) {
 			light_queue[0].count = light_queue[3].count;

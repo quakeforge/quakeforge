@@ -87,6 +87,10 @@ typedef struct bsp_lightinfo_s {
 	uint        data;
 } bsp_lightinfo_t;
 
+typedef struct bsp_lightcache_s {
+	short       vals[4];
+} bsp_lightcache_t;
+
 typedef struct bsp_surfinfo_s {
 	uint        plane;
 	uint        tex;

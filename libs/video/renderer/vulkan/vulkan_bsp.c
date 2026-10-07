@@ -2368,6 +2368,7 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 		BB_buffer (lightinfo),
 		BB_buffer (surfinfo),
+		BB_buffer (light_cache),
 		BB_buffer (light_style_values),
 		BB_buffer (lightmap_data),
 		BB_buffer (light_queue_offs),

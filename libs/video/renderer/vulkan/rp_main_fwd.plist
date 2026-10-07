@@ -369,6 +369,7 @@ properties = {
 					compute = {
 						lightinfo = ptr;
 						surfinfo = ptr;
+						light_cache = ptr;
 						light_style_values = ptr;
 						lightmap_data = ptr;
 						light_queue_offs = ptr;
