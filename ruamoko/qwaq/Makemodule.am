@@ -3,6 +3,29 @@ QWAQ_DEPS=@QWAQ_DEPS@
 QWAQ_INCS=@QWAQ_INCS@
 
 qwaq_targets=\
+	ruamoko/qwaq/qwaq-app_dat$(EXEEXT) \
+	ruamoko/qwaq/qwaq-ed_dat$(EXEEXT) \
+	ruamoko/qwaq/qwaq-dbg_dat$(EXEEXT) \
+	ruamoko/qwaq/gcd_dat$(EXEEXT) \
+	ruamoko/qwaq/input-app_dat$(EXEEXT) \
+	ruamoko/qwaq/z-transform_dat$(EXEEXT)
+
+# Sneaky hack to get automake to chooch my way: keeps the .exe for windows
+# off the actua .dat files but keeps `make dist` working
+ruamoko/qwaq/qwaq-app_dat$(EXEEXT): ruamoko/qwaq/qwaq-app.dat
+	@cp $^ $@
+ruamoko/qwaq/qwaq-ed_dat$(EXEEXT): ruamoko/qwaq/qwaq-ed.dat
+	@cp $^ $@
+ruamoko/qwaq/qwaq-dbg_dat$(EXEEXT): ruamoko/qwaq/qwaq-dbg.dat
+	@cp $^ $@
+ruamoko/qwaq/gcd_dat$(EXEEXT): ruamoko/qwaq/gcd.dat
+	@cp $^ $@
+ruamoko/qwaq/input-app_dat$(EXEEXT): ruamoko/qwaq/input-app.dat
+	@cp $^ $@
+ruamoko/qwaq/z-transform_dat$(EXEEXT): ruamoko/qwaq/z-transform.dat
+	@cp $^ $@
+
+ruamoko_qwaq_data=\
 	ruamoko/qwaq/qwaq-app.dat \
 	ruamoko/qwaq/qwaq-ed.dat \
 	ruamoko/qwaq/qwaq-dbg.dat \
@@ -11,6 +34,7 @@ qwaq_targets=\
 	ruamoko/qwaq/z-transform.dat
 
 noinst_PROGRAMS += @QWAQ_TARGETS@
+noinst_DATA += @ruamoko_qwaq_data@
 
 EXTRA_PROGRAMS += \
 	ruamoko/qwaq/qwaq-cmd \
