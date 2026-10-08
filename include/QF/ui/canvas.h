@@ -74,13 +74,7 @@ typedef struct vrect_s vrect_t;
 typedef struct rscrap_s rscrap_t;
 typedef union glyphkey_s glyphkey_t;
 typedef struct glyphobj_s glyphobj_t;
-
-typedef struct glyphcache_s {
-	glyphkey_t *map;
-	glyphkey_t *objs;
-	vrect_t    *rects;
-	rscrap_t   *scrap;
-} glyphcache_t;
+typedef struct glyphcache_s glyphcache_t;
 
 typedef struct canvas_system_s {
 	ecs_registry_t *reg;
