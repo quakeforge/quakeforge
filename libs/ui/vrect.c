@@ -40,7 +40,7 @@
 
 //#define TEST_MEMORY
 
-#define RECT_BLOCK 128
+#define RECT_BLOCK 2048
 #ifndef TEST_MEMORY
 static vrect_t *free_rects;
 static struct DARRAY_TYPE(vrect_t *) rect_sets = DARRAY_STATIC_INIT (32);
