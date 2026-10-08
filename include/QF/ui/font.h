@@ -40,13 +40,16 @@
 #include "r_scrap.h"//FIXME
 
 typedef struct QFile_s QFile;
+typedef struct wssched_s wssched_t;
+typedef union glyphkey_s glyphkey_t;
 
 typedef struct fontent_s {
 	uint32_t    id;
 } fontent_t;
 
 typedef struct font_s {
-	void       *font_resource;
+	void       *font_data;
+	size_t      font_size;
 	FT_Face     face;
 	rscrap_t    scrap;
 	byte       *scrap_bitmap;
@@ -66,5 +69,9 @@ typedef struct fontspec_s {
 } fontspec_t;
 
 fontspec_t Font_SystemFont (const char *font_pattern);
+
+void Font_LoadGlyphs (font_t *font, glyphkey_t *keys, int count,
+					  wssched_t *sched);
+
 
 #endif//__QF_ui_font_h
