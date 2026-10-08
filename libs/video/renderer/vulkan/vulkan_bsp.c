@@ -42,6 +42,7 @@
 #include "QF/darray.h"
 #include "QF/heapsort.h"
 #include "QF/image.h"
+#include "QF/prefixsum.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -733,18 +734,6 @@ check_cluster (const buildctx_t *build, uint32_t cluster_num)
 	printf ("    %d\n", count);
 }
 
-static uint32_t
-bsp_prefixsum_cpu (uint32_t *array, uint32_t count)
-{
-	uint32_t sum = 0;
-	for (uint32_t i = 1; i < count; i++) {
-		uint32_t temp = array[i];
-		array[i] = sum;
-		sum += temp;
-	}
-	return sum;
-}
-
 void
 Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
@@ -792,7 +781,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	bctx->command_counts = malloc (sizeof (tex_commands));
 	memcpy (bctx->command_counts, tex_commands, sizeof (tex_commands));
 
-	uint32_t num_commands = bsp_prefixsum_cpu (tex_commands, num_tex);
+	uint32_t num_commands = prefixsum_uint32 (tex_commands, num_tex);
 	memcpy (bctx->command_offsets, tex_commands, sizeof (tex_commands));
 	for (uint32_t i = 0; i < num_tex; i++) {
 		auto dst = &bctx->command_offsets[i + num_tex];
@@ -800,7 +789,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		*dst = *src + num_commands;
 	}
 
-	uint32_t num_clusters = bsp_prefixsum_cpu (tex_clusters, num_tex);
+	uint32_t num_clusters = prefixsum_uint32 (tex_clusters, num_tex);
 	uint32_t mod_clusters = build.mod_cluster_count;
 
 	// All vertices from all brush models go into one giant vbo.

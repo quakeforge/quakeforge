@@ -47,6 +47,7 @@ include_qf = \
 	include/QF/plist.h \
 	include/QF/plugin.h \
 	include/QF/pqueue.h \
+	include/QF/prefixsum.h \
 	include/QF/progs.h \
 	include/QF/pvsfile.h \
 	include/QF/qargs.h \
