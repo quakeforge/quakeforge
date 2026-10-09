@@ -59,6 +59,7 @@
 
 #include "compat.h"
 #include "r_internal.h"
+#include "r_scrap.h"
 #include "vid_gl.h"
 
 #define s_dynlight (r_refdef.scene->base + scene_dynlight)

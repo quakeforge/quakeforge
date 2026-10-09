@@ -54,7 +54,7 @@ typedef struct font_s {
 	rscrap_t    scrap;
 	byte       *scrap_bitmap;
 	FT_Long     num_glyphs;
-	vrect_t    *glyph_rects;
+	scrapbox_t *glyph_rects;
 	vec2i_t    *glyph_bearings;
 	uint32_t    fontid;
 } font_t;

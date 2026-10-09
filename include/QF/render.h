@@ -38,13 +38,16 @@
 extern struct vid_render_funcs_s *r_funcs;
 extern struct vid_render_data_s *r_data;
 
+typedef struct scrap_s scrap_t;	///< renderer specific type
+typedef struct scrapbox_s scrapbox_t;
+
 typedef struct subpic_s {
-	const struct subpic_s *const next;
-	const struct scrap_s *const scrap;	///< renderer specific type
-	const struct vrect_s *const rect;
-	const int width;					///< requested width
-	const int height;					///< requested height
-	const float size;					///< size factor for tex coords (mult)
+	struct subpic_s *next;
+	scrap_t    *scrap;
+	scrapbox_t *rect;
+	int         width;			///< requested width
+	int         height;			///< requested height
+	float       size;			///< size factor for tex coords (mult)
 } subpic_t;
 
 // dynamic lights ===========================================================

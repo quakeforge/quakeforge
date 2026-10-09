@@ -407,6 +407,7 @@ uint fbsearch (const uint key, uint *array, const uint count)
 @namespace lightmap {
 	[push_constant] @block Params {
 		bsp_lightinfo_t *lightinfo;
+		bsp_lightsize_t *lightsize;
 		bsp_surfinfo_t *surfinfo;
 		bsp_lightcache_t *light_cache;
 		short      *light_style_values;
@@ -423,7 +424,7 @@ uint fbsearch (const uint key, uint *array, const uint count)
 	};
 
 	[uniform, set(0), binding(0)]
-	@image(float, 2D, Storage, Rgba32f) light_image;
+	@image(float, 2D, Array, Storage, Rgba32f) light_image;
 
 	// Compute the value for a single luxel in the lightmap
 	// The light queue holds relative luxel ranges in the light_queue_offs
@@ -440,12 +441,14 @@ uint fbsearch (const uint key, uint *array, const uint count)
 		uint ind = fbsearch (luxelid, light_queue_offs, light_queue[0].count);
 		uint luxel = luxelid - light_queue_offs[ind];
 		auto li = &lightinfo[light_queue_inds[ind]];
-		if (!li.size.x || !li.size.y) {
+		auto ls = &lightsize[light_queue_inds[ind]];
+		if (!li.width) {
 			// no subpic was allocated
 			printf ("unallocated subpic: %d\n", light_queue_inds[ind]);
 			return;
 		}
-		auto xy = ivec2 (luxel % li.size.x, luxel / li.size.x) + ivec2 (li.pos);
+		auto pos = ivec3 (luxel % li.width, luxel / li.width, 0)
+				 + ivec3 (li.pos);
 		auto light = vec3 (0);
 		if (li.data == ~0u) {
 			light = vec3 (1);
@@ -455,7 +458,7 @@ uint fbsearch (const uint key, uint *array, const uint count)
 			auto _data = &lightmap_data[li.data];
 			// lightmap data is rgb
 			auto data = (ubvec3*)_data;
-			uint stride = li.size.x * li.size.y;
+			uint stride = ls.samples;
 			// style 0xff marks the premature end of the array
 			for (uint i = 0; i < 4; i++) {
 				uint style = li.styles[i];
@@ -465,7 +468,7 @@ uint fbsearch (const uint key, uint *array, const uint count)
 				}
 			}
 		}
-		imageStore (light_image, xy, vec4 (light, 1));
+		imageStore (light_image, pos, vec4 (light, 1));
 	}
 
 	// Add (luxel count, lightmap id) pairs per surface in each cluster to
@@ -499,12 +502,12 @@ uint fbsearch (const uint key, uint *array, const uint count)
 		//FIXME don't queue all visible lightmaps, only those that need to be
 		//updated (need to cache previous style values)
 		uint surf = cluster.first + surfid - light_cluster_surfs[ind];
-		auto li = &lightinfo[surf];
+		auto ls = &lightsize[surf];
 		auto vals = svec4 (
-			light_style_values[li.styles[0]],
-			light_style_values[li.styles[1]],
-			light_style_values[li.styles[2]],
-			light_style_values[li.styles[3]]
+			light_style_values[ls.styles[0]],
+			light_style_values[ls.styles[1]],
+			light_style_values[ls.styles[2]],
+			light_style_values[ls.styles[3]]
 		);
 		auto cached = svec4 (
 			light_cache[surf].vals[0],
@@ -514,8 +517,8 @@ uint fbsearch (const uint key, uint *array, const uint count)
 		);
 		bool changed = @horiz (| vals != cached);
 		light_cache[surf].vals = {vals[0], vals[1], vals[2], vals[3]};
-		uint size = changed ? (uint) li.size.x * (uint) li.size.y : 0;
-		light_queue_offs[surfid] = size;
+		uint samples = changed ? ls.samples : 0;
+		light_queue_offs[surfid] = samples;
 		light_queue_inds[surfid] = surf;
 		if (surfid == 0) {
 			light_queue[0].count = light_queue[3].count;

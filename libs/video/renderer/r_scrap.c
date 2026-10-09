@@ -44,7 +44,7 @@ typedef struct scrapset_s {
 	int         users;
 	union {
 		scrapset_t *sets[256];
-		vrect_t    *rects[16][16];
+		uint32_t    rects[16][16];
 	};
 } scrapset_t;
 
@@ -61,7 +61,35 @@ pow2rup (unsigned x)
 	return x;
 }
 
-static vrect_t *
+static scrapbox_t *
+sb_ptr (rscrap_t *scrap, uint32_t id)
+{
+	return id != nullent ? &scrap->rects[id / 1024][id % 1024] : nullptr;
+}
+
+static scrapbox_t *
+sb_new (rscrap_t *scrap, uint16_t x, uint16_t y, uint16_t layer,
+		uint16_t w, uint16_t h)
+{
+	uint32_t id = ECS_NewId (&scrap->idpool);
+	if (!scrap->rects[id / 1024]) {
+		scrap->rects[id / 1024] = malloc (sizeof (scrapbox_t[1024]));
+		memset (scrap->rects[id / 1024], ~0, sizeof (scrapbox_t[1024]));
+	}
+	auto sb = sb_ptr (scrap, id);
+	*sb = (scrapbox_t) {
+		.x = x,
+		.y = y,
+		.layer = layer,
+		.width = w,
+		.height = h,
+		.scrap_id = scrap->scrap_id,
+		.id = id,
+	};
+	return sb;
+}
+
+static scrapbox_t *
 r_scrap_pull_rect (rscrap_t *scrap, int width, int height)
 {
 	auto col = &scrap->free_rects->sets[width / 16];
@@ -73,11 +101,12 @@ r_scrap_pull_rect (rscrap_t *scrap, int width, int height)
 		return nullptr;
 	}
 	auto cell = &(*row)->rects[width % 16][height % 16];
-	auto rect = *cell;
+	auto rect = sb_ptr (scrap, *cell);
 	if (!rect) {
 		return nullptr;
 	}
-	if (!(*cell = rect->next)) {
+	uint32_t id = *cell;
+	if (!(*cell = rect->id)) {
 		if (!--(*row)->users) {
 			free (*row);
 			*row = nullptr;
@@ -94,12 +123,12 @@ r_scrap_pull_rect (rscrap_t *scrap, int width, int height)
 	if (!--scrap->h_counts[height]) {
 		set_remove (scrap->free_y, height);
 	}
-	rect->next = nullptr;
+	rect->id = id;
 	return rect;
 }
 
 static void
-r_scrap_push_rect (rscrap_t *scrap, vrect_t *rect)
+r_scrap_push_rect (rscrap_t *scrap, scrapbox_t *rect)
 {
 	int width = rect->width - 1;
 	int height = rect->height - 1;
@@ -115,13 +144,15 @@ r_scrap_push_rect (rscrap_t *scrap, vrect_t *rect)
 	if (!*row) {
 		(*col)->users++;
 		*row = calloc (1, sizeof (scrapset_t));
+		memset ((*row)->rects, ~0, sizeof ((*row)->rects));
 	}
 	auto cell = &(*row)->rects[width % 16][height % 16];
-	if (!*cell) {
+	if (!ECS_IdValid (&scrap->idpool, *cell)) {
 		(*row)->users++;
 	}
-	rect->next = *cell;
-	*cell = rect;
+	uint32_t id = rect->id;
+	rect->id = *cell;
+	*cell = id;
 
 	set_add (scrap->free_x, width);
 	set_add (scrap->free_y, height);
@@ -144,8 +175,9 @@ R_ScrapInit (rscrap_t *scrap, int width, int height)
 		.free_y = set_new (),
 		.w_counts = calloc (width, sizeof (int)),
 		.h_counts = calloc (height, sizeof (int)),
+		.rects = calloc (1024, sizeof (scrapbox_t *)),
 	};
-	r_scrap_push_rect (scrap, VRect_New (0, 0, width, height));
+	R_ScrapClear (scrap);
 }
 
 VISIBLE void
@@ -157,7 +189,7 @@ R_ScrapDelete (rscrap_t *scrap)
 	R_ScrapClear (scrap);
 }
 
-VISIBLE vrect_t *
+VISIBLE scrapbox_t *
 R_ScrapAlloc (rscrap_t *scrap, int width, int height)
 {
 	qfZoneScoped (true);
@@ -227,99 +259,49 @@ found:
 
 	auto rect = old;
 	if (old->width > width || old->height > height) {
-		rect = VRect_SubRect (old, width, height);
-		VRect_Delete (old);
-		auto frags = rect->next;
+		auto old_vr = VRect_New (old->x, old->y, old->width, old->height);
+		auto split = VRect_SubRect (old_vr, width, height);
+		rect = sb_new (scrap, split->x, split->y, old->layer,
+					   split->width, split->height);
+		VRect_Delete (old_vr);
+		auto frags = split->next;
 		while (frags) {
 			// old was bigger than the requested size
 			auto next = frags->next;
-			r_scrap_push_rect (scrap, frags);
+			auto f = sb_new (scrap, frags->x, frags->y, old->layer,
+							 frags->width, frags->height);
+			VRect_Delete (frags);
 			frags = next;
+
+			r_scrap_push_rect (scrap, f);
 		}
 	}
-	rect->next = scrap->rects;
-	scrap->rects = rect;
 
 	return rect;
 }
 
 VISIBLE void
-R_ScrapFree (rscrap_t *scrap, vrect_t *rect)
+R_ScrapFree (rscrap_t *scrap, scrapbox_t *rect)
 {
-	vrect_t   **t;
-
-	for (t = &scrap->rects; *t; t = &(*t)->next)
-		if (*t == rect)
-			break;
-	if (*t != rect)
+	if (rect->scrap_id != scrap->scrap_id
+		|| sb_ptr (scrap, rect->id) != rect) {
 		Sys_Error ("R_ScrapFree: broken rect");
-	*t = rect->next;
+	}
+	ECS_DelId (&scrap->idpool, rect->id);
 
-#if 0
-	vrect_t *merge;
-	do {
-		merge = nullptr;
-		int h = rect->height - 1;
-		for (int i = 0; i < 256; i++) {
-			scrapset_t **row;
-			if (!scrap->free_rects->sets[i]
-				|| !*(row = &scrap->free_rects->sets[i]->sets[h / 16])) {
-				continue;
-			}
-			for (int j = 0; j < 16; j++) {
-				for (t = &(*row)->rects[j][h % 16]; *t; t = &(*t)->next) {
-					merge = VRect_Merge (*t, rect);
-					if (merge) {
-						auto old = *t;
-						*t = (*t)->next;
-						VRect_Delete (old);
-						VRect_Delete (rect);
-						rect = merge;
-						break;
-					}
-				}
-			}
-		}
-	} while (merge);
-#endif
 	r_scrap_push_rect (scrap, rect);
 }
 
 VISIBLE void
 R_ScrapClear (rscrap_t *scrap)
 {
-	if (scrap->free_rects) {
-		for (int i = 0; i < 256; i++) {
-			auto col = scrap->free_rects->sets[i];
-			for (int j = 0; col && j < 256; j++) {
-				auto row = col->sets[j];
-				for (int k = 0; row && k < 16; k++) {
-					for (int l = 0; l < 16; l++) {
-						auto cell = &row->rects[k][l];
-						while (*cell) {
-							auto rect = *cell;
-							*cell = rect->next;
-							VRect_Delete (rect);
-						}
-					}
-				}
-				free (row);
-			}
-			free (col);
-		}
-		free (scrap->free_rects);
-		scrap->free_rects = nullptr;
-	}
-	while (scrap->rects) {
-		auto t = scrap->rects;
-		scrap->rects = t->next;
-		VRect_Delete (t);
-	}
-
 	memset (scrap->w_counts, 0, sizeof (int[scrap->width]));
 	memset (scrap->h_counts, 0, sizeof (int[scrap->height]));
 
-	r_scrap_push_rect (scrap, VRect_New (0, 0, scrap->width, scrap->height));
+	ECS_IdPool_Reset (&scrap->idpool);
+
+	r_scrap_push_rect (scrap, sb_new (scrap, 0, 0, 0,
+									  scrap->width, scrap->height));
 }
 
 VISIBLE size_t
@@ -335,8 +317,8 @@ R_ScrapArea (rscrap_t *scrap, int *count)
 				auto row = col->sets[j];
 				for (int k = 0; row && k < 16; k++) {
 					for (int l = 0; l < 16; l++) {
-						for (auto rect = row->rects[k][l]; rect;
-							 rect = rect->next) {
+						for (auto rect = sb_ptr (scrap, row->rects[k][l]);
+							 rect; rect = sb_ptr (scrap, rect->id)) {
 							area += rect->width * rect->height;
 							c++;
 						}
@@ -357,9 +339,17 @@ R_ScrapDump (rscrap_t *scrap)
 	if (scrap->rects) {
 		Sys_Printf ("allocated:\n");
 	}
-	for (auto rect = scrap->rects; rect; rect = rect->next) {
-		Sys_Printf ("%d %d %d %d\n", rect->x, rect->y,
-					rect->width, rect->height);
+	for (int i = 0; i < 1024; i++) {
+		if (scrap->rects[i]) {
+			for (int j = 0; j < 1024; j++) {
+				auto rect = &scrap->rects[i][j];
+				if (sb_ptr (scrap, rect->id) == rect) {
+					Sys_Printf ("%d %d %d %d %d\n",
+								rect->x, rect->y, rect->layer,
+								rect->width, rect->height);
+				}
+			}
+		}
 	}
 	if (scrap->free_rects && scrap->free_rects->users) {
 		Sys_Printf ("free:\n");
@@ -384,12 +374,12 @@ R_ScrapDump (rscrap_t *scrap)
 				}
 				for (int k = 0; k < 16; k++) {
 					for (int l = 0; l < 16; l++) {
-						for (auto rect = row->rects[k][l]; rect;
-							 rect = rect->next) {
-							Sys_Printf ("%d:%d:%d:%d %d %d %d %d\n",
+						for (auto rect = sb_ptr (scrap, row->rects[k][l]);
+							 rect; rect = sb_ptr (scrap, rect->id)) {
+							Sys_Printf ("%d:%d:%d:%d %d %d %d %d %d\n",
 										i, j, k, l,
 										rect->x, rect->y,
-										rect->width, rect->height);
+										rect->width, rect->height, rect->layer);
 						}
 					}
 				}

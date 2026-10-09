@@ -67,7 +67,7 @@ ECS_NewRegistry (const char *name)
 	ecs_registry_t *reg = calloc (1, sizeof (ecs_registry_t));
 	reg->name = name;
 	reg->components = (componentset_t) DARRAY_STATIC_INIT (32);
-	reg->entities.next = Ent_Index (nullent);
+	ECS_IdPool_Reset (&reg->entities);
 	ECS_RegisterComponents (reg, ecs_components, ecs_comp_count);
 	return reg;
 }

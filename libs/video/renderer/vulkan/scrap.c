@@ -30,9 +30,9 @@
 
 #include <string.h>
 
+#include "QF/darray.h"
 #include "QF/dstring.h"
 #include "QF/render.h"
-#include "QF/ui/vrect.h"
 
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
@@ -52,16 +52,13 @@ struct scrap_s {
 	VkImageView view;
 	size_t      bpp;
 	qfv_packet_t *packet;
-	vrect_t    *batch;
-	vrect_t   **batch_tail;
-	vrect_t    *batch_free;
-	size_t      batch_count;
+	struct DARRAY_TYPE (scrapbox_t) batch;
 	subpic_t   *subpics;
 	qfv_device_t *device;
 };
 
 scrap_t *
-QFV_CreateScrap (qfv_device_t *device, const char *name, int size,
+QFV_CreateScrap (qfv_device_t *device, const char *name, int size, int layers,
 				 QFFormat format, qfv_stagebuf_t *stage)
 {
 	qfZoneScoped (true);
@@ -97,13 +94,19 @@ QFV_CreateScrap (qfv_device_t *device, const char *name, int size,
 
 	scrap_t    *scrap = malloc (sizeof (scrap_t));
 
+	*scrap = (scrap_t) {
+		.bpp = bpp,
+		.device = device,
+		.batch = DARRAY_STATIC_INIT (512),
+	};
+
 	R_ScrapInit (&scrap->rscrap, size, size);
 
 	// R_ScrapInit rounds sizes up to next power of 2
 	size = scrap->rscrap.width;
 	VkExtent3D  extent = { size, size, 1 };
 	scrap->image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D, fmt,
-									extent, 1, 1, VK_SAMPLE_COUNT_1_BIT,
+									extent, 1, layers, VK_SAMPLE_COUNT_1_BIT,
 									VK_IMAGE_USAGE_TRANSFER_DST_BIT
 									| VK_IMAGE_USAGE_STORAGE_BIT
 									| VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -116,19 +119,11 @@ QFV_CreateScrap (qfv_device_t *device, const char *name, int size,
 						 dsprintf (str, "memory:scrap:%s", name));
 	QFV_BindImageMemory (device, scrap->image, scrap->memory, 0);
 	scrap->view = QFV_CreateImageView (device, scrap->image,
-									   VK_IMAGE_VIEW_TYPE_2D, fmt,
+									   VK_IMAGE_VIEW_TYPE_2D_ARRAY, fmt,
 									   VK_IMAGE_ASPECT_COLOR_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, scrap->view,
 						 dsprintf (str, "iview:scrap:%s", name));
 	dstring_delete (str);
-	scrap->bpp = bpp;
-	scrap->subpics = 0;
-	scrap->device = device;
-	scrap->packet = 0;
-	scrap->batch = 0;
-	scrap->batch_tail = &scrap->batch;
-	scrap->batch_free = 0;
-	scrap->batch_count = 0;
 
 	qfv_packet_t *packet = QFV_PacketAcquire (stage, "scrap.create");
 	// no data for the packet
@@ -187,11 +182,7 @@ QFV_DestroyScrap (scrap_t *scrap)
 	dfunc->vkDestroyImage (device->dev, scrap->image, 0);
 	dfunc->vkFreeMemory (device->dev, scrap->memory, 0);
 
-	while (scrap->batch_free) {
-		vrect_t    *b = scrap->batch_free;
-		scrap->batch_free = b->next;
-		VRect_Delete (b);
-	}
+	DARRAY_CLEAR (&scrap->batch);
 	free (scrap);
 }
 
@@ -210,30 +201,29 @@ QFV_ScrapImage (scrap_t *scrap)
 subpic_t *
 QFV_ScrapSubpic (scrap_t *scrap, int width, int height)
 {
-	vrect_t    *rect;
-	subpic_t   *subpic;
-
-	rect = R_ScrapAlloc (&scrap->rscrap, width, height);
+	auto rect = R_ScrapAlloc (&scrap->rscrap, width, height);
 	if (!rect) {
-		return 0;
+		return nullptr;
 	}
 
-	subpic = malloc (sizeof (subpic_t));
-	*((subpic_t **) &subpic->next) = scrap->subpics;
+	subpic_t *subpic = malloc (sizeof (subpic_t));
+	*subpic = (subpic_t) {
+		.next = scrap->subpics,
+		.scrap = scrap,
+		.rect = rect,
+		.width = width,
+		.height = height,
+		.size = 1.0 / scrap->rscrap.width,
+	};
 	scrap->subpics = subpic;
-	*((scrap_t **) &subpic->scrap) = scrap;
-	*((vrect_t **) &subpic->rect) = rect;
-	*((int *) &subpic->width) = width;
-	*((int *) &subpic->height) = height;
-	*((float *) &subpic->size) = 1.0 / scrap->rscrap.width;
 	return subpic;
 }
 
 void
 QFV_SubpicDelete (subpic_t *subpic)
 {
-	scrap_t    *scrap = (scrap_t *) subpic->scrap;
-	vrect_t    *rect = (vrect_t *) subpic->rect;
+	scrap_t    *scrap = subpic->scrap;
+	scrapbox_t *rect = subpic->rect;
 	subpic_t  **sp;
 
 	for (sp = &scrap->subpics; *sp; sp = (subpic_t **) &(*sp)->next) {
@@ -253,9 +243,8 @@ void *
 QFV_SubpicBatch (subpic_t *subpic, qfv_stagebuf_t *stage)
 {
 	qfZoneScoped (true);
-	scrap_t    *scrap = (scrap_t *) subpic->scrap;
-	vrect_t    *rect = (vrect_t *) subpic->rect;
-	vrect_t    *batch;
+	scrap_t    *scrap = subpic->scrap;
+	scrapbox_t *rect = subpic->rect;
 	byte       *dest;
 	size_t      size;
 
@@ -276,20 +265,10 @@ QFV_SubpicBatch (subpic_t *subpic, qfv_stagebuf_t *stage)
 		}
 	}
 
-	if (scrap->batch_free) {
-		batch = scrap->batch_free;
-		scrap->batch_free = batch->next;
-		batch->x = rect->x;
-		batch->y = rect->y;
-		batch->width = subpic->width;
-		batch->height = subpic->height;
-	} else {
-		batch = VRect_New (rect->x, rect->y, subpic->width, subpic->height);
-	}
-	*scrap->batch_tail = batch;
-	scrap->batch_tail = &batch->next;
-	batch->next = 0;
-	scrap->batch_count++;
+	auto r = *rect;
+	r.width = subpic->width;
+	r.height = subpic->height;
+	DARRAY_APPEND (&scrap->batch, r);
 	return dest;
 }
 
@@ -300,7 +279,7 @@ QFV_ScrapFlush (scrap_t *scrap)
 	qfv_device_t *device = scrap->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	if (!scrap->batch_count) {
+	if (!scrap->batch.size) {
 		return;
 	}
 
@@ -320,11 +299,11 @@ QFV_ScrapFlush (scrap_t *scrap)
 	ib.image = scrap->image;
 
 	size_t      offset = packet->offset;
-	vrect_t    *batch = scrap->batch;
 	__auto_type copy = QFV_AllocBufferImageCopy (128, alloca);
-	while (scrap->batch_count) {
+	for (size_t b = 0; b < scrap->batch.size; ) {
 		size_t i;
-		for (i = 0; i < scrap->batch_count && i < 128; i++) {
+		for (i = 0; b + i < scrap->batch.size && i < 128; i++) {
+			auto batch = &scrap->batch.a[b + i];
 			size_t      size = batch->width * batch->height * scrap->bpp;
 			copy->a[i] = (VkBufferImageCopy) {
 				.bufferOffset = offset,
@@ -344,13 +323,12 @@ QFV_ScrapFlush (scrap_t *scrap)
 			};
 
 			offset += (size + 3) & ~3;
-			batch = batch->next;
 		}
 		dfunc->vkCmdCopyBufferToImage (packet->cmd, stage->buffer, scrap->image,
 									   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 									   i, copy->a);
-		scrap->batch_count -= i;
-		if (scrap->batch_count) {
+		b += i;
+		if (b < scrap->batch.size) {
 			dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 		}
 	}
@@ -359,10 +337,7 @@ QFV_ScrapFlush (scrap_t *scrap)
 	ib.image = scrap->image;
 	dfunc->vkCmdPipelineBarrier2 (packet->cmd, &dep);
 
-	*scrap->batch_tail = scrap->batch_free;
-	scrap->batch_free = scrap->batch;
-	scrap->batch = 0;
-	scrap->batch_tail = &scrap->batch;
+	scrap->batch.size = 0;
 
 	QFV_PacketSubmit (scrap->packet);
 	scrap->packet = 0;

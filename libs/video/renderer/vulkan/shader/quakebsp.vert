@@ -23,12 +23,14 @@ layout (push_constant) uniform PushConstants {
 
 layout (location = 0) in vec3 vertex;
 layout (location = 1) in vec3 vnormal;
-layout (location = 2) in vec4 tl_uv;
-layout (location = 3) in uint entid;
+layout (location = 2) in vec2 t_uv;
+layout (location = 3) in vec3 l_uvw;
+layout (location = 4) in uint entid;
 
-layout (location = 0) out vec4 tl_st;
-layout (location = 1) out vec3 direction;
-layout (location = 2) out vec4 color;
+layout (location = 0) out vec2 t_st;
+layout (location = 1) out vec3 l_stp;
+layout (location = 2) out vec3 direction;
+layout (location = 3) out vec4 color;
 
 void
 main (void)
@@ -49,6 +51,7 @@ main (void)
 		gl_Position = Projection3d * (View[gl_ViewIndex] * vec4 (vert, 1));
 		direction = (Sky * vec4(vertex,1)).xyz;
 	}
-	tl_st = tl_uv;
+	t_st = t_uv;
+	l_stp = l_uvw;
 	color = entities[entid].color;
 }

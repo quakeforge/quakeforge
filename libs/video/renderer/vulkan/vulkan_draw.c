@@ -801,7 +801,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 		.type = qfv_res_image_view,
 		.image_view = {
 			.image = 0,
-			.type = VK_IMAGE_VIEW_TYPE_2D,
+			.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 			.format = font->resource->glyph_image.image.format,
 			.subresourceRange = {
 				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -1030,7 +1030,7 @@ draw_startup (exprctx_t *ectx)
 									 dctx, 0);
 
 	create_buffers (ctx);
-	dctx->scrap = QFV_CreateScrap (device, "draw_atlas", 2048, tex_rgba,
+	dctx->scrap = QFV_CreateScrap (device, "draw_atlas", 2048, 1, tex_rgba,
 								   ctx->staging);
 
 	load_conchars (ctx);
@@ -1820,7 +1820,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "draw.addfont.verts");
 	quadvert_t *verts = QFV_PacketExtend (packet, glyph_data->buffer.size);
 	for (FT_Long i = 0; i < rfont->num_glyphs; i++) {
-		vrect_t    *rect = &rfont->glyph_rects[i];
+		scrapbox_t *rect = &rfont->glyph_rects[i];
 		float       x = 0;
 		float       y = 0;
 		float       w = rect->width;

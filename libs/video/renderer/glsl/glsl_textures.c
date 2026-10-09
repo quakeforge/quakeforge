@@ -351,16 +351,16 @@ GLSL_CreateScrap (int size, int format, int linear)
 			Sys_Error ("GL_CreateScrap: Invalid texture format");
 	}
 	scrap = malloc (sizeof (scrap_t));
-	qfeglGenTextures (1, &scrap->tnum);
-	R_ScrapInit (&scrap->rscrap, size, size);
-	scrap->format = format;
-	scrap->bpp = bpp;
-	scrap->subpics = 0;
-	scrap->next = scrap_list;
+	*scrap = (scrap_t) {
+		.format = format,
+		.bpp = bpp,
+		.next = scrap_list,
+		.data = calloc (1, size * size * bpp),
+	};
 	scrap_list = scrap;
 
-	scrap->data = calloc (1, size * size * bpp);
-	scrap->batch = 0;
+	qfeglGenTextures (1, &scrap->tnum);
+	R_ScrapInit (&scrap->rscrap, size, size);
 
 	qfeglBindTexture (GL_TEXTURE_2D, scrap->tnum);
 	qfeglTexImage2D (GL_TEXTURE_2D, 0, format,
@@ -422,7 +422,7 @@ subpic_t *
 GLSL_ScrapSubpic (scrap_t *scrap, int width, int height)
 {
 	qfZoneScoped (true);
-	vrect_t    *rect;
+	scrapbox_t *rect;
 	subpic_t   *subpic;
 
 	rect = R_ScrapAlloc (&scrap->rscrap, width, height);
@@ -431,29 +431,32 @@ GLSL_ScrapSubpic (scrap_t *scrap, int width, int height)
 	}
 
 	subpic = malloc (sizeof (subpic_t));
-	*((subpic_t **) &subpic->next) = scrap->subpics;
+	*subpic = (subpic_t) {
+		.next = scrap->subpics,
+		.next = scrap->subpics,
+		.scrap = scrap,
+		.rect = rect,
+		.width = width,
+		.height = height,
+		.size = 1.0 / scrap->rscrap.width,
+	};
 	scrap->subpics = subpic;
-	*((scrap_t **) &subpic->scrap) = scrap;
-	*((vrect_t **) &subpic->rect) = rect;
-	*((int *) &subpic->width) = width;
-	*((int *) &subpic->height) = height;
-	*((float *) &subpic->size) = 1.0 / scrap->rscrap.width;
 	return subpic;
 }
 
 void
 GLSL_SubpicDelete (subpic_t *subpic)
 {
-	scrap_t    *scrap = (scrap_t *) subpic->scrap;
-	vrect_t    *rect = (vrect_t *) subpic->rect;
+	scrap_t    *scrap = subpic->scrap;
+	scrapbox_t *rect = subpic->rect;
 	subpic_t  **sp;
 
-	for (sp = &scrap->subpics; *sp; sp = (subpic_t **) &(*sp)->next)
+	for (sp = &scrap->subpics; *sp; sp = &(*sp)->next)
 		if (*sp == subpic)
 			break;
 	if (*sp != subpic)
 		Sys_Error ("GLSL_ScrapDelSubpic: broken subpic");
-	*sp = (subpic_t *) subpic->next;
+	*sp = subpic->next;
 	free (subpic);
 	R_ScrapFree (&scrap->rscrap, rect);
 }
@@ -461,16 +464,22 @@ GLSL_SubpicDelete (subpic_t *subpic)
 void
 GLSL_SubpicUpdate (subpic_t *subpic, byte *data, int batch)
 {
-	scrap_t    *scrap = (scrap_t *) subpic->scrap;
-	vrect_t    *rect = (vrect_t *) subpic->rect;
+	scrap_t    *scrap = subpic->scrap;
+	scrapbox_t *rect = subpic->rect;
 	byte       *dest;
 	int         step, sbytes;
 	int         i;
 
 	if (batch) {
 		if (scrap->batch) {
+			vrect_t     tmp = {
+				.x = rect->x,
+				.y = rect->y,
+				.width = rect->width,
+				.height = rect->height,
+			};
 			vrect_t    *r = scrap->batch;
-			scrap->batch = VRect_Union (r, rect);
+			scrap->batch = VRect_Union (r, &tmp);
 			VRect_Delete (r);
 		} else {
 			scrap->batch = VRect_New (rect->x, rect->y,

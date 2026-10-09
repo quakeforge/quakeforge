@@ -9,7 +9,7 @@ struct qfv_stagebuf_s;
 struct qfv_device_s;
 
 scrap_t *QFV_CreateScrap (struct qfv_device_s *device, const char *name,
-						  int size, QFFormat format,
+						  int size, int layers, QFFormat format,
 						  struct qfv_stagebuf_s *stage);
 size_t QFV_ScrapSize (scrap_t *scrap) __attribute__((pure));
 void QFV_ScrapClear (scrap_t *scrap);

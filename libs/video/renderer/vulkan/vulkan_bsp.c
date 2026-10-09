@@ -74,6 +74,7 @@
 #include "QF/simd/types.h"
 
 #include "r_internal.h"
+#include "r_scrap.h"
 #include "vid_vulkan.h"
 
 #define ushort uint16_t
@@ -450,7 +451,8 @@ typedef struct DARRAY_TYPE (faceref_t) facerefset_t;
 typedef struct bspvert_s {
 	vec3_t      vertex;
 	vec3_t      normal;
-	quat_t      tlst;
+	float       t_uv[2];
+	vec3_t      l_uvw;
 } bspvert_t;
 
 typedef struct {
@@ -524,24 +526,30 @@ build_surf_vertices (const msurface_t *surf, const mod_brush_t *brush,
 			DotProduct (vec, texinfo->vecs[0]) + texinfo->vecs[0][3],
 			DotProduct (vec, texinfo->vecs[1]) + texinfo->vecs[1][3],
 		};
-		verts[i].tlst[0] = st[0] / texinfo->texture->width;
-		verts[i].tlst[1] = st[1] / texinfo->texture->height;
+		vec2f_t     uv = st / (vec2f_t) {
+			texinfo->texture->width,
+			texinfo->texture->height,
+		};
+		verts[i].t_uv[0] = uv[0];
+		verts[i].t_uv[1] = uv[1];
 
 		if (surf->lightpic) {
 			//lightmap texture coordinates
 			//every lit surface has its own lighmap at a 1/16 resolution
 			//(ie, 16 albedo pixels for every lightmap pixel)
-			const vrect_t *rect = surf->lightpic->rect;
+			const scrapbox_t *rect = surf->lightpic->rect;
 			vec2f_t     lmorg = (vec2f_t) { VEC2_EXP (&rect->x) } * 16 + 8;
 			vec2f_t     texorg = { VEC2_EXP (surf->texturemins) };
 			st = ((st - texorg + lmorg) / 16) * surf->lightpic->size;
-			verts[i].tlst[2] = st[0];
-			verts[i].tlst[3] = st[1];
+			verts[i].l_uvw[0] = st[0];
+			verts[i].l_uvw[1] = st[1];
+			verts[i].l_uvw[2] = rect->layer;
 		} else {
 			// no lightmap for this surface (probably sky or water), so
 			// make the lightmap texture polygon degenerate
-			verts[i].tlst[2] = 0;
-			verts[i].tlst[3] = 0;
+			verts[i].l_uvw[0] = 0;
+			verts[i].l_uvw[1] = 0;
+			verts[i].l_uvw[2] = 0;
 		}
 	}
 	return numverts + 1;
@@ -2238,7 +2246,7 @@ bsp_startup (exprctx_t *ectx)
 	bctx->sampler = QFV_Render_Sampler (ctx, "quakebsp_sampler");
 	bctx->equrect = QFV_Render_Sampler (ctx, "equirectangular_sampler");
 
-	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 4096,
+	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 4096, 1,
 										 tex_frgba, ctx->staging);
 
 	DARRAY_INIT (&bctx->registered_textures, 64);
@@ -2358,6 +2366,7 @@ bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		BB_var (ent_count),
 
 		BB_buffer (lightinfo),
+		BB_buffer (lightsize),
 		BB_buffer (surfinfo),
 		BB_buffer (light_cache),
 		BB_buffer (light_style_values),

@@ -54,7 +54,7 @@
 static FT_Library ft;
 
 static void
-copy_glyph (vrect_t *rect, FT_GlyphSlot src_glyph, font_t *font)
+copy_glyph (scrapbox_t *rect, FT_GlyphSlot src_glyph, font_t *font)
 {
 	int         dst_pitch = font->scrap.width;
 	byte       *dst = font->scrap_bitmap + rect->x + rect->y * dst_pitch;
@@ -134,7 +134,7 @@ Font_Load (QFile *font_file, int index, int size)
 	font->glyph_bearings = malloc (font->num_glyphs * sizeof (vec2i_t));
 
 	for (FT_Long gind = 0; gind < font->face->num_glyphs; gind++) {
-		vrect_t    *rect = &font->glyph_rects[gind];
+		scrapbox_t *rect = &font->glyph_rects[gind];
 		vec2i_t    *bearing = &font->glyph_bearings[gind];
 		FT_Load_Glyph (font->face, gind, FT_LOAD_DEFAULT);
 		__auto_type slot = font->face->glyph;

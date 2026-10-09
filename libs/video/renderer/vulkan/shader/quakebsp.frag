@@ -4,7 +4,7 @@
 #include "fog.finc"
 
 layout (set = 3, binding = 0) uniform sampler2DArray Texture;
-layout (set = 4, binding = 0) uniform sampler2D Lightmap;
+layout (set = 4, binding = 0) uniform sampler2DArray Lightmap;
 
 layout (push_constant) uniform PushConstants {
 	vec4        orm;
@@ -13,20 +13,21 @@ layout (push_constant) uniform PushConstants {
 	float       alpha;
 };
 
-layout (location = 0) in vec4 tl_st;
-layout (location = 1) in vec3 direction;
-layout (location = 2) in vec3 normal;
-layout (location = 3) in vec4 position;
-layout (location = 4) in vec4 color;
+layout (location = 0) in vec2 tex_st;
+layout (location = 1) in vec3 lmap_stp;
+layout (location = 2) in vec3 direction;
+layout (location = 3) in vec3 normal;
+layout (location = 4) in vec4 position;
+layout (location = 5) in vec4 color;
 
 layout (location = 0) out vec4 frag_color;
 
 void
 main (void)
 {
-	vec3        t_st = vec3 (tl_st.xy, 0);
-	vec3        e_st = vec3 (tl_st.xy, 1);
-	vec2        l_st = vec2 (tl_st.zw);
+	vec3        t_st = vec3 (tex_st, 0);
+	vec3        e_st = vec3 (tex_st, 1);
+	vec3        l_st = lmap_stp;
 
 	vec4        c = texture (Texture, t_st) * color;
 	vec4        e = texture (Texture, e_st);

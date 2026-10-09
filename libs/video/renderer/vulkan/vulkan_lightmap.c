@@ -55,6 +55,7 @@
 
 #include "compat.h"
 #include "r_internal.h"
+#include "r_scrap.h"
 #include "vid_vulkan.h"
 
 #define ushort uint16_t
@@ -74,6 +75,7 @@ typedef struct lmapctx_s {
 	uint32_t    num_clusters;
 
 	bsp_lightinfo_t *lightinfo;
+	bsp_lightsize_t *lightsize;
 	bsp_surfinfo_t *surfinfo;
 	bsp_lightcache_t *light_cache;
 	int16_t    *light_style_values;
@@ -230,6 +232,7 @@ vulkan_init_lightmap (uint32_t surfind, lmapctx_t *lmap)
 {
 	auto brush = lmap->brush;
 	auto lightinfo = lmap->lightinfo;
+	auto lightsize = lmap->lightsize;
 	auto surfinfo = lmap->surfinfo;
 	auto lightmap_data = lmap->lightmap_data;
 	auto surf = brush->surfaces + surfind;
@@ -238,16 +241,20 @@ vulkan_init_lightmap (uint32_t surfind, lmapctx_t *lmap)
 	if (surf->lightpic) {
 		auto r = *surf->lightpic->rect;
 		lightinfo[ind] = (bsp_lightinfo_t) {
-			.pos = { r.x, r.y },
-			.size = { r.width, r.height },
+			.pos = { r.x, r.y, r.layer },
+			.width = r.width,
 			.styles = { VEC4_EXP (surf->styles) },
 			.data = lmap->lightmap_luxels * 3,
+		};
+		uint32_t samples = r.width * r.height;
+		lightsize[ind] = (bsp_lightsize_t) {
+			.samples = samples,
+			.styles = { VEC4_EXP (surf->styles) },
 		};
 		surfinfo[ind] = (bsp_surfinfo_t) {
 			//FIXME
 		};
 
-		uint32_t samples = r.width * r.height;
 		if (surf->samples) {
 			byte *dst = lightmap_data + lightinfo[ind].data;
 			byte *src = surf->samples;
@@ -262,6 +269,9 @@ vulkan_init_lightmap (uint32_t surfind, lmapctx_t *lmap)
 		lightinfo[ind] = (bsp_lightinfo_t) {
 			.styles = { VEC4_EXP (surf->styles) },
 			.data = ~0,
+		};
+		lightsize[ind] = (bsp_lightsize_t) {
+			.styles = { VEC4_EXP (surf->styles) },
 		};
 		surfinfo[ind] = (bsp_surfinfo_t) {
 			.plane = ~0,
@@ -344,6 +354,7 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	if (!bctx->lightmap_resource) {
 		size_t size = sizeof (qfv_resource_t)
 					+ sizeof (qfv_resobj_t)		// lightinfo
+					+ sizeof (qfv_resobj_t)		// lightsize
 					+ sizeof (qfv_resobj_t)		// surfinfo
 					+ sizeof (qfv_resobj_t)		// style data
 					+ sizeof (qfv_resobj_t)		// light cache
@@ -360,12 +371,13 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			.name = "bsp:lightmap",
 			.va_ctx = ctx->va_ctx,
 			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			.num_objects = 12,
+			.num_objects = 13,
 			.objects = (qfv_resobj_t *)&bctx->lightmap_resource[1],
 		};
 	};
 	auto lightinfo = &bctx->lightmap_resource->objects[0];
-	auto surfinfo = &lightinfo[1];
+	auto lightsize = &lightinfo[1];
+	auto surfinfo = &lightsize[1];
 	auto light_cache = &surfinfo[1];
 	auto light_style_values = &light_cache[1];
 	auto lightmap_data = &light_style_values[1];
@@ -382,6 +394,16 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		.type = qfv_res_buffer,
 		.buffer = {
 			.size = sizeof (bsp_lightinfo_t[lmap.num_lightmaps]),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		},
+	};
+	*lightsize = (qfv_resobj_t) {
+		.name = "lightsize",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (bsp_lightsize_t[lmap.num_lightmaps]),
 			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -515,6 +537,7 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			} \
 		} while (0)
 	BUFFER (lightinfo);
+	BUFFER (lightsize);
 	BUFFER (surfinfo);
 	BUFFER (light_cache);
 	BUFFER (light_style_values);
@@ -544,6 +567,7 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	};
 
 	size_t size = lightinfo->buffer.size
+				+ lightsize->buffer.size
 				+ surfinfo->buffer.size
 				+ light_clusters->buffer.size
 				+ light_cache->buffer.size
@@ -551,7 +575,8 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 				+ lightmap_data->buffer.size;
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.lightmap");
 	lmap.lightinfo = QFV_PacketExtend (packet, size);
-	lmap.surfinfo = (bsp_surfinfo_t *) &lmap.lightinfo[lmap.num_lightmaps];
+	lmap.lightsize = (bsp_lightsize_t *) &lmap.lightinfo[lmap.num_lightmaps];
+	lmap.surfinfo = (bsp_surfinfo_t *) &lmap.lightsize[lmap.num_lightmaps];
 	lmap.light_clusters = (cluster_t*) &lmap.surfinfo[lmap.num_lightmaps];
 	lmap.light_cache
 		= (bsp_lightcache_t *) &lmap.light_clusters[lmap.num_clusters];
@@ -624,6 +649,7 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 				&bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]); \
 	} while (0)
 	PACKET_SCATTER (lightinfo);
+	PACKET_SCATTER (lightsize);
 	PACKET_SCATTER (surfinfo);
 	PACKET_SCATTER (light_cache);
 	PACKET_SCATTER (light_style_values);

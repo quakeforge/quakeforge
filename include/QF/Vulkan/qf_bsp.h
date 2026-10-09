@@ -261,6 +261,7 @@ typedef struct bspctx_s {
 
 	//lightmap
 	BB_buffer (lightinfo);
+	BB_buffer (lightsize);
 	BB_buffer (surfinfo);
 	BB_buffer (light_style_values);
 	BB_buffer (lightmap_data);

@@ -368,6 +368,7 @@ properties = {
 				pushConstants = {
 					compute = {
 						lightinfo = ptr;
+						lightsize = ptr;
 						surfinfo = ptr;
 						light_cache = ptr;
 						light_style_values = ptr;
@@ -558,14 +559,15 @@ properties = {
 		};
 		vertexInput = {
 			bindings = (
-				{ binding = 0; stride = "2 * 3 * 4 + 4 * 4"; inputRate = vertex; },
+				{ binding = 0; stride = "2 * 3 * 4 + 2 * 4 + 3 * 4"; inputRate = vertex; },
 				{ binding = 1; stride = "4"; inputRate = instance; },
 			);
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32b32_sfloat; offset = 0;  },
 				{ location = 1; binding = 0; format = r32g32b32_sfloat; offset = 12;  },
-				{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 24; },
-				{ location = 3; binding = 1; format = r32_uint; offset = 0; },
+				{ location = 2; binding = 0; format = r32g32_sfloat; offset = 24; },
+				{ location = 3; binding = 0; format = r32g32b32_sfloat; offset = 32; },
+				{ location = 4; binding = 1; format = r32_uint; offset = 0; },
 			);
 		};
 		inputAssembly = {
@@ -1509,7 +1511,7 @@ renderpasses = {
 							);
 							attributes = (
 								"$brush.vertexInput.attributes[0]",
-								"$brush.vertexInput.attributes[3]",
+								"$brush.vertexInput.attributes[4]",
 							);
 						};
 						inputAssembly = $brush.inputAssembly;

@@ -3,6 +3,7 @@
 
 #ifndef __QFCC__
 QF_VEC_TYPE (ushort, usvec2, 2);
+typedef ushort usvec3[3];
 QF_VEC_TYPE (float, vec2, 2);
 #endif
 
@@ -81,11 +82,16 @@ typedef struct bsp_texanim_s {
 } bsp_texanim_t;
 
 typedef struct bsp_lightinfo_s {
-	usvec2      pos;		///< position of atlas subimage
-	usvec2      size;		///< size of atlas subimage
+	usvec3      pos;		///< position of atlas subimage (x y layer)
+	ushort      width;
 	byte        styles[4];
 	uint        data;
 } bsp_lightinfo_t;
+
+typedef struct bsp_lightsize_s {
+	uint        samples;
+	byte        styles[4];	///< copy of styles in bsp_lightinfo_t
+} bsp_lightsize_t;
 
 typedef struct bsp_lightcache_s {
 	short       vals[4];
