@@ -820,7 +820,7 @@ R_VisitWorldNodes (glslbspctx_t *bctx)
 			if (front < 0) {
 				mleaf_t    *leaf = bctx->brush->leafs + ~front;
 				if (leaf->contents != CONTENTS_SOLID) {
-					visit_leaf (~front);
+					visit_leaf (bctx->brush->cluster_map[~front]);
 				}
 			}
 			visit_node (bctx, node, side);
@@ -829,7 +829,7 @@ R_VisitWorldNodes (glslbspctx_t *bctx)
 		if (node_id < 0) {
 			mleaf_t    *leaf = bctx->brush->leafs + ~node_id;
 			if (leaf->contents != CONTENTS_SOLID) {
-				visit_leaf (~node_id);
+				visit_leaf (bctx->brush->cluster_map[~node_id]);
 			}
 		}
 		if (node_ptr != node_stack) {
