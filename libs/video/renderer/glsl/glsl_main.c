@@ -190,8 +190,8 @@ glsl_R_Init (memhunk_t *hunk, struct plitem_s *config)
 	Cmd_AddCommand ("timerefresh", glsl_R_TimeRefresh_f,
 					"Test the current refresh rate for the current location.");
 	R_Init_Cvars ();
-	glsl_Draw_Init ();
 	SCR_Init (hunk);
+	glsl_Draw_Init ();
 
 	qfeglDepthFunc (GL_LEQUAL);
 
