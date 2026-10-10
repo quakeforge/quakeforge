@@ -40,6 +40,9 @@
 #include "compat.h"
 #include "r_scrap.h"
 
+#define FREE_Y(w) &(set_t) \
+	{ .map = scrap->free_y[w], .size = SET_SIZE (scrap->height) }
+
 typedef struct scrapset_s {
 	int         users;
 	union {
@@ -117,12 +120,11 @@ r_scrap_pull_rect (rscrap_t *scrap, int width, int height)
 			}
 		}
 	}
+	set_remove (FREE_Y (width), height);
 	if (!--scrap->w_counts[width]) {
 		set_remove (scrap->free_x, width);
 	}
-	if (!--scrap->h_counts[height]) {
-		set_remove (scrap->free_y, height);
-	}
+	--scrap->h_counts[height];
 	rect->id = id;
 	return rect;
 }
@@ -155,7 +157,10 @@ r_scrap_push_rect (rscrap_t *scrap, scrapbox_t *rect)
 	*cell = id;
 
 	set_add (scrap->free_x, width);
-	set_add (scrap->free_y, height);
+	if (!scrap->free_y[width]) {
+		scrap->free_y[width] = calloc (1, SET_SIZE (scrap->height) / 8);
+	}
+	set_add (FREE_Y (width), height);
 	scrap->w_counts[width]++;
 	scrap->h_counts[height]++;
 }
@@ -172,7 +177,7 @@ R_ScrapInit (rscrap_t *scrap, int width, int height)
 		.width = width,
 		.height = height,
 		.free_x = set_new (),
-		.free_y = set_new (),
+		.free_y = calloc (width, sizeof (set_bits_t *)),
 		.w_counts = calloc (width, sizeof (int)),
 		.h_counts = calloc (height, sizeof (int)),
 		.rects = calloc (1024, sizeof (scrapbox_t *)),
@@ -197,55 +202,13 @@ R_ScrapAlloc (rscrap_t *scrap, int width, int height)
 	const unsigned w = width - 1;
 	const unsigned h = height - 1;
 
-	auto avail_x = set_start (scrap->free_x, w);
-	auto avail_y = set_start (scrap->free_y, h);
-	if (!avail_x || !avail_y) {
-		// no large enough region is available
-		return nullptr;
-	}
-
-	auto old = r_scrap_pull_rect (scrap, avail_x->element, avail_y->element);
-	if (avail_y->element == h) {
-		// perfect fit for height, check all the widths
-		for (avail_x = set_next (avail_x); avail_x;
-			 avail_x = set_next (avail_x)) {
+	scrapbox_t *old = nullptr;
+	for (auto avail_x = set_start (scrap->free_x, w); avail_x;
+		 avail_x = set_next (avail_x)) {
+		if (auto avail_y = set_start (FREE_Y (avail_x->element), h)) {
 			old = r_scrap_pull_rect (scrap, avail_x->element,
 									 avail_y->element);
-			if (old) {
-				goto found;
-			}
-		}
-		avail_x = set_start (scrap->free_x, w);
-		avail_y = set_next (avail_y);
-		if (avail_x && avail_y) {
-			old = r_scrap_pull_rect (scrap, avail_x->element,
-									 avail_y->element);
-		}
-	} else if (avail_x->element == w) {
-		// perfect fit for width, check all the heights
-		for (avail_y = set_next (avail_y); avail_y;
-			 avail_y = set_next (avail_y)) {
-			old = r_scrap_pull_rect (scrap, avail_x->element,
-									 avail_y->element);
-			if (old) {
-				goto found;
-			}
-		}
-		avail_x = set_next (avail_x);
-		avail_y = set_start (scrap->free_y, h);
-		if (avail_x && avail_y) {
-			old = r_scrap_pull_rect (scrap, avail_x->element,
-									 avail_y->element);
-		}
-	}
-	while (!old && avail_x && avail_y) {
-		avail_x = set_next (avail_x);
-		if (!avail_x && (avail_y = set_next (avail_y))) {
-			avail_x = set_start (scrap->free_x, w);
-		}
-		if (avail_x && avail_y) {
-			old = r_scrap_pull_rect (scrap, avail_x->element,
-									 avail_y->element);
+			goto found;
 		}
 	}
 found:
@@ -355,11 +318,13 @@ R_ScrapDump (rscrap_t *scrap)
 		Sys_Printf ("free:\n");
 		Sys_Printf ("widths : %s\n", set_as_string (scrap->free_x));
 		for (auto wi = set_first (scrap->free_x); wi; wi = set_next (wi)) {
-			Sys_Printf (" %d", scrap->w_counts[wi->element]);
-		}
-		Sys_Printf ("\nheights: %s\n", set_as_string (scrap->free_y));
-		for (auto hi = set_first (scrap->free_y); hi; hi = set_next (hi)) {
-			Sys_Printf (" %d", scrap->h_counts[hi->element]);
+			auto free_y = FREE_Y (wi->element);
+			Sys_Printf (" %4d %s\n", scrap->w_counts[wi->element],
+						set_as_string (free_y));
+			Sys_Printf ("heights: %s\n", set_as_string (free_y));
+			for (auto hi = set_first (free_y); hi; hi = set_next (hi)) {
+				Sys_Printf (" %d", scrap->h_counts[hi->element]);
+			}
 		}
 		Sys_Printf ("\n");
 		for (int i = 0; i < 256; i++) {

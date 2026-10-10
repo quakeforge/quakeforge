@@ -32,9 +32,8 @@
 #define __r_scrap_h
 
 #include <QF/ecs.h>
+#include <QF/set.h>
 
-typedef struct vrect_s vrect_t;
-typedef struct set_s set_t;
 typedef struct scrapset_s scrapset_t;
 
 typedef struct scrapbox_s {
@@ -48,7 +47,7 @@ typedef struct rscrap_s {
 	/// For a free region of size width,height, that size will be a member of
 	/// the x set for width, and y set for height.
 	set_t      *free_x;			///< set of free regions by width
-	set_t      *free_y;			///< set of free regions by height
+	set_bits_t**free_y;			///< sets of free regions by height per width
 	int        *w_counts;
 	int        *h_counts;
 	scrapset_t *free_rects;		///< set of width sets
