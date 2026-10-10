@@ -174,13 +174,14 @@ R_ScrapInit (rscrap_t *scrap, int width, int height)
 		Sys_Error ("%dx%d scrap not supported", width, height);
 	}
 	*scrap = (rscrap_t) {
-		.width = width,
-		.height = height,
 		.free_x = set_new (),
 		.free_y = calloc (width, sizeof (set_bits_t *)),
 		.w_counts = calloc (width, sizeof (int)),
 		.h_counts = calloc (height, sizeof (int)),
 		.rects = calloc (1024, sizeof (scrapbox_t *)),
+		.width = width,
+		.height = height,
+		.layers = 1,
 	};
 	R_ScrapClear (scrap);
 }
@@ -213,11 +214,7 @@ R_ScrapAlloc (rscrap_t *scrap, int width, int height)
 	}
 found:
 	if (!old) {
-		R_ScrapDump (scrap);
-		int count = 0;
-		size_t area = R_ScrapArea (scrap, &count);
-		Sys_Error ("the bits lied! [%d, %d], %zd %d",
-				   width, height, area, count);
+		return nullptr;
 	}
 
 	auto rect = old;
@@ -227,6 +224,7 @@ found:
 		rect = sb_new (scrap, split->x, split->y, old->layer,
 					   split->width, split->height);
 		VRect_Delete (old_vr);
+		old->id = nullent;
 		auto frags = split->next;
 		while (frags) {
 			// old was bigger than the requested size
@@ -241,6 +239,14 @@ found:
 	}
 
 	return rect;
+}
+
+VISIBLE void
+R_ScrapAddLayer (rscrap_t *scrap)
+{
+	uint16_t layer = scrap->layers++;
+	r_scrap_push_rect (scrap, sb_new (scrap, 0, 0, layer,
+									  scrap->width, scrap->height));
 }
 
 VISIBLE void
@@ -263,8 +269,10 @@ R_ScrapClear (rscrap_t *scrap)
 
 	ECS_IdPool_Reset (&scrap->idpool);
 
-	r_scrap_push_rect (scrap, sb_new (scrap, 0, 0, 0,
-									  scrap->width, scrap->height));
+	for (unsigned i = 0; i < scrap->layers; i++) {
+		r_scrap_push_rect (scrap, sb_new (scrap, 0, 0, i,
+										  scrap->width, scrap->height));
+	}
 }
 
 VISIBLE size_t

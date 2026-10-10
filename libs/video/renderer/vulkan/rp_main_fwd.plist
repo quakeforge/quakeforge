@@ -2067,6 +2067,7 @@ init_tasks = (
 	{ func = palette_init; },
 	{ func = mesh_init; },
 	{ func = bsp_init; },
+	{ func = lightmap_init; },
 	{ func = matrices_init; },
 	{ func = scene_init; },
 	{ func = sprite_init; },

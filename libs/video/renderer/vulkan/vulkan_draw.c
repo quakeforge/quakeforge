@@ -1030,7 +1030,7 @@ draw_startup (exprctx_t *ectx)
 									 dctx, 0);
 
 	create_buffers (ctx);
-	dctx->scrap = QFV_CreateScrap (device, "draw_atlas", 2048, 1, tex_rgba,
+	dctx->scrap = QFV_CreateScrap (device, "draw_atlas", 2048, tex_rgba,
 								   ctx->staging);
 
 	load_conchars (ctx);

@@ -45,7 +45,10 @@
 #include "QF/sys.h"
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lightmap.h"
+#include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/barrier.h"
+#include "QF/Vulkan/dsmanager.h"
+#include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/scrap.h"
@@ -68,8 +71,8 @@
 
 typedef struct lmapctx_s {
 	vulkan_ctx_t *ctx;
-	bspctx_t   *bctx;
 	mod_brush_t *brush;
+	rscrap_t    rscrap;
 	uint32_t    num_lightmaps;
 	uint32_t    lightmap_luxels;
 	uint32_t    num_clusters;
@@ -190,7 +193,6 @@ vulkan_create_surf_lightmap (cluster_t *cluster, lmapctx_t *lmap)
 			continue;
 		}
 
-		bspctx_t   *bctx = lmap->bctx;
 		int         smax, tmax;
 
 		smax = (surf->extents[0] >> 4) + 1;
@@ -201,9 +203,15 @@ vulkan_create_surf_lightmap (cluster_t *cluster, lmapctx_t *lmap)
 
 		lmap->lightmap_luxels += smax * tmax * i;
 
-		surf->lightpic = QFV_ScrapSubpic (bctx->light_scrap, smax, tmax);
+		//FIXME
+		surf->lightpic = (subpic_t *)R_ScrapAlloc (&lmap->rscrap, smax, tmax);
 		if (!surf->lightpic) {
-			Sys_Error ("FIXME taniwha is being lazy");
+			R_ScrapAddLayer (&lmap->rscrap);
+			surf->lightpic = (subpic_t *)R_ScrapAlloc (&lmap->rscrap,
+														smax, tmax);
+			if (!surf->lightpic) {
+				Sys_Error ("FIXME taniwha is being lazy");
+			}
 		}
 	}
 }
@@ -239,7 +247,7 @@ vulkan_init_lightmap (uint32_t surfind, lmapctx_t *lmap)
 
 	uint ind = lmap->num_lightmaps++;
 	if (surf->lightpic) {
-		auto r = *surf->lightpic->rect;
+		auto r = *(scrapbox_t *) surf->lightpic;//FIXME
 		lightinfo[ind] = (bsp_lightinfo_t) {
 			.pos = { r.x, r.y, r.layer },
 			.width = r.width,
@@ -338,17 +346,29 @@ void
 Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
+	auto device = ctx->device;
 	bspctx_t   *bctx = ctx->bsp_context;
 	uint32_t    frames = ctx->render_context->frames.size;
-
-	QFV_ScrapClear (bctx->light_scrap);
 
 	r_framecount = 1;					// no dlightcache
 	lmapctx_t lmap = {
 		.ctx = ctx,
-		.bctx = bctx,
 	};
+	R_ScrapInit (&lmap.rscrap, 512, 512);
+
 	lmap_model_loop (models, num_models, vulkan_create_surfs, &lmap);
+
+	if (bctx->light_scrap) {
+		QFV_DestroyScrap (bctx->light_scrap);
+		bctx->light_scrap = nullptr;
+	}
+	bctx->light_scrap = QFV_CreateScrapFromScrap (device, "lightmap_atlas",
+												  &lmap.rscrap, tex_frgba,
+												  ctx->staging);
+	for (size_t i = 0; i < bctx->frames.size; i++) {
+		auto frame = &bctx->frames.a[i];
+		frame->need_update = true;
+	}
 
 	QFV_DestroyResource (ctx->device, bctx->lightmap_resource);
 	if (!bctx->lightmap_resource) {
@@ -667,10 +687,28 @@ Vulkan_LightmapImageView (vulkan_ctx_t *ctx)
 	return QFV_ScrapImageView (bctx->light_scrap);
 }
 
-void
-Vulkan_FlushLightmaps (vulkan_ctx_t *ctx)
+static void
+lightmap_startup (exprctx_t *ectx)
 {
 	qfZoneScoped (true);
-	bspctx_t   *bctx = ctx->bsp_context;
-	QFV_ScrapFlush (bctx->light_scrap);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "lightmap startup");
+	auto bctx = ctx->bsp_context;
+	auto tctx = ctx->texture_context;
+
+	bctx->dsmanager = QFV_Render_DSManager (ctx, "lightmap_set");
+	for (size_t i = 0; i < bctx->frames.size; i++) {
+		auto frame = &bctx->frames.a[i];
+		frame->lightmap_image = QFV_DSManager_AllocSet (bctx->dsmanager);
+		frame->lightmap_descriptor = QFV_DSManager_AllocSet (tctx->dsmanager);
+	}
+
+	qfvPopDebug (ctx);
+}
+
+void
+Vulkan_Lightmap_Init (vulkan_ctx_t *ctx)
+{
+	QFV_Render_AddStartup (ctx, lightmap_startup);
 }

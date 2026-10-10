@@ -537,10 +537,11 @@ build_surf_vertices (const msurface_t *surf, const mod_brush_t *brush,
 			//lightmap texture coordinates
 			//every lit surface has its own lighmap at a 1/16 resolution
 			//(ie, 16 albedo pixels for every lightmap pixel)
-			const scrapbox_t *rect = surf->lightpic->rect;
+			auto rect = (scrapbox_t *) surf->lightpic;
+			float size = QFV_ScrapSize (build->bctx->light_scrap);
 			vec2f_t     lmorg = (vec2f_t) { VEC2_EXP (&rect->x) } * 16 + 8;
 			vec2f_t     texorg = { VEC2_EXP (surf->texturemins) };
-			st = ((st - texorg + lmorg) / 16) * surf->lightpic->size;
+			st = ((st - texorg + lmorg) / 16) * size;
 			verts[i].l_uvw[0] = st[0];
 			verts[i].l_uvw[1] = st[1];
 			verts[i].l_uvw[2] = rect->layer;
@@ -1781,6 +1782,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto bctx = ctx->bsp_context;
+	auto frame = &bctx->frames.a[ctx->curFrame];
 	auto pipeline = taskctx->pipeline;
 	auto layout = pipeline->layout;
 	auto cmd = taskctx->cmd;
@@ -1843,7 +1845,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		vulktex_t skymap = { .descriptor = bctx->skymap_descriptor };
 		bind_texture (&skymap, SKYMAP_SET, layout, dfunc, cmd);
 	} else if (pass_ind == QFV_bspLightmap) {
-		vulktex_t lightmap = { .descriptor = bctx->lightmap_descriptor };
+		vulktex_t lightmap = { .descriptor = frame->lightmap_descriptor };
 		bind_texture (&lightmap, LIGHTMAP_SET, layout, dfunc, cmd);
 	}
 
@@ -1996,6 +1998,32 @@ bsp_light_update (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 
 	auto frame = &bctx->frames.a[ctx->curFrame];
+	if (frame->need_update) {
+		frame->need_update = false;
+		auto view = Vulkan_LightmapImageView (ctx);
+		dfunc->vkUpdateDescriptorSets (device->dev, 2,
+			(VkWriteDescriptorSet[]) {
+				{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+					.dstSet = frame->lightmap_descriptor,
+					.descriptorCount = 1,
+					.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+					.pImageInfo = &(VkDescriptorImageInfo) {
+						.imageView = view,
+						.sampler = bctx->sampler,
+						.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+					},
+				},
+				{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+					.dstSet = frame->lightmap_image,
+					.descriptorCount = 1,
+					.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+					.pImageInfo = &(VkDescriptorImageInfo) {
+						.imageView = view,
+						.imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+					},
+				},
+			}, 0, 0);
+	}
 	uint32_t style_offset = frame->style_offset;
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.light_update");
 	auto data = QFV_PacketExtend (packet, sizeof (d_lightstylevalue));
@@ -2011,7 +2039,7 @@ bsp_light_update (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto cmd = taskctx->cmd;
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 	VkDescriptorSet sets[] = {
-		bctx->lightmap_image,
+		frame->lightmap_image,
 	};
 	auto sb = imageBarriers[qfv_LT_ShaderSampled_to_StorageWrite];
 	auto db = imageBarriers[qfv_LT_StorageWrite_to_ShaderSampled];
@@ -2234,9 +2262,6 @@ bsp_startup (exprctx_t *ectx)
 	qfvPushDebug (ctx, "bsp startup");
 	auto bctx = ctx->bsp_context;
 
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-
 	bctx->main_pass.bsp_context = bctx;
 	bctx->shadow_pass.bsp_context = bctx;
 	bctx->shadow_pass.entqueue = EntQueue_New (mod_num_types);
@@ -2245,9 +2270,6 @@ bsp_startup (exprctx_t *ectx)
 
 	bctx->sampler = QFV_Render_Sampler (ctx, "quakebsp_sampler");
 	bctx->equrect = QFV_Render_Sampler (ctx, "equirectangular_sampler");
-
-	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 4096, 1,
-										 tex_frgba, ctx->staging);
 
 	DARRAY_INIT (&bctx->registered_textures, 64);
 
@@ -2261,28 +2283,13 @@ bsp_startup (exprctx_t *ectx)
 	DARRAY_RESIZE (&bctx->frames, frames);
 	bctx->frames.grow = 0;
 
-	create_base_resources (ctx);
-
-	bctx->dsmanager = QFV_Render_DSManager (ctx, "lightmap_set");
-	if (bctx->dsmanager) {
-		bctx->lightmap_image = QFV_DSManager_AllocSet (bctx->dsmanager);
-		dfunc->vkUpdateDescriptorSets (device->dev, 1,
-			&(VkWriteDescriptorSet) {
-				.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-				.dstSet = bctx->lightmap_image,
-				.descriptorCount = 1,
-				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-				.pImageInfo = &(VkDescriptorImageInfo) {
-					.imageView = Vulkan_LightmapImageView (ctx),
-					.imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-				},
-			}, 0, 0);
+	for (size_t i = 0; i < bctx->frames.size; i++) {
+		auto frame = &bctx->frames.a[i];
+		*frame = (bspframe_t) { };
 	}
 
-	bctx->lightmap_descriptor
-		= Vulkan_CreateCombinedImageSampler (ctx,
-											 Vulkan_LightmapImageView (ctx),
-											 bctx->sampler);
+	create_base_resources (ctx);
+
 	bctx->skybox_descriptor
 		= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skybox,
 											 bctx->sampler);
@@ -2303,6 +2310,16 @@ bsp_clearstate (exprctx_t *ectx)
 	//auto taskctx = (qfv_taskctx_t *) ectx;
 	//auto ctx = taskctx->ctx;
 	//auto bctx = ctx->bsp_context;
+}
+
+static void
+lightmap_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+
+	Vulkan_Lightmap_Init (ctx);
 }
 
 static void
@@ -2537,6 +2554,11 @@ static exprfunc_t bsp_register_textures_func[] = {
 	{}
 };
 
+static exprfunc_t lightmap_init_func[] = {
+	{ .func = lightmap_init },
+	{}
+};
+
 static exprfunc_t bsp_init_func[] = {
 	{ .func = bsp_init },
 	{}
@@ -2564,6 +2586,7 @@ static exprsym_t bsp_task_syms[] = {
 	{ "bsp_build_display_lists", &cexpr_function,
 		bsp_build_display_lists_func },
 	{ "bsp_register_textures", &cexpr_function, bsp_register_textures_func },
+	{ "lightmap_init", &cexpr_function, lightmap_init_func },
 	{ "bsp_init", &cexpr_function, bsp_init_func },
 	{}
 };

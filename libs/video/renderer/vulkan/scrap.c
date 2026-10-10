@@ -45,7 +45,7 @@
 
 #include "r_scrap.h"
 
-struct scrap_s {
+typedef struct scrap_s {
 	rscrap_t    rscrap;
 	VkImage     image;
 	VkDeviceMemory memory;
@@ -55,11 +55,11 @@ struct scrap_s {
 	struct DARRAY_TYPE (scrapbox_t) batch;
 	subpic_t   *subpics;
 	qfv_device_t *device;
-};
+} scrap_t;
 
-scrap_t *
-QFV_CreateScrap (qfv_device_t *device, const char *name, int size, int layers,
-				 QFFormat format, qfv_stagebuf_t *stage)
+static scrap_t *
+qfv_create_scrap (qfv_device_t *device, const char *name, rscrap_t *rscrap,
+				  QFFormat format, qfv_stagebuf_t *stage)
 {
 	qfZoneScoped (true);
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -95,15 +95,15 @@ QFV_CreateScrap (qfv_device_t *device, const char *name, int size, int layers,
 	scrap_t    *scrap = malloc (sizeof (scrap_t));
 
 	*scrap = (scrap_t) {
+		.rscrap = *rscrap,
 		.bpp = bpp,
 		.device = device,
 		.batch = DARRAY_STATIC_INIT (512),
 	};
 
-	R_ScrapInit (&scrap->rscrap, size, size);
-
 	// R_ScrapInit rounds sizes up to next power of 2
-	size = scrap->rscrap.width;
+	int size = scrap->rscrap.width;
+	int layers = scrap->rscrap.layers;
 	VkExtent3D  extent = { size, size, 1 };
 	scrap->image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D, fmt,
 									extent, 1, layers, VK_SAMPLE_COUNT_1_BIT,
@@ -138,7 +138,13 @@ QFV_CreateScrap (qfv_device_t *device, const char *name, int size, int layers,
 	VkClearColorValue color = {
 		.float32 = {0xde/255.0, 0xad/255.0, 0xbe/255.0, 0xef/255.0},
 	};
-	VkImageSubresourceRange range = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+	VkImageSubresourceRange range = {
+		.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+		.baseMipLevel = 0,
+		.levelCount = VK_REMAINING_MIP_LEVELS,
+		.baseArrayLayer = 0,
+		.layerCount = VK_REMAINING_ARRAY_LAYERS,
+	};
 	dfunc->vkCmdClearColorImage (packet->cmd, scrap->image,
 								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								 &color, 1, &range);
@@ -149,10 +155,33 @@ QFV_CreateScrap (qfv_device_t *device, const char *name, int size, int layers,
 	return scrap;
 }
 
-size_t
+scrap_t *
+QFV_CreateScrap (qfv_device_t *device, const char *name, int size,
+				 QFFormat format, qfv_stagebuf_t *stage)
+{
+	rscrap_t rscrap;
+	R_ScrapInit (&rscrap, size, size);
+	return qfv_create_scrap (device, name, &rscrap, format, stage);
+}
+
+scrap_t *
+QFV_CreateScrapFromScrap (qfv_device_t *device, const char *name,
+						  rscrap_t *rscrap, QFFormat format,
+						  qfv_stagebuf_t *stage)
+{
+	return qfv_create_scrap (device, name, rscrap, format, stage);
+}
+
+uint32_t
+QFV_ScrapLayers (scrap_t *scrap)
+{
+	return scrap->rscrap.layers;
+}
+
+float
 QFV_ScrapSize (scrap_t *scrap)
 {
-	return scrap->rscrap.width * scrap->rscrap.height * scrap->bpp;
+	return 1.0 / scrap->rscrap.width;
 }
 
 void

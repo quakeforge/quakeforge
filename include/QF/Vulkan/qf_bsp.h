@@ -138,6 +138,10 @@ typedef struct bspframe_s {
 	uint32_t    entid_count;
 	uint32_t    queue;
 	uint32_t    style_offset;
+
+	VkDescriptorSet lightmap_image;
+	VkDescriptorSet lightmap_descriptor;
+	bool        need_update;
 } bspframe_t;
 
 typedef struct bspframeset_s
@@ -171,8 +175,6 @@ typedef struct bspctx_s {
 	struct qfv_dsmanager_s *dsmanager;
 	qfv_resource_t *lightmap_resource;
 	struct scrap_s *light_scrap;
-	VkDescriptorSet lightmap_descriptor;
-	VkDescriptorSet lightmap_image;
 
 	unsigned    max_edges;
 

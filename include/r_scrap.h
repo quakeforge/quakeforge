@@ -62,6 +62,7 @@ typedef struct rscrap_s {
 void R_ScrapInit (rscrap_t *scrap, int width, int height);
 void R_ScrapDelete (rscrap_t *scrap);
 scrapbox_t *R_ScrapAlloc (rscrap_t *scrap, int width, int height);
+void R_ScrapAddLayer (rscrap_t *scrap);
 void R_ScrapFree (rscrap_t *scrap, scrapbox_t *rect);
 void R_ScrapClear (rscrap_t *scrap);
 size_t R_ScrapArea (rscrap_t *scrap, int *count) __attribute__((pure));
