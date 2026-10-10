@@ -515,10 +515,10 @@ build_surf_displist (model_t **models, msurface_t *surf, int base,
 			//lightmap texture coordinates
 			//every lit surface has its own lighmap at a 1/16 resolution
 			//(ie, 16 albedo pixels for every lightmap pixel)
-			const scrapbox_t *rect = surf->lightpic->rect;
+			const scrapbox_t *rect = surf->lightpic;
 			vec2f_t     lmorg = (vec2f_t) { VEC2_EXP (&rect->x) } * 16 + 8;
 			vec2f_t     texorg = { VEC2_EXP (surf->texturemins) };
-			st = ((st - texorg + lmorg) / 16) * surf->lightpic->size;
+			st = ((st - texorg + lmorg) / 16) * glsl_R_LightmapSize ();
 			verts[i].tlst[2] = st[0];
 			verts[i].tlst[3] = st[1];
 		} else {

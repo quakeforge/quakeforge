@@ -418,6 +418,12 @@ GLSL_ScrapTexture (scrap_t *scrap)
 	return scrap->tnum;
 }
 
+float
+GLSL_ScrapSize (scrap_t *scrap)
+{
+	return 1.0 / scrap->rscrap.width;
+}
+
 subpic_t *
 GLSL_ScrapSubpic (scrap_t *scrap, int width, int height)
 {

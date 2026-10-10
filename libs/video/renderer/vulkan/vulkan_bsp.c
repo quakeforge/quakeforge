@@ -537,7 +537,7 @@ build_surf_vertices (const msurface_t *surf, const mod_brush_t *brush,
 			//lightmap texture coordinates
 			//every lit surface has its own lighmap at a 1/16 resolution
 			//(ie, 16 albedo pixels for every lightmap pixel)
-			auto rect = (scrapbox_t *) surf->lightpic;
+			auto rect = surf->lightpic;
 			float size = QFV_ScrapSize (build->bctx->light_scrap);
 			vec2f_t     lmorg = (vec2f_t) { VEC2_EXP (&rect->x) } * 16 + 8;
 			vec2f_t     texorg = { VEC2_EXP (surf->texturemins) };

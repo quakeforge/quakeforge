@@ -56,6 +56,7 @@
 
 #include "compat.h"
 #include "r_internal.h"
+#include "r_scrap.h"
 
 #define s_dynlight (r_refdef.scene->base + scene_dynlight)
 
@@ -299,7 +300,12 @@ R_BuildLightMap_1 (const vec4f_t *transform, mod_brush_t *brush,
 		bl++;
 	}
 
-	GL_SubpicUpdate (surf->lightpic, (byte *) blocklights, 1);
+	GL_SubpicUpdate (&(subpic_t) {
+			.scrap = light_scrap,
+			.rect = surf->lightpic,
+			.width = surf->lightpic->width,
+			.height = surf->lightpic->height,
+		}, (byte *) blocklights, 1);
 }
 
 static void
@@ -361,7 +367,12 @@ R_BuildLightMap_3 (const vec4f_t *transform, mod_brush_t *brush,
 		bl++;
 	}
 
-	GL_SubpicUpdate (surf->lightpic, (byte *) blocklights, 1);
+	GL_SubpicUpdate (&(subpic_t) {
+			.scrap = light_scrap,
+			.rect = surf->lightpic,
+			.width = surf->lightpic->width,
+			.height = surf->lightpic->height,
+		}, (byte *) blocklights, 1);
 }
 
 static void
@@ -424,7 +435,12 @@ R_BuildLightMap_4 (const vec4f_t *transform, mod_brush_t *brush,
 		*dest++ = 255;
 	}
 
-	GL_SubpicUpdate (surf->lightpic, (byte *) blocklights, 1);
+	GL_SubpicUpdate (&(subpic_t) {
+			.scrap = light_scrap,
+			.rect = surf->lightpic,
+			.width = surf->lightpic->width,
+			.height = surf->lightpic->height,
+		}, (byte *) blocklights, 1);
 }
 
 // BRUSH MODELS ===============================================================
@@ -533,10 +549,11 @@ GL_CreateSurfaceLightmap (mod_brush_t *brush, msurface_t *surf)
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
 
-	surf->lightpic = GL_ScrapSubpic (light_scrap, smax, tmax);
-	if (!surf->lightpic) {
+	auto subpic = GL_ScrapSubpic (light_scrap, smax, tmax);
+	if (!subpic) {
 		Sys_Error ("FIXME taniwha is being lazy");
 	}
+	surf->lightpic = subpic->rect;
 	if (smax > bl_extents[0]) {
 		bl_extents[0] = smax;
 	}
@@ -642,6 +659,12 @@ int
 gl_R_LightmapTexture (void)
 {
 	return GL_ScrapTexture (light_scrap);
+}
+
+float
+gl_R_LightmapSize (void)
+{
+	return GL_ScrapSize (light_scrap);
 }
 
 void

@@ -203,12 +203,10 @@ vulkan_create_surf_lightmap (cluster_t *cluster, lmapctx_t *lmap)
 
 		lmap->lightmap_luxels += smax * tmax * i;
 
-		//FIXME
-		surf->lightpic = (subpic_t *)R_ScrapAlloc (&lmap->rscrap, smax, tmax);
+		surf->lightpic = R_ScrapAlloc (&lmap->rscrap, smax, tmax);
 		if (!surf->lightpic) {
 			R_ScrapAddLayer (&lmap->rscrap);
-			surf->lightpic = (subpic_t *)R_ScrapAlloc (&lmap->rscrap,
-														smax, tmax);
+			surf->lightpic = R_ScrapAlloc (&lmap->rscrap, smax, tmax);
 			if (!surf->lightpic) {
 				Sys_Error ("FIXME taniwha is being lazy");
 			}

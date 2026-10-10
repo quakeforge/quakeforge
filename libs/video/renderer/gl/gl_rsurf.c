@@ -846,12 +846,12 @@ GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 		t = DotProduct (vec, texinfo->vecs[1]) + texinfo->vecs[1][3];
 		s -= surf->texturemins[0];
 		t -= surf->texturemins[1];
-		s += surf->lightpic->rect->x * 16 + 8;
-		t += surf->lightpic->rect->y * 16 + 8;
+		s += surf->lightpic->x * 16 + 8;
+		t += surf->lightpic->y * 16 + 8;
 		s /= 16;
 		t /= 16;
-		poly->verts[i].lm_uv[0] = s * surf->lightpic->size;
-		poly->verts[i].lm_uv[1] = t * surf->lightpic->size;
+		poly->verts[i].lm_uv[0] = s * gl_R_LightmapSize ();
+		poly->verts[i].lm_uv[1] = t * gl_R_LightmapSize ();
 	}
 
 	// remove co-linear points - Ed

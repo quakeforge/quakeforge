@@ -37,6 +37,7 @@
 #include "QF/simd/types.h"
 
 typedef struct ent_aabb_s ent_aabb_t;
+typedef struct scrapbox_s scrapbox_t;
 
 extern struct vid_model_funcs_s *mod_funcs;
 
@@ -152,7 +153,7 @@ typedef struct msurface_s {
 		struct {
 			glpoly_t   *polys;	// multiple if warped
 			instsurf_t *instsurf;///< null if not part of world model/sub-model
-			struct subpic_s *lightpic;///< light map texture ref (glsl)
+			scrapbox_t *lightpic;///< light map texture ref (glsl)
 			byte       *base;
 		};
 	};

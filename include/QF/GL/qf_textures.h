@@ -61,6 +61,7 @@ scrap_t *GL_CreateScrap (int size, int format, int linear);
 void GL_DestroyScrap (scrap_t *scrap);
 void GL_ScrapClear (scrap_t *scrap);
 int GL_ScrapTexture (scrap_t *scrap) __attribute__((pure));
+float GL_ScrapSize (scrap_t *scrap) __attribute__((pure));
 struct subpic_s *GL_ScrapSubpic (scrap_t *scrap, int width, int height);
 void GL_SubpicDelete (struct subpic_s *subpic);
 void GL_SubpicUpdate (struct subpic_s *subpic, byte *data, int batch);

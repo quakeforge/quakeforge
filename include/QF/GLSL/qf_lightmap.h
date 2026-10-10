@@ -40,6 +40,7 @@ void glsl_R_CalcLightmaps (void);
 extern void (*glsl_R_BuildLightMap) (const vec4f_t *transform,
 									 mod_brush_t *brush, msurface_t *surf);
 int  glsl_R_LightmapTexture (void) __attribute__((pure));
+float glsl_R_LightmapSize (void) __attribute__((pure));
 void glsl_R_FlushLightmaps (void);
 
 #endif//__QF_GLSL_lightmap_h
