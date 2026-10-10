@@ -944,13 +944,12 @@ parse_task_function (const plitem_t *item, void **data,
 	}
 	size_t      size = func->num_params * sizeof (exprval_t);
 	size += func->num_params * sizeof (exprval_t *);
-	size_t      base = size;
+	size_t      base = RUP (size, 16);
+	size = base;
 	for (int i = 0; i < func->num_params; i++) {
 		exprtype_t *type = func->param_types[i];
-		size = ((size + type->size - 1) & ~(type->size - 1));
-		if (i == 0) {
-			base = size;
-		}
+		size = RUP (size, type->size);
+		size += type->size;
 	}
 	exprval_t **param_ptrs = vkparse_alloc (pctx, size);
 	exprval_t  *params = (exprval_t *) &param_ptrs[func->num_params];
@@ -960,11 +959,11 @@ parse_task_function (const plitem_t *item, void **data,
 	for (int i = 0; i < func->num_params; i++) {
 		exprtype_t *type = func->param_types[i];
 		param_ptrs[i] = &params[i];
+		offs = RUP (offs, type->size);
 		params[i] = (exprval_t) {
 			.type = type,
 			.value = param_data + offs,
 		};
-		offs = ((offs + type->size - 1) & ~(type->size - 1));
 		offs += type->size;
 	}
 	*(const char **) data[0] = vkstrdup (pctx, fname);
