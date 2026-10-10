@@ -44,6 +44,7 @@ noinst_LIBRARIES =
 noinst_PROGRAMS =
 noinst_HEADERS =
 noinst_PYTHON =
+noinst_DATA =
 plugin_LTLIBRARIES =
 
 RANLIB=touch

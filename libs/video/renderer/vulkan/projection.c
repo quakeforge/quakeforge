@@ -116,6 +116,7 @@ QFV_PerspectiveTan (mat4f_t proj, float fov_x, float fov_y, float nearclip)
 	float       fx = fov_x;
 	float       fy = fov_y;
 
+	//NOTE columns are horizontal!!! (column major)
 	proj[0] = (vec4f_t) { 1/fx,   0, 0, 0 };
 	proj[1] = (vec4f_t) {   0, 1/fy, 0, 0 };
 	proj[2] = (vec4f_t) {   0,   0,  0, 1 };

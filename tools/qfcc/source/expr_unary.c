@@ -484,6 +484,7 @@ unary_expr (int op, const expr_t *e)
 
 	unary_type_t *unary_type = nullptr;
 	auto t = get_type (e);
+	t = core_type (t);
 
 	if (op == '!' && e->type == ex_bool) {
 		return new_boolean_expr (!e->boolean.not, e->boolean.e);

@@ -82,14 +82,26 @@
 	string      name = [self outname];
 	int         length = strlen (name);
 	int         start, end, c;
-	for (start = 2; start < length; start = end) {
-		for (end = start + 1; end < length; end++) {
+	int         tail = length;
+	c = str_char (name, tail - 1);
+	while (c >= '0' && c <= '9') {
+		tail--;
+		c = str_char (name, tail - 1);
+	}
+	if (c == '_' && tail < length) {
+		tail++;
+	}
+	for (start = 2; start < tail; start = end) {
+		for (end = start + 1; end < tail; end++) {
 			c = str_char (name, end);
 			if (c >= 'A' && c <= 'Z') {
 				break;
 			}
 		}
 		s += "_" + str_mid (name, start, end);
+	}
+	if (tail < length) {
+		s += "_" + str_mid (name, tail);
 	}
 	str_free (name);
 	return str_upper (s);

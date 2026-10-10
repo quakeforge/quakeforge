@@ -1505,7 +1505,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 		def_t      *def = new_def (arg_name, 0, arg_space, sc_argument);
 		auto arg_type = get_type (a);
 		int         size = type_size (arg_type);
-		int         alignment = arg_type->alignment;
+		int         alignment = type_align (arg_type);
 		if (args_va_list || alignment < 4) {
 			alignment = 4;
 		}
@@ -2458,7 +2458,7 @@ expr_horizontal (sblock_t *sblock, const expr_t *e, operand_t **op)
 			internal_error (e, "invalid horizontal op");
 	}
 	hop |= (type_width (vec_type) - 1) << 3;
-	hop |= (pr_type_size[vec_type->type] - 1) << 5;
+	hop |= (type_size (base_type (vec_type)) - 1) << 5;
 
 	s = new_statement (st_expr, opcode, e);
 	sblock = statement_subexpr (sblock, e->hop.vec, &s->opa);
@@ -2547,7 +2547,7 @@ expr_extend (sblock_t *sblock, const expr_t *e, operand_t **op)
 	};
 	int         ext = mode[src_width - 1][res_width - 1];
 	ext |= (e->extend.extend & 3) << 3;
-	ext |= (pr_type_size[res_base->type] - 1) << 5;
+	ext |= (type_size (res_base) - 1) << 5;
 	ext |= e->extend.reverse << 6;
 	if (ext < 0 || res_base != src_base) {
 		internal_error (e, "invalid type combination for extend %d %d %d",

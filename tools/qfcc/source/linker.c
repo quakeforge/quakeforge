@@ -861,7 +861,6 @@ type_def_compare (const void *a, const void *b)
 static void
 update_type_space_reloc (qfo_mspace_t *space, qfo_reloc_t *reloc)
 {
-	qfo_def_t    dummy;
 	qfo_def_t   *def;
 
 	if (reloc->type == -1) {
@@ -869,7 +868,9 @@ update_type_space_reloc (qfo_mspace_t *space, qfo_reloc_t *reloc)
 		// is in the old reloc's offset.
 		reloc = work->relocs + reloc->offset;
 	}
-	dummy.offset = reloc->offset;
+	qfo_def_t    dummy = {
+		.offset = reloc->offset,
+	};
 	def = (qfo_def_t *) bsearch (&dummy, space->defs, space->num_defs,
 								 sizeof (qfo_def_t), type_def_compare);
 	if (!def) {

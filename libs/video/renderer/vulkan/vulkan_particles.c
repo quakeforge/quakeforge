@@ -213,6 +213,8 @@ memory_barrier (vulkan_ctx_t *ctx, VkCommandBuffer cmd)
 		.dstStageMask = bb.dstStageMask,
 		.dstAccessMask = bb.dstAccessMask,
 	};
+	mb.dstStageMask |= VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+	mb.dstAccessMask |= VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
 	VkDependencyInfo dep = {
 		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 		.memoryBarrierCount = 1,
@@ -400,7 +402,8 @@ particle_startup (exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	qfvPushDebug (ctx, "particles init");
 	auto pctx = ctx->particle_context;
-	pctx->psystem = &r_psystem;
+	pctx->psystem = &r_psystem;				//FIXME
+	pctx->psystem->palette_id = nullent;	//FIXME
 
 	size_t      frames = ctx->render_context->frames.size;
 	DARRAY_INIT (&pctx->frames, frames);
@@ -468,9 +471,11 @@ particles_newscene (const exprval_t **params, exprval_t *result,
 	size_t      count = pctx->frames.size;
 	for (size_t i = 0; i < count; i++) {
 		auto frame = &pctx->frames.a[i];
+		auto db = bufferBarriers[qfv_BB_TransferWrite_to_ShaderRW];
+		db.dstStageMask |= VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
 		QFV_PacketCopyBuffer (packet, frame->system, 0,
 			  &bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
-			  &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRW]);
+			  &db);
 	}
 	QFV_PacketSubmit (packet);
 }

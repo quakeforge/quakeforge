@@ -67,7 +67,7 @@ create_param (symtab_t *parameters, symbol_t *param)
 	defspace_t *space = parameters->space;
 	def_t      *def = new_def (param->name, 0, space, sc_param);
 	int         size = type_size (param->type);
-	int         alignment = param->type->alignment;
+	int         alignment = type_align (param->type);
 	if (alignment < 4) {
 		alignment = 4;
 	}
@@ -447,6 +447,9 @@ ruamoko_test_expr (const expr_t *expr)
 		case ev_double:
 		case ev_short:
 		case ev_ushort:
+		case ev_sbyte:
+		case ev_ubyte:
+		case ev_half:
 		{
 			// short and ushort handled with the same code as float/double
 			// because they have no backing type and thus constants, which
@@ -562,4 +565,5 @@ target_t ruamoko_target = {
 	.zero_memory = true,
 	.pointer_scale = 1,
 	.pointer_direct_cast = true,
+	.pointer_cast = &type_int,
 };

@@ -146,14 +146,14 @@ cl_draw_crosshair (view_pos_t abs, view_pos_t len, void *data)
 static void
 SCR_CShift (view_pos_t abs, view_pos_t len, void *data)
 {
-	mleaf_t    *leaf;
 	int         contents = CONTENTS_EMPTY;
 
 	if (_vs->active && cl_world.scene->worldmodel) {
 		vec4f_t     origin;
 		origin = Transform_GetWorldPosition (_vs->camera_transform);
-		leaf = Mod_PointInLeaf (origin, cl_world.scene->worldmodel->brush);
-		contents = leaf->contents;
+		auto brush = cl_world.scene->worldmodel->brush;
+		uint32_t leafnum = Mod_PointInLeaf (origin, brush);
+		contents = brush->leafs[leafnum].contents;
 	}
 	V_SetContentsColor (_vs, contents);
 	r_funcs->draw.BlendScreen (_vs->cshift_color);

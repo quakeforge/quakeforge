@@ -2,10 +2,12 @@
 
 #include "vkalias.h"
 #include "vkenum.h"
+#include "vkflags64.h"
 #include "vkgen.h"
 #include "vkstruct.h"
 
 @implementation Alias
+
 -initWithType: (qfot_type_t *) type
 {
 	if (!(self = [super initWithType: type])) {
@@ -13,6 +15,26 @@
 	}
 	[[self resolveType] setAlias: self];
 	return self;
+}
+
++forType:(qfot_type_t *) type
+{
+	if (type.alias.type == ev_ulong
+		&& type.alias.full_type.meta == ty_alias
+		&& type.alias.full_type.alias.name == "VkFlags64") {
+		string name = type.alias.name;
+		int tail = strlen (name);
+		while (tail >= 8 && str_mid (name, tail, tail + 8) != "FlagBits") {
+			tail--;
+		}
+		if (tail >= 8) {
+			return [[Flags64 alloc] initWithType: type];
+		}
+	}
+	if (type.alias.name) {
+		return [[Alias alloc] initWithType: type];
+	}
+	return [Type fromType: type.alias.full_type];
 }
 
 -(string) name
@@ -36,6 +58,22 @@
 			id enumObj = [(id) Hash_Find (available_types, tag) resolveType];
 			[enumObj addToQueue];
 		}
+	} else if ([alias name] == "VkFlags64") {
+		int         tail = strlen (name);
+		// the name might end in a version (eg, 2) and/or an extension (eg KHR)
+		while (tail >= 5 && str_mid (name, tail - 5, tail) != "Flags") {
+			tail--;
+		}
+		if (tail < 5) {
+			printf ("what? %s\n", name);
+			return;
+		}
+		// VkImageCreateFlags2KHR -> VkImageCreateFlagBits2KHR
+		// VkAccessFlags2 -> VkAccessFlagBits2
+		string bits = "Bits" + str_mid (name, tail);
+		string tag = str_mid (name, 0, tail - 1) + bits;
+		id enumObj = [(id) Hash_Find (available_types, tag) resolveType];
+		[enumObj addToQueue];
 	} else if (name == "VkBool32") {
 		id enumObj = [(id) Hash_Find (available_types, name) resolveType];
 		[enumObj addToQueue];
@@ -73,6 +111,12 @@
 			return [enumObj cexprType];
 		}
 	}
+	if ([alias name] == "VkFlags64") {
+		id enumObj = [Flags64 fromName:name];
+		if (enumObj) {
+			return [enumObj cexprType];
+		}
+	}
 	if (name == "VkBool32") {
 		id enumObj = [(id) Hash_Find (available_types, name) resolveType];
 		return [enumObj cexprType];
@@ -107,6 +151,12 @@
 			return [enumObj parseType];
 		}
 	}
+	if ([alias name] == "VkFlags64") {
+		id enumObj = [Flags64 fromName:name];
+		if (enumObj) {
+			return [enumObj parseType];
+		}
+	}
 	switch (name) {
 		case "VkBool32":
 			id enumObj = [(id) Hash_Find (available_types, name) resolveType];
@@ -133,6 +183,12 @@
 			return [enumObj parseFunc];
 		}
 	}
+	if ([alias name] == "VkFlags64") {
+		id enumObj = [Flags64 fromName:name];
+		if (enumObj) {
+			return [enumObj parseFunc];
+		}
+	}
 	switch (name) {
 		case "VkBool32":
 			id enumObj = [(id) Hash_Find (available_types, name) resolveType];
@@ -156,6 +212,12 @@
 		if (str_mid (name, -5) == "Flags") {
 			string tag = str_mid (name, 0, -1) + "Bits";
 			id enumObj = [(id) Hash_Find (available_types, tag) resolveType];
+			return [enumObj parseData];
+		}
+	}
+	if ([alias name] == "VkFlags64") {
+		id enumObj = [Flags64 fromName:name];
+		if (enumObj) {
 			return [enumObj parseData];
 		}
 	}

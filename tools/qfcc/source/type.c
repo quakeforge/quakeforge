@@ -93,7 +93,7 @@ type_t      type_auto = {
 		.type = ev_##base_type, \
 		.name = #type_name, \
 		.alignment = PR_ALIGNOF(type_name), \
-		.width = PR_SIZEOF(type_name) / PR_SIZEOF (base_type), \
+		.width = sizeof(pr_##type_name##_t) / sizeof (pr_##base_type##_t), \
 		.columns = 1, \
 		.meta = ty_basic, \
 	};
@@ -207,7 +207,7 @@ type_t      type_param = {
 };
 static type_t type_param_pointer = {
 	.type = ev_ptr,
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -220,18 +220,18 @@ type_t      type_zero = {
 type_t      type_type_encodings = {
 	.type = ev_invalid,
 	.name = "@type_encodings",
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.meta = ty_struct,
 };
 type_t      type_xdef = {
 	.type = ev_invalid,
 	.name = "@xdef",
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.meta = ty_struct,
 };
 type_t      type_xdef_pointer = {
 	.type = ev_ptr,
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -240,14 +240,14 @@ type_t      type_xdef_pointer = {
 type_t      type_xdefs = {
 	.type = ev_invalid,
 	.name = "@xdefs",
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.meta = ty_struct,
 };
 
 type_t      type_floatfield = {
 	.type = ev_field,
 	.name = ".float",
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (field),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -281,7 +281,7 @@ static hashtab_t *type_tab;
 etype_t
 low_level_type (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->type > ev_type_count)
 		internal_error (0, "invalid type");
 	if (type->type == ev_type_count)
@@ -301,7 +301,7 @@ low_level_type (const type_t *type)
 int
 type_cast_map (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	int cast = type_cast_map_data[type->type];
 	if (is_boolean (type)) {
 		// unsigned | float/double -> boolean
@@ -348,8 +348,11 @@ new_type (void)
 {
 	type_t     *type;
 	ALLOC (1024, type_t, types, type);
-	type->freeable = true;
-	type->allocated = true;
+	*type = (type_t) {
+		.type = ev_invalid,
+		.freeable = true,
+		.allocated = true,
+	};
 	return type;
 }
 
@@ -395,6 +398,9 @@ free_type (type_t *type)
 		case ev_short:
 		case ev_ushort:
 		case ev_double:
+		case ev_sbyte:
+		case ev_ubyte:
+		case ev_half:
 			break;
 		case ev_field:
 		case ev_ptr:
@@ -439,6 +445,9 @@ copy_chain (type_t *type, type_t *append)
 					case ev_short:
 					case ev_ushort:
 					case ev_double:
+					case ev_sbyte:
+					case ev_ubyte:
+					case ev_half:
 						internal_error (0, "copy basic type");
 					case ev_field:
 					case ev_ptr:
@@ -457,6 +466,10 @@ copy_chain (type_t *type, type_t *append)
 			case ty_array:
 				n = (type_t **) &(*n)->array.type;
 				type = (type_t *) type->array.type;
+				break;
+			case ty_qual:
+				n = (type_t **) &(*n)->qual.type;
+				type = (type_t *) type->qual.type;
 				break;
 			case ty_struct:
 			case ty_union:
@@ -497,17 +510,20 @@ append_type (const type_t *type, const type_t *new)
 					case ev_short:
 					case ev_ushort:
 					case ev_double:
+					case ev_sbyte:
+					case ev_ubyte:
+					case ev_half:
 						internal_error (0, "append to basic type");
 					case ev_field:
 					case ev_ptr:
 						t = (const type_t **) &(*t)->fldptr.type;
-						((type_t *) type)->alignment = 1;
+						((type_t *) type)->alignment = PR_ALIGNOF (ptr);
 						((type_t *) type)->width = 1;
 						((type_t *) type)->columns = 1;
 						break;
 					case ev_func:
 						t = (const type_t **) &(*t)->func.ret_type;
-						((type_t *) type)->alignment = 1;
+						((type_t *) type)->alignment = PR_ALIGNOF (func);
 						((type_t *) type)->width = 1;
 						((type_t *) type)->columns = 1;
 						break;
@@ -518,6 +534,12 @@ append_type (const type_t *type, const type_t *new)
 				break;
 			case ty_array:
 				t = (const type_t **) &(*t)->array.type;
+				((type_t *) type)->alignment = new->alignment;
+				((type_t *) type)->width = new->width;
+				((type_t *) type)->columns = new->columns;
+				break;
+			case ty_qual:
+				t = (const type_t **) &(*t)->qual.type;
 				((type_t *) type)->alignment = new->alignment;
 				((type_t *) type)->width = new->width;
 				((type_t *) type)->columns = new->columns;
@@ -593,10 +615,16 @@ default_type (specifier_t spec, const symbol_t *sym)
 			} else {
 				spec.type = type_long_int;
 			}
+		} else if (spec.is_short) {
+			if (spec.is_unsigned) {
+				spec.type = &type_ushort;
+			} else {
+				spec.type = &type_short;
+			}
 		} else {
 			if (spec.is_unsigned) {
 				spec.type = &type_uint;
-			} else if (spec.is_signed || spec.is_short) {
+			} else if (spec.is_signed) {
 				spec.type = &type_int;
 			}
 		}
@@ -611,6 +639,14 @@ default_type (specifier_t spec, const symbol_t *sym)
 					 type_default->name);
 		}
 	}
+	if (spec.is_const) {
+		spec.type = const_type (spec.type);
+		spec.is_const = false;
+	}
+	if (spec.is_volatile) {
+		spec.type = volatile_type (spec.type);
+		spec.is_volatile = false;
+	}
 	return spec;
 }
 
@@ -619,8 +655,9 @@ types_same (const type_t *a, const type_t *b)
 {
 	int         i, count;
 
-	if (a->type != b->type || a->meta != b->meta)
+	if (a->type != b->type || a->meta != b->meta) {
 		return false;
+	}
 	switch (a->meta) {
 		case ty_basic:
 			switch (a->type) {
@@ -676,6 +713,9 @@ types_same (const type_t *a, const type_t *b)
 			return a->algebra == b->algebra;
 		case ty_bool:
 			return a->type == b->type;
+		case ty_qual:
+			return a->qual.is_const == b->qual.is_const
+				&& a->qual.is_volatile && b->qual.is_volatile;
 		case ty_meta_count:
 			break;
 	}
@@ -739,6 +779,9 @@ find_type (const type_t *type)
 			case ty_handle:
 				break;
 			case ty_algebra:
+				break;
+			case ty_qual:
+				((type_t *) type)->qual.type = find_type (type->qual.type);
 				break;
 			case ty_meta_count:
 				break;
@@ -825,7 +868,7 @@ field_type (const type_t *aux)
 	else
 		new = new_type ();
 	new->type = ev_field;
-	new->alignment = 1;
+	new->alignment = PR_ALIGNOF (field);
 	new->width = 1;
 	new->columns = 1;
 	if (aux) {
@@ -845,7 +888,7 @@ tagged_pointer_type (unsigned tag, const type_t *aux)
 	else
 		new = new_type ();
 	new->type = ev_ptr;
-	new->alignment = 1;
+	new->alignment = PR_ALIGNOF (ptr);
 	new->width = 1;
 	new->columns = 1;
 	new->fldptr.tag = tag;
@@ -880,7 +923,7 @@ tagged_reference_type (unsigned tag, const type_t *aux)
 		new = new_type ();
 	}
 	new->type = ev_ptr;
-	new->alignment = 1;
+	new->alignment = PR_ALIGNOF (ptr);
 	new->width = 1;
 	new->columns = 1;
 	new->fldptr.tag = tag;
@@ -897,10 +940,58 @@ reference_type (const type_t *aux)
 	return tagged_reference_type (0, aux);
 }
 
+const type_t *
+volatile_type (const type_t *type)
+{
+	if (is_array (type) || is_reference (type)) {
+		internal_error (0, "applying volatile to array or reference");
+	}
+	if (is_volatile (type)) {
+		return type;
+	}
+	if (is_qual (type)) {
+		auto ctype = copy_type (type);
+		ctype->qual.is_volatile = true;
+		return find_type (ctype);
+	}
+	auto new = new_type ();
+	new->meta = ty_qual;
+	new->alignment = type->alignment;
+	new->width = type->width;
+	new->columns = type->columns;
+	new->qual.type = type;
+	new->qual.is_volatile = true;
+	return new;
+}
+
+const type_t *
+const_type (const type_t *type)
+{
+	if (is_array (type) || is_reference (type)) {
+		internal_error (0, "applying const to array or reference");
+	}
+	if (is_const (type)) {
+		return type;
+	}
+	if (is_qual (type)) {
+		auto ctype = copy_type (type);
+		ctype->qual.is_const = true;
+		return find_type (ctype);
+	}
+	auto new = new_type ();
+	new->meta = ty_qual;
+	new->alignment = type->alignment;
+	new->width = type->width;
+	new->columns = type->columns;
+	new->qual.type = type;
+	new->qual.is_const = true;
+	return new;
+}
+
 unsigned
 pointer_tag (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (!is_ptr (type)) {
 		internal_error (0, "not a pointer or reference");
 	}
@@ -984,6 +1075,7 @@ base_type (const type_t *vec_type)
 	if (is_enum (vec_type)) {//FIXME enum should use valid ev_type
 		return type_default;
 	}
+	vec_type = core_type (vec_type);
 	return ev_types[vec_type->type];
 }
 
@@ -995,9 +1087,9 @@ int_type (const type_t *base)
 	if (!base) {
 		return nullptr;
 	}
-	if (type_size (base) == 1) {
+	if (type_size (base) == type_size (&type_int)) {
 		base = &type_int;
-	} else if (type_size (base) == 2) {
+	} else if (type_size (base) == type_size (&type_long)) {
 		base = &type_long;
 	}
 	return vector_type (base, width);
@@ -1011,9 +1103,9 @@ uint_type (const type_t *base)
 	if (!base) {
 		return nullptr;
 	}
-	if (type_size (base) == 1) {
+	if (type_size (base) == type_size (&type_uint)) {
 		base = &type_uint;
-	} else if (type_size (base) == 2) {
+	} else if (type_size (base) == type_size (&type_ulong)) {
 		base = &type_ulong;
 	}
 	return vector_type (base, width);
@@ -1027,9 +1119,9 @@ bool_type (const type_t *base)
 	if (!base) {
 		return nullptr;
 	}
-	if (type_size (base) == 1) {
+	if (type_byte_size (base) <= type_byte_size (&type_bool)) {
 		base = &type_bool;
-	} else if (type_size (base) == 2) {
+	} else if (type_byte_size (base) == type_byte_size (&type_lbool)) {
 		base = &type_lbool;
 	}
 	return vector_type (base, width);
@@ -1043,9 +1135,9 @@ float_type (const type_t *base)
 	if (!base) {
 		return nullptr;
 	}
-	if (type_size (base) == 1) {
+	if (type_size (base) == type_size (&type_float)) {
 		base = &type_float;
-	} else if (type_size (base) == 2) {
+	} else if (type_size (base) == type_size (&type_double)) {
 		base = &type_double;
 	}
 	return vector_type (base, width);
@@ -1162,7 +1254,6 @@ type_set_attrs (type_t *type, attribute_t **attributes)
 					   " and at least 4 (alignment is in bytes)");
 				return;
 			}
-			alignment /= sizeof (pr_int_t);
 			if (alignment < type->alignment) {
 				warning (val, "cannot reduce alignment");
 				alignment = type->alignment;
@@ -1257,6 +1348,15 @@ print_type_str (dstring_t *str, const type_t *type)
 					   type->width > 1 ? va ("{%d}", type->width)
 									   : "");
 			return;
+		case ty_qual:
+			if (type->qual.is_volatile) {
+				dasprintf (str, " volatile");
+			}
+			if (type->qual.is_const) {
+				dasprintf (str, " const");
+			}
+			print_type_str (str, type->array.type);
+			return;
 		case ty_basic:
 			switch (type->type) {
 				case ev_field:
@@ -1317,6 +1417,9 @@ print_type_str (dstring_t *str, const type_t *type)
 				case ev_short:
 				case ev_ushort:
 				case ev_double:
+				case ev_sbyte:
+				case ev_ubyte:
+				case ev_half:
 					{
 						const char *name = pr_type_name[type->type];
 						int width = type->width;
@@ -1383,7 +1486,7 @@ encode_params (const type_t *type)
 		if (type->func.param_quals[i] != pq_in) {
 			dasprintf (encoding, "%c", "c_Oo"[type->func.param_quals[i]]);
 		}
-		encode_type (encoding, unalias_type (type->func.param_types[i]));
+		encode_type (encoding, core_type (type->func.param_types[i]));
 	}
 	if (type->func.num_params < 0)
 		dasprintf (encoding, ".");
@@ -1453,8 +1556,9 @@ encode_enum (dstring_t *encoding, const type_t *type)
 void
 encode_type (dstring_t *encoding, const type_t *type)
 {
-	if (!type)
+	if (!type) {
 		return;
+	}
 	if (type->attributes || (is_func (type) && type->func.attribute_bits)) {
 		dstring_appendstr (encoding, "%");
 	}
@@ -1504,6 +1608,15 @@ encode_type (dstring_t *encoding, const type_t *type)
 			} else {
 				dasprintf (encoding, "%c", bool_char);
 			}
+			return;
+		case ty_qual:
+			if (type->qual.is_const) {
+				dstring_appendstr (encoding, "r");
+			}
+			if (type->qual.is_volatile) {
+				dstring_appendstr (encoding, "%");
+			}
+			encode_type (encoding, type->qual.type);
 			return;
 		case ty_basic:
 			switch (type->type) {
@@ -1602,10 +1715,39 @@ encode_type (dstring_t *encoding, const type_t *type)
 					}
 					return;
 				case ev_short:
-					dasprintf (encoding, "s");
+					if (type->width > 1) {
+						dasprintf (encoding, "s%d", type->width);
+					} else {
+						dasprintf (encoding, "s");
+					}
 					return;
 				case ev_ushort:
-					dasprintf (encoding, "S");
+					if (type->width > 1) {
+						dasprintf (encoding, "S%d", type->width);
+					} else {
+						dasprintf (encoding, "S");
+					}
+					return;
+				case ev_sbyte:
+					if (type->width > 1) {
+						dasprintf (encoding, "c%d", type->width);
+					} else {
+						dasprintf (encoding, "c");
+					}
+					return;
+				case ev_ubyte:
+					if (type->width > 1) {
+						dasprintf (encoding, "C%d", type->width);
+					} else {
+						dasprintf (encoding, "C");
+					}
+					return;
+				case ev_half:
+					if (type->width > 1) {
+						dasprintf (encoding, "h%d", type->width);
+					} else {
+						dasprintf (encoding, "h");
+					}
 					return;
 				case ev_invalid:
 				case ev_type_count:
@@ -1616,10 +1758,26 @@ encode_type (dstring_t *encoding, const type_t *type)
 	internal_error (0, "bad type meta:type %d:%d", type->meta, type->type);
 }
 
+const type_t *
+core_type (const type_t *type)
+{
+	while (true) {
+		if (type->meta == ty_alias) {
+			type = type->alias.aux_type;
+			continue;
+		}
+		if (type->meta == ty_qual) {
+			type = type->qual.type;
+			continue;
+		}
+		return type;
+	}
+}
+
 #define EV_TYPE(t) \
 bool is_##t (const type_t *type) \
 { \
-	type = unalias_type (type); \
+	type = core_type (type); \
 	if (type->meta != ty_basic && type->meta != ty_algebra) { \
 		return false; \
 	} \
@@ -1636,21 +1794,21 @@ is_auto (const type_t *type)
 bool
 is_pointer (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	return is_ptr (type) && !type->fldptr.deref;
 }
 
 bool
 is_reference (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	return is_ptr (type) && type->fldptr.deref;
 }
 
 bool
 is_enum (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if ((type->type == ev_int || type->type == ev_uint
 		 || type->type == ev_long || type->type == ev_ulong)
 		&& type->meta == ty_enum) {
@@ -1662,7 +1820,7 @@ is_enum (const type_t *type)
 bool
 is_bool (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->meta != ty_bool) {
 		return false;
 	}
@@ -1672,7 +1830,7 @@ is_bool (const type_t *type)
 bool
 is_lbool (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->meta != ty_bool) {
 		return false;
 	}
@@ -1688,8 +1846,8 @@ is_boolean (const type_t *type)
 bool
 is_signed (const type_t *type)
 {
-	type = unalias_type (type);
-	if (is_int (type) || is_long (type) || is_short (type)) {
+	type = core_type (type);
+	if (is_int (type) || is_long (type) || is_short (type) || is_sbyte (type)) {
 		return true;
 	}
 	return false;
@@ -1698,8 +1856,9 @@ is_signed (const type_t *type)
 bool
 is_unsigned (const type_t *type)
 {
-	type = unalias_type (type);
-	if (is_uint (type) || is_ulong (type) || is_ushort (type)) {
+	type = core_type (type);
+	if (is_uint (type) || is_ulong (type) || is_ushort (type)
+		|| is_ubyte (type)) {
 		return true;
 	}
 	return false;
@@ -1716,18 +1875,14 @@ is_integral (const type_t *type)
 bool
 is_real (const type_t *type)
 {
-	type = unalias_type (type);
-	return is_float (type) || is_double (type);
+	type = core_type (type);
+	return is_half (type) || is_float (type) || is_double (type);
 }
 
 bool
 is_scalar (const type_t *type)
 {
-	type = unalias_type (type);
-	if (is_short (type) || is_ushort (type)) {
-		// shorts have width 0
-		return true;
-	}
+	type = core_type (type);
 	if (type->width != 1) {
 		return false;
 	}
@@ -1746,7 +1901,7 @@ is_matrix (const type_t *type)
 bool
 is_nonscalar (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (is_vector (type) || is_quaternion (type)) {
 		return true;
 	}
@@ -1764,7 +1919,7 @@ is_nonscalar (const type_t *type)
 bool
 is_math (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 
 	if (is_vector (type) || is_quaternion (type)) {
 		return true;
@@ -1778,7 +1933,7 @@ is_math (const type_t *type)
 bool
 is_struct (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->type == ev_invalid && type->meta == ty_struct)
 		return true;
 	return false;
@@ -1787,7 +1942,7 @@ is_struct (const type_t *type)
 bool
 is_handle (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->meta == ty_handle)
 		return true;
 	return false;
@@ -1796,7 +1951,7 @@ is_handle (const type_t *type)
 bool
 is_union (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->type == ev_invalid && type->meta == ty_union)
 		return true;
 	return false;
@@ -1805,16 +1960,43 @@ is_union (const type_t *type)
 bool
 is_array (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (type->type == ev_invalid && type->meta == ty_array)
 		return true;
 	return false;
 }
 
 bool
-is_structural (const type_t *type)
+is_qual (const type_t *type)
 {
 	type = unalias_type (type);
+	return type->meta == ty_qual;
+}
+
+bool
+is_const (const type_t *type)
+{
+	type = unalias_type (type);
+	if (type->meta != ty_qual) {
+		return false;
+	}
+	return type->qual.is_const;
+}
+
+bool
+is_volatile (const type_t *type)
+{
+	type = unalias_type (type);
+	if (type->meta != ty_qual) {
+		return false;
+	}
+	return type->qual.is_volatile;
+}
+
+bool
+is_structural (const type_t *type)
+{
+	type = core_type (type);
 	return is_struct (type) || is_union (type) || is_array (type);
 }
 
@@ -1842,14 +2024,42 @@ type_compatible (const type_t *dst, const type_t *src)
 }
 
 bool
+type_bindable (const type_t *ref, const type_t *src)
+{
+	if (!is_reference (ref)) {
+		return false;
+	}
+	auto dst = dereference_type (ref);
+	//FIXME copies type_same because I'm not sure how I want type_same to
+	//behave
+	if (core_type (dst) != core_type (src)) {
+		return false;
+	}
+	// strip off only alias, not qualifiers
+	dst = unalias_type (dst);
+	src = unalias_type (src);
+	if (!is_qual (dst) && !is_qual (src)) {
+		return true;
+	}
+	if (!is_const (dst) && is_const (src)) {
+		// non-const reference, const var
+		return false;
+	}
+	if (!is_volatile (dst) && is_volatile (src)) {
+		return false;
+	}
+	return true;
+}
+
+bool
 type_assignable (const type_t *dst, const type_t *src)
 {
 	if (!dst || !src) {
 		return false;
 	}
 
-	dst = unalias_type (dst);
-	src = unalias_type (src);
+	dst = core_type (dst);
+	src = core_type (src);
 	// same type
 	if (dst == src)
 		return true;
@@ -1928,14 +2138,16 @@ type_assignable (const type_t *dst, const type_t *src)
 
 #define P(type) (1 << ev_##type)
 static unsigned promote_masks[ev_type_count] = {
-	[ev_float] = P(int) | P(uint),
-	[ev_int] = P(short) | P(ushort),
-	[ev_uint] = P(int) | P(short) | P(ushort),
-	[ev_double] = P(float) | P(ulong) | P(long)
+	[ev_float] = P(sbyte) | P(ubyte) | P(short) | P(ushort)
+				| P(int) | P(uint) | P(half),
+	[ev_int] = P(short) | P(ushort) | P(sbyte) | P(ubyte),
+	[ev_uint] = P(int) | P(short) | P(ushort) | P(sbyte) | P(ubyte),
+	[ev_double] = P(float) | P(half) | P(ulong) | P(long) | P(sbyte) | P(ubyte)
 				| P(int) | P(uint) | P(short) | P(ushort),
-	[ev_long] = P(int) | P(uint) | P(short) | P(ushort),
-	[ev_ulong] = P(long) | P(int) | P(uint) | P(short) | P(ushort),
-	[ev_ushort] = P(short),
+	[ev_long] = P(int) | P(uint) | P(short) | P(ushort) | P(sbyte) | P(ubyte),
+	[ev_ulong] = P(long) | P(int) | P(uint) | P(short) | P(ushort)
+				| P(sbyte) | P(ubyte),
+	[ev_ushort] = P(short) | P(sbyte) | P(ubyte),
 };
 #undef P
 
@@ -1946,8 +2158,8 @@ type_promotes (const type_t *dst, const type_t *src)
 		return false;
 	}
 
-	dst = unalias_type (dst);
-	src = unalias_type (src);
+	dst = core_type (dst);
+	src = core_type (src);
 	if ((is_image (dst) || is_sampled_image (dst))
 		&& (is_image (src) || is_sampled_image (src))) {
 		return image_type_promotes (dst, src);
@@ -1999,8 +2211,8 @@ type_demotes (const type_t *dst, const type_t *src)
 		return false;
 	}
 
-	dst = unalias_type (dst);
-	src = unalias_type (src);
+	dst = core_type (dst);
+	src = core_type (src);
 	if ((is_image (dst) || is_sampled_image (dst))
 		&& (is_image (src) || is_sampled_image (src))) {
 		return image_type_demotes (dst, src);
@@ -2037,8 +2249,8 @@ type_compares (const type_t *dst, const type_t *src)
 		return false;
 	}
 
-	dst = unalias_type (dst);
-	src = unalias_type (src);
+	dst = core_type (dst);
+	src = core_type (src);
 	if (dst == src) {
 		return true;
 	}
@@ -2071,8 +2283,8 @@ type_compares (const type_t *dst, const type_t *src)
 bool
 type_same (const type_t *dst, const type_t *src)
 {
-	dst = unalias_type (dst);
-	src = unalias_type (src);
+	dst = core_type (dst);
+	src = core_type (src);
 
 	return dst == src;
 }
@@ -2081,11 +2293,12 @@ bool
 type_move_assign (const type_t *type)
 {
 	return (is_structural (type) || is_matrix (type) || type->width > 4
-			|| (is_algebra (type) && type_size (type) > 4));
+			|| (is_algebra (type)
+				&& type_size (type) > type_size (&type_vec4)));
 }
 
-int
-type_size (const type_t *type)
+size_t
+type_byte_size (const type_t *type)
 {
 	switch (type->meta) {
 		case ty_handle:
@@ -2107,9 +2320,12 @@ type_size (const type_t *type)
 		case ty_enum:
 			if (!type->symtab)
 				return 0;
-			return type_size (&type_int);
+			return type_byte_size (&type_int);
+		case ty_qual:
+			return type_byte_size (type->qual.type);
 		case ty_array:
-			return type->array.count * type_aligned_size (type->array.type);
+			return type->array.count
+				 * type_byte_aligned_size (type->array.type);
 		case ty_class:
 			{
 				class_t    *class = type->class;
@@ -2118,13 +2334,13 @@ type_size (const type_t *type)
 					return 0;
 				size = class->ivars->size;
 				if (class->super_class)
-					size += type_size (class->super_class->type);
+					size += type_byte_size (class->super_class->type);
 				return size;
 			}
 		case ty_alias:
-			return type_size (type->alias.aux_type);
+			return type_byte_size (type->alias.aux_type);
 		case ty_algebra:
-			return algebra_type_size (type);
+			return algebra_type_byte_size (type);
 		case ty_meta_count:
 			break;
 	}
@@ -2132,13 +2348,33 @@ type_size (const type_t *type)
 }
 
 int
-type_align (const type_t *type)
+type_words (size_t bytes)
 {
-	type = unalias_type (type);
+	//FIXME get short/byte working properly
+	//return (bytes + sizeof (pr_type_t) - 1) / sizeof (pr_type_t);
+	return bytes / sizeof (pr_type_t);
+}
+
+int
+type_size (const type_t *type)
+{
+	return type_words (type_byte_size (type));
+}
+
+size_t
+type_byte_align (const type_t *type)
+{
+	type = core_type (type);
 	if (is_ptr (type) && current_target.pointer_size) {
 		return current_target.pointer_size;
 	}
 	return type->alignment;
+}
+
+int
+type_align (const type_t *type)
+{
+	return type_words (type_byte_align (type));
 }
 
 int
@@ -2167,6 +2403,8 @@ type_count (const type_t *type)
 			return type_count (type->alias.aux_type);
 		case ty_algebra:
 			return algebra_type_count (type);
+		case ty_qual:
+			return type_count (type->qual.type);
 		case ty_meta_count:
 			break;
 	}
@@ -2179,6 +2417,7 @@ type_width (const type_t *type)
 	switch (type->meta) {
 		case ty_bool:
 		case ty_basic:
+		case ty_qual:
 			if (type->type == ev_vector) {
 				return 3;
 			}
@@ -2214,6 +2453,7 @@ type_cols (const type_t *type)
 	switch (type->meta) {
 		case ty_bool:
 		case ty_basic:
+		case ty_qual:
 			return type->columns;
 		case ty_handle:
 		case ty_struct:
@@ -2246,6 +2486,14 @@ type_rows (const type_t *type)
 }
 
 int
+type_byte_aligned_size (const type_t *type)
+{
+	int         size = type_byte_size (type);
+	int         alignment = type_byte_align (type);
+	return RUP (size, alignment);
+}
+
+int
 type_aligned_size (const type_t *type)
 {
 	int         size = type_size (type);
@@ -2256,7 +2504,7 @@ type_aligned_size (const type_t *type)
 symtab_t *
 type_symtab (const type_t *type)
 {
-	type = unalias_type (type);
+	type = core_type (type);
 	if (is_algebra (type)) {
 		return get_mvec_struct (type);
 	}
@@ -2278,7 +2526,7 @@ chain_basic_types (void)
 
 	type_entity.symtab = pr.entity_fields;
 	if (options.code.progsversion == PROG_VERSION) {
-		type_quaternion.alignment = 4;
+		type_quaternion.alignment = PR_ALIGNOF (vec4);
 	}
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		type_bool.type = ev_float;
@@ -2307,6 +2555,9 @@ chain_basic_types (void)
 			chain_type (&type_long);
 			chain_type (&type_ulong);
 			chain_type (&type_ushort);
+			chain_type (&type_sbyte);
+			chain_type (&type_ubyte);
+			chain_type (&type_half);
 #define VEC_TYPE(name, type) chain_type (&type_##name);
 #include "tools/qfcc/include/vec_types.h"
 #define MAT_TYPE(name, type, cols, align_as) chain_type (&type_##name);

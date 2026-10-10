@@ -84,14 +84,21 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	model_t    *mod = sprite_ctx->mod;
-	dsprite_t  *dsprite = sprite_ctx->dsprite;
 	mod->clear = vulkan_sprite_clear;
 	mod->data = ctx;
 
+	int         width = 0;
+	int         height = 0;
+	for (int i = 0; i < sprite_ctx->numframes; i++) {
+		auto dframe = sprite_ctx->dframes[i];
+		width = max (width, dframe->width);
+		height = max (height, dframe->height);
+	}
+
 	qfv_sprite_t *sprite = Hunk_AllocName (sprite_ctx->hunk,
 										   sizeof (*sprite), mod->name);
-	int         mipLevels = QFV_MipLevels (dsprite->width, dsprite->height);
-	VkExtent3D  extent = { dsprite->width, dsprite->height, 1 };
+	int         mipLevels = QFV_MipLevels (width, height);
+	VkExtent3D  extent = { width, height, 1 };
 	sprite->image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
 									 VK_FORMAT_R8G8B8A8_UNORM, extent,
 									 mipLevels, sprite_ctx->numframes,
@@ -137,20 +144,29 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "sprit.data");
 	spritevrt_t *verts = QFV_PacketExtend (packet,
 										   numverts * sizeof (spritevrt_t));
-	int         texsize = 4 * dsprite->width * dsprite->height;
+	int         texsize = 4 * width * height;
 	byte       *pixels = QFV_PacketExtend (packet,
 										   sprite_ctx->numframes * texsize);
 
 	for (int i = 0; i < sprite_ctx->numframes; i++) {
 		auto dframe = sprite_ctx->dframes[i];
+		auto src = (const byte *) &dframe[1];
 		mspriteframe_t f;
 		Mod_LoadSpriteFrame (&f, dframe);
 		verts[i * 4 + 0] = (spritevrt_t) { f.left, f.up, 0, 0 };
 		verts[i * 4 + 1] = (spritevrt_t) { f.right, f.up, 1, 0 };
 		verts[i * 4 + 2] = (spritevrt_t) { f.left, f.down, 0, 1 };
 		verts[i * 4 + 3] = (spritevrt_t) { f.right, f.down, 1, 1 };
-		Vulkan_ExpandPalette (pixels + i * texsize, (const byte *)(dframe + 1),
-							  vid.palette32, 2, texsize / 4);
+		for (int j = 0; j < height; j++) {
+			auto out = pixels + i * texsize + j * 4 * width;
+			Vulkan_ExpandPalette (out, src, vid.palette32, 2, dframe->width);
+			src += dframe->width;
+			out += dframe->width * 4;
+			for (int k = dframe->width; k < width; k++, out += 4) {
+				Vulkan_ExpandPalette (out, (byte[1]){0xff}, vid.palette32,
+									  2, 1);
+			}
+		}
 		sprite_ctx->frames[i]->data = i;
 	}
 
@@ -185,14 +201,14 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 	VkBufferImageCopy copy = {
 		packet->offset + numverts * sizeof (spritevrt_t), 0, 0,
 		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, sprite_ctx->numframes},
-		{0, 0, 0}, {dsprite->width, dsprite->height, 1},
+		{0, 0, 0}, {width, height, 1},
 	};
 	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
 								   sprite->image,
 								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								   1, &copy);
 	QFV_GenerateMipMaps (device, packet->cmd, sprite->image,
-						 0, mipLevels, dsprite->width, dsprite->height,
+						 0, mipLevels, width, height,
 						 sprite_ctx->numframes);
 
 	QFV_PacketSubmit (packet);

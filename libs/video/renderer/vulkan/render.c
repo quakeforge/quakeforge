@@ -227,7 +227,7 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, qfv_taskctx_t *taskctx,
 	auto rctx = ctx->render_context;
 	auto frame = &rctx->frames.a[ctx->curFrame];
 
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	qftVkScopedZoneTransientC (frame->qftVkCtx, cmd, rp->label.name, rp->label.color32);
 
 	QFV_duCmdBeginLabel (device, cmd, rp->label.name,
@@ -299,6 +299,19 @@ run_renderpass (qfv_renderpass_t *rp, qfv_taskctx_t *taskctx)
 }
 
 static void
+memory_barrier (vulkan_ctx_t *ctx, VkCommandBuffer cmd, VkMemoryBarrier2 *mb)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	VkDependencyInfo dep = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.memoryBarrierCount = 1,
+		.pMemoryBarriers = mb,
+	};
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dep);
+}
+
+static void
 run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 					  qfv_taskctx_t *taskctx)
 {
@@ -310,19 +323,32 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 	auto dfunc = device->funcs;
 	auto rctx = ctx->render_context;
 	auto frame = &rctx->frames.a[ctx->curFrame];
-	qftVkScopedZone (frame->qftVkCtx, cmd, "compute");
+
+	QFV_duCmdBeginLabel (device, cmd, pipeline->label.name,
+						 {VEC4_EXP (pipeline->label.color)});
+	qftVkScopedZoneTransientC (frame->qftVkCtx, cmd,
+							   pipeline->label.name, pipeline->label.color32);
 	dfunc->vkCmdBindPipeline (cmd, pipeline->bindPoint, pipeline->pipeline);
 
 	qfv_taskctx_t tctx = *taskctx;
 	tctx.pipeline = pipeline,
 	tctx.cmd = cmd,
+	pipeline->pre_memory_barrier = false;
+	pipeline->post_memory_barrier = false;
 	run_tasks (pipeline->task_count, pipeline->tasks, &tctx);
 
 	vec4u_t     d = pipeline->dispatch;
 	if (d[0] && d[1] && d[2]) {
 		QFV_PushBlackboard (ctx, cmd, pipeline);
+		if (pipeline->pre_memory_barrier) {
+			memory_barrier (ctx, cmd, &pipeline->pre_mb);
+		}
 		dfunc->vkCmdDispatch (cmd, d[0], d[1], d[2]);
+		if (pipeline->post_memory_barrier) {
+			memory_barrier (ctx, cmd, &pipeline->post_mb);
+		}
 	}
+	QFV_duCmdEndLabel (device, cmd);
 }
 
 static void
@@ -402,7 +428,7 @@ void
 QFV_RunRenderPass (qfv_taskctx_t *taskctx, qfv_renderpass_t *renderpass,
 				   uint32_t width, uint32_t height)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	qfv_output_t output = {
 		.extent = {
 			.width = width,
@@ -416,7 +442,7 @@ QFV_RunRenderPass (qfv_taskctx_t *taskctx, qfv_renderpass_t *renderpass,
 static void
 run_deletion_queue (vulkan_ctx_t *ctx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto rctx = ctx->render_context;
@@ -426,6 +452,9 @@ run_deletion_queue (vulkan_ctx_t *ctx)
 			break;
 		}
 		auto del = PQUEUE_REMOVE (&rctx->deletion_queue);
+		if (del.swapchain) {
+			dfunc->vkDestroySwapchainKHR (device->dev, del.swapchain, 0);
+		}
 		QFV_DestroyResource (device, del.resources);
 		if (del.framebuffer) {
 			dfunc->vkDestroyFramebuffer (device->dev, del.framebuffer, 0);
@@ -442,11 +471,12 @@ run_deletion_queue (vulkan_ctx_t *ctx)
 void
 QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
 	auto frame = &rctx->frames.a[ctx->curFrame];
-	int64_t start = Sys_LongTime ();
+
+	job->start_time = Sys_LongTime ();
 
 	run_deletion_queue (ctx);
 
@@ -483,7 +513,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job)
 	if (++ctx->curFrame >= rctx->frames.size) {
 		ctx->curFrame = 0;
 	}
-	update_time (&job->time, start, Sys_LongTime ());
+	update_time (&job->time, job->start_time, Sys_LongTime ());
 }
 
 static qfv_imageviewinfo_t * __attribute__((pure))
@@ -608,6 +638,18 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 }
 
 void
+QFV_QueueSwapchainDelete (vulkan_ctx_t *ctx, VkSwapchainKHR swapchain)
+{
+	auto rctx = ctx->render_context;
+	uint32_t frames = rctx->frames.size;
+	qfv_delete_t del = {
+		.swapchain = swapchain,
+		.deletion_frame = ctx->frameNumber + frames,
+	};
+	PQUEUE_INSERT (&rctx->deletion_queue, del);
+}
+
+void
 QFV_QueueResourceDelete (vulkan_ctx_t *ctx, qfv_resource_t *res)
 {
 	auto rctx = ctx->render_context;
@@ -646,7 +688,7 @@ QFV_QueueFramebufferDelete (vulkan_ctx_t *ctx, VkFramebuffer framebuffer)
 static void
 wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -670,11 +712,12 @@ static void
 update_framebuffer (const exprval_t **params, exprval_t *result,
 					exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto rctx = ctx->render_context;
 	auto graph = rctx->graph;
+	auto job = taskctx->job;
 
 	VkExtent2D *extent = nullptr;
 	if (graph->num_framebuffers) {
@@ -692,7 +735,7 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 	int64_t size_time = rctx->size_time;
 	if ((output.extent.width != extent->width
 		|| output.extent.height != extent->height)
-		&& (size_time < 0 || Sys_LongTime () - size_time > 2*1000*1000)) {
+		&& (size_time < 0 || job->start_time - size_time > 2*1000*1000)) {
 		if (step) {
 			auto render = step->render;
 			auto rp = render->active;
@@ -723,7 +766,7 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 static void
 fullscreen_pass (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -743,7 +786,7 @@ fullscreen_pass (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 submit_depth (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto job = taskctx->job;
@@ -763,7 +806,7 @@ submit_depth (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto rctx = ctx->render_context;
@@ -788,12 +831,36 @@ submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 set_dispatch (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto pipeline = taskctx->pipeline;
 	pipeline->dispatch[0] = *(uint32_t *) params[2]->value;
 	pipeline->dispatch[1] = *(uint32_t *) params[1]->value;
 	pipeline->dispatch[2] = *(uint32_t *) params[0]->value;
+}
+
+static void
+indirect_dispatch_barrier (const exprval_t **params, exprval_t *result,
+						   exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto cmd = taskctx->cmd;
+
+	static VkMemoryBarrier2 indirect_barrier = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
+					   | VK_ACCESS_2_SHADER_READ_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT
+					  | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT
+					   | VK_ACCESS_2_SHADER_WRITE_BIT
+					   | VK_ACCESS_2_SHADER_READ_BIT,
+	};
+
+	memory_barrier (ctx, cmd, &indirect_barrier);
 }
 
 static VkBuffer
@@ -1099,6 +1166,10 @@ static exprfunc_t set_dispatch_func[] = {
 	{ .func = set_dispatch, .num_params = 3, set_dispatch_params },
 	{}
 };
+static exprfunc_t indirect_dispatch_barrier_func[] = {
+	{ .func = indirect_dispatch_barrier },
+	{}
+};
 
 static exprtype_t *buffer_barrier_params[] = {
 	&qfv_bufferbarrier_t_type,
@@ -1193,6 +1264,8 @@ static exprsym_t render_task_syms[] = {
 	{ "submit_render", &cexpr_function, submit_render_func },
 
 	{ "set_dispatch", &cexpr_function, set_dispatch_func },
+	{ "indirect_dispatch_barrier", &cexpr_function,
+		indirect_dispatch_barrier_func },
 
 	{ "buffer_barrier", &cexpr_function, buffer_barrier_func },
 	{ "image_barrier", &cexpr_function, image_barrier_func },
@@ -1638,6 +1711,62 @@ QFV_UpdateBuffer (vulkan_ctx_t *ctx, const char *name, uint32_t offset,
 		size -= count;
 	}
 	QFV_PacketSubmit (packet);
+}
+
+typedef struct bbctx_s {
+	qfv_push_constants_t *pc;
+	byte       *data;
+	uint32_t    num_pc;
+} bbctx_t;
+
+static void
+qfv_bb_print_sym (void *ele, void *data)
+{
+	qfv_pushconstantinfo_t *pc = ele;
+	bbctx_t *bbctx = data;
+	byte *pc_data = bbctx->data + pc->offset;
+	for (uint32_t i = 0; i < bbctx->num_pc; i++) {
+		if (bbctx->pc[i].data == pc_data) {
+			printf ("%s:%d %d [%d %d] [%d %d]%d:",
+					pc->name, pc->line, pc->type,
+					pc->offset, pc->size,
+					bbctx->pc[i].offset, bbctx->pc[i].size,
+					bbctx->pc[i].stageFlags);
+			switch (pc->type) {
+				case qfv_uint:
+					printf (" %u\n", *(uint32_t *) (bbctx->data + pc->offset));
+					break;
+				case qfv_ptr:
+					printf (" 0x%"PRIx64"\n",
+							*(VkDeviceSize *) (bbctx->data + pc->offset));
+					break;
+				default:
+					for (uint32_t i = 0; i < pc->size; i++) {
+						printf (" %02x", bbctx->data[pc->offset + i]);
+					}
+					printf ("\n");
+					break;
+			}
+		}
+	}
+}
+
+static void __attribute__((used))
+qfv_print_blackboard (vulkan_ctx_t *ctx, qfv_pipeline_t *pipeline)
+{
+	auto rctx = ctx->render_context;
+	auto blackboard = &rctx->blackboard;
+	auto first = pipeline->first_push_constant;
+	auto count = pipeline->num_push_constants;
+	auto push_constants = blackboard->push_constants + first;
+
+	bbctx_t bbctx = {
+		.pc = push_constants,
+		.num_pc = count,
+		.data = blackboard->data,
+	};
+	printf (GRN"%s"DFL"\n", pipeline->label.name);
+	Hash_ForEach (blackboard->symbols, qfv_bb_print_sym, &bbctx);
 }
 
 void

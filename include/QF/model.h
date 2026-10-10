@@ -36,6 +36,9 @@
 
 #include "QF/simd/types.h"
 
+typedef struct ent_aabb_s ent_aabb_t;
+typedef struct scrapbox_s scrapbox_t;
+
 extern struct vid_model_funcs_s *mod_funcs;
 
 /*
@@ -90,8 +93,9 @@ typedef struct texture_s {
 	void       *render;		// renderer specific data
 	int			anim_total;				// total tenths in sequence ( 0 = no)
 	int			anim_min, anim_max;		// time for this frame min <=time< max
+	unsigned    flags;					// SURF_DRAWSKY etc
 	struct texture_s *anim_next;		// in the animation sequence
-	struct texture_s *alternate_anims;	// bmodels in frmae 1 use these
+	struct texture_s *alternate_anims;	// bmodels in frame 1 use these
 	unsigned    offsets[MIPLEVELS];		// four mip maps stored
 } texture_t;
 
@@ -149,7 +153,7 @@ typedef struct msurface_s {
 		struct {
 			glpoly_t   *polys;	// multiple if warped
 			instsurf_t *instsurf;///< null if not part of world model/sub-model
-			struct subpic_s *lightpic;///< light map texture ref (glsl)
+			scrapbox_t *lightpic;///< light map texture ref (glsl)
 			byte       *base;
 		};
 	};
@@ -193,9 +197,6 @@ typedef struct mleaf_s {
 	float		mins[3];
 	float		maxs[3];
 
-// leaf specific
-	byte		*compressed_vis;
-
 	int         firstmarksurface;
 	int			nummarksurfaces;
 	int			key;			// BSP sequence number for leaf's contents
@@ -223,11 +224,25 @@ typedef struct {
 	uint32_t    num_leafs;
 } leafmap_t;
 
-typedef struct {
+typedef struct cluster_s {
 	// index into array of surface ids
-	uint32_t    firstsurface;
-	uint32_t    numsurfaces;
+	uint32_t    first;
+	uint32_t    count;
 } cluster_t;
+
+typedef struct visstate_s {
+	const mleaf_t *viewleaf;
+	int         *node_visframes;
+	int         *leaf_visframes;
+	int         *face_visframes;
+	int          vis_frame;
+	const struct mod_brush_s *brush;
+} visstate_t;
+
+typedef struct visdata_s {
+	byte       *data;
+	uint32_t    count;			///< number of visible ares, not counting 0
+} visdata_t;
 
 typedef struct mod_brush_s {
 	unsigned    firstface;		///< index into main model's face list
@@ -241,8 +256,8 @@ typedef struct mod_brush_s {
 	plane_t    *planes;
 
 	unsigned    modleafs;		///< number of leafs in model, including 0
-	unsigned    visleafs;		///< number of visible leafs, not counting 0
 	mleaf_t    *leafs;
+	uint32_t   *leaf_offs;		///< [leaf] offset into visdata
 
 	unsigned    numvertexes;
 	mvertex_t  *vertexes;
@@ -276,20 +291,25 @@ typedef struct mod_brush_s {
 	texture_t **textures;
 	texture_t  *skytexture;
 
-	uint32_t    vis_clusters;
-	leafmap_t  *leaf_map;
-	uint32_t   *cluster_map;
-	uint32_t   *cluster_offs;// cluster offset into cluster_vis
-	mnode_t    *cluster_nodes;
-	int         cluster_depth;
-	byte       *cluster_vis;
-	uint32_t   *cluster_surfs;
-	cluster_t  *clusters;
+	leafmap_t  *leaf_map;		///< [cluster] leaf nodes in cluster
+	uint32_t   *cluster_map;	///< [leaf]    cluster containing leaf
+	uint32_t   *cluster_offs;	///< [cluster] offset into cluster_vis
+	mnode_t    *cluster_nodes;	///< [node]    node tree for clusters
+	ent_aabb_t *cluster_aabb;	///< [cluster] bounding box for cluster
+	int         cluster_depth;	///< maximum depth of cluster node tree
+	uint32_t   *cluster_surfs;	///< indices of surfs on cluster
+	cluster_t  *clusters;		///< [cluster] cluster(leaf) nodes
+	int32_t    *cluster_heads;	///< [model] first node of submodel or
+								///< cluster if negative
 
-	int         lightmap_bytes;
-	byte       *visdata;
+	uint32_t    lightmap_size;	///< luxels in lightmap data
+	uint32_t    luxel_bytes;	///< bytes per luxel (1 or 3)
+	visdata_t   leaf_vis;
+	visdata_t   cluster_vis;
 	byte       *lightdata;
 	char       *entities;	//FIXME should not be here
+
+	visstate_t *visstate;
 
 	int32_t    *node_parents;
 	int32_t    *leaf_parents;
@@ -393,11 +413,11 @@ model_t *Mod_ForName (const char *name, bool crash);
 void Mod_TouchModel (const char *name);
 void Mod_UnloadModel (model_t *model);
 // brush specific
-mleaf_t *Mod_PointInLeaf (vec4f_t p, const mod_brush_t *brush) __attribute__((pure));
+uint32_t Mod_PointInLeaf (vec4f_t p, const mod_brush_t *brush) __attribute__((pure));
 struct set_s;
-void Mod_LeafPVS_set (const mleaf_t *leaf, const mod_brush_t *brush,
+void Mod_LeafPVS_set (uint32_t vis_offset, const visdata_t *vis,
 					  byte defvis, struct set_s *pvs);
-void Mod_LeafPVS_mix (const mleaf_t *leaf, const mod_brush_t *brush,
+void Mod_LeafPVS_mix (uint32_t vis_offset, const visdata_t *vis,
 					  byte defvis, struct set_s *pvs);
 
 void Mod_Print (void);

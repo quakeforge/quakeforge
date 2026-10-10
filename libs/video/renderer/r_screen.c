@@ -65,8 +65,6 @@ bool        r_override_camera;
 transform_t r_camera;
 entqueue_t *r_ent_queue;
 
-visstate_t r_visstate;		//FIXME per renderer
-
 bool        scr_skipupdate;
 static bool scr_initialized;// ready to draw
 
@@ -330,20 +328,27 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs,
 	}
 
 	R_AnimateLight ();
+	mod_brush_t *brush = nullptr;
+	visstate_t *visstate = nullptr;
 	if (!r_lock_viewleaf && r_refdef.scene && r_refdef.scene->worldmodel) {
+		brush = r_refdef.scene->worldmodel->brush;
+		visstate = brush->visstate;
 		r_refdef.scene->viewleaf = 0;
 		vec4f_t     position = refdef->frame.position;
-		auto brush = r_refdef.scene->worldmodel->brush;
-		r_refdef.scene->viewleaf = Mod_PointInLeaf (position, brush);
+		uint32_t leafnum = Mod_PointInLeaf (position, brush);
+		r_refdef.scene->view_leafnum = leafnum;
+		r_refdef.scene->viewleaf = brush->leafs + leafnum;
 		r_dowarpold = r_dowarp;
 		if (r_waterwarp) {
 			r_dowarp = r_refdef.scene->viewleaf->contents <= CONTENTS_WATER;
 		}
-		R_MarkLeaves (&r_visstate, r_refdef.scene->viewleaf);
+		if (!r_refdef.no_mark_leaves) {
+			R_MarkLeaves (visstate, r_refdef.scene->viewleaf);
+		}
 	}
 	r_framecount++;
 	if (r_refdef.scene) {
-		R_PushDlights (vec3_origin, &r_visstate);
+		R_PushDlights (vec3_origin, visstate);
 	}
 	r_funcs->UpdateScreen (scr_funcs, scrf_data);
 }
@@ -511,22 +516,23 @@ SCR_NewScene (scene_t *scene)
 		mod_brush_t *brush = r_refdef.scene->worldmodel->brush;
 		int         count = brush->numnodes + brush->modleafs
 							+ brush->numsurfaces;
-		int         size = count * sizeof (int);
-		int        *node_visframes = Hunk_AllocName (hunk, size, "visframes");
+		int         size = sizeof (visstate_t) + count * sizeof (int);
+		visstate_t *visstate = Hunk_AllocName (hunk, size, "visstate");
+		int        *node_visframes = (int *) &visstate[1];
 		int        *leaf_visframes = node_visframes + brush->numnodes;
 		int        *face_visframes = leaf_visframes + brush->modleafs;
-		r_visstate = (visstate_t) {
+		*visstate = (visstate_t) {
 			.brush = brush,
 			.node_visframes = node_visframes,
 			.leaf_visframes = leaf_visframes,
 			.face_visframes = face_visframes,
 		};
+		brush->visstate = visstate;
 		r_refdef.registry = scene->reg;
 		r_funcs->set_fov (tan_fov_x, tan_fov_y);
 		r_funcs->R_NewScene (scene);
 		r_ent_queue = scene->ent_queue;
 	} else {
-		r_visstate = (visstate_t) {};
 		r_funcs->R_ClearState ();
 		r_refdef.registry = 0;
 	}

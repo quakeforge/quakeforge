@@ -1105,7 +1105,7 @@ gl_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
 
 	glfont_t   *font = &gl_fonts.a[fontid];
 	font_t     *rfont = font->font;
-	vrect_t    *rect = &rfont->glyph_rects[glyphid];
+	scrapbox_t *rect = &rfont->glyph_rects[glyphid];
 
 	float       w = rect->width;
 	float       h = rect->height;

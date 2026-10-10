@@ -46,7 +46,8 @@
 void
 R_MarkLeavesPVS (visstate_t *visstate, const set_t *pvs)
 {
-	int visframecount = ++visstate->visframecount;
+	qfZoneScoped (true);
+	int vis_frame = ++visstate->vis_frame;
 	auto brush = visstate->brush;
 	auto node_visframes = visstate->node_visframes;
 	auto leaf_visframes = visstate->leaf_visframes;
@@ -62,16 +63,16 @@ R_MarkLeavesPVS (visstate_t *visstate, const set_t *pvs)
 		if ((c = leaf->nummarksurfaces)) {
 			auto mark = brush->marksurfaces + leaf->firstmarksurface;
 			do {
-				face_visframes[*mark - brush->surfaces] = visframecount;
+				face_visframes[*mark - brush->surfaces] = vis_frame;
 				mark++;
 			} while (--c);
 		}
-		leaf_visframes[i + 1] = visframecount;
+		leaf_visframes[i + 1] = vis_frame;
 		int         node_id = brush->leaf_parents[leaf - brush->leafs];
 		while (node_id >= 0) {
-			if (node_visframes[node_id] == visframecount)
+			if (node_visframes[node_id] == vis_frame)
 				break;
-			node_visframes[node_id] = visframecount;
+			node_visframes[node_id] = vis_frame;
 			node_id = brush->node_parents[node_id];
 		}
 	}
@@ -80,8 +81,9 @@ R_MarkLeavesPVS (visstate_t *visstate, const set_t *pvs)
 void
 R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
 {
+	qfZoneScoped (true);
 	auto brush = visstate->brush;
-	set_t        vis = SET_STATIC_INIT (brush->visleafs, alloca);
+	set_t        vis = SET_STATIC_INIT (brush->leaf_vis.count, alloca);
 
 	if (visstate->viewleaf == viewleaf && !r_novis)
 		return;
@@ -96,7 +98,8 @@ R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
 		// force use of default vis (full visibility)
 		viewleaf = brush->leafs;
 	}
-	Mod_LeafPVS_set (viewleaf, brush, 0xff, &vis);
+	uint32_t vis_offset = brush->leaf_offs[viewleaf - brush->leafs];
+	Mod_LeafPVS_set (vis_offset, &brush->leaf_vis, 0xff, &vis);
 	R_MarkLeavesPVS (visstate, &vis);
 }
 
@@ -108,6 +111,7 @@ R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
 texture_t  *
 R_TextureAnimation (int frame, msurface_t *surf)
 {
+	qfZoneScoped (true);
 	texture_t  *base = surf->texinfo->texture;
 	int         count, relative;
 

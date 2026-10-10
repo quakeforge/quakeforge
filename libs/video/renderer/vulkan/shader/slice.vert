@@ -15,7 +15,7 @@ layout (location = 1) in vec4 glyph_color;
 layout (location = 2) in vec2 glyph_position;
 layout (location = 3) in vec2 glyph_offset;	// for 9-slice
 
-layout (location = 0) out vec2 uv;
+layout (location = 0) out vec3 uvp;
 layout (location = 1) out vec4 color;
 
 void
@@ -27,6 +27,6 @@ main (void)
 	vec2 position = glyph_position + glyph.xy + offset * glyph_offset;
 	gl_Position = Projection2d * vec4 (position.xy, 0.0, 1.0);
 	// texture uv stored in glyph components 2 and 3
-	uv = glyph.pq;
+	uvp = vec3(glyph.pq, 0);
 	color = glyph_color;
 }

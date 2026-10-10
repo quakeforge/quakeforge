@@ -192,8 +192,8 @@ render_graph = {
 				access = color_attachment_write;
 			};
 			dst = {
-				stage = fragment_shader;
-				access = input_attachment_read;
+				stage = fragment_shader|color_attachment_output;
+				access = input_attachment_read|color_attachment_write;
 			};
 			flags = by_region|view_local;
 		};
@@ -220,11 +220,11 @@ render_graph = {
 		depthtest_dependency = {
 			src = {
 				stage = early_fragment_tests|late_fragment_tests;
-				access = depth_stencil_attachment_write|depth_stencil_attachment_read;
+				access = depth_stencil_attachment_write;
 			};
 			dst = {
 				stage = fragment_shader|early_fragment_tests|late_fragment_tests;
-				access = depth_stencil_attachment_read|depth_stencil_attachment_write;
+				access = depth_stencil_attachment_write;
 			};
 			flags = by_region|view_local;
 		};
@@ -515,7 +515,171 @@ render_graph = {
 			};
 		};
 
+		prefixsum = {
+			shader = {
+				main = {
+					stage = compute;
+					name = main;
+					module = $builtin/prefixsum.r;
+				};
+				offset = {
+					stage = compute;
+					name = offset;
+					module = $builtin/prefixsum.r;
+				};
+				modal = {
+					stage = compute;
+					name = modal;
+					module = $builtin/prefixsum.r;
+				};
+			};
+			layout = {
+				pushConstants = {
+					compute = {
+						in_data = ptr;
+						out_data = ptr;
+						sum_data = ptr;
+						count = ptr;
+						mode = uint;
+					};
+				};
+			};
+		};
 		brush = {
+			cluster = {
+				shader = {
+					clear = {
+						stage = compute;
+						name = cluster.clear;
+						module = $builtin/bsp.r;
+					};
+					count_subclusters = {
+						stage = compute;
+						name = cluster.count_subclusters;
+						module = $builtin/bsp.r;
+					};
+					alloc_textures = {
+						stage = compute;
+						name = cluster.alloc_textures;
+						module = $builtin/bsp.r;
+					};
+					queue_textures = {
+						stage = compute;
+						name = cluster.queue_textures;
+						module = $builtin/bsp.r;
+					};
+					set_dispatch = {
+						subcluster = {
+							stage = compute;
+							name = cluster.set_dispatch.subcluster;
+							module = $builtin/bsp.r;
+						};
+						texture = {
+							stage = compute;
+							name = cluster.set_dispatch.texture;
+							module = $builtin/bsp.r;
+						};
+					};
+				};
+				layout = {
+					pushConstants = {
+						compute = {
+							command_counts = ptr;
+							command_offsets = ptr;
+							commands = ptr;
+							subclusters = ptr;
+							clusters = ptr;
+							cluster_map = ptr;
+							subcluster_queue = ptr;
+							subcluster_tmp = ptr;
+							instance_queue = ptr;
+							texture_count = uint;
+							anim_index = uint;
+
+							models = ptr;
+							anim_main = ptr;
+							anim_alt = ptr;
+							frame_map = ptr;
+
+							mod_invoke = ptr;
+							prefixsum_counts = ptr;
+						};
+					};
+				};
+			};
+			ent = {
+				shader = {
+					distribute = {
+						stage = compute;
+						name = ent.distribute;
+						module = $builtin/bsp.r;
+					};
+					model_count = {
+						stage = compute;
+						name = ent.model_count;
+						module = $builtin/bsp.r;
+					};
+					model_instances = {
+						stage = compute;
+						name = ent.model_instances;
+						module = $builtin/bsp.r;
+					};
+					set_dispatch = {
+						cluster = {
+							stage = compute;
+							name = ent.set_dispatch.cluster;
+							module = $builtin/bsp.r;
+						};
+						model = {
+							stage = compute;
+							name = ent.set_dispatch.model;
+							module = $builtin/bsp.r;
+						};
+						instance = {
+							stage = compute;
+							name = ent.set_dispatch.instance;
+							module = $builtin/bsp.r;
+						};
+					};
+					world_instance = {
+						stage = compute;
+						name = ent.world_instance;
+						module = $builtin/bsp.r;
+					};
+					clear = {
+						stage = compute;
+						name = ent.clear;
+						module = $builtin/bsp.r;
+					};
+					count = {
+						stage = compute;
+						name = ent.count;
+						module = $builtin/bsp.r;
+					};
+				};
+				layout = {
+					pushConstants = {
+						compute = {
+							ent_ids = ptr;
+							ent_rel = ptr;
+							inst_ids = ptr;
+							entities = ptr;
+							instance_queue = ptr;
+							cluster_queue = ptr;
+							models = ptr;
+
+							mod_counts = ptr;
+							mod_offsets = ptr;
+							mod_clusters = ptr;
+							ent_count = uint;
+							num_models = uint;
+							mod_invoke = ptr;
+
+							prefixsum_counts = ptr;
+						};
+					};
+				};
+			};
 			shader = {
 				shadow_vertex = {
 					stage = vertex;
@@ -560,14 +724,15 @@ render_graph = {
 			};
 			vertexInput = {
 				bindings = (
-					{ binding = 0; stride = "2 * 3 * 4 + 4 * 4"; inputRate = vertex; },
+					{ binding = 0; stride = "2 * 3 * 4 + 2 * 4 + 3 * 4"; inputRate = vertex; },
 					{ binding = 1; stride = "4"; inputRate = instance; },
 				);
 				attributes = (
 					{ location = 0; binding = 0; format = r32g32b32_sfloat; offset = 0;  },
 					{ location = 1; binding = 0; format = r32g32b32_sfloat; offset = 12;  },
-					{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 24; },
-					{ location = 3; binding = 1; format = r32_uint; offset = 0; },
+					{ location = 2; binding = 0; format = r32g32_sfloat; offset = 24; },
+					{ location = 3; binding = 0; format = r32g32b32_sfloat; offset = 32; },
+					{ location = 4; binding = 1; format = r32_uint; offset = 0; },
 				);
 			};
 			inputAssembly = {
@@ -1891,6 +2056,7 @@ render_graph = {
 	renderpasses = {
 		depth = {
 			color = "[0, 1, 0, 1]";
+			viewMask = 1;
 			framebuffer = {
 				use = flat;
 				attachments = {
@@ -1936,7 +2102,7 @@ render_graph = {
 								);
 								attributes = (
 									"$brush.vertexInput.attributes[0]",
-									"$brush.vertexInput.attributes[3]",
+									"$brush.vertexInput.attributes[4]",
 								);
 							};
 							inputAssembly = $brush.inputAssembly;
@@ -1999,6 +2165,17 @@ render_graph = {
 					color = "[ 0.25, 0.25, 0.6, 1]";
 					dependencies = {
 						depth = $depthtest_dependency;
+						translucent = {
+							src = {
+								stage = fragment_shader;
+								access = shader_storage_write;
+							};
+							dst = {
+								stage = fragment_shader;
+								access = shader_storage_write;
+							};
+							flags = by_region|view_local;
+						};
 					};
 					attachments = {
 						depth = {
@@ -2013,6 +2190,8 @@ render_graph = {
 						bsp:trans = {
 							color = $color.bsp;
 							tasks = (
+								{ func = bsp_draw_queue;
+								  params = (main, trans_ent, 1); },
 								{ func = bsp_draw_queue;
 								  params = (main, translucent, 1); },
 								{ func = bsp_draw_queue;
@@ -2075,9 +2254,7 @@ render_graph = {
 		};
 		depth_cube = {
 			@inherit = $renderpasses.depth;
-			@next = (VkRenderPassMultiviewCreateInfo, {
-				viewMasks   = (0x3fu, 0x3fu);
-			});
+			viewMask = 0x3fu;
 			framebuffer = {
 				use = cube;
 				attachments = {
@@ -2090,6 +2267,7 @@ render_graph = {
 		};
 		occlusion = {
 			color = "[0.8, 0.6, 0, 1]";
+			viewMask = 1;
 			framebuffer = {
 				use = flat;
 				attachments = {
@@ -2142,9 +2320,7 @@ render_graph = {
 		};
 		occlusion_cube = {
 			@inherit = $renderpasses.occlusion;
-			@next = (VkRenderPassMultiviewCreateInfo, {
-				viewMasks   = (0x3fu);
-			});
+			viewMask = 0x3fu;
 			framebuffer = {
 				use = cube;
 				attachments = {
@@ -2157,6 +2333,7 @@ render_graph = {
 		};
 		gizmo = {
 			color = "[0, 1, 0, 1]";
+			viewMask = 1;
 			framebuffer = {
 				width = "($render_output.extent.width + 7u) / 8u";
 				height = "($render_output.extent.height + 7u) / 8u";
@@ -2198,9 +2375,7 @@ render_graph = {
 		};
 		gizmo_cube = {
 			@inherit = $renderpasses.gizmo;
-			@next = (VkRenderPassMultiviewCreateInfo, {
-				viewMasks   = (0x3fu);
-			});
+			viewMask = 0x3fu;
 			framebuffer = {
 				width = "(min($render_output.extent.width,$render_output.extent.height) + 7u) / 8u";
 				height = "(min($render_output.extent.width,$render_output.extent.height) + 7u) / 8u";
@@ -2211,6 +2386,7 @@ render_graph = {
 		};
 		deferred = {
 			color = "[0, 1, 0, 1]";
+			viewMask = 1;
 			framebuffer = {
 				use = flat;
 				attachments = {
@@ -2243,7 +2419,10 @@ render_graph = {
 							};
 						};
 						depth = {
-							depth = depth_stencil_read_only_optimal;
+							depth = {
+								layout = depth_stencil_read_only_optimal;
+								aspectMask = depth;
+							};
 						};
 						preserve = (color, normal, output);
 					};
@@ -2412,10 +2591,22 @@ render_graph = {
 					};
 					attachments = {
 						input = {
-							color = shader_read_only_optimal;
-							orm = shader_read_only_optimal;
-							normal = shader_read_only_optimal;
-							depth = shader_read_only_optimal;
+							color = {
+								layout = shader_read_only_optimal;
+								aspectMask = color;
+							};
+							orm = {
+								layout = shader_read_only_optimal;
+								aspectMask = color;
+							};
+							normal = {
+								layout = shader_read_only_optimal;
+								aspectMask = color;
+							};
+							depth = {
+								layout = shader_read_only_optimal;
+								aspectMask = depth;
+							};
 						};
 						color = {
 							light = {
@@ -2506,9 +2697,18 @@ render_graph = {
 					};
 					attachments = {
 						input = {
-							light = shader_read_only_optimal;
-							emission = shader_read_only_optimal;
-							depth = shader_read_only_optimal;
+							light = {
+								layout = shader_read_only_optimal;
+								aspectMask = color;
+							};
+							emission = {
+								layout = shader_read_only_optimal;
+								aspectMask = color;
+							};
+							depth = {
+								layout = shader_read_only_optimal;
+								aspectMask = depth;
+							};
 						};
 						color = {
 							compo = {
@@ -2545,6 +2745,8 @@ render_graph = {
 								{ func = bsp_draw_queue;
 								  params = (debug, sky, 0); },
 								{ func = bsp_draw_queue;
+								  params = (debug, trans_ent, 0); },
+								{ func = bsp_draw_queue;
 								  params = (debug, translucent, 0); },
 								{ func = bsp_draw_queue;
 								  params = (debug, turbulent, 0); },
@@ -2561,7 +2763,7 @@ render_graph = {
 								);
 								attributes = (
 									"$brush.vertexInput.attributes[0]",
-									"$brush.vertexInput.attributes[3]",
+									"$brush.vertexInput.attributes[4]",
 								);
 							};
 							inputAssembly = $brush.inputAssembly;
@@ -2632,8 +2834,14 @@ render_graph = {
 					};
 					attachments = {
 						input = {
-							compo = shader_read_only_optimal;
-							depth = shader_read_only_optimal;
+							compo = {
+								layout = shader_read_only_optimal;
+								aspectMask = color;
+							};
+							depth = {
+								layout = shader_read_only_optimal;
+								aspectMask = depth;
+							};
 						};
 						color = {
 							output = {
@@ -2736,9 +2944,7 @@ render_graph = {
 		};
 		deferred_cube = {
 			@inherit = $renderpasses.deferred;
-			@next = (VkRenderPassMultiviewCreateInfo, {
-				viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
-			});
+			viewMask = 0x3fu;
 			framebuffer = {
 				use = cube;
 				attachments = {
@@ -2924,7 +3130,7 @@ render_graph = {
 								);
 								attributes = (
 									"$brush.vertexInput.attributes[0]",
-									"$brush.vertexInput.attributes[3]",
+									"$brush.vertexInput.attributes[4]",
 								);
 							};
 							inputAssembly = $brush.inputAssembly;
@@ -3033,14 +3239,170 @@ render_graph = {
 						};
 					};
 				};
+				world_enqueue = {
+					dependencies = (start_frame);
+					compute = {
+						pipelines = {
+							ent:clear = {
+								tasks = (
+									{ func = bsp_model_invoke; },
+								);
+								stage = $brush.ent.shader.clear;
+								layout = $brush.ent.layout;
+							};
+							ent:world_instance = {
+								tasks = (
+									{ func = bsp_reset_queues; },
+									{ func = bsp_visit_world; },
+									{ func = indirect_dispatch_barrier; },
+									{ func = bsp_cluster_invoke; },
+								);
+								stage = $brush.ent.shader.world_instance;
+								layout = $brush.ent.layout;
+							};
+							ent:count = {
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = bsp_entity_invoke; },
+								);
+								stage = $brush.ent.shader.count;
+								layout = $brush.ent.layout;
+							};
+							ent:model:set_dispatch = {
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = set_dispatch; params = (1, 1, 1); },
+								);
+								stage = $brush.ent.shader.set_dispatch.model;
+								layout = $brush.ent.layout;
+							};
+							ent:prefixsum = {
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = bsp_prefixsum;
+									  params = (mod_offsets); },
+								);
+								stage = $prefixsum.shader.modal;
+								layout = $prefixsum.layout;
+							};
+							ent:distribute = {
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = bsp_entity_invoke; },
+								);
+								stage = $brush.ent.shader.distribute;
+								layout = $brush.ent.layout;
+							};
+							ent:model_count = {
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = bsp_model_invoke; },
+								);
+								stage = $brush.ent.shader.model_count;
+								layout = $brush.ent.layout;
+							};
+							ent:cluster:set_dispatch = {
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = set_dispatch; params = (1, 1, 1); },
+								);
+								stage = $brush.ent.shader.set_dispatch.model;
+								layout = $brush.ent.layout;
+							};
+							ent:cluster:prefixsum = {
+								tasks = (
+									{ func = bsp_update_mod_clusters; },
+									{ func = indirect_dispatch_barrier; },
+									{ func = bsp_prefixsum;
+									  params = (mod_clusters); },
+								);
+								stage = $prefixsum.shader.modal;
+								layout = $prefixsum.layout;
+							};
+							ent:model_instances = {
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = bsp_cluster_invoke; },
+								);
+								stage = $brush.ent.shader.model_instances;
+								layout = $brush.ent.layout;
+							};
+							ent:instance:set_dispatch = {
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = set_dispatch; params = (1, 1, 1); },
+								);
+								stage = $brush.ent.shader.set_dispatch.instance;
+								layout = $brush.ent.layout;
+							};
+							cluster:clear_commands = {
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = bsp_command_invoke; },
+								);
+								stage = $brush.cluster.shader.clear;
+								layout = $brush.cluster.layout;
+							};
+							cluster:count_subclusters = {
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = bsp_instance_invoke; },
+								);
+								stage = $brush.cluster.shader.count_subclusters;
+								layout = $brush.cluster.layout;
+							};
+							cluster:subcluster:set_dispatch = {
+								color = "[0.8, 0.7, 0.4]";
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = set_dispatch; params = (1, 1, 1); },
+								);
+								stage = $brush.cluster.shader.set_dispatch.subcluster;
+								layout = $brush.cluster.layout;
+							};
+							cluster:prefixsum = {
+								tasks = (
+									{ func = bsp_update_mod_clusters; },
+									{ func = indirect_dispatch_barrier; },
+									{ func = bsp_prefixsum;
+									  params = (subclusters); },
+								);
+								stage = $prefixsum.shader.modal;
+								layout = $prefixsum.layout;
+							};
+							cluster:texture:set_dispatch = {
+								color = "[0.8, 0.7, 0.4]";
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = set_dispatch; params = (1, 1, 1); },
+								);
+								stage = $brush.cluster.shader.set_dispatch.texture;
+								layout = $brush.cluster.layout;
+							};
+							cluster:alloc_textures = {
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = bsp_subcluster_invoke; },
+								);
+								stage = $brush.cluster.shader.alloc_textures;
+								layout = $brush.cluster.layout;
+							};
+							cluster:queue_textures = {
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = bsp_subcluster_invoke; },
+								);
+								stage = $brush.cluster.shader.queue_textures;
+								layout = $brush.cluster.layout;
+							};
+						};
+					};
+				};
 				world = {
 					color = "[0.3, 0.4, 0.0]";
-					dependencies = (start_frame);
+					dependencies = (enqueue);
 					process = {
 						tasks = (
-							{ func = bsp_reset_queues; },
-							{ func = bsp_visit_world;
-							  params = (main); },
 							{ func = scene_draw_viewmodel; },
 							{ func = lighting_update_lights; },
 							{ func = output_select_renderpass;
@@ -3122,7 +3484,7 @@ render_graph = {
 							{ func = sync_translucent; },
 							{ func = gizmo_flush; },
 							{ func = blackboard_set_bufferptr;
-							  params = ("\"planetary\"", "\"planetary\"") },
+							  params = (planetary, planetary) },
 						);
 					};
 				};
@@ -3208,10 +3570,9 @@ render_graph = {
 								color = "[0.3, 0.8, 0.9]";
 								tasks = (
 									{ func = blackboard_set_uvec2;
-									  params = ("\"brdf_size\"",
-												"'256 256'u"); },
+									  params = (brdf_size, "'256 256'u"); },
 									{ func = blackboard_set_bufferptr;
-									  params = ("\"brdf_data\"", "\"brdf\""); },
+									  params = (brdf_data, brdf); },
 									{ func = set_dispatch;
 									  params = (16, 16, 1); },
 								);
@@ -3230,17 +3591,15 @@ render_graph = {
 					process = {
 						tasks = (
 							{ func = buffer_barrier;
-							  params = ("\"brdf\"",
+							  params = (brdf,
 										bb_shaderwrite_to_transferread); },
 							{ func = image_barrier;
-							  params = ("\"brdf\"",
-										lt_undefined_to_transferdst); },
+							  params = (brdf, lt_undefined_to_transferdst); },
 							{ func = copy_buffer_to_image;
-							  params = ("\"brdf\"", 0, 0, 0,
-										"\"brdf\"", "'0 0 0'u",
-													"'256 256 1'u"); },
+							  params = (brdf, 0, 0, 0,
+										brdf, "'0 0 0'u", "'256 256 1'u"); },
 							{ func = image_barrier;
-							  params = ("\"brdf\"",
+							  params = (brdf,
 										lt_transferdst_to_shaderreadonly); },
 							{ func = submit_depth; },
 						);
@@ -3257,16 +3616,19 @@ render_graph = {
 				conv_process = {
 					color = "[0.6, 0.8, 0.9]";
 					init = { func = miploop_init_loop;
-							 params = ("\"diff_cube\"", 6,
+							 params = (diff_cube, 6,
 										((pbr_cube_id, pbr_cube_set),
 										 (pbr_env_id, pbr_env_set))); };
 					process = {
 						tasks = (
-							{ func = blackboard_set_int; params = ("\"distribution\"", 0); },
+							{ func = blackboard_set_int;
+							  params = (distribution, 0); },
 							{ func = miploop_draw; params = (0); },
-							{ func = blackboard_set_int; params = ("\"distribution\"", 1); },
+							{ func = blackboard_set_int;
+							  params = (distribution, 1); },
 							{ func = miploop_draw; params = (6); },
-							{ func = blackboard_set_int; params = ("\"distribution\"", 2); },
+							{ func = blackboard_set_int;
+							  params = (distribution, 2); },
 							{ func = miploop_draw; params = (12); },
 							{ func = submit_depth; },
 						);
@@ -3331,7 +3693,7 @@ render_graph = {
 					process = {
 						tasks = (
 							{ func = image_barrier;
-							  params = ("\"diff_cube\"",
+							  params = (diff_cube,
 										lt_colorattach_to_shaderreadonly); },
 						);
 					};

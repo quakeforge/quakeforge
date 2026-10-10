@@ -98,6 +98,8 @@ typedef struct spirvphi_s {
 } spirvphi_t;
 
 static unsigned spirv_value (const expr_t *e, spirvctx_t *ctx);
+static unsigned spirv_gen_bitcast (const type_t *type, unsigned src_id,
+								   spirvctx_t *ctx);
 
 static unsigned
 spirv_id (spirvctx_t *ctx)
@@ -325,7 +327,7 @@ spirv_DecorateLiteral (unsigned id, SpvDecoration decoration, void *literal,
 	if (type != ev_int) {
 		internal_error (0, "unexpected type");
 	}
-	int size = pr_type_size[type];
+	int size = type_words (pr_type_size[type]);
 	auto decorations = ctx->module->decorations;
 	auto insn = spirv_new_insn (SpvOpDecorate, 3 + size, decorations, ctx);
 	INSN (insn, 1) = id;
@@ -354,7 +356,7 @@ spirv_MemberDecorateLiteral (unsigned id, unsigned member,
 	if (type != ev_int) {
 		internal_error (0, "unexpected type");
 	}
-	int size = pr_type_size[type];
+	int size = type_words (pr_type_size[type]);
 	auto decorations = ctx->module->decorations;
 	auto insn = spirv_new_insn (SpvOpMemberDecorate, 4 + size,
 								decorations, ctx);
@@ -449,6 +451,12 @@ spirv_TypeVoid (spirvctx_t *ctx)
 static unsigned
 spirv_TypeInt (unsigned bitwidth, bool is_signed, spirvctx_t *ctx)
 {
+	if (bitwidth == 8) {
+		ctx->module->int8 = true;
+	}
+	if (bitwidth == 16) {
+		ctx->module->int16 = true;
+	}
 	auto globals = ctx->module->globals;
 	auto insn = spirv_new_insn (SpvOpTypeInt, 4, globals, ctx);
 	INSN (insn, 1) = spirv_id (ctx);
@@ -460,6 +468,9 @@ spirv_TypeInt (unsigned bitwidth, bool is_signed, spirvctx_t *ctx)
 static unsigned
 spirv_TypeFloat (unsigned bitwidth, spirvctx_t *ctx)
 {
+	if (bitwidth == 16) {
+		ctx->module->float16 = true;
+	}
 	auto globals = ctx->module->globals;
 	auto insn = spirv_new_insn (SpvOpTypeFloat, 3, globals, ctx);
 	INSN (insn, 1) = spirv_id (ctx);
@@ -489,6 +500,17 @@ spirv_TypeMatrix (unsigned col_type, unsigned columns, spirvctx_t *ctx)
 	return INSN (insn, 1);
 }
 
+static const type_t *
+strip_qualifiers (const type_t *type)
+{
+	type = core_type (type);
+	if (is_ptr (type)) {
+		auto aux = strip_qualifiers (type->fldptr.type);
+		type = tagged_pointer_type (type->fldptr.tag, aux);
+	}
+	return type;
+}
+
 static unsigned
 spirv_TypePointer (const type_t *type, spirvctx_t *ctx)
 {
@@ -510,6 +532,12 @@ spirv_TypePointer (const type_t *type, spirvctx_t *ctx)
 	INSN (insn, 2) = type->fldptr.tag;
 	INSN (insn, 3) = rid;
 	spirv_decorate_id (id, type->attributes, ctx);
+	if (type->fldptr.tag == SpvStorageClassPhysicalStorageBuffer) {
+		int stride = type_byte_aligned_size (rtype);
+		// FIXME need to make sure there's only one ArrayStride decoration
+		auto attr = new_attrfunc ("ArrayStride", new_uint_expr (stride));
+		spirv_decorate_id (id, attr, ctx);
+	}
 	return id;
 }
 
@@ -586,7 +614,7 @@ spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
 	auto symtab = type_symtab (type);
 	unsigned id = spirv_emit_symtab (symtab, ctx);
 
-	spirv_Name (id, unalias_type (type)->name + 4, ctx);
+	spirv_Name (id, core_type (type)->name + 4, ctx);
 	return id;
 }
 
@@ -698,7 +726,7 @@ spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 	unsigned param_types[num_params + 1];
 	num_params = 0;
 	for (auto p = fsym->params; p; p = p->next) {
-		auto ptype = p->type;
+		auto ptype = core_type (p->type);
 		if (is_void (p->type)) {
 			break;
 		}
@@ -724,7 +752,7 @@ spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 static unsigned
 spirv_Type (const type_t *type, spirvctx_t *ctx)
 {
-	type = unalias_type (type);
+	type = strip_qualifiers (type);
 	if (spirv_type_id (type, ctx)) {
 		return spirv_type_id (type, ctx);
 	}
@@ -778,6 +806,14 @@ spirv_Type (const type_t *type, spirvctx_t *ctx)
 		if (is_boolean (type)) {
 			spirv_mirror_bool (type, id, ctx);
 		}
+	} else if (is_sbyte (type)) {
+		id = spirv_TypeInt (8, true, ctx);
+	} else if (is_ubyte (type)) {
+		id = spirv_TypeInt (8, false, ctx);
+	} else if (is_short (type)) {
+		id = spirv_TypeInt (16, true, ctx);
+	} else if (is_ushort (type)) {
+		id = spirv_TypeInt (16, false, ctx);
 	} else if (is_int (type)) {
 		id = spirv_TypeInt (32, true, ctx);
 	} else if (is_uint (type)) {
@@ -786,6 +822,8 @@ spirv_Type (const type_t *type, spirvctx_t *ctx)
 		id = spirv_TypeInt (64, true, ctx);
 	} else if (is_ulong (type)) {
 		id = spirv_TypeInt (64, false, ctx);
+	} else if (is_half (type)) {
+		id = spirv_TypeFloat (16, ctx);
 	} else if (is_float (type)) {
 		id = spirv_TypeFloat (32, ctx);
 	} else if (is_double (type)) {
@@ -797,6 +835,8 @@ spirv_Type (const type_t *type, spirvctx_t *ctx)
 		id = spirv_TypeStruct (type, ctx);
 	} else if (is_boolean (type)) {
 		id = spirv_TypeBool (type, ctx);
+	} else if (is_qual (type)) {
+		return spirv_Type (type->qual.type, ctx);
 	} else if (is_enum (type)) {
 		// type->type will be one of the integer types
 		id = spirv_Type (ev_types[type->type], ctx);
@@ -1103,7 +1143,7 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 	spirv_Name (func_id, GETSTR (func->s_name), ctx);
 
 	for (auto p = func->sym->params; p; p = p->next) {
-		auto ptype = p->type;
+		auto ptype = core_type (p->type);
 		if (is_void (ptype)) {
 			break;
 		}
@@ -1288,6 +1328,9 @@ spirv_ptr_load (const type_t *res_type, unsigned ptr_id, unsigned align,
 	INSN (insn, 3) = ptr_id;
 	if (align) {
 		INSN (insn, 4) = SpvMemoryAccessAlignedMask;
+		if (is_volatile (res_type)) {
+			INSN (insn, 4) |= SpvMemoryAccessNonPrivatePointerMask;
+		}
 		INSN (insn, 5) = align;
 	}
 	return id;
@@ -1439,7 +1482,7 @@ spirv_generate_load (const expr_t *e, spirvctx_t *ctx)
 	auto ptr_type = get_type (ptr);
 	unsigned align = 0;
 	if (ptr_type->fldptr.tag == SpvStorageClassPhysicalStorageBuffer) {
-		align = type_align (res_type) * sizeof (pr_type_t);
+		align = type_byte_align (res_type);
 	}
 
 	unsigned ptr_id = spirv_emit_expr (ptr, ctx);
@@ -1470,10 +1513,12 @@ spirv_generate_ptrcmp (const expr_t *e, spirvctx_t *ctx)
 #define SPV_type(m,t) ((unsigned)((1<<((m)+16))|(1<<(t))))
 #define SPV_type_cmp(a,b) (((a) & (b)) == (b))
 #define SPV_BOOL  (SPV_type(ty_bool, ev_int)   |SPV_type(ty_bool, ev_long))
+#define SPV_SSHORT (SPV_type(ty_basic, ev_sbyte)  |SPV_type(ty_basic, ev_short))
+#define SPV_USHORT (SPV_type(ty_basic, ev_ubyte) |SPV_type(ty_basic, ev_ushort))
 #define SPV_SINT  (SPV_type(ty_basic, ev_int)  |SPV_type(ty_basic, ev_long))
 #define SPV_UINT  (SPV_type(ty_basic, ev_uint) |SPV_type(ty_basic, ev_ulong))
 #define SPV_FLOAT (SPV_type(ty_basic, ev_float)|SPV_type(ty_basic, ev_double))
-#define SPV_INT   (SPV_SINT|SPV_UINT)
+#define SPV_INT   (SPV_SINT|SPV_UINT|SPV_SSHORT|SPV_USHORT)
 #define SPV_PTR   (SPV_type(ty_basic, ev_ptr))
 #define SPV_QUAT  (SPV_type(ty_basic, ev_quaternion))
 #define SPV_VEC   (SPV_type(ty_basic, ev_vector))
@@ -1584,6 +1629,8 @@ static spvop_t spv_ops[] = {
 static const spvop_t *
 spirv_find_op (const char *op_name, const type_t *type1, const type_t *type2)
 {
+	type1 = type1 ? core_type (type1) : nullptr;
+	type2 = type2 ? core_type (type2) : nullptr;
 	constexpr int num_ops = sizeof (spv_ops) / sizeof (spv_ops[0]);
 	etype_t t1 = type1->type;
 	etype_t t2 = type2 ? type2->type : ev_void;
@@ -1921,7 +1968,8 @@ spirv_vector_value (const ex_value_t *value, spirvctx_t *ctx)
 	int width = type_width (value->type);
 	ex_value_t *comp_vals[width];
 	auto val = &value->raw_value;
-	if (type_size (base) < 1 || type_size (base) > 2) {
+	if (type_size (base) < type_size (&type_int)
+		|| type_size (base) > type_size (&type_long)) {
 		internal_error (nullptr, "invalid vector component size");
 	}
 	for (int i = 0; i < width; i++) {
@@ -1974,6 +2022,12 @@ spirv_matrix_value (const ex_value_t *value, spirvctx_t *ctx)
 static unsigned
 spirv_nil (const expr_t *e, spirvctx_t *ctx)
 {
+	if (is_pointer (e->nil)) {
+		// not allowed null pointer constants
+		auto fake_nil = new_zero_expr (&type_uvec2);
+		unsigned id = spirv_emit_expr (fake_nil, ctx);
+		return spirv_gen_bitcast (e->nil, id, ctx);
+	}
 	unsigned tid = spirv_Type (e->nil, ctx);
 	unsigned id = spirv_id (ctx);
 	auto globals = ctx->module->globals;
@@ -2006,12 +2060,19 @@ spirv_value (const expr_t *e, spirvctx_t *ctx)
 			op = value->int_val ? SpvOpConstantTrue : SpvOpConstantFalse;
 			val_size = 0;
 		} else {
-			if (type_size (value->type) == 1) {
+#define CHECK_SIZE(vt, tt) type_byte_size (vt) == type_byte_size (tt)
+			if (CHECK_SIZE (value->type, &type_uint)) {
 				val = value->uint_val;
 				val_size = 1;
-			} else if (type_size (value->type) == 2) {
+			} else if (CHECK_SIZE (value->type, &type_ulong)) {
 				val = value->ulong_val;
 				val_size = 2;
+			} else if (CHECK_SIZE (value->type, &type_ushort)) {
+				val = value->ushort_val;
+				val_size = 1;
+			} else if (CHECK_SIZE (value->type, &type_ubyte)) {
+				val = value->ubyte_val;
+				val_size = 1;
 			} else {
 				internal_error (e, "not implemented");
 			}
@@ -2114,6 +2175,35 @@ spirv_vector (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_gen_access (unsigned op, const type_t *acc_type, unsigned base_id,
+				  int num_ind, unsigned *ind_id, spirvctx_t *ctx)
+{
+	unsigned acc_type_id = spirv_Type (acc_type, ctx);
+	unsigned id = spirv_id (ctx);
+	auto insn = spirv_new_insn (op, 4 + num_ind, ctx->code_space, ctx);
+	INSN (insn, 1) = acc_type_id;
+	INSN (insn, 2) = id;
+	INSN (insn, 3) = base_id;
+	auto field_ind = &INSN (insn, 4);
+	for (int i = 0; i < num_ind; i++) {
+		field_ind[i] = ind_id[i];
+	}
+	return id;
+}
+
+static unsigned
+spirv_gen_bitcast (const type_t *type, unsigned src_id, spirvctx_t *ctx)
+{
+	unsigned tid = spirv_Type (type, ctx);
+	unsigned id = spirv_id (ctx);
+	auto insn = spirv_new_insn (SpvOpBitcast, 4, ctx->code_space, ctx);
+	INSN (insn, 1) = tid;
+	INSN (insn, 2) = id;
+	INSN (insn, 3) = src_id;
+	return id;
+}
+
+static unsigned
 spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 					const type_t **res_type, const type_t **acc_type)
 {
@@ -2139,26 +2229,27 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 	// e is now the base object of the field/array expression chain
 	auto base_type = get_type (e);
 	unsigned base_id = spirv_emit_expr (e, ctx);
+	if (is_reference (base_type) && is_pointer (dereference_type (base_type))) {
+		base_type = dereference_type (base_type);
+		base_id = spirv_ptr_load (base_type, base_id, 0, ctx);
+	}
 	if (!list.head) {
 		*acc_type = *res_type;
 		return base_id;
 	}
-	int op = SpvOpCompositeExtract;
+	unsigned op = SpvOpCompositeExtract;
 
 	*acc_type = *res_type;
 	bool literal_ind = true;
-	bool ptr_start = false;
 	if (is_pointer (base_type) || is_reference (base_type)) {
 		unsigned storage = base_type->fldptr.tag;
-		*acc_type = tagged_reference_type (storage, *res_type);
+		if (is_reference (base_type)) {
+			*acc_type = tagged_reference_type (storage, *res_type);
+		} else {
+			*acc_type = tagged_pointer_type (storage, *res_type);
+		}
 		op = SpvOpAccessChain;
 		literal_ind = false;
-		if (is_reference (base_type)
-			&& is_pointer (dereference_type (base_type))) {
-			ptr_start = true;
-			base_type = dereference_type (base_type);
-			e = pointer_deref (e);
-		}
 	}
 
 	int num_obj = list_count (&list);
@@ -2166,28 +2257,39 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 	unsigned ind_id[num_obj];
 	int num_ind = 0;
 	list_scatter (&list, ind_expr);
-	for (int i = 0; !ptr_start && i < num_obj; i++) {
+	for (int i = 0; i < num_obj; i++) {
 		auto obj = ind_expr[i];
 		bool direct_ind = false;
+		bool use_ptr = false;
+		const type_t *ptr_access = nullptr;
 		unsigned index;
 		if (obj->type == ex_field) {
-			if (is_pointer (get_type (obj->field.object))) {
-				unsigned storage = base_type->fldptr.tag;
-				base_type = get_type (obj->field.object);
-				*acc_type = tagged_pointer_type (storage, base_type);
-				break;
-			}
 			if (obj->field.member->type != ex_symbol) {
 				internal_error (obj->field.member, "not a symbol");
 			}
 			auto sym = obj->field.member->symbol;
+			unsigned storage = base_type->fldptr.tag;
+			if (is_pointer (get_type (obj->field.object))) {
+				base_type = get_type (obj->field.object);
+				ptr_access = tagged_pointer_type (storage, base_type);
+				storage = get_type (obj->field.object)->fldptr.tag;
+				*acc_type = tagged_pointer_type (storage, *res_type);
+			}
 			index = sym->id;
 		} else if (obj->type == ex_array) {
-			if (is_pointer (get_type (obj->array.base))) {
+			if (i == 0 && is_pointer (base_type)) {
+				auto arr_type = array_type (obj->array.type, 0);
+				arr_type = iface_block_type (arr_type, "@bda");
+				use_ptr = true;
+			} else if (is_pointer (get_type (obj->array.base))) {
 				unsigned storage = base_type->fldptr.tag;
 				base_type = get_type (obj->array.base);
-				*acc_type = tagged_pointer_type (storage, base_type);
-				break;
+				ptr_access = tagged_pointer_type (storage, base_type);
+				auto arr_type = array_type (obj->array.type, 0);
+				arr_type = iface_block_type (arr_type, "@bda");
+				storage = base_type->fldptr.tag;
+				use_ptr = true;
+				*acc_type = tagged_pointer_type (storage, *res_type);
 			}
 			auto ind = obj->array.index;
 			if (is_integral_val (ind)) {
@@ -2202,6 +2304,15 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 		} else {
 			internal_error (obj, "what the what?!?");
 		}
+		if (ptr_access) {
+			unsigned id = spirv_gen_access (op, ptr_access, base_id,
+											num_ind, ind_id, ctx);
+			base_id = spirv_ptr_load (base_type, id, 8, ctx);
+			num_ind = 0;
+		}
+		if (use_ptr) {
+			op = SpvOpPtrAccessChain;
+		}
 		if (literal_ind || direct_ind) {
 			ind_id[num_ind++] = index;
 		} else {
@@ -2209,95 +2320,22 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 			auto ind = new_uint_expr (index);
 			ind_id[num_ind++] = spirv_emit_expr (ind, ctx);
 		}
-		e = obj;
 	}
-	// e is now the base object of the pointer chain
 
 	unsigned id = 0;
 	if (num_ind) {
-		unsigned acc_type_id = spirv_Type (*acc_type, ctx);
-		id = spirv_id (ctx);
-		auto insn = spirv_new_insn (op, 4 + num_ind, ctx->code_space, ctx);
-		INSN (insn, 1) = acc_type_id;
-		INSN (insn, 2) = id;
-		INSN (insn, 3) = base_id;
-		auto field_ind = &INSN (insn, 4);
-		for (int i = 0; i < num_ind; i++) {
-			field_ind[i] = ind_id[i];
-		}
+		id = spirv_gen_access (op, *acc_type, base_id, num_ind, ind_id, ctx);
 	}
-	if (num_ind == num_obj) {
-		return id;
-	}
-	unsigned ptr_id = 0;
-	unsigned align = 0;
-	const expr_t *ptr = nullptr;
-	base_type = get_type (e);
-	unsigned storage = base_type->fldptr.tag;
-	for (int i = num_ind; i < num_obj; i++) {
-		scoped_src_loc (e);
-		if (id) {
-			ptr_id = spirv_ptr_load (base_type, id, align, ctx);
-			id = 0;
-		}
-		auto obj = ind_expr[i];
-		const expr_t *offset;
-		const type_t *type;
-		if (obj->type == ex_field) {
-			scoped_src_loc (obj->field.member);
-			if (obj->field.member->type != ex_symbol) {
-				internal_error (obj->field.member, "not a symbol");
-			}
-			auto sym = obj->field.member->symbol;
-			offset = new_uint_expr (sym->offset);
-			type = obj->field.type;
-		} else if (obj->type == ex_array) {
-			scoped_src_loc (obj->array.index);
-			int base_ind = 0;
-			if (is_array (base_type)) {
-				base_ind = base_type->array.base;
-			}
-			type = obj->array.type;
-			auto base = new_int_expr (base_ind, false);
-			int size = type_aligned_size (type) * sizeof (pr_type_t);
-			auto scale = new_int_expr (size, false);
-			auto index = binary_expr ('*', obj->array.index, scale);
-			offset = binary_expr ('*', base, scale);
-			offset = binary_expr ('-', index, offset);
-		} else {
-			internal_error (obj, "what the what?!?");
-		}
-		// "wedge" the spirv-id for the pointer into the expression
-		// being generated. spirv_emit_expr will use the id instead
-		// of evaluating the expression. If ptr_id is still 0, then
-		// the expression will still be evaluated.
-		if (!ptr) {
-			ptr = new_expr_copy (e);
-			spirv_add_expr_id (ptr, ptr_id, ctx);
-		}
-		*acc_type = tagged_pointer_type (storage, type);
-		if (!is_zero (offset)) {
-			ptr = offset_pointer_expr (ptr, offset);
-		}
-		ptr = cast_expr (*acc_type, ptr);
-		if (is_pointer (type)) {
-			ptr_id = spirv_emit_expr (ptr, ctx);
-			id = ptr_id;
-			align = type_align (type) * sizeof (pr_type_t);
-			base_type = type;
-			storage = base_type->fldptr.tag;
-		}
-		e = obj;
-	}
-	ptr_id = spirv_emit_expr (ptr, ctx);
-	return ptr_id;
+	return id;
 }
 
 static unsigned
 spirv_address (const expr_t *e, spirvctx_t *ctx)
 {
 	auto lvalue = e->address.lvalue;
-	if (lvalue->type != ex_field && lvalue->type != ex_array) {
+	if (is_deref (lvalue)) {
+		return spirv_emit_expr (lvalue->expr.e1, ctx);
+	} else if (lvalue->type != ex_field && lvalue->type != ex_array) {
 		internal_error (e, "not field or array");
 	}
 	if (e->address.offset) {
@@ -2367,6 +2405,7 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 	unsigned src = spirv_emit_expr (src_expr, ctx);
 	unsigned dst = 0;
 	unsigned align = 0;	// default to not emitting Aligned
+	bool is_vol = false;
 
 	if (is_temp (dst_expr)) {
 		// spir-v uses SSA, so temps cannot be assigned to directly, so instead
@@ -2393,13 +2432,15 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 			internal_error (e, "access type is not a pointer or reference");
 		}
 		if (acc_type->fldptr.tag == SpvStorageClassPhysicalStorageBuffer) {
-			align = type_align (res_type) * sizeof (pr_type_t);
+			align = type_byte_align (res_type);
+			is_vol = is_volatile (res_type);
 		}
 	} else if (is_deref (dst_expr)) {
 		auto ptr = dst_expr->expr.e1;
 		auto ptr_type = get_type (ptr);
 		if (is_pointer (ptr_type)) {
-			align = type_align (ptr_type) * sizeof (pr_type_t);
+			align = type_byte_align (ptr_type);
+			is_vol = is_volatile (ptr_type);
 		}
 		dst = spirv_emit_expr (ptr, ctx);
 	} else if (dst_expr->type == ex_xvalue && dst_expr->xvalue.lvalue) {
@@ -2421,6 +2462,9 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 	INSN (insn, 2) = src;
 	if (align) {
 		INSN (insn, 3) = SpvMemoryAccessAlignedMask;
+		if (is_vol) {
+			INSN (insn, 3) |= SpvMemoryAccessNonPrivatePointerMask;
+		}
 		INSN (insn, 4) = align;
 	}
 	return 0;
@@ -2448,7 +2492,7 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 		} else {
 			scoped_src_loc (a);
 			auto psym = new_symbol ("param");
-			auto arg_type = get_type (a);
+			auto arg_type = core_type (get_type (a));
 			if (is_reference (arg_type)) {
 				psym->type = arg_type;
 			} else {
@@ -2772,8 +2816,8 @@ spirv_cond (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_field_array (const expr_t *e, spirvctx_t *ctx)
 {
-	const type_t *res_type;
-	const type_t *acc_type;
+	const type_t *res_type = nullptr;
+	const type_t *acc_type = nullptr;
 
 	unsigned id = spirv_access_chain (e, ctx, &res_type, &acc_type);
 
@@ -2781,7 +2825,7 @@ spirv_field_array (const expr_t *e, spirvctx_t *ctx)
 		// base is a pointer or reference so load the value
 		unsigned align = 0;
 		if (is_pointer (acc_type)) {
-			align = type_align (res_type) * sizeof (pr_type_t);
+			align = type_byte_align (res_type);
 		}
 		id = spirv_ptr_load (res_type, id, align, ctx);
 	}
@@ -3017,7 +3061,7 @@ spirv_ptroffset (const expr_t *e, spirvctx_t *ctx)
 	auto ptr = e->ptroffset.ptr;
 	auto offs = e->ptroffset.offset;
 	ptr = cast_expr (&type_uvec2, ptr);
-	if (type_size (get_type (offs)) != 1) {
+	if (type_size (get_type (offs)) != type_size (&type_uint)) {
 		error (offs, "64-bit offset not supported (yet)");
 		return 0;
 	}
@@ -3180,6 +3224,18 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	}
 
 	auto mod = pr->module;
+	//spirv_add_capability (mod, SpvCapabilityFloat16);
+	if (mod->int8) {
+		spirv_add_capability (mod, SpvCapabilityInt8);
+		spirv_add_capability (mod, SpvCapabilityStorageBuffer8BitAccess);
+	}
+	if (mod->int16) {
+		spirv_add_capability (mod, SpvCapabilityInt16);
+	}
+	if (mod->float16 || mod->int16) {
+		spirv_add_capability (mod, SpvCapabilityStorageBuffer16BitAccess);
+	}
+	//spirv_add_capability (mod, SpvCapabilityInt64);
 	for (auto cap = pr->module->capabilities.head; cap; cap = cap->next) {
 		spirv_Capability (expr_uint (cap->expr), space, &ctx);
 	}
@@ -3800,6 +3856,8 @@ spirv_shift_op (int op, const expr_t *e1, const expr_t *e2)
 static bool __attribute__((pure))
 spirv_types_logically_match (const type_t *dst, const type_t *src)
 {
+	dst = core_type (dst);
+	src = core_type (src);
 	if (type_same (dst, src)) {
 		return true;
 	}
@@ -3843,13 +3901,7 @@ spirv_test_expr (const expr_t *expr)
 		auto test = typed_binary_expr (bool_type (type), QC_NE, expr, zero);
 		expr = test;
 	}
-	type = get_type (expr);
-	if (is_scalar (type)) {
-		return expr;
-	}
-	type = base_type (type);
-	auto test = new_horizontal_expr ('|', expr, type);
-	return test;
+	return ruamoko_test_expr (expr);
 }
 
 static const expr_t *
@@ -3894,6 +3946,8 @@ static SpvCapability spirv_base_capabilities[] = {
 	SpvCapabilityDeviceGroup,
 	SpvCapabilityShaderNonUniform,
 	SpvCapabilityPhysicalStorageBufferAddresses,
+	SpvCapabilityVulkanMemoryModel,
+	SpvCapabilityVulkanMemoryModelDeviceScope,
 };
 
 static const char *
@@ -3916,8 +3970,7 @@ spirv_init (void)
 	//FIXME unhardcode
 	spirv_set_addressing_model (pr.module,
 								SpvAddressingModelPhysicalStorageBuffer64);
-	//FIXME look into Vulkan, or even configurable
-	spirv_set_memory_model (pr.module, SpvMemoryModelGLSL450);
+	spirv_set_memory_model (pr.module, SpvMemoryModelVulkan);
 
 	for (size_t i = 0; i < countof (spirv_base_capabilities); i++) {
 		auto cap = spirv_base_capabilities[i];
@@ -4172,5 +4225,6 @@ target_t spirv_target = {
 	.short_circuit = true,
 	.pointer_type = spirv_pointer_type,
 	.pointer_scale = 4,
-	.pointer_size = 2,	// internal sizes are in ints rather than bytes
+	.pointer_size = sizeof(uint64_t),
+	.pointer_cast = &type_uvec2,
 };

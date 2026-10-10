@@ -151,7 +151,7 @@ glsl_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx)
 	auto hunk = brush_ctx->hunk;
 	// a bit hacky, but it's as good a place as any
 	mod->clear = glsl_brush_clear;
-	mod->brush->lightmap_bytes = 1;
+	mod->brush->luxel_bytes = 1;
 	if (!bsp->lightdatasize) {
 		mod->brush->lightdata = NULL;
 		return;

@@ -358,8 +358,8 @@ merge_spaces (defspace_t *dst, defspace_t *src, int alignment)
 	int         offset;
 
 	for (def_t *def = src->defs; def; def = def->next) {
-		if (def->type->alignment > alignment) {
-			alignment = def->type->alignment;
+		if (type_align (def->type) > alignment) {
+			alignment = type_align (def->type);
 		}
 	}
 	offset = defspace_alloc_aligned_highwater (dst, src->size, alignment);

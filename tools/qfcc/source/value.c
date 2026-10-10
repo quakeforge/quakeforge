@@ -453,9 +453,42 @@ _get_value_string (const ex_value_t *value, const type_t *type, bool print_name)
 			}
 			return va ("%s %s", type->name, str);
 		case ev_short:
-			return va ("%s %"PRIi16, type->name, value->short_val);
+			switch (type_width (type)) {
+				case 1:
+					str = va ("%hd", value->short_val);
+					break;
+				case 2:
+					str = va ("[%hd, %hd]",
+							  VEC2_EXP (value->svec2_val));
+					break;
+				case 3:
+					str = va ("[%hd, %hd, %hd]",
+							  VectorExpand (value->svec3_val));
+					break;
+				case 4:
+					str = va ("[%hd, %hd, %hd, %hd]",
+							  VEC4_EXP (value->svec4_val));
+					break;
+			}
+			return va ("%s %s", type->name, str);
 		case ev_ushort:
-			return va ("%s %"PRIu16, type->name, value->ushort_val);
+			switch (type_width (type)) {
+				case 1:
+					str = va ("%hu", value->ushort_val);
+					break;
+				case 2:
+					str = va ("[%hu, %hu]",
+							  VEC2_EXP (value->usvec2_val));
+					break;
+				case 3:
+					str = va ("[%hu, %hu, %hu]",
+							  VectorExpand (value->usvec3_val));
+					break;
+				case 4:
+					str = va ("[%hu, %hu, %hu, %hu]",
+							  VEC4_EXP (value->usvec4_val));
+					break;
+			}
 		case ev_double:
 			switch (type_width (type)) {
 				case 1:
@@ -509,6 +542,69 @@ _get_value_string (const ex_value_t *value, const type_t *type, bool print_name)
 				case 4:
 					str = va ("[%"PRIu64", %"PRIi64", %"PRIi64", %"PRIi64"]",
 							  VEC4_EXP (value->ulvec4_val));
+					break;
+			}
+			return va ("%s %s", type->name, str);
+		case ev_sbyte:
+			switch (type_width (type)) {
+				case 1:
+					str = va ("%hhd", value->sbyte_val);
+					break;
+				case 2:
+					str = va ("[%hhd, %hhd]",
+							  VEC2_EXP (value->sbvec2_val));
+					break;
+				case 3:
+					str = va ("[%hhd, %hhd, %hhd]",
+							  VectorExpand (value->sbvec3_val));
+					break;
+				case 4:
+					str = va ("[%hhd, %hhd, %hhd, %hhd]",
+							  VEC4_EXP (value->sbvec4_val));
+					break;
+			}
+			return va ("%s %s", type->name, str);
+		case ev_ubyte:
+			switch (type_width (type)) {
+				case 1:
+					str = va ("%02hhx", value->ubyte_val);
+					break;
+				case 2:
+					str = va ("[%02hhx, %02hhx]",
+							  VEC2_EXP (value->ubvec2_val));
+					break;
+				case 3:
+					str = va ("[%02hhx, %02hhx, %02hhx]",
+							  VectorExpand (value->ubvec3_val));
+					break;
+				case 4:
+					str = va ("[%02hhx, %02hhx, %02hhx, %02hhx]",
+							  VEC4_EXP (value->ubvec4_val));
+					break;
+			}
+			return va ("%s %s", type->name, str);
+		case ev_half:
+			switch (type_width (type)) {
+				case 1:
+					str = va ("%.5g", (double) value->half_val);
+					break;
+				case 2:
+					str = va ("[%.5g, %.5g]",
+							  (double) value->hvec2_val[0],
+							  (double) value->hvec2_val[1]);
+					break;
+				case 3:
+					str = va ("[%.5g, %.5g, %.5g]",
+							  (double) value->hvec3_val[0],
+							  (double) value->hvec3_val[1],
+							  (double) value->hvec3_val[2]);
+					break;
+				case 4:
+					str = va ("[%.5g, %.5g, %.5g, %.5g]",
+							  (double) value->hvec4_val[0],
+							  (double) value->hvec4_val[1],
+							  (double) value->hvec4_val[2],
+							  (double) value->hvec4_val[3]);
 					break;
 			}
 			return va ("%s %s", type->name, str);

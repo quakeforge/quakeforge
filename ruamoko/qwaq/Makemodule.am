@@ -3,6 +3,29 @@ QWAQ_DEPS=@QWAQ_DEPS@
 QWAQ_INCS=@QWAQ_INCS@
 
 qwaq_targets=\
+	ruamoko/qwaq/qwaq-app_dat$(EXEEXT) \
+	ruamoko/qwaq/qwaq-ed_dat$(EXEEXT) \
+	ruamoko/qwaq/qwaq-dbg_dat$(EXEEXT) \
+	ruamoko/qwaq/gcd_dat$(EXEEXT) \
+	ruamoko/qwaq/input-app_dat$(EXEEXT) \
+	ruamoko/qwaq/z-transform_dat$(EXEEXT)
+
+# Sneaky hack to get automake to chooch my way: keeps the .exe for windows
+# off the actua .dat files but keeps `make dist` working
+ruamoko/qwaq/qwaq-app_dat$(EXEEXT): ruamoko/qwaq/qwaq-app.dat
+	@cp $^ $@
+ruamoko/qwaq/qwaq-ed_dat$(EXEEXT): ruamoko/qwaq/qwaq-ed.dat
+	@cp $^ $@
+ruamoko/qwaq/qwaq-dbg_dat$(EXEEXT): ruamoko/qwaq/qwaq-dbg.dat
+	@cp $^ $@
+ruamoko/qwaq/gcd_dat$(EXEEXT): ruamoko/qwaq/gcd.dat
+	@cp $^ $@
+ruamoko/qwaq/input-app_dat$(EXEEXT): ruamoko/qwaq/input-app.dat
+	@cp $^ $@
+ruamoko/qwaq/z-transform_dat$(EXEEXT): ruamoko/qwaq/z-transform.dat
+	@cp $^ $@
+
+ruamoko_qwaq_data=\
 	ruamoko/qwaq/qwaq-app.dat \
 	ruamoko/qwaq/qwaq-ed.dat \
 	ruamoko/qwaq/qwaq-dbg.dat \
@@ -11,6 +34,7 @@ qwaq_targets=\
 	ruamoko/qwaq/z-transform.dat
 
 noinst_PROGRAMS += @QWAQ_TARGETS@
+noinst_DATA += @ruamoko_qwaq_data@
 
 EXTRA_PROGRAMS += \
 	ruamoko/qwaq/qwaq-cmd \
@@ -41,6 +65,11 @@ include $(qwaqshader_dep) # am--include-marker
 spv_depfiles_remade += $(qwaqshader_dep)
 
 qwaqshader_r = $(call spvautoc,$(qwaqshader_src))
+
+if run_tools_qfcc_tests
+TESTS += $(qwaqshader_src:.r=.r.spv.run)
+#check_PROGRAMS += $(qwaqshader_src:.r=.r.spv)
+endif
 
 libui=ruamoko/qwaq/libui.a
 libmisc=ruamoko/qwaq/libmisc.a
@@ -261,7 +290,7 @@ ruamoko_qwaq_qwaq_wl_DEPENDENCIES= $(qwaq_wl_libs) $(QWAQ_DEPS)
 ruamoko_qwaq_qwaq_app_dat_SOURCES=$(qwaq_app_dat_src)
 ruamoko_qwaq_qwaq_app_obj=$(ruamoko_qwaq_qwaq_app_dat_SOURCES:.r=.o)
 ruamoko_qwaq_qwaq_app_dep=$(call qcautodep,$(ruamoko_qwaq_qwaq_app_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/qwaq-app.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_app_obj) $(QFCC_DEP) $(libdbg) $(libedit) $(libui) $(libmisc) ruamoko/lib/libr.a
+ruamoko/qwaq/qwaq-app.dat: $(ruamoko_qwaq_qwaq_app_obj) $(QFCC_DEP) $(libdbg) $(libedit) $(libui) $(libmisc) ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_app_obj) $(libdbg) $(libedit) $(libui) $(libmisc) -lr
 include $(ruamoko_qwaq_qwaq_app_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_app_dep)
@@ -272,14 +301,14 @@ r_depfiles_remade += $(qwaq_core_dep)
 ruamoko_qwaq_qwaq_dbg_dat_SOURCES=$(qwaq_core_src) $(qwaq_dbg_dat_src)
 ruamoko_qwaq_qwaq_dbg_obj=$(ruamoko_qwaq_qwaq_dbg_dat_SOURCES:.r=.o)
 ruamoko_qwaq_qwaq_dbg_dep=$(call qcautodep,$(qwaq_dbg_dat_src:.o=.Qo))
-ruamoko/qwaq/qwaq-dbg.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_dbg_obj) $(QFCC_DEP) $(libdbg) $(libedit) $(libmisc) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
+ruamoko/qwaq/qwaq-dbg.dat: $(ruamoko_qwaq_qwaq_dbg_obj) $(QFCC_DEP) $(libdbg) $(libedit) $(libmisc) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_dbg_obj) $(libdbg) $(libedit) $(libmisc) -lcsqc -lr
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_dbg_dep)
 
 ruamoko_qwaq_qwaq_ed_dat_SOURCES=$(qwaq_core_src) $(qwaq_ed_dat_src)
 ruamoko_qwaq_qwaq_ed_obj=$(ruamoko_qwaq_qwaq_ed_dat_SOURCES:.r=.o)
 ruamoko_qwaq_qwaq_ed_dep=$(call qcautodep,$(qwaq_ed_dat_src:.o=.Qo))
-ruamoko/qwaq/qwaq-ed.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_ed_obj) $(QFCC_DEP) $(libedit) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
+ruamoko/qwaq/qwaq-ed.dat: $(ruamoko_qwaq_qwaq_ed_obj) $(QFCC_DEP) $(libedit) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_ed_obj) $(libedit) -lcsqc -lr
 include $(qwaq_core_dep) $(ruamoko_qwaq_qwaq_dbg_dep) $(ruamoko_qwaq_qwaq_ed_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_ed_dep)
@@ -287,7 +316,7 @@ r_depfiles_remade += $(ruamoko_qwaq_qwaq_ed_dep)
 ruamoko_qwaq_input_app_dat_SOURCES=$(qwaq_input_app_dat_src)
 ruamoko_qwaq_input_app_obj=$(ruamoko_qwaq_input_app_dat_SOURCES:.r=.o)
 ruamoko_qwaq_input_app_dep=$(call qcautodep,$(ruamoko_qwaq_input_app_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/input-app.dat$(EXEEXT): $(ruamoko_qwaq_input_app_obj) $(QFCC_DEP) $(libui) $(libmisc) ruamoko/lib/libr.a
+ruamoko/qwaq/input-app.dat: $(ruamoko_qwaq_input_app_obj) $(QFCC_DEP) $(libui) $(libmisc) ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_input_app_obj) $(libui) $(libmisc) -lr
 include $(ruamoko_qwaq_input_app_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_input_app_dep)
@@ -295,7 +324,7 @@ r_depfiles_remade += $(ruamoko_qwaq_input_app_dep)
 ruamoko_qwaq_gcd_dat_SOURCES=ruamoko/qwaq/gcd.r
 ruamoko_qwaq_gcd_obj=$(ruamoko_qwaq_gcd_dat_SOURCES:.r=.o)
 ruamoko_qwaq_gcd_dep=$(call qcautodep,$(ruamoko_qwaq_gcd_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/gcd.dat$(EXEEXT): $(ruamoko_qwaq_gcd_obj) $(QFCC_DEP) ruamoko/lib/libr.a
+ruamoko/qwaq/gcd.dat: $(ruamoko_qwaq_gcd_obj) $(QFCC_DEP) ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_gcd_obj) -lr
 include $(ruamoko_qwaq_gcd_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_gcd_dep)
@@ -303,7 +332,7 @@ r_depfiles_remade += $(ruamoko_qwaq_gcd_dep)
 ruamoko_qwaq_z_transform_dat_SOURCES=ruamoko/qwaq/z-transform.r
 ruamoko_qwaq_z_transform_obj=$(ruamoko_qwaq_z_transform_dat_SOURCES:.r=.o)
 ruamoko_qwaq_z_transform_dep=$(call qcautodep,$(ruamoko_qwaq_z_transform_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/z-transform.dat$(EXEEXT): $(ruamoko_qwaq_z_transform_obj) $(QFCC_DEP) ruamoko/lib/libr.a
+ruamoko/qwaq/z-transform.dat: $(ruamoko_qwaq_z_transform_obj) $(QFCC_DEP) ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_z_transform_obj) -lr
 include $(ruamoko_qwaq_z_transform_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_z_transform_dep)
@@ -351,17 +380,15 @@ EXTRA_DIST += \
 	ruamoko/qwaq/gui/filewindow.h \
 	ruamoko/qwaq/gui/listview.h \
 	ruamoko/qwaq/gui/nodepanel.h \
+	ruamoko/qwaq/gui/slider.h \
 	ruamoko/qwaq/gui/ui_object.h \
 	ruamoko/qwaq/gui/virtinput.h \
 	ruamoko/qwaq/gui/window.h \
-	ruamoko/qwaq/input-app.h \
-	ruamoko/qwaq/mainmenu.h \
-	ruamoko/qwaq/physics.h \
-	ruamoko/qwaq/qwaq-app.h \
-	ruamoko/qwaq/qwaq-ed.h \
-	ruamoko/qwaq/qwaq-input.h \
-	ruamoko/qwaq/qwaq.h \
-	ruamoko/qwaq/threading.h \
+	ruamoko/qwaq/orrery/grandorrery.h \
+	ruamoko/qwaq/orrery/orbit.h \
+	ruamoko/qwaq/orrery/body.h \
+	ruamoko/qwaq/orrery/physorbit.h \
+	ruamoko/qwaq/orrery/orbiter.h \
 	ruamoko/qwaq/ui/button.h \
 	ruamoko/qwaq/ui/color.h \
 	ruamoko/qwaq/ui/curses.h \
@@ -381,7 +408,9 @@ EXTRA_DIST += \
 	ruamoko/qwaq/ui/view.h \
 	ruamoko/qwaq/ui/window.h \
 	ruamoko/qwaq/shader/atmosphere.r \
+	ruamoko/qwaq/shader/common.h \
 	ruamoko/qwaq/shader/conic.r \
+	ruamoko/qwaq/shader/conic.h \
 	ruamoko/qwaq/shader/pbr_brdf.r \
 	ruamoko/qwaq/shader/pbr_conv.r \
 	ruamoko/qwaq/shader/pixpal.r \
@@ -389,14 +418,25 @@ EXTRA_DIST += \
 	ruamoko/qwaq/shader/planetary.h \
 	ruamoko/qwaq/armature.h \
 	ruamoko/qwaq/camera.h \
+	ruamoko/qwaq/camerasystem.h \
 	ruamoko/qwaq/gizmo.h \
+	ruamoko/qwaq/input-app.h \
+	ruamoko/qwaq/mainmenu.h \
 	ruamoko/qwaq/pga3d.h \
+	ruamoko/qwaq/physics.h \
 	ruamoko/qwaq/player.h \
 	ruamoko/qwaq/playercam.h \
+	ruamoko/qwaq/qwaq-app.h \
+	ruamoko/qwaq/qwaq-ed.h \
+	ruamoko/qwaq/qwaq-input.h \
+	ruamoko/qwaq/qwaq.h \
+	ruamoko/qwaq/threading.h \
+	ruamoko/qwaq/config/orrery.plist \
 	ruamoko/qwaq/config/qwaq-ed-in.cfg \
 	ruamoko/qwaq/config/qwaq-ed-rg.plist
 CLEANFILES += \
 	ruamoko/qwaq/qwaq-curses.log \
+	ruamoko/qwaq/*.a \
 	ruamoko/qwaq/*.dat \
 	ruamoko/qwaq/*.sym \
-	ruamoko/qwaq/shader/*.spv
+	ruamoko/qwaq/shader/*.spv*

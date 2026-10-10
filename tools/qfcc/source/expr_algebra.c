@@ -51,7 +51,7 @@ get_group_mask (const type_t *type, algebra_t *algebra)
 		int group = layout->group_map[layout->mask_map[0]].num;
 		return 1u << group;
 	} else {
-		type = unalias_type (type);
+		type = core_type (type);
 		if (type->type == ev_invalid) {
 			return (1 << algebra->layout.count) - 1;
 		}
@@ -463,6 +463,7 @@ mvec_expr (const expr_t *expr, algebra_t *algebra)
 		mvtype = dereference_type (mvtype);
 		expr = pointer_deref (expr);
 	}
+	mvtype = core_type (mvtype);
 
 	if (expr->type == ex_multivec) {
 		return expr;

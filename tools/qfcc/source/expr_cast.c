@@ -75,8 +75,9 @@ static const expr_t *
 cast_math (const type_t *dstType, const type_t *srcType, const expr_t *expr)
 {
 #define ALIGN [[gnu::aligned(alignof(pr_lvec4_t))]]
-	pr_type_t   src_value[type_size (srcType)] ALIGN;
-	pr_type_t   dst_value[type_size (dstType)] ALIGN;
+	//FIXME type_size rounds down, should be up, but causes problems
+	pr_type_t   src_value[type_size (srcType) + 1] ALIGN;
+	pr_type_t   dst_value[type_size (dstType) + 1] ALIGN;
 
 	value_store (src_value, srcType, expr);
 
@@ -89,7 +90,7 @@ cast_math (const type_t *dstType, const type_t *srcType, const expr_t *expr)
 static const expr_t * __attribute__((pure))
 ptr_cast_special (const type_t *ptr_type, const expr_t *src)
 {
-	if (type_size (ptr_type) > 1) {
+	if (type_size (ptr_type) > type_size (&type_uint)) {
 		auto uint_cast = new_alias_expr (&type_uint, src);
 		auto intptr_type = int_type (ptr_type);
 		src = typed_unary_expr (intptr_type, 'C', uint_cast);
@@ -180,10 +181,10 @@ do_cast (const type_t *dstType, const expr_t *e, bool value)
 		dstType = dereference_type (dstType);
 		return edag_add_expr (address_expr (e, dstType));
 	}
-	if (is_short (srcType)) {
+	if (is_short (srcType) && is_constant (e)) {
 		e = new_int_expr (expr_short (e), false);
 		srcType = &type_int;
-	} else if (is_ushort (srcType)) {
+	} else if (is_ushort (srcType) && is_constant (e)) {
 		e = new_int_expr (expr_ushort (e), false);
 		srcType = &type_int;
 	}

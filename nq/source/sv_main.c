@@ -386,9 +386,12 @@ SV_AddToFatPVS (vec4f_t org, int node_id)
 	while (1) {
 		// if this is a leaf, accumulate the pvs bits
 		if (node_id < 0) {
-			mleaf_t    *leaf = sv.worldmodel->brush->leafs + ~node_id;
+			auto brush = sv.worldmodel->brush;
+			uint32_t    leafnum = ~node_id;
+			mleaf_t    *leaf = brush->leafs + leafnum;
 			if (leaf->contents != CONTENTS_SOLID) {
-				Mod_LeafPVS_mix (leaf, sv.worldmodel->brush, 0xff, fatpvs);
+				uint32_t    vis_offset = brush->leaf_offs[leafnum];
+				Mod_LeafPVS_mix (vis_offset, &brush->leaf_vis, 0xff, fatpvs);
 			}
 			return;
 		}
@@ -416,9 +419,9 @@ static set_t *
 SV_FatPVS (vec4f_t org)
 {
 	if (!fatpvs) {
-		fatpvs = set_new_size (sv.worldmodel->brush->visleafs);
+		fatpvs = set_new_size (sv.worldmodel->brush->leaf_vis.count);
 	}
-	set_expand (fatpvs, sv.worldmodel->brush->visleafs);
+	set_expand (fatpvs, sv.worldmodel->brush->leaf_vis.count);
 	set_empty (fatpvs);
 	SV_AddToFatPVS (org, 0);
 	return fatpvs;

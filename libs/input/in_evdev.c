@@ -425,7 +425,7 @@ in_evdev_get_axis_name (void *data, void *device, int axis_num)
 	return abs_axis_names[axis->evnum];
 }
 
-static int
+static int __attribute__((pure))
 in_evdev_get_axis_num (void *data, void *device, const char *axis_name)
 {
 	device_t   *dev = device;

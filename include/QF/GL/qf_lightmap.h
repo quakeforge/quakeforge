@@ -55,6 +55,7 @@ struct transform_s;
 extern void (*gl_R_BuildLightMap) (const vec4f_t *transform,
 								   mod_brush_t *brush, msurface_t *surf);
 int gl_R_LightmapTexture (void) __attribute__((pure));
+float gl_R_LightmapSize (void) __attribute__((pure));
 void gl_R_FlushLightmaps (void);
 
 

@@ -460,6 +460,9 @@ set_address (sv_def_t *def, void *address)
 		case ev_void:
 		case ev_short:
 		case ev_ushort:
+		case ev_sbyte:
+		case ev_ubyte:
+		case ev_half:
 		case ev_invalid:
 		case ev_type_count:
 			break;

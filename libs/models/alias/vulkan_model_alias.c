@@ -1,5 +1,5 @@
 /*
-	vulkan_model_alais.c
+	vulkan_model_alias.c
 
 	Alias model processing for Vulkan
 
@@ -420,7 +420,7 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	rmesh->index_buffer = index_obj->buffer.buffer;
 
 	size_t packet_size = vert_size + uv_size + ind_size;
-	auto packet = QFV_PacketAcquire (ctx->staging, "alais.mesh");
+	auto packet = QFV_PacketAcquire (ctx->staging, "alias.mesh");
 	byte *packet_start = QFV_PacketExtend (packet, packet_size);
 	byte *packet_data = packet_start;
 

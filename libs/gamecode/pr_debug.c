@@ -258,6 +258,9 @@ pr_debug_type_base (const progs_t *pr, const qfot_type_t *type)
 		case ty_alias:
 			aux_type = &G_STRUCT (pr, qfot_type_t, type->alias.aux_type);
 			return pr_debug_type_base (pr, aux_type);
+		case ty_qual:
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->qual.type);
+			return pr_debug_type_base (pr, aux_type);
 		case ty_algebra:
 			//FIXME wip
 			return type->algebra.type;
@@ -304,6 +307,9 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 			return 1;	//FIXME or should it return sizeof class struct?
 		case ty_alias:
 			aux_type = &G_STRUCT (pr, qfot_type_t, type->alias.aux_type);
+			return pr_debug_type_size (pr, aux_type);
+		case ty_qual:
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->qual.type);
 			return pr_debug_type_size (pr, aux_type);
 		case ty_algebra:
 			//FIXME wip
@@ -1210,6 +1216,10 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 			type = &G_STRUCT (data->pr, qfot_type_t, type->alias.aux_type);
 			value_string (data, type, value);
 			break;
+		case ty_qual:
+			type = &G_STRUCT (data->pr, qfot_type_t, type->qual.type);
+			value_string (data, type, value);
+			break;
 		case ty_meta_count:
 			break;
 	}
@@ -1627,12 +1637,61 @@ pr_debug_uint_view (qfot_type_t *type, pr_type_t *value, void *_data)
 }
 
 static void
+pr_debug_print_short (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	dasprintf (dstr, "%" PRIi16, *(int16_t *)value);
+}
+
+static void
 pr_debug_short_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
-	__auto_type data = (pr_debug_data_t *) _data;
-	dstring_t  *dstr = data->dstr;
+	pr_debug_print_matrix (type, value, _data, 1, pr_debug_print_short);
+}
 
-	dasprintf (dstr, "%04x", (short)PR_PTR (int, value));
+static void
+pr_debug_print_sbyte (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	dasprintf (dstr, "%" PRIx8, PR_PTR (sbyte, value));
+}
+
+static void
+pr_debug_sbyte_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	pr_debug_print_matrix (type, value, _data, 1, pr_debug_print_sbyte);
+}
+
+static void
+pr_debug_print_ubyte (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	dasprintf (dstr, "%02" PRIx8, PR_PTR (ubyte, value));
+}
+
+static void
+pr_debug_ubyte_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	pr_debug_print_matrix (type, value, _data, 1, pr_debug_print_ubyte);
+}
+
+static void
+pr_debug_print_half (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	if (data->pr->progs->version == PROG_ID_VERSION
+		&& ISDENORM (PR_PTR (int, value))
+		&& PR_PTR (uint, value) != 0x80000000) {
+		dasprintf (dstr, "<%04x>", PR_PTR (ushort, value));
+	} else {
+		dasprintf (dstr, "%.5g", (double) PR_PTR (half, value));
+	}
+}
+
+static void
+pr_debug_half_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	pr_debug_print_matrix (type, value, _data, 1, pr_debug_print_half);
 }
 
 static void
@@ -1675,12 +1734,16 @@ pr_debug_ulong_view (qfot_type_t *type, pr_type_t *value, void *_data)
 }
 
 static void
+pr_debug_print_ushort (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	dasprintf (dstr, "%04" PRIx16, *(uint16_t *)value);
+}
+
+static void
 pr_debug_ushort_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
-	__auto_type data = (pr_debug_data_t *) _data;
-	dstring_t  *dstr = data->dstr;
-
-	dasprintf (dstr, "%04x", (pr_ushort_t)PR_PTR (int, value));
+	pr_debug_print_matrix (type, value, _data, 1, pr_debug_print_ushort);
 }
 
 static void
@@ -1742,7 +1805,7 @@ pr_debug_array_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	dstring_appendstr (dstr, "{");
 	int offset = 0;
 	for (int i = 0; i < array->count; i++, offset += val_size) {
-		pr_type_t  *val = value + offset;
+		pr_type_t  *val = (pr_type_t*) ((byte *) value + offset);
 		dasprintf (dstr, "[%d]=", array->base + i);
 		value_string (data, val_type, val);
 		if (i < array->count - 1) {

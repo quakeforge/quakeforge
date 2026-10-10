@@ -51,6 +51,7 @@ typedef enum {
 	ty_handle,
 	ty_algebra,
 	ty_bool,
+	ty_qual,
 
 	ty_meta_count
 } ty_meta_e;
@@ -66,6 +67,17 @@ typedef struct qfot_handle_s {
 	etype_t     type;
 	pr_string_t tag;
 } qfot_handle_t;
+
+typedef struct qfot_qual_s {
+	pr_ptr_t    type;
+	union {
+		struct {
+			pr_uint_t   is_const:1;
+			pr_uint_t   is_volatile:1;
+		};
+		pr_uint_t   bits;
+	};
+} qfot_qual_t;
 
 typedef struct qfot_fldptr_s {
 	etype_t     type;				///< ev_field or ev_ptr
@@ -138,6 +150,7 @@ typedef struct qfot_type_s {
 		pr_string_t class;			///< ty_class
 		qfot_alias_t alias;			///< ty_alias
 		qfot_handle_t handle;		///< ty_handle
+		qfot_qual_t qual;			///< ty_qual
 		qfot_algebra_t algebra;		///< ty_algebra
 	};
 } qfot_type_t;

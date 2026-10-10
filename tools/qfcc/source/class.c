@@ -78,7 +78,7 @@ type_t      type_selector = {
 type_t      type_SEL = {
 	.type = ev_ptr,
 	.name = "SEL",
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -88,7 +88,7 @@ const type_t *IMP_params[] = { &type_id, &type_SEL };
 param_qual_t IMP_quals[] = { pq_in, pq_in };
 type_t      type_IMP_func = {
 	.type = ev_func,
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (func),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -103,7 +103,7 @@ type_t      type_IMP_func = {
 type_t      type_IMP = {
 	.type = ev_ptr,
 	.name = "IMP",
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -116,7 +116,7 @@ type_t      type_super = {
 };
 type_t      type_SuperPtr = {
 	.type = ev_ptr,
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -127,7 +127,7 @@ param_qual_t supermsg_quals[] = { pq_in, pq_in };
 type_t      type_supermsg = {
 	.type = ev_func,
 	.name = ".supermsg",
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (func),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -160,7 +160,7 @@ type_t      type_module = {
 };
 type_t      type_moduleptr = {
 	.type = ev_ptr,
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -172,7 +172,7 @@ const type_t *obj_exec_class_params[] = {
 param_qual_t obj_exec_class_quals[] = { pq_in };
 type_t      type_exec_class = {
 	.type = ev_func,
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (func),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -194,7 +194,7 @@ type_t      type_object = {
 type_t      type_id = {
 	.type = ev_ptr,
 	.name = "id",
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -206,7 +206,7 @@ type_t      type_class = {
 };
 type_t      type_Class = {
 	.type = ev_ptr,
-	.alignment = 1,
+	.alignment = PR_ALIGNOF (ptr),
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
@@ -1388,7 +1388,7 @@ build_ivars (class_t *class, symtab_t *ivars, expr_t *ivar_decls,
 
 	int base = 0;
 	if (class->super_class) {
-		base = type_size (class->super_class->type);
+		base = type_byte_size (class->super_class->type);
 	}
 	auto parent = ivars->parent;	// preserve the ivars inheritance chain
 	build_struct ('s', 0, ivars, 0, base);
@@ -1810,7 +1810,7 @@ procollist_find_protocol (protocollist_t *protocollist, protocol_t *proto)
 	return 0;
 }
 
-static method_t *
+__attribute__((pure)) static method_t *
 protocol_find_method (protocol_t *protocol, selector_t *selector, int instance)
 {
 	method_t   *m = 0;

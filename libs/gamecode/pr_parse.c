@@ -252,21 +252,29 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 			break;
 
 		case ev_field:
-			def = PR_FindField (pr, s);
-			if (!def) {
-				Sys_Printf ("Can't find field %s\n", s);
-				return false;
+			if (s && s[0]) {
+				def = PR_FindField (pr, s);
+				if (!def) {
+					Sys_Printf ("Can't find field %s\n", s);
+					return false;
+				}
+				PR_PTR (int, d) = G_INT (pr, def->ofs);
+			} else {
+				PR_PTR (int, d) = 0;
 			}
-			PR_PTR (int, d) = G_INT (pr, def->ofs);
 			break;
 
 		case ev_func:
-			func = PR_FindFunction (pr, s);
-			if (!func) {
-				Sys_Printf ("Can't find function %s\n", s);
-				return false;
+			if (s && s[0]) {
+				func = PR_FindFunction (pr, s);
+				if (!func) {
+					Sys_Printf ("Can't find function %s\n", s);
+					return false;
+				}
+				PR_PTR (func, d) = func - pr->pr_functions;
+			} else {
+				PR_PTR (func, d) = 0;
 			}
-			PR_PTR (func, d) = func - pr->pr_functions;
 			break;
 
 		default:

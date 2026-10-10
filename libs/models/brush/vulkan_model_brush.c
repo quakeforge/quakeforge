@@ -185,13 +185,18 @@ transfer_texture (texture_t *tx, VkImage image, qfv_packet_t *packet,
 	auto dfunc = device->funcs;
 
 	size_t layer_size = mipsize (tx->width * tx->height * 4);
-	byte  *dst = QFV_PacketExtend (packet, layer_size);
+	size_t packet_size = layer_size;
+	if (!(tx->flags & (SURF_DRAWSKY | SURF_DRAWALPHA))) {
+		// textures with glow maps/fullbrights (most textures) require 2 layers
+		packet_size *= 2;
+	}
+	byte  *dst = QFV_PacketExtend (packet, packet_size);
 	if (!dst) {
 		QFV_PacketSubmit (packet);
 		packet = QFV_PacketAcquire (ctx->staging, "brush.tex");
-		dst = QFV_PacketExtend (packet, layer_size);
+		dst = QFV_PacketExtend (packet, packet_size);
 		if (!dst) {
-			Sys_Error ("could not acquire %zd bytes for packet", layer_size);
+			Sys_Error ("could not acquire %zd bytes for packet", packet_size);
 		}
 	}
 
@@ -213,10 +218,10 @@ transfer_texture (texture_t *tx, VkImage image, qfv_packet_t *packet,
 	}
 	unsigned layers = 2;
 	unsigned mip = QFV_MipLevels (width, height);
-	if (strncmp (tx->name, "sky", 3) == 0) {
+	if (tx->flags & SURF_DRAWSKY) {
 		transfer_mips (dst, tx + 1, tx, palette, (vprocess_t) memcpy);
 		copy_mips (packet, tx, dst, image, 0, MIPLEVELS, dfunc);
-	} else if (tx->name[0] == '{') {
+	} else if (tx->flags & SURF_DRAWALPHA) {
 		transfer_mip_level (dst, tx + 1, tx, 0, palette, (vprocess_t) memcpy);
 		copy_mips (packet, tx, dst, image, 0, 1, dfunc);
 		QFV_GenerateMipMaps (device, packet->cmd, image, 0, mip,
@@ -226,7 +231,7 @@ transfer_texture (texture_t *tx, VkImage image, qfv_packet_t *packet,
 	} else {
 		transfer_mips (dst, tx + 1, tx, palette, Mod_ClearFullbright);
 		copy_mips (packet, tx, dst, image, 0, MIPLEVELS, dfunc);
-		byte *glow = QFV_PacketExtend (packet, layer_size);
+		byte *glow = dst + layer_size;
 		transfer_mips (glow, tx + 1, tx, palette, Mod_CalcFullbright);
 		copy_mips (packet, tx, glow, image, 1, MIPLEVELS, dfunc);
 	}
@@ -394,7 +399,7 @@ Vulkan_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx, vulkan_ctx_t *ctx)
 	auto bsp = brush_ctx->bsp;
 	auto hunk = brush_ctx->hunk;
 
-	brush->lightmap_bytes = 3;
+	brush->luxel_bytes = 3;
 	if (!bsp->lightdatasize) {
 		brush->lightdata = NULL;
 		return;
@@ -407,7 +412,7 @@ Vulkan_Mod_LoadLighting (mod_brush_ctx_t *brush_ctx, vulkan_ctx_t *ctx)
 	QFile      *lit_file;
 
 	brush->lightdata = 0;
-	if (brush->lightmap_bytes > 1) {
+	if (brush->luxel_bytes > 1) {
 		// LordHavoc: check for a .lit file to load
 		dstring_t  *litfilename = dstring_new ();
 		dstring_copystr (litfilename, mod->name);

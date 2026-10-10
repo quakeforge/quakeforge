@@ -69,45 +69,8 @@ typedef struct handleref_s {
 	uint64_t    handle;
 } handleref_t;
 
-static void flag_or (const exprval_t *val1, const exprval_t *val2,
-					 exprval_t *result, exprctx_t *ctx)
-{
-	*(int *) (result->value) = *(int *) (val1->value) | *(int *) (val2->value);
-}
-
-static void flag_and (const exprval_t *val1, const exprval_t *val2,
-					 exprval_t *result, exprctx_t *ctx)
-{
-	*(int *) (result->value) = *(int *) (val1->value) & *(int *) (val2->value);
-}
-
-static void flag_cast_int (const exprval_t *val1, const exprval_t *val2,
-						   exprval_t *result, exprctx_t *ctx)
-{
-	// FIXME should check value is valid
-	*(int *) (result->value) = *(int *) (val2->value);
-}
-
-static void flag_not (const exprval_t *val, exprval_t *result, exprctx_t *ctx)
-{
-	*(int *) (result->value) = ~(*(int *) (val->value));
-}
-
-binop_t flag_binops[] = {
-	{ '|', 0, 0, flag_or },
-	{ '&', 0, 0, flag_and },
-	{ '=', &cexpr_int, 0, flag_cast_int },
-	{ '=', &cexpr_plitem, 0, cexpr_cast_plitem },
-	{}
-};
-
 binop_t enum_binops[] = {
 	{ '=', &cexpr_plitem, 0, cexpr_cast_plitem },
-	{}
-};
-
-unop_t flag_unops[] = {
-	{ '~', 0, flag_not },
 	{}
 };
 
@@ -629,8 +592,10 @@ void
 QFV_AddHandle (hashtab_t *tab, const char *name, uint64_t handle)
 {
 	handleref_t *hr = malloc (sizeof (handleref_t));
-	hr->name = strdup (name);
-	hr->handle = handle;
+	*hr = (handleref_t) {
+		.name = strdup (name),
+		.handle = handle,
+	};
 	Hash_Add (tab, hr);
 }
 
@@ -979,13 +944,12 @@ parse_task_function (const plitem_t *item, void **data,
 	}
 	size_t      size = func->num_params * sizeof (exprval_t);
 	size += func->num_params * sizeof (exprval_t *);
-	size_t      base = size;
+	size_t      base = RUP (size, 16);
+	size = base;
 	for (int i = 0; i < func->num_params; i++) {
 		exprtype_t *type = func->param_types[i];
-		size = ((size + type->size - 1) & ~(type->size - 1));
-		if (i == 0) {
-			base = size;
-		}
+		size = RUP (size, type->size);
+		size += type->size;
 	}
 	exprval_t **param_ptrs = vkparse_alloc (pctx, size);
 	exprval_t  *params = (exprval_t *) &param_ptrs[func->num_params];
@@ -995,11 +959,11 @@ parse_task_function (const plitem_t *item, void **data,
 	for (int i = 0; i < func->num_params; i++) {
 		exprtype_t *type = func->param_types[i];
 		param_ptrs[i] = &params[i];
+		offs = RUP (offs, type->size);
 		params[i] = (exprval_t) {
 			.type = type,
 			.value = param_data + offs,
 		};
-		offs = ((offs + type->size - 1) & ~(type->size - 1));
 		offs += type->size;
 	}
 	*(const char **) data[0] = vkstrdup (pctx, fname);
@@ -1030,6 +994,10 @@ parse_task_params (const plitem_t *item, void **data,
 		exprctx_t   ectx = *pctx->ectx;
 		if (param->type == &cexpr_plitem) {
 			*(plitem_t **) param->value = paramitm;
+			continue;
+		}
+		if (param->type == &cexpr_string && paramstr && *paramstr != '"') {
+			*(char **) param->value = vkstrdup (pctx, paramstr);
 			continue;
 		}
 		if (param->type->data) {

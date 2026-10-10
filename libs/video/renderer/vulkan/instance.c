@@ -161,7 +161,13 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	}
 	if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
 		&& strcmp (callbackData->pMessageIdName, "VVL-DEBUG-PRINTF") == 0) {
-		fprintf (stderr, "%s\n", callbackData->pMessage);
+		const char *msg = strchr (callbackData->pMessage, '\n');
+		if (msg && msg > callbackData->pMessage && msg[-1] == ':') {
+			msg++;
+		} else {
+			msg = callbackData->pMessage;
+		}
+		fprintf (stderr, "%s", msg);
 	} else {
 		fprintf (stderr, "validation layer: %s%s\n", msgSev,
 				 callbackData->pMessage);
@@ -184,7 +190,9 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 			fprintf (stderr, "    %s\n", instance->debug_stack.a[i]);
 		}
 	}
-	debug_breakpoint (messageSeverity);
+	if (!(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)) {
+		debug_breakpoint (messageSeverity);
+	}
 	return VK_FALSE;
 }
 

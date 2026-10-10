@@ -53,6 +53,7 @@
 #include "QF/GLSL/qf_vid.h"
 
 #include "r_internal.h"
+#include "r_scrap.h"
 
 #define s_dynlight (r_refdef.scene->base + scene_dynlight)
 
@@ -151,7 +152,12 @@ R_BuildLightMap_1 (const vec4f_t *transform, mod_brush_t *brush,
 	memset (blocklights, 0, size * sizeof (blocklights[0]));
 	if (!brush->lightdata) {
 		// because we by-pass the inversion, "no light" = "full bright"
-		GLSL_SubpicUpdate (surf->lightpic, (byte *) blocklights, 1);
+		GLSL_SubpicUpdate (&(subpic_t) {
+				.scrap = light_scrap,
+				.rect = surf->lightpic,
+				.width = surf->lightpic->width,
+				.height = surf->lightpic->height,
+			}, (byte *) blocklights, 1);
 		return;
 	}
 
@@ -184,7 +190,12 @@ R_BuildLightMap_1 (const vec4f_t *transform, mod_brush_t *brush,
 		*out++ = t;
 	}
 
-	GLSL_SubpicUpdate (surf->lightpic, (byte *) blocklights, 1);
+	GLSL_SubpicUpdate (&(subpic_t) {
+			.scrap = light_scrap,
+			.rect = surf->lightpic,
+			.width = surf->lightpic->width,
+			.height = surf->lightpic->height,
+		}, (byte *) blocklights, 1);
 }
 
 static void
@@ -194,9 +205,11 @@ create_surf_lightmap (msurface_t *surf)
 	int        smax, tmax;
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
-	surf->lightpic = GLSL_ScrapSubpic (light_scrap, smax, tmax);
-	if (!surf->lightpic)
+	auto subpic = GLSL_ScrapSubpic (light_scrap, smax, tmax);
+	if (!subpic) {
 		Sys_Error ("FIXME taniwha is being lazy");
+	}
+	surf->lightpic = subpic->rect;
 	if (smax > bl_extents[0])
 		bl_extents[0] = smax;
 	if (tmax > bl_extents[1])
@@ -264,6 +277,12 @@ int
 glsl_R_LightmapTexture (void)
 {
 	return GLSL_ScrapTexture (light_scrap);
+}
+
+float
+glsl_R_LightmapSize (void)
+{
+	return GLSL_ScrapSize (light_scrap);
 }
 
 void

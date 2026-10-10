@@ -85,6 +85,7 @@
 #define vec3 vec3f_t
 #define vec4 vec4f_t
 #define uint uint32_t
+#define ushort uint16_t
 #include "shader/lighting.h"
 #undef uint
 #undef vec3
@@ -246,30 +247,11 @@ lighting_init_shadow (const exprval_t **params, exprval_t *result,
 	};
 	auto rpinfo = rt->renderpasses;
 	auto rp = render->renderpasses;
-	uint32_t num_subpasses = rpinfo->num_subpasses;
-	if (num_subpasses > 0 && strcmp (rpinfo->subpasses[num_subpasses - 1].name,
-									 "$external") == 0) {
-		num_subpasses--;
-	}
-	VkRenderPassMultiviewCreateInfo *mv = cmemalloc (memsuper,
-			sizeof (VkRenderPassMultiviewCreateInfo[max_views]));
-	uint32_t *all_viewmasks = cmemalloc (memsuper,
-			sizeof (uint32_t[max_views * num_subpasses]));
 	for (uint32_t i = 0; i < max_views; i++) {
-		auto viewmasks = &all_viewmasks[i * num_subpasses];
-		mv[i] = (VkRenderPassMultiviewCreateInfo) {
-			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO,
-			.pNext = rpinfo->pNext,
-			.subpassCount = num_subpasses,
-			.pViewMasks = viewmasks,
-		};
 		rp[i] = *rpinfo;
-		rp[i].pNext = &mv[i];
 		rp[i].name = cmemstrdup (memsuper, vac (ctx->va_ctx, "%s:%d",
 												rpinfo->name, i + 1));
-		for (uint32_t j = 0; j < num_subpasses; j++) {
-			viewmasks[j] = ~0u >> (31 - i);
-		}
+		rp[i].viewMask = ~0u >> (31 - i);
 	}
 }
 
@@ -297,42 +279,37 @@ lighting_setup_shadow (const exprval_t **params, exprval_t *result,
 		};
 		lctx->ldata->receivers = lctx->ldata->receivers;
 	}
-	set_t leafs = SET_STATIC_INIT (brush->modleafs, alloca);
-	set_empty (&leafs);
+	auto vis = brush->cluster_vis;
+	set_t clusters = SET_STATIC_INIT (vis.count + 1, alloca);
+	set_empty (&clusters);
 
 	for (int i = 0; i < st_count; i++) {
 		auto q = lframe->light_queue[i];
 		for (uint32_t j = 0; j < q.count; j++) {
 			uint32_t leafnum = lframe->id_radius[q.start + j].leafnum;
 			if (leafnum != ~0u) {
-				set_add (&leafs, leafnum);
+				set_add (&clusters, leafnum);
 			}
 		}
 	}
 
-	set_t pvs = SET_STATIC_INIT (brush->visleafs, alloca);
-	auto iter = set_first (&leafs);
+	set_t pvs = SET_STATIC_INIT (vis.count, alloca);
+	auto iter = set_first (&clusters);
 	if (!iter) {
 		return;
 	}
 	if (iter->element == 0) {
 		set_assign (&pvs, lctx->ldata->sun_pvs);
 	}  else {
-		Mod_LeafPVS_set (brush->leafs + iter->element, brush, 0, &pvs);
+		Mod_LeafPVS_set (brush->cluster_offs[iter->element], &vis, 0, &pvs);
 	}
 	for (iter = set_next (iter); iter; iter = set_next (iter)) {
-		Mod_LeafPVS_mix (brush->leafs + iter->element, brush, 0, &pvs);
+		Mod_LeafPVS_mix (brush->cluster_offs[iter->element], &vis, 0, &pvs);
 	}
 
-	visstate_t visstate = {
-		.node_visframes = pass->node_frames,
-		.leaf_visframes = pass->leaf_frames,
-		.face_visframes = pass->face_frames,
-		.visframecount = pass->vis_frame,
-		.brush = pass->brush,
-	};
+	visstate_t visstate = pass->visstate;
 	R_MarkLeavesPVS (&visstate, &pvs);
-	pass->vis_frame = visstate.visframecount;
+	pass->visstate.vis_frame = visstate.vis_frame;
 }
 
 static VkFramebuffer
@@ -3112,27 +3089,21 @@ update_shadow_descriptors (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 static void
 mark_leaves (bsp_pass_t *pass, set_t *pvs)
 {
-	visstate_t visstate = {
-		.node_visframes = pass->node_frames,
-		.leaf_visframes = pass->leaf_frames,
-		.face_visframes = pass->face_frames,
-		.visframecount = pass->vis_frame,
-		.brush = pass->brush,
-	};
+	visstate_t visstate = pass->visstate;
 	R_MarkLeavesPVS (&visstate, pvs);
-	pass->vis_frame = visstate.visframecount;
+	pass->visstate.vis_frame = visstate.vis_frame;
 }
 
 static void
-show_leaves (vulkan_ctx_t *ctx, uint32_t leafnum, efrag_t *efrags)
+show_clusters (vulkan_ctx_t *ctx, uint32_t cluster_num, efrag_t *efrags)
 {
 	auto pass = Vulkan_Bsp_GetPass (ctx, QFV_bspDebug);
 	auto brush = pass->brush;
 
-	set_t pvs = SET_STATIC_INIT (brush->visleafs, alloca);
+	set_t pvs = SET_STATIC_INIT (brush->cluster_vis.count, alloca);
 	set_empty (&pvs);
-	if (leafnum) {
-		set_add (&pvs, leafnum - 1);
+	if (cluster_num) {
+		set_add (&pvs, cluster_num - 1);
 	} else {
 		//for (auto e = efrags; e; e = e->entnext) {
 		//	set_add (&pvs, e->leaf - brush->leafs - 1);
@@ -3224,7 +3195,7 @@ scene_efrags_ui (void *comp, ecs_registry_t *reg, uint32_t ent,
 	//}
 	UI_Horizontal {
 		if (UI_Button (vac (ctx->va_ctx, "Show##lightefrags_ui.%08x", ent))) {
-			show_leaves (ctx, 0, efrags);
+			show_clusters (ctx, 0, efrags);
 		}
 		UI_FlexibleSpace ();
 		UI_Labelf ("%4s %5u", valid ? "good" : "bad", len);
@@ -3237,18 +3208,19 @@ scene_lightleaf_ui (void *comp, ecs_registry_t *reg, uint32_t ent,
 {
 	vulkan_ctx_t *ctx = component->data;
 	auto imui_ctx = QFV_Render_UI_Context(ctx);
-	auto leaf = *(uint32_t *) comp;
+	auto cluster = *(uint32_t *) comp;
 	UI_Horizontal {
 		if (UI_Button (vac (ctx->va_ctx, "Show##lightleaf_ui.%08x", ent))) {
-			show_leaves (ctx, leaf, 0);
+			show_clusters (ctx, cluster, 0);
 		}
 		UI_FlexibleSpace ();
-		UI_Labelf ("%5u", leaf);
+		UI_Labelf ("%5u", cluster);
 
 		auto pass = Vulkan_Bsp_GetPass (ctx, QFV_bspDebug);
 		auto brush = pass->brush;
-		set_t pvs = SET_STATIC_INIT (brush->visleafs, alloca);
-		Mod_LeafPVS_set (brush->leafs + leaf, brush, 0, &pvs);
+		auto vis = brush->cluster_vis;
+		set_t pvs = SET_STATIC_INIT (vis.count, alloca);
+		Mod_LeafPVS_set (brush->cluster_offs[cluster], &vis, 0, &pvs);
 
 		UI_FlexibleSpace ();
 		if (UI_Button (vac (ctx->va_ctx, "Vis##lightleaf_ui.%08x", ent))) {

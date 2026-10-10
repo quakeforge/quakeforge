@@ -17,9 +17,10 @@ layout (push_constant) uniform PushConstants {
 	uint        control;
 };
 
-layout (location = 0) in vec4 tl_st;
-layout (location = 1) in vec3 direction;
-layout (location = 2) in vec4 color;
+layout (location = 0) in vec2 tex_st;
+layout (location = 1) in vec3 lmap_stp;
+layout (location = 2) in vec3 direction;
+layout (location = 3) in vec4 color;
 
 layout(early_fragment_tests) in;
 layout (location = 0) out vec4 frag_color;

@@ -100,6 +100,13 @@ typedef enum {
 
 @extern void *PR_FindGlobal (string name);	//FIXME where?
 
+typedef struct ddef_s {
+	uint        type:16;
+	uint        ofs:16;
+	string      name;
+} ddef_t;
+@extern ddef_t PR_GlobalAtOfs (void *ofs);	//FIXME where?
+
 // copies the list in src to a temporary buffer that will be freed when the
 // calling function returns, and places the pointer to the buffer into the
 // returned va_list. The count is copies as-is.

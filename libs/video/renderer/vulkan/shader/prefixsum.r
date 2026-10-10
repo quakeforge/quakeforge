@@ -13,19 +13,20 @@ void printf (string fmt, ...)
 	uint *in_data;
 	uint *out_data;
 	uint *sum_data;
-	uint count;
+	uint *count;		// single value
+	uint  mode;
 };
 
 [in("GlobalInvocationId")] uvec3 gl_GlobalInvocationID;
 [in("LocalInvocationId")] uvec3 gl_LocalInvocationID;
+//[in("NumWorkgroups")] uvec3 gl_NumWorkgroups;
 
 void barrier () = @intrinsic(OpControlBarrier)
 	[Scope.Workgroup, Scope.Workgroup,
 	 (MemorySemantics.AcquireRelease | MemorySemantics.WorkgroupMemory)];
 
-[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 void
-main ()
+do_main ()
 {
 	const uint num_steps = BITOP_LOG2(workgroup_size) + 1;
 	uint ext_ind0 = gl_GlobalInvocationID.x * 2 + 0;
@@ -34,8 +35,16 @@ main ()
 	uint loc_ind0 = gl_LocalInvocationID.x * 2 + 0;
 	uint loc_ind1 = gl_LocalInvocationID.x * 2 + 1;
 
-	local_data[loc_ind0] = (ext_ind0 < count) ? in_data[ext_ind0] : 0;
-	local_data[loc_ind1] = (ext_ind1 < count) ? in_data[ext_ind1] : 0;
+	if (ext_ind0 < *count) {
+		local_data[loc_ind0] = in_data[ext_ind0];
+	} else {
+		local_data[loc_ind0] = 0;
+	}
+	if (ext_ind1 < *count) {
+		local_data[loc_ind1] = in_data[ext_ind1];
+	} else {
+		local_data[loc_ind1] = 0;
+	}
 	barrier ();
 
 	// inclusive prefix sum using Blelloch
@@ -49,16 +58,37 @@ main ()
 		barrier ();
 	}
 
-	if (ext_ind0 < count) {
-		// output data converting to exclusive prefix sum
-		if (id < workgroup_size - 1) {
-			out_data[ext_ind0 + 1] = local_data[loc_ind0];
-			out_data[ext_ind1 + 1] = local_data[loc_ind1];
-		} else {
-			out_data[ext_ind0 & ~(block_size - 1)] = 0;
-			out_data[ext_ind1] = local_data[loc_ind0];
-			sum_data[ext_ind0 / block_size] = local_data[loc_ind1];
-		}
+	// output data converting to exclusive prefix sum
+	if (ext_ind0 + 1 < *count) {
+		out_data[ext_ind0 + 1] = local_data[loc_ind0];
+	}
+	if (ext_ind1 + 1 < *count && loc_ind1 + 1 < block_size) {
+		out_data[ext_ind1 + 1] = local_data[loc_ind1];
+	}
+	if (id == workgroup_size - 1) {
+		out_data[ext_ind0 & ~(block_size - 1)] = 0;
+		sum_data[ext_ind0 / block_size] = local_data[loc_ind1];
+	}
+}
+
+[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+void
+main ()
+{
+	do_main ();
+}
+
+void
+do_offset ()
+{
+	uint ext_ind0 = gl_GlobalInvocationID.x * 2 + 0;
+	uint ext_ind1 = gl_GlobalInvocationID.x * 2 + 1;
+	uint sum_ind = ext_ind0 / block_size;
+	if (ext_ind0 < *count) {
+		out_data[ext_ind0] = in_data[ext_ind0] + sum_data[sum_ind];
+	}
+	if (ext_ind1 < *count) {
+		out_data[ext_ind1] = in_data[ext_ind1] + sum_data[sum_ind];
 	}
 }
 
@@ -66,13 +96,16 @@ main ()
 void
 offset ()
 {
-	uint ext_ind0 = gl_GlobalInvocationID.x * 2 + 0;
-	uint ext_ind1 = gl_GlobalInvocationID.x * 2 + 1;
-	uint sum_ind = ext_ind0 / block_size;
-	if (ext_ind0 < count) {
-		out_data[ext_ind0] = in_data[ext_ind0] + sum_data[sum_ind];
-	}
-	if (ext_ind1 < count) {
-		out_data[ext_ind1] = in_data[ext_ind1] + sum_data[sum_ind];
+	do_offset ();
+}
+
+[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
+void
+modal ()
+{
+	if (mode) {
+		do_offset ();
+	} else {
+		do_main ();
 	}
 }

@@ -18,7 +18,6 @@ search = (
 	VkClearColorValue,
 	VkClearValue,
 	VkPhysicalDeviceLimits,
-	VkRenderPassMultiviewCreateInfo,
 
 	qfv_output_t,
 
@@ -208,23 +207,6 @@ parse = {
 		color = auto;
 		depthStencil = auto;
 	};
-	VkRenderPassMultiviewCreateInfo = {
-		viewMasks = {
-			type = (array, uint32_t);
-			size = subpassCount;
-			values = pViewMasks;
-		};
-		viewOffsets = {
-			type = (array, int32_t);
-			size = dependencyCount;
-			values = pViewOffsets;
-		};
-		correlationMasks = {
-			type = (array, uint32_t);
-			size = correlationMaskCount;
-			values = pCorrelationMasks;
-		};
-	};
 
 	qfv_output_s = {
 		.name = qfv_output_t;
@@ -262,7 +244,7 @@ parse = {
 			name = $name;
 			line = $item.line;
 			layout = $auto;
-			blend = "(VkPipelineColorBlendAttachmentState) { .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT }"
+			blend = "(VkPipelineColorBlendAttachmentState) { .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT }";
 		};
 		.dictionary = {
 			.parse = auto;
@@ -271,6 +253,7 @@ parse = {
 		};
 		layout = auto;
 		blend = auto;
+		aspectMask = auto;
 	};
 	qfv_attachmentsetinfo_s = {
 		.name = qfv_attachmentsetinfo_t;
@@ -443,6 +426,7 @@ parse = {
 			line = $item.line;
 		};
 		color = auto;
+		viewMask = auto;
 		dependencies = {
 			type = (custom, (QFDictionary, QFArray), parse_dependency_info);
 			fields = (num_dependencies, dependencies);
@@ -514,10 +498,16 @@ parse = {
 		.name = qfv_renderpassinfo_t;
 		color = auto;
 		framebuffer = auto;
+		viewMask = auto;
 		subpasses = {
 			type = (labeledarray, qfv_subpassinfo_t, name);
 			size = num_subpasses;
 			values = subpasses;
+		};
+		correlated_views = {
+			type = (array, uint32_t);
+			size = num_correlated_views;
+			values = correlated_views;
 		};
 		output = auto;
 	};

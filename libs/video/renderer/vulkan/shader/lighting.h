@@ -24,8 +24,8 @@ typedef struct qfv_light_matdata_s {
 } qfv_light_matdata_t;
 
 typedef struct LightQueue {
-	uint        start:16;
-	uint        count:16;
+	ushort      start;
+	ushort      count;
 } LightQueue;
 
 #ifdef __QFCC__

@@ -261,6 +261,26 @@ tf_float_func (progs_t *pr, void *data)
 }
 
 static void
+tf_volatile_func (progs_t *pr, void *data)
+{
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	auto type = fetch_type (id, ctx);
+	type = volatile_type (type);
+	R_UINT (pr) = type->id;
+}
+
+static void
+tf_const_func (progs_t *pr, void *data)
+{
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	auto type = fetch_type (id, ctx);
+	type = const_type (type);
+	R_UINT (pr) = type->id;
+}
+
+static void
 tf_gentype_func (progs_t *pr, void *data)
 {
 	auto ctx = *(typectx_t **) data;
@@ -301,6 +321,8 @@ static bfunction_t type_functions[] = {
 	TF_FUNC(tf_uint),
 	TF_FUNC(tf_bool),
 	TF_FUNC(tf_float),
+	TF_FUNC(tf_volatile),
+	TF_FUNC(tf_const),
 	TF_FUNC(tf_gentype),
 };
 #undef TF_FUNC

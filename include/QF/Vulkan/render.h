@@ -127,8 +127,8 @@ typedef struct qfv_bufferviewinfo_s {
 } qfv_bufferviewinfo_t;
 
 typedef struct qfv_dependencymask_s {
-	VkPipelineStageFlags stage;
-	VkAccessFlags access;
+	VkPipelineStageFlags2 stage;
+	VkAccessFlags2 access;
 } qfv_dependencymask_t;
 
 typedef struct qfv_dependencyinfo_s {
@@ -170,6 +170,7 @@ typedef struct qfv_attachmentrefinfo_s {
 	int         line;
 	VkImageLayout layout;
 	VkPipelineColorBlendAttachmentState blend;
+	VkImageAspectFlags aspectMask;
 } qfv_attachmentrefinfo_t;
 
 typedef struct qfv_attachmentsetinfo_s {
@@ -214,6 +215,7 @@ typedef struct qfv_subpassinfo_s {
 	const char *name;
 	int         line;
 	uint32_t    num_dependencies;
+	uint32_t    viewMask;
 	qfv_dependencyinfo_t *dependencies;
 	qfv_attachmentsetinfo_t *attachments;
 	qfv_pipelineinfo_t *base_pipeline;
@@ -238,9 +240,12 @@ typedef struct qfv_renderpassinfo_s {
 	const char *name;
 	void       *pNext;
 	qfv_framebufferinfo_t framebuffer;
+	uint32_t    viewMask;				// default for subpasses
 	uint32_t    num_subpasses;
 	qfv_subpassinfo_t *subpasses;
 	qfv_reference_t output;
+	uint32_t    num_correlated_views;
+	uint32_t   *correlated_views;
 } qfv_renderpassinfo_t;
 
 typedef struct qfv_computeinfo_s {
@@ -452,6 +457,8 @@ typedef struct qfv_label_s {
 typedef struct qfv_pipeline_s {
 	qfv_label_t label;
 	bool        disabled;
+	bool        pre_memory_barrier;
+	bool        post_memory_barrier;
 	VkPipelineBindPoint bindPoint;
 	vec4u_t     dispatch;
 	VkPipeline  pipeline;
@@ -467,6 +474,9 @@ typedef struct qfv_pipeline_s {
 
 	uint32_t    task_count;
 	qfv_taskinfo_t *tasks;
+
+	VkMemoryBarrier2 pre_mb;
+	VkMemoryBarrier2 post_mb;
 } qfv_pipeline_t;
 
 typedef struct qfv_subpass_s {
@@ -487,6 +497,7 @@ typedef struct qfv_subpassinput_s {
 } qfv_subpassinput_t;
 
 typedef struct qfv_framebuffer_s {
+	const char *name;
 	VkExtent2D  extent;
 	uint32_t    layers;
 	uint32_t    num_attachments;
@@ -556,6 +567,7 @@ typedef struct qfv_job_s {
 	uint32_t    num_steps;
 	qfv_step_t *steps;
 	qfv_time_t  time;
+	int64_t     start_time;
 
 	qfv_blackboard_t blackboard;
 	qfv_cmdbufferset_t commands;
@@ -610,6 +622,7 @@ typedef struct qfv_delete_s {
 	VkFramebuffer framebuffer;
 	VkSemaphore semaphore;
 	VkImageView image_view;
+	VkSwapchainKHR swapchain;
 	uint64_t    deletion_frame;
 } qfv_delete_t;
 
@@ -699,6 +712,7 @@ void QFV_DestroyFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp);
 void QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 							VkExtent2D extent);
 
+void QFV_QueueSwapchainDelete (vulkan_ctx_t *ctx, VkSwapchainKHR swapchain);
 void QFV_QueueResourceDelete (vulkan_ctx_t *ctx, qfv_resource_t *res);
 void QFV_QueueImageViewDelete (vulkan_ctx_t *ctx, VkImageView view);
 void QFV_QueueFramebufferDelete (vulkan_ctx_t *ctx, VkFramebuffer framebuffer);

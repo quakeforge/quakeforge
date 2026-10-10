@@ -161,6 +161,20 @@ qfo_encode_basic (const type_t *type, defspace_t *space)
 }
 
 static def_t *
+qfo_encode_qual (const type_t *type, defspace_t *space)
+{
+	qfot_type_t *enc;
+	def_t      *def;
+
+	auto type_def = qfo_encode_type (type->alias.aux_type, space);
+	def = qfo_new_encoding (type, sizeof (enc->handle), space);
+	enc = D_POINTER (qfot_type_t, def);
+	ENC_DEF (enc->qual.type, type_def);
+	enc->qual.bits = type->qual.bits;
+	return def;
+}
+
+static def_t *
 qfo_encode_struct (const type_t *type, defspace_t *space)
 {
 	sy_type_e   sy;
@@ -189,10 +203,6 @@ qfo_encode_struct (const type_t *type, defspace_t *space)
 
 	size = offsetof (qfot_struct_t, fields[num_fields]);
 	def = qfo_new_encoding (type, size, space);
-	enc = D_POINTER (qfot_type_t, def);
-	strct = &enc->strct;
-	ENC_STR (strct->tag, type->name);
-	strct->num_fields = num_fields;
 
 	type_encodings.a[type->id] = def;	// avoid infinite recursion
 
@@ -211,6 +221,10 @@ qfo_encode_struct (const type_t *type, defspace_t *space)
 		i++;
 	}
 
+	enc = D_POINTER (qfot_type_t, def);
+	strct = &enc->strct;
+	ENC_STR (strct->tag, type->name);
+	strct->num_fields = num_fields;
 	for (i = 0, sym = type->symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy)
 			continue;
@@ -333,6 +347,7 @@ qfo_encode_type (const type_t *type, defspace_t *space)
 		[ty_handle]  = qfo_encode_handle,
 		[ty_algebra] = qfo_encode_algebra,
 		[ty_bool]    = qfo_encode_basic,
+		[ty_qual]    = qfo_encode_qual,
 	};
 
 	auto type_def = &type_encodings.a[type->id];

@@ -553,7 +553,7 @@ parse_params (const type_t *return_type, param_t *parms, rua_ctx_t *ctx)
 
 	new = new_type ();
 	new->type = ev_func;
-	new->alignment = 1;
+	new->alignment = PR_ALIGNOF (func);
 	new->width = 1;
 	new->columns = 1;
 	new->func.ret_type = return_type;
@@ -578,7 +578,7 @@ parse_params (const type_t *return_type, param_t *parms, rua_ctx_t *ctx)
 				error (0, "cannot use an object as a parameter (forgot *?)");
 				p->type = &type_id;
 			}
-			auto ptype = unalias_type (p->type);
+			auto ptype = core_type (p->type);
 			new->func.param_types[new->func.num_params] = ptype;
 			new->func.param_quals[new->func.num_params] = p->qual;
 			new->func.num_params++;
@@ -628,10 +628,10 @@ set_func_type_attrs (const type_t *func_type, attribute_t **attr_list,
 	if (!is_func (func_type)) {
 		internal_error (0, "not a function");
 	}
-	func_type = unalias_type (func_type);
+	func_type = core_type (func_type);
 	type_t new = {
 		.type = ev_func,
-		.alignment = 1,
+		.alignment = PR_ALIGNOF (func),
 		.width = 1,
 		.columns = 1,
 		.meta = ty_basic,
@@ -864,15 +864,15 @@ create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype,
 	}
 	param_t *params = nullptr;
 	for (int i = 0; i < num_params; i++) {
-		param_types[i] = unalias_type (param_types[i]);
+		param_types[i] = core_type (param_types[i]);
 		params = append_params (params, new_param (nullptr, param_types[i],
 												   g->params[i].name));
 	}
-	return_type = unalias_type (return_type);
+	return_type = core_type (return_type);
 
 	type_t ftype = {
 		.type = ev_func,
-		.alignment = 1,
+		.alignment = PR_ALIGNOF (func),
 		.width = 1,
 		.columns = 1,
 		.func = {
@@ -916,7 +916,7 @@ get_function (const char *name, const char *ns_name, specifier_t spec,
 		spec.sym->type = type;
 	}
 
-	auto type = unalias_type (spec.sym->type);
+	auto type = core_type (spec.sym->type);
 	int num_params = type->func.num_params;
 	if (num_params < 0) {
 		num_params = ~num_params;
@@ -1057,7 +1057,7 @@ function_symbol (specifier_t spec, rua_ctx_t *ctx)
 	if (!s || s->table != current_symtab) {
 		s = new_symbol (name);
 		s->sy_type = sy_func;
-		s->type = unalias_type (sym->type);
+		s->type = core_type (sym->type);
 		symtab_addsymbol (current_symtab, s);
 		if (func->sym) {
 			internal_error (0, "function already has a symbol");
@@ -1361,7 +1361,7 @@ make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
 	if (!func) {
 		func = new_function (full_name, nice_name);
 		func->sym = sym;
-		func->type = unalias_type (sym->type);
+		func->type = core_type (sym->type);
 		sym->metafunc->func = func;
 	}
 	if (func->def && func->def->external && storage != sc_extern) {

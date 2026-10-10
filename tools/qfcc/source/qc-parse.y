@@ -163,7 +163,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token				NAMESPACE PROPERTY
 %token	<op>		STRUCT BLOCK
 %token				HANDLE INTRINSIC
-%token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL
+%token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL INOUT
 %token	<spec>		OBJECT_NAME
 %token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
 %token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
@@ -171,7 +171,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token				GENERIC CONSTRUCT
 %token				AT_FUNCTION AT_FIELD AT_POINTER AT_ARRAY
 %token				AT_BASE AT_WIDTH AT_VECTOR AT_ROWS AT_COLS AT_MATRIX
-%token				AT_INT AT_UINT AT_BOOL AT_FLOAT
+%token				AT_INT AT_UINT AT_BOOL AT_FLOAT AT_VOLATILE AT_CONST
 %token				HORIZ
 
 %type	<spec>		storage_class save_storage
@@ -187,7 +187,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		declspecs_sc_ts declspecs_sc_nots defspecs
 %type	<spec>		declarator notype_declarator after_type_declarator
 %type	<spec>		param_declarator param_declarator_starttypename
-%type	<spec>		param_declarator_nostarttypename
+%type	<spec>		param_declarator_nostarttypename seldecl
 %type	<spec>		absdecl absdecl1 direct_absdecl typename ptr_spec copy_spec
 %type	<mut_expr>	struct_defs component_decl_list
 %type	<expr>	component_declarator component_notype_declarator
@@ -383,6 +383,25 @@ spec_type (specifier_t spec)
 }
 
 static specifier_t
+qual_spec (specifier_t spec, specifier_t qual)
+{
+	auto qual_list = new_list_expr (nullptr);
+	if (!qual.is_const && !qual.is_volatile) {
+		internal_error (0, "invalid qualifiers");
+	}
+	if (qual.is_const) {
+		auto qual = new_type_function (QC_AT_CONST, nullptr);
+		expr_append_expr (qual_list, qual);
+	}
+	if (qual.is_volatile) {
+		auto qual = new_type_function (QC_AT_VOLATILE, nullptr);
+		expr_append_expr (qual_list, qual);
+	}
+	spec.ptr_quals = qual_list;
+	return spec;
+}
+
+static specifier_t
 spec_merge (specifier_t spec, specifier_t new)
 {
 	if (spec_type (new)) {
@@ -512,12 +531,14 @@ static specifier_t
 pointer_spec (specifier_t quals, specifier_t spec)
 {
 	// referenced type will be filled in when building the final type
-	auto type_expr = new_type_function (QC_AT_POINTER, nullptr);
-	if (spec.type_list) {
-		expr_append_expr (spec.type_list, type_expr);
-	} else {
-		spec.type_list = new_list_expr (type_expr);
+	if (!spec.type_list) {
+		spec.type_list = new_list_expr (nullptr);
 	}
+	if (quals.ptr_quals) {
+		expr_append_list (spec.type_list, &quals.ptr_quals->list);
+	}
+	auto type_expr = new_type_function (QC_AT_POINTER, nullptr);
+	expr_append_expr (spec.type_list, type_expr);
 	return spec;
 }
 
@@ -580,7 +601,7 @@ make_ellipsis (void)
 static param_t *
 set_param_qual (specifier_t spec, param_t *param)
 {
-	if (spec.is_const) {
+	if (spec.is_const || (spec.type && is_const (spec.type))) {
 		if (spec.storage == sc_out) {
 			error (0, "cannot use const with @out");
 		} else if (spec.storage == sc_inout) {
@@ -1193,6 +1214,11 @@ copy_spec
 
 ptr_spec
 	: copy_spec	// for when no qualifiers are present
+	| TYPE_QUAL
+		{
+			auto spec = qual_spec ($<spec>-1, $1);
+			$$ = spec;
+		}
 	;
 
 // does not reuse a typedef or class name
@@ -1496,6 +1522,7 @@ storage_class
 	: EXTERN					{ $$ = storage_spec (sc_extern); }
 	| STATIC					{ $$ = storage_spec (sc_static); }
 	| SYSTEM					{ $$ = storage_spec (sc_system); }
+	| INOUT						{ $$ = $1; }
 	| TYPEDEF					{ $$ = typedef_spec (); }
 	| OVERLOAD					{ $$ = overload_spec (); }
 	| GENERIC '('				{ $<spec>$ = generic_spec (ctx); }
@@ -1560,6 +1587,8 @@ type_func
 	| AT_UINT					{ $$ = QC_AT_UINT; }
 	| AT_BOOL					{ $$ = QC_AT_BOOL; }
 	| AT_FLOAT					{ $$ = QC_AT_FLOAT; }
+	| AT_VOLATILE				{ $$ = QC_AT_VOLATILE; }
+	| AT_CONST					{ $$ = QC_AT_CONST; }
 	;
 
 type_op
@@ -3206,8 +3235,13 @@ reserved_word
 	| TYPEDEF					{ $$ = new_symbol (qc_yytext); }
 	;
 
+seldecl
+	: typename					{ $$ = $1; }
+	| INOUT typename			{ $$ = spec_merge ($1, $2); }
+	;
+
 keyworddecl
-	: selector[sel] ':' '(' typename[spec] ')' identifier[id]
+	: selector[sel] ':' '(' seldecl[spec] ')' identifier[id]
 		{
 			auto spec = resolve_type_spec ($spec, ctx);
 			$$ = make_selector (spec, $sel->name, spec.type, $id->name);
@@ -3217,7 +3251,7 @@ keyworddecl
 			specifier_t spec = { .storage = sc_param };
 			$$ = make_selector (spec, $sel->name, &type_id, $id->name);
 		}
-	| ':' '(' typename[spec] ')' identifier[id]
+	| ':' '(' seldecl[spec] ')' identifier[id]
 		{
 			auto spec = resolve_type_spec ($spec, ctx);
 			$$ = make_selector (spec, "", spec.type, $id->name);
@@ -3426,6 +3460,7 @@ static keyword_t at_keywords[] = {
 	{"not",			QC_NOT		},
 	{"auto",		QC_TYPE_SPEC, .spec = { .type = &type_auto } },
 	{"const",		QC_TYPE_QUAL, .spec = { .is_const = true } },
+	{"volatile",	QC_TYPE_QUAL, .spec = { .is_volatile = true } },
 };
 
 // These keywords require the QuakeForge VM to be of any use. ie, they cannot
@@ -3442,6 +3477,11 @@ static keyword_t qf_keywords[] = {
 	{"signed",		QC_TYPE_SPEC, .spec = { .is_signed = true } },
 	{"long",		QC_TYPE_SPEC, .spec = { .is_long = true } },
 	{"short",		QC_TYPE_SPEC, .spec = { .is_short = true } },
+	{"ushort",		QC_TYPE_SPEC, .spec = { .type = &type_ushort } },
+	{"sbyte",		QC_TYPE_SPEC, .spec = { .type = &type_sbyte } },
+	{"byte",		QC_TYPE_SPEC, .spec = { .type = &type_ubyte } },
+	{"ubyte",		QC_TYPE_SPEC, .spec = { .type = &type_ubyte } },
+	{"half",		QC_TYPE_SPEC, .spec = { .type = &type_half } },
 
 	{"true",        QC_TRUE },
 	{"false",       QC_FALSE},
@@ -3450,9 +3490,9 @@ static keyword_t qf_keywords[] = {
 	{"@va_list",	QC_TYPE_SPEC, .spec = { .type = &type_va_list } 	},
 	{"@param",		QC_TYPE_SPEC, .spec = { .type = &type_param } 		},
 	{"@return",     QC_AT_RETURN,		},
-	{"@in",			QC_TYPE_QUAL, .spec = { .storage = sc_in } },
-	{"@out",		QC_TYPE_QUAL, .spec = { .storage = sc_out } },
-	{"@inout",		QC_TYPE_QUAL, .spec = { .storage = sc_inout } },
+	{"@in",			QC_INOUT,		.spec = { .storage = sc_in } },
+	{"@out",		QC_INOUT,		.spec = { .storage = sc_out } },
+	{"@inout",		QC_INOUT,		.spec = { .storage = sc_inout } },
 
 	{"@hadamard",	QC_HADAMARD,	},
 	{"@cross",		QC_CROSS,		},
@@ -3489,6 +3529,8 @@ static keyword_t qf_keywords[] = {
 	{"@uint",		QC_AT_UINT,		},
 	{"@bool",		QC_AT_BOOL,		},
 	{"@float",		QC_AT_FLOAT,	},
+	{"@volatile",   QC_AT_VOLATILE, },
+	{"@const",      QC_AT_CONST, },
 };
 
 // These keywors are always available. Other than the @ keywords, they

@@ -873,10 +873,6 @@ spec_process_list (specifier_t spec, rua_ctx_t *ctx)
 	int num_types = list_count (&spec.type_list->list);
 	const expr_t *type_list[num_types];
 	auto type = spec.type; // core type (int etc)
-	if (spec.type_expr) {
-		type = resolve_type (spec.type_expr, ctx);
-		spec.type_expr = nullptr;
-	}
 	// other than fields, the type list is built up by appending types
 	// to the list, but it's the final type in the list that takes the
 	// core type, so extract them in reverse for a forward loop
@@ -938,9 +934,11 @@ spec_process (specifier_t spec, rua_ctx_t *ctx)
 			spec.type = get_type (type_expr);
 		}
 	}
-	if (!spec.type_expr) {
-		spec = default_type (spec, spec.sym);
+	if (spec.type_expr) {
+		spec.type = resolve_type (spec.type_expr, ctx);
+		spec.type_expr = nullptr;
 	}
+	spec = default_type (spec, spec.sym);
 	if (!spec.type_list) {
 		if (spec.type_expr) {
 			spec.type = resolve_type (spec.type_expr, ctx);

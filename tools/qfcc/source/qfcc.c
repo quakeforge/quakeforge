@@ -487,7 +487,7 @@ finish_link (void)
 	flags = (QFOD_GLOBAL | QFOD_CONSTANT | QFOD_INITIALIZED | QFOD_NOSAVE);
 	if (options.code.progsversion != PROG_ID_VERSION) {
 		pr_int_t    param_size = type_size (&type_param);
-		pr_int_t    param_alignment = qfo_log2 (type_param.alignment);
+		pr_int_t    param_alignment = qfo_log2 (type_align (&type_param));
 		linker_add_def (".param_size", &type_int, flags,
 						&param_size);
 		linker_add_def (".param_alignment", &type_int, flags,

@@ -137,6 +137,30 @@ initialize_base_data (const exprval_t **params, exprval_t *result,
 }
 
 static void
+set_counts (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+
+	auto count = *(uint32_t *) params[0]->value;
+	auto buff_name = *(const char **) params[1]->value;
+	auto info = QFV_FindBufferInfo (ctx, buff_name);
+	auto buffer = QFV_GetBuffer (ctx, info);
+
+	size_t packet_size = sizeof (uint32_t[2]);
+	auto packet = QFV_PacketAcquire (ctx->staging, "prefixsum.set_counts");
+	uint32_t *counts_array = QFV_PacketExtend (packet, packet_size);
+	counts_array[0] = count;
+	counts_array[1] = (count + 1023) / 1024;
+
+	auto srcBarrier = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto dstBarrier = bufferBarriers[qfv_BB_TransferWrite_to_ShaderRW];
+	QFV_PacketCopyBuffer (packet, buffer, 0, &srcBarrier, &dstBarrier);
+
+	QFV_PacketSubmit (packet);
+}
+
+static void
 copy_data (vulkan_ctx_t *ctx, VkBuffer dst, VkBuffer src, size_t count)
 {
 	auto device = ctx->device;
@@ -253,6 +277,17 @@ static exprfunc_t initialize_base_data_func[] = {
 	{}
 };
 
+static exprtype_t *set_counts_params[] = {
+	&cexpr_uint,
+	&cexpr_string,
+};
+static exprfunc_t set_counts_func[] = {
+	{ .func = set_counts,
+		.num_params = countof (set_counts_params),
+		.param_types = set_counts_params },
+	{}
+};
+
 static exprtype_t *readback_prefixsum_params[] = {
 	&cexpr_uint,
 	&cexpr_string,
@@ -269,6 +304,7 @@ static exprfunc_t readback_prefixsum_func[] = {
 
 static exprsym_t prefixsum_task_syms[] = {
 	{ "initialize_base_data", &cexpr_function, initialize_base_data_func },
+	{ "set_counts", &cexpr_function, set_counts_func },
 	{ "readback_prefixsum", &cexpr_function, readback_prefixsum_func },
 	{}
 };

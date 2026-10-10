@@ -282,12 +282,37 @@ static dmodel_t empty_submodel[] = {
 
 static byte empty_visdata[] = { 0x01 };
 
+static leafmap_t empty_leaf_map[] = {
+	[0] = {
+		.first_leaf = 0,
+		.num_leafs = 1,
+	},
+	[1] = {
+		.first_leaf = 1,
+		.num_leafs = 1,
+	},
+};
+
+static uint32_t empty_cluster_map[] = { 0, 1 };
+
+static uint32_t empty_cluster_surfs[] = { 0 };
+
+static cluster_t empty_clusters[] = {
+	[1] = {
+		.first = 0,
+		.count = 1,
+	},
+};
+
+static int32_t empty_cluster_heads[] = { 0 };
+
+static uint32_t empty_leaf_offs[] = { ~0, 0 };
+
 static mleaf_t empty_leafs[] = {
 	[1] = {
 		.contents = CONTENTS_EMPTY,
 		.mins = {-INFINITY, -INFINITY, -INFINITY},
 		.maxs = { INFINITY,  INFINITY,  INFINITY},
-		.compressed_vis = empty_visdata,
 		.firstmarksurface = 0,
 		.nummarksurfaces = 1,
 	},
@@ -341,16 +366,32 @@ static mod_brush_t empty_brush = {
 		.numsubmodels = 1,
 		.submodels = empty_submodel,
 		.modleafs = 2,
-		.visleafs = 1,
 		.numnodes = 1,
 		.nodes = empty_nodes,
 		.leafs = empty_leafs,
+		.leaf_offs = empty_leaf_offs,
 		.numsurfaces = 1,
 		.surfaces = empty_surfs,
 		.nummarksurfaces = 1,
 		.marksurfaces = empty_marksurfaces,
 		.entities = empty_entities,
-		.visdata = empty_visdata,
+
+		.leaf_map = empty_leaf_map,
+		.cluster_map = empty_cluster_map,
+		.cluster_offs = empty_leaf_offs,
+		.cluster_nodes = empty_nodes,
+		.cluster_surfs = empty_cluster_surfs,
+		.clusters = empty_clusters,
+		.cluster_heads = empty_cluster_heads,
+
+		.leaf_vis = {
+			.data = empty_visdata,
+			.count = 1,
+		},
+		.cluster_vis = {
+			.data = empty_visdata,
+			.count = 1,
+		},
 		.node_parents = empty_node_parents,
 		.leaf_parents = empty_leaf_parents,
 		.leaf_flags = empty_leaf_flags,
@@ -394,7 +435,7 @@ Scene_NewScene (scene_system_t *extra_systems)
 
 	scene->ent_queue = EntQueue_New (mod_num_types);
 	scene->efrag_db = malloc (sizeof (efrag_db_t));
-	Efrags_InitDB (scene->efrag_db, empty_brush.visleafs + 1);
+	Efrags_InitDB (scene->efrag_db, empty_brush.cluster_vis.count + 1);
 
 	return scene;
 }
@@ -411,7 +452,8 @@ Scene_SetWorld (scene_t *scene, model_t *worldmodel)
 	} else {
 		scene->worldmodel = &empty_world;
 	}
-	Efrags_InitDB (scene->efrag_db, scene->worldmodel->brush->visleafs + 1);
+	auto brush = scene->worldmodel->brush;
+	Efrags_InitDB (scene->efrag_db, brush->cluster_vis.count + 1);
 }
 
 void

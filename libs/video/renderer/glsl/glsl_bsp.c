@@ -59,6 +59,7 @@
 #include "QF/GLSL/qf_vid.h"
 
 #include "r_internal.h"
+#include "r_scrap.h"
 
 #define s_dynlight (r_refdef.scene->base + scene_dynlight)
 
@@ -514,10 +515,10 @@ build_surf_displist (model_t **models, msurface_t *surf, int base,
 			//lightmap texture coordinates
 			//every lit surface has its own lighmap at a 1/16 resolution
 			//(ie, 16 albedo pixels for every lightmap pixel)
-			const vrect_t *rect = surf->lightpic->rect;
+			const scrapbox_t *rect = surf->lightpic;
 			vec2f_t     lmorg = (vec2f_t) { VEC2_EXP (&rect->x) } * 16 + 8;
 			vec2f_t     texorg = { VEC2_EXP (surf->texturemins) };
-			st = ((st - texorg + lmorg) / 16) * surf->lightpic->size;
+			st = ((st - texorg + lmorg) / 16) * glsl_R_LightmapSize ();
 			verts[i].tlst[2] = st[0];
 			verts[i].tlst[3] = st[1];
 		} else {
@@ -726,10 +727,10 @@ R_DrawBrushModel (entity_t e)
 }
 
 static inline void
-visit_leaf (mleaf_t *leaf)
+visit_leaf (uint32_t leafnum)
 {
 	// deal with model fragments in this leaf
-	R_StoreEfrags (r_refdef.scene, leaf);
+	R_StoreEfrags (r_refdef.scene, leafnum);
 }
 
 // 1 = back side, 0 = front side
@@ -755,9 +756,10 @@ visit_node (glslbspctx_t *bctx, mnode_t *node, int side)
 	// not all nodes have any surfaces to draw (purely a split plane)
 	if ((c = node->numsurfaces)) {
 		int         surf_id = node->firstsurface;
+		auto visstate = bctx->brush->visstate;
 		surf = bctx->brush->surfaces + surf_id;
 		for (; c; c--, surf++, surf_id++) {
-			if (r_visstate.face_visframes[surf_id] != r_visstate.visframecount)
+			if (visstate->face_visframes[surf_id] != visstate->vis_frame)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK
@@ -776,7 +778,8 @@ test_node (glslbspctx_t *bctx, int node_id)
 {
 	if (node_id < 0)
 		return 0;
-	if (r_visstate.node_visframes[node_id] != r_visstate.visframecount)
+	auto visstate = bctx->brush->visstate;
+	if (visstate->node_visframes[node_id] != visstate->vis_frame)
 		return 0;
 	mnode_t    *node = bctx->brush->nodes + node_id;
 	if (R_CullBox (r_refdef.frustum, node->minmaxs, node->minmaxs + 3))
@@ -818,7 +821,7 @@ R_VisitWorldNodes (glslbspctx_t *bctx)
 			if (front < 0) {
 				mleaf_t    *leaf = bctx->brush->leafs + ~front;
 				if (leaf->contents != CONTENTS_SOLID) {
-					visit_leaf (leaf);
+					visit_leaf (bctx->brush->cluster_map[~front]);
 				}
 			}
 			visit_node (bctx, node, side);
@@ -827,7 +830,7 @@ R_VisitWorldNodes (glslbspctx_t *bctx)
 		if (node_id < 0) {
 			mleaf_t    *leaf = bctx->brush->leafs + ~node_id;
 			if (leaf->contents != CONTENTS_SOLID) {
-				visit_leaf (leaf);
+				visit_leaf (bctx->brush->cluster_map[~node_id]);
 			}
 		}
 		if (node_ptr != node_stack) {

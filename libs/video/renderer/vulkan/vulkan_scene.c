@@ -72,6 +72,14 @@ Vulkan_Scene_Descriptors (vulkan_ctx_t *ctx)
 	return sframe->descriptors;
 }
 
+VkDeviceAddress
+Vulkan_Scene_EntBufferAddr (vulkan_ctx_t *ctx)
+{
+	scenectx_t *sctx = ctx->scene_context;
+	scnframe_t *sframe = &sctx->frames.a[ctx->curFrame];
+	return sctx->entity_buffer_addr + sframe->offset;
+}
+
 int
 Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t entity)
 {
@@ -102,22 +110,27 @@ Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t entity)
 	//unlock
 	if (entdata) {
 		mat4f_t     f;
-		vec4f_t     color;
 		if (Entity_Valid (entity)) { //FIXME give world entity an entity :P
 			transform_t transform = Entity_Transform (entity);
 			auto renderer = Entity_GetRenderer (entity);
+			auto animation = Entity_GetAnimation (entity);
 			mat4ftranspose (f, Transform_GetWorldMatrixPtr (transform));
-			entdata->xform[0] = f[0];
-			entdata->xform[1] = f[1];
-			entdata->xform[2] = f[2];
-			color = (vec4f_t) { QuatExpand (renderer->colormod) };
+			*entdata = (entdata_t) {
+				.xform = { VectorExpand (f) },
+				.color = { QuatExpand (renderer->colormod) },
+				.model = renderer->model->render_id,
+				.frame = animation->frame & 1,
+			};
 		} else {
-			entdata->xform[0] = (vec4f_t) { 1, 0, 0, 0 };
-			entdata->xform[1] = (vec4f_t) { 0, 1, 0, 0 };
-			entdata->xform[2] = (vec4f_t) { 0, 0, 1, 0 };
-			color = (vec4f_t) { 1, 1, 1, 1 };
+			*entdata = (entdata_t) {
+				.xform = {
+					{ 1, 0, 0, 0 },
+					{ 0, 1, 0, 0 },
+					{ 0, 0, 1, 0 },
+				},
+				.color = { 1, 1, 1, 1 },
+			};
 		}
-		entdata->color = color;
 	}
 	return render_id;
 }
@@ -233,12 +246,14 @@ scene_startup (exprctx_t *ectx)
 		.buffer = {
 			.size = frames * qfv_max_entities * sizeof (entdata_t),
 			.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
-					| VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+					| VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 		},
 	};
 
 	QFV_CreateResource (device, sctx->entities);
 	sctx->entity_buffer = sctx->entities->objects[0].buffer.buffer;
+	sctx->entity_buffer_addr = sctx->entities->objects[0].buffer.address;
 	sctx->pooled_entities = set_new ();
 	sctx->entity_pool = (entdataset_t) {
 		.maxSize = qfv_max_entities,

@@ -21,7 +21,7 @@ layout (set = 1, binding = 0) readonly buffer Entities {
 };
 
 layout (location = 0) in vec4 vertex;
-layout (location = 3) in uint entid;
+layout (location = 4) in uint entid;
 
 layout (location = 0) out int InstanceIndex;
 

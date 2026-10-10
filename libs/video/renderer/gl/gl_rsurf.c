@@ -59,6 +59,7 @@
 
 #include "compat.h"
 #include "r_internal.h"
+#include "r_scrap.h"
 #include "vid_gl.h"
 
 #define s_dynlight (r_refdef.scene->base + scene_dynlight)
@@ -582,10 +583,10 @@ gl_R_DrawBrushModel (entity_t e)
 // WORLD MODEL ================================================================
 
 static inline void
-visit_leaf (mleaf_t *leaf)
+visit_leaf (uint32_t leafnum)
 {
 	// deal with model fragments in this leaf
-	R_StoreEfrags (r_refdef.scene, leaf);
+	R_StoreEfrags (r_refdef.scene, leafnum);
 }
 
 static inline int
@@ -608,9 +609,10 @@ visit_node (glbspctx_t *bctx, mnode_t *node, int side)
 	// draw stuff
 	if ((c = node->numsurfaces)) {
 		int         surf_id = node->firstsurface;
+		auto visstate = bctx->brush->visstate;
 		surf = bctx->brush->surfaces + surf_id;
 		for (; c; c--, surf++, surf_id++) {
-			if (r_visstate.face_visframes[surf_id] != r_visstate.visframecount)
+			if (visstate->face_visframes[surf_id] != visstate->vis_frame)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK
@@ -627,7 +629,8 @@ test_node (glbspctx_t *bctx, int node_id)
 {
 	if (node_id < 0)
 		return 0;
-	if (r_visstate.node_visframes[node_id] != r_visstate.visframecount)
+	auto visstate = bctx->brush->visstate;
+	if (visstate->node_visframes[node_id] != visstate->vis_frame)
 		return 0;
 	mnode_t    *node = bctx->brush->nodes + node_id;
 	if (R_CullBox (r_refdef.frustum, node->minmaxs, node->minmaxs + 3))
@@ -669,7 +672,7 @@ R_VisitWorldNodes (glbspctx_t *bctx)
 			if (front < 0) {
 				mleaf_t    *leaf = bctx->brush->leafs + ~front;
 				if (leaf->contents != CONTENTS_SOLID) {
-					visit_leaf (leaf);
+					visit_leaf (bctx->brush->cluster_map[~front]);
 				}
 			}
 			visit_node (bctx, node, side);
@@ -678,7 +681,7 @@ R_VisitWorldNodes (glbspctx_t *bctx)
 		if (node_id < 0) {
 			mleaf_t    *leaf = bctx->brush->leafs + ~node_id;
 			if (leaf->contents != CONTENTS_SOLID) {
-				visit_leaf (leaf);
+				visit_leaf (bctx->brush->cluster_map[~node_id]);
 			}
 		}
 		if (node_ptr != node_stack) {
@@ -843,12 +846,12 @@ GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 		t = DotProduct (vec, texinfo->vecs[1]) + texinfo->vecs[1][3];
 		s -= surf->texturemins[0];
 		t -= surf->texturemins[1];
-		s += surf->lightpic->rect->x * 16 + 8;
-		t += surf->lightpic->rect->y * 16 + 8;
+		s += surf->lightpic->x * 16 + 8;
+		t += surf->lightpic->y * 16 + 8;
 		s /= 16;
 		t /= 16;
-		poly->verts[i].lm_uv[0] = s * surf->lightpic->size;
-		poly->verts[i].lm_uv[1] = t * surf->lightpic->size;
+		poly->verts[i].lm_uv[0] = s * gl_R_LightmapSize ();
+		poly->verts[i].lm_uv[1] = t * gl_R_LightmapSize ();
 	}
 
 	// remove co-linear points - Ed

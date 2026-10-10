@@ -372,6 +372,49 @@ QFV_DestroyResource (qfv_device_t *device, qfv_resource_t *resource)
 }
 
 void
+QFV_PrintResource (qfv_resource_t *resource)
+{
+	static const char *qfv_res_type_names[] = {
+		"!!!unset!!!",
+		[qfv_res_buffer]      = "qfv_res_buffer",
+		[qfv_res_buffer_view] = "qfv_res_buffer_view",
+		[qfv_res_image]       = "qfv_res_image",
+		[qfv_res_image_view]  = "qfv_res_image_view",
+	};
+	for (unsigned i = 0; i < resource->num_objects; i++) {
+		__auto_type obj = &resource->objects[i];
+		printf ("%d:%s %s(%d)\n", i, obj->name,
+				obj->type < countof (qfv_res_type_names)
+				? qfv_res_type_names[obj->type] : "!!!invalid!!!", obj->type);
+		switch (obj->type) {
+			case qfv_res_buffer:
+				printf ("      size: %zd\n", obj->buffer.size);
+				printf ("     usage: %x\n", obj->buffer.usage);
+				printf ("    buffer: %"PRIx64"\n",
+						(uint64_t) obj->buffer.buffer);
+				printf ("    offset: %zd\n", obj->buffer.offset);
+				printf ("   address: %zx\n", obj->buffer.address);
+				break;
+			case qfv_res_buffer_view:
+				printf ("    buffer: %d\n", obj->buffer_view.buffer);
+				printf ("    format: %d\n", obj->buffer_view.format);
+				printf ("    buffer: %d\n", obj->buffer_view.buffer);
+				printf ("    offset: %zd\n", obj->buffer_view.offset);
+				printf ("    offset: %zd\n", obj->buffer_view.size);
+				printf ("      view: %"PRIx64"\n",
+						(uint64_t) obj->buffer_view.view);
+				break;
+			case qfv_res_image:
+				printf ("FIXME\n");
+				break;
+			case qfv_res_image_view:
+				printf ("FIXME\n");
+				break;
+		}
+	}
+}
+
+void
 QFV_ResourceInitTexImage (qfv_resobj_t *image, const char *name,
 						  bool mips, const tex_t *tex)
 {

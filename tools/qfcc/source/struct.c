@@ -196,14 +196,15 @@ append_symbol (struct_state_t *state, symbol_t *s)
 static void
 struct_offset (struct_state_t *state, symbol_t *s)
 {
-	int         alignment = type_align (s->type);
+	//FIXME get short/byte working properly
+	int         alignment = type_byte_align (s->type);
 	if (state->su == 's') {
 		int offset = state->offset + state->base;
 		offset = RUP (offset, alignment) - state->base;
-		s->offset = offset;
-		state->offset = offset + type_size (s->type);
+		s->offset = type_words (offset);
+		state->offset = offset + type_byte_size (s->type);
 	} else {
-		int         size = type_size (s->type);
+		int         size = type_byte_size (s->type);
 		s->offset = 0;
 		if (size > state->symtab->size) {
 			state->symtab->size = RUP (size, alignment);
@@ -526,7 +527,7 @@ start_enum (symbol_t *sym)
 		sym = find_enum (nullptr, nullptr);
 	}
 	((type_t *) sym->type)->symtab = new_symtab (current_symtab, stab_enum);
-	((type_t *) sym->type)->alignment = 1;
+	((type_t *) sym->type)->alignment = PR_ALIGNOF (int);
 	((type_t *) sym->type)->width = 1;
 	((type_t *) sym->type)->columns = 1;
 	return sym->type->symtab;

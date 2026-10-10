@@ -1,0 +1,11 @@
+#! /bin/sh
+
+script=$1
+spv=`dirname $script`/`basename $script .run`
+shift
+
+cat > $script <<EOF
+#! /bin/sh
+spirv-val --scalar-block-layout --target-env vulkan1.4 $spv $@
+EOF
+chmod +x $script

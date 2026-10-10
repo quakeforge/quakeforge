@@ -1,5 +1,6 @@
 endian=""
 FNM_FLAGS=""
+unalign="no"
 
 case "$host_os" in
 	mingw32*)
@@ -16,6 +17,7 @@ case "$host_os" in
 		SYSTYPE=WIN32
 		AC_DEFINE(NEED_GNUPRINTF)
 		endian="little"
+		unalign="yes"
 		;;
 	cygwin*)
 		cygwin=yes

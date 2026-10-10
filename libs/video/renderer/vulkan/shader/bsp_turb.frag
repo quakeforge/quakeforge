@@ -16,9 +16,10 @@ layout (push_constant) uniform PushConstants {
 	float       turb_scale;
 };
 
-layout (location = 0) in vec4 tl_st;
-layout (location = 1) in vec3 direction;
-layout (location = 2) in vec4 color;
+layout (location = 0) in vec2 tex_st;
+layout (location = 1) in vec3 lmap_stp;
+layout (location = 2) in vec3 direction;
+layout (location = 3) in vec4 color;
 
 layout(early_fragment_tests) in;
 
@@ -40,7 +41,7 @@ warp_st (vec2 st, float time)
 void
 main (void)
 {
-	vec2        st = warp_st (tl_st.xy, time);
+	vec2        st = warp_st (tex_st, time);
 	vec4        c = texture (Texture, vec3(st, 0));
 	vec4        e = texture (Texture, vec3(st, 1));
 	float       a = c.a * e.a * alpha;

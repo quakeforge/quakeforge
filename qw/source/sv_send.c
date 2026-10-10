@@ -296,17 +296,15 @@ SV_Multicast (const vec3_t origin, int to)
 {
 	set_t      *mask;
 	client_t   *client;
-	int         leafnum, j;
-	mleaf_t    *leaf;
+	uint32_t    leafnum, j;
 	bool        reliable;
 	mod_brush_t *brush = sv.worldmodel->brush;
 
 	vec4f_t     org = { VectorExpand (origin), 1 };
-	leaf = Mod_PointInLeaf (org, brush);
-	if (!leaf)
+	leafnum = Mod_PointInLeaf (org, brush);
+	if (leafnum == ~0u) {
 		leafnum = 0;
-	else
-		leafnum = leaf - brush->leafs;
+	}
 
 	reliable = false;
 
@@ -347,10 +345,10 @@ SV_Multicast (const vec3_t origin, int to)
 		}
 
 		org = (vec4f_t) {VectorExpand (SVvector (client->edict, origin)), 1};
-		leaf = Mod_PointInLeaf (org, brush);
-		if (leaf) {
+		leafnum = Mod_PointInLeaf (org, brush);
+		if (leafnum != ~0u) {
 			// -1 is because pvs rows are 1 based, not 0 based like leafs
-			leafnum = leaf - brush->leafs - 1;
+			leafnum = leafnum - 1;
 			if (!set_is_member (mask, leafnum)) {
 //				SV_Printf ("supressed multicast\n");
 				continue;

@@ -22,7 +22,7 @@ typedef struct qfv_parameters_s {
 
 // Doubles as VkDrawIndirectCommand
 typedef struct qfv_particle_system_s {
-	uint32_t    vertexCount;	// always 1
+	uint32_t    vertexCount;	// always 4
 	uint32_t    particleCount;
 	uint32_t    firstVertex;	// always 0
 	uint32_t    firstInstance;	// always 0

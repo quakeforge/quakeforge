@@ -143,6 +143,7 @@ extern const component_t ecs_component_groups;
 
 uint32_t ECS_NewId (ecs_idpool_t *idpool);
 bool ECS_DelId (ecs_idpool_t *idpool, uint32_t id);
+ECSINLINE void ECS_IdPool_Reset (ecs_idpool_t *idpool);
 ECSINLINE int ECS_IdValid (ecs_idpool_t *idpool, uint32_t id);
 ECSINLINE uint32_t Ent_Index (uint32_t id);
 ECSINLINE uint32_t Ent_Generation (uint32_t id);
@@ -201,6 +202,14 @@ ECSINLINE void *Ent_SetComponent (uint32_t ent, uint32_t comp,
 #else
 #define ECSINLINE VISIBLE
 #endif
+
+ECSINLINE
+void ECS_IdPool_Reset (ecs_idpool_t *idpool)
+{
+	idpool->next = Ent_Index (nullent);
+	idpool->available = 0;
+	idpool->num_ids = 0;
+}
 
 ECSINLINE int
 ECS_IdValid (ecs_idpool_t *idpool, uint32_t id)

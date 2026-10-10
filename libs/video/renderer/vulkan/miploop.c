@@ -140,25 +140,11 @@ miploop_init_loop (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 									 "$external") == 0) {
 		num_subpasses--;
 	}
-	VkRenderPassMultiviewCreateInfo *mv = cmemalloc (memsuper,
-			sizeof (VkRenderPassMultiviewCreateInfo));
-	uint32_t *all_viewmasks = cmemalloc (memsuper,
-			sizeof (uint32_t[num_subpasses]));
 	{
-		auto viewmasks = &all_viewmasks[0 * num_subpasses];
-		mv[0] = (VkRenderPassMultiviewCreateInfo) {
-			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO,
-			.pNext = rpinfo->pNext,
-			.subpassCount = num_subpasses,
-			.pViewMasks = viewmasks,
-		};
 		rp[0] = *rpinfo;
-		rp[0].pNext =&mv[0];
 		rp[0].name = cmemstrdup (memsuper, vac (ctx->va_ctx, "%s:%d",
 												rpinfo->name, 0 + 1));
-		for (uint32_t j = 0; j < num_subpasses; j++) {
-			viewmasks[j] = ~0u >> (32 - layers);
-		}
+		rp[0].viewMask = ~0u >> (32 - layers);
 	}
 
 	auto image_info = QFV_FindImageInfo (ctx, img_name);

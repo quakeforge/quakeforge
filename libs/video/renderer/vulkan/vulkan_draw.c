@@ -518,8 +518,10 @@ flush_draw_data (VkBuffer buffer, VkDeviceSize offset,
 						 {0.2, 0.8, 0.3, 1});
 	auto sb = bufferBarriers[qfv_BB_VertexAttrRead_to_TransferWrite];
 	auto db = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
-	sb.srcStageMask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-	db.dstStageMask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	sb.srcStageMask |= VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+	sb.srcAccessMask |= VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+	db.dstStageMask |= VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+	db.dstAccessMask |= VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
 	QFV_PacketCopyBuffer (packet, buffer, offset, &sb, &db);
 	QFV_duCmdEndLabel (ctx->device, packet->cmd);
 	QFV_PacketSubmit (packet);
@@ -799,7 +801,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 		.type = qfv_res_image_view,
 		.image_view = {
 			.image = 0,
-			.type = VK_IMAGE_VIEW_TYPE_2D,
+			.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 			.format = font->resource->glyph_image.image.format,
 			.subresourceRange = {
 				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -1796,7 +1798,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 		.type = qfv_res_image_view,
 		.image_view = {
 			.image = 2,
-			.type = VK_IMAGE_VIEW_TYPE_2D,
+			.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 			.format = font->resource->glyph_image.image.format,
 			.subresourceRange = {
 				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -1818,7 +1820,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "draw.addfont.verts");
 	quadvert_t *verts = QFV_PacketExtend (packet, glyph_data->buffer.size);
 	for (FT_Long i = 0; i < rfont->num_glyphs; i++) {
-		vrect_t    *rect = &rfont->glyph_rects[i];
+		scrapbox_t *rect = &rfont->glyph_rects[i];
 		float       x = 0;
 		float       y = 0;
 		float       w = rect->width;

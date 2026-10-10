@@ -191,11 +191,11 @@ pointer_compare (int op, const expr_t *e1, const expr_t *e2)
 	if (options.code.progsversion < PROG_VERSION) {
 		e = new_binary_expr (op, e1, e2);
 	} else {
-		e = new_binary_expr (op, cast_expr (&type_int, e1),
-							 cast_expr (&type_int, e2));
+		e = new_binary_expr (op, cast_expr (current_target.pointer_cast, e1),
+							 cast_expr (current_target.pointer_cast, e2));
 	}
-	e->expr.type = &type_bool;
-	return e;
+	e->expr.type = bool_type (current_target.pointer_cast);
+	return test_expr (edag_add_expr (e));
 }
 
 static const expr_t *
@@ -1109,6 +1109,8 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		t1 = pointer_type (dereference_type (t2));
 		e2 = cast_expr (t2, e2);
 	}
+	t1 = core_type (t1);
+	t2 = core_type (t2);
 
 	if ((unsigned) op > countof (expr_types)) {
 		internal_error (e1, "invalid operator: %s", get_op_string (op));

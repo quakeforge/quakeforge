@@ -72,10 +72,10 @@ typedef struct efrag_db_s {
 
 typedef struct scene_s scene_t;
 typedef struct mleaf_s mleaf_t;
-uint32_t R_LinkEfrag (scene_t *scene, mleaf_t *leaf, entity_t ent,
+uint32_t R_LinkEfrag (scene_t *scene, uint32_t cluster_num, entity_t ent,
 					  uint32_t queue, uint32_t efrag);
 void R_AddEfrags (scene_t *scene, entity_t ent);
-void R_StoreEfrags (scene_t *scene, mleaf_t *leaf);
+void R_StoreEfrags (scene_t *scene, uint32_t cluster_num);
 
 void Efrags_DelEfrag (efrag_db_t *db, uint32_t efragid);
 void Efrags_InitDB (efrag_db_t *db, int num_clusters);

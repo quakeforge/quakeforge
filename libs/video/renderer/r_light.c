@@ -249,18 +249,18 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 {
 	const auto leaf_visframes = visstate->leaf_visframes;
 	const auto face_visframes = visstate->face_visframes;
-	const auto visframecount = visstate->visframecount;
+	const auto vis_frame = visstate->vis_frame;
 	const auto brush = visstate->brush;
-	const auto pvsleaf = Mod_PointInLeaf (lightorigin, brush);
+	uint32_t leaf_ind = Mod_PointInLeaf (lightorigin, brush);
 
-	if (!pvsleaf->compressed_vis) {
+	if (brush->leaf_offs[leaf_ind] == ~0u) {
 		int         node_id = brush->hulls[0].firstclipnode;
 		R_RecursiveMarkLights (brush, lightorigin, light, lightnum, node_id);
 	} else {
 		float       radius = light->radius;
 		vec3_t      mins, maxs;
 		unsigned    leafnum = 0;
-		byte       *in = pvsleaf->compressed_vis;
+		byte       *in = brush->leaf_vis.data + brush->leaf_offs[leaf_ind];
 		byte        vis_bits;
 
 		mins[0] = lightorigin[0] - radius;
@@ -269,19 +269,19 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 		maxs[0] = lightorigin[0] + radius;
 		maxs[1] = lightorigin[1] + radius;
 		maxs[2] = lightorigin[2] + radius;
-		while (leafnum < brush->visleafs) {
+		while (leafnum < brush->leaf_vis.count) {
 			int         b;
 			if (!(vis_bits = *in++)) {
 				leafnum += (*in++) * 8;
 				continue;
 			}
-			for (b = 1; b < 256 && leafnum < brush->visleafs;
+			for (b = 1; b < 256 && leafnum < brush->leaf_vis.count;
 				 b <<= 1, leafnum++) {
 				int      m;
 				mleaf_t *leaf  = &brush->leafs[leafnum + 1];
 				if (!(vis_bits & b))
 					continue;
-				if (leaf_visframes[leafnum + 1] != visframecount)
+				if (leaf_visframes[leafnum + 1] != vis_frame)
 					continue;
 				if (leaf->mins[0] > maxs[0] || leaf->maxs[0] < mins[0]
 					|| leaf->mins[1] > maxs[1] || leaf->maxs[1] < mins[1]
@@ -291,7 +291,7 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 				for (m = 0; m < leaf->nummarksurfaces; m++) {
 					msurface_t *surf = *msurf++;
 					int         surf_id = surf - brush->surfaces;
-					if (face_visframes[surf_id] != visframecount)
+					if (face_visframes[surf_id] != vis_frame)
 						continue;
 					mark_surfaces (surf, lightorigin, light, lightnum);
 				}
@@ -305,7 +305,7 @@ R_PushDlights (const vec3_t entorigin, const visstate_t *visstate)
 {
 	r_dlightframecount = r_framecount;
 
-	if (!r_dlight_lightmap)
+	if (!r_dlight_lightmap || !visstate)
 		return;
 
 	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
@@ -446,7 +446,7 @@ loop:
 		if (!surf->samples)
 			return 0;
 
-		if (brush->lightmap_bytes == 1)
+		if (brush->luxel_bytes == 1)
 			return calc_lighting_1 (surf, ds, dt);
 		else
 			return calc_lighting_3 (surf, ds, dt);

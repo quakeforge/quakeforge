@@ -117,8 +117,8 @@ sw_R_Init (memhunk_t *hunk, struct plitem_s *config)
 
 	R_Init_Cvars ();
 
-	Draw_Init ();
 	SCR_Init (hunk);
+	Draw_Init ();
 	R_SetFPCW ();
 #ifdef USE_INTEL_ASM
 	R_InitVars ();

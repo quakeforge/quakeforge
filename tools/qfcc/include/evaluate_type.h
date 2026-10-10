@@ -52,6 +52,8 @@ enum {
 	tf_uint,
 	tf_bool,
 	tf_float,
+	tf_volatile,
+	tf_const,
 	tf_gentype,
 
 	tf_num_functions

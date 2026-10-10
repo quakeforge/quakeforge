@@ -41,7 +41,7 @@ properties = {
 		};
 		dst = {
 			stage = color_attachment_output;
-			access = color_attachment_write;
+			access = color_attachment_read|color_attachment_write;
 		};
 	};
 	extcolor_outdep = {
@@ -61,7 +61,7 @@ properties = {
 		};
 		dst = {
 			stage = early_fragment_tests|late_fragment_tests;
-			access = depth_stencil_attachment_read;
+			access = depth_stencil_attachment_write;
 		};
 		flags = by_region|view_local;
 	};
@@ -287,7 +287,239 @@ properties = {
 		};
 	};
 
+	prefixsum = {
+		shader = {
+			main = {
+				stage = compute;
+				name = main;
+				module = $builtin/prefixsum.r;
+			};
+			offset = {
+				stage = compute;
+				name = offset;
+				module = $builtin/prefixsum.r;
+			};
+			modal = {
+				stage = compute;
+				name = modal;
+				module = $builtin/prefixsum.r;
+			};
+		};
+		layout = {
+			pushConstants = {
+				compute = {
+					in_data = ptr;
+					out_data = ptr;
+					sum_data = ptr;
+					count = ptr;
+					mode = uint;
+				};
+			};
+		};
+	};
 	brush = {
+		lightmap = {
+			shader = {
+				main = {
+					stage = compute;
+					name = lightmap.main;
+					module = $builtin/bsp.r;
+				};
+				luxels = {
+					stage = compute;
+					name = lightmap.luxels;
+					module = $builtin/bsp.r;
+				};
+				queue_surfs = {
+					stage = compute;
+					name = lightmap.queue_surfs;
+					module = $builtin/bsp.r;
+				};
+				set_dispatch = {
+					update = {
+						stage = compute;
+						name = lightmap.set_dispatch.update;
+						module = $builtin/bsp.r;
+					};
+					surf = {
+						stage = compute;
+						name = lightmap.set_dispatch.surf;
+						module = $builtin/bsp.r;
+					};
+					luxel = {
+						stage = compute;
+						name = lightmap.set_dispatch.luxel;
+						module = $builtin/bsp.r;
+					};
+					cluster = {
+						stage = compute;
+						name = lightmap.set_dispatch.cluster;
+						module = $builtin/bsp.r;
+					};
+				};
+				clear = {
+					stage = compute;
+					name = lightmap.clear;
+					module = $builtin/bsp.r;
+				};
+			};
+			layout = {
+				descriptorSets = (lightmap_set);
+				pushConstants = {
+					compute = {
+						lightinfo = ptr;
+						lightsize = ptr;
+						surfinfo = ptr;
+						light_cache = ptr;
+						light_style_values = ptr;
+						lightmap_data = ptr;
+						light_queue_offs = ptr;
+						light_queue_inds = ptr;
+						light_clusters = ptr;
+						light_cluster_surfs = ptr;
+						cluster_queue = ptr;
+						light_queue = ptr;
+
+						prefixsum_counts = ptr;
+						num_lightmaps = uint;
+					};
+				};
+			};
+		};
+		cluster = {
+			shader = {
+				clear = {
+					stage = compute;
+					name = cluster.clear;
+					module = $builtin/bsp.r;
+				};
+				count_subclusters = {
+					stage = compute;
+					name = cluster.count_subclusters;
+					module = $builtin/bsp.r;
+				};
+				alloc_textures = {
+					stage = compute;
+					name = cluster.alloc_textures;
+					module = $builtin/bsp.r;
+				};
+				queue_textures = {
+					stage = compute;
+					name = cluster.queue_textures;
+					module = $builtin/bsp.r;
+				};
+				set_dispatch = {
+					subcluster = {
+						stage = compute;
+						name = cluster.set_dispatch.subcluster;
+						module = $builtin/bsp.r;
+					};
+					texture = {
+						stage = compute;
+						name = cluster.set_dispatch.texture;
+						module = $builtin/bsp.r;
+					};
+				};
+			};
+			layout = {
+				pushConstants = {
+					compute = {
+						command_counts = ptr;
+						command_offsets = ptr;
+						commands = ptr;
+						subclusters = ptr;
+						clusters = ptr;
+						cluster_map = ptr;
+						subcluster_queue = ptr;
+						subcluster_tmp = ptr;
+						instance_queue = ptr;
+						texture_count = uint;
+						anim_index = uint;
+
+						models = ptr;
+						anim_main = ptr;
+						anim_alt = ptr;
+						frame_map = ptr;
+
+						mod_invoke = ptr;
+						prefixsum_counts = ptr;
+					};
+				};
+			};
+		};
+		ent = {
+			shader = {
+				distribute = {
+					stage = compute;
+					name = ent.distribute;
+					module = $builtin/bsp.r;
+				};
+				model_count = {
+					stage = compute;
+					name = ent.model_count;
+					module = $builtin/bsp.r;
+				};
+				model_instances = {
+					stage = compute;
+					name = ent.model_instances;
+					module = $builtin/bsp.r;
+				};
+				set_dispatch = {
+					cluster = {
+						stage = compute;
+						name = ent.set_dispatch.cluster;
+						module = $builtin/bsp.r;
+					};
+					model = {
+						stage = compute;
+						name = ent.set_dispatch.model;
+						module = $builtin/bsp.r;
+					};
+					instance = {
+						stage = compute;
+						name = ent.set_dispatch.instance;
+						module = $builtin/bsp.r;
+					};
+				};
+				world_instance = {
+					stage = compute;
+					name = ent.world_instance;
+					module = $builtin/bsp.r;
+				};
+				clear = {
+					stage = compute;
+					name = ent.clear;
+					module = $builtin/bsp.r;
+				};
+				count = {
+					stage = compute;
+					name = ent.count;
+					module = $builtin/bsp.r;
+				};
+			};
+			layout = {
+				pushConstants = {
+					compute = {
+						ent_ids = ptr;
+						ent_rel = ptr;
+						inst_ids = ptr;
+						entities = ptr;
+						instance_queue = ptr;
+						cluster_queue = ptr;
+						models = ptr;
+
+						mod_counts = ptr;
+						mod_offsets = ptr;
+						mod_clusters = ptr;
+						ent_count = uint;
+						num_models = uint;
+						mod_invoke = ptr;
+
+						prefixsum_counts = ptr;
+					};
+				};
+			};
+		};
 		shader = {
 			vertex = {
 				stage = vertex;
@@ -327,14 +559,15 @@ properties = {
 		};
 		vertexInput = {
 			bindings = (
-				{ binding = 0; stride = "2 * 3 * 4 + 4 * 4"; inputRate = vertex; },
+				{ binding = 0; stride = "2 * 3 * 4 + 2 * 4 + 3 * 4"; inputRate = vertex; },
 				{ binding = 1; stride = "4"; inputRate = instance; },
 			);
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32b32_sfloat; offset = 0;  },
 				{ location = 1; binding = 0; format = r32g32b32_sfloat; offset = 12;  },
-				{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 24; },
-				{ location = 3; binding = 1; format = r32_uint; offset = 0; },
+				{ location = 2; binding = 0; format = r32g32_sfloat; offset = 24; },
+				{ location = 3; binding = 0; format = r32g32b32_sfloat; offset = 32; },
+				{ location = 4; binding = 1; format = r32_uint; offset = 0; },
 			);
 		};
 		inputAssembly = {
@@ -701,6 +934,16 @@ descriptorSetLayouts = {
 			},
 		);
 	};
+	lightmap_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = storage_image;
+				descriptorCount = 1;
+				stageFlags = compute;
+			},
+		);
+	};
 	oit_set = {
 		bindings = (
 			{
@@ -939,35 +1182,75 @@ output = {
 	format = r16g16b16a16_sfloat;
 	finalLayout = shader_read_only_optimal;
 };
+framebuffers = {
+	flat = {
+		width = $render_output.extent.width;
+		height = $render_output.extent.height;
+		layers = 1;
+		attachments = {
+			depth = {
+				@inherit = $depth_base;
+				format = $images.depth.format;
+				view = depth;
+			};
+			color = {
+				@inherit = $attachment_base;
+				format = $images.color.format;
+				finalLayout = color_attachment_optimal;
+				loadOp = clear;
+				storeOp = store;
+				view = color;
+			};
+			output = {
+				@inherit = $attachment_base;
+				format = $images.output.format;
+				loadOp = clear;
+				storeOp = store;
+				finalLayout = $render_output.finalLayout;
+				view = output;
+			};
+		};
+	};
+	cube = {
+		width = "min($render_output.extent.width,$render_output.extent.height)";
+		height = "min($render_output.extent.width,$render_output.extent.height)";
+		layers = 1;
+		attachments = {
+			depth = {
+				@inherit = $depth_base;
+				format = $images.cube_depth.format;
+				view = cube_depth;
+			};
+			color = {
+				@inherit = $attachment_base;
+				format = $images.cube_color.format;
+				finalLayout = color_attachment_optimal;
+				loadOp = clear;
+				storeOp = store;
+				view = cube_color;
+			};
+			output = {
+				@inherit = $attachment_base;
+				format = $images.cube_output.format;
+				loadOp = clear;
+				storeOp = store;
+				finalLayout = $render_output.finalLayout;
+				view = cube_output;
+			};
+		};
+	};
+};
 renderpasses = {
 	forward = {
 		color = "[0, 1, 0, 1]";
 		framebuffer = {
-			width = $render_output.extent.width;
-			height = $render_output.extent.height;
-			layers = 1;
+			use = flat;
 			attachments = {
-				depth = {
-					@inherit = $depth_base;
-					format = $images.depth.format;
-					view = depth;
-				};
-				color = {
-					@inherit = $attachment_base;
-					format = $images.color.format;
-					loadOp = clear;
-					view = color;
-				};
-				output = {
-					@inherit = $attachment_base;
-					format = $render_output.format;
-					loadOp = clear;
-					storeOp = store;
-					finalLayout = $render_output.finalLayout;
-					view = output;
-				};
+				depth = { };
+				color = { };
 			};
 		};
+		viewMask = 0x01;
 		subpasses = {
 			solid = {
 				color = "[ 0.3,  0.7,  0.3, 1]";
@@ -1067,6 +1350,17 @@ renderpasses = {
 				color = "[ 0.25, 0.25, 0.6, 1]";
 				dependencies = {
 					solid = $depthtest_dependency;
+					translucent = {
+						src = {
+							stage = fragment_shader;
+							access = shader_storage_write;
+						};
+						dst = {
+							stage = fragment_shader;
+							access = shader_storage_write;
+						};
+						flags = by_region|view_local;
+					};
 				};
 				attachments = {
 					depth = {
@@ -1082,6 +1376,8 @@ renderpasses = {
 					bsp:trans = {
 						color = $color.bsp;
 						tasks = (
+							{ func = bsp_draw_queue;
+							  params = (lightmap, trans_ent, 1); },
 							{ func = bsp_draw_queue;
 							  params = (lightmap, translucent, 1); },
 							{ func = bsp_draw_queue;
@@ -1111,16 +1407,57 @@ renderpasses = {
 					};
 				};
 			};
+			$external = {
+				dependencies = {
+					solid = {
+						src = {
+							stage = color_attachment_output;
+							access = color_attachment_read|color_attachment_write;
+						};
+						dst = {
+							stage = color_attachment_output;
+							access = color_attachment_read|color_attachment_write;
+						};
+					};
+				}
+			}
+		};
+	};
+	forward_cube = {
+		@inherit = $renderpasses.forward;
+		viewMask = 0x3fu;
+		framebuffer = {
+			use = cube;
+			attachments = {
+				depth = { };
+				color = { };
+			};
+		};
+	};
+	compose = {
+		color = "[0, 1, 0, 1]";
+		framebuffer = {
+			use = flat;
+			attachments = {
+				color = {
+					loadOp = load;
+					initialLayout = color_attachment_optimal;
+				};
+				output = { };
+			};
+		};
+		subpasses = {
 			compose = {
 				color = "[ 0.7,  0.3,  0.3, 1]";
 				dependencies = (
-					{@inherit = $color_dependency; name = solid;},
-					{@inherit = $color_dependency; name = translucent;},
-					{@inherit = $depthread_dependency; name = solid;},
+					{@inherit = $extcolor_dependency; name = $external;},
 				);
 				attachments = {
 					input = {
-						color = shader_read_only_optimal;
+						color = {
+							layout = shader_read_only_optimal;
+							aspectMask = color;
+						};
 					};
 					color = {
 						output = {
@@ -1128,7 +1465,6 @@ renderpasses = {
 							blend = $additive_blend;
 						};
 					};
-					//preserve = (depth);
 				};
 				pipelines = {
 					compose = {
@@ -1159,6 +1495,8 @@ renderpasses = {
 							{ func = bsp_draw_queue;
 							  params = (debug, translucent, 0); },
 							{ func = bsp_draw_queue;
+							  params = (debug, translucent, 0); },
+							{ func = bsp_draw_queue;
 							  params = (debug, turbulent, 0); },
 						);
 
@@ -1173,7 +1511,7 @@ renderpasses = {
 							);
 							attributes = (
 								"$brush.vertexInput.attributes[0]",
-								"$brush.vertexInput.attributes[3]",
+								"$brush.vertexInput.attributes[4]",
 							);
 						};
 						inputAssembly = $brush.inputAssembly;
@@ -1200,35 +1538,17 @@ renderpasses = {
 		};
 		output = output;
 	};
-	forward_cube = {
-		@inherit = $renderpasses.forward;
-		@next = (VkRenderPassMultiviewCreateInfo, {
-			viewMasks   = (0x3fu, 0x3fu, 0x3fu);
-		});
+	compose_cube = {
+		@inherit = $renderpasses.compose;
+		viewMask = 0x3fu;
 		framebuffer = {
-			width = "min($render_output.extent.width,$render_output.extent.height)";
-			height = "min($render_output.extent.width,$render_output.extent.height)";
-			layers = 1;
+			use = cube;
 			attachments = {
-				depth = {
-					@inherit = $depth_base;
-					format = $images.cube_depth.format;
-					view = cube_depth;
-				};
 				color = {
-					@inherit = $attachment_base;
-					format = $images.cube_color.format;
-					loadOp = clear;
-					view = cube_color;
+					loadOp = load;
+					initialLayout = color_attachment_optimal;
 				};
-				output = {
-					@inherit = $attachment_base;
-					format = $images.cube_color.format;
-					loadOp = clear;
-					storeOp = store;
-					finalLayout = $render_output.finalLayout;
-					view = cube_output;
-				};
+				output = { };
 			};
 		};
 		output = cube_output;
@@ -1384,13 +1704,272 @@ jobs = {
 					};
 				};
 			};
-			world = {
+			world_enqueue = {
 				dependencies = (start_frame);
+				compute = {
+					pipelines = {
+						ent:clear = {
+							tasks = (
+								{ func = bsp_model_invoke; },
+							);
+							stage = $brush.ent.shader.clear;
+							layout = $brush.ent.layout;
+						};
+						ent:world_instance = {
+							tasks = (
+								{ func = bsp_reset_queues; },
+								{ func = bsp_visit_world; },
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_cluster_invoke; },
+							);
+							stage = $brush.ent.shader.world_instance;
+							layout = $brush.ent.layout;
+						};
+						ent:count = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_entity_invoke; },
+							);
+							stage = $brush.ent.shader.count;
+							layout = $brush.ent.layout;
+						};
+						ent:model:set_dispatch = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.ent.shader.set_dispatch.model;
+							layout = $brush.ent.layout;
+						};
+						ent:prefixsum = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_prefixsum;
+								  params = (mod_offsets); },
+							);
+							stage = $prefixsum.shader.modal;
+							layout = $prefixsum.layout;
+						};
+						ent:distribute = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_entity_invoke; },
+							);
+							stage = $brush.ent.shader.distribute;
+							layout = $brush.ent.layout;
+						};
+						ent:model_count = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_model_invoke; },
+							);
+							stage = $brush.ent.shader.model_count;
+							layout = $brush.ent.layout;
+						};
+						ent:cluster:set_dispatch = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.ent.shader.set_dispatch.model;
+							layout = $brush.ent.layout;
+						};
+						ent:cluster:prefixsum = {
+							tasks = (
+								{ func = bsp_update_mod_clusters; },
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_prefixsum;
+								  params = (mod_clusters); },
+							);
+							stage = $prefixsum.shader.modal;
+							layout = $prefixsum.layout;
+						};
+						ent:model_instances = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_cluster_invoke; },
+							);
+							stage = $brush.ent.shader.model_instances;
+							layout = $brush.ent.layout;
+						};
+						ent:instance:set_dispatch = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.ent.shader.set_dispatch.instance;
+							layout = $brush.ent.layout;
+						};
+						cluster:clear_commands = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_command_invoke; },
+							);
+							stage = $brush.cluster.shader.clear;
+							layout = $brush.cluster.layout;
+						};
+						cluster:count_subclusters = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_instance_invoke; },
+							);
+							stage = $brush.cluster.shader.count_subclusters;
+							layout = $brush.cluster.layout;
+						};
+						cluster:subcluster:set_dispatch = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.cluster.shader.set_dispatch.subcluster;
+							layout = $brush.cluster.layout;
+						};
+						cluster:prefixsum = {
+							tasks = (
+								{ func = bsp_update_mod_clusters; },
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_prefixsum;
+								  params = (subclusters); },
+							);
+							stage = $prefixsum.shader.modal;
+							layout = $prefixsum.layout;
+						};
+						cluster:texture:set_dispatch = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.cluster.shader.set_dispatch.texture;
+							layout = $brush.cluster.layout;
+						};
+						cluster:alloc_textures = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_subcluster_invoke; },
+							);
+							stage = $brush.cluster.shader.alloc_textures;
+							layout = $brush.cluster.layout;
+						};
+						cluster:queue_textures = {
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_subcluster_invoke; },
+							);
+							stage = $brush.cluster.shader.queue_textures;
+							layout = $brush.cluster.layout;
+						};
+
+						light:clear = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.lightmap.shader.clear;
+							layout = $brush.lightmap.layout;
+						};
+						light:cluster:set_dispatch = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.lightmap.shader.set_dispatch.cluster;
+							layout = $brush.lightmap.layout;
+						};
+						light:cluster:surfs = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_cluster_invoke; },
+							);
+							stage = $brush.lightmap.shader.queue_surfs;
+							layout = $brush.lightmap.layout;
+						};
+						light:clust:set_dispatch = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.lightmap.shader.set_dispatch.surf;
+							layout = $brush.lightmap.layout;
+						};
+						light:surf:prefixsum = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_prefixsum;
+								  params = (light_surfs); },
+							);
+							stage = $prefixsum.shader.modal;
+							layout = $prefixsum.layout;
+						};
+						light:luxel:set_dispatch = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.lightmap.shader.set_dispatch.luxel;
+							layout = $brush.lightmap.layout;
+						};
+						light:cluster:luxels = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_light_queue_luxels; },
+							);
+							stage = $brush.lightmap.shader.luxels;
+							layout = $brush.lightmap.layout;
+						};
+						light:surf:set_dispatch = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.lightmap.shader.set_dispatch.surf;
+							layout = $brush.lightmap.layout;
+						};
+						light:luxel:prefixsum = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_prefixsum;
+								  params = (light_luxels); },
+							);
+							stage = $prefixsum.shader.modal;
+							layout = $prefixsum.layout;
+						};
+						light:update:set_dispatch = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = set_dispatch; params = (1, 1, 1); },
+							);
+							stage = $brush.lightmap.shader.set_dispatch.update;
+							layout = $brush.lightmap.layout;
+						};
+						light:update = {
+							color = "[0.8, 0.7, 0.4]";
+							tasks = (
+								{ func = indirect_dispatch_barrier; },
+								{ func = bsp_light_update; },
+							);
+							stage = $brush.lightmap.shader.main;
+							layout = $brush.lightmap.layout;
+						};
+					};
+				};
+			};
+			world = {
+				dependencies = (world_enqueue);
 				process = {
 					tasks = (
-						{ func = bsp_reset_queues; },
-						{ func = bsp_visit_world;
-						  params = (lightmap); },
+						{ func = bsp_draw_barrier; },
 						{ func = scene_draw_viewmodel; },
 					);
 				};
@@ -1401,8 +1980,14 @@ jobs = {
 					tasks = (
 						{ func = output_select_renderpass;
 						  params = (main`main); },
+						{ func = output_select_renderpass;
+						  params = (main`compose); },
+						{ func = update_framebuffer;
+						  params = (@); },
 						{ func = update_framebuffer;
 						  params = (main`main); },
+						{ func = update_framebuffer;
+						  params = (main`compose); },
 						{ func = clear_translucent;
 						  params = (main`main); },
 						{ func = compose_update; },
@@ -1419,6 +2004,23 @@ jobs = {
 					};
 				};
 			};
+			setup_compose = {
+				dependencies = (main);
+				process = {
+					tasks = (
+						{ func = sync_translucent; },
+					);
+				};
+			};
+			compose = {
+				dependencies = (setup_compose);
+				render = {
+					renderpasses = {
+						compose = $renderpasses.compose;
+						compose_cube = $renderpasses.compose_cube;
+					};
+				};
+			};
 			preoutput = {
 				dependencies = (main);
 				process = {
@@ -1427,7 +2029,7 @@ jobs = {
 						{ func = acquire_output;
 						  params = (main`output); },
 						{ func = update_input;
-						  params = (main`main); },
+						  params = (main`compose); },
 						{ func = output_select_pipeline;
 						  params = (main`output); },
 						{ func = flush_draw; },
@@ -1467,6 +2069,7 @@ init_tasks = (
 	{ func = palette_init; },
 	{ func = mesh_init; },
 	{ func = bsp_init; },
+	{ func = lightmap_init; },
 	{ func = matrices_init; },
 	{ func = scene_init; },
 	{ func = sprite_init; },

@@ -581,9 +581,14 @@ mesh_draw_entqueue (int stage, int pass, int entqueue, qfv_taskctx_t *taskctx)
 			continue;
 		}
 		// FIXME hack the depth range to prevent view model
-		// from poking into walls
+		// from poking into walls, but it breaks position reconstruction
 		if (stage == mesh_main && renderer->depthhack) {
-			mesh_depth_range (taskctx, 0.7, 1);
+			//FIXME assumes quake's player and view weapon
+			float n = r_nearclip;
+			float d = 16; // size of player box (half-width)
+			float v = 24; // approximate depth to tip of weapon
+			float minDepth = n*(v-d)/(d*(v-n));
+			mesh_depth_range (taskctx, minDepth, 1);
 		}
 		mesh_draw_ent (taskctx, ent, pass, renderer);
 		// unhack in case the view_model is not the last

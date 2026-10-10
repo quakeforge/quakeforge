@@ -818,34 +818,40 @@ GL_ScrapTexture (scrap_t *scrap)
 	return scrap->tnum;
 }
 
+float
+GL_ScrapSize (scrap_t *scrap)
+{
+	return 1.0 / scrap->rscrap.width;
+}
+
 subpic_t *
 GL_ScrapSubpic (scrap_t *scrap, int width, int height)
 {
 	qfZoneScoped (true);
-	vrect_t    *rect;
-	subpic_t   *subpic;
 
-	rect = R_ScrapAlloc (&scrap->rscrap, width, height);
+	auto rect = R_ScrapAlloc (&scrap->rscrap, width, height);
 	if (!rect) {
-		return 0;
+		return nullptr;
 	}
 
-	subpic = malloc (sizeof (subpic_t));
-	*((subpic_t **) &subpic->next) = scrap->subpics;
+	subpic_t *subpic = malloc (sizeof (subpic_t));
+	*subpic = (subpic_t) {
+		.next = scrap->subpics,
+		.scrap = scrap,
+		.rect = rect,
+		.width = width,
+		.height = height,
+		.size = 1.0 / scrap->rscrap.width,
+	};
 	scrap->subpics = subpic;
-	*((scrap_t **) &subpic->scrap) = scrap;
-	*((vrect_t **) &subpic->rect) = rect;
-	*((int *) &subpic->width) = width;
-	*((int *) &subpic->height) = height;
-	*((float *) &subpic->size) = 1.0 / scrap->rscrap.width;
 	return subpic;
 }
 
 void
 GL_SubpicDelete (subpic_t *subpic)
 {
-	scrap_t    *scrap = (scrap_t *) subpic->scrap;
-	vrect_t    *rect = (vrect_t *) subpic->rect;
+	scrap_t    *scrap = subpic->scrap;
+	scrapbox_t *rect = subpic->rect;
 	subpic_t  **sp;
 
 	for (sp = &scrap->subpics; *sp; sp = (subpic_t **) &(*sp)->next)
@@ -861,21 +867,13 @@ GL_SubpicDelete (subpic_t *subpic)
 void
 GL_SubpicUpdate (subpic_t *subpic, byte *data, int batch)
 {
-	scrap_t    *scrap = (scrap_t *) subpic->scrap;
-	vrect_t    *rect = (vrect_t *) subpic->rect;
+	scrap_t    *scrap = subpic->scrap;
+	scrapbox_t *rect = subpic->rect;
 	byte       *dest;
 	int         step, sbytes;
 	int         i;
 
 	if (batch) {
-		/*if (scrap->batch) {
-			vrect_t    *r = scrap->batch;
-			scrap->batch = VRect_Union (r, rect);
-			VRect_Delete (r);
-		} else {
-			scrap->batch = VRect_New (rect->x, rect->y,
-									  rect->width, rect->height);
-		}*/
 		vrect_t    *r = VRect_New (rect->x, rect->y,
 								   rect->width, rect->height);
 		r->next = scrap->batch;

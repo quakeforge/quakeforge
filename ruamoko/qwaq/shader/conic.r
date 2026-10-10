@@ -55,10 +55,10 @@ main ()
 			auto n = c.point ∨ c.s ∨ c.t;
 			point_t p = ray ∧ n;
 			float t = ⋆(p * (n ∧ eye)) * e321;
-			if (t >= 0) {
+			float vn = ⋆(e0 ∧ p);
+			if (t >= 0 || !vn) {
 				continue;
 			}
-			float vn = ⋆(e0 ∧ p);
 			p /= vn;
 			vec4 proj_p = PV * vec4 (p);
 			// Assumes s and t are orthogonal and unit
@@ -78,7 +78,7 @@ main ()
 			float F = (1 - e*e)*x*x + 2*l*e*x + y*y - l*l;
 			auto delF = 2*vec2 ((1 - e*e)*x + l*e, y);
 			auto df = vec2 (duvdx • delF, duvdy • delF);
-			float dd = F * F / (df • df);
+			float dd = F ? F * F / (df • df) : 0;
 			float alpha = c.width - sqrt (dd) / (abs(vn));
 			alpha = max (min(alpha, 1), 0);
 			color += asrgba (c.color) * alpha;

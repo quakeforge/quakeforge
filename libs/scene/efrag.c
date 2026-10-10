@@ -159,14 +159,13 @@ Efrags_DelEfrag (efrag_db_t *db, uint32_t efragid)
 }
 
 uint32_t
-R_LinkEfrag (scene_t *scene, mleaf_t *leaf, entity_t ent, uint32_t queue,
-			 uint32_t efrag)
+R_LinkEfrag (scene_t *scene, uint32_t cluster_num, entity_t ent,
+			 uint32_t queue, uint32_t efrag)
 {
 	qfZoneScoped (true);
-	if (leaf->contents == CONTENTS_SOLID) {
+	if (cluster_num == 0) {
 		return efrag;
 	}
-	uint32_t cluster = leaf - scene->worldmodel->brush->leafs;
 	auto db = scene->efrag_db;
 	if (efrag == nullent) {
 		efrag = ECS_NewId (&db->idpool);
@@ -193,7 +192,7 @@ R_LinkEfrag (scene_t *scene, mleaf_t *leaf, entity_t ent, uint32_t queue,
 		grp->refs = realloc (grp->refs, sizeof (cluster_ref_t[new_max]));
 		grp->max_refs = new_max;
 	}
-	auto frags = &db->clusters[cluster];
+	auto frags = &db->clusters[cluster_num];
 	if (frags->num_efrags == frags->max_efrags) {
 		uint32_t    new_max = frags->max_efrags + 8;
 		frags->efrags = realloc (frags->efrags, sizeof (efrag_t[new_max]));
@@ -202,7 +201,7 @@ R_LinkEfrag (scene_t *scene, mleaf_t *leaf, entity_t ent, uint32_t queue,
 		frags->max_efrags = new_max;
 	}
 	grp->refs[grp->num_refs++] = (cluster_ref_t) {
-		.id = cluster,
+		.id = cluster_num,
 		.index = frags->num_efrags,
 	};
 	frags->efrags[frags->num_efrags] = (efrag_t) {
@@ -233,20 +232,18 @@ R_SplitEntityOnNode (scene_t *scene, entity_t ent, uint32_t queue,
 
 	int32_t     node_id = 0;
 	while (node_id != (int) brush->numnodes) {
-		// add an efrag if the node is a leaf
+		// add an efrag if the node is a leaf (cluster)
 		if (__builtin_expect (node_id < 0, 0)) {
 			if (visibility->topnode_id == -1) {
 				visibility->topnode_id = node_id;
 			}
 
-			auto leaf = brush->leafs + ~node_id;
-
-			visibility->efrag = R_LinkEfrag (scene, leaf, ent, queue,
+			visibility->efrag = R_LinkEfrag (scene, ~node_id, ent, queue,
 											 visibility->efrag);
 
 			node_id = *--node_ptr;
 		} else {
-			mnode_t    *node = brush->nodes + node_id;
+			mnode_t    *node = brush->cluster_nodes + node_id;
 			// NODE_MIXED
 			splitplane = (plane_t *) &node->plane;
 			sides = BOX_ON_PLANE_SIDE (emins, emaxs, splitplane);
@@ -311,12 +308,11 @@ R_AddEfrags (scene_t *scene, entity_t ent)
 }
 
 void
-R_StoreEfrags (scene_t *scene, mleaf_t *leaf)
+R_StoreEfrags (scene_t *scene, uint32_t cluster_num)
 {
 	qfZoneScoped (true);
-	uint32_t cluster = leaf - scene->worldmodel->brush->leafs;
 	auto db = scene->efrag_db;
-	auto frags = &db->clusters[cluster];
+	auto frags = &db->clusters[cluster_num];
 	for (uint32_t i = 0; i < frags->num_efrags; i++) {
 		auto efrag = &frags->efrags[i];
 		entity_t    ent = {

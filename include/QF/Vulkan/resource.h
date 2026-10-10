@@ -6,7 +6,7 @@
 #endif
 #include <vulkan/vulkan.h>
 
-typedef enum {
+typedef enum : unsigned {
 	qfv_res_buffer = 1,
 	qfv_res_buffer_view,
 	qfv_res_image,
@@ -76,6 +76,7 @@ struct qfv_device_s;
 int QFV_CreateResource (struct qfv_device_s *device, qfv_resource_t *resource);
 void QFV_DestroyResource (struct qfv_device_s *device,
 						  qfv_resource_t *resource);
+void QFV_PrintResource (qfv_resource_t *resource);
 struct tex_s;
 void QFV_ResourceInitTexImage (qfv_resobj_t *image, const char *name,
 							   bool mips, const struct tex_s *tex);

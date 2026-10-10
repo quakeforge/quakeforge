@@ -76,6 +76,17 @@ typedef struct ty_handle_s {
 	unsigned    extra;		///< handle for extra
 } ty_handle_t;
 
+typedef struct ty_qual_s {
+	const type_t *type;		///< qualified type
+	union {
+		struct {
+			bool        is_const:1;
+			bool        is_volatile:1;
+		};
+		unsigned    bits;
+	};
+} ty_qual_t;
+
 typedef struct type_s {
 	etype_t     type;		///< ev_invalid means structure/array etc
 	unsigned    id;			///< internal id for registerd types
@@ -99,6 +110,7 @@ typedef struct type_s {
 		struct multivector_s *multivec;
 		ty_alias_t  alias;
 		ty_handle_t handle;
+		ty_qual_t qual;
 	};
 	attribute_t *attributes;
 	const type_t *source;		///< source type for clones (eg, spir-v)
@@ -177,6 +189,8 @@ const type_t *pointer_type (const type_t *aux);
 const type_t *tagged_pointer_type (unsigned tag, const type_t *aux);
 const type_t *reference_type (const type_t *aux);
 const type_t *tagged_reference_type (unsigned tag, const type_t *aux);
+const type_t *volatile_type (const type_t *type);
+const type_t *const_type (const type_t *type);
 unsigned pointer_tag (const type_t *type);
 const type_t *vector_type (const type_t *ele_type, int width) __attribute__((pure));
 const type_t *matrix_type (const type_t *ele_type, int cols, int rows) __attribute__((pure));
@@ -233,6 +247,7 @@ const type_t *array_type (const type_t *aux, int size);
 const type_t *based_array_type (const type_t *aux, int base, int top);
 const type_t *alias_type (const type_t *type, const type_t *alias_chain,
 						  const char *name);
+const type_t *core_type (const type_t *type) __attribute__((pure));
 const type_t *unalias_type (const type_t *type) __attribute__((pure));
 const type_t *dereference_type (const type_t *type) __attribute__((pure));
 void print_type_str (struct dstring_s *str, const type_t *type);
@@ -265,20 +280,28 @@ bool is_struct (const type_t *type) __attribute__((pure));
 bool is_handle (const type_t *type) __attribute__((pure));
 bool is_union (const type_t *type) __attribute__((pure));
 bool is_array (const type_t *type) __attribute__((pure));
+bool is_qual (const type_t *type) __attribute__ ((pure));
+bool is_const (const type_t *type) __attribute__ ((pure));
+bool is_volatile (const type_t *type) __attribute__ ((pure));
 bool is_structural (const type_t *type) __attribute__((pure));
 bool type_compatible (const type_t *dst, const type_t *src) __attribute__((pure));
+bool type_bindable (const type_t *ref, const type_t *src) __attribute__((pure));
 bool type_assignable (const type_t *dst, const type_t *src);
 bool type_promotes (const type_t *dst, const type_t *src) __attribute__((pure));
 bool type_demotes (const type_t *dst, const type_t *src) __attribute__((pure));
 bool type_compares (const type_t *dst, const type_t *src) __attribute__((pure));
 bool type_same (const type_t *dst, const type_t *src) __attribute__((pure));
 bool type_move_assign (const type_t *type) __attribute__((pure));
+int type_words (size_t bytes) __attribute__((const));
 int type_size (const type_t *type) __attribute__((pure));
 int type_align (const type_t *type) __attribute__((pure));
+size_t type_byte_size (const type_t *type) __attribute__((pure));
+size_t type_byte_align (const type_t *type) __attribute__((pure));
 int type_count (const type_t *type) __attribute__((pure));
 int type_width (const type_t *type) __attribute__((pure));
 int type_rows (const type_t *type) __attribute__((pure));
 int type_cols (const type_t *type) __attribute__((pure));
+int type_byte_aligned_size (const type_t *type) __attribute__((pure));
 int type_aligned_size (const type_t *type) __attribute__((pure));
 symtab_t *type_symtab (const type_t *type) __attribute__((pure));
 

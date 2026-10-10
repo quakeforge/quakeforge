@@ -128,10 +128,10 @@ gl_R_Init (memhunk_t *hunk, struct plitem_s *config)
 					"Tests the current refresh rate for the current location");
 	Cmd_AddCommand ("loadsky", gl_R_LoadSky_f, "Load a skybox");
 
+	SCR_Init (hunk);
 	gl_Draw_Init ();
 	glrmain_init ();
 	gl_lightmap_init ();
-	SCR_Init (hunk);
 	gl_R_InitBubble ();
 
 	GDT_Init ();

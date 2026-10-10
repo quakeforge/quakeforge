@@ -39,68 +39,15 @@
 
 #include "QF/simd/types.h"
 
+typedef struct set_s set_t;
+typedef struct qfv_resource_s qfv_resource_t;
+
 /** \defgroup vulkan_bsp Brush model rendering
 	\ingroup vulkan
 */
 
-/** Represent a single face (polygon) of a brush model.
- *
- * There is one of these for each face in the bsp (brush) model, built at run
- * time when the model is loaded (actually, after all models are loaded but
- * before rendering begins).
- */
-typedef struct bsp_face_s {
-	uint32_t    first_index;	///< index of first index in poly_indices
-	uint32_t    index_count;	///< includes primitive restart
-	uint32_t    tex_id;			///< texture bound to this face (maybe animated)
-	uint32_t    flags;			///< face drawing (alpha, side, sky, turb)
-} bsp_face_t;
-
-/** Represent a brush model, both main and sub-model.
- *
- * Used for rendering non-world models.
- */
-typedef struct bsp_model_s {
-	uint32_t    first_face;
-	uint32_t    face_count;
-} bsp_model_t;
-
-#if 0
-typedef struct texname_s {
-	char        name[MIPTEXNAME];
-} texname_t;
-
-typedef struct texmip_s {
-	uint32_t    width;
-	uint32_t    height;
-	uint32_t    offsets[MIPLEVELS];
-} texmip_t;
-#endif
-/** \defgroup vulkan_bsp_texanim Animated Textures
- * \ingroup vulkan_bsp
- *
- * Brush models support texture animations. For general details, see
- * \ref bsp_texture_animation. These structures allow for quick lookup
- * of the correct texture to use in an animation cycle, or even whether there
- * is an animation cycle.
- */
-///@{
-/** Represent a texture's animation group.
- *
- * Every texture is in an animation group, even when not animated. When the
- * texture is not animated, `count` is 1, otherwise `count` is the number of
- * frames in the group, thus every texture has at least one frame.
- *
- * Each texture in a particular group shares the same `base` frame, with
- * `offset` giving the texture's relative frame number within the group.
- * The current frame is given by `base + (anim_index + offset) % count` where
- * `anim_index` is the global time-based texture animation frame.
- */
-typedef struct texanim_s {
-	uint16_t    base;		///< first frame in group
-	byte        offset;		///< relative frame in group
-	byte        count;		///< number of frames in group
-} texanim_t;
+typedef struct bsp_model_s bsp_model_t;
+typedef struct bsp_texanim_s bsp_texanim_t;
 
 /** Holds texture animation data for brush models.
  *
@@ -108,18 +55,15 @@ typedef struct texanim_s {
  * entity's frame (0 or non-0). When the entity's frame is 0, group 0 is used,
  * otherwise group 1 is used. If there is no alternate (group 1) animation
  * data for the texture, then the texture's group 0 data is copied to group 1
- * in order to avoid coplications in selecting which texture a face is to use.
+ * in order to avoid complications in selecting which texture a face is to use.
  *
  * As all of a group's frames are together, `frame_map` is used to get the
  * actual texture id for the frame.
  */
 typedef struct texdata_s {
-//	texname_t  *names;
-//	texmip_t  **mips;
-	texanim_t  *anim_main;	///< group 0 animations
-	texanim_t  *anim_alt;	///< group 1 animations
+	bsp_texanim_t *anim_main;	///< group 0 animations
+	bsp_texanim_t *anim_alt;	///< group 1 animations
 	uint16_t   *frame_map;	///< map from texture frame to texture id
-//	int         num_tex;
 } texdata_t;
 ///@}
 
@@ -131,140 +75,11 @@ typedef struct vulktex_s {
 	VkImageView view;
 	VkDescriptorSet descriptor;
 	int         tex_id;
+	const char *name;
 } vulktex_t;
 
 typedef struct regtexset_s
     DARRAY_TYPE (vulktex_t *) regtexset_t;
-
-/** Represent a single draw call.
- *
- * For each texture that has faces to be rendered, one or more draw calls is
- * made. Normally, only one call per texture is made, but if different models
- * use the same texture, then a separate draw call is made for each model.
- * When multiple entities use the same model, instanced rendering is used to
- * draw all the faces sharing a texture for all the entities using that model.
- * Thus when there are multiple draw calls for a single texture, they are
- * grouped together so there is only one bind per texture.
- *
- * The index buffer is populated every frame with the vertex indices of the
- * faces to be rendered for the current frame, grouped by texture and instance
- * id (model render id).
- *
- * The model render id is assigned after models are loaded but before rendering
- * begins and remains constant until the next time models are loaded (level
- * change).
- *
- * The entid buffer is also populated every frame with the render id of the
- * entities to be drawn that frame, It is used to map gl_InstanceIndex to
- * entity id so as to look up the entity's transform and color (and any other
- * data in the future).
- *
- * \dot
- * digraph vulkan_bsp_draw_call {
- *     layout=dot; rankdir=LR; compound=true; nodesep=1.0;
- *     vertices [shape=none,label=< <table border="1" cellborder="1">
- *                  <tr><td>vertex</td></tr>
- *                  <tr><td>vertex</td></tr>
- *                  <tr><td>...</td></tr>
- *                  <tr><td port="p">vertex</td></tr>
- *                  <tr><td>vertex</td></tr>
- *              </table> >];
- *     indices  [shape=none,label=< <table border="1" cellborder="1">
- *                  <tr><td>index</td></tr>
- *                  <tr><td>index</td></tr>
- *                  <tr><td>...</td></tr>
- *                  <tr><td port="p">index</td></tr>
- *                  <tr><td>index</td></tr>
- *              </table> >];
- *     entids   [shape=none,label=< <table border="1" cellborder="1">
- *                  <tr><td>entid</td></tr>
- *                  <tr><td>...</td></tr>
- *                  <tr><td port="p">entid</td></tr>
- *                  <tr><td>entid</td></tr>
- *                  <tr><td>...</td></tr>
- *                  <tr><td>entid</td></tr>
- *              </table> >];
- *     entdata  [shape=none,label=< <table border="1" cellborder="1">
- *                  <tr><td>transform</td><td>color</td></tr>
- *                  <tr><td>transform</td><td>color</td></tr>
- *                  <tr><td colspan="2">...</td></tr>
- *                  <tr><td port="p">transform</td><td>color</td></tr>
- *                  <tr><td colspan="2">...</td></tr>
- *                  <tr><td>transform</td><td>color</td></tr>
- *              </table> >];
- *     drawcall [shape=none,label=< <table border="1" cellborder="1">
- *                  <tr><td port="tex" >tex_id</td></tr>
- *                  <tr><td            >inst_id</td></tr>
- *                  <tr><td port="ind" >first_index</td></tr>
- *                  <tr><td            >index_count</td></tr>
- *                  <tr><td port="inst">first_instance</td></tr>
- *                  <tr><td            >instance_count</td></tr>
- *              </table> >];
- *     textures [shape=none,label=< <table border="1" cellborder="1">
- *                  <tr><td>texture</td></tr>
- *                  <tr><td>texture</td></tr>
- *                  <tr><td port="p">texture</td></tr>
- *                  <tr><td>...</td></tr>
- *                  <tr><td>texture</td></tr>
- *              </table> >];
- *     vertex   [label="vertex shader"];
- *     fragment [label="fragment shader"];
- *     drawcall:tex -> textures:p;
- *     drawcall:ind -> indices:p;
- *     drawcall:inst -> entids:p;
- *     entids:p -> entdata:p;
- *     indices:p -> vertices:p;
- *     vertex -> entdata [label="storage buffer"];
- *     vertex -> entids [label="per instance"];
- *     vertex -> indices [label="index buffer"];
- *     vertex -> vertices [label="per vertex"];
- *     fragment -> textures [label="per call"];
- * }
- * \enddot
- */
-///@{
-typedef struct bsp_draw_s {
-	uint32_t    tex_id;			///< texture to bind for this draw call
-	uint32_t    inst_id;		///< model render id owning this draw call
-	uint32_t    index_count;	///< number of indices for this draw call
-	uint32_t    instance_count;	///< number of instances to draw
-	uint32_t    first_index;	///< index into index buffer
-	uint32_t    first_instance;	///< index into entid buffer
-} bsp_draw_t;
-
-typedef struct bsp_drawset_s
-    DARRAY_TYPE (bsp_draw_t) bsp_drawset_t;
-///@}
-
-/** Tag models that are to be queued for translucent drawing.
- */
-#define INST_ALPHA (1u<<31)
-
-/** Representation of a single face queued for drawing.
- */
-///@{
-typedef struct instface_s {
-	uint32_t    inst_id;		///< model render id owning this face
-	uint32_t    face;			///< index of face in context array
-} instface_t;
-
-typedef struct bsp_instfaceset_s
-    DARRAY_TYPE (instface_t) bsp_instfaceset_t;
-///@}
-
-/** Track entities using a model.
- */
-///@{
-typedef struct bsp_modelentset_s
-	DARRAY_TYPE (uint32_t) bsp_modelentset_t;
-
-/** Represent a single model and the entities using it.
- */
-typedef struct bsp_instance_s {
-	int         first_instance;	///< index into entid buffer
-	bsp_modelentset_t entities;	///< list of entity render ids using this model
-} bsp_instance_t;
-///@}
 
 typedef struct bsp_pass_s {
 	vec4f_t     position;			///< view position
@@ -274,13 +89,11 @@ typedef struct bsp_pass_s {
 	struct entqueue_s *entqueue;	///< entities to render this pass
 	/** \name GPU data
 	 *
-	 * The indices to be drawn and the entity ids associated with each draw
+	 * The entity ids associated with each draw
 	 * instance are updated each frame. The pointers are to the per-frame
 	 * mapped buffers for the respective data.
 	 */
 	///@{
-	uint32_t   *indices;			///< polygon vertex indices
-	uint32_t    index_count;		///< number of indices written to buffer
 	uint32_t   *entid_data;			///< instance id to entity id map
 	uint32_t    entid_count;		///< number of entids written to buffer
 	///@}
@@ -291,27 +104,9 @@ typedef struct bsp_pass_s {
 	 * `vis_frame`, and adding an object to the PVS is done by setting its
 	 * current frame id to the current visibility frame id.
 	 */
-	///@{
-	int         vis_frame;			///< current visibility frame id
-	int        *face_frames;		///< per-face visibility frame ids
-	int        *leaf_frames;		///< per-leaf visibility frame ids
-	int        *node_frames;		///< per-node visibility frame ids
-	///@}
-	bsp_instfaceset_t *face_queue;	///< per-texture face queues
+	visstate_t  visstate;
 	regtexset_t *textures;			///< textures to bind when emitting calls
-	int         num_queues;			///< number of pipeline queues
-	bsp_drawset_t *draw_queues;		///< per-pipeline draw queues
-	uint32_t    inst_id;			///< render id of current model
-	bsp_instance_t *instances;		///< per-model entid lists
-	// FIXME There are several potential optimizations here:
-	// 1) ent_frame could be forced to be 0 or 1 and then used to index a
-	// two-element array of texanim pointers
-	// 2) ent_frame could be a pointer to the correct texanim array
-	// 3) could update a tex_id map each frame and unconditionally index that
-	//
-	// As the texture id is used for selecting the face queue, 3 could be used
-	// for mapping all textures to 1 or two queues for shadow rendering
-	int         ent_frame;			///< animation frame of current entity
+	set_t      *tex_set;			///< per-pipeline set of textures
 } bsp_pass_t;
 ///@}
 
@@ -323,6 +118,7 @@ typedef enum {
 	QFV_bspSky,
 	QFV_bspTrans,	// texture translucency
 	QFV_bspTurb,	// also translucent via r_wateralpha
+	QFV_bspTransEnt,// translucent entities
 
 	QFV_bspNumPasses
 } QFV_BspQueue;
@@ -337,16 +133,34 @@ typedef enum {
 } QFV_BspPass;
 
 typedef struct bspframe_s {
-	uint32_t   *index_data;		// pointer into mega-buffer for this frame (c)
-	uint32_t    index_offset;	// offset of index_data within mega-buffer (c)
-	uint32_t    index_count;	// number if indices queued (d)
 	uint32_t   *entid_data;
 	uint32_t    entid_offset;
 	uint32_t    entid_count;
+	uint32_t    queue;
+	uint32_t    style_offset;
+
+	VkDescriptorSet lightmap_image;
+	VkDescriptorSet lightmap_descriptor;
+	bool        need_update;
 } bspframe_t;
 
 typedef struct bspframeset_s
     DARRAY_TYPE (bspframe_t) bspframeset_t;
+
+typedef struct bsp_buffer_s {
+	VkBuffer    buffer;
+	size_t      size;
+	VkDeviceAddress addr;
+	VkDeviceAddress *bb;
+} bsp_buffer_t;
+
+typedef struct bsp_prefixsum_s {
+	VkDeviceAddress in;
+	VkDeviceAddress out;
+	VkDeviceAddress tmp;
+	VkDeviceAddress total;
+	VkBuffer    invoke;		// bsp_invoke_t [2]
+} bsp_prefixsum_t;
 
 /** Main BSP context structure
  *
@@ -358,22 +172,17 @@ typedef struct bspctx_s {
 	VkImageView    notexture;			///< replacement for invalid textures
 	VkDescriptorSet notexture_descriptor;
 
+	struct qfv_dsmanager_s *dsmanager;
+	qfv_resource_t *lightmap_resource;
 	struct scrap_s *light_scrap;
-	VkDescriptorSet lightmap_descriptor;
 
 	unsigned    max_edges;
-	int         num_models;			///< number of loaded brush models
-	uint32_t    num_faces;
-	bsp_model_t *models;			///< all loaded brush models
-	bsp_face_t *faces;				///< all faces from all loaded brush models
-	msurface_t **surfaces;			///< all faces from all loaded brush models
-	uint32_t   *poly_indices;	///< face indices from all loaded brush models
 
 	regtexset_t registered_textures;///< textures for all loaded brush models
-	texdata_t   texdata;			///< texture animation data
-	int         anim_index;			///< texture animation frame (5fps)
 	VkImageView default_skysheet;
 	VkImageView skysheet_tex;	///< scrolling sky texture for current map
+
+	texdata_t   texdata;
 
 	VkImageView default_skybox;
 	struct qfv_tex_s *skybox_tex;		///< sky box texture for current map
@@ -382,6 +191,8 @@ typedef struct bspctx_s {
 
 	vulktex_t   notexture_render;
 	vulktex_t   background_render;
+	texture_t   notexture_tex;
+	texture_t   background_tex;
 
 	VkImageView default_skymap;
 	struct qfv_tex_s *skymap_tex;		///< sky eqrec map for current map
@@ -395,24 +206,97 @@ typedef struct bspctx_s {
 	VkSampler    sampler;
 	VkSampler    equrect;
 
-	struct qfv_resource_s *base_resource;
+	// for vkCmdDrawIndexedIndirectCount
+	uint32_t    *command_offsets;
+	uint32_t    *command_counts;
+
+	qfv_resource_t *base_resource;
+	qfv_resource_t *tex_resource;
+	uint32_t     num_tex_anim;
 	VkBuffer     default_verts;
-	struct qfv_resource_s *bsp_resource;
-	size_t       vertex_buffer_size;
-	size_t       index_buffer_size;
-	VkBuffer     vertex_buffer;
-	VkBuffer     index_buffer;
-	VkBuffer     entid_buffer;
-	uint32_t    *index_data;
-	uint32_t    *entid_data;
+	qfv_resource_t *bsp_resource;
+
 	bspframeset_t frames;
 
-	uint32_t    *matrix_base;
-	vec4f_t     *fog;
-	float       *time;
-	float       *alpha;
-	float       *turb_scale;
-	uint32_t    *control;
+	bsp_prefixsum_t mod_offsets;
+	bsp_prefixsum_t mod_clusters;
+	bsp_prefixsum_t light_surfs;
+	bsp_prefixsum_t light_luxels;
+	bsp_prefixsum_t subclusters;
+
+	bsp_buffer_t mod_tmp_buffer;
+#define BB_buffer(name) bsp_buffer_t name##_buffer
+	BB_buffer (index);
+	BB_buffer (vertex);
+
+	//cluster (both realtime lights and lightmap)
+	BB_buffer (command_counts);
+	BB_buffer (command_offsets);
+	BB_buffer (commands);
+	BB_buffer (subclusters);
+	BB_buffer (clusters);
+	BB_buffer (cluster_map);
+	BB_buffer (anim_main);
+	BB_buffer (anim_alt);
+	BB_buffer (frame_map);
+
+	uint32_t   *texture_count;
+	uint32_t   *anim_index;
+
+	//ent (both realtime lights and lightmap)
+	BB_buffer (ent_ids);
+	BB_buffer (ent_rel);
+	BB_buffer (inst_ids);
+	VkDeviceAddress *entities;
+	BB_buffer (subcluster_queue);
+	BB_buffer (subcluster_tmp);
+	BB_buffer (instance_queue);
+	BB_buffer (cluster_queue);
+	BB_buffer (models);
+	BB_buffer (tex_ids);//XXX not used
+	BB_buffer (mod_counts);
+	BB_buffer (mod_offsets);
+	BB_buffer (mod_clusters);
+	BB_buffer (mod_invoke);
+	uint32_t   *ent_count;
+	uint32_t   *num_models;
+
+	//lightmap
+	BB_buffer (lightinfo);
+	BB_buffer (lightsize);
+	BB_buffer (surfinfo);
+	BB_buffer (light_style_values);
+	BB_buffer (lightmap_data);
+	BB_buffer (light_cache);
+	BB_buffer (light_queue_offs);
+	BB_buffer (light_queue_inds);
+	BB_buffer (light_queue_tmp);
+	BB_buffer (light_clusters);
+	BB_buffer (light_cluster_surfs);
+	BB_buffer (light_cluster_tmp);
+	BB_buffer (light_queue);
+	uint32_t   *num_lightmaps;
+
+	//prefixsum
+	struct {
+		VkDeviceAddress *in_data;
+		VkDeviceAddress *out_data;
+		VkDeviceAddress *sum_data;
+		VkDeviceAddress *count;
+		uint32_t   *mode;
+	}           psum;
+	BB_buffer (prefixsum_counts);
+	BB_buffer (block_sums);
+
+	//render
+	uint32_t   *MatrixBase;
+	vec4f_t    *fog;
+	float      *time;
+	float      *alpha;
+	float      *turb_scale;
+	uint32_t   *control;
+
+#undef BB_buffer
 } bspctx_t;
 
 struct vulkan_ctx_s;
