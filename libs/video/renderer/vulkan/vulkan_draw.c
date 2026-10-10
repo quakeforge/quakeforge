@@ -1798,7 +1798,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 		.type = qfv_res_image_view,
 		.image_view = {
 			.image = 2,
-			.type = VK_IMAGE_VIEW_TYPE_2D,
+			.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 			.format = font->resource->glyph_image.image.format,
 			.subresourceRange = {
 				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
