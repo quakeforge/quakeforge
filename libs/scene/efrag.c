@@ -38,6 +38,13 @@
 
 #include "qfalloca.h"
 
+typedef struct ef_block_s {
+	ef_block_t *next;
+} ef_block_t;
+
+static_assert (sizeof (efrag_t) == sizeof (cluster_ref_t));
+static_assert (sizeof (efrag_t) >= sizeof (ef_block_t));
+
 /* Efrag database
 
    Entities in the scene get an efrag id (which is itself an entity id in
@@ -50,7 +57,14 @@
    cluster_ref_t references to the reference in the group that refers to
    the efrag (yeah, that's confusing).
 
+   clusters: a b c d e
+   entities: 1 2 3 4 5
+   groups  : A B C D E
+   queues  : B M S L
+
 	clusters: (find entities in an efrag)
+	          efrags are entid+queue
+			  group_refs are group+index
 	    efrags      group_refs
 	a  |1B|4L|      |A0|D0|
 	b  |2M|3B|4L    |B0|C0|D1|
@@ -62,12 +76,84 @@
 	the groups.sparse array for lookup.
 
 	groups: (find efrags on an entity)
+	        cluster+index
 	A  |a0|
 	B  |b0|
 	C  |b1|d0|
 	D  |a1|b2|c0|d1
 	E  |e0|
 */
+
+static void
+free_block (efrag_db_t *db, ef_block_t *block, uint32_t max)
+{
+	if (!block) {
+		return;
+	}
+	uint32_t ind = max / 8 - 1;
+
+	block->next = db->free_blocks[ind];
+	db->free_blocks[ind] = block;
+}
+
+static void
+free_efrags (efrag_db_t *db, efrag_t *efrags, uint32_t max)
+{
+	free_block (db, (ef_block_t *) efrags, max);
+}
+
+static void
+free_refs (efrag_db_t *db, cluster_ref_t *refs, uint32_t max)
+{
+	free_block (db, (ef_block_t *) refs, max);
+}
+
+static ef_block_t *
+realloc_block (efrag_db_t *db, ef_block_t *old,
+			   uint32_t old_max, uint32_t new_max)
+{
+	ef_block_t *new = nullptr;
+	uint32_t old_ind = old_max / 8 - 1;
+	uint32_t new_ind = new_max / 8 - 1;
+	if (new_ind >= db->max_free_blocks) {
+		uint32_t new_max_free = new_ind + 1;
+		db->free_blocks = realloc (db->free_blocks,
+								   sizeof (ef_block_t *[new_max_free]));
+		for (uint32_t i = db->max_free_blocks; i < new_max_free; i++) {
+			db->free_blocks[i] = nullptr;
+		}
+		db->max_free_blocks = new_max_free;
+		db->num_free_blocks = new_max_free;
+	}
+	if (!db->free_blocks[new_ind]) {
+		db->free_blocks[new_ind] = malloc (sizeof (ef_block_t[new_max]));
+		db->free_blocks[new_ind]->next = nullptr;
+	}
+	new = db->free_blocks[new_ind];
+	db->free_blocks[new_ind] = new->next;
+	if (old) {
+		memcpy (new, old, sizeof (ef_block_t[old_max]));
+		old->next = db->free_blocks[old_ind];
+		db->free_blocks[old_ind] = old;
+	}
+	return new;
+}
+
+static efrag_t *
+realloc_efrags (efrag_db_t *db, efrag_t *old,
+				uint32_t old_max, uint32_t new_max)
+{
+	return (efrag_t *) realloc_block (db, (ef_block_t *) old,
+									  old_max, new_max);
+}
+
+static cluster_ref_t *
+realloc_refs (efrag_db_t *db, cluster_ref_t *old,
+			  uint32_t old_max, uint32_t new_max)
+{
+	return (cluster_ref_t *) realloc_block (db, (ef_block_t *) old,
+											old_max, new_max);
+}
 
 static void
 destroy_cluster_group (void *_grp, ecs_registry_t *reg, uint32_t ent,
@@ -91,7 +177,7 @@ destroy_cluster_group (void *_grp, ecs_registry_t *reg, uint32_t ent,
 		}
 		frags->num_efrags--;
 	}
-	free (grp->refs);
+	free_refs (db, grp->refs, grp->max_refs);
 }
 
 static component_t cluster_group_component = {
@@ -115,15 +201,29 @@ Efrags_ClearDB (efrag_db_t *db)
 	qfZoneScoped (true);
 	if (db->clusters) {
 		for (int i = 0; i < db->num_clusters; i++) {
-			free (db->clusters[i].efrags);
-			free (db->clusters[i].group_refs);
+			auto cluster = &db->clusters[i];
+			free_efrags (db, cluster->efrags, cluster->max_efrags);
+			free_refs (db, cluster->group_refs, cluster->max_efrags);
 		}
 	}
-	free (db->clusters);
-	db->clusters = nullptr;
 	Component_DestroyElements (&cluster_group_component, db->groups.data,
 							   0, db->groups.count, db->groups.dense,
 							   (ecs_registry_t *) db);
+};
+
+void
+Efrags_DestroyDB (efrag_db_t *db)
+{
+	qfZoneScoped (true);
+	free (db->clusters);
+	for (uint32_t i = 0; i < db->max_free_blocks; i++) {
+		while (db->free_blocks[i]) {
+			auto tmp = db->free_blocks[i];
+			db->free_blocks[i] = tmp->next;
+			free (tmp);
+		}
+	}
+	free (db->free_blocks);
 	free (db->groups.sparse);
 	free (db->groups.dense);
 	free (db->groups.data);
@@ -189,15 +289,16 @@ R_LinkEfrag (scene_t *scene, uint32_t cluster_num, entity_t ent,
 	};
 	if (grp->num_refs == grp->max_refs) {
 		uint32_t    new_max = grp->max_refs + 8;
-		grp->refs = realloc (grp->refs, sizeof (cluster_ref_t[new_max]));
+		grp->refs = realloc_refs (db, grp->refs, grp->max_refs, new_max);
 		grp->max_refs = new_max;
 	}
 	auto frags = &db->clusters[cluster_num];
 	if (frags->num_efrags == frags->max_efrags) {
 		uint32_t    new_max = frags->max_efrags + 8;
-		frags->efrags = realloc (frags->efrags, sizeof (efrag_t[new_max]));
-		frags->group_refs = realloc (frags->group_refs,
-									 sizeof (cluster_ref_t[new_max]));
+		frags->efrags = realloc_efrags (db, frags->efrags,
+										frags->max_efrags, new_max);
+		frags->group_refs = realloc_refs (db, frags->group_refs,
+										  frags->max_efrags, new_max);
 		frags->max_efrags = new_max;
 	}
 	grp->refs[grp->num_refs++] = (cluster_ref_t) {

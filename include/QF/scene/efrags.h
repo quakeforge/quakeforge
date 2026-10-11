@@ -39,6 +39,7 @@
 #include "QF/ecs.h"
 
 typedef struct entity_s entity_t;
+typedef struct ef_block_s ef_block_t;
 
 typedef struct efrag_s {
 	uint32_t    entity;
@@ -68,6 +69,9 @@ typedef struct efrag_db_s {
 	ecs_pool_t  groups;			// cluster_group_t
 	int         num_clusters;
 	cluster_frags_t *clusters;
+	ef_block_t **free_blocks;	// by size
+	uint32_t    num_free_blocks;
+	uint32_t    max_free_blocks;
 } efrag_db_t;
 
 typedef struct scene_s scene_t;
@@ -80,6 +84,7 @@ void R_StoreEfrags (scene_t *scene, uint32_t cluster_num);
 void Efrags_DelEfrag (efrag_db_t *db, uint32_t efragid);
 void Efrags_InitDB (efrag_db_t *db, int num_clusters);
 void Efrags_ClearDB (efrag_db_t *db);
+void Efrags_DestroyDB (efrag_db_t *db);
 
 
 ///@}
