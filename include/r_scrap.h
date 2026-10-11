@@ -59,6 +59,7 @@ typedef struct rscrap_s {
 	uint16_t    scrap_id;
 } rscrap_t;
 
+bool r_scrap_check (rscrap_t *scrap);
 void R_ScrapInit (rscrap_t *scrap, int width, int height);
 void R_ScrapDelete (rscrap_t *scrap);
 scrapbox_t *R_ScrapAlloc (rscrap_t *scrap, int width, int height);

@@ -109,7 +109,8 @@ r_scrap_pull_rect (rscrap_t *scrap, int width, int height)
 		return nullptr;
 	}
 	uint32_t id = *cell;
-	if (!(*cell = rect->id)) {
+	if ((*cell = rect->id) == nullent) {
+		set_remove (FREE_Y (width), height);
 		if (!--(*row)->users) {
 			free (*row);
 			*row = nullptr;
@@ -120,7 +121,6 @@ r_scrap_pull_rect (rscrap_t *scrap, int width, int height)
 			}
 		}
 	}
-	set_remove (FREE_Y (width), height);
 	if (!--scrap->w_counts[width]) {
 		set_remove (scrap->free_x, width);
 	}
@@ -269,7 +269,31 @@ R_ScrapClear (rscrap_t *scrap)
 
 	ECS_IdPool_Reset (&scrap->idpool);
 
-	for (unsigned i = 0; i < scrap->layers; i++) {
+	if (scrap->free_rects) {
+		for (int i = 0; i < 256; i++) {
+			auto col = scrap->free_rects->sets[i];
+			for (int j = 0; col && j < 256; j++) {
+				auto row = col->sets[j];
+				if (row) {
+					memset (row->rects, ~0, sizeof (row->rects));
+					row->users = 0;
+				}
+			}
+		}
+	}
+	for (int i = 0; i < 1024; i++) {
+		if (scrap->rects[i]) {
+			memset (scrap->rects[i], ~0, sizeof (scrapbox_t[1024]));
+		};
+	}
+	for (int i = 0; i < scrap->width; i++) {
+		if (scrap->free_y[i]) {
+			memset (scrap->free_y[i], 0, SET_SIZE (scrap->height) / 8);
+		};
+	}
+	set_empty (scrap->free_x);
+
+	for (unsigned i = scrap->layers; i-- > 0; ) {
 		r_scrap_push_rect (scrap, sb_new (scrap, 0, 0, i,
 										  scrap->width, scrap->height));
 	}
@@ -304,6 +328,64 @@ R_ScrapArea (rscrap_t *scrap, int *count)
 	return area;
 }
 
+VISIBLE bool
+r_scrap_check (rscrap_t *scrap)
+{
+	if (!scrap->free_rects || !scrap->free_rects->users) {
+		return true;
+	}
+	bool ok = true;
+	for (int w = 0; w < scrap->width; w++) {
+		auto col = scrap->free_rects->sets[w / 16];
+		if (!col) {
+			if (set_is_member (scrap->free_x, w)) {
+				Sys_Printf ("width %d not in free_rects but in free_x\n", w);
+				ok = false;
+			}
+			continue;
+		}
+		if (!set_is_member (scrap->free_x, w)) {
+			if (set_is_member (scrap->free_x, w)) {
+				Sys_Printf ("width %d in free_rects but in not free_x\n", w);
+				ok = false;
+			}
+			continue;
+		}
+		for (int h = 0; h < scrap->height; h++) {
+			auto row = col->sets[h / 16];
+			if (!row) {
+				if (scrap->free_y[w] && set_is_member (FREE_Y(w), h)) {
+					Sys_Printf ("w,h %d,%d not in free_rects but in free_y\n",
+								w, h);
+					ok = false;
+				}
+				continue;
+			}
+			auto cell = &row->rects[w % 16][h % 16];
+			auto rect = sb_ptr (scrap, *cell);
+			if (!rect) {
+				if (scrap->free_y[w] && set_is_member (FREE_Y(w), h)) {
+					Sys_Printf ("w,h %d,%d not in free_rects but in free_y\n",
+								w, h);
+					ok = false;
+				}
+				continue;
+			}
+			if (rect == sb_ptr (scrap, rect->id)) {
+				Sys_Printf ("allocated rect in freelist!: %d %d\n",
+							w, h);
+				return false;
+			}
+			if (!scrap->free_y[w] || !set_is_member (FREE_Y(w), h)) {
+				Sys_Printf ("w,h %d,%d in free_rects BUT not in free_y\n",
+							w, h);
+				ok = false;
+			}
+		}
+	}
+	return ok;
+}
+
 VISIBLE void
 R_ScrapDump (rscrap_t *scrap)
 {
@@ -315,7 +397,7 @@ R_ScrapDump (rscrap_t *scrap)
 			for (int j = 0; j < 1024; j++) {
 				auto rect = &scrap->rects[i][j];
 				if (sb_ptr (scrap, rect->id) == rect) {
-					Sys_Printf ("%d %d %d %d %d\n",
+					Sys_Printf ("%d:%d %d %d %d %d\n", rect->id,
 								rect->x, rect->y, rect->layer,
 								rect->width, rect->height);
 				}
@@ -329,7 +411,8 @@ R_ScrapDump (rscrap_t *scrap)
 			auto free_y = FREE_Y (wi->element);
 			Sys_Printf (" %4d %s\n", scrap->w_counts[wi->element],
 						set_as_string (free_y));
-			Sys_Printf ("heights: %s\n", set_as_string (free_y));
+			Sys_Printf ("heights %d: %s\n", wi->element,
+						set_as_string (free_y));
 			for (auto hi = set_first (free_y); hi; hi = set_next (hi)) {
 				Sys_Printf (" %d", scrap->h_counts[hi->element]);
 			}
@@ -347,12 +430,14 @@ R_ScrapDump (rscrap_t *scrap)
 				}
 				for (int k = 0; k < 16; k++) {
 					for (int l = 0; l < 16; l++) {
-						for (auto rect = sb_ptr (scrap, row->rects[k][l]);
-							 rect; rect = sb_ptr (scrap, rect->id)) {
-							Sys_Printf ("%d:%d:%d:%d %d %d %d %d %d\n",
-										i, j, k, l,
+						uint32_t id;
+						for (auto rect = sb_ptr (scrap, id = row->rects[k][l]);
+							 rect; rect = sb_ptr (scrap, id = rect->id)) {
+							Sys_Printf ("%d:%d:%d:%d %d:%d %d %d %d %d -> %d\n",
+										i, j, k, l, id,
 										rect->x, rect->y,
-										rect->width, rect->height, rect->layer);
+										rect->width, rect->height, rect->layer,
+										rect->id);
 						}
 					}
 				}
