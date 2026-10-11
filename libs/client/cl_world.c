@@ -76,7 +76,7 @@ CL_World_Shutdown (void *data)
 		Scene_DeleteScene (cl_world.scene);
 	}
 	free (cl_world.models.a);
-	free (cl_static_entities.a);
+	free (cl_static_entity_states.a);
 }
 
 void
@@ -140,7 +140,7 @@ CL_ParseStatic (qmsg_t *msg, int version)
 	CL_Init_Entity (ent);
 
 	CL_ParseBaseline (msg, &es, version);
-	DARRAY_APPEND (&cl_static_entities, es);
+	DARRAY_APPEND (&cl_static_entity_states, es);
 
 	auto renderer = Entity_GetRenderer (ent);
 	auto animation = Entity_GetAnimation (ent);
@@ -245,7 +245,7 @@ CL_World_NewMap (const char *mapname, const char *skyname)
 	qfZoneScoped (true);
 	Scene_SetWorld (cl_world.scene, cl_world.models.a[1]);
 
-	cl_static_entities.size = 0;
+	cl_static_entity_states.size = 0;
 
 	if (cl_world.models.a[1] && cl_world.models.a[1]->brush->entities) {
 		if (cl_world.edicts) {

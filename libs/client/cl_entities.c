@@ -46,7 +46,7 @@
 #include "client/temp_entities.h"
 #include "client/world.h"
 
-entitystateset_t cl_static_entities = DARRAY_STATIC_INIT (32);
+entitystateset_t cl_static_entity_states = DARRAY_STATIC_INIT (32);
 
 /*  QW has a max of 512 entities and wants 64 frames of data per entity, plus
 	the baseline data (512 * (64 + 1) = 33280), but NQ has a max of 32000

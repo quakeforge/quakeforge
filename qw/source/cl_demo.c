@@ -813,9 +813,9 @@ demo_start_recording (int track)
 		SZ_Clear (&buf);
 	}
 	// spawnstatic
-	for (size_t staticIndex = 0; staticIndex < cl_static_entities.size;
+	for (size_t staticIndex = 0; staticIndex < cl_static_entity_states.size;
 		 staticIndex++) {
-		entity_state_t *es = &cl_static_entities.a[staticIndex];
+		entity_state_t *es = &cl_static_entity_states.a[staticIndex];
 
 		MSG_WriteByte (&buf, svc_spawnstatic);
 

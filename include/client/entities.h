@@ -37,9 +37,7 @@
 
 #include "QF/simd/types.h"
 
-typedef struct entitystateset_s DARRAY_TYPE (struct entity_state_s)
-		entitystateset_t;
-extern	entitystateset_t cl_static_entities;
+typedef struct entity_s entity_t;
 
 // entity_state_t is the information conveyed from the server
 // in an update message
@@ -77,8 +75,10 @@ extern entstates_t qw_entstates;
 
 extern vec3_t ent_colormod[256];
 
-struct entity_s;
-void CL_TransformEntity (struct entity_s ent, float scale,
+typedef struct entitystateset_s DARRAY_TYPE (entity_state_t) entitystateset_t;
+extern	entitystateset_t cl_static_entity_states;
+
+void CL_TransformEntity (entity_t ent, float scale,
 						 const vec3_t angles, vec4f_t position);
 
 #endif//__client_entities_h
