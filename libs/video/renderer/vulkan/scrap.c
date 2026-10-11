@@ -46,7 +46,7 @@
 #include "r_scrap.h"
 
 typedef struct scrap_s {
-	rscrap_t    rscrap;
+	rscrap_t   *rscrap;
 	VkImage     image;
 	VkDeviceMemory memory;
 	VkImageView view;
@@ -55,6 +55,7 @@ typedef struct scrap_s {
 	struct DARRAY_TYPE (scrapbox_t) batch;
 	subpic_t   *subpics;
 	qfv_device_t *device;
+	bool        own_rscrap;
 } scrap_t;
 
 static scrap_t *
@@ -95,15 +96,15 @@ qfv_create_scrap (qfv_device_t *device, const char *name, rscrap_t *rscrap,
 	scrap_t    *scrap = malloc (sizeof (scrap_t));
 
 	*scrap = (scrap_t) {
-		.rscrap = *rscrap,
+		.rscrap = rscrap,
 		.bpp = bpp,
 		.device = device,
 		.batch = DARRAY_STATIC_INIT (512),
 	};
 
 	// R_ScrapInit rounds sizes up to next power of 2
-	int size = scrap->rscrap.width;
-	int layers = scrap->rscrap.layers;
+	int size = scrap->rscrap->width;
+	int layers = scrap->rscrap->layers;
 	VkExtent3D  extent = { size, size, 1 };
 	scrap->image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D, fmt,
 									extent, 1, layers, VK_SAMPLE_COUNT_1_BIT,
@@ -159,9 +160,11 @@ scrap_t *
 QFV_CreateScrap (qfv_device_t *device, const char *name, int size,
 				 QFFormat format, qfv_stagebuf_t *stage)
 {
-	rscrap_t rscrap;
-	R_ScrapInit (&rscrap, size, size);
-	return qfv_create_scrap (device, name, &rscrap, format, stage);
+	rscrap_t *rscrap = malloc (sizeof (rscrap_t));
+	R_ScrapInit (rscrap, size, size);
+	auto scrap = qfv_create_scrap (device, name, rscrap, format, stage);
+	scrap->own_rscrap = true;
+	return scrap;
 }
 
 scrap_t *
@@ -175,13 +178,13 @@ QFV_CreateScrapFromScrap (qfv_device_t *device, const char *name,
 uint32_t
 QFV_ScrapLayers (scrap_t *scrap)
 {
-	return scrap->rscrap.layers;
+	return scrap->rscrap->layers;
 }
 
 float
 QFV_ScrapSize (scrap_t *scrap)
 {
-	return 1.0 / scrap->rscrap.width;
+	return 1.0 / scrap->rscrap->width;
 }
 
 void
@@ -193,7 +196,9 @@ QFV_ScrapClear (scrap_t *scrap)
 		scrap->subpics = (subpic_t *) sp->next;
 		free (sp);
 	}
-	R_ScrapClear (&scrap->rscrap);
+	if (scrap->own_rscrap) {
+		R_ScrapClear (scrap->rscrap);
+	}
 }
 
 void
@@ -206,7 +211,9 @@ QFV_DestroyScrap (scrap_t *scrap)
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	QFV_ScrapClear (scrap);
-	R_ScrapDelete (&scrap->rscrap);
+	if (scrap->own_rscrap) {
+		R_ScrapDelete (scrap->rscrap);
+	}
 	dfunc->vkDestroyImageView (device->dev, scrap->view, 0);
 	dfunc->vkDestroyImage (device->dev, scrap->image, 0);
 	dfunc->vkFreeMemory (device->dev, scrap->memory, 0);
@@ -230,7 +237,7 @@ QFV_ScrapImage (scrap_t *scrap)
 subpic_t *
 QFV_ScrapSubpic (scrap_t *scrap, int width, int height)
 {
-	auto rect = R_ScrapAlloc (&scrap->rscrap, width, height);
+	auto rect = R_ScrapAlloc (scrap->rscrap, width, height);
 	if (!rect) {
 		return nullptr;
 	}
@@ -242,7 +249,7 @@ QFV_ScrapSubpic (scrap_t *scrap, int width, int height)
 		.rect = rect,
 		.width = width,
 		.height = height,
-		.size = 1.0 / scrap->rscrap.width,
+		.size = 1.0 / scrap->rscrap->width,
 	};
 	scrap->subpics = subpic;
 	return subpic;
@@ -265,7 +272,7 @@ QFV_SubpicDelete (subpic_t *subpic)
 	}
 	*sp = (subpic_t *) subpic->next;
 	free (subpic);
-	R_ScrapFree (&scrap->rscrap, rect);
+	R_ScrapFree (scrap->rscrap, rect);
 }
 
 void *

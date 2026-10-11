@@ -41,6 +41,8 @@
 
 typedef struct set_s set_t;
 typedef struct qfv_resource_s qfv_resource_t;
+typedef struct scrap_s scrap_t;
+typedef struct rscrap_s rscrap_t;
 
 /** \defgroup vulkan_bsp Brush model rendering
 	\ingroup vulkan
@@ -174,7 +176,8 @@ typedef struct bspctx_s {
 
 	struct qfv_dsmanager_s *dsmanager;
 	qfv_resource_t *lightmap_resource;
-	struct scrap_s *light_scrap;
+	rscrap_t   *light_rects;
+	scrap_t    *light_scrap;
 
 	unsigned    max_edges;
 

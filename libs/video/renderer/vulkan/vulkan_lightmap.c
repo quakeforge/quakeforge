@@ -72,7 +72,7 @@
 typedef struct lmapctx_s {
 	vulkan_ctx_t *ctx;
 	mod_brush_t *brush;
-	rscrap_t    rscrap;
+	rscrap_t   *rscrap;
 	uint32_t    num_lightmaps;
 	uint32_t    lightmap_luxels;
 	uint32_t    num_clusters;
@@ -203,10 +203,10 @@ vulkan_create_surf_lightmap (cluster_t *cluster, lmapctx_t *lmap)
 
 		lmap->lightmap_luxels += smax * tmax * i;
 
-		surf->lightpic = R_ScrapAlloc (&lmap->rscrap, smax, tmax);
+		surf->lightpic = R_ScrapAlloc (lmap->rscrap, smax, tmax);
 		if (!surf->lightpic) {
-			R_ScrapAddLayer (&lmap->rscrap);
-			surf->lightpic = R_ScrapAlloc (&lmap->rscrap, smax, tmax);
+			R_ScrapAddLayer (lmap->rscrap);
+			surf->lightpic = R_ScrapAlloc (lmap->rscrap, smax, tmax);
 			if (!surf->lightpic) {
 				Sys_Error ("FIXME taniwha is being lazy");
 			}
@@ -348,21 +348,27 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	bspctx_t   *bctx = ctx->bsp_context;
 	uint32_t    frames = ctx->render_context->frames.size;
 
+	uint16_t layers = bctx->light_rects->layers;
+
 	r_framecount = 1;					// no dlightcache
 	lmapctx_t lmap = {
 		.ctx = ctx,
+		.rscrap = bctx->light_rects,
 	};
-	R_ScrapInit (&lmap.rscrap, 512, 512);
+	R_ScrapClear (lmap.rscrap);
 
 	lmap_model_loop (models, num_models, vulkan_create_surfs, &lmap);
 
-	if (bctx->light_scrap) {
+	if (bctx->light_scrap && layers < lmap.rscrap->layers) {
 		QFV_DestroyScrap (bctx->light_scrap);
 		bctx->light_scrap = nullptr;
 	}
-	bctx->light_scrap = QFV_CreateScrapFromScrap (device, "lightmap_atlas",
-												  &lmap.rscrap, tex_frgba,
-												  ctx->staging);
+	if (!bctx->light_scrap) {
+		printf (RED"new light_scrap:"DFL" %d\n", lmap.rscrap->layers);
+		bctx->light_scrap = QFV_CreateScrapFromScrap (device, "lightmap_atlas",
+													  lmap.rscrap, tex_frgba,
+													  ctx->staging);
+	}
 	for (size_t i = 0; i < bctx->frames.size; i++) {
 		auto frame = &bctx->frames.a[i];
 		frame->need_update = true;
@@ -701,6 +707,9 @@ lightmap_startup (exprctx_t *ectx)
 		frame->lightmap_image = QFV_DSManager_AllocSet (bctx->dsmanager);
 		frame->lightmap_descriptor = QFV_DSManager_AllocSet (tctx->dsmanager);
 	}
+
+	bctx->light_rects = malloc (sizeof (rscrap_t));
+	R_ScrapInit (bctx->light_rects, 512, 512);
 
 	qfvPopDebug (ctx);
 }

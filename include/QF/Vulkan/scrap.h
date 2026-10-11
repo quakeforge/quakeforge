@@ -13,7 +13,6 @@ typedef struct qfv_device_s qfv_device_t;
 scrap_t *QFV_CreateScrap (qfv_device_t *device, const char *name,
 						  int size, QFFormat format, qfv_stagebuf_t *stage);
 scrap_t *QFV_CreateScrapFromScrap (qfv_device_t *device, const char *name,
-								   //copies contents of rscrap, don't use later
 								   rscrap_t *rscrap, QFFormat format,
 								   qfv_stagebuf_t *stage);
 uint32_t QFV_ScrapLayers (scrap_t *scrap) __attribute__((pure));
