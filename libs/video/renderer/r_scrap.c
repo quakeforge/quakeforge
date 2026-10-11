@@ -44,12 +44,83 @@
 	{ .map = scrap->free_y[w], .size = SET_SIZE (scrap->height) }
 
 typedef struct scrapset_s {
-	int         users;
 	union {
 		scrapset_t *sets[256];
 		uint32_t    rects[16][16];
 	};
+	scrapset_t *next;
+	int         users;
 } scrapset_t;
+
+static scrapset_t *free_scrapset_set_list;
+static scrapset_t *free_scrapset_rect_list;
+
+static scrapset_t *
+new_scrapset_set ()
+{
+	if (free_scrapset_set_list) {
+		auto set = free_scrapset_set_list;
+		free_scrapset_set_list = set->next;
+		set->next = nullptr;
+		// to have been freed, users and all set[] pointers should be 0/nullptr
+		return set;
+	}
+	scrapset_t *set = malloc (sizeof (scrapset_t));
+	*set = (scrapset_t) {};
+	return set;
+}
+
+static void
+free_scrapset_set (scrapset_t *set)
+{
+	if (0) {
+		if (set->users) {
+			Sys_Error ("freeing scrapset with users");
+		}
+		for (int i = 0; i < 256; i++) {
+			if (set->sets[i]) {
+				Sys_Error ("freeing scrapset with non-null sets");
+			}
+		}
+	}
+	set->next = free_scrapset_set_list;
+	free_scrapset_set_list = set;
+}
+
+static scrapset_t *
+new_scrapset_rect ()
+{
+	if (free_scrapset_rect_list) {
+		auto set = free_scrapset_rect_list;
+		free_scrapset_rect_list = set->next;
+		set->next = nullptr;
+		// to have been freed, users should be 0 and all rects nullent
+		return set;
+	}
+	scrapset_t *set = malloc (sizeof (scrapset_t));
+	*set = (scrapset_t) {};
+	memset (set->rects, ~0, sizeof (set->rects));
+	return set;
+}
+
+static void
+free_scrapset_rect (scrapset_t *set)
+{
+	if (0) {
+		if (set->users) {
+			Sys_Error ("freeing scrapset with users");
+		}
+		for (int i = 0; i < 16; i++) {
+			for (int j = 0; j < 16; j++) {
+				if (set->rects[i][j] != nullent) {
+					Sys_Error ("freeing scrapset with non-nullent rects");
+				}
+			}
+		}
+	}
+	set->next = free_scrapset_rect_list;
+	free_scrapset_rect_list = set;
+}
 
 static unsigned
 pow2rup (unsigned x)
@@ -112,10 +183,10 @@ r_scrap_pull_rect (rscrap_t *scrap, int width, int height)
 	if ((*cell = rect->id) == nullent) {
 		set_remove (FREE_Y (width), height);
 		if (!--(*row)->users) {
-			free (*row);
+			free_scrapset_rect (*row);
 			*row = nullptr;
 			if (!--(*col)->users) {
-				free (*col);
+				free_scrapset_set (*col);
 				*col = nullptr;
 				--scrap->free_rects->users;
 			}
@@ -135,18 +206,17 @@ r_scrap_push_rect (rscrap_t *scrap, scrapbox_t *rect)
 	int width = rect->width - 1;
 	int height = rect->height - 1;
 	if (!scrap->free_rects) {
-		scrap->free_rects = calloc (1, sizeof (scrapset_t));
+		scrap->free_rects = new_scrapset_set ();
 	}
 	auto col = &scrap->free_rects->sets[width / 16];
 	if (!*col) {
 		scrap->free_rects->users++;
-		*col = calloc (1, sizeof (scrapset_t));
+		*col = new_scrapset_set ();
 	}
 	auto row = &(*col)->sets[height / 16];
 	if (!*row) {
 		(*col)->users++;
-		*row = calloc (1, sizeof (scrapset_t));
-		memset ((*row)->rects, ~0, sizeof ((*row)->rects));
+		*row = new_scrapset_rect ();
 	}
 	auto cell = &(*row)->rects[width % 16][height % 16];
 	if (!ECS_IdValid (&scrap->idpool, *cell)) {
