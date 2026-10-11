@@ -139,7 +139,7 @@ static const component_t view_type_components[view_type_count] = {
 	},
 };
 
-static const hierarchy_type_t view_type = {
+static const archetype_t view_type = {
 	.num_components = view_type_count,
 	.components = view_type_components,
 };

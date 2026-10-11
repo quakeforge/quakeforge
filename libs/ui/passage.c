@@ -59,7 +59,7 @@ static const component_t passage_type_components[passage_type_count] = {
 	},
 };
 
-static const hierarchy_type_t passage_type = {
+static const archetype_t passage_type = {
 	.num_components = passage_type_count,
 	.components = passage_type_components,
 };

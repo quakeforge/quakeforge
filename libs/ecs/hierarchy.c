@@ -39,6 +39,15 @@
 
 #include "QF/ecs.h"
 
+#define HIERARCHY_MAX_TYPES 16
+
+typedef struct DARRAY_TYPE (hierarchy_t) hierarchyset_t;
+
+typedef struct free_hierarchies_s {
+	archetype_map_t type_map[HIERARCHY_MAX_TYPES];
+	hierarchyset_t free[HIERARCHY_MAX_TYPES];
+} free_hierarchies_t;
+
 static component_t ent_component = { .size = sizeof (uint32_t) };
 static component_t own_component = { .size = sizeof (uint8_t) };
 static component_t childCount_component = { .size = sizeof (uint32_t) };
@@ -47,12 +56,32 @@ static component_t parentIndex_component = { .size = sizeof (uint32_t) };
 static component_t nextIndex_component = { .size = sizeof (uint32_t) };
 static component_t lastIndex_component = { .size = sizeof (uint32_t) };
 
-
+static void __attribute__((used))
+true_hierarchy_destroy (void *_hierarchy, ecs_registry_t *reg, uint32_t ent,
+						const component_t *component)
+{
+	hierarchy_t *hierarchy = _hierarchy;
+	qfZoneScoped (true);
+	free (hierarchy->ent);
+	free (hierarchy->own);
+	free (hierarchy->childCount);
+	free (hierarchy->childIndex);
+	free (hierarchy->parentIndex);
+	free (hierarchy->nextIndex);
+	free (hierarchy->lastIndex);
+	if (hierarchy->type) {
+		for (uint32_t i = 0; i < hierarchy->type->num_components; i++) {
+			free (hierarchy->components[i]);
+		}
+		free (hierarchy->components);
+	}
+}
 
 static void
 hierarchy_UpdateTransformIndices (hierarchy_t *hierarchy, uint32_t start,
 								  int offset)
 {
+	qfZoneScoped (true);
 	ecs_registry_t *reg = hierarchy->reg;
 	if (!reg) {
 		return;
@@ -519,24 +548,17 @@ Hierarchy_Create (hierarchy_t *hierarchy)
 static void
 hierarchy_destroy (hierarchy_t *hierarchy)
 {
-	free (hierarchy->ent);
-	free (hierarchy->own);
-	free (hierarchy->childCount);
-	free (hierarchy->childIndex);
-	free (hierarchy->parentIndex);
-	free (hierarchy->nextIndex);
-	free (hierarchy->lastIndex);
-	if (hierarchy->type) {
-		for (uint32_t i = 0; i < hierarchy->type->num_components; i++) {
-			free (hierarchy->components[i]);
-		}
-		free (hierarchy->components);
-	}
+	qfZoneScoped (true);
+	auto reg = hierarchy->reg;
+	auto free = &reg->free_hierarchies->free[hierarchy->type_id];
+	DARRAY_APPEND (free, *hierarchy);
+	*hierarchy = (hierarchy_t) {};
 }
 
 void
 Hierarchy_Destroy (hierarchy_t *hierarchy)
 {
+	qfZoneScoped (true);
 	if (hierarchy->reg) {
 		hierarchy_InvalidateReferences (hierarchy, 0, hierarchy->num_objects);
 		for (uint32_t i = 0; i < hierarchy->num_objects; i++) {
@@ -546,16 +568,58 @@ Hierarchy_Destroy (hierarchy_t *hierarchy)
 	hierarchy_destroy (hierarchy);
 }
 
+static void
+hierarchy_init_free_hierarchies (ecs_registry_t *reg)
+{
+	reg->free_hierarchies = malloc (sizeof (free_hierarchies_t));
+	*reg->free_hierarchies = (free_hierarchies_t) { };
+	for (int i = 0; i < HIERARCHY_MAX_TYPES; i++) {
+		reg->free_hierarchies->free[i].grow = 64;
+	}
+}
+
+static uint32_t
+hierarchy_type_id (ecs_registry_t *reg, const archetype_t *type)
+{
+	auto map = reg->free_hierarchies->type_map;
+	int i;
+	for (i = 0; i < HIERARCHY_MAX_TYPES && map[i].type; i++) {
+		if (map[i].type == type) {
+			return i;
+		}
+	}
+	if (i == HIERARCHY_MAX_TYPES) {
+		Sys_Error ("too many archetypes");
+	}
+	map[i].type = type;
+	return i;
+}
+
 uint32_t
 Hierarchy_New (ecs_registry_t *reg, uint32_t href_comp,
-			   const hierarchy_type_t *type, bool createRoot)
+			   const archetype_t *type, bool createRoot)
 {
-	hierarchy_t hierarchy = {
-		.reg = reg,
-		.href_comp = href_comp,
-		.type = type,
-		.components = type ? calloc (type->num_components, sizeof (void *)) : 0,
-	};
+
+	if (!reg->free_hierarchies) {
+		hierarchy_init_free_hierarchies (reg);
+	}
+	uint32_t type_id = hierarchy_type_id (reg, type);
+	auto free = &reg->free_hierarchies->free[type_id];
+
+	hierarchy_t hierarchy;
+	if (free->size) {
+		hierarchy = DARRAY_REMOVE (free);
+		hierarchy.num_objects = 0;
+		hierarchy.tree_mode = false;
+	} else {
+		uint32_t count = type ? type->num_components : 0;
+		hierarchy = (hierarchy_t) {
+			.reg = reg,
+			.href_comp = href_comp,
+			.type = type,
+			.components = count ? calloc (count, sizeof (void *)) : nullptr,
+		};
+	}
 
 	if (createRoot) {
 		hierarchy_open (&hierarchy, 0, 1);

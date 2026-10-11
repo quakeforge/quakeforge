@@ -123,7 +123,7 @@ static const component_t transform_components[transform_type_count] = {
 	},
 };
 
-static const hierarchy_type_t transform_type = {
+static const archetype_t transform_type = {
 	.num_components = transform_type_count,
 	.components = transform_components,
 };

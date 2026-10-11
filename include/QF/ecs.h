@@ -124,6 +124,8 @@ typedef struct ecs_registry_s {
 	componentset_t components;
 	ecs_groups_t groups;
 	void       *data;
+
+	free_hierarchies_t *free_hierarchies;
 } ecs_registry_t;
 
 /** Tie an ECS system to a registry.
@@ -135,6 +137,20 @@ typedef struct ecs_system_s {
 	ecs_registry_t *reg;
 	uint32_t    base;
 } ecs_system_t;
+
+/** Descriptors for components attached to every entity in an archetype.
+
+	For example, in hierarchy_t.
+*/
+typedef struct archetype_s {
+	uint32_t    num_components;
+	const component_t *components;
+} archetype_t;
+
+typedef struct archetype_map_s {
+	const archetype_t *type;
+	uint32_t    id;
+} archetype_map_t;
 
 extern const component_t ecs_group_components;
 extern const component_t ecs_component_groups;

@@ -35,18 +35,13 @@
 
 typedef struct ecs_registry_s ecs_registry_t;
 typedef struct component_s component_t;
+typedef struct archetype_s archetype_t;
+typedef struct free_hierarchies_s free_hierarchies_t;
 
 /** \defgroup entity Hierarchy management
 	\ingroup utils
 */
 ///@{
-
-/** Descriptors for components attached to every entity in the hierarchy.
-*/
-typedef struct hierarchy_type_s {
-	uint32_t    num_components;
-	const component_t *components;
-} hierarchy_type_t;
 
 typedef struct hierref_s {
 	uint32_t    id;				///< entity holding hierarchy object
@@ -63,9 +58,10 @@ typedef struct hierarchy_s {
 	uint32_t   *parentIndex;
 	uint32_t   *nextIndex;
 	uint32_t   *lastIndex;
-	const hierarchy_type_t *type;
+	const archetype_t *type;
 	void      **components;
 	ecs_registry_t *reg;
+	uint32_t    type_id;
 	uint32_t    href_comp;
 	bool        tree_mode;	// use for fast building
 } hierarchy_t;
@@ -77,7 +73,7 @@ void Hierarchy_Create (hierarchy_t *hierarchy);
 void Hierarchy_Destroy (hierarchy_t *hierarchy);
 
 uint32_t Hierarchy_New (ecs_registry_t *reg, uint32_t href_comp,
-						const hierarchy_type_t *type, bool createRoot);
+						const archetype_t *type, bool createRoot);
 void Hierarchy_Delete (uint32_t hierarchy, ecs_registry_t *reg);
 
 void Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count);
