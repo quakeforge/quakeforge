@@ -84,7 +84,8 @@ void R_StoreEfrags (scene_t *scene, uint32_t cluster_num);
 void Efrags_DelEfrag (efrag_db_t *db, uint32_t efragid);
 void Efrags_InitDB (efrag_db_t *db, int num_clusters);
 void Efrags_ClearDB (efrag_db_t *db);
-void Efrags_DestroyDB (efrag_db_t *db);
+efrag_db_t *Efrags_NewDB (void);
+void Efrags_DeleteDB (efrag_db_t *db);
 
 
 ///@}

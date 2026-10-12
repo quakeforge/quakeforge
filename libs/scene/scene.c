@@ -434,7 +434,7 @@ Scene_NewScene (scene_system_t *extra_systems)
 	scene->camera = nullent;
 
 	scene->ent_queue = EntQueue_New (mod_num_types);
-	scene->efrag_db = malloc (sizeof (efrag_db_t));
+	scene->efrag_db = Efrags_NewDB();
 	Efrags_InitDB (scene->efrag_db, empty_brush.cluster_vis.count + 1);
 
 	return scene;
@@ -462,6 +462,7 @@ Scene_DeleteScene (scene_t *scene)
 	qfZoneScoped (true);
 	if (scene) {
 		ECS_DelRegistry (scene->reg);
+		Efrags_DeleteDB (scene->efrag_db);
 
 		free (scene);
 	}

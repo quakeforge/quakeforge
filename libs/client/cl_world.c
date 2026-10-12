@@ -278,7 +278,7 @@ void
 CL_World_Clear (void)
 {
 	qfZoneScoped (true);
-	Scene_SetWorld (cl_world.scene, nullptr);
 	Scene_FreeAllEntities (cl_world.scene);
+	Scene_SetWorld (cl_world.scene, nullptr);
 	CL_ClearTEnts ();
 }

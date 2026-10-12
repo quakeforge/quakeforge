@@ -189,10 +189,9 @@ void
 Efrags_InitDB (efrag_db_t *db, int num_clusters)
 {
 	qfZoneScoped (true);
-	*db = (efrag_db_t) {
-		.num_clusters = num_clusters,
-		.clusters = calloc (num_clusters, sizeof (cluster_frags_t)),
-	};
+	free (db->clusters);
+	db->clusters = calloc (num_clusters, sizeof (cluster_frags_t));
+	db->num_clusters = num_clusters;
 }
 
 void
@@ -211,8 +210,17 @@ Efrags_ClearDB (efrag_db_t *db)
 							   (ecs_registry_t *) db);
 };
 
+efrag_db_t *
+Efrags_NewDB (void)
+{
+	qfZoneScoped (true);
+	efrag_db_t *db = malloc (sizeof (efrag_db_t));
+	*db = (efrag_db_t) { };
+	return db;
+}
+
 void
-Efrags_DestroyDB (efrag_db_t *db)
+Efrags_DeleteDB (efrag_db_t *db)
 {
 	qfZoneScoped (true);
 	free (db->clusters);
