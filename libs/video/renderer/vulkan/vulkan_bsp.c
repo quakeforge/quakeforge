@@ -1845,7 +1845,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		vulktex_t skymap = { .descriptor = bctx->skymap_descriptor };
 		bind_texture (&skymap, SKYMAP_SET, layout, dfunc, cmd);
 	} else if (pass_ind == QFV_bspLightmap) {
-		vulktex_t lightmap = { .descriptor = frame->lightmap_descriptor };
+		vulktex_t lightmap = { .descriptor = frame->lightmap_tex };
 		bind_texture (&lightmap, LIGHTMAP_SET, layout, dfunc, cmd);
 	}
 
@@ -2004,7 +2004,7 @@ bsp_light_update (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		dfunc->vkUpdateDescriptorSets (device->dev, 2,
 			(VkWriteDescriptorSet[]) {
 				{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-					.dstSet = frame->lightmap_descriptor,
+					.dstSet = frame->lightmap_tex,
 					.descriptorCount = 1,
 					.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 					.pImageInfo = &(VkDescriptorImageInfo) {
@@ -2014,7 +2014,7 @@ bsp_light_update (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 					},
 				},
 				{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-					.dstSet = frame->lightmap_image,
+					.dstSet = frame->lightmap_img,
 					.descriptorCount = 1,
 					.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
 					.pImageInfo = &(VkDescriptorImageInfo) {
@@ -2039,7 +2039,7 @@ bsp_light_update (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto cmd = taskctx->cmd;
 	QFV_PushBlackboard (ctx, cmd, pipeline);
 	VkDescriptorSet sets[] = {
-		frame->lightmap_image,
+		frame->lightmap_img,
 	};
 	auto sb = imageBarriers[qfv_LT_ShaderSampled_to_StorageWrite];
 	auto db = imageBarriers[qfv_LT_StorageWrite_to_ShaderSampled];

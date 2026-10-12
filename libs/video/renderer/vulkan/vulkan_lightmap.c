@@ -699,13 +699,13 @@ lightmap_startup (exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	qfvPushDebug (ctx, "lightmap startup");
 	auto bctx = ctx->bsp_context;
-	auto tctx = ctx->texture_context;
 
-	bctx->dsmanager = QFV_Render_DSManager (ctx, "lightmap_set");
+	bctx->lmimg_dsmanager = QFV_Render_DSManager (ctx, "lightmap_set");
+	bctx->lmtex_dsmanager = QFV_Render_DSManager (ctx, "texture_set");
 	for (size_t i = 0; i < bctx->frames.size; i++) {
 		auto frame = &bctx->frames.a[i];
-		frame->lightmap_image = QFV_DSManager_AllocSet (bctx->dsmanager);
-		frame->lightmap_descriptor = QFV_DSManager_AllocSet (tctx->dsmanager);
+		frame->lightmap_img = QFV_DSManager_AllocSet (bctx->lmimg_dsmanager);
+		frame->lightmap_tex = QFV_DSManager_AllocSet (bctx->lmtex_dsmanager);
 	}
 
 	bctx->light_rects = malloc (sizeof (rscrap_t));

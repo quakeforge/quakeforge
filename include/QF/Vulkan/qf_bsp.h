@@ -141,8 +141,8 @@ typedef struct bspframe_s {
 	uint32_t    queue;
 	uint32_t    style_offset;
 
-	VkDescriptorSet lightmap_image;
-	VkDescriptorSet lightmap_descriptor;
+	VkDescriptorSet lightmap_img;
+	VkDescriptorSet lightmap_tex;
 	bool        need_update;
 } bspframe_t;
 
@@ -174,7 +174,8 @@ typedef struct bspctx_s {
 	VkImageView    notexture;			///< replacement for invalid textures
 	VkDescriptorSet notexture_descriptor;
 
-	struct qfv_dsmanager_s *dsmanager;
+	struct qfv_dsmanager_s *lmimg_dsmanager;
+	struct qfv_dsmanager_s *lmtex_dsmanager;
 	qfv_resource_t *lightmap_resource;
 	rscrap_t   *light_rects;
 	scrap_t    *light_scrap;
