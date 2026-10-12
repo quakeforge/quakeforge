@@ -56,7 +56,7 @@ static component_t parentIndex_component = { .size = sizeof (uint32_t) };
 static component_t nextIndex_component = { .size = sizeof (uint32_t) };
 static component_t lastIndex_component = { .size = sizeof (uint32_t) };
 
-static void __attribute__((used))
+static void
 true_hierarchy_destroy (void *_hierarchy, ecs_registry_t *reg, uint32_t ent,
 						const component_t *component)
 {
@@ -550,8 +550,13 @@ hierarchy_destroy (hierarchy_t *hierarchy)
 {
 	qfZoneScoped (true);
 	auto reg = hierarchy->reg;
-	auto free = &reg->free_hierarchies->free[hierarchy->type_id];
-	DARRAY_APPEND (free, *hierarchy);
+	if (reg) {
+		auto free = &reg->free_hierarchies->free[hierarchy->type_id];
+		DARRAY_APPEND (free, *hierarchy);
+	} else {
+		//FIXME need to clean up the free_hierarchies database
+		true_hierarchy_destroy (hierarchy, reg, nullent, nullptr);
+	}
 	*hierarchy = (hierarchy_t) {};
 }
 
@@ -696,6 +701,14 @@ swap_pointers (void *a, void *b)
 	*(void **)b = t;
 }
 
+static void
+swap_uints (uint32_t *a, uint32_t *b)
+{
+	uint32_t t = *a;
+	*a = *b;
+	*b = t;
+}
+
 void
 Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode)
 {
@@ -727,14 +740,27 @@ Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode)
 	}
 
 	auto src = hierarchy;
-	hierarchy_t tmp = {
-		.reg = src->reg,
-		.href_comp = src->href_comp,
-		.type = src->type,
-		.components = src->type
-					? calloc (src->type->num_components, sizeof (void *)) : 0,
-	};
-	Hierarchy_Reserve (&tmp, src->num_objects);
+	hierarchy_t tmp;
+
+	auto reg = src->reg;
+	auto free = reg ? &reg->free_hierarchies->free[src->type_id] : nullptr;
+	if (free && free->size) {
+		tmp = DARRAY_REMOVE (free);
+		tmp.num_objects = 0;	// for Hierarchy_Reserve
+		tmp.tree_mode = false;
+	} else {
+		uint32_t count = src->type ? src->type->num_components : 0;
+		tmp = (hierarchy_t) {
+			.reg = src->reg,
+			.href_comp = src->href_comp,
+			.type = src->type,
+			.components = count ? calloc (count, sizeof (void *)) : nullptr,
+			.type_id = src->type_id,
+		};
+	}
+	// reserve the same max_objects so the resulting memory blocks are
+	// at least as big after swapping pointers
+	Hierarchy_Reserve (&tmp, src->max_objects);
 	tmp.num_objects = src->num_objects;
 
 	// treat parentIndex as a queue for breadth-first traversal
@@ -758,6 +784,8 @@ Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode)
 		}
 	}
 
+	// src may have been smaller than the recycled hierarchy
+	swap_uints (&tmp.max_objects, &src->max_objects);
 	swap_pointers (&tmp.ent, &src->ent);
 	swap_pointers (&tmp.own, &src->own);
 	swap_pointers (&tmp.childCount, &src->childCount);
