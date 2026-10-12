@@ -196,6 +196,8 @@ typedef struct drawfontres_s {
 
 typedef struct drawfont_s {
 	VkDescriptorSet set;
+	qfv_atlas_t *atlas;
+	uint32_t    atlas_id;
 	drawfontres_t *resource;
 } drawfont_t;
 
@@ -1744,44 +1746,10 @@ Vulkan_Draw_BlendScreen (quat_t color, vulkan_ctx_t *ctx)
 int
 Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	drawctx_t  *dctx = ctx->draw_context;
 	int         fontid = dctx->fonts.size;
 	DARRAY_OPEN_AT (&dctx->fonts, fontid, 1);
 	drawfont_t *font = &dctx->fonts.a[fontid];
-
-	font->resource = malloc (sizeof (drawfontres_t));
-	font->resource->resource = (qfv_resource_t) {
-		.name = vac (ctx->va_ctx, "glyph_data:%d", fontid),
-		.va_ctx = ctx->va_ctx,
-		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = 4,
-		.objects = &font->resource->glyph_data,
-	};
-
-	font->resource->glyph_data = (qfv_resobj_t) {
-		.name = "geom",
-		.type = qfv_res_buffer,
-		.buffer = {
-			.size = rfont->num_glyphs * 4 * sizeof (quadvert_t),
-			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-					| VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
-		},
-	};
-	auto glyph_data = &font->resource->glyph_data;
-
-	font->resource->glyph_bview = (qfv_resobj_t) {
-		.name = "geom_view",
-		.type = qfv_res_buffer_view,
-		.buffer_view = {
-			.buffer = 0,
-			.format = VK_FORMAT_R32G32B32A32_SFLOAT,
-			.offset = 0,
-			.size = font->resource->glyph_data.buffer.size,
-		},
-	};
-	auto glyph_bview = &font->resource->glyph_bview;
 
 	tex_t       tex = {
 		.width = rfont->scrap.width,
@@ -1790,16 +1758,14 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 		.loaded = true,
 		.data = rfont->scrap_bitmap,
 	};
-	QFV_ResourceInitTexImage (&font->resource->glyph_image, "image", 0, &tex);
-	auto glyph_image = &font->resource->glyph_image;
 
-	font->resource->glyph_iview = (qfv_resobj_t) {
-		.name = "image_view",
-		.type = qfv_res_image_view,
-		.image_view = {
-			.image = 2,
-			.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-			.format = font->resource->glyph_image.image.format,
+	auto imageinfo = qfv_tex_imageinfo ("atlas", false, &tex);
+	qfv_atlasinfo_t atlasinfo = {
+		.image = imageinfo,
+		.view = {
+			.name = "image_view",
+			.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+			.format = imageinfo.format,
 			.subresourceRange = {
 				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 				.levelCount = VK_REMAINING_MIP_LEVELS,
@@ -1812,13 +1778,28 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 				.a = VK_COMPONENT_SWIZZLE_R,
 			},
 		},
+		.buffer = {
+			.name = "geom",
+			.size = rfont->num_glyphs * 4 * sizeof (quadvert_t),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
+		},
+		.bufferview = {
+			.name = "geom_view",
+			.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+			.range = VK_WHOLE_SIZE,
+		},
 	};
-	auto glyph_iview = &font->resource->glyph_iview;
+	uint32_t atlas_id = QFV_CreateAtlas (ctx, &atlasinfo, 0, "glyph_data");
+	*font = (drawfont_t) {
+		.atlas_id = atlas_id,
+		.atlas = QFV_GetAtlas (ctx, atlas_id),
+		.set = QFV_GetAtlasSet (ctx, atlas_id),
+	};
 
-	QFV_CreateResource (ctx->device, &font->resource->resource);
-
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "draw.addfont.verts");
-	quadvert_t *verts = QFV_PacketExtend (packet, glyph_data->buffer.size);
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging,
+											  "draw.addfont.verts");
+	quadvert_t *verts = QFV_PacketExtend (packet, atlasinfo.buffer.size);
 	for (FT_Long i = 0; i < rfont->num_glyphs; i++) {
 		scrapbox_t *rect = &rfont->glyph_rects[i];
 		float       x = 0;
@@ -1848,35 +1829,17 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 	}
 	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
 	auto db = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
-	QFV_PacketCopyBuffer (packet, glyph_data->buffer.buffer, 0, &sb, &db);
+	QFV_PacketCopyBuffer (packet, font->atlas->buffer, 0, &sb, &db);
 	QFV_PacketSubmit (packet);
 
 	packet = QFV_PacketAcquire (ctx->staging, "draw.addfont.texels");
 	byte       *texels = QFV_PacketExtend (packet, tex.width * tex.height);
 	memcpy (texels, tex.data, tex.width * tex.height);
-	QFV_PacketCopyImage (packet, glyph_image->image.image, (qfv_offset_t){},
+	QFV_PacketCopyImage (packet, font->atlas->image, (qfv_offset_t){},
 						 (qfv_extent_t) {tex.width, tex.height, 1, 1}, 0,
 						 &imageBarriers[qfv_LT_Undefined_to_TransferDst],
 						 &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly]);
 	QFV_PacketSubmit (packet);
-
-	font->set = QFV_DSManager_AllocSet (dctx->dsmanager);;
-	VkDescriptorImageInfo imageInfo = {
-		dctx->glyph_sampler,
-		glyph_iview->image_view.view,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-	};
-	VkWriteDescriptorSet write[] = {
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  font->set, 0, 0, 1,
-		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		  &imageInfo, 0, 0 },
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  font->set, 1, 0, 1,
-		  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
-		  0, 0, &glyph_bview->buffer_view.view },
-	};
-	dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
 
 	return fontid;
 }

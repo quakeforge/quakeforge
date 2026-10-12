@@ -443,6 +443,7 @@ typedef struct qfv_resobj_s qfv_resobj_t;
 typedef struct dstring_s dstring_t;
 typedef struct qfv_resource_s qfv_resource_t;
 typedef struct plitem_s plitem_t;
+typedef struct tex_s tex_t;
 
 typedef struct qfv_resourcearray_s {
 	qfv_resource_t *array;
@@ -726,6 +727,8 @@ void QFV_QueueResourceDelete (vulkan_ctx_t *ctx, qfv_resource_t *res);
 void QFV_QueueImageViewDelete (vulkan_ctx_t *ctx, VkImageView view);
 void QFV_QueueFramebufferDelete (vulkan_ctx_t *ctx, VkFramebuffer framebuffer);
 
+qfv_imageinfo_t qfv_tex_imageinfo (const char *name, bool mips,
+								   const tex_t *tex) __attribute__((pure));
 void qfv_setup_image_obj (qfv_resobj_t *image, const qfv_imageinfo_t *img);
 void qfv_setup_imageview_obj (qfv_resobj_t *image_view,
 		                      const qfv_resobj_t *image,

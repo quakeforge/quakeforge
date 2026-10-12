@@ -51,6 +51,9 @@ uint32_t QFV_TexFindTexture (vulkan_ctx_t *ctx, const char *name);
 uint32_t QFV_TexGetSkinId (vulkan_ctx_t *ctx, uint32_t id) __attribute__((pure));
 void QFV_TexSetSkinId (vulkan_ctx_t *ctx, uint32_t id, uint32_t skinid);
 VkDescriptorSet QFV_GetTexture (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure));
+qfv_tex_t *QFV_GetTex (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure));
+qfv_atlas_t *QFV_GetAtlas (vulkan_ctx_t *ctx, uint32_t atlasid) __attribute__((pure));
+VkDescriptorSet QFV_GetAtlasSet (vulkan_ctx_t *ctx, uint32_t atlasid) __attribute__((pure));
 bool QFV_TexIsCubemap (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure));
 
 void Vulkan_ExpandPalette (byte *dst, const byte *src, const byte *palette,

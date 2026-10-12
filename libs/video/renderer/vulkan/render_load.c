@@ -692,6 +692,28 @@ QFV_FindImageViewInfo (vulkan_ctx_t *ctx, const char *name)
 	return find_imageviewinfo (res->imageviews, res->num_imageviews, &ref);
 }
 
+qfv_imageinfo_t
+qfv_tex_imageinfo (const char *name, bool mips, const tex_t *tex)
+{
+	qfv_imageinfo_t imageinfo = {
+		.name = name,
+		.imageType = VK_IMAGE_TYPE_2D,
+		.format = QFV_ImageFormat (tex->format, 0),
+		.extent = {
+			.width = tex->width,
+			.height = tex->height,
+			.depth = 1,
+		},
+		.mipLevels = mips ? QFV_MipLevels (tex->width, tex->height) : 1,
+		.arrayLayers = 1,
+		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
+				| VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+				| VK_IMAGE_USAGE_SAMPLED_BIT,
+	};
+	return imageinfo;
+}
+
 void
 qfv_setup_image_obj (qfv_resobj_t *image, const qfv_imageinfo_t *img)
 {
@@ -760,6 +782,7 @@ qfv_setup_bufferview_obj (qfv_resobj_t *bufferview, qfv_bufferinfo_t *b,
 {
 	*bufferview = (qfv_resobj_t) {
 		.name = bv->name,
+		.type = qfv_res_buffer_view,
 		.buffer_view = {
 			.buffer = b->object,
 			.format = bv->format,

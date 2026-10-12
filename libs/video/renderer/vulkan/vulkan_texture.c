@@ -809,9 +809,15 @@ texture_shutdown (exprctx_t *ectx)
 	auto pools = reg->comp_pools;
 
 	uint32_t c_tex = tctx->comp_base + qfv_tex_tex;
+	uint32_t c_atlas = tctx->comp_base + qfv_tex_atlas;
 	for (uint32_t i = 0; i < pools[c_tex].count; i++) {
 		auto tex = ((qfv_tex_t **)pools[c_tex].data)[i];
 		Vulkan_UnloadTex (ctx, tex);
+	}
+	for (uint32_t i = 0; i < pools[c_atlas].count; i++) {
+		auto atlas = ((qfv_atlas_t **)pools[c_atlas].data)[i];
+		QFV_DestroyResource (device, atlas->resource);
+		free (atlas);
 	}
 
 	uint32_t c_texinfo = tctx->comp_base + qfv_tex_texinfo;
@@ -1167,12 +1173,21 @@ QFV_CreateAtlas (vulkan_ctx_t *ctx, qfv_atlasinfo_t *atlasinfo,
 	qfv_setup_bufferview_obj (bufferview, &atlasinfo->buffer,
 							  &atlasinfo->bufferview);
 	atlasinfo->bufferview.object = bufferview - &atlas->resource->objects[0];
+	QFV_CreateResource (device, atlas->resource);
 
-	auto atlas_set = QFV_DSManager_AllocSet (tctx->atlas_dsmanager);;
+	atlas->image = image->image.image;
+	atlas->view = view->image_view.view;
+	atlas->buffer = buffer->buffer.buffer;
+	atlas->buffer_view = bufferview->buffer_view.view;
+
+	auto atlas_set = QFV_DSManager_AllocSet (tctx->atlas_dsmanager);
+	QFV_duSetObjectName (device, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
+						 atlas_set, name);
 	dfunc->vkUpdateDescriptorSets (device->dev, 2,
 		(VkWriteDescriptorSet[]) {
 			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 				.dstSet = atlas_set,
+				.dstBinding = 0,
 				.descriptorCount = 1,
 				.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 				.pImageInfo = &(VkDescriptorImageInfo) {
@@ -1183,6 +1198,7 @@ QFV_CreateAtlas (vulkan_ctx_t *ctx, qfv_atlasinfo_t *atlasinfo,
 			},
 			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 				.dstSet = atlas_set,
+				.dstBinding = 1,
 				.descriptorCount = 1,
 				.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
 				.pTexelBufferView = &atlas->buffer_view,
@@ -1300,6 +1316,24 @@ QFV_GetTexture (vulkan_ctx_t *ctx, uint32_t texid)
 	auto reg = tctx->reg;
 	uint32_t c_texture = tctx->comp_base + qfv_tex_texture_set;
 	return *(VkDescriptorSet *) Ent_GetComponent (texid, c_texture, reg);
+}
+
+qfv_atlas_t *
+QFV_GetAtlas (vulkan_ctx_t *ctx, uint32_t atlasid)
+{
+	auto tctx = ctx->texture_context;
+	auto reg = tctx->reg;
+	uint32_t c_atlas = tctx->comp_base + qfv_tex_atlas;
+	return *(qfv_atlas_t **) Ent_GetComponent (atlasid, c_atlas, reg);
+}
+
+VkDescriptorSet
+QFV_GetAtlasSet (vulkan_ctx_t *ctx, uint32_t atlasid)
+{
+	auto tctx = ctx->texture_context;
+	auto reg = tctx->reg;
+	uint32_t c_atlas_set = tctx->comp_base + qfv_tex_atlas_set;
+	return *(VkDescriptorSet *) Ent_GetComponent (atlasid, c_atlas_set, reg);
 }
 
 bool
