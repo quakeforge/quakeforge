@@ -959,7 +959,7 @@ properties = {
 			primitiveRestartEnable = true;
 		};
 		layout = {
-			descriptorSets = (matrix_set, quad_data_set);
+			descriptorSets = (matrix_set, atlas_set);
 		};
 	};
 	lines = {
@@ -1026,7 +1026,7 @@ descriptorSetLayouts = {
 			},
 		);
 	};
-	quad_data_set = {
+	atlas_set = {
 		bindings = (
 			{
 				// glyph texture data

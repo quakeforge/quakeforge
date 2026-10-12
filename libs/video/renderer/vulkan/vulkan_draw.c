@@ -225,7 +225,7 @@ typedef struct drawctx_s {
 	qfv_resobj_t *instance_objects;
 	qfv_resobj_t *dvertex_objects;
 	qfv_resobj_t *lvertex_objects;
-	VkDescriptorSet core_quad_set;
+	VkDescriptorSet core_atlas_set;
 	drawframeset_t frames;
 	drawfontset_t fonts;
 	SCR_Func   *scr_funcs;
@@ -1011,7 +1011,7 @@ draw_startup (exprctx_t *ectx)
 	dctx->pic_sampler = QFV_Render_Sampler (ctx, "quakepic");
 	dctx->glyph_sampler = QFV_Render_Sampler (ctx, "glyph");
 
-	dctx->dsmanager = QFV_Render_DSManager (ctx, "quad_data_set");
+	dctx->dsmanager = QFV_Render_DSManager (ctx, "atlas_set");
 
 	auto rctx = ctx->render_context;
 	size_t      frames = rctx->frames.size;
@@ -1056,21 +1056,21 @@ draw_startup (exprctx_t *ectx)
 		auto frame = &dctx->frames.a[i];
 		frame->dyn_descs = (descpool_t) { .dctx = dctx };
 	}
-	dctx->core_quad_set = QFV_DSManager_AllocSet (dctx->dsmanager);
+	dctx->core_atlas_set = QFV_DSManager_AllocSet (dctx->dsmanager);
 
 	VkWriteDescriptorSet write[] = {
 		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  dctx->core_quad_set, 0, 0, 1,
+		  dctx->core_atlas_set, 0, 0, 1,
 		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 		  &imageInfo, 0, 0 },
 		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  dctx->core_quad_set, 1, 0, 1,
+		  dctx->core_atlas_set, 1, 0, 1,
 		  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
 		  0, 0, &dctx->svertex_objects[1].buffer_view.view },
 	};
 	dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
 
-	DARRAY_APPEND (&dctx->fonts, (drawfont_t) { .set = dctx->core_quad_set });
+	DARRAY_APPEND (&dctx->fonts, (drawfont_t) { .set = dctx->core_atlas_set });
 
 	qfvPopDebug (ctx);
 }

@@ -8,6 +8,7 @@
 typedef struct ecs_registry_s ecs_registry_t;
 typedef struct vulkan_ctx_s vulkan_ctx_t;
 typedef struct qfv_textureinfo_s qfv_textureinfo_t;
+typedef struct qfv_atlasinfo_s qfv_atlasinfo_t;
 typedef struct hashtab_s hashtab_t;
 typedef struct hashctx_s hashctx_t;
 
@@ -17,8 +18,17 @@ typedef struct qfv_tex_s {
 	VkImageView view;
 } qfv_tex_t;
 
+typedef struct qfv_atlas_s {
+	struct qfv_resource_s *resource;
+	VkImage     image;
+	VkImageView view;
+	VkBuffer    buffer;
+	VkBufferView buffer_view;
+} qfv_atlas_t;
+
 typedef struct texturectx_s {
-	struct qfv_dsmanager_s *dsmanager;
+	struct qfv_dsmanager_s *texture_dsmanager;
+	struct qfv_dsmanager_s *atlas_dsmanager;
 	struct qfv_resource_s *tex_resource;
 
 	ecs_registry_t *reg;
@@ -33,6 +43,8 @@ VkImageView QFV_Tex_View (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure
 VkSampler QFV_Tex_Sampler (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure));
 uint32_t QFV_CreateTexture (vulkan_ctx_t *ctx, VkImage image, VkImageView view,
 							VkSampler sampler, const char *name);
+uint32_t QFV_CreateAtlas (vulkan_ctx_t *ctx, qfv_atlasinfo_t *atlasinfo,
+						  VkSampler sampler, const char *name);
 uint32_t QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
 						  const char *name);
 uint32_t QFV_TexFindTexture (vulkan_ctx_t *ctx, const char *name);

@@ -1309,7 +1309,7 @@ render_graph = {
 				primitiveRestartEnable = true;
 			};
 			layout = {
-				descriptorSets = (matrix_set, quad_data_set);
+				descriptorSets = (matrix_set, atlas_set);
 			};
 		};
 		lines = {
@@ -1420,7 +1420,7 @@ render_graph = {
 				},
 			);
 		};
-		quad_data_set = {
+		atlas_set = {
 			bindings = (
 				{
 					// glyph texture data

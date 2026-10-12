@@ -423,6 +423,15 @@ typedef struct qfv_textureinfo_s {
 	qfv_texturetype_t type;
 } qfv_textureinfo_t;
 
+typedef struct qfv_atlasinfo_s {
+	struct memsuper_s *memsuper;
+	qfv_imageinfo_t image;
+	qfv_imageviewinfo_t view;
+	qfv_samplercreateinfo_t sampler;
+	qfv_bufferinfo_t buffer;
+	qfv_bufferviewinfo_t bufferview;
+} qfv_atlasinfo_t;
+
 #ifndef __QFCC__
 
 typedef struct hashtab_s hashtab_t;
@@ -716,6 +725,15 @@ void QFV_QueueSwapchainDelete (vulkan_ctx_t *ctx, VkSwapchainKHR swapchain);
 void QFV_QueueResourceDelete (vulkan_ctx_t *ctx, qfv_resource_t *res);
 void QFV_QueueImageViewDelete (vulkan_ctx_t *ctx, VkImageView view);
 void QFV_QueueFramebufferDelete (vulkan_ctx_t *ctx, VkFramebuffer framebuffer);
+
+void qfv_setup_image_obj (qfv_resobj_t *image, const qfv_imageinfo_t *img);
+void qfv_setup_imageview_obj (qfv_resobj_t *image_view,
+		                      const qfv_resobj_t *image,
+							  const qfv_imageinfo_t *img,
+							  const qfv_imageviewinfo_t *imgview);
+void qfv_setup_buffer_obj (qfv_resobj_t *buffer, const qfv_bufferinfo_t *buf);
+void qfv_setup_bufferview_obj (qfv_resobj_t *bufferview, qfv_bufferinfo_t *b,
+		                       const qfv_bufferviewinfo_t *bv);
 
 QFV_REND_INLINE void qfv_resourcearray_next (qfv_resourcearray_t *array);
 

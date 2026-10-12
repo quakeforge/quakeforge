@@ -57,10 +57,14 @@
 
 enum qfv_tex_components {
 	qfv_tex_texinfo,
+	qfv_tex_atlasinfo,
 	qfv_tex_view,
+	qfv_tex_bufferview,
 	qfv_tex_sampler,
 	qfv_tex_tex,
-	qfv_tex_texture,
+	qfv_tex_atlas,
+	qfv_tex_texture_set,
+	qfv_tex_atlas_set,
 	qfv_tex_skinid,
 
 	qfv_tex_num_components
@@ -296,7 +300,7 @@ init_tex_stage_commands (tex_cmd_t *cmd, tex_t **tex, int count, int bpp)
 }
 
 static qfv_tex_t *
-alloc_qfv_tex ()
+alloc_qfv_tex (vulkan_ctx_t *ctx, const char *name)
 {
 	size_t size = sizeof (qfv_tex_t)
 				+ sizeof (qfv_resource_t)
@@ -305,7 +309,34 @@ alloc_qfv_tex ()
 	*qtex = (qfv_tex_t) {
 		.resource = (qfv_resource_t *) &qtex[1],
 	};
+	*qtex->resource = (qfv_resource_t) {
+		.name = name,
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = 2,
+		.objects = (qfv_resobj_t *) &qtex->resource[1],
+	};
 	return qtex;
+}
+
+static qfv_atlas_t *
+alloc_qfv_atlas (vulkan_ctx_t *ctx, const char *name)
+{
+	size_t size = sizeof (qfv_atlas_t)
+				+ sizeof (qfv_resource_t)
+				+ sizeof (qfv_resobj_t[4]);
+	qfv_atlas_t  *qatlas = malloc (size);
+	*qatlas = (qfv_atlas_t) {
+		.resource = (qfv_resource_t *) &qatlas[1],
+	};
+	*qatlas->resource = (qfv_resource_t) {
+		.name = name,
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = 4,
+		.objects = (qfv_resobj_t*) &qatlas->resource[1],
+	};
+	return qatlas;
 }
 
 static void
@@ -386,16 +417,9 @@ load_tex_array (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
 		mip = 1;
 	}
 
-	auto qtex = alloc_qfv_tex ();
-	auto image = (qfv_resobj_t *) &qtex->resource[1];
+	auto qtex = alloc_qfv_tex (ctx, name);
+	auto image = &qtex->resource->objects[0];
 	auto view = &image[1];
-	*qtex->resource = (qfv_resource_t) {
-		.name = name,
-		.va_ctx = ctx->va_ctx,
-		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = 2,
-		.objects = image,
-	};
 
 	QFV_ResourceInitTexImage (image, "tex", mip > 1, &tex[0]);
 	image->image.format = format;
@@ -448,16 +472,9 @@ create_cubetex (vulkan_ctx_t *ctx, int size, VkFormat format,
 {
 	qfv_device_t *device = ctx->device;
 
-	auto qtex = alloc_qfv_tex ();
-	auto image = (qfv_resobj_t *) &qtex->resource[1];
+	auto qtex = alloc_qfv_tex (ctx, name);
+	auto image = &qtex->resource->objects[0];
 	auto view = &image[1];
-	*qtex->resource = (qfv_resource_t) {
-		.name = name,
-		.va_ctx = ctx->va_ctx,
-		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = 2,
-		.objects = image,
-	};
 	tex_t tex = {
 		.width = size,
 		.height = size,
@@ -812,7 +829,7 @@ texture_shutdown (exprctx_t *ectx)
 static uint32_t
 create_texture_ent (vulkan_ctx_t *ctx, const char *name,
 					qfv_textureinfo_t *texinfo, VkSampler sampler,
-					qfv_tex_t *tex, VkDescriptorSet texture)
+					qfv_tex_t *tex, VkDescriptorSet texture_set)
 {
 	auto tctx = ctx->texture_context;
 	auto reg = tctx->reg;
@@ -820,7 +837,7 @@ create_texture_ent (vulkan_ctx_t *ctx, const char *name,
 	uint32_t c_view = tctx->comp_base + qfv_tex_view;
 	uint32_t c_samp = tctx->comp_base + qfv_tex_sampler;
 	uint32_t c_tex = tctx->comp_base + qfv_tex_tex;
-	uint32_t c_texture = tctx->comp_base + qfv_tex_texture;
+	uint32_t c_texture = tctx->comp_base + qfv_tex_texture_set;
 
 	uint32_t texid = ECS_NewEntity (reg);
 	Ent_SetComponent (texid, ecs_name, reg, &name);
@@ -832,12 +849,45 @@ create_texture_ent (vulkan_ctx_t *ctx, const char *name,
 	}
 	Ent_SetComponent (texid, c_view, reg, &tex->view);
 	Ent_SetComponent (texid, c_tex, reg, &tex);
-	Ent_SetComponent (texid, c_texture, reg, &texture);
+	Ent_SetComponent (texid, c_texture, reg, &texture_set);
 
 	// nullent -> nullptr
 	Hash_Add (tctx->textures, (void *)(uintptr_t) (texid + 1));
 
 	return texid;
+}
+
+static uint32_t
+create_atlas_ent (vulkan_ctx_t *ctx, const char *name,
+				  qfv_atlasinfo_t *atlasinfo, VkSampler sampler,
+				  qfv_atlas_t *atlas, VkDescriptorSet atlas_set)
+{
+	auto tctx = ctx->texture_context;
+	auto reg = tctx->reg;
+	uint32_t c_atlasinfo = tctx->comp_base + qfv_tex_atlasinfo;
+	uint32_t c_view = tctx->comp_base + qfv_tex_view;
+	uint32_t c_bufferview = tctx->comp_base + qfv_tex_bufferview;
+	uint32_t c_samp = tctx->comp_base + qfv_tex_sampler;
+	uint32_t c_atlas = tctx->comp_base + qfv_tex_atlas;
+	uint32_t c_atlas_set = tctx->comp_base + qfv_tex_atlas_set;
+
+	uint32_t atlasid = ECS_NewEntity (reg);
+	Ent_SetComponent (atlasid, ecs_name, reg, &name);
+	if (atlasinfo) {
+		Ent_SetComponent (atlasid, c_atlasinfo, reg, &atlasinfo);
+	}
+	if (sampler) {
+		Ent_SetComponent (atlasid, c_samp, reg, &sampler);
+	}
+	Ent_SetComponent (atlasid, c_view, reg, &atlas->view);
+	Ent_SetComponent (atlasid, c_bufferview, reg, &atlas->buffer_view);
+	Ent_SetComponent (atlasid, c_atlas, reg, &atlas);
+	Ent_SetComponent (atlasid, c_atlas_set, reg, &atlas_set);
+
+	// nullent -> nullptr
+	Hash_Add (tctx->textures, (void *)(uintptr_t) (atlasid + 1));
+
+	return atlasid;
 }
 
 static VkImageViewType qfv_tex_view_types[] = {
@@ -857,7 +907,8 @@ texture_startup (exprctx_t *ectx)
 	qfvPushDebug (ctx, "texture init");
 	auto tctx = ctx->texture_context;
 
-	tctx->dsmanager = QFV_Render_DSManager (ctx, "texture_set");
+	tctx->texture_dsmanager = QFV_Render_DSManager (ctx, "texture_set");
+	tctx->atlas_dsmanager = QFV_Render_DSManager (ctx, "atlas_set");
 
 	const int num_deftex = countof (default_textures);
 	const int num_skin_tex = countof (default_skin_tex);
@@ -1019,9 +1070,17 @@ static const component_t qfv_tex_components[] = {
 		.size = sizeof (qfv_textureinfo_t *),
 		.name = "texinfo",
 	},
+	[qfv_tex_atlasinfo] = {
+		.size = sizeof (qfv_atlasinfo_t *),
+		.name = "atlasinfo",
+	},
 	[qfv_tex_view] = {
 		.size = sizeof (VkImageView),
 		.name = "view",
+	},
+	[qfv_tex_bufferview] = {
+		.size = sizeof (VkBufferView),
+		.name = "bufferview",
 	},
 	[qfv_tex_sampler] = {
 		.size = sizeof (VkSampler),
@@ -1031,9 +1090,17 @@ static const component_t qfv_tex_components[] = {
 		.size = sizeof (qfv_tex_t *),
 		.name = "tex",
 	},
-	[qfv_tex_texture] = {
+	[qfv_tex_atlas] = {
+		.size = sizeof (qfv_atlas_t *),
+		.name = "atlas",
+	},
+	[qfv_tex_texture_set] = {
 		.size = sizeof (VkDescriptorSet *),
-		.name = "texture",
+		.name = "texture set",
+	},
+	[qfv_tex_atlas_set] = {
+		.size = sizeof (VkDescriptorSet *),
+		.name = "atlas set",
 	},
 	[qfv_tex_skinid] = {
 		.size = sizeof (uint32_t),
@@ -1073,6 +1140,56 @@ QFV_CreateTexture (vulkan_ctx_t *ctx, VkImage image, VkImageView view,
 		.view = view,
 	};
 	return create_texture_ent (ctx, name, nullptr, sampler, tex, 0);
+}
+
+uint32_t
+QFV_CreateAtlas (vulkan_ctx_t *ctx, qfv_atlasinfo_t *atlasinfo,
+				 VkSampler sampler, const char *name)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto tctx = ctx->texture_context;
+	if (!sampler) {
+		sampler = tctx->default_sampler;
+	}
+	auto atlas = alloc_qfv_atlas (ctx, name);
+	auto image = &atlas->resource->objects[0];
+	auto view = &image[1];
+	auto buffer = &view[1];
+	auto bufferview = &buffer[1];
+
+	qfv_setup_image_obj (image, &atlasinfo->image);
+	atlasinfo->image.object = image - &atlas->resource->objects[0];
+	qfv_setup_imageview_obj (view, image, &atlasinfo->image, &atlasinfo->view);
+	atlasinfo->view.object = view - &atlas->resource->objects[0];
+	qfv_setup_buffer_obj (buffer, &atlasinfo->buffer);
+	atlasinfo->buffer.object = buffer - &atlas->resource->objects[0];
+	qfv_setup_bufferview_obj (bufferview, &atlasinfo->buffer,
+							  &atlasinfo->bufferview);
+	atlasinfo->bufferview.object = bufferview - &atlas->resource->objects[0];
+
+	auto atlas_set = QFV_DSManager_AllocSet (tctx->atlas_dsmanager);;
+	dfunc->vkUpdateDescriptorSets (device->dev, 2,
+		(VkWriteDescriptorSet[]) {
+			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstSet = atlas_set,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+				.pImageInfo = &(VkDescriptorImageInfo) {
+					.imageView = atlas->view,
+					.sampler = sampler,
+					.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				},
+			},
+			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstSet = atlas_set,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+				.pTexelBufferView = &atlas->buffer_view,
+			},
+		}, 0, 0);
+
+	return create_atlas_ent (ctx, name, atlasinfo, sampler, atlas, atlas_set);
 }
 
 
@@ -1181,7 +1298,7 @@ QFV_GetTexture (vulkan_ctx_t *ctx, uint32_t texid)
 {
 	auto tctx = ctx->texture_context;
 	auto reg = tctx->reg;
-	uint32_t c_texture = tctx->comp_base + qfv_tex_texture;
+	uint32_t c_texture = tctx->comp_base + qfv_tex_texture_set;
 	return *(VkDescriptorSet *) Ent_GetComponent (texid, c_texture, reg);
 }
 
@@ -1267,7 +1384,7 @@ Vulkan_CreateCombinedImageSampler (vulkan_ctx_t *ctx, VkImageView view,
 	auto dfunc = device->funcs;
 	auto tctx = ctx->texture_context;
 
-	auto descriptor = QFV_DSManager_AllocSet (tctx->dsmanager);
+	auto descriptor = QFV_DSManager_AllocSet (tctx->texture_dsmanager);
 
 	VkDescriptorImageInfo imageInfo[1];
 	imageInfo[0] = base_image_info;
@@ -1297,5 +1414,5 @@ Vulkan_FreeTexture (vulkan_ctx_t *ctx, VkDescriptorSet texture)
 {
 	auto tctx = ctx->texture_context;
 
-	QFV_DSManager_FreeSet (tctx->dsmanager, texture);
+	QFV_DSManager_FreeSet (tctx->texture_dsmanager, texture);
 }

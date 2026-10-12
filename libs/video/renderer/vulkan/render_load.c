@@ -692,8 +692,8 @@ QFV_FindImageViewInfo (vulkan_ctx_t *ctx, const char *name)
 	return find_imageviewinfo (res->imageviews, res->num_imageviews, &ref);
 }
 
-static void
-setup_image_obj (qfv_resobj_t *image, const qfv_imageinfo_t *img)
+void
+qfv_setup_image_obj (qfv_resobj_t *image, const qfv_imageinfo_t *img)
 {
 	*image = (qfv_resobj_t) {
 		.name = img->name,
@@ -718,11 +718,11 @@ setup_image_obj (qfv_resobj_t *image, const qfv_imageinfo_t *img)
 	}
 }
 
-static void
-setup_imageview_obj (qfv_resobj_t *image_view,
-					 const qfv_resobj_t *image,
-					 const qfv_imageinfo_t *img,
-					 const qfv_imageviewinfo_t *imgview)
+void
+qfv_setup_imageview_obj (qfv_resobj_t *image_view,
+						 const qfv_resobj_t *image,
+						 const qfv_imageinfo_t *img,
+						 const qfv_imageviewinfo_t *imgview)
 {
 	*image_view = (qfv_resobj_t) {
 		.name = imgview->name,
@@ -739,6 +739,34 @@ setup_imageview_obj (qfv_resobj_t *image_view,
 	if (!image_view->image_view.format) {
 		image_view->image_view.format = image->image.format;
 	}
+}
+
+void
+qfv_setup_buffer_obj (qfv_resobj_t *buffer, const qfv_bufferinfo_t *buf)
+{
+	*buffer = (qfv_resobj_t) {
+		.name = buf->name,
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = buf->size,
+			.usage = buf->usage,
+		},
+	};
+}
+
+void
+qfv_setup_bufferview_obj (qfv_resobj_t *bufferview, qfv_bufferinfo_t *b,
+						  const qfv_bufferviewinfo_t *bv)
+{
+	*bufferview = (qfv_resobj_t) {
+		.name = bv->name,
+		.buffer_view = {
+			.buffer = b->object,
+			.format = bv->format,
+			.offset = bv->offset,
+			.size = bv->range,
+		},
+	};
 }
 
 static bool
@@ -771,10 +799,10 @@ setup_framebuffers (vulkan_ctx_t *ctx,
 			error = true;
 			continue;
 		}
-		setup_image_obj (&images[i], img);
+		qfv_setup_image_obj (&images[i], img);
 		img->object = &images[i] - resources->objects;
 
-		setup_imageview_obj (&image_views[i], &images[i], img, imgview);
+		qfv_setup_imageview_obj (&image_views[i], &images[i], img, imgview);
 		imgview->object = &image_views[i] - resources->objects;
 	}
 	return !error;
@@ -810,7 +838,7 @@ setup_resources (qfv_resourceinfo_t *ri, vulkan_ctx_t *ctx)
 
 	for (uint32_t i = 0; i < ri->num_images; i++) {
 		auto img = &ri->images[i];
-		setup_image_obj (&images[i], img);
+		qfv_setup_image_obj (&images[i], img);
 		img->object = &images[i] - resources->objects;
 	}
 	for (uint32_t i = 0; i < ri->num_imageviews; i++) {
@@ -820,26 +848,18 @@ setup_resources (qfv_resourceinfo_t *ri, vulkan_ctx_t *ctx)
 			error = true;
 			continue;
 		}
-		setup_imageview_obj (&imageviews[i], &images[img->object],
-							 img, imgview);
+		qfv_setup_imageview_obj (&imageviews[i], &images[img->object],
+								 img, imgview);
 		imgview->object = &imageviews[i] - resources->objects;
 	}
 	for (uint32_t i = 0; i < ri->num_buffers; i++) {
-		auto b = &ri->buffers[i];
-		VkDeviceSize size = b->size;
-		if (b->perframe) {
-			b->size = RUP (b->size, 64);
-			size = b->size * rctx->frames.size;
+		auto b = ri->buffers[i];
+		if (b.perframe) {
+			b.size = RUP (b.size, 64);
+			b.size *= rctx->frames.size;
 		}
-		buffers[i] = (qfv_resobj_t) {
-			.name = b->name,
-			.type = qfv_res_buffer,
-			.buffer = {
-				.size = size,
-				.usage = b->usage,
-			},
-		};
-		b->object = &buffers[i] - resources->objects;
+		qfv_setup_buffer_obj (&buffers[i], &b);
+		ri->buffers[i].object = &buffers[i] - resources->objects;
 	}
 	for (uint32_t i = 0; i < ri->num_bufferviews; i++) {
 		auto bv = &ri->bufferviews[i];
@@ -848,15 +868,7 @@ setup_resources (qfv_resourceinfo_t *ri, vulkan_ctx_t *ctx)
 			error = true;
 			continue;
 		}
-		bufferviews[i] = (qfv_resobj_t) {
-			.name = bv->name,
-			.buffer_view = {
-				.buffer = b->object,
-				.format = bv->format,
-				.offset = bv->offset,
-				.size = bv->range,
-			},
-		};
+		qfv_setup_bufferview_obj (&bufferviews[i], b, bv);
 	}
 	if (error) {
 		free (resources);
