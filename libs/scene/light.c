@@ -219,11 +219,7 @@ Light_DecayLights (lightingdata_t *ldata, float frametime, double realtime)
 		dlight->radius -= frametime * dlight->decay;
 		if (dlight->radius <= 0 || dlight->die < realtime) {
 			uint32_t ent = dlight_pool->dense[i];
-			Ent_RemoveComponent (ent, scene->base + scene_dynlight, reg);
-			if (!Ent_HasComponent (ent, scene->base + scene_efrag, reg)) {
-				Sys_Error ("dlight with no efrag");
-			}
-			Ent_RemoveComponent (ent, scene->base + scene_efrag, reg);
+			ECS_DelEntity (reg, ent);
 			i--;
 		}
 	}
