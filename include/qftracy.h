@@ -41,6 +41,9 @@ static inline void __qfZoneEnd (TracyCZoneCtx **ctxptr)
 
 #define qfMessageL(msg) TracyCMessageL(msg)
 
+#define qfAllocN(p,s,n) TracyCAllocN(p, s, n)
+#define qfFreeN(p,n) TracyCFreeN(p, n)
+
 #ifndef __cplusplus
 #define aligned_alloc(a, s) qf_aligned_alloc(a, s)
 #define malloc(s) qf_malloc(s)
@@ -79,6 +82,8 @@ char *getcwd (char *b, size_t s) asm("__qf_getcwd");
 #define qfZoneValue(ctx, value)
 #define qfZoneNamedN(varname, name, active)
 #define qfMessageL(msg)
+#define qfAllocN(p,s,n)
+#define qfFreeN(p,n)
 
 #define qftVkCtx_t void
 

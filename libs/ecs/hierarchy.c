@@ -599,7 +599,7 @@ uint32_t
 Hierarchy_New (ecs_registry_t *reg, uint32_t href_comp,
 			   const archetype_t *type, bool createRoot)
 {
-
+	qfZoneScoped (true);
 	if (!reg->free_hierarchies) {
 		hierarchy_init_free_hierarchies (reg);
 	}

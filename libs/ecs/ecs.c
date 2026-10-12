@@ -257,6 +257,7 @@ VISIBLE uint32_t
 ECS_NewEntity (ecs_registry_t *registry)
 {
 	uint32_t    ent = ECS_NewId (&registry->entities);
+	qfAllocN ((void *)(uintptr_t) ent, 1, registry->name);
 	return ent;
 }
 
@@ -271,6 +272,7 @@ ECS_DelEntity (ecs_registry_t *registry, uint32_t ent)
 	if (!ECS_DelId (&registry->entities, ent)) {
 		return;
 	}
+	qfFreeN ((void *)(uintptr_t) ent, registry->name);
 
 	for (uint32_t i = 0; i < registry->components.size; i++) {
 		Ent_RemoveComponent (ent, i, registry);
