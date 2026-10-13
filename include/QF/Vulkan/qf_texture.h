@@ -45,6 +45,9 @@ uint32_t QFV_CreateTexture (vulkan_ctx_t *ctx, VkImage image, VkImageView view,
 							VkSampler sampler, const char *name);
 uint32_t QFV_CreateAtlas (vulkan_ctx_t *ctx, qfv_atlasinfo_t *atlasinfo,
 						  VkSampler sampler, const char *name);
+uint32_t QFV_CreateAtlasBuffer (vulkan_ctx_t *ctx, qfv_atlasinfo_t *atlasinfo,
+								VkBuffer buffer, VkBufferView buffer_view,
+								VkSampler sampler, const char *name);
 uint32_t QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
 						  const char *name);
 uint32_t QFV_TexFindTexture (vulkan_ctx_t *ctx, const char *name);

@@ -772,21 +772,10 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 		return pic;
 	}
 
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	drawctx_t  *dctx = ctx->draw_context;
 	int         fontid = dctx->fonts.size;
 	DARRAY_OPEN_AT (&dctx->fonts, fontid, 1);
 	drawfont_t *font = &dctx->fonts.a[fontid];
-
-	font->resource = malloc (sizeof (drawfontres_t));
-	font->resource->resource = (qfv_resource_t) {
-		.name = vac (ctx->va_ctx, "cachepic:%d", fontid),
-		.va_ctx = ctx->va_ctx,
-		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = 2,
-		.objects = &font->resource->glyph_image,
-	};
 
 	tex_t       tex = {
 		.width = p->width,
@@ -795,32 +784,31 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 		.loaded = true,
 		.data = p->data,
 	};
-	QFV_ResourceInitTexImage (&font->resource->glyph_image, "image", 0, &tex);
-	auto cache_image = &font->resource->glyph_image;
-
-	font->resource->glyph_iview = (qfv_resobj_t) {
-		.name = "image_view",
-		.type = qfv_res_image_view,
-		.image_view = {
-			.image = 0,
-			.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-			.format = font->resource->glyph_image.image.format,
+	auto imageinfo = qfv_tex_imageinfo ("image", false, &tex);
+	qfv_atlasinfo_t atlasinfo = {
+		.image = imageinfo,
+		.view = {
+			.name = "image_view",
+			.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+			.format = imageinfo.format,
 			.subresourceRange = {
 				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 				.levelCount = VK_REMAINING_MIP_LEVELS,
 				.layerCount = VK_REMAINING_ARRAY_LAYERS,
 			},
-			.components = {
-				.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-				.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-				.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-				.a = VK_COMPONENT_SWIZZLE_IDENTITY,
-			},
 		},
 	};
-	auto cache_iview = &font->resource->glyph_iview;
-
-	QFV_CreateResource (ctx->device, &font->resource->resource);
+	auto buffer = dctx->svertex_objects[0].buffer.buffer;
+	auto buffer_view = dctx->svertex_objects[1].buffer_view.view;
+	uint32_t atlas_id = QFV_CreateAtlasBuffer (ctx, &atlasinfo, buffer,
+											   buffer_view, 0,
+											   vac (ctx->va_ctx, "cachepic:%d",
+													fontid));
+	*font = (drawfont_t) {
+		.atlas_id = atlas_id,
+		.atlas = QFV_GetAtlas (ctx, atlas_id),
+		.set = QFV_GetAtlasSet (ctx, atlas_id),
+	};
 
 	auto packet = QFV_PacketAcquire (ctx->staging, "draw.lmp");
 	int         count = tex.width * tex.height;
@@ -831,29 +819,11 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 	palette[255*4 + 1] = 0;
 	palette[255*4 + 2] = 0;
 	Vulkan_ExpandPalette (texels, tex.data, palette, 2, count);
-	QFV_PacketCopyImage (packet, cache_image->image.image, (qfv_offset_t){},
+	QFV_PacketCopyImage (packet, font->atlas->image, (qfv_offset_t){},
 						 (qfv_extent_t) {tex.width, tex.height, 1, 1}, 0,
 						 &imageBarriers[qfv_LT_Undefined_to_TransferDst],
 						 &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly]);
 	QFV_PacketSubmit (packet);
-
-	font->set = QFV_DSManager_AllocSet (dctx->dsmanager);;
-	VkDescriptorImageInfo imageInfo = {
-		dctx->pic_sampler,
-		cache_iview->image_view.view,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-	};
-	VkWriteDescriptorSet write[] = {
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  font->set, 0, 0, 1,
-		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		  &imageInfo, 0, 0 },
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  font->set, 1, 0, 1,
-		  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
-		  0, 0, &dctx->svertex_objects[1].buffer_view.view },
-	};
-	dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
 
 	qpic_t *pic;
 	pic = cmemalloc (dctx->pic_memsuper,

@@ -816,6 +816,11 @@ texture_shutdown (exprctx_t *ectx)
 	}
 	for (uint32_t i = 0; i < pools[c_atlas].count; i++) {
 		auto atlas = ((qfv_atlas_t **)pools[c_atlas].data)[i];
+		if (atlas->resource->objects[3].buffer_view.buffer == ~0u
+			&& atlas->resource->objects[2].buffer.size == 0) {
+			// don't own the buffer or view
+			atlas->resource->num_objects -= 2;
+		}
 		QFV_DestroyResource (device, atlas->resource);
 		free (atlas);
 	}
@@ -1148,16 +1153,10 @@ QFV_CreateTexture (vulkan_ctx_t *ctx, VkImage image, VkImageView view,
 	return create_texture_ent (ctx, name, nullptr, sampler, tex, 0);
 }
 
-uint32_t
-QFV_CreateAtlas (vulkan_ctx_t *ctx, qfv_atlasinfo_t *atlasinfo,
-				 VkSampler sampler, const char *name)
+static qfv_atlas_t *
+create_atlas_resource (vulkan_ctx_t *ctx, qfv_atlasinfo_t *atlasinfo,
+					   const char *name)
 {
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto tctx = ctx->texture_context;
-	if (!sampler) {
-		sampler = tctx->default_sampler;
-	}
 	auto atlas = alloc_qfv_atlas (ctx, name);
 	auto image = &atlas->resource->objects[0];
 	auto view = &image[1];
@@ -1168,13 +1167,39 @@ QFV_CreateAtlas (vulkan_ctx_t *ctx, qfv_atlasinfo_t *atlasinfo,
 	atlasinfo->image.object = image - &atlas->resource->objects[0];
 	qfv_setup_imageview_obj (view, image, &atlasinfo->image, &atlasinfo->view);
 	atlasinfo->view.object = view - &atlas->resource->objects[0];
-	qfv_setup_buffer_obj (buffer, &atlasinfo->buffer);
-	atlasinfo->buffer.object = buffer - &atlas->resource->objects[0];
-	qfv_setup_bufferview_obj (bufferview, &atlasinfo->buffer,
-							  &atlasinfo->bufferview);
-	atlasinfo->bufferview.object = bufferview - &atlas->resource->objects[0];
-	QFV_CreateResource (device, atlas->resource);
+	if (atlasinfo->buffer.object != ~0u) {
+		qfv_setup_buffer_obj (buffer, &atlasinfo->buffer);
+		atlasinfo->buffer.object = buffer - &atlas->resource->objects[0];
+	} else {
+		atlas->resource->num_objects--;
+	}
+	if (atlasinfo->bufferview.object != ~0u) {
+		qfv_setup_bufferview_obj (bufferview, &atlasinfo->buffer,
+								  &atlasinfo->bufferview);
+		atlasinfo->bufferview.object = bufferview
+									 - &atlas->resource->objects[0];
+	} else {
+		atlas->resource->num_objects--;
+	}
+	return atlas;
+}
 
+static uint32_t
+finish_atlas (vulkan_ctx_t *ctx, qfv_atlas_t *atlas,
+		      qfv_atlasinfo_t *atlasinfo, VkSampler sampler, const char *name)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto tctx = ctx->texture_context;
+
+	if (!sampler) {
+		sampler = tctx->default_sampler;
+	}
+
+	auto image = &atlas->resource->objects[0];
+	auto view = &image[1];
+	auto buffer = &view[1];
+	auto bufferview = &buffer[1];
 	atlas->image = image->image.image;
 	atlas->view = view->image_view.view;
 	atlas->buffer = buffer->buffer.buffer;
@@ -1208,6 +1233,38 @@ QFV_CreateAtlas (vulkan_ctx_t *ctx, qfv_atlasinfo_t *atlasinfo,
 	return create_atlas_ent (ctx, name, atlasinfo, sampler, atlas, atlas_set);
 }
 
+uint32_t
+QFV_CreateAtlas (vulkan_ctx_t *ctx, qfv_atlasinfo_t *atlasinfo,
+				 VkSampler sampler, const char *name)
+{
+	auto device = ctx->device;
+	auto atlas = create_atlas_resource (ctx, atlasinfo, name);
+	QFV_CreateResource (device, atlas->resource);
+	return finish_atlas (ctx, atlas, atlasinfo, sampler, name);
+}
+
+uint32_t
+QFV_CreateAtlasBuffer (vulkan_ctx_t *ctx, qfv_atlasinfo_t *atlasinfo,
+		               VkBuffer buffer, VkBufferView buffer_view,
+					   VkSampler sampler, const char *name)
+{
+	auto device = ctx->device;
+	atlasinfo->buffer.object = ~0u;
+	atlasinfo->bufferview.object = ~0u;
+	auto atlas = create_atlas_resource (ctx, atlasinfo, name);
+	QFV_CreateResource (device, atlas->resource);
+	// num_objects was reduced in create_atlas_resource
+	atlas->resource->objects[atlas->resource->num_objects++] = (qfv_resobj_t) {
+		.type = qfv_res_buffer,
+		.buffer.buffer = buffer,
+	};
+	atlas->resource->objects[atlas->resource->num_objects++] = (qfv_resobj_t) {
+		.type = qfv_res_buffer_view,
+		.buffer_view.buffer = ~0u,
+		.buffer_view.view = buffer_view,
+	};
+	return finish_atlas (ctx, atlas, atlasinfo, sampler, name);
+}
 
 uint32_t
 QFV_LoadTexinfo (vulkan_ctx_t *ctx, qfv_textureinfo_t *texinfo,
