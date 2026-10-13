@@ -109,7 +109,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 	qfv_physdev_t *physdev = device->physDev;
 	size_t      atom = physdev->p.properties.limits.nonCoherentAtomSize;
 	VkPhysicalDeviceMemoryProperties *memprops = &physdev->memory_properties;
-	VkMemoryRequirements req;
+	uint32_t    memoryTypeBits = 0;
 	VkDeviceSize size = 0;
 	VkMemoryAllocateFlags alloc_flags = 0;
 
@@ -123,6 +123,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 	}
 	for (unsigned i = 0; i < resource->num_objects; i++) {
 		__auto_type obj = &resource->objects[i];
+		VkMemoryRequirements req = { .alignment = 1 };
 		switch (obj->type) {
 			case qfv_res_buffer:
 				{
@@ -181,6 +182,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 				Sys_Error ("%s:%s invalid resource type %d",
 						   resource->name, obj->name, obj->type);
 		}
+		memoryTypeBits |= req.memoryTypeBits;
 		req.alignment = max (req.alignment, atom);
 		size = QFV_NextOffset (size, &req);
 		size += QFV_NextOffset (req.size, &req);
@@ -189,7 +191,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 	for (uint32_t type = 0; type < memprops->memoryTypeCount; type++) {
 		auto memType = &memprops->memoryTypes[type];
 		auto memHeap = &memprops->memoryHeaps[memType->heapIndex];
-		if ((req.memoryTypeBits & (1 << type))
+		if ((memoryTypeBits & (1 << type))
 			&& ((memType->propertyFlags & properties) == properties)) {
 			Sys_MaskPrintf (SYS_vulkan, "QFV_CreateResource: %s:mti:"
 							" %d %x"
@@ -220,6 +222,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 
 	VkDeviceSize offset = 0;
 	for (unsigned i = 0; i < resource->num_objects; i++) {
+		VkMemoryRequirements req = { .alignment = 1 };
 		__auto_type obj = &resource->objects[i];
 		switch (obj->type) {
 			case qfv_res_buffer:
