@@ -324,6 +324,7 @@ debug_src = $(vkshaderpath)/debug.frag
 debug_c = $(vkshaderpath)/debug.frag.spv
 entid_src = $(vkshaderpath)/entid.frag
 entid_c = $(vkshaderpath)/entid.frag.spv
+fbsearch_r = $(vkshaderpath)/fbsearch.r
 light_entid_src = $(vkshaderpath)/light_entid.r
 light_entid_c = $(vkshaderpath)/light_entid.r.spv
 light_splatv_src = $(vkshaderpath)/light_splat.r
@@ -563,6 +564,7 @@ vkshader_c_r=$(call spvautoc,$(vkshader_src_r))
 vkshader_h = \
 	$(bsp_h) \
 	$(entity_h) \
+	$(fbsearch_r) \
 	$(fog) \
 	$(gizmo_h) \
 	$(infplane) \
