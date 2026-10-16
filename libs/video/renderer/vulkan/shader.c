@@ -83,6 +83,9 @@ static const byte alignas(uint32_t) quakebsp_vert[] = {
 static const byte alignas(uint32_t) quakebsp_frag[] = {
 #embed "libs/video/renderer/vulkan/shader/quakebsp.frag.spv"
 };
+static const byte alignas(uint32_t) atlas_r[] = {
+#embed "libs/video/renderer/vulkan/shader/atlas.r.spv"
+};
 static const byte alignas(uint32_t) bsp_r[] = {
 #embed "libs/video/renderer/vulkan/shader/bsp.r.spv"
 };
@@ -211,6 +214,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "twod.frag", twod_frag, sizeof (twod_frag) },
 	{ "quakebsp.vert", quakebsp_vert, sizeof (quakebsp_vert) },
 	{ "quakebsp.frag", quakebsp_frag, sizeof (quakebsp_frag) },
+	{ "atlas.r", atlas_r, sizeof (atlas_r) },
 	{ "bsp.r", bsp_r, sizeof (bsp_r) },
 	{ "bsp_depth.vert", bsp_depth_vert, sizeof (bsp_depth_vert) },
 	{ "bsp_gbuf.vert", bsp_gbuf_vert, sizeof (bsp_gbuf_vert) },

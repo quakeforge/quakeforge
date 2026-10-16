@@ -59,6 +59,11 @@ typedef struct rscrap_s {
 	uint16_t    scrap_id;
 } rscrap_t;
 
+typedef struct atlas_update_s {
+	scrapbox_t *rects;
+	void       *texels;
+} atlas_update_t;
+
 bool r_scrap_check (rscrap_t *scrap);
 void R_ScrapInit (rscrap_t *scrap, int width, int height);
 void R_ScrapDelete (rscrap_t *scrap);

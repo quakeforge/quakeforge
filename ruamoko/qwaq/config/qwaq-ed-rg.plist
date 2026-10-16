@@ -545,6 +545,74 @@ render_graph = {
 				};
 			};
 		};
+		atlas = {
+			tex_l = {
+				stage = compute;
+				name = tex_l.main;
+				module = $builtin/atlas.r;
+			};
+			tex_a = {
+				stage = compute;
+				name = tex_a.main;
+				module = $builtin/atlas.r;
+			};
+			tex_la = {
+				stage = compute;
+				name = tex_la.main;
+				module = $builtin/atlas.r;
+			};
+			tex_rgb = {
+				stage = compute;
+				name = tex_rgb.main;
+				module = $builtin/atlas.r;
+			};
+			tex_rgba = {
+				stage = compute;
+				name = tex_rgba.main;
+				module = $builtin/atlas.r;
+			};
+			tex_frgba = {
+				stage = compute;
+				name = tex_frgba.main;
+				module = $builtin/atlas.r;
+			};
+			rects = {
+				stage = compute;
+				name = rects.main;
+				module = $builtin/atlas.r;
+			};
+			set_dispatch = {
+				rect = {
+					stage = compute;
+					name = set_dispatch.rect;
+					module = $builtin/atlas.r;
+				};
+				texel = {
+					stage = compute;
+					name = set_dispatch.texel;
+					module = $builtin/atlas.r;
+				};
+			};
+
+			layout = {
+				descriptorSets = (atlas_update_set);
+				pushConstants = {
+					compute = {
+						texel_queue = ptr;
+						texel_offs = ptr;
+						texel_data = ptr;
+						vertex_data = ptr;
+						rect_data = ptr;
+						format = uint;
+						num_rects = uint;
+						extents = uvec2;
+
+						prefixsum_counts = ptr;
+						atlas_invoke = ptr;
+					};
+				};
+			};
+		};
 		brush = {
 			cluster = {
 				shader = {
@@ -1417,6 +1485,17 @@ render_graph = {
 					descriptorType = storage_buffer;
 					descriptorCount = 1;
 					stageFlags = vertex|fragment;
+				},
+			);
+		};
+		atlas_update_set = {
+			bindings = (
+				{
+					// glyph texture data
+					binding = 0;
+					descriptorType = storage_image;
+					descriptorCount = 1;
+					stageFlags = compute;
 				},
 			);
 		};
@@ -3696,6 +3775,127 @@ render_graph = {
 							  params = (diff_cube,
 										lt_colorattach_to_shaderreadonly); },
 						);
+					};
+				};
+			};
+		};
+		atlas_update = {
+			steps = {
+				rects = {
+					color = "[0.6, 0.8, 0.9]";
+					compute = {
+						pipelines = {
+							rects = {
+								color = "[0.3, 0.8, 0.9]";
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = atlas_rect_invoke; },
+								);
+								stage = $atlas.rects;
+								layout = $atlas.layout;
+							};
+							rect:set_dispatch = {
+								color = "[0.3, 0.8, 0.9]";
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = set_dispatch;
+									  params = (1, 1, 1); },
+								);
+								stage = $atlas.set_dispatch.rect;
+								layout = $atlas.layout;
+							};
+							rect:prefixsum = {
+								color = "[0.3, 0.8, 0.9]";
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = atlas_prefixsum; },
+								);
+								stage = $prefixsum.shader.modal;
+								layout = $prefixsum.layout;
+							};
+							texel:set_dispatch = {
+								color = "[0.3, 0.8, 0.9]";
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = set_dispatch;
+									  params = (1, 1, 1); },
+								);
+								stage = $atlas.set_dispatch.texel;
+								layout = $atlas.layout;
+							};
+						};
+					};
+				};
+				texels = {
+					color = "[0.6, 0.8, 0.9]";
+					process = {
+						tasks = (
+							{ func = atlas_tex_select; },
+						);
+					};
+					compute = {
+						pipelines = {
+							tex_l = {
+								disabled = true;
+								color = "[0.3, 0.8, 0.9]";
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = atlas_tex_invoke; },
+								);
+								stage = $atlas.tex_l;
+								layout = $atlas.layout;
+							};
+							tex_a = {
+								disabled = true;
+								color = "[0.3, 0.8, 0.9]";
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = atlas_tex_invoke; },
+								);
+								stage = $atlas.tex_a;
+								layout = $atlas.layout;
+							};
+							tex_la = {
+								disabled = true;
+								color = "[0.3, 0.8, 0.9]";
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = atlas_tex_invoke; },
+								);
+								stage = $atlas.tex_la;
+								layout = $atlas.layout;
+							};
+							tex_rgb = {
+								disabled = true;
+								color = "[0.3, 0.8, 0.9]";
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = atlas_tex_invoke; },
+								);
+								stage = $atlas.tex_rgb;
+								layout = $atlas.layout;
+							};
+							tex_rgba = {
+								disabled = true;
+								color = "[0.3, 0.8, 0.9]";
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = atlas_tex_invoke; },
+								);
+								stage = $atlas.tex_rgba;
+								layout = $atlas.layout;
+							};
+							tex_frgba = {
+								disabled = true;
+								color = "[0.3, 0.8, 0.9]";
+								tasks = (
+									{ func = indirect_dispatch_barrier; },
+									{ func = atlas_tex_invoke; },
+								);
+								stage = $atlas.tex_frgba;
+								layout = $atlas.layout;
+							};
+						};
 					};
 				};
 			};

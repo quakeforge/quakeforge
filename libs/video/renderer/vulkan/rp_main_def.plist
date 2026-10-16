@@ -1026,6 +1026,17 @@ descriptorSetLayouts = {
 			},
 		);
 	};
+	atlas_update_set = {
+		bindings = (
+			{
+				// glyph texture data
+				binding = 0;
+				descriptorType = storage_image;
+				descriptorCount = 1;
+				stageFlags = compute;
+			},
+		);
+	};
 	atlas_set = {
 		bindings = (
 			{

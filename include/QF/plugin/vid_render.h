@@ -100,15 +100,17 @@ typedef struct vid_model_funcs_s {
 	void (*set_skinid) (uint32_t id, uint32_t skinid);
 } vid_model_funcs_t;
 
-struct tex_s;
-struct font_s;
-struct draw_charbuffer_s;
-struct imui_ctx_s;
+typedef struct tex_s tex_t;
+typedef struct font_s font_t;
+typedef struct scrapbox_s scrapbox_t;
+typedef struct atlas_update_s atlas_update_t;
+typedef struct draw_charbuffer_s draw_charbuffer_t;
+typedef struct imui_ctx_s imui_ctx_t;
 
-typedef void (*capfunc_t) (struct tex_s *screencap, void *data);
+typedef void (*capfunc_t) (tex_t *screencap, void *data);
 
 typedef struct vid_draw_s {
-	void (*CharBuffer) (int x, int y, struct draw_charbuffer_s *buffer);
+	void (*CharBuffer) (int x, int y, draw_charbuffer_t *buffer);
 	void (*SetScale) (int scale);
 	void (*Character) (int x, int y, unsigned ch);
 	void (*String) (int x, int y, const char *str);
@@ -131,12 +133,20 @@ typedef struct vid_draw_s {
 	void (*Pic) (int x, int y, qpic_t *pic);
 	void (*FitPic) (int x, int y, int width, int height, qpic_t *pic);
 	void (*Picf) (float x, float y, qpic_t *pic);
-	void (*SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
-	int (*AddFont) (struct font_s *font);
+	void (*SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy,
+					int width, int height);
+	int (*AddFont) (font_t *font);
 	void (*Glyph) (int x, int y, int fontid, int glyphid, int c);
 	void (*SetClip) (int x, int y, int w, int h);
 	void (*ResetClip) (void);
 	void (*Flush) (void);
+
+	uint32_t (*make_atlas) (const char *name, const tex_t *tex, int num_rects,
+							const scrapbox_t *rects);
+	atlas_update_t (*atlas_prepare_update) (uint32_t atlasid,
+											uint32_t num_rects,
+											uint32_t tex_bytes);
+	void (*atlas_finish_update) (void);
 } vid_draw_t;
 
 typedef struct gizmo_node_s gizmo_node_t;
@@ -193,7 +203,7 @@ typedef struct vid_render_funcs_s {
 
 	void (*capture_screen) (capfunc_t callback, void *data);
 
-	void (*debug_ui) (struct imui_ctx_s *imui_ctx);
+	void (*debug_ui) (imui_ctx_t *imui_ctx);
 
 	void (*SetJobBlackboardVar) (const char *job_name, const char *var_name,
 								 const void *var_data);

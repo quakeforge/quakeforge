@@ -27,6 +27,10 @@ int imageSamples(__readonly __writeonly gimageMS image) = SPV(OpImageQuerySample
 	imageLoad(__readonly IMAGE_PARAMS_MS) = SPV(OpImageRead);
 void imageStore(__writeonly IMAGE_PARAMS, @vector(gimage.sample_type, 4) data)
 	= SPV(OpImageWrite);
+void imageStore(__writeonly IMAGE_PARAMS, @vector(gimage.sample_type, 2) data)
+	= SPV(OpImageWrite);
+void imageStore(__writeonly IMAGE_PARAMS, gimage.sample_type data)
+	= SPV(OpImageWrite);
 void imageStore(__writeonly IMAGE_PARAMS_MS,
 				@vector(gimageMS.sample_type, 4) data)
 	= SPV(OpImageWrite);

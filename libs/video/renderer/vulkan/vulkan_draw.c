@@ -198,8 +198,28 @@ typedef struct drawfont_s {
 	VkDescriptorSet set;
 	qfv_atlas_t *atlas;
 	uint32_t    atlas_id;
+	QFFormat    format;
+	vec2u_t     extents;
 	drawfontres_t *resource;
 } drawfont_t;
+
+#define workgroup_size 512
+#define block_size (workgroup_size * 2)
+typedef struct draw_invoke_s {
+	uint32_t    count;
+	uint32_t    x;
+	uint32_t    y;
+	uint32_t    z;
+} draw_invoke_t;
+
+typedef struct draw_prefixsum_s {
+	VkDeviceAddress in;
+	VkDeviceAddress out;
+	VkDeviceAddress tmp;
+	VkDeviceAddress total;
+	VkBuffer    invoke;     // draw_invoke_t [2]
+	VkDeviceSize offset;
+} draw_prefixsum_t;
 
 typedef struct drawfontset_s
 	DARRAY_TYPE (drawfont_t) drawfontset_t;
@@ -235,6 +255,30 @@ typedef struct drawctx_s {
 
 	vertqueue_t slice_vert_queue;
 	quadvert_t  slice_verts[QUEUED_QUADS * VERTS_PER_SLICE];
+
+	struct {
+		VkDeviceAddress *in_data;
+		VkDeviceAddress *out_data;
+		VkDeviceAddress *sum_data;
+		VkDeviceAddress *count;
+		uint32_t   *mode;
+	}           psum;
+	VkDeviceAddress *atlas_texel_queue;
+	VkDeviceAddress *atlas_texel_offs;
+	VkDeviceAddress *atlas_texel_data;
+	VkDeviceAddress *atlas_vertex_data;
+	VkDeviceAddress *atlas_rect_data;
+	uint32_t   *atlas_format;
+	uint32_t   *atlas_num_rects;
+	vec2u_t    *atlas_extents;
+	VkDeviceAddress *prefixsum_counts;
+	VkDeviceAddress *atlas_invoke;
+
+	VkDeviceAddress prefixsum_counts_addr;
+	VkDeviceAddress block_sums_addr;
+	draw_prefixsum_t atlas_psum;
+	qfv_packet_t *atlas_packet;
+	qfv_job_t  *atlas_job;
 } drawctx_t;
 
 static int
@@ -785,6 +829,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 		.data = p->data,
 	};
 	auto imageinfo = qfv_tex_imageinfo ("image", false, &tex);
+	imageinfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
 	qfv_atlasinfo_t atlasinfo = {
 		.image = imageinfo,
 		.view = {
@@ -806,6 +851,8 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 													fontid));
 	*font = (drawfont_t) {
 		.atlas_id = atlas_id,
+		.format = tex.format,
+		.extents = { tex.width, tex.height },
 		.atlas = QFV_GetAtlas (ctx, atlas_id),
 		.set = QFV_GetAtlasSet (ctx, atlas_id),
 	};
@@ -980,6 +1027,7 @@ draw_startup (exprctx_t *ectx)
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 
+	dctx->atlas_job = QFV_FindJob ("atlas_update", ctx->render_context->graph);
 	dctx->pic_sampler = QFV_Render_Sampler (ctx, "quakepic");
 	dctx->glyph_sampler = QFV_Render_Sampler (ctx, "glyph");
 
@@ -1057,8 +1105,28 @@ draw_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_Render_AddShutdown (ctx, draw_shutdown);
 	QFV_Render_AddStartup (ctx, draw_startup);
 
-	drawctx_t  *dctx = calloc (1, sizeof (drawctx_t));
+	drawctx_t  *dctx = malloc (sizeof (drawctx_t));
 	ctx->draw_context = dctx;
+
+	*dctx = (drawctx_t) {
+		.psum = {
+			.in_data = QFV_GetBlackboardVar (ctx, "in_data"),
+			.out_data = QFV_GetBlackboardVar (ctx, "out_data"),
+			.sum_data = QFV_GetBlackboardVar (ctx, "sum_data"),
+			.count = QFV_GetBlackboardVar (ctx, "count"),
+			.mode = QFV_GetBlackboardVar (ctx, "mode"),
+		},
+		.atlas_texel_queue = QFV_GetBlackboardVar (ctx, "texel_queue"),
+		.atlas_texel_offs = QFV_GetBlackboardVar (ctx,"texel_offs"),
+		.atlas_texel_data = QFV_GetBlackboardVar (ctx, "texel_data"),
+		.atlas_vertex_data = QFV_GetBlackboardVar (ctx, "vertex_data"),
+		.atlas_rect_data = QFV_GetBlackboardVar (ctx, "rect_data"),
+		.atlas_format = QFV_GetBlackboardVar (ctx, "format"),
+		.atlas_num_rects = QFV_GetBlackboardVar (ctx, "num_rects"),
+		.atlas_extents = QFV_GetBlackboardVar (ctx, "extents"),
+		.prefixsum_counts = QFV_GetBlackboardVar (ctx, "prefixsum_counts"),
+		.atlas_invoke = QFV_GetBlackboardVar (ctx, "atlas_invoke"),
+	};
 }
 
 static void
@@ -1223,6 +1291,129 @@ draw_scr_funcs (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dframe->dyn_vert_queue.base = 0;
 }
 
+static void
+atlas_rect_invoke (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto dctx = ctx->draw_context;
+	auto pipeline = taskctx->pipeline;
+	int  count = *dctx->atlas_num_rects;
+
+	pipeline->dispatch[0] = RUP (count, workgroup_size) / workgroup_size;
+	pipeline->dispatch[1] = 1;
+	pipeline->dispatch[2] = 1;
+}
+
+static void
+atlas_prefixsum (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	static VkMemoryBarrier2 barrier = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+		.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
+					   | VK_ACCESS_2_SHADER_READ_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT
+					   | VK_ACCESS_2_SHADER_READ_BIT,
+	};
+	static VkDependencyInfo dependency = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.memoryBarrierCount = 1,
+		.pMemoryBarriers = &barrier,
+	};
+
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto dctx = ctx->draw_context;
+	auto pipeline = taskctx->pipeline;
+
+	auto psum = &dctx->atlas_psum;
+
+	auto cmd = taskctx->cmd;
+
+	VkDeviceAddress block_sums[] = {
+		dctx->block_sums_addr,
+		dctx->block_sums_addr + sizeof (uint32_t[1024]),
+	};
+	VkDeviceAddress counts[] = {
+		dctx->prefixsum_counts_addr,
+		dctx->prefixsum_counts_addr + sizeof (uint32_t),
+	};
+
+	*dctx->psum.in_data = psum->in;
+	*dctx->psum.out_data = psum->tmp;
+	*dctx->psum.sum_data = block_sums[0];
+	*dctx->psum.count = counts[0];
+	*dctx->psum.mode = 0;
+	QFV_PushBlackboard (ctx, cmd, pipeline);
+	dfunc->vkCmdDispatchIndirect (cmd, psum->invoke,
+								  psum->offset + offsetof (draw_invoke_t, x));
+
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dependency);
+
+	*dctx->psum.in_data = block_sums[0];
+	*dctx->psum.out_data = block_sums[1];
+	*dctx->psum.sum_data = psum->total;
+	*dctx->psum.count = counts[1];
+	*dctx->psum.mode = 0;
+	QFV_PushBlackboard (ctx, cmd, pipeline);
+	dfunc->vkCmdDispatchIndirect (cmd, psum->invoke,
+								  psum->offset + sizeof (draw_invoke_t)
+								  + offsetof (draw_invoke_t, x));
+
+	dfunc->vkCmdPipelineBarrier2 (cmd, &dependency);
+
+	*dctx->psum.in_data = psum->tmp;
+	*dctx->psum.out_data = psum->out;
+	*dctx->psum.sum_data = block_sums[1];
+	*dctx->psum.count = counts[0];
+	*dctx->psum.mode = 1;
+	QFV_PushBlackboard (ctx, cmd, pipeline);
+	dfunc->vkCmdDispatchIndirect (cmd, psum->invoke,
+								  psum->offset + offsetof (draw_invoke_t, x));
+}
+
+static void
+atlas_tex_invoke (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto dctx = ctx->draw_context;
+	auto pipeline = taskctx->pipeline;
+
+	auto psum = &dctx->atlas_psum;
+	auto cmd = taskctx->cmd;
+	QFV_PushBlackboard (ctx, cmd, pipeline);
+	dfunc->vkCmdDispatchIndirect (cmd, psum->invoke, psum->offset);
+}
+
+static void
+atlas_tex_select (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto dctx = ctx->draw_context;
+	auto compute = taskctx->step->compute;
+
+	for (uint32_t i = 0; i < compute->pipeline_count; i++) {
+		compute->pipelines[i].disabled = true;
+	}
+	switch (*dctx->atlas_format) {
+		case tex_l:     compute->pipelines[0].disabled = false; break;
+		case tex_a:     compute->pipelines[1].disabled = false; break;
+		case tex_la:    compute->pipelines[2].disabled = false; break;
+		case tex_rgb:   compute->pipelines[3].disabled = false; break;
+		case tex_rgba:  compute->pipelines[4].disabled = false; break;
+		case tex_frgba: compute->pipelines[5].disabled = false; break;
+	}
+}
+
 static exprfunc_t flush_draw_func[] = {
 	{ .func = flush_draw },
 	{}
@@ -1245,12 +1436,34 @@ static exprfunc_t draw_init_func[] = {
 	{}
 };
 
+static exprfunc_t atlas_rect_invoke_func[] = {
+	{ .func = atlas_rect_invoke },
+	{}
+};
+static exprfunc_t atlas_prefixsum_func[] = {
+	{ .func = atlas_prefixsum },
+	{}
+};
+static exprfunc_t atlas_tex_invoke_func[] = {
+	{ .func = atlas_tex_invoke },
+	{}
+};
+static exprfunc_t atlas_tex_select_func[] = {
+	{ .func = atlas_tex_select },
+	{}
+};
+
 static exprsym_t draw_task_syms[] = {
 	{ "flush_draw", &cexpr_function, flush_draw_func },
 	{ "slice_draw", &cexpr_function, slice_draw_func },
 	{ "line_draw", &cexpr_function, line_draw_func },
 	{ "draw_scr_funcs", &cexpr_function, draw_scr_funcs_func },
 	{ "draw_init", &cexpr_function, draw_init_func },
+
+	{ "atlas_rect_invoke", &cexpr_function, atlas_rect_invoke_func },
+	{ "atlas_prefixsum", &cexpr_function, atlas_prefixsum_func },
+	{ "atlas_tex_invoke", &cexpr_function, atlas_tex_invoke_func },
+	{ "atlas_tex_select", &cexpr_function, atlas_tex_select_func },
 	{}
 };
 
@@ -1713,27 +1926,42 @@ Vulkan_Draw_BlendScreen (quat_t color, vulkan_ctx_t *ctx)
 	}
 }
 
-int
-Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
+uint32_t
+Vulkan_make_atlas (const char *name, const tex_t *tex, int num_rects,
+				   const scrapbox_t *rects, vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;
 	int         fontid = dctx->fonts.size;
 	DARRAY_OPEN_AT (&dctx->fonts, fontid, 1);
 	drawfont_t *font = &dctx->fonts.a[fontid];
 
-	tex_t       tex = {
-		.width = rfont->scrap.width,
-		.height = rfont->scrap.height,
-		.format = tex_a,
-		.loaded = true,
-		.data = rfont->scrap_bitmap,
-	};
-
-	auto imageinfo = qfv_tex_imageinfo ("atlas", false, &tex);
+	auto imageinfo = qfv_tex_imageinfo ("atlas", false, tex);
+	imageinfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+	VkComponentMapping components = {};	// default is identity
+	uint32_t pix_size = tex->format;
+	if (tex->format == tex_l || tex->format == tex_a) {
+		components = (VkComponentMapping) {
+			.r = VK_COMPONENT_SWIZZLE_R,
+			.g = VK_COMPONENT_SWIZZLE_R,
+			.b = VK_COMPONENT_SWIZZLE_R,
+			.a = VK_COMPONENT_SWIZZLE_R,
+		};
+		pix_size = 1;
+	} else if (tex->format == tex_la) {
+		components = (VkComponentMapping) {
+			.r = VK_COMPONENT_SWIZZLE_R,
+			.g = VK_COMPONENT_SWIZZLE_R,
+			.b = VK_COMPONENT_SWIZZLE_R,
+			.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+		};
+	} else if (tex->format == tex_frgba) {
+		pix_size = 16;
+	}
+	size_t rects_size = sizeof (quadvert_t[num_rects * 4]);
 	qfv_atlasinfo_t atlasinfo = {
 		.image = imageinfo,
 		.view = {
-			.name = "image_view",
+			.name = "atlas_view",
 			.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 			.format = imageinfo.format,
 			.subresourceRange = {
@@ -1741,16 +1969,11 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 				.levelCount = VK_REMAINING_MIP_LEVELS,
 				.layerCount = VK_REMAINING_ARRAY_LAYERS,
 			},
-			.components = {
-				.r = VK_COMPONENT_SWIZZLE_R,
-				.g = VK_COMPONENT_SWIZZLE_R,
-				.b = VK_COMPONENT_SWIZZLE_R,
-				.a = VK_COMPONENT_SWIZZLE_R,
-			},
+			.components = components,
 		},
 		.buffer = {
 			.name = "geom",
-			.size = rfont->num_glyphs * 4 * sizeof (quadvert_t),
+			.size = rects_size,
 			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 					| VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
 		},
@@ -1760,58 +1983,147 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 			.range = VK_WHOLE_SIZE,
 		},
 	};
-	uint32_t atlas_id = QFV_CreateAtlas (ctx, &atlasinfo, 0, "glyph_data");
+	uint32_t atlas_id = QFV_CreateAtlas (ctx, &atlasinfo, 0, name);
 	*font = (drawfont_t) {
 		.atlas_id = atlas_id,
+		.format = tex->format,
+		.extents = { tex->width, tex->height },
 		.atlas = QFV_GetAtlas (ctx, atlas_id),
 		.set = QFV_GetAtlasSet (ctx, atlas_id),
 	};
 
+	size_t img_size = tex->width * tex->height * pix_size;
+	size_t size = (rects ? rects_size : 0) + (tex->data ? img_size : 0);
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging,
-											  "draw.addfont.verts");
-	quadvert_t *verts = QFV_PacketExtend (packet, atlasinfo.buffer.size);
-	for (FT_Long i = 0; i < rfont->num_glyphs; i++) {
-		scrapbox_t *rect = &rfont->glyph_rects[i];
-		float       x = 0;
-		float       y = 0;
-		float       w = rect->width;
-		float       h = rect->height;
-		float       u = rect->x;
-		float       v = rect->y;
-		float       s = 1.0 / rfont->scrap.width;
-		float       t = 1.0 / rfont->scrap.height;
-		verts[i * 4 + 0] = (quadvert_t) {
-			.offset = { x,     y },
-			.uv     = { u * s, v * t },
-		};
-		verts[i * 4 + 1] = (quadvert_t) {
-			.offset = { x,      y + h },
-			.uv     = { u * s, (v + h) * t },
-		};
-		verts[i * 4 + 2] = (quadvert_t) {
-			.offset = { x + w,      y },
-			.uv     = {(u + w) * s, v * t },
-		};
-		verts[i * 4 + 3] = (quadvert_t) {
-			.offset = { x + w,       y + h },
-			.uv     = {(u + w) * s, (v + h) * t },
-		};
-	}
-	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
-	auto db = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
-	QFV_PacketCopyBuffer (packet, font->atlas->buffer, 0, &sb, &db);
-	QFV_PacketSubmit (packet);
+											  "draw.make_atlas");
+	byte *data = QFV_PacketExtend (packet, size);
+	if (rects) {
+		auto verts = (quadvert_t *) data;
+		for (int i = 0; i < num_rects; i++) {
+			float       x = 0;
+			float       y = 0;
+			float       w = rects[i].width;
+			float       h = rects[i].height;
+			float       u = rects[i].x;
+			float       v = rects[i].y;
+			float       s = 1.0 / tex->width;
+			float       t = 1.0 / tex->height;
+			verts[i * 4 + 0] = (quadvert_t) {
+				.offset = { x,     y },
+				.uv     = { u * s, v * t },
+			};
+			verts[i * 4 + 1] = (quadvert_t) {
+				.offset = { x,      y + h },
+				.uv     = { u * s, (v + h) * t },
+			};
+			verts[i * 4 + 2] = (quadvert_t) {
+				.offset = { x + w,      y },
+				.uv     = {(u + w) * s, v * t },
+			};
+			verts[i * 4 + 3] = (quadvert_t) {
+				.offset = { x + w,       y + h },
+				.uv     = {(u + w) * s, (v + h) * t },
+			};
+		}
 
-	packet = QFV_PacketAcquire (ctx->staging, "draw.addfont.texels");
-	byte       *texels = QFV_PacketExtend (packet, tex.width * tex.height);
-	memcpy (texels, tex.data, tex.width * tex.height);
-	QFV_PacketCopyImage (packet, font->atlas->image, (qfv_offset_t){},
-						 (qfv_extent_t) {tex.width, tex.height, 1, 1}, 0,
-						 &imageBarriers[qfv_LT_Undefined_to_TransferDst],
-						 &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly]);
+		qfv_scatter_t scatter = {
+			.srcOffset = QFV_PacketOffset (packet, verts),
+			.dstOffset = 0,
+			.length = rects_size,
+		};
+
+		auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+		auto db = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+		QFV_PacketScatterBuffer (packet, font->atlas->buffer, 1, &scatter,
+								 &sb, &db);
+	}
+
+	if (tex->data) {
+		auto texels = data + rects_size;
+		memcpy (texels, tex->data, img_size);
+		auto sb = &imageBarriers[qfv_LT_Undefined_to_TransferDst];
+		auto db = &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+		QFV_PacketCopyImage (packet, font->atlas->image, (qfv_offset_t){},
+							 (qfv_extent_t) {tex->width, tex->height, 1, 1},
+							 QFV_PacketOffset (packet, texels), sb, db);
+	}
 	QFV_PacketSubmit (packet);
 
 	return fontid;
+}
+
+atlas_update_t
+Vulkan_atlas_prepare_update (uint32_t atlasid, uint32_t num_rects,
+							 uint32_t tex_bytes, vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+
+	typedef struct atlas_packet_s {
+		scrapbox_t  rect_data[num_rects];
+		byte        texel_data[tex_bytes];
+		draw_invoke_t invoke[3];
+		uint32_t    counts[2];
+		uint32_t    sums[(num_rects + block_size - 1) / block_size];
+		uint32_t    texel_offs[num_rects];
+		uint32_t    temp[num_rects];
+	} atlas_packet_t;;
+	size_t size = sizeof (atlas_packet_t);
+	auto packet = QFV_PacketAcquire (ctx->staging, "draw.atlas_update");
+	atlas_packet_t *atlas_packet = QFV_PacketExtend (packet, size);
+	atlas_update_t update = {
+		.rects = atlas_packet->rect_data,
+		.texels = atlas_packet->texel_data,
+	};
+	*dctx->atlas_texel_queue = QFV_PacketAddress (packet,
+												  &atlas_packet->invoke[2]);
+	*dctx->atlas_texel_offs = QFV_PacketAddress (packet,
+												 atlas_packet->texel_offs);
+	*dctx->atlas_texel_data = QFV_PacketAddress (packet,
+												 atlas_packet->texel_data);
+	*dctx->atlas_rect_data = QFV_PacketAddress (packet,
+												atlas_packet->rect_data);
+
+	auto font = &dctx->fonts.a[atlasid];
+	*dctx->atlas_format = font->format;
+	*dctx->atlas_num_rects = num_rects;
+	*dctx->atlas_extents = font->extents;
+	dctx->prefixsum_counts_addr = QFV_PacketAddress (packet,
+													  atlas_packet->counts);
+	dctx->block_sums_addr = QFV_PacketAddress (packet, atlas_packet->sums);
+	*dctx->atlas_invoke = QFV_PacketAddress (packet, atlas_packet->invoke);
+
+	dctx->atlas_packet = packet;
+
+	dctx->atlas_psum = (draw_prefixsum_t) {
+		.in = QFV_PacketAddress (packet, atlas_packet->texel_offs),
+		.out = QFV_PacketAddress (packet, atlas_packet->texel_offs),
+		.tmp = QFV_PacketAddress (packet, atlas_packet->temp),
+		.total = *dctx->atlas_texel_queue,
+		.invoke = ctx->staging->buffer,
+		.offset = QFV_PacketFullOffset (packet, atlas_packet->invoke),
+	};
+	return update;
+}
+
+void
+Vulkan_atlas_finish_update (vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+	QFV_RunRenderJob (ctx, dctx->atlas_job);
+}
+
+int
+Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
+{
+	tex_t       tex = {
+		.width = rfont->scrap.width,
+		.height = rfont->scrap.height,
+		.format = tex_a,
+		.loaded = true,
+		.data = rfont->scrap_bitmap,
+	};
+	return Vulkan_make_atlas ("glyph_data", &tex, rfont->num_glyphs,
+							  rfont->glyph_rects, ctx);
 }
 
 void

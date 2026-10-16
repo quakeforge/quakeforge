@@ -81,6 +81,7 @@
 
 #include "mod_internal.h"
 #include "r_internal.h"
+#include "r_scrap.h"
 #include "vid_internal.h"
 #include "vid_vulkan.h"
 #include "vulkan/vkparse.h"
@@ -444,6 +445,27 @@ static void
 vulkan_Draw_Flush (void)
 {
 	Vulkan_Draw_Flush (vulkan_ctx);
+}
+
+static uint32_t
+vulkan_make_atlas (const char *name, const tex_t *tex, int num_rects,
+				   const scrapbox_t *rects)
+{
+	return Vulkan_make_atlas (name, tex, num_rects, rects, vulkan_ctx);
+}
+
+static atlas_update_t
+vulkan_atlas_prepare_update (uint32_t atlasid, uint32_t num_rects,
+							 uint32_t tex_bytes)
+{
+	return Vulkan_atlas_prepare_update (atlasid, num_rects, tex_bytes,
+										vulkan_ctx);
+}
+
+static void
+vulkan_atlas_finish_update (void)
+{
+	Vulkan_atlas_finish_update (vulkan_ctx);
 }
 
 static void
@@ -874,6 +896,10 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 		.SetClip           = vulkan_Draw_SetClip,
 		.ResetClip         = vulkan_Draw_ResetClip,
 		.Flush             = vulkan_Draw_Flush,
+
+		.make_atlas        = vulkan_make_atlas,
+		.atlas_prepare_update = vulkan_atlas_prepare_update,
+		.atlas_finish_update = vulkan_atlas_finish_update,
 	},
 
 	.gizmo = {

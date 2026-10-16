@@ -305,6 +305,8 @@ quakebspv_c = $(vkshaderpath)/quakebsp.vert.spv
 quakebspf_src = $(vkshaderpath)/quakebsp.frag
 quakebspf_c = $(vkshaderpath)/quakebsp.frag.spv
 
+atlas_src = $(vkshaderpath)/atlas.r
+atlas_c = $(vkshaderpath)/atlas.r.spv
 bsp_src = $(vkshaderpath)/bsp.r
 bsp_h = $(vkshaderpath)/bsp.h
 bsp_c = $(vkshaderpath)/bsp.r.spv
@@ -420,6 +422,8 @@ $(quakebspv_c): $(quakebspv_src) $(entity_h) $(matrices_h)
 
 $(quakebspf_c): $(quakebspf_src) $(fog_h)
 
+$(atlas_c): $(atlas_src)
+
 $(bsp_c): $(bsp_src)
 
 $(bsp_depth_c): $(bsp_depth_src) $(entity_h) $(matrices_h)
@@ -533,6 +537,7 @@ vkshader_src_frag = \
 vkshader_src_comp =
 
 vkshader_src_r = \
+	$(atlas_src) \
 	$(bsp_src) \
 	$(bsp_gbuff_src) \
 	$(composef_src) \

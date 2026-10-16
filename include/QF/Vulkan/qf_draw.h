@@ -30,10 +30,12 @@
 
 #include "QF/screen.h"
 
-struct vulkan_ctx_s;
+typedef struct vulkan_ctx_s vulkan_ctx_t;
+typedef struct tex_s tex_t;
 struct qpic_s;
 struct font_s;
 struct draw_charbuffer_s;
+typedef struct atlas_update_s atlas_update_t;
 
 void Vulkan_Draw_CharBuffer (int x, int y, struct draw_charbuffer_s *buffer,
 							 struct vulkan_ctx_s *ctx);
@@ -77,6 +79,13 @@ void Vulkan_Draw_Picf (float x, float y, struct qpic_s *pic,
 void Vulkan_Draw_SubPic(int x, int y, struct qpic_s *pic,
 						int srcx, int srcy, int width, int height,
 						struct vulkan_ctx_s *ctx);
+uint32_t Vulkan_make_atlas (const char *name, const tex_t *tex, int num_rects,
+							const scrapbox_t *rects, vulkan_ctx_t *ctx);
+atlas_update_t Vulkan_atlas_prepare_update (uint32_t atlasid,
+											uint32_t num_rects,
+											uint32_t tex_bytes,
+											vulkan_ctx_t *ctx);
+void Vulkan_atlas_finish_update (vulkan_ctx_t *ctx);
 int Vulkan_Draw_AddFont (struct font_s *font, struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Glyph (int x, int y, int fontid, int glyphid, int c,
 						struct vulkan_ctx_s *ctx);

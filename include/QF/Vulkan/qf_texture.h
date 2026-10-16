@@ -29,6 +29,7 @@ typedef struct qfv_atlas_s {
 typedef struct texturectx_s {
 	struct qfv_dsmanager_s *texture_dsmanager;
 	struct qfv_dsmanager_s *atlas_dsmanager;
+	struct qfv_dsmanager_s *atlas_update_dsmanager;
 	struct qfv_resource_s *tex_resource;
 
 	ecs_registry_t *reg;
@@ -57,6 +58,7 @@ VkDescriptorSet QFV_GetTexture (vulkan_ctx_t *ctx, uint32_t texid) __attribute__
 qfv_tex_t *QFV_GetTex (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure));
 qfv_atlas_t *QFV_GetAtlas (vulkan_ctx_t *ctx, uint32_t atlasid) __attribute__((pure));
 VkDescriptorSet QFV_GetAtlasSet (vulkan_ctx_t *ctx, uint32_t atlasid) __attribute__((pure));
+VkDescriptorSet QFV_GetAtlasUpdateSet (vulkan_ctx_t *ctx, uint32_t atlasid) __attribute__((pure));
 bool QFV_TexIsCubemap (vulkan_ctx_t *ctx, uint32_t texid) __attribute__((pure));
 
 void Vulkan_ExpandPalette (byte *dst, const byte *src, const byte *palette,
