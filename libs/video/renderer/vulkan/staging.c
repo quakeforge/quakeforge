@@ -32,6 +32,7 @@
 #include "QF/backtrace.h"
 #include "QF/dstring.h"
 #include "QF/fbsearch.h"
+#include "QF/va.h"
 
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
@@ -39,11 +40,12 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/staging.h"
 
 qfv_stagebuf_t *
 QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
-						 VkCommandPool cmdPool)
+						 VkCommandPool cmdPool, va_ctx_t *va_ctx)
 {
 	size_t atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
 	size_t atom_mask = atom - 1;
@@ -52,24 +54,35 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 	qfv_devfuncs_t *dfunc = device->funcs;
 	dstring_t  *dstr = dstring_new ();
 
-	auto buffer = QFV_CreateBuffer (device, size,
-									VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-									//FIXME make a param
-									| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, buffer,
-						 dsprintf (dstr, "staging:buffer:%s", name));
-	auto memory = QFV_AllocBufferMemory (device, buffer,
-										 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-										 size, 0);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, memory,
-						 dsprintf (dstr, "staging:memory:%s", name));
-	QFV_BindBufferMemory (device, buffer, memory, 0);
-
+	size_t res_size = sizeof (qfv_resource_t)
+					+ sizeof (qfv_resobj_t);
+	qfv_resource_t *resource = malloc (res_size);
+	*resource = (qfv_resource_t) {
+		.name = vac (va_ctx, "staging:%s", name),
+		.va_ctx = va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+		.num_objects = 1,
+		.objects = (qfv_resobj_t *) &resource[1],
+	};
+	resource->objects[0] = (qfv_resobj_t) {
+		.name = "buffer",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = size,
+			.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+				   //FIXME make a param
+				   | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+				   | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		},
+	};
+	QFV_CreateResource (device, resource);
 	qfv_stagebuf_t *stage = malloc (sizeof (qfv_stagebuf_t));
+	auto memory = resource->memory;
 	*stage = (qfv_stagebuf_t) {
 		.device = device,
+		.resource = resource,
 		.cmdPool = cmdPool,
-		.buffer = buffer,
+		.buffer = resource->objects[0].buffer.buffer,
 		.memory = memory,
 		.atom_mask = atom_mask,
 		.free = { [0] = { .offset = 0, .length = size } },
@@ -77,6 +90,7 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 		.size = size,
 		.dstr = dstr,
 		.name = strdup (name),
+		.address = resource->objects[0].buffer.address,
 	};
 	dfunc->vkMapMemory (device->dev, memory, 0, size, 0, &stage->data);
 
@@ -605,7 +619,8 @@ QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 	}
 }
 
-size_t QFV_PacketOffset (qfv_packet_t *packet, void *ptr)
+size_t
+QFV_PacketOffset (qfv_packet_t *packet, void *ptr)
 {
 	auto sub = (uintptr_t) ptr;
 	auto data = (uintptr_t) packet->stage->data;
@@ -619,7 +634,8 @@ size_t QFV_PacketOffset (qfv_packet_t *packet, void *ptr)
 	return sub - packet->offset;
 }
 
-size_t QFV_PacketFullOffset (qfv_packet_t *packet, void *ptr)
+size_t
+QFV_PacketFullOffset (qfv_packet_t *packet, void *ptr)
 {
 	auto sub = (uintptr_t) ptr;
 	auto data = (uintptr_t) packet->stage->data;
@@ -631,4 +647,19 @@ size_t QFV_PacketFullOffset (qfv_packet_t *packet, void *ptr)
 		Sys_Error ("ptr outside of packet");
 	}
 	return sub;
+}
+
+VkDeviceAddress
+QFV_PacketAddress (qfv_packet_t *packet, void *ptr)
+{
+	auto sub = (uintptr_t) ptr;
+	auto data = (uintptr_t) packet->stage->data;
+	if (sub < data || sub > data + packet->stage->size) {
+		Sys_Error ("ptr outside of staging buffer");
+	}
+	sub -= data;
+	if (sub < packet->offset || sub >= packet->offset + packet->length) {
+		Sys_Error ("ptr outside of packet");
+	}
+	return sub + packet->stage->address;
 }

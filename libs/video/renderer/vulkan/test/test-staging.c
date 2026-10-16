@@ -8,11 +8,14 @@
 #include <string.h>
 
 #include "QF/backtrace.h"
+#include "QF/va.h"
 
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/staging.h"
+
+#define VA_CTX_COUNT 64
 
 void *stage_memory;
 
@@ -32,6 +35,13 @@ vkBindBufferMemory (VkDevice device, VkBuffer buffer, VkDeviceMemory memory,
 					VkDeviceSize offset)
 {
 	return VK_SUCCESS;
+}
+
+static VkDeviceAddress VKAPI_CALL
+vkGetBufferDeviceAddress (VkDevice device,
+						  const VkBufferDeviceAddressInfo *pInfo)
+{
+	return 0;
 }
 
 static VkResult VKAPI_CALL
@@ -145,6 +155,7 @@ qfv_devfuncs_t dfuncs = {
 	.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements,
 	.vkMapMemory = vkMapMemory,
 	.vkBindBufferMemory = vkBindBufferMemory,
+	.vkGetBufferDeviceAddress = vkGetBufferDeviceAddress,
 	.vkAllocateCommandBuffers = vkAllocateCommandBuffers,
 	.vkCreateFence = vkCreateFence,
 	.vkWaitForFences = vkWaitForFences,
@@ -189,7 +200,9 @@ main (int argc, char **argv)
 {
 	BT_Init (argv[0]);
 
-	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (&device, "", 1024, 0);
+	auto va_ctx = va_create_context (VA_CTX_COUNT);
+	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (&device, "", 1024, 0,
+													 va_ctx);
 
 	if (stage->size != 1024) {
 		error ("stage has incorrect size: %zd", stage->size);
@@ -239,6 +252,7 @@ main (int argc, char **argv)
 	if (QFV_PacketExtend (packet, 1)) {
 		error ("1 byte request did not return null");
 	}
+	va_destroy_context (va_ctx);
 
 	return 0;
 }

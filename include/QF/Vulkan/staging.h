@@ -4,6 +4,8 @@
 #include "QF/ringbuffer.h"
 
 typedef struct dstring_s dstring_t;
+typedef struct qfv_resource_s qfv_resource_t;
+typedef struct va_ctx_s va_ctx_t;
 
 typedef struct qfv_packet_s {
 	struct qfv_stagebuf_s *stage;	///< staging buffer that owns this packet
@@ -23,6 +25,7 @@ typedef struct qfvs_space_s {
 
 typedef struct qfv_stagebuf_s {
 	struct qfv_device_s *device;
+	qfv_resource_t *resource;
 	VkCommandPool cmdPool;
 	VkBuffer    buffer;
 	VkDeviceMemory memory;
@@ -35,6 +38,7 @@ typedef struct qfv_stagebuf_s {
 	dstring_t  *dstr;
 	void       *data;
 	const char *name;
+	VkDeviceAddress address;
 } qfv_stagebuf_t;
 
 typedef struct qfv_scatter_s {
@@ -61,7 +65,8 @@ typedef struct qfv_extent_s {
 
 qfv_stagebuf_t *QFV_CreateStagingBuffer (struct qfv_device_s *device,
 										 const char *name, size_t size,
-										 VkCommandPool cmdPool);
+										 VkCommandPool cmdPool,
+										 va_ctx_t *va_ctx);
 void QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage);
 void QFV_FlushStagingBuffer (qfv_stagebuf_t *stage, size_t offset, size_t size);
 qfv_packet_t *QFV_PacketAcquire (qfv_stagebuf_t *stage, const char *name);
@@ -83,5 +88,6 @@ void QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 						  const VkImageMemoryBarrier2 *dstBarrier);
 size_t QFV_PacketOffset (qfv_packet_t *packet, void *ptr);
 size_t QFV_PacketFullOffset (qfv_packet_t *packet, void *ptr);
+VkDeviceAddress QFV_PacketAddress (qfv_packet_t *packet, void *ptr);
 
 #endif//__QF_Vulkan_staging_h
