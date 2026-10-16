@@ -1164,8 +1164,13 @@ find_layout (const qfv_reference_t *ref, objstate_t *s)
 	auto memsuper = s->ginfo->memsuper;
 	if (!QFV_ParseLayoutInfo (s->ctx, memsuper, s->symtab, ref->name,
 							  &s->ptr.layouts[s->inds.num_layouts])) {
-		Sys_Error ("%s.%s:%d: invalid layout: %s",
-				   s->rpi->name, s->spi->name, ref->line, ref->name);
+		if (s->rpi) {
+			Sys_Error ("%s.%s:%d: invalid layout: %s",
+					   s->rpi->name, s->spi->name, ref->line, ref->name);
+		} else {
+			Sys_Error ("%s:%d: invalid layout: %s",
+					   s->pipeline->name, ref->line, ref->name);
+		}
 	}
 	__auto_type li = &s->ptr.layouts[s->inds.num_layouts++];
 	li->name = ref->name;
