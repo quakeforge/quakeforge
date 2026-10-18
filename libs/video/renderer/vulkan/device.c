@@ -212,7 +212,8 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 				.samplerAnisotropy = 1,
 				.fragmentStoresAndAtomics = 1,
 				.fillModeNonSolid = 1,
-				.shaderInt64 = 0,//FIXME not yet
+				.shaderFloat64 = 1,
+				.shaderInt64 = 1,
 				.shaderInt16 = 1,
 			},
 		};
