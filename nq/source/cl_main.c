@@ -153,6 +153,7 @@ static cvar_t r_drawflat_cvar = {
 };
 
 memhunk_t  *cl_hunk;
+wssched_t  *cl_sched;
 client_static_t cls;
 client_state_t cl;
 
@@ -735,16 +736,41 @@ cl_allocator (void *data, size_t size)
 	return Hunk_RawAllocName (alloc->hunk, size, alloc->name);
 }
 
+static cmd_t cl_commands[] = {
+	{	"pointfile", pointfile_f,
+		"Load a pointfile to determine map leaks."
+	},
+	{	"entities", CL_PrintEntities_f,
+		"No Description"
+	},
+	{	"disconnect", CL_Disconnect_f,
+		"No Description"
+	},
+	{	"maplist", Con_Maplist_f,
+		"List available maps"
+	},
+	{	"skyboxlist", Con_Skyboxlist_f,
+		"List skyboxes available"
+	},
+	{	"demolist", Con_Demolist_DEM_f,
+		"List available demos"
+	},
+	{	"force_centerview", Force_CenterView_f,
+		"force the view to be level"
+	},
+};
+
 void
-CL_Init (memhunk_t *hunk)
+CL_Init (wssched_t *sched, memhunk_t *hunk)
 {
 	qfZoneScoped (true);
 	byte       *basepal, *colormap;
 
 	cl_hunk = hunk;
+	cl_sched = sched;
 
 	cl_alloc_t cl_alloc = {
-		.hunk = hunk,
+		.hunk = cl_hunk,
 		.name = "palette",
 	};
 	qfs_allocator_t alloc = {
@@ -760,15 +786,17 @@ CL_Init (memhunk_t *hunk)
 	if (!colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
 
-	Host_OnServerSpawn (CL_ClearMemory);
-
-	W_LoadWadFile ("gfx.wad", hunk);
+	W_LoadWadFile ("gfx.wad", cl_hunk);
 	VID_Init (basepal, colormap);
-	IN_Init (hunk);
+	IN_Init (cl_hunk);
 	GIB_Key_Init ();
+	Mod_Init (cl_sched, cl_hunk);
 	R_Init (cl_hunk, nullptr);
 	r_data->lightstyle = cl.lightstyle;
 	S_Init (&cl.viewentity, &host_frametime);
+	CDAudio_Init ();
+
+	CL_Init_Input (host_cbuf);
 
 	PI_RegisterPlugins (client_plugin_list);
 	CL_Init_Screen (&(clscr_data_t) {
@@ -780,31 +808,21 @@ CL_Init (memhunk_t *hunk)
 			.item_gettime = cl.item_gettime,
 		});
 
-	CDAudio_Init ();
-
-	CL_Init_Input (host_cbuf);
 	CL_Particles_Init ();
 	CL_Effects_Init ();
 	CL_TEnts_Init ();
+
 	CL_World_Init ();
 	CL_ClearState ();
 
 	VID_SendSize ();
-
 	V_Init (&cl.viewstate);
 
-	Cmd_AddCommand ("pointfile", pointfile_f,
-					"Load a pointfile to determine map leaks.");
-	Cmd_AddCommand ("entities", CL_PrintEntities_f, "No Description");
-	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "No Description");
-	Cmd_AddCommand ("maplist", Con_Maplist_f, "List available maps");
-	Cmd_AddCommand ("skyboxlist", Con_Skyboxlist_f, "List skyboxes available");
-	Cmd_AddCommand ("demolist", Con_Demolist_DEM_f, "List available demos");
-	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view "
-					"to be level");
+	Cmd_AddCommands (cl_commands, countof (cl_commands));
 
 	Sys_RegisterShutdown (CL_Shutdown, 0);
 
+	Host_OnServerSpawn (CL_ClearMemory);
 	cl_stuffbuff = dstring_newstr ();
 	SZ_Alloc (&cls.message, 1024, hunk);
 	CL_SetState (ca_disconnected);

@@ -955,13 +955,13 @@ Host_Init (void)
 
 	NET_Init (host_cbuf, host_hunk);
 
-	Mod_Init (host_sched, host_hunk);
+	if (net_is_dedicated) {
+		Mod_Init (host_sched, host_hunk);
+	} else {
+		CL_Init (host_sched, host_hunk);
+	}
 
 	SV_Init ();
-
-	if (!net_is_dedicated) {
-		CL_Init (host_hunk);
-	}
 
 	Host_ExecConfig (host_cbuf, isDedicated || !cl_quakerc);
 

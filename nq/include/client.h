@@ -223,13 +223,14 @@ extern struct set_s cl_forcelink;
 
 extern int fps_count;
 
+typedef struct wssched_s wssched_t;
 typedef struct memhunk_s memhunk_t;
 extern memhunk_t *cl_hunk;
 
 extern void (*write_angles) (sizebuf_t *sb, const vec3_t angles);
 
 // cl_main
-void CL_Init (memhunk_t *hunk);
+void CL_Init (wssched_t *sched, memhunk_t *hunk);
 void CL_InitCvars (void);
 void CL_ClearMemory (void);
 void CL_PreFrame (void);

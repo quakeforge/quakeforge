@@ -32,7 +32,10 @@
 #include "QF/qtypes.h"
 #include "QF/render.h"
 
-void CL_Init (void);
+typedef struct wssched_s wssched_t;
+typedef struct memhunk_s memhunk_t;
+
+void CL_Init (wssched_t *sched, memhunk_t *hunk);
 void Host_WriteConfiguration (void);
 int Host_ReadConfiguration (const char *cfg_name);
 

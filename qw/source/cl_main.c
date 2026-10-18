@@ -1472,10 +1472,112 @@ cl_allocator (void *data, size_t size)
 	return Hunk_RawAllocName (alloc->hunk, size, alloc->name);
 }
 
+static cmd_t cl_commands[] = {
+	{	"pointfile", pointfile_f,
+		"Load a pointfile to determine map leaks."
+	},
+	{	"version", CL_Version_f,
+		"Report version information"
+	},
+	{	"changing", CL_Changing_f,
+		"Used when maps are changing"
+	},
+	{	"disconnect", CL_Disconnect_f,
+		"Disconnect from server"
+	},
+	{	"snap", CL_RSShot_f,
+		"Take a screenshot and upload it to the server"
+	},
+	{	"maplist", Con_Maplist_f,
+		"List maps available"
+	},
+	{	"skinlist", Con_Skinlist_f,
+		"List skins available"
+	},
+	{	"skyboxlist", Con_Skyboxlist_f,
+		"List skyboxes available"
+	},
+	{	"demolist", Con_Demolist_QWD_f,
+		"List demos available"
+	},
+	{	"connect", CL_Connect_f,
+		"Connect to a server 'connect hostname:port'"
+	},
+	{	"reconnect", CL_Reconnect_f,
+		"Reconnect to the last server"
+	},
+	{	"rcon", CL_Rcon_f,
+		"Issue set of commands to the current connected server or the one\n"
+		"set in rcon_address"
+	},
+	{	"packet", CL_Packet_f,
+		"Send a packet with specified contents to the destination"
+	},
+	{	"user", CL_User_f,
+		"Queries the user for his setinfo information"
+	},
+	{	"users", CL_Users_f,
+		"Report information on connected players and retrieve user ids"
+	},
+	{	"setinfo", CL_SetInfo_f,
+		"Sets information about your QuakeWorld user.\n"
+		"Used without a key it will list all of your current settings.\n"
+		"Specifying a non-existent key and a value will create the new key.\n"
+		"Special Keys:\n"
+		"    b_switch - Determines the highest weapon that Quake should\n"
+		"               switch to upon a backpack pickup.\n"
+		"    w_switch - Determines the highest weapon that Quake should\n"
+		"               switch to upon a weapon pickup."
+	},
+	{	"fullinfo", CL_FullInfo_f,
+		"Used by GameSpy and Qlist to set setinfo variables"
+	},
+	{	"fullserverinfo", CL_FullServerinfo_f,
+		"Used by GameSpy and Qlist to obtain server variables"
+	},
+	{	"download", CL_Download_f,
+		"Manually download a quake file from the server"
+	},
+	{	"nextul", CL_NextUpload,
+		"Tells the client to send the next upload"
+	},
+	{	"stopul", CL_StopUpload,
+		"Tells the client to stop uploading"
+	},
+	{	"force_centerview", Force_CenterView_f,
+		"force the view to be level"
+	},
+	{	"rotate", CL_Rotate_f,
+		"Look left or right a given amount. Usage: rotate <degrees>"
+	},
+	{	"protate", CL_PRotate_f,
+		"Look up or down a given amount. Usage: protate <degrees>"
+	},
+	// forward to server commands
+	{	"kill", CL_Cmd_ForwardToServer,
+		"Suicide :)"
+	},
+	{	"pause", CL_Cmd_ForwardToServer,
+		"Pause the game"
+	},
+	{	"say", CL_Cmd_ForwardToServer,
+		"Say something to all other players"
+	},
+	{	"say_team", CL_Cmd_ForwardToServer,
+		"Say something to only people on your team"
+	},
+	{	"serverinfo", CL_Cmd_ForwardToServer,
+		"Report the current server info"
+	},
+};
+
 void
-CL_Init (void)
+CL_Init (wssched_t *sched, memhunk_t *hunk)
 {
 	byte       *basepal, *colormap;
+
+	cl_hunk = hunk;
+	cl_sched = sched;
 
 	cl_alloc_t cl_alloc = {
 		.hunk = cl_hunk,
@@ -1485,8 +1587,7 @@ CL_Init (void)
 		.alloc = cl_allocator,
 		.data = &cl_alloc,
 	};
-	basepal = (byte *) QFS_LoadFile (QFS_FOpenFile ("gfx/palette.lmp"),
-									 &alloc);
+	basepal = (byte *) QFS_LoadFile (QFS_FOpenFile ("gfx/palette.lmp"), &alloc);
 	if (!basepal)
 		Sys_Error ("Couldn't load gfx/palette.lmp");
 	cl_alloc.name = "colormap";
@@ -1498,9 +1599,14 @@ CL_Init (void)
 	W_LoadWadFile ("gfx.wad", cl_hunk);
 	VID_Init (basepal, colormap);
 	IN_Init (cl_hunk);
+	GIB_Key_Init ();
 	Mod_Init (cl_sched, cl_hunk);
 	R_Init (cl_hunk, nullptr);
 	r_data->lightstyle = cl.lightstyle;
+	S_Init (&cl.viewentity, &host_frametime);
+	CDAudio_Init ();
+
+	CL_Init_Input (cl_cbuf);
 
 	PI_RegisterPlugins (client_plugin_list);
 	CL_Init_Screen (&(clscr_data_t) {
@@ -1515,27 +1621,28 @@ CL_Init (void)
 		});
 	CL_NetGraph_Init ();
 
-	S_Init (&cl.viewentity, &host_frametime);
-	CDAudio_Init ();
-
-	CL_Init_Input (cl_cbuf);
 	CL_Ents_Init ();
 	CL_Particles_Init ();
 	CL_Effects_Init ();
 	CL_TEnts_Init ();
+
 	CL_World_Init ();
 	CL_ClearState ();
-	Pmove_Init ();
 
 	VID_SendSize ();
-
-	SL_Init ();
-
-	CL_Skin_Init ();
-	Locs_Init ();
 	V_Init (&cl.viewstate);
 
+	Cmd_AddCommands (cl_commands, countof (cl_commands));
+	if (!con_module) {
+		Cmd_AddCommand ("quit", CL_Quit_f, "Exit the program");
+	}
+
 	Sys_RegisterShutdown (CL_Shutdown, 0);
+
+	Pmove_Init ();
+	SL_Init ();
+	CL_Skin_Init ();
+	Locs_Init ();
 
 	Info_SetValueForStarKey (cls.userinfo, "*ver", QW_VERSION, 0);
 
@@ -1545,67 +1652,9 @@ CL_Init (void)
 	cls.downloadurl = dstring_newstr ();
 	Info_Destroy (cl.serverinfo);
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0, cl_hunk);
-	free (cl.players);
 	cl.players = calloc (MAX_CLIENTS, sizeof (player_info_t));
 	Sbar_SetPlayers (cl.players, MAX_CLIENTS);
 
-	// register our commands
-	Cmd_AddCommand ("pointfile", pointfile_f,
-					"Load a pointfile to determine map leaks.");
-	Cmd_AddCommand ("version", CL_Version_f, "Report version information");
-	Cmd_AddCommand ("changing", CL_Changing_f, "Used when maps are changing");
-	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "Disconnect from server");
-	Cmd_AddCommand ("snap", CL_RSShot_f, "Take a screenshot and upload it to "
-					"the server");
-	Cmd_AddCommand ("maplist", Con_Maplist_f, "List maps available");
-	Cmd_AddCommand ("skinlist", Con_Skinlist_f, "List skins available");
-	Cmd_AddCommand ("skyboxlist", Con_Skyboxlist_f, "List skyboxes available");
-	Cmd_AddCommand ("demolist", Con_Demolist_QWD_f, "List demos available");
-	if (!con_module)
-		Cmd_AddCommand ("quit", CL_Quit_f, "Exit the program");
-	Cmd_AddCommand ("connect", CL_Connect_f, "Connect to a server 'connect "
-					"hostname:port'");
-	Cmd_AddCommand ("reconnect", CL_Reconnect_f, "Reconnect to the last "
-					"server");
-	Cmd_AddCommand ("rcon", CL_Rcon_f, "Issue set of commands to the current "
-					"connected server or the one set in rcon_address");
-	Cmd_AddCommand ("packet", CL_Packet_f, "Send a packet with specified "
-					"contents to the destination");
-	Cmd_AddCommand ("user", CL_User_f, "Queries the user for his setinfo "
-					"information");
-	Cmd_AddCommand ("users", CL_Users_f, "Report information on connected "
-					"players and retrieve user ids");
-	Cmd_AddCommand ("setinfo", CL_SetInfo_f, "Sets information about your "
-					"QuakeWorld user.\n Used without a key it will list all "
-					"of your current settings.\n Specifying a non-existent "
-					"key and a value will create the new key.\n"
-					"Special Keys:\n b_switch - Determines the highest weapon "
-					"that Quake should switch to upon a backpack pickup.\n "
-					"w_switch - Determines the highest weapon that Quake "
-					"should switch to upon a weapon pickup.");
-	Cmd_AddCommand ("fullinfo", CL_FullInfo_f, "Used by GameSpy and Qlist to "
-					"set setinfo variables");
-	Cmd_AddCommand ("fullserverinfo", CL_FullServerinfo_f, "Used by GameSpy "
-					"and Qlist to obtain server variables");
-	Cmd_AddCommand ("download", CL_Download_f, "Manually download a quake "
-					"file from the server");
-	Cmd_AddCommand ("nextul", CL_NextUpload, "Tells the client to send the "
-					"next upload");
-	Cmd_AddCommand ("stopul", CL_StopUpload, "Tells the client to stop "
-					"uploading");
-	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view "
-					"to be level");
-	Cmd_AddCommand ("rotate", CL_Rotate_f, "Look left or right a given amount. Usage: rotate <degrees>");
-	Cmd_AddCommand ("protate", CL_PRotate_f, "Look up or down a given amount. Usage: protate <degrees>");
-	// forward to server commands
-	Cmd_AddCommand ("kill", CL_Cmd_ForwardToServer, "Suicide :)");
-	Cmd_AddCommand ("pause", CL_Cmd_ForwardToServer, "Pause the game");
-	Cmd_AddCommand ("say", CL_Cmd_ForwardToServer, "Say something to all "
-					"other players");
-	Cmd_AddCommand ("say_team", CL_Cmd_ForwardToServer, "Say something to "
-					"only people on your team");
-	Cmd_AddCommand ("serverinfo", CL_Cmd_ForwardToServer, "Report the current "
-					"server info");
 	cl_player_health_e = GIB_Event_New ("player.health");
 	cl_chat_e = GIB_Event_New ("chat");
 
@@ -1639,7 +1688,7 @@ cl_yawspeed_f (void *data, const cvar_t *var)
 
 
 static void
-CL_Init_Cvars (void)
+CL_Init_Cvars (memhunk_t *hunk)
 {
 	VID_Init_Cvars ();
 	IN_Init_Cvars ();
@@ -1662,7 +1711,7 @@ CL_Init_Cvars (void)
 	var = Cvar_FindVar ("cl_yawspeed");
 	Cvar_AddListener (var, cl_yawspeed_f, 0);
 
-	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0, cl_hunk);
+	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0, hunk);
 
 	Cvar_Register (&cl_model_crcs_cvar, 0, 0);
 	Cvar_Register (&cl_allow_cmd_pkt_cvar, 0, 0);
@@ -2100,12 +2149,11 @@ Host_Init (void)
 
 	Sys_Init ();
 
-	cl_hunk = CL_Init_Memory ();
-	Cmd_SetHunk (cl_hunk);
+	auto hunk = CL_Init_Memory ();
+	Cmd_SetHunk (hunk);
 
-	Cache_Init (cl_hunk);
-	GIB_Init (true, cl_hunk);
-	GIB_Key_Init ();
+	Cache_Init (hunk);
+	GIB_Init (true, hunk);
 	COM_ParseConfig (cl_cbuf);
 
 	pr_gametype = "quakeworld";
@@ -2116,7 +2164,7 @@ Host_Init (void)
 
 	Sys_RegisterShutdown (Host_Shutdown, 0);
 
-	cl_sched = wssched_create (Sys_ProcessorCount ());
+	auto sched = wssched_create (Sys_ProcessorCount ());
 
 	Sys_RegisterShutdown (Net_LogStop, 0);
 
@@ -2124,7 +2172,7 @@ Host_Init (void)
 
 	PR_Init_Cvars ();		// FIXME location
 
-	CL_Init_Cvars ();
+	CL_Init_Cvars (hunk);
 
 	CL_Chat_Init ();
 
@@ -2146,7 +2194,7 @@ Host_Init (void)
 
 	CL_Demo_Init ();
 
-	CL_Init ();
+	CL_Init (sched, hunk);
 
 	cl.viewstate.time = realtime;
 	cl.viewstate.realtime = realtime;
@@ -2160,8 +2208,8 @@ Host_Init (void)
 	// make sure all + commands have been executed
 	Cbuf_Execute_Stack (cl_cbuf);
 
-	Hunk_AllocName (cl_hunk, 0, "-HOST_HUNKLEVEL-");
-	host_hunklevel = Hunk_LowMark (cl_hunk);
+	Hunk_AllocName (hunk, 0, "-HOST_HUNKLEVEL-");
+	host_hunklevel = Hunk_LowMark (hunk);
 
 	Sys_Printf ("\nClient version %s (build %04d)\n\n", PACKAGE_VERSION,
 				build_number ());

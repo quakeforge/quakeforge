@@ -64,7 +64,7 @@ CL_Frame (void)
 }
 
 void
-CL_Init (memhunk_t *hunk)
+CL_Init (wssched_t *sched, memhunk_t *hunk)
 {
 }
 
