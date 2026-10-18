@@ -319,19 +319,11 @@ bi_create_registry (graphics_resources_t *res, int num_components,
 	ECS_CreateComponentPools (res->ecs.reg);
 }
 
-bi(init_graphics)
+static void
+init_screen (graphics_resources_t *res)
 {
 	qfZoneScoped (true);
-	graphics_resources_t *res = _res;
-	VID_Init (default_palette[0], default_colormap);
-	IN_Init (pr->pr_hunk);
-	Mod_Init (bi_sched, pr->pr_hunk);
-	int plitem_id = P_INT (pr, 0);
-	plitem_t *plitem = nullptr;
-	if (plitem_id) {
-		plitem = Plist_GetItem (pr, plitem_id);
-	}
-	R_Init (pr->pr_hunk, plitem);
+
 	Font_Init ();
 
 	Con_Load ("client");
@@ -339,22 +331,18 @@ bi(init_graphics)
 	Canvas_InitSys (&canvas_sys, reg);
 	if (con_module) {
 		auto cd = con_module->data->console;
+		cd->component_base = ECS_RegisterComponents (reg, cd->components,
+													 cd->num_components);
+		cd->canvas_sys = &canvas_sys;
+
 		cd->realtime = &res->con_realtime;
 		cd->frametime = &res->con_frametime;
 		cd->quit = quit_f;
 		cd->cbuf = qwaq_cbuf;
-		cd->component_base = ECS_RegisterComponents (reg, cd->components,
-													 cd->num_components);
-		cd->canvas_sys = &canvas_sys;
 	}
-
-	int num_components = P_INT (pr, 1);
-	auto components = &P_STRUCT (pr, qwaq_comp_t, 2);
-	if (num_components > 0) {
-		bi_create_registry (res, num_components, components);
-	}
-
 	ECS_CreateComponentPools (reg);
+
+	Con_Init ();
 
 	res->canvas = Canvas_New (canvas_sys);
 	res->screen_view = Canvas_GetRootView (canvas_sys, res->canvas);
@@ -364,13 +352,37 @@ bi(init_graphics)
 	View_SetVisible (res->screen_view, 1);
 
 	VID_OnVidResize_AddListener (vidsize_listener, res);
+}
 
-	//Key_SetKeyDest (key_game);
-	Con_Init ();
-	VID_SendSize ();
+bi(init_graphics)
+{
+	qfZoneScoped (true);
+	graphics_resources_t *res = _res;
 
+	int plitem_id = P_INT (pr, 0);
+	plitem_t *plitem = nullptr;
+	if (plitem_id) {
+		plitem = Plist_GetItem (pr, plitem_id);
+	}
+
+	VID_Init (default_palette[0], default_colormap);
+	IN_Init (pr->pr_hunk);
+	Mod_Init (bi_sched, pr->pr_hunk);
+	R_Init (pr->pr_hunk, plitem);
 	S_Init (0, &res->con_frametime);
 	//CDAudio_Init ();
+
+	init_screen (res);
+
+	int num_components = P_INT (pr, 1);
+	auto components = &P_STRUCT (pr, qwaq_comp_t, 2);
+	if (num_components > 0) {
+		bi_create_registry (res, num_components, components);
+	}
+
+	//Key_SetKeyDest (key_game);
+	VID_SendSize ();
+
 	Con_NewMap ();
 	res->basetime = Sys_DoubleTime ();
 }
