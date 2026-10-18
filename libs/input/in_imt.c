@@ -890,13 +890,7 @@ imt_drop_all_f (void)
 	}
 }
 
-typedef struct {
-	const char *name;
-	xcommand_t  func;
-	const char *desc;
-} imtcmd_t;
-
-static imtcmd_t imt_commands[] = {
+static cmd_t imt_commands[] = {
 	{	"imt", imt_f,
 		"Set the active imt of the specified context"
 	},
@@ -955,7 +949,6 @@ static imtcmd_t imt_commands[] = {
 	{	"imt_drop_all", imt_drop_all_f,
 		"Delete all imt tables.\n"
 	},
-	{},
 };
 
 static void
@@ -979,9 +972,7 @@ IMT_Init (void)
 	binding_mem = new_memsuper ();
 	recipe_tab = Hash_NewTable (61, 0, recipe_free, 0, 0);
 	Hash_SetHashCompare (recipe_tab, recipe_get_hash, recipe_compare);
-	for (imtcmd_t *cmd = imt_commands; cmd->name; cmd++) {
-		Cmd_AddCommand (cmd->name, cmd->func, cmd->desc);
-	}
+	Cmd_AddCommands (imt_commands, countof (imt_commands));
 }
 
 void

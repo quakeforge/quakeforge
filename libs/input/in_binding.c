@@ -761,13 +761,7 @@ keyhelp_f (void)
 	Sys_Printf ("Press button or move axis to identify\n");
 }
 
-typedef struct {
-	const char *name;
-	xcommand_t  func;
-	const char *desc;
-} bindcmd_t;
-
-static bindcmd_t in_binding_commands[] = {
+static cmd_t in_binding_commands[] = {
 	{	"in_bind", in_bind_f,
 		"Assign a command or a set of commands to a key.\n"
 		"Note: To bind multiple commands to a key, enclose the "
@@ -798,7 +792,6 @@ static bindcmd_t in_binding_commands[] = {
 		"buttons can always be bound by number, so even those for which a "
 		"name is not known, but " PACKAGE_NAME " sees, can be bound."
 	},
-	{ }
 #if 0
 	{	"bindlist", Key_Bindlist_f,
 		"list all of the key bindings"
@@ -847,9 +840,7 @@ IN_Binding_Init (memhunk_t *hunk)
 	in_binding_handler = IE_Add_Handler (in_binding_event_handler, 0);
 	in_keyhelp_handler = IE_Add_Handler (in_keyhelp_event_handler, 0);
 
-	for (bindcmd_t *cmd = in_binding_commands; cmd->name; cmd++) {
-		Cmd_AddCommand (cmd->name, cmd->func, cmd->desc);
-	}
+	Cmd_AddCommands (in_binding_commands, countof (in_binding_commands));
 }
 
 void

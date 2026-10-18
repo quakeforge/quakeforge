@@ -47,6 +47,12 @@ typedef enum {
     src_command,		// from a command buffer
 } cmd_source_t;
 
+typedef struct cmd_s {
+	const char *name;
+	xcommand_t  func;
+	const char *desc;
+} cmd_t;
+
 typedef struct cmd_function_s {
 	struct cmd_function_s *next;
 	const char *name;
@@ -64,6 +70,7 @@ void	Cmd_SetHunk (memhunk_t *hunk);
 
 int		Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 						const char *description);
+void	Cmd_AddCommands (cmd_t *cmds, int num_cmds);
 int		Cmd_AddDataCommand (const char *cmd_name, xdatacmd_t function,
 							void *data, const char *description);
 int		Cmd_RemoveCommand (const char *cmd_name);

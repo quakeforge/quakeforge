@@ -182,6 +182,14 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 	return add_command (cmd_name, function, 0, 0, description);
 }
 
+VISIBLE void
+Cmd_AddCommands (cmd_t *cmds, int num_cmds)
+{
+	for (int i = 0; i < num_cmds; i++) {
+		Cmd_AddCommand (cmds[i].name, cmds[i].func, cmds[i].desc);
+	}
+}
+
 /* Registers a command and handler function with data */
 VISIBLE int
 Cmd_AddDataCommand (const char *cmd_name, xdatacmd_t function,
