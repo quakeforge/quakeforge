@@ -585,8 +585,6 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item)
 			int ivar_count = *ivar_ptr;
 			auto ivar = (struct obj_ivar *) (ivar_ptr + 1);
 			for (int i = 0; i < ivar_count; i++, ivar++) {
-				//FIXME ((qfot_type_t*)ivar.ivar_type).encoding crashes qfcc
-				// (not that it's needed here anyway)
 				auto item = PL_ObjectForKey (plitem, ivar.ivar_name);
 				if (item) {
 					deserialize_value (ivar.ivar_type, obj + ivar.ivar_offset,
@@ -848,8 +846,6 @@ serialize_value (qfot_type_t *type, void *ptr)
 		int ivar_count = *ivar_ptr;
 		auto ivar = (struct obj_ivar *) (ivar_ptr + 1);
 		for (int i = 0; i < ivar_count; i++, ivar++) {
-			//FIXME ((qfot_type_t*)ivar.ivar_type).encoding crashes qfcc
-			// (not that it's needed here anyway)
 			auto o = serialize_value (ivar.ivar_type, self + ivar.ivar_offset);
 			if (o) {
 				PL_D_AddObject (pl, ivar.ivar_name, o);
