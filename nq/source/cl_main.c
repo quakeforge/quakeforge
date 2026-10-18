@@ -28,7 +28,6 @@
 # include "config.h"
 #endif
 
-#include "QF/cbuf.h"
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -54,7 +53,6 @@
 #include "QF/scene/entity.h"
 #include "QF/scene/light.h"
 #include "QF/scene/scene.h"
-#include "QF/ui/font.h"//FIXME
 #include "QF/thread/schedule.h"
 
 #include "compat.h"
@@ -738,7 +736,7 @@ cl_allocator (void *data, size_t size)
 }
 
 void
-CL_Init (cbuf_t *cbuf, memhunk_t *hunk)
+CL_Init (memhunk_t *hunk)
 {
 	qfZoneScoped (true);
 	byte       *basepal, *colormap;
@@ -771,17 +769,20 @@ CL_Init (cbuf_t *cbuf, memhunk_t *hunk)
 	R_Init (cl_hunk, nullptr);
 	r_data->lightstyle = cl.lightstyle;
 	S_Init (&cl.viewentity, &host_frametime);
-	Font_Init ();	//FIXME not here
 
 	PI_RegisterPlugins (client_plugin_list);
-	CL_Init_Screen ();
-	Con_Init ();
+	CL_Init_Screen (&(clscr_data_t) {
+			.realtime = &con_realtime,
+			.frametime = &con_frametime,
+			.quit = Host_Quit_f,
+			.cbuf = host_cbuf,
+			.stats = cl.stats,
+			.item_gettime = cl.item_gettime,
+		});
 
 	CDAudio_Init ();
 
-	Sbar_Init (cl.stats, cl.item_gettime);
-
-	CL_Init_Input (cbuf);
+	CL_Init_Input (host_cbuf);
 	CL_Particles_Init ();
 	CL_Effects_Init ();
 	CL_TEnts_Init ();

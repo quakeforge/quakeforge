@@ -33,6 +33,12 @@
 #include <QF/console.h>
 #include <QF/plugin.h>
 
+typedef struct dstring_s dstring_t;
+typedef struct cbuf_s cbuf_t;
+typedef struct view_s view_t;
+typedef struct canvas_system_s canvas_system_t;
+typedef struct component_s component_t;
+
 typedef struct console_funcs_s {
 	void (*init) (void);
 	void (*print) (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
@@ -43,19 +49,20 @@ typedef struct console_funcs_s {
 } console_funcs_t;
 
 typedef struct console_data_s {
-	struct dstring_s *dl_name;
+	dstring_t  *dl_name;
 	int        *dl_percent;
 	double     *realtime;
 	double     *frametime;
+	void      (*quit) (void);
+	cbuf_t     *cbuf;
+
 	int         force_commandline;
 	int         ormask;
-	void      (*quit) (void);
-	struct cbuf_s *cbuf;
-	struct view_s *status_view;
-	const struct component_s *components;
+	view_t     *status_view;
+	const component_t *components;
 	uint32_t    num_components;
 	uint32_t    component_base;
-	struct canvas_system_s *canvas_sys;
+	canvas_system_t *canvas_sys;
 	float       lines;
 	int       (*exec_line)(void *data, const char *line);
 	void       *exec_data;

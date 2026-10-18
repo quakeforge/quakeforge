@@ -92,7 +92,6 @@
 #include "QF/plugin/console.h"
 #include "QF/scene/light.h"
 #include "QF/scene/transform.h"
-#include "QF/ui/font.h"//FIXME
 #include "QF/thread/schedule.h"
 
 #include "buildnum.h"
@@ -1502,27 +1501,22 @@ CL_Init (void)
 	Mod_Init (cl_sched, cl_hunk);
 	R_Init (cl_hunk, nullptr);
 	r_data->lightstyle = cl.lightstyle;
-	Font_Init ();	//FIXME not here
 
 	PI_RegisterPlugins (client_plugin_list);
-	CL_Init_Screen ();
-	if (con_module) {
-		con_module->data->console->dl_name = cls.downloadname;
-		con_module->data->console->dl_percent = &cls.downloadpercent;
-		con_module->data->console->realtime = &con_realtime;
-		con_module->data->console->frametime = &con_frametime;
-		con_module->data->console->quit = CL_Quit_f;
-		//FIXME need to rethink cbuf connections (they can form a stack)
-		Cbuf_DeleteStack (con_module->data->console->cbuf);
-		con_module->data->console->cbuf = cl_cbuf;
-	}
-	Con_Init ();
+	CL_Init_Screen (&(clscr_data_t) {
+			.dl_name = cls.downloadname,
+			.dl_percent = &cls.downloadpercent,
+			.realtime = &con_realtime,
+			.frametime = &con_frametime,
+			.quit = CL_Quit_f,
+			.cbuf = cl_cbuf,
+			.stats = cl.stats,
+			.item_gettime = cl.item_gettime,
+		});
 	CL_NetGraph_Init ();
 
 	S_Init (&cl.viewentity, &host_frametime);
 	CDAudio_Init ();
-
-	Sbar_Init (cl.stats, cl.item_gettime);
 
 	CL_Init_Input (cl_cbuf);
 	CL_Ents_Init ();

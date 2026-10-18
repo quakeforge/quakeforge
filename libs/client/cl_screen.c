@@ -38,6 +38,7 @@
 #include <time.h>
 
 #include "QF/console.h"
+#include "QF/cbuf.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/image.h"
@@ -51,6 +52,7 @@
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 #include "QF/ui/canvas.h"
+#include "QF/ui/font.h"//FIXME?
 
 #include "r_local.h"	//FIXME for r_cache_thrash
 
@@ -288,9 +290,12 @@ CL_Shutdown_Screen (void *data)
 }
 
 void
-CL_Init_Screen (void)
+CL_Init_Screen (clscr_data_t *clscr_data)
 {
 	qfZoneScoped (true);
+
+	Font_Init ();	//FIXME not here?
+
 	Sys_RegisterShutdown (CL_Shutdown_Screen, 0);
 	Con_Load ("client");
 
@@ -301,9 +306,21 @@ CL_Init_Screen (void)
 		cd->component_base = ECS_RegisterComponents (reg, cd->components,
 													 cd->num_components);
 		cd->canvas_sys = &cl_canvas_sys;
+
+		cd->dl_name = clscr_data->dl_name;
+		cd->dl_percent = clscr_data->dl_percent;
+
+		cd->realtime = clscr_data->realtime;
+		cd->frametime = clscr_data->frametime;
+		cd->quit = clscr_data->quit;
+		//FIXME need to rethink cbuf connections (they can form a stack)
+		Cbuf_DeleteStack (cd->cbuf);
+		cd->cbuf = clscr_data->cbuf;
 	}
 	HUD_Init (reg);
 	ECS_CreateComponentPools (reg);
+
+	Con_Init ();
 
 	cl_xlen = viddef.width;
 	cl_ylen = viddef.height;
@@ -333,6 +350,8 @@ CL_Init_Screen (void)
 	Cvar_AddListener (con_scale, cl_scale_listener, 0);
 	cl_scale_listener (0, con_scale);
 	VID_OnVidResize_AddListener (cl_vidsize_listener, 0);
+
+	Sbar_Init (clscr_data->stats, clscr_data->item_gettime);
 }
 
 void

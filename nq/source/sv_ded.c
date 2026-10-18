@@ -64,7 +64,7 @@ CL_Frame (void)
 }
 
 void
-CL_Init (struct cbuf_s *cbuf, memhunk_t *hunk)
+CL_Init (memhunk_t *hunk)
 {
 }
 

@@ -229,8 +229,7 @@ extern memhunk_t *cl_hunk;
 extern void (*write_angles) (sizebuf_t *sb, const vec3_t angles);
 
 // cl_main
-struct cbuf_s;
-void CL_Init (struct cbuf_s *cbuf, memhunk_t *hunk);
+void CL_Init (memhunk_t *hunk);
 void CL_InitCvars (void);
 void CL_ClearMemory (void);
 void CL_PreFrame (void);
@@ -282,7 +281,9 @@ void CL_RelinkEntities (void);
 void CL_ClearEnts (void);
 struct entity_s CL_GetEntity (int num);
 
-extern	double			realtime;
+extern double realtime;
+extern double con_frametime;
+extern double con_realtime;
 
 extern bool recording;
 

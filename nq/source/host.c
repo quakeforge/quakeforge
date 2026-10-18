@@ -959,16 +959,8 @@ Host_Init (void)
 
 	SV_Init ();
 
-	if (!net_is_dedicated)
-		CL_Init (host_cbuf, host_hunk);
-
-	if (con_module) {
-		con_module->data->console->realtime = &con_realtime;
-		con_module->data->console->frametime = &con_frametime;
-		con_module->data->console->quit = Host_Quit_f;
-		//FIXME need to rethink cbuf connections (they can form a stack)
-		Cbuf_DeleteStack (con_module->data->console->cbuf);
-		con_module->data->console->cbuf = host_cbuf;
+	if (!net_is_dedicated) {
+		CL_Init (host_hunk);
 	}
 
 	Host_ExecConfig (host_cbuf, isDedicated || !cl_quakerc);
