@@ -68,6 +68,7 @@ typedef struct module_s {
 	ex_list_t   capabilities;
 	bool        int8;
 	bool        int16;
+	bool        int64;
 	bool        float16;
 	ex_list_t   extensions;
 	symtab_t   *extinst_imports;
