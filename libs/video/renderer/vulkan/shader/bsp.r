@@ -256,9 +256,6 @@ typedef struct cluster_queue_s {
 	void model_instances ()
 	{
 		uint cluster_id = gl_GlobalInvocationID.x;
-		if (cluster_id == 0) {
-			instance_queue.count = cluster_queue.count;
-		}
 		// skip world model clusters
 		if (cluster_id < instance_queue.count
 			|| cluster_id >= cluster_queue.count) {
@@ -343,6 +340,7 @@ typedef struct cluster_queue_s {
 		void instance ()
 		{
 			if (instance_queue) {
+				instance_queue.count = cluster_queue.count;
 				instance_queue.x = DISPATCH(instance_queue.count);
 				instance_queue.y = 1;
 				instance_queue.z = 1;
