@@ -754,7 +754,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	*bctx->num_models = 0;
 	for (int i = 0; i < num_models; i++) {
 		model_t    *m = models[i];
-		if (m && m->type == mod_brush) {
+		if (m && m->type == mod_brush && m->brush) {
 			m->render_id = (*bctx->num_models)++;
 			if (!visstate) {
 				visstate = m->brush->visstate;
