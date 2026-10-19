@@ -474,6 +474,9 @@ spirv_TypeFloat (unsigned bitwidth, spirvctx_t *ctx)
 	if (bitwidth == 16) {
 		ctx->module->float16 = true;
 	}
+	if (bitwidth == 64) {
+		ctx->module->float64 = true;
+	}
 	auto globals = ctx->module->globals;
 	auto insn = spirv_new_insn (SpvOpTypeFloat, 3, globals, ctx);
 	INSN (insn, 1) = spirv_id (ctx);

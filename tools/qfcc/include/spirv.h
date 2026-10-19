@@ -70,6 +70,7 @@ typedef struct module_s {
 	bool        int16;
 	bool        int64;
 	bool        float16;
+	bool        float64;
 	ex_list_t   extensions;
 	symtab_t   *extinst_imports;
 	const expr_t *addressing_model;
