@@ -61,11 +61,14 @@ typedef struct glyphobj_s {
 typedef struct glyphcache_s {
 	glyphkey_t *map;
 	glyphkey_t *objs;
-	vrect_t    *rects;
+	uint32_t   *rects;
 	rscrap_t   *scrap;
+	font_t    **fonts;
+	uint32_t    num_fonts;
+	uint32_t    atlas_id;
 } glyphcache_t;
 
-glyphcache_t *glyphcache_new (void);
+glyphcache_t *glyphcache_new (font_t **font_list, uint32_t num_fonts);
 void glyphcache_load_glyphs (canvas_system_t *canvas_sys);
 
 #endif//__QF_scene_glyphcache_h

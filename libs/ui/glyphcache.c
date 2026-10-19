@@ -31,36 +31,54 @@
 # include "config.h"
 #endif
 
+#include "QF/image.h"
+
 #include "QF/ui/canvas.h"
 #include "QF/ui/font.h"
 #include "QF/ui/glyphcache.h"
 #include "QF/ui/text.h"
 
+#include "QF/plugin/vid_render.h"
+
 #define GLYPH_CACHE_SIZE 4096
 #define GLYPH_SCRAP_SIZE 2048
 
 glyphcache_t *
-glyphcache_new (void)
+glyphcache_new (font_t **font_list, uint32_t num_fonts)
 {
 	qfZoneScoped (true);
 	size_t size = sizeof (glyphcache_t)
 				+ sizeof (glyphkey_t[GLYPH_CACHE_SIZE])
 				+ sizeof (glyphkey_t[GLYPH_CACHE_SIZE])
-				+ sizeof (vrect_t[GLYPH_CACHE_SIZE])
-				+ sizeof (rscrap_t);
+				+ sizeof (uint32_t[GLYPH_CACHE_SIZE])
+				+ sizeof (rscrap_t)
+				+ sizeof (font_t *[num_fonts]);
 	glyphcache_t *cache = malloc (size);
 	auto map = (glyphkey_t *) &cache[1];
 	auto objs = (glyphkey_t *) &map[GLYPH_CACHE_SIZE];
-	auto rects = (vrect_t *) &objs[GLYPH_CACHE_SIZE];
+	auto rects = (uint32_t *) &objs[GLYPH_CACHE_SIZE];
 	auto scrap = (rscrap_t *) &rects[GLYPH_CACHE_SIZE];
+	auto fonts = (font_t **) &scrap[1];
+	tex_t tex = {
+		.width = 2048,
+		.height = 2048,
+		.format = tex_a,
+	};
+	uint32_t atlas_id
+		= r_funcs->draw.make_atlas ("glyphs", &tex, GLYPH_CACHE_SIZE, nullptr);
 	*cache = (glyphcache_t) {
 		.map = map,
 		.objs = objs,
 		.rects = rects,
 		.scrap = scrap,
+		.fonts = fonts,
+		.num_fonts = num_fonts,
+		.atlas_id = atlas_id,
 	};
 	memset (map, 0, sizeof (glyphkey_t[GLYPH_CACHE_SIZE]));
 	memset (objs, 0, sizeof (glyphkey_t[GLYPH_CACHE_SIZE]));
+	memset (rects, ~0u, sizeof (uint32_t[GLYPH_CACHE_SIZE]));
+	memcpy (fonts, font_list, sizeof (font_t *[num_fonts]));
 	R_ScrapInit (scrap, GLYPH_SCRAP_SIZE, GLYPH_SCRAP_SIZE);
 	return cache;
 }

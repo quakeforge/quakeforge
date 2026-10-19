@@ -51,6 +51,7 @@
 
 #include "QF/ui/canvas.h"
 #include "QF/ui/font.h"
+#include "QF/ui/glyphcache.h"
 #include "QF/ui/imui.h"
 #include "QF/ui/shaper.h"
 #include "QF/ui/text.h"
@@ -366,6 +367,9 @@ IMUI_NewContext (canvas_system_t *csys, const char *font, float fontsize)
 			ctx->font = Font_Load (file, fspec.index, fontsize);
 			//Qclose (file); FIXME closed by QFS_LoadFile
 			ctx->ptsize = fontsize * 64;
+			auto cache = glyphcache_new (&ctx->font, 1);
+			ctx->csys->glyphcache = cache;
+			csys->glyphcache = cache;
 		}
 		free (fspec.path);
 	}

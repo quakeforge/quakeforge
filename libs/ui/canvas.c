@@ -547,7 +547,6 @@ Canvas_InitSys (canvas_system_t *canvas_sys, ecs_registry_t *reg)
 											 text_comp_count),
 		.imui_base = ECS_RegisterComponents (reg, imui_components,
 											 imui_comp_count),
-		.glyphcache = glyphcache_new (),
 	};
 }
 
