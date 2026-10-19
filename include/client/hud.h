@@ -46,10 +46,10 @@ extern int hud_time;
 extern struct view_s hud_canvas_view;
 
 struct ecs_registry_s;
-struct canvas_system_s;
+typedef struct canvas_system_s canvas_system_t;
 
 void HUD_Init (struct ecs_registry_s *reg);
-void HUD_CreateCanvas (struct canvas_system_s canvas_sys);
+void HUD_CreateCanvas (canvas_system_t *canvas_sys);
 
 extern bool sbar_showscores;
 

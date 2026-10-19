@@ -188,7 +188,7 @@ scr_draw_views (void *data)
 	View_SetVisible (zgraph_view, r_zgraph);
 
 	Con_DrawConsole ();
-	Canvas_Draw (cl_canvas_sys);
+	Canvas_Draw (&cl_canvas_sys);
 }
 
 static SCR_Func scr_funcs[] = {
@@ -206,8 +206,8 @@ cl_set_size (void)
 	int        xlen = cl_xlen / cl_scale;
 	int        ylen = cl_ylen / cl_scale;
 	//printf ("cl_set_size: %d %d %d\n", cl_scale, xlen, ylen);
-	Canvas_SetLen (cl_canvas_sys, cl_canvas, (view_pos_t) { xlen, ylen });
-	Canvas_SetLen (cl_canvas_sys, hud_canvas, (view_pos_t) { xlen, ylen });
+	Canvas_SetLen (&cl_canvas_sys, cl_canvas, (view_pos_t) { xlen, ylen });
+	Canvas_SetLen (&cl_canvas_sys, hud_canvas, (view_pos_t) { xlen, ylen });
 }
 
 static void
@@ -330,10 +330,10 @@ CL_Init_Screen (clscr_data_t *clscr_data)
 		.base = cl_canvas_sys.view_base,
 	};
 
-	HUD_CreateCanvas (cl_canvas_sys);
+	HUD_CreateCanvas (&cl_canvas_sys);
 
-	cl_canvas = Canvas_New (cl_canvas_sys);
-	cl_screen_view = Canvas_GetRootView (cl_canvas_sys, cl_canvas);
+	cl_canvas = Canvas_New (&cl_canvas_sys);
+	cl_screen_view = Canvas_GetRootView (&cl_canvas_sys, cl_canvas);
 
 	View_SetPos (cl_screen_view, 0, 0);
 	View_SetLen (cl_screen_view, cl_xlen, cl_ylen);

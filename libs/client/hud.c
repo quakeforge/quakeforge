@@ -2236,7 +2236,7 @@ set_hud_sbar (void)
 		sbar_remcomponent (sbar_tile[0], canvas_tile);
 		sbar_remcomponent (sbar_tile[1], canvas_tile);
 	}
-	Canvas_SortComponentPool (cl_canvas_sys, hud_canvas, canvas_pic);
+	Canvas_SortComponentPool (&cl_canvas_sys, hud_canvas, canvas_pic);
 }
 
 static void
@@ -2717,7 +2717,7 @@ HUD_Init (ecs_registry_t *reg)
 }
 
 void
-HUD_CreateCanvas (canvas_system_t canvas_sys)
+HUD_CreateCanvas (canvas_system_t *canvas_sys)
 {
 	hud_canvas = Canvas_New (canvas_sys);
 	hud_canvas_view = Canvas_GetRootView (canvas_sys, hud_canvas);

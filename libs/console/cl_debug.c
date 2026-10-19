@@ -307,7 +307,7 @@ Con_Debug_Init (void)
 
 	debug_event_id = IE_Add_Handler (debug_event_handler, 0);
 	debug_context = IMT_CreateContext ("debug.context");
-	debug_imui = IMUI_NewContext (*con_data.canvas_sys,
+	debug_imui = IMUI_NewContext (con_data.canvas_sys,
 								  deb_fontname, deb_fontsize);
 	IMUI_RegisterWindow (debug_imui, &debug_menu);
 	IMUI_RegisterWindow (debug_imui, &renderer_menu);

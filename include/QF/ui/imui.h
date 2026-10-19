@@ -35,7 +35,7 @@
 
 typedef struct dstring_s dstring_t;
 typedef struct imui_ctx_s imui_ctx_t;
-struct canvas_system_s;
+typedef struct canvas_system_s canvas_system_t;
 struct IE_event_s;
 struct passage_s;
 
@@ -151,7 +151,7 @@ typedef struct imui_key_s {
 	uint32_t    shift;
 } imui_key_t;
 
-imui_ctx_t *IMUI_NewContext (struct canvas_system_s canvas_sys,
+imui_ctx_t *IMUI_NewContext (canvas_system_t *canvas_sys,
 							 const char *font, float fontsize);
 void IMUI_DestroyContext (imui_ctx_t *ctx);
 

@@ -66,6 +66,6 @@ typedef struct glyphcache_s {
 } glyphcache_t;
 
 glyphcache_t *glyphcache_new (void);
-void glyphcache_load_glyphs (canvas_system_t canvas_sys);
+void glyphcache_load_glyphs (canvas_system_t *canvas_sys);
 
 #endif//__QF_scene_glyphcache_h

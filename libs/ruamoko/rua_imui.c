@@ -51,7 +51,7 @@ typedef struct bi_imui_ctx_s {
 
 typedef struct {
 	progs_t    *pr;
-	canvas_system_t canvas_sys;
+	canvas_system_t *canvas_sys;
 
 	PR_RESMAP (bi_imui_ctx_t) imui_ctx_map;
 	bi_imui_ctx_t *imui_ctxs;

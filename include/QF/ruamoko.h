@@ -33,19 +33,19 @@
 
 #include "QF/progs/pr_obj.h"
 
-struct progs_s;
-struct cbuf_s;
+typedef struct progs_s progs_t;
+typedef struct cbuf_s cbuf_t;
 
-void RUA_Init (struct progs_s *pr, int secure);
-void RUA_Cbuf_SetCbuf (struct progs_s *pr, struct cbuf_s *cbuf);
-pr_func_t RUA_Obj_msg_lookup (struct progs_s *pr, pr_ptr_t _self,
+void RUA_Init (progs_t *pr, int secure);
+void RUA_Cbuf_SetCbuf (progs_t *pr, cbuf_t *cbuf);
+pr_func_t RUA_Obj_msg_lookup (progs_t *pr, pr_ptr_t _self,
 							  pr_ptr_t __cmd);
 
-void RUA_Game_Init (struct progs_s *pr, int secure);
+void RUA_Game_Init (progs_t *pr, int secure);
 
 // self is expected in param 0
-int RUA_obj_increment_retaincount (struct progs_s *pr, void *data);
+int RUA_obj_increment_retaincount (progs_t *pr, void *data);
 // self is expected in param 0
-int RUA_obj_decrement_retaincount (struct progs_s *pr, void *data);
+int RUA_obj_decrement_retaincount (progs_t *pr, void *data);
 
 #endif//__QF_ruamoko_h

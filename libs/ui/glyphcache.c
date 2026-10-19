@@ -124,20 +124,20 @@ glyphcache_add (glyphcache_t *cache, glyphkey_t key)
 }
 
 void
-glyphcache_load_glyphs (canvas_system_t canvas_sys)
+glyphcache_load_glyphs (canvas_system_t *canvas_sys)
 {
 	qfZoneScoped (true);
 	static int glyph_comps[] = {
 		canvas_passage_glyphs,
 		canvas_glyphs
 	};
-	auto reg = canvas_sys.reg;
-	auto cache = canvas_sys.glyphcache;
+	auto reg = canvas_sys->reg;
+	auto cache = canvas_sys->glyphcache;
 	glyphkey_t new_keys[GLYPH_CACHE_SIZE] = {};
 	int new_inds[GLYPH_CACHE_SIZE] = {};
 	int num_keys = 0;
 	for (uint32_t i = 0; i < countof (glyph_comps); i++) {
-		auto pool = &reg->comp_pools[canvas_sys.base + glyph_comps[i]];
+		auto pool = &reg->comp_pools[canvas_sys->base + glyph_comps[i]];
 		for (uint32_t j = 0; j < pool->count; j++) {
 			auto        glyphset = &((glyphset_t *) pool->data)[j];
 			for (uint32_t k = 0; k < glyphset->count; k++) {

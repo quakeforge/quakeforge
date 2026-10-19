@@ -547,12 +547,12 @@ RUA_GUI_Init (progs_t *pr, int secure)
 	res->shaper = Shaper_New ();
 }
 
-canvas_system_t
+canvas_system_t *
 RUA_GUI_GetCanvasSystem (progs_t *pr)
 {
 	qfZoneScoped (true);
 	gui_resources_t *res = PR_Resources_Find (pr, "GUI");
-	return res->csys;
+	return &res->csys;
 }
 
 passage_t *

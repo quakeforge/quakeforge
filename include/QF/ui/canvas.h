@@ -111,23 +111,23 @@ typedef struct canvas_subpic_s {
 #define CANVASINLINE GNU89INLINE inline
 
 void Canvas_InitSys (canvas_system_t *canvas_sys, ecs_registry_t *reg);
-void Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent);
-uint32_t Canvas_New (canvas_system_t canvas_sys);
-void Canvas_Draw (canvas_system_t canvas_sys);
-void Canvas_SortComponentPool (canvas_system_t canvas_sys, uint32_t ent,
+void Canvas_AddToEntity (canvas_system_t *canvas_sys, uint32_t ent);
+uint32_t Canvas_New (canvas_system_t *canvas_sys);
+void Canvas_Draw (canvas_system_t *canvas_sys);
+void Canvas_SortComponentPool (canvas_system_t *canvas_sys, uint32_t ent,
 							   uint32_t component);
-void Canvas_SetLen (canvas_system_t canvas_sys, uint32_t ent, view_pos_t len);
-CANVASINLINE view_t Canvas_GetRootView (canvas_system_t canvas_sys,
+void Canvas_SetLen (canvas_system_t *canvas_sys, uint32_t ent, view_pos_t len);
+CANVASINLINE view_t Canvas_GetRootView (canvas_system_t *canvas_sys,
 										uint32_t ent);
-CANVASINLINE uint32_t Canvas_Entity (canvas_system_t canvas_sys, uint32_t ent);
-CANVASINLINE void Canvas_SetReference (canvas_system_t canvas_sys,
+CANVASINLINE uint32_t Canvas_Entity (canvas_system_t *canvas_sys, uint32_t ent);
+CANVASINLINE void Canvas_SetReference (canvas_system_t *canvas_sys,
 									   uint32_t ent, uint32_t ref);
-CANVASINLINE bool *Canvas_Visible (canvas_system_t canvas_sys, uint32_t ent);
-CANVASINLINE int32_t *Canvas_DrawGroup (canvas_system_t canvas_sys,
+CANVASINLINE bool *Canvas_Visible (canvas_system_t *canvas_sys, uint32_t ent);
+CANVASINLINE int32_t *Canvas_DrawGroup (canvas_system_t *canvas_sys,
 										uint32_t ent);
-CANVASINLINE int32_t *Canvas_DrawOrder (canvas_system_t canvas_sys,
+CANVASINLINE int32_t *Canvas_DrawOrder (canvas_system_t *canvas_sys,
 										uint32_t ent);
-void Canvas_DrawSort (canvas_system_t canvas_sys);
+void Canvas_DrawSort (canvas_system_t *canvas_sys);
 
 #undef CANVASINLINE
 #ifndef IMPLEMENT_CANVAS_Funcs
@@ -138,53 +138,53 @@ void Canvas_DrawSort (canvas_system_t canvas_sys);
 
 CANVASINLINE
 view_t
-Canvas_GetRootView (canvas_system_t canvas_sys, uint32_t ent)
+Canvas_GetRootView (canvas_system_t *canvas_sys, uint32_t ent)
 {
-	ecs_system_t viewsys = { canvas_sys.reg, canvas_sys.view_base };
+	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	return View_FromEntity (viewsys, ent);
 }
 
 CANVASINLINE
 uint32_t
-Canvas_Entity (canvas_system_t canvas_sys, uint32_t ent)
+Canvas_Entity (canvas_system_t *canvas_sys, uint32_t ent)
 {
-	uint32_t rcomp = canvas_sys.base + canvas_canvasref;
-	return *(uint32_t *) Ent_GetComponent (ent, rcomp, canvas_sys.reg);
+	uint32_t rcomp = canvas_sys->base + canvas_canvasref;
+	return *(uint32_t *) Ent_GetComponent (ent, rcomp, canvas_sys->reg);
 }
 
 CANVASINLINE
 void
-Canvas_SetReference (canvas_system_t canvas_sys, uint32_t ent, uint32_t ref)
+Canvas_SetReference (canvas_system_t *canvas_sys, uint32_t ent, uint32_t ref)
 {
-	uint32_t rcomp = canvas_sys.base + canvas_canvasref;
-	Ent_SetComponent (ent, rcomp, canvas_sys.reg, &ref);
+	uint32_t rcomp = canvas_sys->base + canvas_canvasref;
+	Ent_SetComponent (ent, rcomp, canvas_sys->reg, &ref);
 }
 
 
 CANVASINLINE
 bool *
-Canvas_Visible (canvas_system_t canvas_sys, uint32_t ent)
+Canvas_Visible (canvas_system_t *canvas_sys, uint32_t ent)
 {
-	uint32_t comp = canvas_sys.base + canvas_canvas;
-	auto canvas = (canvas_t *) Ent_GetComponent (ent, comp, canvas_sys.reg);
+	uint32_t comp = canvas_sys->base + canvas_canvas;
+	auto canvas = (canvas_t *) Ent_GetComponent (ent, comp, canvas_sys->reg);
 	return &canvas->visible;
 }
 
 CANVASINLINE
 int32_t *
-Canvas_DrawGroup (canvas_system_t canvas_sys, uint32_t ent)
+Canvas_DrawGroup (canvas_system_t *canvas_sys, uint32_t ent)
 {
-	uint32_t comp = canvas_sys.base + canvas_canvas;
-	auto canvas = (canvas_t *) Ent_GetComponent (ent, comp, canvas_sys.reg);
+	uint32_t comp = canvas_sys->base + canvas_canvas;
+	auto canvas = (canvas_t *) Ent_GetComponent (ent, comp, canvas_sys->reg);
 	return &canvas->draw_group;
 }
 
 CANVASINLINE
 int32_t *
-Canvas_DrawOrder (canvas_system_t canvas_sys, uint32_t ent)
+Canvas_DrawOrder (canvas_system_t *canvas_sys, uint32_t ent)
 {
-	uint32_t comp = canvas_sys.base + canvas_canvas;
-	auto canvas = (canvas_t *) Ent_GetComponent (ent, comp, canvas_sys.reg);
+	uint32_t comp = canvas_sys->base + canvas_canvas;
+	auto canvas = (canvas_t *) Ent_GetComponent (ent, comp, canvas_sys->reg);
 	return &canvas->draw_order;
 }
 

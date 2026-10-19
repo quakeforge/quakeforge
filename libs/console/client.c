@@ -875,7 +875,7 @@ con_set_size (void)
 	int         xlen = win_xlen / con_scale;
 	int         ylen = win_ylen / con_scale;
 	if (xlen > 0 && ylen > 0) {
-		Canvas_SetLen (*con_data.canvas_sys, screen_canvas,
+		Canvas_SetLen (con_data.canvas_sys, screen_canvas,
 					   (view_pos_t) { xlen, ylen });
 	}
 }
@@ -1086,10 +1086,10 @@ C_Init (void)
 
 	// The console will get resized, so assume initial size is 320x200
 	ecs_system_t sys = { con_data.canvas_sys->reg, view_base };
-	screen_canvas = Canvas_New (*con_data.canvas_sys);
+	screen_canvas = Canvas_New (con_data.canvas_sys);
 	Con_Debug_Init ();
 
-	screen_view   = Canvas_GetRootView (*con_data.canvas_sys, screen_canvas);
+	screen_view   = Canvas_GetRootView (con_data.canvas_sys, screen_canvas);
 	console_view  = View_New (sys, screen_view);
 	buffer_view   = View_New (sys, console_view);
 	command_view  = View_New (sys, console_view);

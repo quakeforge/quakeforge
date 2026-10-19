@@ -149,7 +149,7 @@ bi_2d (void *data)
 		PR_ExecuteProgram (res->pr, res->qc2d);
 	}
 	Con_DrawConsole ();
-	Canvas_Draw (canvas_sys);
+	Canvas_Draw (&canvas_sys);
 }
 
 static SCR_Func bi_2dfuncs[] = {
@@ -162,7 +162,7 @@ vidsize_listener (void *data, const viddef_t *vdef)
 {
 	qfZoneScoped (true);
 	graphics_resources_t *res = data;
-	Canvas_SetLen (canvas_sys, res->canvas,
+	Canvas_SetLen (&canvas_sys, res->canvas,
 				   (view_pos_t) { vdef->width, vdef->height });
 }
 
@@ -344,8 +344,8 @@ init_screen (graphics_resources_t *res)
 
 	Con_Init ();
 
-	res->canvas = Canvas_New (canvas_sys);
-	res->screen_view = Canvas_GetRootView (canvas_sys, res->canvas);
+	res->canvas = Canvas_New (&canvas_sys);
+	res->screen_view = Canvas_GetRootView (&canvas_sys, res->canvas);
 	View_SetPos (res->screen_view, 0, 0);
 	View_SetLen (res->screen_view, viddef.width, viddef.height);
 	View_SetGravity (res->screen_view, grav_northwest);
