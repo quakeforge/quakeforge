@@ -81,14 +81,14 @@ load_skins (mod_alias_ctx_t *alias_ctx, daliasskintype_t *type,
 			load_skin (alias_ctx, &skinframe[index++], 0, skin);
 			skin += skinsize;
 		} else {
-			auto group = (daliasgroup_t *) &type[1];
+			auto group = (daliasskingroup_t *) &type[1];
 			clips[i] = (clipdesc_t) {
 				.firstframe = index,
-				.numframes = group->numframes,
+				.numframes = group->numskins,
 			};
 			auto intervals = (float *) &group[1];
-			skin = (byte *) &intervals[group->numframes];
-			for (int j = 0; j < group->numframes; j++) {
+			skin = (byte *) &intervals[group->numskins];
+			for (int j = 0; j < group->numskins; j++) {
 				load_skin (alias_ctx, &skinframe[index++], intervals[j], skin);
 				skin += skinsize;
 			}
