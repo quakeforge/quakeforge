@@ -49,6 +49,7 @@ static void
 text_passage_glyphs_destroy (void *_glyphset, ecs_registry_t *reg,
 							 uint32_t ent, const component_t *component)
 {
+	qfZoneScoped (true);
 	glyphset_t *glyphset = _glyphset;
 	free (glyphset->glyphs);
 }
@@ -57,6 +58,7 @@ static void
 text_features_create (void *_features, ecs_registry_t *reg, uint32_t ent,
 					  const component_t *component)
 {
+	qfZoneScoped (true);
 	featureset_t *features = _features;
 	*features = (featureset_t) DARRAY_STATIC_INIT (4);
 }
@@ -65,6 +67,7 @@ static void
 text_features_destroy (void *_features, ecs_registry_t *reg, uint32_t ent,
 					   const component_t *component)
 {
+	qfZoneScoped (true);
 	featureset_t *features = _features;
 	DARRAY_CLEAR (features);
 }
@@ -126,6 +129,7 @@ static view_resize_f para_flow_funcs[] = {
 static void
 text_flow_vertical (view_t view, view_pos_t len)
 {
+	qfZoneScoped (true);
 	auto ref = View_GetRef (view);
 	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *vlen = h->components[view_len];
@@ -135,6 +139,7 @@ text_flow_vertical (view_t view, view_pos_t len)
 static void
 text_flow_horizontal (view_t view, view_pos_t len)
 {
+	qfZoneScoped (true);
 	auto ref = View_GetRef (view);
 	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *vlen = h->components[view_len];
@@ -156,6 +161,7 @@ static glyphkey_t
 glyphcache_make_key (uint16_t glyphid, const shaping_t *shaping,
 					 int x, int y, uint16_t render_mode)
 {
+	qfZoneScoped (true);
 	return (glyphkey_t) {
 		.glyphid = glyphid,
 		.fontid = shaping->font->fontid,
@@ -171,6 +177,7 @@ layout_glyphs (glyphnode_t *node, const shaping_t *shaping,
 			   unsigned glpyhCount, const hb_glyph_info_t *glyphInfo,
 			   const hb_glyph_position_t *glyphPos)
 {
+	qfZoneScoped (true);
 	int         x = 0, y = 0;
 	auto font = shaping->font;
 	for (unsigned k = 0; k < glpyhCount; k++) {
@@ -213,6 +220,7 @@ configure_textview (view_t textview, glyphobj_t *glyphs, glyphnode_t *node,
 					uint32_t glyphref_base, uint32_t c_glyphs,
 					bool vertical, font_t *font)
 {
+	qfZoneScoped (true);
 	glyphref_t  glyph_ref = {
 		.start = glyphref_base,
 		.count = node->count,
@@ -237,6 +245,7 @@ configure_textview (view_t textview, glyphobj_t *glyphs, glyphnode_t *node,
 static void
 set_shaping (shaping_t *shaping, uint32_t ent, text_system_t textsys)
 {
+	qfZoneScoped (true);
 	auto reg = textsys.reg;
 	uint32_t c_ptsize = textsys.text_base + text_ptsize;
 	uint32_t c_script = textsys.text_base + text_script;
@@ -257,6 +266,7 @@ view_t
 Text_PassageView (text_system_t textsys, view_t parent,
 				  font_t *font, passage_t *passage, text_shaper_t *shaper)
 {
+	qfZoneScoped (true);
 	auto reg = textsys.reg;
 	uint32_t c_script = textsys.text_base + text_script;
 	uint32_t c_glyphs = textsys.text_base + text_glyphs;
@@ -392,6 +402,7 @@ Text_Size (struct font_s *font, int16_t ptsize, const char *str, uint32_t len,
 		   script_component_t *sc, featureset_t *fs,
 		   text_shaper_t *shaper)
 {
+	qfZoneScoped (true);
 	glyphnode_t *glyph_nodes = 0;
 	glyphnode_t **head = &glyph_nodes;
 
@@ -443,6 +454,7 @@ Text_StringView (text_system_t textsys, view_t parent,
 				 script_component_t *sc, featureset_t *fs,
 				 text_shaper_t *shaper)
 {
+	qfZoneScoped (true);
 	auto reg = textsys.reg;
 	uint32_t c_glyphs = textsys.text_base + text_glyphs;
 	uint32_t c_passage_glyphs = textsys.text_base + text_passage_glyphs;
@@ -509,6 +521,7 @@ Text_String32View (text_system_t textsys, view_t parent,
 				   script_component_t *sc, featureset_t *fs,
 				   text_shaper_t *shaper)
 {
+	qfZoneScoped (true);
 	auto reg = textsys.reg;
 	uint32_t c_glyphs = textsys.text_base + text_glyphs;
 	uint32_t c_passage_glyphs = textsys.text_base + text_passage_glyphs;
@@ -572,6 +585,7 @@ void
 Text_SetScript (text_system_t textsys, uint32_t textid, const char *lang,
 				hb_script_t script, text_dir_e dir)
 {
+	qfZoneScoped (true);
 	script_component_t scr = {
 		.language = hb_language_from_string (lang, strlen (lang)),
 		.script = script,
@@ -584,6 +598,7 @@ Text_SetScript (text_system_t textsys, uint32_t textid, const char *lang,
 void
 Text_SetFont (text_system_t textsys, uint32_t textid, font_t *font)
 {
+	qfZoneScoped (true);
 	Ent_SetComponent (textid, textsys.text_base + text_font, textsys.reg,
 					  &font);
 }
@@ -591,6 +606,7 @@ Text_SetFont (text_system_t textsys, uint32_t textid, font_t *font)
 void
 Text_SetPtSize (text_system_t textsys, uint32_t textid, int16_t ptsize)
 {
+	qfZoneScoped (true);
 	Ent_SetComponent (textid, textsys.text_base + text_ptsize, textsys.reg,
 					  &ptsize);
 }
@@ -599,6 +615,7 @@ void
 Text_SetFeatures (text_system_t textsys, uint32_t textid,
 				  featureset_t *features)
 {
+	qfZoneScoped (true);
 	uint32_t    features_comp = textsys.text_base + text_features;
 	if (Ent_HasComponent (textid, features_comp, textsys.reg)) {
 		Ent_RemoveComponent (textid, features_comp, textsys.reg);
@@ -611,6 +628,7 @@ Text_SetFeatures (text_system_t textsys, uint32_t textid,
 void
 Text_AddFeature (text_system_t textsys, uint32_t textid, hb_feature_t feature)
 {
+	qfZoneScoped (true);
 	uint32_t    features_comp = textsys.text_base + text_features;
 	if (!Ent_HasComponent (textid, features_comp, textsys.reg)) {
 		Ent_SetComponent (textid, features_comp, textsys.reg, 0);

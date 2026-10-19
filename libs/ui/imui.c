@@ -151,6 +151,7 @@ static void
 imui_reference_destroy (void *_ref, ecs_registry_t *reg, uint32_t ent,
 						const component_t *component)
 {
+	qfZoneScoped (true);
 	imui_reference_t *ref = _ref;
 	if (ref->ctx) {
 		ECS_DelEntity (ref->ctx->csys->reg, ref->ref_id);
@@ -176,6 +177,7 @@ const component_t imui_components[imui_comp_count] = {
 static int32_t
 imui_next_window (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	ctx->draw_order &= ~(imui_draw_order (1) - 1);
 	ctx->draw_order += imui_draw_order (1);
 	return ctx->draw_order;
@@ -184,6 +186,7 @@ imui_next_window (imui_ctx_t *ctx)
 static imui_state_t *
 imui_state_new (imui_ctx_t *ctx, uint32_t entity)
 {
+	qfZoneScoped (true);
 	auto state = PR_RESNEW (ctx->state_map);
 	uint32_t sid = ECS_NewId (&ctx->state_ids);
 	*state = (imui_state_map_t) {
@@ -216,6 +219,7 @@ imui_state_new (imui_ctx_t *ctx, uint32_t entity)
 static void
 imui_state_free (imui_ctx_t *ctx, imui_state_map_t *state)
 {
+	qfZoneScoped (true);
 	ECS_DelId (&ctx->state_ids, state->state.self);
 	if (state->next) {
 		state->next->prev = state->prev;
@@ -227,12 +231,14 @@ imui_state_free (imui_ctx_t *ctx, imui_state_map_t *state)
 imui_state_t *
 IMUI_CurrentState (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	return ctx->current_state;
 }
 
 imui_state_t *
 IMUI_FindState (imui_ctx_t *ctx, const char *label)
 {
+	qfZoneScoped (true);
 	int         key_offset = 0;
 	const char *key = strstr (label, "##");
 	if (key) {
@@ -247,12 +253,14 @@ IMUI_FindState (imui_ctx_t *ctx, const char *label)
 dstring_t *
 IMUI_GetKeyString (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	return ctx->key_utf8;
 }
 
 static imui_state_t *
 imui_get_state (imui_ctx_t *ctx, const char *label, uint32_t entity)
 {
+	qfZoneScoped (true);
 	int         key_offset = 0;
 	uint32_t    label_len = ~0u;
 	const char *key = strstr (label, "##");
@@ -286,6 +294,7 @@ imui_get_state (imui_ctx_t *ctx, const char *label, uint32_t entity)
 static const char *
 imui_state_getkey (const void *obj, void *data)
 {
+	qfZoneScoped (true);
 	auto state = (const imui_state_t *) obj;
 	return state->label + state->key_offset;
 }
@@ -379,6 +388,7 @@ IMUI_NewContext (canvas_system_t *csys, const char *font, float fontsize)
 static void
 clear_items (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	uint32_t    root_ent = ctx->root_view.id;
 
 	// delete the root view (but not the root entity)
@@ -422,6 +432,7 @@ clear_items (imui_ctx_t *ctx)
 void
 IMUI_DestroyContext (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	if (!ctx) {
 		return;
 	}
@@ -464,6 +475,7 @@ IMUI_DestroyContext (imui_ctx_t *ctx)
 uint32_t
 IMUI_RegisterWindow (imui_ctx_t *ctx, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	uint32_t    wid = ECS_NewId (&ctx->window_ids);
 
 	if (ctx->registered_windows.size != ctx->window_ids.max_ids) {
@@ -481,6 +493,7 @@ IMUI_RegisterWindow (imui_ctx_t *ctx, imui_window_t *window)
 void
 IMUI_DeregisterWindow (imui_ctx_t *ctx, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	if (window->self && ECS_DelId (&ctx->window_ids, window->self)) {
 		ctx->registered_windows.a[Ent_Index (window->self)] = nullptr;
 	}
@@ -490,6 +503,7 @@ IMUI_DeregisterWindow (imui_ctx_t *ctx, imui_window_t *window)
 imui_window_t *
 IMUI_GetWindow (imui_ctx_t *ctx, uint32_t wid)
 {
+	qfZoneScoped (true);
 	if (wid && ECS_IdValid (&ctx->window_ids, wid)) {
 		return ctx->registered_windows.a[Ent_Index (wid)];
 	}
@@ -499,6 +513,7 @@ IMUI_GetWindow (imui_ctx_t *ctx, uint32_t wid)
 imui_window_t *
 IMUI_FindWindow (imui_ctx_t *ctx, const char *name)
 {
+	qfZoneScoped (true);
 	//FIXME use a hash table
 	for (size_t i = 1; i < ctx->registered_windows.size; i++) {
 		auto window = ctx->registered_windows.a[i];
@@ -512,12 +527,14 @@ IMUI_FindWindow (imui_ctx_t *ctx, const char *name)
 const char *
 IMUI_PanelId (imui_ctx_t *ctx, imui_window_t *panel)
 {
+	qfZoneScoped (true);
 	return va ("###panel_%08x", panel->self);
 }
 
 void
 IMUI_SetVisible (imui_ctx_t *ctx, bool visible)
 {
+	qfZoneScoped (true);
 	if (!visible) {
 		uint32_t    root_ent = ctx->root_view.id;
 		clear_items (ctx);
@@ -534,12 +551,14 @@ IMUI_SetVisible (imui_ctx_t *ctx, bool visible)
 void
 IMUI_SetSize (imui_ctx_t *ctx, int xlen, int ylen)
 {
+	qfZoneScoped (true);
 	Canvas_SetLen (ctx->csys, ctx->canvas, (view_pos_t) { xlen, ylen });
 }
 
 static bool
 is_inside (view_pos_t mp, view_pos_t abs, view_pos_t len)
 {
+	qfZoneScoped (true);
 	return (mp.x >= abs.x && mp.y >= abs.y
 			&& mp.x < abs.x + len.x && mp.y < abs.y + len.y);
 }
@@ -547,6 +566,7 @@ is_inside (view_pos_t mp, view_pos_t abs, view_pos_t len)
 static imui_state_t *
 get_state_from_id (imui_ctx_t *ctx, uint32_t id)
 {
+	qfZoneScoped (true);
 	if (!ECS_IdValid (&ctx->state_ids, id)) {
 		return nullptr;
 	}
@@ -557,6 +577,7 @@ get_state_from_id (imui_ctx_t *ctx, uint32_t id)
 bool
 IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 {
+	qfZoneScoped (true);
 	bool handled = false;
 	if (ie_event->type == ie_mouse) {
 		auto m = &ie_event->mouse;
@@ -636,6 +657,7 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 imui_io_t
 IMUI_GetIO (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto state = ctx->current_state;
 	return (imui_io_t) {
 		.mouse = ctx->mouse_position,
@@ -656,6 +678,7 @@ IMUI_GetIO (imui_ctx_t *ctx)
 bool
 IMUI_GetKey (imui_ctx_t *ctx, imui_key_t *key)
 {
+	qfZoneScoped (true);
 	auto state = ctx->current_state;
 	if (ctx->focused == state->old_entity) {
 		*key = ctx->key;
@@ -688,6 +711,7 @@ set_hierarchy_tree_mode (imui_ctx_t *ctx, hierref_t ref, bool tree)
 void
 IMUI_BeginFrame (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	Shaper_FlushUnused (ctx->shaper);
 	uint32_t    root_ent = ctx->root_view.id;
 	auto root_size = View_GetLen (ctx->root_view);
@@ -708,6 +732,7 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 static void
 prune_objects (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	for (auto s = &ctx->state_wrappers; *s; ) {
 		if ((*s)->state.frame_count == ctx->frame_count) {
 			s = &(*s)->next;
@@ -724,6 +749,7 @@ prune_objects (imui_ctx_t *ctx)
 static const char *
 view_color (hierarchy_t *h, uint32_t ind, imui_ctx_t *ctx, bool for_y)
 {
+	qfZoneScoped (true);
 	auto reg = h->reg;
 	uint32_t e = h->ent[ind];
 	viewcont_t *cont = h->components[view_control];
@@ -845,6 +871,7 @@ typedef struct {
 static int
 fraction (uint32_t ent, int len, uint32_t fcomp, ecs_registry_t *reg)
 {
+	qfZoneScoped (true);
 	auto f = *(imui_frac_t *) Ent_GetComponent (ent, fcomp, reg);
 	int val = len;
 	if (f.den > 0) {
@@ -863,6 +890,7 @@ static void
 calc_upwards_dependent (imui_ctx_t *ctx, hierref_t href,
 						downdep_t *down_depend)
 {
+	qfZoneScoped (true);
 	auto reg = ctx->csys->reg;
 	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 	uint32_t   *ent = h->ent;
@@ -919,6 +947,7 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierref_t href,
 static void
 calc_downwards_dependent (imui_ctx_t *ctx, hierref_t href)
 {
+	qfZoneScoped (true);
 	auto reg = ctx->csys->reg;
 	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 	uint32_t   *ent = h->ent;
@@ -970,6 +999,7 @@ calc_downwards_dependent (imui_ctx_t *ctx, hierref_t href)
 static void
 calc_expansions (imui_ctx_t *ctx, hierref_t href)
 {
+	qfZoneScoped (true);
 	auto reg = ctx->csys->reg;
 	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 	uint32_t   *ent = h->ent;
@@ -1097,6 +1127,7 @@ calc_expansions (imui_ctx_t *ctx, hierref_t href)
 static uint32_t __attribute__((pure))
 count_views (imui_ctx_t *ctx, hierref_t href)
 {
+	qfZoneScoped (true);
 	auto reg = ctx->csys->reg;
 	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 	uint32_t    count = h->num_objects;
@@ -1118,6 +1149,7 @@ count_views (imui_ctx_t *ctx, hierref_t href)
 static void
 position_views (imui_ctx_t *ctx, view_t root_view)
 {
+	qfZoneScoped (true);
 	auto reg = ctx->vsys.reg;
 	auto href = View_GetRef (root_view);
 	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
@@ -1172,6 +1204,7 @@ position_views (imui_ctx_t *ctx, view_t root_view)
 static void
 layout_objects (imui_ctx_t *ctx, view_t root_view)
 {
+	qfZoneScoped (true);
 	auto href = View_GetRef (root_view);
 
 	downdep_t   down_depend[count_views (ctx, href)];
@@ -1192,6 +1225,7 @@ layout_objects (imui_ctx_t *ctx, view_t root_view)
 static void
 check_inside (imui_ctx_t *ctx, hierref_t href, int level)
 {
+	qfZoneScoped (true);
 	auto reg = ctx->vsys.reg;
 	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 
@@ -1246,6 +1280,7 @@ check_inside (imui_ctx_t *ctx, hierref_t href, int level)
 static int
 imui_window_cmp (const void *a, const void *b)
 {
+	qfZoneScoped (true);
 	auto windowa = *(imui_state_t **) a;
 	auto windowb = *(imui_state_t **) b;
 	return windowa->draw_order - windowb->draw_order;
@@ -1254,6 +1289,7 @@ imui_window_cmp (const void *a, const void *b)
 static void
 sort_windows (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	heapsort (ctx->windows.a, ctx->windows.size, sizeof (imui_state_t *),
 			  imui_window_cmp);
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
@@ -1271,6 +1307,7 @@ sort_windows (imui_ctx_t *ctx)
 static void
 imui_draw_preinput (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	sizebuf_t utf8_sz = {
 		.data = (byte *) ctx->key_preedit->str,
 		.cursize = ctx->key_preedit->size,
@@ -1309,6 +1346,7 @@ imui_draw_preinput (imui_ctx_t *ctx)
 void
 IMUI_Draw (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	ctx->frame_draw = Sys_LongTime ();
 	if (ctx->key_preedit->size) {
 		imui_draw_preinput (ctx);
@@ -1365,12 +1403,14 @@ IMUI_Draw (imui_ctx_t *ctx)
 void
 IMUI_SetDragId (imui_ctx_t *ctx, uint32_t drag_id)
 {
+	qfZoneScoped (true);
 	ctx->drag_id = drag_id;
 }
 
 int
 IMUI_PushLayout (imui_ctx_t *ctx, bool vertical)
 {
+	qfZoneScoped (true);
 	DARRAY_APPEND (&ctx->state_stack, ctx->current_state);
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
 	auto view = View_New (ctx->vsys, ctx->current_parent);
@@ -1404,6 +1444,7 @@ IMUI_PushLayout (imui_ctx_t *ctx, bool vertical)
 void
 IMUI_PopLayout (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	ctx->current_parent = DARRAY_REMOVE (&ctx->parent_stack);
 	ctx->current_state = DARRAY_REMOVE (&ctx->state_stack);
 }
@@ -1411,6 +1452,7 @@ IMUI_PopLayout (imui_ctx_t *ctx)
 void
 IMUI_Layout_SetXSize (imui_ctx_t *ctx, imui_size_t size, int value)
 {
+	qfZoneScoped (true);
 	auto pcont = View_Control (ctx->current_parent);
 	uint32_t id = ctx->current_parent.id;
 	pcont->semantic_x = size;
@@ -1424,6 +1466,7 @@ IMUI_Layout_SetXSize (imui_ctx_t *ctx, imui_size_t size, int value)
 void
 IMUI_Layout_SetYSize (imui_ctx_t *ctx, imui_size_t size, int value)
 {
+	qfZoneScoped (true);
 	auto pcont = View_Control (ctx->current_parent);
 	uint32_t id = ctx->current_parent.id;
 	pcont->semantic_y = size;
@@ -1437,6 +1480,7 @@ IMUI_Layout_SetYSize (imui_ctx_t *ctx, imui_size_t size, int value)
 int
 IMUI_PushStyle (imui_ctx_t *ctx, const imui_style_t *style)
 {
+	qfZoneScoped (true);
 	DARRAY_APPEND (&ctx->style_stack, ctx->style);
 	if (style) {
 		ctx->style = *style;
@@ -1447,24 +1491,28 @@ IMUI_PushStyle (imui_ctx_t *ctx, const imui_style_t *style)
 void
 IMUI_PopStyle (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	ctx->style = DARRAY_REMOVE (&ctx->style_stack);
 }
 
 void
 IMUI_Style_Update (imui_ctx_t *ctx, const imui_style_t *style)
 {
+	qfZoneScoped (true);
 	ctx->style = *style;
 }
 
 void
 IMUI_Style_Fetch (const imui_ctx_t *ctx, imui_style_t *style)
 {
+	qfZoneScoped (true);
 	*style = ctx->style;
 }
 
 static bool
 check_button_state (imui_ctx_t *ctx, uint32_t entity)
 {
+	qfZoneScoped (true);
 	bool result = false;
 	//printf ("check_button_state: h:%8x a:%8x e:%8x\n", ctx->hot, ctx->active, entity);
 	if (ctx->active == entity) {
@@ -1483,6 +1531,7 @@ check_button_state (imui_ctx_t *ctx, uint32_t entity)
 static view_pos_t
 check_drag_delta (imui_ctx_t *ctx, uint32_t entity)
 {
+	qfZoneScoped (true);
 	view_pos_t  delta = {};
 	if (ctx->active == entity) {
 		auto active = ctx->active_position;
@@ -1503,6 +1552,7 @@ check_drag_delta (imui_ctx_t *ctx, uint32_t entity)
 static void
 setup_text (imui_ctx_t *ctx, view_t text)
 {
+	qfZoneScoped (true);
 	auto reg = ctx->csys->reg;
 	int ascender = ctx->font->face->size->metrics.ascender / 64;
 	int descender = ctx->font->face->size->metrics.descender / 64;
@@ -1527,6 +1577,7 @@ static view_t
 add_text_str_len (imui_ctx_t *ctx, view_t view, const char *str, int length,
 				  int mode)
 {
+	qfZoneScoped (true);
 	auto text = Text_StringView (ctx->tsys, view, ctx->font, ctx->ptsize,
 								 str, length, 0, 0, ctx->shaper);
 	setup_text (ctx, text);
@@ -1543,12 +1594,14 @@ add_text_str_len (imui_ctx_t *ctx, view_t view, const char *str, int length,
 static view_t
 add_text_state (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
 {
+	qfZoneScoped (true);
 	return add_text_str_len (ctx, view, state->label, state->label_len, mode);
 }
 
 static int
 update_hot_active (imui_ctx_t *ctx, imui_state_t *state)
 {
+	qfZoneScoped (true);
 	int mode = 0;
 	if (state->old_entity != nullent) {
 		if (ctx->hot == state->old_entity) {
@@ -1569,12 +1622,14 @@ update_hot_active (imui_ctx_t *ctx, imui_state_t *state)
 static void
 set_fill (imui_ctx_t *ctx, view_t view, byte color)
 {
+	qfZoneScoped (true);
 	*(byte*) Ent_AddComponent (view.id, c_fill, ctx->csys->reg) = color;
 }
 
 static void
 set_control (imui_ctx_t *ctx, view_t view, bool active)
 {
+	qfZoneScoped (true);
 	*View_Control (view) = (viewcont_t) {
 		.gravity = grav_northwest,
 		.visible = 1,
@@ -1587,6 +1642,7 @@ set_control (imui_ctx_t *ctx, view_t view, bool active)
 static void
 set_expand_x (imui_ctx_t *ctx, view_t view, int weight)
 {
+	qfZoneScoped (true);
 	View_Control (view)->semantic_x = imui_size_expand;
 	Ent_SetComponent (view.id, c_fraction_x, ctx->csys->reg,
 					  &(imui_frac_t) { weight, 100 });
@@ -1595,6 +1651,7 @@ set_expand_x (imui_ctx_t *ctx, view_t view, int weight)
 int
 IMUI_CheckButtonState (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto state = ctx->current_state;
 	return check_button_state (ctx, state->entity);
 }
@@ -1602,6 +1659,7 @@ IMUI_CheckButtonState (imui_ctx_t *ctx)
 int
 IMUI_UpdateHotActive (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto state = ctx->current_state;
 	return update_hot_active (ctx, state);
 }
@@ -1609,6 +1667,7 @@ IMUI_UpdateHotActive (imui_ctx_t *ctx)
 view_pos_t
 IMUI_TextSize (imui_ctx_t *ctx, const char *str)
 {
+	qfZoneScoped (true);
 	auto size = Text_Size (ctx->font, ctx->ptsize, str, strlen (str),
 						   nullptr, nullptr, ctx->shaper);
 	return VP_div (size, (view_pos_t) {64, 64});
@@ -1617,6 +1676,7 @@ IMUI_TextSize (imui_ctx_t *ctx, const char *str)
 void
 IMUI_SetActive (imui_ctx_t *ctx, bool active)
 {
+	qfZoneScoped (true);
 	auto state = ctx->current_state;
 	auto view = View_FromEntity (ctx->vsys, state->entity);
 	auto control = View_Control (view);
@@ -1626,6 +1686,7 @@ IMUI_SetActive (imui_ctx_t *ctx, bool active)
 void
 IMUI_SetDropTarget (imui_ctx_t *ctx, bool drop_target)
 {
+	qfZoneScoped (true);
 	auto state = ctx->current_state;
 	auto view = View_FromEntity (ctx->vsys, state->entity);
 	auto control = View_Control (view);
@@ -1635,6 +1696,7 @@ IMUI_SetDropTarget (imui_ctx_t *ctx, bool drop_target)
 void
 IMUI_SetFocus (imui_ctx_t *ctx, bool focus)
 {
+	qfZoneScoped (true);
 	auto state = ctx->current_state;
 	auto view = View_FromEntity (ctx->vsys, state->entity);
 	auto control = View_Control (view);
@@ -1644,6 +1706,7 @@ IMUI_SetFocus (imui_ctx_t *ctx, bool focus)
 void
 IMUI_SetFill (imui_ctx_t *ctx, byte color)
 {
+	qfZoneScoped (true);
 	auto state = ctx->current_state;
 	auto view = View_FromEntity (ctx->vsys, state->entity);
 	set_fill (ctx, view, color);
@@ -1652,6 +1715,7 @@ IMUI_SetFill (imui_ctx_t *ctx, byte color)
 void
 IMUI_Label (imui_ctx_t *ctx, const char *label)
 {
+	qfZoneScoped (true);
 	auto view = View_New (ctx->vsys, ctx->current_parent);
 	set_control (ctx, view, true);
 
@@ -1665,6 +1729,7 @@ IMUI_Label (imui_ctx_t *ctx, const char *label)
 void
 IMUI_Labelf (imui_ctx_t *ctx, const char *fmt, ...)
 {
+	qfZoneScoped (true);
 	va_list     args;
 	va_start (args, fmt);
 	dvsprintf (ctx->dstr, fmt, args);
@@ -1676,6 +1741,7 @@ void
 IMUI_Label32Attr (imui_ctx_t *ctx, const uint32_t *str, const uint32_t *attr,
 				  uint32_t len)
 {
+	qfZoneScoped (true);
 	uint32_t num_counts = 0;
 	uint32_t counts[len + 1];
 	counts[0] = 0;
@@ -1717,6 +1783,7 @@ IMUI_Label32Attr (imui_ctx_t *ctx, const uint32_t *str, const uint32_t *attr,
 void
 IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 {
+	qfZoneScoped (true);
 	IMUI_StartScroller (ctx);
 	auto anchor_view = ctx->current_parent;
 
@@ -1757,6 +1824,7 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 bool
 IMUI_Button (imui_ctx_t *ctx, const char *label)
 {
+	qfZoneScoped (true);
 	auto view = View_New (ctx->vsys, ctx->current_parent);
 	set_control (ctx, view, true);
 
@@ -1772,6 +1840,7 @@ IMUI_Button (imui_ctx_t *ctx, const char *label)
 bool
 IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label)
 {
+	qfZoneScoped (true);
 	auto view = View_New (ctx->vsys, ctx->current_parent);
 	set_control (ctx, view, true);
 	View_Control (view)->semantic_x = imui_size_fitchildren;
@@ -1809,6 +1878,7 @@ IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label)
 void
 IMUI_Radio (imui_ctx_t *ctx, int *curvalue, int value, const char *label)
 {
+	qfZoneScoped (true);
 	auto view = View_New (ctx->vsys, ctx->current_parent);
 	set_control (ctx, view, true);
 	View_Control (view)->semantic_x = imui_size_fitchildren;
@@ -1846,6 +1916,7 @@ void
 IMUI_Slider (imui_ctx_t *ctx, float *value, float minval, float maxval,
 			 const char *label)
 {
+	qfZoneScoped (true);
 }
 
 static view_t
@@ -1853,6 +1924,7 @@ sized_view (imui_ctx_t *ctx,
 			imui_size_t xsize, int xvalue,
 			imui_size_t ysize, int yvalue, bool active)
 {
+	qfZoneScoped (true);
 	auto view = View_New (ctx->vsys, ctx->current_parent);
 	View_SetLen (ctx->current_parent, 0, 0);
 
@@ -1886,6 +1958,7 @@ IMUI_ActiveItem (imui_ctx_t *ctx,
 				 imui_size_t ysize, int yvalue,
 				 const char *name)
 {
+	qfZoneScoped (true);
 	auto view = sized_view (ctx, xsize, xvalue, ysize, yvalue, true);
 	auto state = imui_get_state (ctx, name, view.id);
 	return state->entity;
@@ -1896,6 +1969,7 @@ IMUI_Spacer (imui_ctx_t *ctx,
 			 imui_size_t xsize, int xvalue,
 			 imui_size_t ysize, int yvalue)
 {
+	qfZoneScoped (true);
 	auto view = sized_view (ctx, xsize, xvalue, ysize, yvalue, false);
 	set_fill (ctx, view, ctx->style.background.normal);
 }
@@ -1903,6 +1977,7 @@ IMUI_Spacer (imui_ctx_t *ctx,
 static void
 create_reference_anchor (imui_ctx_t *ctx, uint32_t ent, imui_window_t *panel)
 {
+	qfZoneScoped (true);
 	auto state = IMUI_FindState (ctx, panel->reference);
 	if (!state) {
 		Sys_Printf ("IMUI: unknown widget '%s' for '%s'\n", panel->reference,
@@ -1931,6 +2006,7 @@ IMUI_Dragable (imui_ctx_t *ctx,
 			   imui_size_t ysize, int yvalue,
 			   const char *name)
 {
+	qfZoneScoped (true);
 	auto view = sized_view (ctx, xsize, xvalue, ysize, yvalue, true);
 
 	auto state = imui_get_state (ctx, name, view.id);
@@ -1944,6 +2020,7 @@ IMUI_Dragable (imui_ctx_t *ctx,
 static void
 drag_window_tl (view_pos_t delta, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	int x = max (window->xlen - delta.x, 20);
 	int y = max (window->ylen - delta.y, 20);
 
@@ -1956,6 +2033,7 @@ drag_window_tl (view_pos_t delta, imui_window_t *window)
 static void
 drag_window_tc (view_pos_t delta, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	int y = max (window->ylen - delta.y, 20);
 
 	window->ypos += window->ylen - y;
@@ -1965,6 +2043,7 @@ drag_window_tc (view_pos_t delta, imui_window_t *window)
 static void
 drag_window_tr (view_pos_t delta, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	int x = max (window->xlen + delta.x, 20);
 	int y = max (window->ylen - delta.y, 20);
 
@@ -1976,6 +2055,7 @@ drag_window_tr (view_pos_t delta, imui_window_t *window)
 static void
 drag_window_cl (view_pos_t delta, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	int x = max (window->xlen - delta.x, 20);
 
 	window->xpos += window->xlen - x;
@@ -1985,6 +2065,7 @@ drag_window_cl (view_pos_t delta, imui_window_t *window)
 static void
 drag_window_cr (view_pos_t delta, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	int x = max (window->xlen + delta.x, 20);
 
 	window->xlen = x;
@@ -1993,6 +2074,7 @@ drag_window_cr (view_pos_t delta, imui_window_t *window)
 static void
 drag_window_bl (view_pos_t delta, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	int x = max (window->xlen - delta.x, 20);
 	int y = max (window->ylen + delta.y, 20);
 
@@ -2004,6 +2086,7 @@ drag_window_bl (view_pos_t delta, imui_window_t *window)
 static void
 drag_window_bc (view_pos_t delta, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	int y = max (window->ylen + delta.y, 20);
 
 	window->ylen = y;
@@ -2012,6 +2095,7 @@ drag_window_bc (view_pos_t delta, imui_window_t *window)
 static void
 drag_window_br (view_pos_t delta, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	int x = max (window->xlen + delta.x, 20);
 	int y = max (window->ylen + delta.y, 20);
 
@@ -2026,6 +2110,7 @@ drag_window_br (view_pos_t delta, imui_window_t *window)
 int
 IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 {
+	qfZoneScoped (true);
 	if (!panel->is_open) {
 		return 1;
 	}
@@ -2156,6 +2241,7 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 int
 IMUI_ExtendPanel (imui_ctx_t *ctx, const char *panel_name)
 {
+	qfZoneScoped (true);
 	auto state = IMUI_FindState (ctx, panel_name);
 	if (!state || !ECS_EntValid (state->entity, ctx->vsys.reg)) {
 		return 1;
@@ -2169,12 +2255,14 @@ IMUI_ExtendPanel (imui_ctx_t *ctx, const char *panel_name)
 void
 IMUI_EndPanel (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	IMUI_PopLayout (ctx);
 }
 
 int
 IMUI_StartMenu (imui_ctx_t *ctx, imui_window_t *menu, bool vertical)
 {
+	qfZoneScoped (true);
 	menu->parent = ctx->current_menu ? ctx->current_menu->self : 0;
 	ctx->current_menu = menu;
 
@@ -2218,6 +2306,7 @@ IMUI_StartMenu (imui_ctx_t *ctx, imui_window_t *menu, bool vertical)
 void
 IMUI_EndMenu (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto menu = ctx->current_menu;
 	if (menu->parent) {
 		auto parent = IMUI_GetWindow (ctx, menu->parent);
@@ -2229,6 +2318,7 @@ IMUI_EndMenu (imui_ctx_t *ctx)
 bool
 IMUI_MenuItem (imui_ctx_t *ctx, const char *label, bool collapse)
 {
+	qfZoneScoped (true);
 	auto res = IMUI_Button (ctx, label);
 	//auto state = ctx->current_state;
 	if (res && collapse) {
@@ -2243,6 +2333,7 @@ IMUI_MenuItem (imui_ctx_t *ctx, const char *label, bool collapse)
 void
 IMUI_TitleBar (imui_ctx_t *ctx, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	auto title_bar = View_New (ctx->vsys, ctx->current_parent);
 
 	auto tb_state = imui_get_state (ctx, va ("###title_bar:%08x",
@@ -2270,6 +2361,7 @@ IMUI_TitleBar (imui_ctx_t *ctx, imui_window_t *window)
 void
 IMUI_CollapseButton (imui_ctx_t *ctx, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	char cbutton = window->is_collapsed ? '>' : 'v';
 	if (UI_Button (va ("%c###collapse_%08x", cbutton, window->self))) {
 		window->is_collapsed = !window->is_collapsed;
@@ -2279,6 +2371,7 @@ IMUI_CollapseButton (imui_ctx_t *ctx, imui_window_t *window)
 void
 IMUI_CloseButton (imui_ctx_t *ctx, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	if (UI_Button (va ("X###close_%08x", window->self))) {
 		window->is_open = false;
 	}
@@ -2287,6 +2380,7 @@ IMUI_CloseButton (imui_ctx_t *ctx, imui_window_t *window)
 int
 IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	if (!window->is_open) {
 		return 1;
 	}
@@ -2310,12 +2404,14 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 void
 IMUI_EndWindow (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	IMUI_PopLayout (ctx);
 }
 
 void
 IMUI_RaiseWindow (imui_ctx_t *ctx, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	auto state = get_state_from_id (ctx, window->state);
 	state->draw_order = imui_ontop;
 }
@@ -2323,6 +2419,7 @@ IMUI_RaiseWindow (imui_ctx_t *ctx, imui_window_t *window)
 void
 IMUI_LowerWindow (imui_ctx_t *ctx, imui_window_t *window)
 {
+	qfZoneScoped (true);
 	auto state = get_state_from_id (ctx, window->state);
 	state->draw_order = imui_onbottom;
 }
@@ -2330,6 +2427,7 @@ IMUI_LowerWindow (imui_ctx_t *ctx, imui_window_t *window)
 int
 IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name)
 {
+	qfZoneScoped (true);
 	auto anchor_view = View_New (ctx->vsys, ctx->current_parent);
 	*View_Control (anchor_view) = (viewcont_t) {
 		.gravity = grav_northwest,
@@ -2395,12 +2493,14 @@ IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name)
 void
 IMUI_EndScrollBox (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	IMUI_PopLayout (ctx);
 }
 
 void
 IMUI_ScrollBar (imui_ctx_t *ctx, const char *name)
 {
+	qfZoneScoped (true);
 	auto pcont = View_Control (ctx->current_parent);
 	// if the current layout is vertical, then the scroll bar will be placed
 	// under the previous item (or above the next) and thus should be
@@ -2480,6 +2580,7 @@ IMUI_ScrollBar (imui_ctx_t *ctx, const char *name)
 int
 IMUI_StartScroller (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto anchor_view = View_New (ctx->vsys, ctx->current_parent);
 	*View_Control (anchor_view) = (viewcont_t) {
 		.gravity = grav_northwest,
@@ -2517,6 +2618,7 @@ IMUI_StartScroller (imui_ctx_t *ctx)
 void
 IMUI_EndScroller (imui_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	IMUI_PopLayout (ctx);
 	auto state = ctx->current_state;
 	auto name = state->label;
@@ -2536,6 +2638,7 @@ IMUI_EndScroller (imui_ctx_t *ctx)
 void
 IMUI_SetViewPos (imui_ctx_t *ctx, view_pos_t pos)
 {
+	qfZoneScoped (true);
 	uint32_t id = ctx->current_state->entity;
 	auto view = View_FromEntity (ctx->vsys, id);
 	View_SetPos (view, pos.x, pos.y);
@@ -2544,6 +2647,7 @@ IMUI_SetViewPos (imui_ctx_t *ctx, view_pos_t pos)
 void
 IMUI_SetViewLen (imui_ctx_t *ctx, view_pos_t len)
 {
+	qfZoneScoped (true);
 	uint32_t id = ctx->current_state->entity;
 	auto view = View_FromEntity (ctx->vsys, id);
 	View_SetLen (view, len.x, len.y);
@@ -2552,6 +2656,7 @@ IMUI_SetViewLen (imui_ctx_t *ctx, view_pos_t len)
 void
 IMUI_SetViewFree (imui_ctx_t *ctx, bool fx, bool fy)
 {
+	qfZoneScoped (true);
 	uint32_t id = ctx->current_state->entity;
 	auto view = View_FromEntity (ctx->vsys, id);
 	auto control = View_Control (view);
@@ -2562,6 +2667,7 @@ IMUI_SetViewFree (imui_ctx_t *ctx, bool fx, bool fy)
 void
 IMUI_SetViewGravity (imui_ctx_t *ctx, grav_t gravity)
 {
+	qfZoneScoped (true);
 	uint32_t id = ctx->current_state->entity;
 	auto view = View_FromEntity (ctx->vsys, id);
 	View_SetGravity (view, gravity);
