@@ -1618,6 +1618,7 @@ CL_Init (wssched_t *sched, memhunk_t *hunk)
 			.cbuf = cl_cbuf,
 			.stats = cl.stats,
 			.item_gettime = cl.item_gettime,
+			.sched = sched,
 		});
 	CL_NetGraph_Init ();
 

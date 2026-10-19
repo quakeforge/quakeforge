@@ -75,6 +75,7 @@ typedef struct rscrap_s rscrap_t;
 typedef union glyphkey_s glyphkey_t;
 typedef struct glyphobj_s glyphobj_t;
 typedef struct glyphcache_s glyphcache_t;
+typedef struct wssched_s wssched_t;
 
 typedef struct canvas_system_s {
 	ecs_registry_t *reg;
@@ -82,6 +83,7 @@ typedef struct canvas_system_s {
 	uint32_t    view_base;
 	uint32_t    text_base;
 	uint32_t    imui_base;
+	wssched_t  *sched;
 	glyphcache_t *glyphcache;
 } canvas_system_t;
 
