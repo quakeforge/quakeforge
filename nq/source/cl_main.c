@@ -808,9 +808,7 @@ CL_Init (wssched_t *sched, memhunk_t *hunk)
 			.item_gettime = cl.item_gettime,
 		});
 
-	CL_Particles_Init ();
 	CL_Effects_Init ();
-	CL_TEnts_Init ();
 
 	CL_World_Init ();
 	CL_ClearState ();

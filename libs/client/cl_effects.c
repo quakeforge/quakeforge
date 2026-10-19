@@ -50,6 +50,7 @@
 #include "client/entities.h"
 #include "client/effects.h"
 #include "client/particles.h"
+#include "client/temp_entities.h"
 #include "client/world.h"
 
 ecs_system_t effect_system;
@@ -262,6 +263,8 @@ void
 CL_Effects_Init (void)
 {
 	qfZoneScoped (true);
+	CL_Particles_Init ();
+	CL_TEnts_Init ();
 	if (r_funcs->TrailSystem) {
 		cl_tsystem = r_funcs->TrailSystem ();
 	}

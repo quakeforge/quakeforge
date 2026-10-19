@@ -1622,9 +1622,7 @@ CL_Init (wssched_t *sched, memhunk_t *hunk)
 	CL_NetGraph_Init ();
 
 	CL_Ents_Init ();
-	CL_Particles_Init ();
 	CL_Effects_Init ();
-	CL_TEnts_Init ();
 
 	CL_World_Init ();
 	CL_ClearState ();
