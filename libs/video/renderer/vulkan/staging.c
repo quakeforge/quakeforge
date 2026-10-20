@@ -72,6 +72,7 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 			.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
 				   //FIXME make a param
 				   | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+				   | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
 				   | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		},
 	};
