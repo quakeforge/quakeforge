@@ -362,27 +362,34 @@ run_compute (qfv_compute_t *comp, qfv_taskctx_t *taskctx, qfv_step_t *step)
 	auto dfunc = device->funcs;
 	auto job = taskctx->job;
 
-	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
-						 vac (ctx->va_ctx, "cmd:compute:%s:%" PRIu64,
-							  step->label.name, ctx->frameNumber));
+	bool own_cmd = false;
+	auto cmd = taskctx->cmd;
+	if (!cmd) {
+		cmd = QFV_GetCmdBuffer (ctx, false);
+		own_cmd = true;
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+							 vac (ctx->va_ctx, "cmd:compute:%s:%" PRIu64,
+								  step->label.name, ctx->frameNumber));
 
-	VkCommandBufferBeginInfo beginInfo = {
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-	};
-	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+		VkCommandBufferBeginInfo beginInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+			.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+		};
+		dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
-	QFV_duCmdBeginLabel (device, cmd, step->label.name,
-						 {VEC4_EXP (step->label.color)});
+		QFV_duCmdBeginLabel (device, cmd, step->label.name,
+							 {VEC4_EXP (step->label.color)});
+	}
 
 	for (uint32_t i = 0; i < comp->pipeline_count; i++) {
 		__auto_type pipeline = &comp->pipelines[i];
 		run_compute_pipeline (pipeline, cmd, taskctx);
 	}
-	QFV_duCmdEndLabel (device, cmd);
-	dfunc->vkEndCommandBuffer (cmd);
-	DARRAY_APPEND (&job->commands, cmd);
+	if (own_cmd) {
+		QFV_duCmdEndLabel (device, cmd);
+		dfunc->vkEndCommandBuffer (cmd);
+		DARRAY_APPEND (&job->commands, cmd);
+	}
 }
 
 static void
@@ -469,7 +476,7 @@ run_deletion_queue (vulkan_ctx_t *ctx)
 }
 
 void
-QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job)
+QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job, VkCommandBuffer cmd)
 {
 	qfZoneScoped (true);
 	auto rctx = ctx->render_context;
@@ -485,6 +492,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job)
 		.graph = graph,
 		.job = job,
 		.frame = frame,
+		.cmd = cmd,
 	};
 
 	for (uint32_t i = 0; i < job->num_steps; i++) {

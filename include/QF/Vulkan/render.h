@@ -697,7 +697,7 @@ void QFV_RunRenderPassCmd (VkCommandBuffer cmd, qfv_taskctx_t *taskctx,
 						   qfv_renderpass_t *renderpass);
 void QFV_RunRenderPass (qfv_taskctx_t *taskctx, qfv_renderpass_t *renderpass,
 						uint32_t width, uint32_t height);
-void QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job);
+void QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job, VkCommandBuffer cmd);
 void QFV_LoadRenderInfo (vulkan_ctx_t *ctx, struct plitem_s *item);
 void QFV_LoadSamplerInfo (vulkan_ctx_t *ctx, struct plitem_s *item);
 void QFV_LoadEntqueueInfo (vulkan_ctx_t *ctx, struct plitem_s *item);

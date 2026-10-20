@@ -543,7 +543,7 @@ vulkan_UpdateScreen (SCR_Func *scr_funcs, void *scrf_data)
 	Vulkan_SetScrFuncs (scr_funcs, scrf_data, vulkan_ctx);
 	auto graph = vulkan_ctx->render_context->graph;
 	auto job = QFV_FindJob ("main", graph);//FIXME
-	QFV_RunRenderJob (vulkan_ctx, job);
+	QFV_RunRenderJob (vulkan_ctx, job, 0);
 }
 
 static void
@@ -599,7 +599,7 @@ vulkan_RunRenderJob (const char *name)
 {
 	auto graph = vulkan_ctx->render_context->graph;
 	auto job = QFV_FindJob (name, graph);
-	QFV_RunRenderJob (vulkan_ctx, job);
+	QFV_RunRenderJob (vulkan_ctx, job, 0);
 }
 
 static void

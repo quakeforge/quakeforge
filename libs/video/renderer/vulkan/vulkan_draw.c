@@ -2109,7 +2109,7 @@ void
 Vulkan_atlas_finish_update (vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;
-	QFV_RunRenderJob (ctx, dctx->atlas_job);
+	QFV_RunRenderJob (ctx, dctx->atlas_job, 0);
 }
 
 int
