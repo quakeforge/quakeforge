@@ -41,7 +41,8 @@
 
 typedef struct QFile_s QFile;
 typedef struct wssched_s wssched_t;
-typedef union glyphkey_s glyphkey_t;
+typedef struct glyphcache_s glyphcache_t;
+typedef struct glyphobj_s glyphobj_t;
 
 typedef struct fontent_s {
 	uint32_t    id;
@@ -70,7 +71,7 @@ typedef struct fontspec_s {
 
 fontspec_t Font_SystemFont (const char *font_pattern);
 
-void Font_LoadGlyphs (font_t *font, glyphkey_t *keys, int count,
+void Font_LoadGlyphs (glyphcache_t *cache, glyphobj_t *objs, int count,
 					  wssched_t *sched);
 
 

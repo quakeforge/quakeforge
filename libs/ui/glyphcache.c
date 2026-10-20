@@ -49,15 +49,15 @@ glyphcache_new (font_t **font_list, uint32_t num_fonts)
 	qfZoneScoped (true);
 	size_t size = sizeof (glyphcache_t)
 				+ sizeof (glyphkey_t[GLYPH_CACHE_SIZE])
-				+ sizeof (glyphkey_t[GLYPH_CACHE_SIZE])
+				+ sizeof (glyphobj_t[GLYPH_CACHE_SIZE])
 				+ sizeof (uint32_t[GLYPH_CACHE_SIZE])
 				+ sizeof (rscrap_t)
 				+ sizeof (font_t *[num_fonts]);
 	glyphcache_t *cache = malloc (size);
 	auto map = (glyphkey_t *) &cache[1];
-	auto objs = (glyphkey_t *) &map[GLYPH_CACHE_SIZE];
-	auto rects = (uint32_t *) &objs[GLYPH_CACHE_SIZE];
-	auto scrap = (rscrap_t *) &rects[GLYPH_CACHE_SIZE];
+	auto keys = (glyphkey_t *) &map[GLYPH_CACHE_SIZE];
+	auto rect_ids = (uint32_t *) &keys[GLYPH_CACHE_SIZE];
+	auto scrap = (rscrap_t *) &rect_ids[GLYPH_CACHE_SIZE];
 	auto fonts = (font_t **) &scrap[1];
 	tex_t tex = {
 		.width = 2048,
@@ -68,16 +68,16 @@ glyphcache_new (font_t **font_list, uint32_t num_fonts)
 		= r_funcs->draw.make_atlas ("glyphs", &tex, GLYPH_CACHE_SIZE, nullptr);
 	*cache = (glyphcache_t) {
 		.map = map,
-		.objs = objs,
-		.rects = rects,
+		.keys = keys,
+		.rect_ids = rect_ids,
 		.scrap = scrap,
 		.fonts = fonts,
 		.num_fonts = num_fonts,
 		.atlas_id = atlas_id,
 	};
 	memset (map, 0, sizeof (glyphkey_t[GLYPH_CACHE_SIZE]));
-	memset (objs, 0, sizeof (glyphkey_t[GLYPH_CACHE_SIZE]));
-	memset (rects, ~0u, sizeof (uint32_t[GLYPH_CACHE_SIZE]));
+	memset (keys, 0, sizeof (glyphkey_t[GLYPH_CACHE_SIZE]));
+	memset (rect_ids, ~0u, sizeof (uint32_t[GLYPH_CACHE_SIZE]));
 	memcpy (fonts, font_list, sizeof (font_t *[num_fonts]));
 	R_ScrapInit (scrap, GLYPH_SCRAP_SIZE, GLYPH_SCRAP_SIZE);
 	return cache;
@@ -151,9 +151,9 @@ glyphcache_load_glyphs (canvas_system_t *canvas_sys)
 	};
 	auto reg = canvas_sys->reg;
 	auto cache = canvas_sys->glyphcache;
-	glyphkey_t new_keys[GLYPH_CACHE_SIZE] = {};
+	glyphobj_t new_objs[GLYPH_CACHE_SIZE] = {};
 	int new_inds[GLYPH_CACHE_SIZE] = {};
-	int num_keys = 0;
+	int num_objs = 0;
 	for (uint32_t i = 0; i < countof (glyph_comps); i++) {
 		auto pool = &reg->comp_pools[canvas_sys->base + glyph_comps[i]];
 		for (uint32_t j = 0; j < pool->count; j++) {
@@ -163,22 +163,22 @@ glyphcache_load_glyphs (canvas_system_t *canvas_sys)
 				int index = glyphcache_lookup (cache, gobj->key);
 				if (index < 0) {
 					index = glyphcache_add (cache, gobj->key);
-					new_keys[num_keys] = gobj->key;
-					new_inds[num_keys] = index;
 					gobj->cacheind = index;
-					num_keys++;
+					new_objs[num_objs] = *gobj;
+					new_inds[num_objs] = index;
+					num_objs++;
 				} else {
 					gobj->cacheind = index;
 				}
 			}
 		}
 	}
-	if (!num_keys) {
+	if (!num_objs) {
 		return;
 	}
 
-	//Font_LoadGlyphs (new_keys, num_keys);
-	for (int i = 0; i < num_keys; i++) {
-		cache->objs[new_inds[i]] = new_keys[i];
+	Font_LoadGlyphs (cache, new_objs, num_objs, canvas_sys->sched);
+	for (int i = 0; i < num_objs; i++) {
+		cache->keys[new_inds[i]] = new_objs[i].key;
 	}
 }

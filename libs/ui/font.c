@@ -180,7 +180,7 @@ Font_SystemFont (const char *font_pattern)
 }
 
 typedef struct fontctx_s {
-	glyphkey_t *keys;
+	glyphobj_t *objs;
 	FT_BBox    *bboxes;
 	FT_Face    *faces;
 	byte       *buffer;
@@ -193,6 +193,7 @@ typedef struct fontctx_s {
 static void
 glyph_wait (task_t *task, int worker_id)
 {
+	qfZoneScoped (true);
 	auto ctx = *(fontctx_t *) task->data;
 	notifier_notify_all (ctx.notifier);
 	//int ind = task - ctx.tasks;
@@ -202,9 +203,10 @@ glyph_wait (task_t *task, int worker_id)
 static void
 glyph_setup (int worker_id, task_t *task)
 {
+	qfZoneScoped (true);
 	auto ctx = *(fontctx_t *) task->data;
 	int index = task - ctx.tasks;
-	auto key = ctx.keys[index];
+	auto key = ctx.objs[index].key;
 	auto face = ctx.faces[worker_id];
 
 	FT_Set_Char_Size (face, 0, key.ptsize, 72, 72);
@@ -217,6 +219,7 @@ glyph_setup (int worker_id, task_t *task)
 static void
 glyph_calc_bounds (task_t *task, int worker_id)
 {
+	qfZoneScoped (true);
 	auto ctx = *(fontctx_t *) task->data;
 	int index = task - ctx.tasks;
 
@@ -247,12 +250,13 @@ typedef struct renderctx_s {
 static void
 glyph_spans (int y, int count, const FT_Span *spans, void *user)
 {
+	qfZoneScoped (true);
 	auto ctx = *(renderctx_t *) user;
 
-	if (y < 0 || y >= ctx.y_len) {
+	int row = ctx.y_pos - y;
+	if (row < 0 || row >= ctx.y_len) {
 		return;
 	}
-	int row = ctx.y_pos - y;
 	int ofs = row * ctx.x_len;
 	auto data = ctx.buffer + ofs;
 	for (int i = 0; i < count; i++) {
@@ -270,6 +274,7 @@ glyph_spans (int y, int count, const FT_Span *spans, void *user)
 static void
 glyph_render (task_t *task, int worker_id)
 {
+	qfZoneScoped (true);
 	auto ctx = *(fontctx_t *) task->data;
 	int index = task - ctx.tasks;
 
@@ -303,13 +308,17 @@ glyph_render (task_t *task, int worker_id)
 }
 
 void
-Font_LoadGlyphs (font_t *font, glyphkey_t *keys, int count, wssched_t *sched)
+Font_LoadGlyphs (glyphcache_t *cache, glyphobj_t *objs, int count,
+				 wssched_t *sched)
 {
+	qfZoneScoped (true);
 	if (count < 1) {
 		return;
 	}
 
 	int num_workers = wssched_worker_count (sched);
+	// FIXME deal with multiple fonts
+	auto font = cache->fonts[0];
 	FT_Face faces[num_workers];
 	for (int i = 0; i < num_workers; i++) {
 		FT_New_Memory_Face (ft, font->font_data, font->font_size, 0, &faces[i]);
@@ -324,7 +333,7 @@ Font_LoadGlyphs (font_t *font, glyphkey_t *keys, int count, wssched_t *sched)
 	};
 	task_t glyph_tasks[count + 1];
 	fontctx_t   fontctx = {
-		.keys = keys,
+		.objs = objs,
 		.bboxes = bboxes,
 		.faces = faces,
 		.offsets = offsets,
@@ -357,17 +366,42 @@ Font_LoadGlyphs (font_t *font, glyphkey_t *keys, int count, wssched_t *sched)
 	uint32_t size = prefixsum_uint32 (offsets, count);
 	//printf ("%d bytes\n", size);
 
+	auto prepare_update = r_funcs->draw.atlas_prepare_update;
+	auto update = prepare_update (cache->atlas_id, count, size);
+	memset (update.texels, 0, size);
+	fontctx.buffer = update.texels;
+	for (int i = 0; i < count; i++) {
+		auto bbox = bboxes[i];
+		int x_min = bbox.xMin >> 6;
+		int y_min = bbox.yMin >> 6;
+		int x_max = (bbox.xMax + 63) >> 6;
+		int y_max = (bbox.yMax + 63) >> 6;
+		int x_len = x_max - x_min;
+		int y_len = y_max - y_min;
+		scrapbox_t *rect;
+		// include a small buffer between glyphs
+		rect = R_ScrapAlloc (cache->scrap, x_len + 1, y_len + 1);
+		cache->rect_ids[objs[i].cacheind] = rect->id;
+		update.rects[i] = *rect;
+		// Force rect to specified size
+		update.rects[i].width = x_len;
+		update.rects[i].height = y_len;
+		// Set the rect id to the cache index so it refers to the correct
+		// quad
+		update.rects[i].id = objs[i].cacheind;
+	}
+
 	wait_task->dependency_count = count;
 	for (int i = 0; i < count; i++) {
 		glyph_tasks[i].execute = glyph_render;
 	}
-	byte buffer[size] = {};
-	fontctx.buffer = buffer;
 
 	wssched_insert (sched, count, glyph_task_set);
 
 	notifier_prepare_to_wait (fontctx.notifier, &waiter);
 	notifier_commit_wait (fontctx.notifier, &waiter);
+
+	r_funcs->draw.atlas_finish_update ();
 
 	//for (int i = 0; i < count; i++) {
 	//	auto bbox = bboxes[i];
@@ -377,7 +411,8 @@ Font_LoadGlyphs (font_t *font, glyphkey_t *keys, int count, wssched_t *sched)
 	//	int y_max = (bbox.yMax + 63) >> 6;
 	//	int x_len = x_max - x_min;
 	//	int y_len = y_max - y_min;
-	//	byte *data = buffer + offsets[i];
+	//	byte *data = fontctx.buffer + offsets[i];
+	//	printf ("%dx%d\n", x_len, y_len);
 	//	for (int y = 0; y < y_len; y++) {
 	//		for (int x = 0; x < x_len; x++) {
 	//			putc (" .oO"[data[y * x_len + x] / 64], stdout);

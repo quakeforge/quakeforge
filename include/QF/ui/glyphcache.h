@@ -60,8 +60,8 @@ typedef struct glyphobj_s {
 
 typedef struct glyphcache_s {
 	glyphkey_t *map;
-	glyphkey_t *objs;
-	uint32_t   *rects;
+	glyphkey_t *keys;
+	uint32_t   *rect_ids;		// scrap rect ids (indexed by cacheind)
 	rscrap_t   *scrap;
 	font_t    **fonts;
 	uint32_t    num_fonts;

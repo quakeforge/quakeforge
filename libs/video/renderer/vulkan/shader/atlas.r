@@ -6,6 +6,9 @@
 #define DISPATCH(x) (((x) + workgroup_size - 1) / workgroup_size)
 #define BLOCKDISP(x) (((x) + (2 * workgroup_size) - 1) / (2 * workgroup_size))
 
+void printf (string fmt, ...)
+	= @intrinsic(OpExtInst, "NonSemantic.DebugPrintf", DebugPrintf);
+
 [in("GlobalInvocationId")] uvec3 gl_GlobalInvocationID;
 
 typedef struct bsp_invoke_s {
@@ -40,17 +43,18 @@ typedef struct {
 	bsp_invoke_t *atlas_invoke;
 };
 
-uvec2 get_pos (uint texel_id)
+uvec3 get_pos (uint texel_id)
 {
-	uint ind = fbsearch (texel_id, texel_offs, texel_queue.count);
+	uint ind = fbsearch (texel_id, texel_offs, num_rects);
 	uint texel = texel_id - texel_offs[ind];
 	auto r = &rect_data[ind];
-	auto pos = ivec2 (texel % r.width, texel / r.width);
+	auto pos = ivec3 (r.x + texel % r.width, r.y + texel / r.width, r.layer);
+	return pos;
 }
 
 @namespace tex_l {
 	[uniform, set(0), binding(0)]
-	@image(uint, 2D, /*Array,*/ Storage, R8ui) atlas_image;
+	@image(float, 2D, Array, Storage, R8) atlas_image;
 
 	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 	void main ()
@@ -61,14 +65,14 @@ uvec2 get_pos (uint texel_id)
 		}
 		auto pos = get_pos (texel_id);
 		//FIXME qfcc doesn't cast for imageStore
-		auto data = uint (((byte *) texel_data)[texel_id]);
+		auto data = float (((byte *) texel_data)[texel_id]) / 255;
 		imageStore (atlas_image, pos, data);
 	}
 }
 
 @namespace tex_a {
 	[uniform, set(0), binding(0)]
-	@image(uint, 2D, /*Array,*/ Storage, R8ui) atlas_image;
+	@image(float, 2D, Array, Storage, R8) atlas_image;
 
 	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 	void main ()
@@ -79,14 +83,14 @@ uvec2 get_pos (uint texel_id)
 		}
 		auto pos = get_pos (texel_id);
 		//FIXME qfcc doesn't cast for imageStore
-		auto data = uint (((byte *) texel_data)[texel_id]);
+		auto data = float (((byte *) texel_data)[texel_id]) / 255;
 		imageStore (atlas_image, pos, data);
 	}
 }
 
 @namespace tex_la {
 	[uniform, set(0), binding(0)]
-	@image(uint, 2D, /*Array,*/ Storage, Rg8ui) atlas_image;
+	@image(float, 2D, Array, Storage, Rg8) atlas_image;
 
 	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 	void main ()
@@ -97,14 +101,14 @@ uvec2 get_pos (uint texel_id)
 		}
 		auto pos = get_pos (texel_id);
 		//FIXME qfcc doesn't cast for imageStore
-		auto data = uvec2 (((ubvec2 *) texel_data)[texel_id]);
+		auto data = vec2 (((ubvec2 *) texel_data)[texel_id]) / 255;
 		imageStore (atlas_image, pos, data);
 	}
 }
 
 @namespace tex_rgb {
 	[uniform, set(0), binding(0)]
-	@image(uint, 2D, /*Array,*/ Storage, Rgba8ui) atlas_image;
+	@image(float, 2D, Array, Storage, Rgba8) atlas_image;
 
 	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 	void main ()
@@ -115,14 +119,14 @@ uvec2 get_pos (uint texel_id)
 		}
 		auto pos = get_pos (texel_id);
 		//FIXME qfcc doesn't cast for imageStore
-		auto data = uvec4 (((ubvec3 *) texel_data)[texel_id], 255);
+		auto data = vec4 (((ubvec3 *) texel_data)[texel_id], 255) / 255;
 		imageStore (atlas_image, pos, data);
 	}
 }
 
 @namespace tex_rgba {
 	[uniform, set(0), binding(0)]
-	@image(uint, 2D, /*Array,*/ Storage, Rgba8ui) atlas_image;
+	@image(float, 2D, Array, Storage, Rgba8) atlas_image;
 
 	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 	void main ()
@@ -133,14 +137,14 @@ uvec2 get_pos (uint texel_id)
 		}
 		auto pos = get_pos (texel_id);
 		//FIXME qfcc doesn't cast for imageStore
-		auto data = uvec4 (((ubvec4 *) texel_data)[texel_id]);
+		auto data = vec4 (((ubvec4 *) texel_data)[texel_id]) / 255;
 		imageStore (atlas_image, pos, data);
 	}
 }
 
 @namespace tex_frgba {
 	[uniform, set(0), binding(0)]
-	@image(float, 2D, /*Array,*/ Storage, Rgba32f) atlas_image;
+	@image(float, 2D, Array, Storage, Rgba32f) atlas_image;
 
 	[shader(GLCompute, LocalSize=[workgroup_size,1,1])]
 	void main ()
@@ -172,7 +176,8 @@ uvec2 get_pos (uint texel_id)
 		float h = r.height;
 		float u = r.x;
 		float v = r.y;
-		auto s = vec2 (1f) / extents;
+		//FIXME qfcc does bit cast instead of value cast for implicit
+		auto s = vec2 (1f) / vec2(extents);
 		verts[0] = {
 			.offset = vec2 (x, y),
 			.uv     = vec2 (u, v) * s,

@@ -3783,11 +3783,11 @@ render_graph = {
 		atlas_update = {
 			steps = {
 				rects = {
-					color = "[0.6, 0.8, 0.9]";
+					color = "[0.6, 0.8, 0.0]";
 					compute = {
 						pipelines = {
 							rects = {
-								color = "[0.3, 0.8, 0.9]";
+								color = "[0.6, 0.8, 0.0]";
 								tasks = (
 									{ func = indirect_dispatch_barrier; },
 									{ func = atlas_rect_invoke; },
@@ -3796,7 +3796,7 @@ render_graph = {
 								layout = $atlas.layout;
 							};
 							rect:set_dispatch = {
-								color = "[0.3, 0.8, 0.9]";
+								color = "[0.6, 0.8, 0.0]";
 								tasks = (
 									{ func = indirect_dispatch_barrier; },
 									{ func = set_dispatch;
@@ -3806,7 +3806,7 @@ render_graph = {
 								layout = $atlas.layout;
 							};
 							rect:prefixsum = {
-								color = "[0.3, 0.8, 0.9]";
+								color = "[0.6, 0.8, 0.0]";
 								tasks = (
 									{ func = indirect_dispatch_barrier; },
 									{ func = atlas_prefixsum; },
@@ -3815,7 +3815,7 @@ render_graph = {
 								layout = $prefixsum.layout;
 							};
 							texel:set_dispatch = {
-								color = "[0.3, 0.8, 0.9]";
+								color = "[0.6, 0.8, 0.0]";
 								tasks = (
 									{ func = indirect_dispatch_barrier; },
 									{ func = set_dispatch;
@@ -3827,18 +3827,22 @@ render_graph = {
 						};
 					};
 				};
-				texels = {
-					color = "[0.6, 0.8, 0.9]";
+				texel_select = {
+					color = "[0.6, 0.8, 0.0]";
 					process = {
 						tasks = (
-							{ func = atlas_tex_select; },
+							{ func = atlas_tex_select;
+							  params = (atlas_update`texels); },
 						);
 					};
+				};
+				texels = {
+					color = "[0.6, 0.8, 0.0]";
 					compute = {
 						pipelines = {
 							tex_l = {
 								disabled = true;
-								color = "[0.3, 0.8, 0.9]";
+								color = "[0.6, 0.8, 0.0]";
 								tasks = (
 									{ func = indirect_dispatch_barrier; },
 									{ func = atlas_tex_invoke; },
@@ -3848,7 +3852,7 @@ render_graph = {
 							};
 							tex_a = {
 								disabled = true;
-								color = "[0.3, 0.8, 0.9]";
+								color = "[0.6, 0.8, 0.0]";
 								tasks = (
 									{ func = indirect_dispatch_barrier; },
 									{ func = atlas_tex_invoke; },
@@ -3858,7 +3862,7 @@ render_graph = {
 							};
 							tex_la = {
 								disabled = true;
-								color = "[0.3, 0.8, 0.9]";
+								color = "[0.6, 0.8, 0.0]";
 								tasks = (
 									{ func = indirect_dispatch_barrier; },
 									{ func = atlas_tex_invoke; },
@@ -3868,7 +3872,7 @@ render_graph = {
 							};
 							tex_rgb = {
 								disabled = true;
-								color = "[0.3, 0.8, 0.9]";
+								color = "[0.6, 0.8, 0.0]";
 								tasks = (
 									{ func = indirect_dispatch_barrier; },
 									{ func = atlas_tex_invoke; },
@@ -3878,7 +3882,7 @@ render_graph = {
 							};
 							tex_rgba = {
 								disabled = true;
-								color = "[0.3, 0.8, 0.9]";
+								color = "[0.6, 0.8, 0.0]";
 								tasks = (
 									{ func = indirect_dispatch_barrier; },
 									{ func = atlas_tex_invoke; },
@@ -3888,7 +3892,7 @@ render_graph = {
 							};
 							tex_frgba = {
 								disabled = true;
-								color = "[0.3, 0.8, 0.9]";
+								color = "[0.6, 0.8, 0.0]";
 								tasks = (
 									{ func = indirect_dispatch_barrier; },
 									{ func = atlas_tex_invoke; },

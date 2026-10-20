@@ -263,6 +263,7 @@ typedef struct drawctx_s {
 		VkDeviceAddress *count;
 		uint32_t   *mode;
 	}           psum;
+	VkDeviceSize atlas_texel_queue_offset;
 	VkDeviceAddress *atlas_texel_queue;
 	VkDeviceAddress *atlas_texel_offs;
 	VkDeviceAddress *atlas_texel_data;
@@ -277,6 +278,7 @@ typedef struct drawctx_s {
 	VkDeviceAddress prefixsum_counts_addr;
 	VkDeviceAddress block_sums_addr;
 	draw_prefixsum_t atlas_psum;
+	uint32_t    atlas_id;
 	qfv_packet_t *atlas_packet;
 	qfv_job_t  *atlas_job;
 } drawctx_t;
@@ -1386,11 +1388,37 @@ atlas_tex_invoke (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto dctx = ctx->draw_context;
 	auto pipeline = taskctx->pipeline;
+	auto layout = pipeline->layout;
+
+	auto atlas = QFV_GetAtlas (ctx, dctx->atlas_id);
 
 	auto psum = &dctx->atlas_psum;
 	auto cmd = taskctx->cmd;
 	QFV_PushBlackboard (ctx, cmd, pipeline);
-	dfunc->vkCmdDispatchIndirect (cmd, psum->invoke, psum->offset);
+	VkDescriptorSet sets[] = {
+		QFV_GetAtlasUpdateSet (ctx, dctx->atlas_id),
+	};
+	auto sb = imageBarriers[qfv_LT_ShaderSampled_to_StorageWrite];
+	auto db = imageBarriers[qfv_LT_StorageWrite_to_ShaderSampled];
+	sb.image = atlas->image;
+	db.image = atlas->image;
+	dfunc->vkCmdPipelineBarrier2 (cmd, &(VkDependencyInfo) {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &sb,
+	});
+
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+									layout, 0, countof (sets), sets, 0, 0);
+	VkDeviceSize offset = dctx->atlas_texel_queue_offset;
+	dfunc->vkCmdDispatchIndirect (cmd, psum->invoke,
+								  offset + offsetof (draw_invoke_t, x));
+
+	dfunc->vkCmdPipelineBarrier2 (cmd, &(VkDependencyInfo) {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &db,
+	});
 }
 
 static void
@@ -1399,7 +1427,9 @@ atlas_tex_select (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto dctx = ctx->draw_context;
-	auto compute = taskctx->step->compute;
+	auto graph = taskctx->graph;
+	auto step = QFV_GetStep (params[0], graph);
+	auto compute = step->compute;
 
 	for (uint32_t i = 0; i < compute->pipeline_count; i++) {
 		compute->pipelines[i].disabled = true;
@@ -1449,7 +1479,8 @@ static exprfunc_t atlas_tex_invoke_func[] = {
 	{}
 };
 static exprfunc_t atlas_tex_select_func[] = {
-	{ .func = atlas_tex_select },
+	{ .func = atlas_tex_select,
+	  .num_params = 1, .param_types = qfv_stepref_param },
 	{}
 };
 
@@ -1930,6 +1961,8 @@ uint32_t
 Vulkan_make_atlas (const char *name, const tex_t *tex, int num_rects,
 				   const scrapbox_t *rects, vulkan_ctx_t *ctx)
 {
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
 	drawctx_t  *dctx = ctx->draw_context;
 	int         fontid = dctx->fonts.size;
 	DARRAY_OPEN_AT (&dctx->fonts, fontid, 1);
@@ -1975,6 +2008,7 @@ Vulkan_make_atlas (const char *name, const tex_t *tex, int num_rects,
 			.name = "geom",
 			.size = rects_size,
 			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
 					| VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
 		},
 		.bufferview = {
@@ -2038,14 +2072,37 @@ Vulkan_make_atlas (const char *name, const tex_t *tex, int num_rects,
 								 &sb, &db);
 	}
 
+	auto sb = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	auto db = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
 	if (tex->data) {
 		auto texels = data + rects_size;
 		memcpy (texels, tex->data, img_size);
-		auto sb = &imageBarriers[qfv_LT_Undefined_to_TransferDst];
-		auto db = &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
 		QFV_PacketCopyImage (packet, font->atlas->image, (qfv_offset_t){},
 							 (qfv_extent_t) {tex->width, tex->height, 1, 1},
-							 QFV_PacketOffset (packet, texels), sb, db);
+							 QFV_PacketOffset (packet, texels), &sb, &db);
+	} else {
+		sb.image = font->atlas->image;
+		db.image = font->atlas->image;
+		dfunc->vkCmdPipelineBarrier2 (packet->cmd, &(VkDependencyInfo) {
+				.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+				.imageMemoryBarrierCount = 1,
+				.pImageMemoryBarriers = &sb,
+			});
+		dfunc->vkCmdClearColorImage (packet->cmd, font->atlas->image,
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				&(VkClearColorValue) {},
+				1, &(VkImageSubresourceRange) {
+					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+					.baseMipLevel = 0,
+					.levelCount = VK_REMAINING_MIP_LEVELS,
+					.baseArrayLayer = 0,
+					.layerCount = VK_REMAINING_ARRAY_LAYERS,
+				});
+		dfunc->vkCmdPipelineBarrier2 (packet->cmd, &(VkDependencyInfo) {
+				.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+				.imageMemoryBarrierCount = 1,
+				.pImageMemoryBarriers = &db,
+			});
 	}
 	QFV_PacketSubmit (packet);
 
@@ -2074,8 +2131,9 @@ Vulkan_atlas_prepare_update (uint32_t atlasid, uint32_t num_rects,
 		.rects = atlas_packet->rect_data,
 		.texels = atlas_packet->texel_data,
 	};
-	*dctx->atlas_texel_queue = QFV_PacketAddress (packet,
-												  &atlas_packet->invoke[2]);
+	auto tq_ptr = &atlas_packet->invoke[2];
+	dctx->atlas_texel_queue_offset = QFV_PacketFullOffset (packet, tq_ptr);
+	*dctx->atlas_texel_queue = QFV_PacketAddress (packet, tq_ptr);
 	*dctx->atlas_texel_offs = QFV_PacketAddress (packet,
 												 atlas_packet->texel_offs);
 	*dctx->atlas_texel_data = QFV_PacketAddress (packet,
@@ -2084,11 +2142,13 @@ Vulkan_atlas_prepare_update (uint32_t atlasid, uint32_t num_rects,
 												atlas_packet->rect_data);
 
 	auto font = &dctx->fonts.a[atlasid];
+	*dctx->atlas_vertex_data = font->atlas->resource->objects[3].buffer.address;
 	*dctx->atlas_format = font->format;
 	*dctx->atlas_num_rects = num_rects;
 	*dctx->atlas_extents = font->extents;
 	dctx->prefixsum_counts_addr = QFV_PacketAddress (packet,
-													  atlas_packet->counts);
+													 atlas_packet->counts);
+	*dctx->prefixsum_counts = dctx->prefixsum_counts_addr;
 	dctx->block_sums_addr = QFV_PacketAddress (packet, atlas_packet->sums);
 	*dctx->atlas_invoke = QFV_PacketAddress (packet, atlas_packet->invoke);
 
@@ -2102,6 +2162,7 @@ Vulkan_atlas_prepare_update (uint32_t atlasid, uint32_t num_rects,
 		.invoke = ctx->staging->buffer,
 		.offset = QFV_PacketFullOffset (packet, atlas_packet->invoke),
 	};
+	dctx->atlas_id = font->atlas_id;
 	return update;
 }
 
@@ -2109,7 +2170,9 @@ void
 Vulkan_atlas_finish_update (vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;
-	QFV_RunRenderJob (ctx, dctx->atlas_job, 0);
+	QFV_RunRenderJob (ctx, dctx->atlas_job, dctx->atlas_packet->cmd);
+	QFV_PacketSubmit (dctx->atlas_packet);
+	dctx->atlas_packet = nullptr;
 }
 
 int
