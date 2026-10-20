@@ -485,25 +485,24 @@ output_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	VID_OnVidResize_AddListener (output_vidsize_listener, ctx);
 }
 
-static exprtype_t *stepref_param[] = {
-	&cexpr_void,
-};
 static exprfunc_t acquire_output_func[] = {
-	{ .func = acquire_output, .num_params = 1, .param_types = stepref_param },
+	{ .func = acquire_output,
+	  .num_params = 1, .param_types = qfv_stepref_param },
 	{}
 };
 static exprfunc_t update_input_func[] = {
-	{ .func = update_input, .num_params = 1, .param_types = stepref_param },
+	{ .func = update_input,
+	  .num_params = 1, .param_types = qfv_stepref_param },
 	{}
 };
 static exprfunc_t output_select_pipeline_func[] = {
 	{ .func = output_select_pipeline,
-	  .num_params = 1, .param_types = stepref_param },
+	  .num_params = 1, .param_types = qfv_stepref_param },
 	{}
 };
 static exprfunc_t output_select_renderpass_func[] = {
 	{ .func = output_select_renderpass,
-	  .num_params = 1, .param_types = stepref_param },
+	  .num_params = 1, .param_types = qfv_stepref_param },
 	{}
 };
 static exprfunc_t output_draw_flat_func[] = {
@@ -554,6 +553,4 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, output_task_syms);
-
-	stepref_param[0] = &ctx->render_context->step_type;
 }

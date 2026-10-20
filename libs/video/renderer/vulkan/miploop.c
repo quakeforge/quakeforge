@@ -324,10 +324,6 @@ miploop_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	mctx->miploop_range = QFV_GetBlackboardVar (ctx, "miploop_range");
 }
 
-static exprtype_t *stepref_param[] = {
-	&cexpr_string,
-};
-
 static exprtype_t *miploop_init_loop_params[] = {
 	&cexpr_plitem,
 	&cexpr_uint,
@@ -371,6 +367,4 @@ QFV_MipLoop_Init (vulkan_ctx_t *ctx)
 	qfZoneScoped (true);
 
 	QFV_Render_AddTasks (ctx, miploop_task_syms);
-
-	stepref_param[0] = &ctx->render_context->step_type;
 }

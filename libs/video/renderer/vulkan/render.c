@@ -1134,11 +1134,11 @@ static exprfunc_t wait_on_fence_func[] = {
 	{}
 };
 
-static exprtype_t *update_framebuffer_params[] = {
-	&cexpr_void,
+exprtype_t *qfv_stepref_param[] = {
+	    &cexpr_void,
 };
 static exprfunc_t update_framebuffer_func[] = {
-	{ .func = update_framebuffer, .num_params = 1, update_framebuffer_params },
+	{ .func = update_framebuffer, .num_params = 1, qfv_stepref_param },
 	{}
 };
 
@@ -1317,7 +1317,7 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 	};
 	DARRAY_RESIZE (&rctx->frames, num_frames);
 
-	update_framebuffer_params[0] = &rctx->step_type;
+	qfv_stepref_param[0] = &rctx->step_type;
 
 	cexpr_init_symtab (&rctx->task_functions,
 					   &(exprctx_t) { .hashctx = &rctx->hashctx });

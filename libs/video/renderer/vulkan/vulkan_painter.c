@@ -443,13 +443,9 @@ static exprfunc_t painter_init_func[] = {
 	{}
 };
 
-static exprtype_t *painter_update_framebuffer_params[] = {
-	&cexpr_void,
-};
-
 static exprfunc_t painter_update_framebuffer_func[] = {
-	{ .func = painter_update_framebuffer, .num_params = 1,
-		painter_update_framebuffer_params },
+	{ .func = painter_update_framebuffer,
+	  .num_params = 1, qfv_stepref_param },
 	{}
 };
 
@@ -467,8 +463,6 @@ Vulkan_Painter_Init (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, painter_task_syms);
-
-	painter_update_framebuffer_params[0] = &ctx->render_context->step_type;
 }
 
 static void

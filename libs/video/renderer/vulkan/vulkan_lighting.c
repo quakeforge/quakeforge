@@ -2262,10 +2262,6 @@ static exprtype_t *shadow_type_param[] = {
 	&lighting_stage_type,
 };
 
-static exprtype_t *stepref_param[] = {
-	&cexpr_string,
-};
-
 static exprfunc_t lighting_update_lights_func[] = {
 	{ .func = lighting_update_lights },
 	{}
@@ -2280,13 +2276,13 @@ static exprfunc_t lighting_draw_splats_func[] = {
 	{}
 };
 static exprfunc_t lighting_cull_select_renderpass_func[] = {
-	{ .func = lighting_cull_select_renderpass, .num_params = 1,
-		.param_types = stepref_param },
+	{ .func = lighting_cull_select_renderpass,
+	  .num_params = 1, .param_types = qfv_stepref_param },
 	{}
 };
 static exprfunc_t lighting_cull_lights_func[] = {
-	{ .func = lighting_cull_lights, .num_params = 1,
-		.param_types = stepref_param },
+	{ .func = lighting_cull_lights,
+	  .num_params = 1, .param_types = qfv_stepref_param },
 	{}
 };
 static exprfunc_t lighting_draw_hulls_func[] = {
@@ -2307,8 +2303,8 @@ static exprfunc_t lighting_setup_shadow_func[] = {
 	{}
 };
 static exprfunc_t lighting_draw_shadow_maps_func[] = {
-	{ .func = lighting_draw_shadow_maps, .num_params = 1,
-		.param_types = stepref_param },
+	{ .func = lighting_draw_shadow_maps,
+	  .num_params = 1, .param_types = qfv_stepref_param },
 	{}
 };
 
@@ -2367,8 +2363,6 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	Cvar_Register (&pbr_diff_cvar, nullptr, 0);
 
 	QFV_Render_AddTasks (ctx, lighting_task_syms);
-
-	stepref_param[0] = &ctx->render_context->step_type;
 }
 
 static void

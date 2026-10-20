@@ -686,6 +686,8 @@ typedef struct qfv_taskctx_s {
 	void       *data;
 } qfv_taskctx_t;
 
+extern exprtype_t *qfv_stepref_param[];
+
 #define QFV_REND_INLINE GNU89INLINE inline
 
 VkCommandBuffer QFV_GetCmdBuffer (vulkan_ctx_t *ctx, bool secondary);
