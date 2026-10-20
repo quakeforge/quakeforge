@@ -458,6 +458,14 @@ glsl_capture_screen (capfunc_t callback, void *data)
 	callback (tex, data);
 }
 
+static uint32_t
+glsl_make_atlas (const char *name, const tex_t *tex, int num_rects,
+				 const scrapbox_t *rects)
+{
+	//FIXME implement
+	return nullent;
+}
+
 vid_render_funcs_t glsl_vid_render_funcs = {
 	.init = glsl_vid_render_init,
 
@@ -492,6 +500,8 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 		.Glyph             = glsl_Draw_Glyph,
 		.SetClip           = glsl_Draw_SetClip,
 		.ResetClip         = glsl_Draw_ResetClip,
+
+		.make_atlas        = glsl_make_atlas,
 	},
 
 	.ParticleSystem   = glsl_ParticleSystem,

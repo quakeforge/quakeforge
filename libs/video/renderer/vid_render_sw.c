@@ -449,6 +449,14 @@ sw_capture_screen (capfunc_t callback, void *data)
 	callback (tex, data);
 }
 
+static uint32_t
+sw_make_atlas (const char *name, const tex_t *tex, int num_rects,
+				 const scrapbox_t *rects)
+{
+	//FIXME implement
+	return nullent;
+}
+
 vid_render_funcs_t sw_vid_render_funcs = {
 	.init = sw_vid_render_init,
 
@@ -482,6 +490,8 @@ vid_render_funcs_t sw_vid_render_funcs = {
 		.Glyph             = Draw_Glyph,
 		.SetClip           = Draw_SetClip,
 		.ResetClip         = Draw_ResetClip,
+
+		.make_atlas        = sw_make_atlas,
 	},
 
 	.ParticleSystem   = sw_ParticleSystem,
