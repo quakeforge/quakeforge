@@ -1565,9 +1565,6 @@ create_base_resources (vulkan_ctx_t *ctx)
 	BUFFER (block_sums);
 #undef BUFFER
 
-	printf ("prefixsum_counts: %zx\n", bctx->prefixsum_counts_buffer.addr);
-	printf ("block_sums: %zx\n", bctx->block_sums_buffer.addr);
-
 	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.base");
 	create_notexture (ctx, packet, &images[0]);
 	create_default_skys (ctx, packet, &images[1]);
