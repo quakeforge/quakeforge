@@ -2815,6 +2815,7 @@ jobs = {
 						{ func = capture_initiate; },
 						{ func = submit_output; },
 						{ func = present_output; },
+						{ func = end_frame; },
 					);
 				};
 			};

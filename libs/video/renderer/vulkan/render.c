@@ -509,10 +509,6 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx, qfv_job_t *job)
 	}
 
 	qfMessageL ("update_time");
-	ctx->frameNumber++;
-	if (++ctx->curFrame >= rctx->frames.size) {
-		ctx->curFrame = 0;
-	}
 	update_time (&job->time, job->start_time, Sys_LongTime ());
 }
 
@@ -683,6 +679,20 @@ QFV_QueueFramebufferDelete (vulkan_ctx_t *ctx, VkFramebuffer framebuffer)
 		.deletion_frame = ctx->frameNumber + frames,
 	};
 	PQUEUE_INSERT (&rctx->deletion_queue, del);
+}
+
+static void
+end_frame (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto rctx = ctx->render_context;
+
+	ctx->frameNumber++;
+	if (++ctx->curFrame >= rctx->frames.size) {
+		ctx->curFrame = 0;
+	}
 }
 
 static void
@@ -1129,6 +1139,11 @@ blackboard_set_bufferptr_offset (const exprval_t **params, exprval_t *result,
 	*ptr = addr + offset;
 }
 
+static exprfunc_t end_frame_func[] = {
+	{ .func = end_frame },
+	{}
+};
+
 static exprfunc_t wait_on_fence_func[] = {
 	{ .func = wait_on_fence },
 	{}
@@ -1257,6 +1272,7 @@ static exprfunc_t blackboard_set_bufferptr_offset_func[] = {
 #define bbfunc(type) bbfunc_decl(blackboard_set_##type)
 
 static exprsym_t render_task_syms[] = {
+	{ "end_frame", &cexpr_function, end_frame_func },
 	{ "wait_on_fence", &cexpr_function, wait_on_fence_func },
 	{ "update_framebuffer", &cexpr_function, update_framebuffer_func },
 	{ "fullscreen_pass", &cexpr_function, fullscreen_pass_func },
