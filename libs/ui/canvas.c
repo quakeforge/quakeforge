@@ -382,10 +382,9 @@ draw_glyph_refs (view_pos_t *abs, glyphset_t *glyphset, glyphref_t *gref,
 	glyphobj_t *glyph = glyphset->glyphs + gref->start;
 
 	while (count-- > 0) {
-		glyphobj_t *g = glyph++;
-		glyphkey_t k = cache->keys[g->cacheind];
-		r_funcs->draw.Glyph (abs->x + g->x / 64, abs->y + g->y / 64,
-							 k.fontid, k.glyphid, color);
+		glyphobj_t g = *glyph++;
+		r_funcs->draw.Glyph (abs->x + g.x / 64, abs->y + g.y / 64,
+							 cache->atlas_id, g.cacheind, color);
 	}
 }
 
