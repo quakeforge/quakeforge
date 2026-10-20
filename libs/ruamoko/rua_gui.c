@@ -528,7 +528,10 @@ RUA_GUI_Init (progs_t *pr, int secure)
 	PR_RegisterBuiltins (pr, builtins, res);
 
 	res->reg = ECS_NewRegistry ("rua gui");
+
 	Canvas_InitSys (&res->csys, res->reg);
+	res->csys.sched = RUA_GetSched (pr);
+
 	res->tsys = (text_system_t) {
 		.reg = res->reg,
 		.view_base = res->csys.view_base,

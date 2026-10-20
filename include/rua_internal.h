@@ -37,6 +37,9 @@ struct progs_s;
 struct dstring_s;
 typedef struct sizebuf_s sizebuf_t;
 typedef struct set_s set_t;
+typedef struct wssched_s wssched_t;
+
+wssched_t *RUA_GetSched (progs_t *pr);
 
 void RUA_Secured (progs_t *pr, void *_res)__attribute__((noreturn));
 void RUA_Cbuf_Init (struct progs_s *pr, int secure);

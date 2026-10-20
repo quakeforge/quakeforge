@@ -35,8 +35,10 @@
 
 typedef struct progs_s progs_t;
 typedef struct cbuf_s cbuf_t;
+typedef struct wssched_s wssched_t;
 
 void RUA_Init (progs_t *pr, int secure);
+void RUA_SetSched (progs_t *pr, wssched_t *sched);
 void RUA_Cbuf_SetCbuf (progs_t *pr, cbuf_t *cbuf);
 pr_func_t RUA_Obj_msg_lookup (progs_t *pr, pr_ptr_t _self,
 							  pr_ptr_t __cmd);

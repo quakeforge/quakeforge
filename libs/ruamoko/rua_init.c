@@ -27,6 +27,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#include <stdlib.h>
 
 #include "QF/progs.h"
 #include "QF/ruamoko.h"
@@ -60,12 +61,49 @@ RUA_Secured (progs_t *pr, void *_res)
 	PR_RunError (pr, "Secured function called");
 }
 
+typedef struct rua_system_s {
+	wssched_t  *sched;
+} rua_system_t;
+
+static void
+rua_cleanup (progs_t *pr, void *_res)
+{
+}
+
+static void
+rua_destroy (progs_t *pr, void *_res)
+{
+	rua_system_t *res = _res;
+	free (res);
+}
+
 VISIBLE void
 RUA_Init (progs_t *pr, int secure)
 {
 	qfZoneScoped (true);
-	size_t      i;
 
-	for (i = 0; i < sizeof (init_funcs) / sizeof (init_funcs[0]); i++)
+	for (size_t i = 0; i < countof (init_funcs); i++) {
 		init_funcs[i] (pr, secure);
+	}
+
+	rua_system_t *res = malloc (sizeof (rua_system_t));
+	*res = (rua_system_t) {
+	};
+	PR_Resources_Register (pr, "RUA_system", res, rua_cleanup, rua_destroy);
+}
+
+VISIBLE void
+RUA_SetSched (progs_t *pr, wssched_t *sched)
+{
+	qfZoneScoped (true);
+	rua_system_t *res = PR_Resources_Find (pr, "RUA_system");
+	res->sched = sched;
+}
+
+wssched_t *
+RUA_GetSched (progs_t *pr)
+{
+	qfZoneScoped (true);
+	rua_system_t *res = PR_Resources_Find (pr, "RUA_system");
+	return res->sched;
 }

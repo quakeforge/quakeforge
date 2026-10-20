@@ -951,6 +951,7 @@ BI_Graphics_Main_Init (progs_t *pr)
 	Sys_RegisterShutdown (BI_shutdown, pr);
 
 	bi_sched = wssched_create (Sys_ProcessorCount ());
+	RUA_SetSched (pr, bi_sched);
 
 	R_Progs_Init (pr);
 	RUA_Game_Init (pr, thread->rua_security);
