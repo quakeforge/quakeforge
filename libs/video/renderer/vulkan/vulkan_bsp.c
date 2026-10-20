@@ -1974,6 +1974,8 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	*bctx->anim_index = vr_data.realtime * 5;
 
+	*bctx->prefixsum_counts_buffer.bb = bctx->prefixsum_counts_buffer.addr;
+
 	frame->entid_count = pass->entid_count;
 
 	bsp_flush (ctx);
