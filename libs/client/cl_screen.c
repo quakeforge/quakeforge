@@ -301,6 +301,8 @@ CL_Init_Screen (clscr_data_t *clscr_data)
 
 	__auto_type reg = ECS_NewRegistry ("cl screen");
 	Canvas_InitSys (&cl_canvas_sys, reg);
+	cl_canvas_sys.sched = clscr_data->sched;
+
 	if (con_module) {
 		__auto_type cd = con_module->data->console;
 		cd->component_base = ECS_RegisterComponents (reg, cd->components,

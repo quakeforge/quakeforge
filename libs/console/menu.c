@@ -49,6 +49,7 @@
 #include "QF/sys.h"
 
 #include "QF/input/event.h"
+#include "QF/ui/canvas.h"
 #include "QF/ui/view.h"
 
 #include "QF/plugin/console.h"
@@ -653,6 +654,7 @@ Menu_Init (void)
 	PR_RegisterBuiltins (&menu_pr_state, builtins, 0);
 
 	RUA_Init (&menu_pr_state, 3);
+	RUA_SetSched (&menu_pr_state, con_data.canvas_sys->sched);
 
 	InputLine_Progs_Init (&menu_pr_state);
 	RUA_Game_Init (&menu_pr_state, 1);
