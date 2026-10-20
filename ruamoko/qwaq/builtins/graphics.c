@@ -329,6 +329,8 @@ init_screen (graphics_resources_t *res)
 	Con_Load ("client");
 	auto reg = ECS_NewRegistry ("qwaq gr");
 	Canvas_InitSys (&canvas_sys, reg);
+	canvas_sys.sched = bi_sched;
+
 	if (con_module) {
 		auto cd = con_module->data->console;
 		cd->component_base = ECS_RegisterComponents (reg, cd->components,
