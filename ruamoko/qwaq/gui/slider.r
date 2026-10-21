@@ -32,7 +32,6 @@ void printf(string fmt, ...);
 								 imui_size_pixels, 25,
 								 sprintf ("slider_%p", self));
 	IMUI_SetViewPos (IMUI_context, {0, 0});
-	IMUI_SetViewFree (IMUI_context, {true, true});
 	IMUI_SetViewGravity (IMUI_context, grav_northwest);
 
 	int mode = IMUI_UpdateHotActive (IMUI_context);

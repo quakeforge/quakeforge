@@ -286,7 +286,6 @@ camera_lookat (point_t eye, point_t target, point_t up)
 			}
 			IMUI_Labelf (IMUI_context, "%4.1f##camWindow_sp", camera_speed_exp);
 		}
-		//FIXME sort out why Slider needs free positioning
 		UI_Vertical {
 			if ([sens_slider draw:sensitivity]) {
 				[system setSensitivity:pow (10, sensitivity)];
