@@ -790,6 +790,7 @@ view_color (hierarchy_t *h, uint32_t ind, imui_ctx_t *ctx, bool for_y)
 		case imui_size_fraction: return ONG;
 		case imui_size_fitchildren: return MAG;
 		case imui_size_expand: return RED;
+		case imui_size_minimum: return BLU;
 	}
 	return BLU;
 }
@@ -801,6 +802,7 @@ static const char *size_names[] = {
 	[imui_size_fraction]    = "fr",
 	[imui_size_fitchildren] = "fc",
 	[imui_size_expand]      = "ex",
+	[imui_size_minimum]     = "mn",
 };
 
 static void __attribute__((used))
@@ -932,7 +934,8 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierref_t href,
 			down_depend[i].num_views = 0;
 		}
 		if (cont[i].semantic_x == imui_size_fitchildren
-			|| cont[i].semantic_x == imui_size_expand) {
+			|| cont[i].semantic_x == imui_size_expand
+			|| cont[i].semantic_x == imui_size_minimum) {
 			down_depend[i].x = true;
 		} else if (!(i > 0 && (down_depend[i].x = down_depend[parent[i]].x))
 				   && cont[i].semantic_x == imui_size_fraction) {
@@ -944,7 +947,8 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierref_t href,
 			down_depend[i].x = false;
 		}
 		if (cont[i].semantic_y == imui_size_fitchildren
-			|| cont[i].semantic_y == imui_size_expand) {
+			|| cont[i].semantic_y == imui_size_expand
+			|| cont[i].semantic_y == imui_size_minimum) {
 			down_depend[i].y = true;
 		} else if (!(i > 0 && (down_depend[i].y = down_depend[parent[i]].y))
 				   && cont[i].semantic_y == imui_size_fraction) {
@@ -988,9 +992,12 @@ calc_downwards_dependent (imui_ctx_t *ctx, hierref_t href)
 		}
 		view_pos_t  clen = len[i];
 		if (cont[i].semantic_x == imui_size_fitchildren
-			|| cont[i].semantic_x == imui_size_expand) {
-			clen.x = 0;
-			if (cont[i].vertical) {
+			|| cont[i].semantic_x == imui_size_expand
+			|| cont[i].semantic_x == imui_size_minimum) {
+			if (cont[i].semantic_x != imui_size_minimum) {
+				clen.x = 0;
+			}
+			if (cont[i].vertical || cont[i].semantic_x == imui_size_minimum) {
 				for (uint32_t j = 0; j < h->childCount[i]; j++) {
 					uint32_t child = h->childIndex[i] + j;
 					clen.x = max (clen.x, len[child].x);
@@ -1003,9 +1010,13 @@ calc_downwards_dependent (imui_ctx_t *ctx, hierref_t href)
 			}
 		}
 		if (cont[i].semantic_y == imui_size_fitchildren
-			|| cont[i].semantic_y == imui_size_expand) {
-			clen.y = 0;
-			if (!cont[i].vertical) {
+			|| cont[i].semantic_y == imui_size_expand
+			|| cont[i].semantic_y == imui_size_minimum) {
+			if (cont[i].semantic_y != imui_size_minimum) {
+				clen.y = 0;
+			}
+			//Note the ! (horizontal)
+			if (!cont[i].vertical || cont[i].semantic_y == imui_size_minimum) {
 				for (uint32_t j = 0; j < h->childCount[i]; j++) {
 					uint32_t child = h->childIndex[i] + j;
 					clen.y = max (clen.y, len[child].y);
@@ -1395,8 +1406,14 @@ IMUI_Draw (imui_ctx_t *ctx)
 	prune_objects (ctx);
 	layout_objects (ctx, ctx->root_view);
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
-		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
-		layout_objects (ctx, window);
+		auto win = ctx->windows.a[i];
+		auto view = View_FromEntity (ctx->vsys, win->entity);
+		layout_objects (ctx, view);
+		auto len = View_GetLen (view);
+		auto window = ctx->registered_windows.a[win->window];
+		win->len = len;
+		window->xlen = len.x;
+		window->ylen = len.y;
 	}
 	ctx->hot = nullent;
 	bool was_focused = ctx->focused != nullent;
@@ -2176,7 +2193,7 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 		state->draw_order = imui_next_window (ctx);
 	}
 
-	auto semantic = panel->auto_fit ? imui_size_fitchildren : imui_size_pixels;
+	auto semantic = panel->auto_fit ? imui_size_fitchildren : imui_size_minimum;
 
 	ctx->current_parent = panel_view;
 	*View_Control (panel_view) = (viewcont_t) {

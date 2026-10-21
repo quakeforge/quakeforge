@@ -60,6 +60,7 @@ typedef enum {
 	imui_size_fraction,
 	imui_size_fitchildren,
 	imui_size_expand,
+	imui_size_minimum,
 } imui_size_t;
 
 typedef union imui_color_s {
