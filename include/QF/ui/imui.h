@@ -40,6 +40,10 @@ struct IE_event_s;
 struct passage_s;
 
 enum {
+	imui_pixels_x,///< int
+	imui_pixels_y,///< int
+	imui_weight_x,///< int
+	imui_weight_y,///< int
 	imui_fraction_x,///< imui_frac_t
 	imui_fraction_y,///< imui_frac_t
 	imui_reference,	///< imui_reference_t

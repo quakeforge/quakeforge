@@ -58,6 +58,10 @@
 
 #define IMUI_context ctx
 
+#define c_pixels_x (ctx->csys->imui_base + imui_pixels_x)
+#define c_pixels_y (ctx->csys->imui_base + imui_pixels_y)
+#define c_weight_x (ctx->csys->imui_base + imui_weight_x)
+#define c_weight_y (ctx->csys->imui_base + imui_weight_y)
 #define c_fraction_x (ctx->csys->imui_base + imui_fraction_x)
 #define c_fraction_y (ctx->csys->imui_base + imui_fraction_y)
 #define c_reference (ctx->csys->imui_base + imui_reference)
@@ -159,6 +163,22 @@ imui_reference_destroy (void *_ref, ecs_registry_t *reg, uint32_t ent,
 }
 
 const component_t imui_components[imui_comp_count] = {
+	[imui_pixels_x] = {
+		.size = sizeof (int),
+		.name = "pixels x",
+	},
+	[imui_pixels_y] = {
+		.size = sizeof (int),
+		.name = "pixels y",
+	},
+	[imui_weight_x] = {
+		.size = sizeof (int),
+		.name = "weight x",
+	},
+	[imui_weight_y] = {
+		.size = sizeof (int),
+		.name = "weight y",
+	},
 	[imui_fraction_x] = {
 		.size = sizeof (imui_frac_t),
 		.name = "fraction x",
@@ -823,6 +843,13 @@ dump_tree (hierref_t href, int level, imui_ctx_t *ctx)
 						view_color (h, ind, ctx, j == c_fraction_y),
 						val.num, val.den);
 			}
+			if (j == c_pixels_x || j == c_pixels_y
+				|| j == c_weight_x || j == c_weight_y) {
+				auto val = *(int *) Ent_GetComponent (e, j, reg);
+				printf ("(%s%d"DFL")",
+						view_color (h, ind, ctx, j == c_pixels_y
+												|| j == c_weight_y), val);
+			}
 			if (j == ecs_name) {
 				auto name = *(const char **) Ent_GetComponent (e, j, reg);
 				printf ("(%s)", name);
@@ -911,9 +938,8 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierref_t href,
 				   && cont[i].semantic_x == imui_size_fraction) {
 			len[i].x = fraction (ent[i], len[parent[i]].x, c_fraction_x, reg);
 		} else if (cont[i].semantic_x == imui_size_pixels
-				   && Ent_HasComponent (ent[i], c_fraction_x, reg)) {
-			//FIXME uses numerator for pixels
-			int *pixels = Ent_GetComponent (ent[i], c_fraction_x, reg);
+				   && Ent_HasComponent (ent[i], c_pixels_x, reg)) {
+			int *pixels = Ent_GetComponent (ent[i], c_pixels_x, reg);
 			len[i].x = *pixels;
 			down_depend[i].x = false;
 		}
@@ -924,9 +950,8 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierref_t href,
 				   && cont[i].semantic_y == imui_size_fraction) {
 			len[i].y = fraction (ent[i], len[parent[i]].y, c_fraction_y, reg);
 		} else if (cont[i].semantic_y == imui_size_pixels
-				   && Ent_HasComponent (ent[i], c_fraction_y, reg)) {
-			//FIXME uses numerator for pixels
-			int *pixels = Ent_GetComponent (ent[i], c_fraction_y, reg);
+				   && Ent_HasComponent (ent[i], c_pixels_y, reg)) {
+			int *pixels = Ent_GetComponent (ent[i], c_pixels_y, reg);
 			len[i].y = *pixels;
 			down_depend[i].y = false;
 		}
@@ -1028,14 +1053,12 @@ calc_expansions (imui_ctx_t *ctx, hierref_t href)
 				tlen.y += len[child].y;
 			}
 			if (cont[child].semantic_x == imui_size_expand) {
-				//FIXME uses numerator for weight
-				int *p = Ent_GetComponent (ent[child], c_fraction_x, reg);
+				int *p = Ent_GetComponent (ent[child], c_weight_x, reg);
 				elen.x += *p;
 				ecount.x++;
 			}
 			if (cont[child].semantic_y == imui_size_expand) {
-				//FIXME uses numerator for weight
-				int *p = Ent_GetComponent (ent[child], c_fraction_y, reg);
+				int *p = Ent_GetComponent (ent[child], c_weight_y, reg);
 				elen.y += *p;
 				ecount.y++;
 			}
@@ -1052,8 +1075,7 @@ calc_expansions (imui_ctx_t *ctx, hierref_t href)
 					len[child].x = len[i].x;
 				}
 				if (cont[child].semantic_y == imui_size_expand) {
-					//FIXME uses numerator for weight
-					int *p = Ent_GetComponent (ent[child], c_fraction_y, reg);
+					int *p = Ent_GetComponent (ent[child], c_weight_y, reg);
 					int delta = *p * space / elen.y;
 					len[child].y += max (delta, 0);
 					filled += max (delta, 0);
@@ -1075,8 +1097,7 @@ calc_expansions (imui_ctx_t *ctx, hierref_t href)
 			for (uint32_t j = 0; j < h->childCount[i]; j++) {
 				uint32_t child = h->childIndex[i] + j;
 				if (cont[child].semantic_x == imui_size_expand) {
-					//FIXME uses numerator for weight
-					int *p = Ent_GetComponent (ent[child], c_fraction_x, reg);
+					int *p = Ent_GetComponent (ent[child], c_weight_x, reg);
 					int delta = *p * space / elen.x;
 					len[child].x += max (delta, 0);
 					filled += max (delta, 0);
@@ -1431,12 +1452,10 @@ IMUI_PushLayout (imui_ctx_t *ctx, bool vertical)
 	ctx->current_state = state;
 	View_SetLen (view, 0, 0);
 	if (x_size == imui_size_expand) {
-		Ent_SetComponent (view.id, c_fraction_x, ctx->csys->reg,
-						  &(imui_frac_t) { 100, 100 });
+		Ent_SetComponent (view.id, c_weight_x, ctx->csys->reg, &(int) { 100 });
 	}
 	if (y_size == imui_size_expand) {
-		Ent_SetComponent (view.id, c_fraction_y, ctx->csys->reg,
-						  &(imui_frac_t) { 100, 100 });
+		Ent_SetComponent (view.id, c_weight_y, ctx->csys->reg, &(int) { 100 });
 	}
 	return 0;
 }
@@ -1456,10 +1475,13 @@ IMUI_Layout_SetXSize (imui_ctx_t *ctx, imui_size_t size, int value)
 	auto pcont = View_Control (ctx->current_parent);
 	uint32_t id = ctx->current_parent.id;
 	pcont->semantic_x = size;
-	if (size == imui_size_fraction || size == imui_size_expand
-		|| size == imui_size_pixels) {
+	if (size == imui_size_fraction) {
 		Ent_SetComponent (id, c_fraction_x, ctx->csys->reg,
 						  &(imui_frac_t) { value, 100 });
+	} else if (size == imui_size_expand) {
+		Ent_SetComponent (id, c_weight_x, ctx->csys->reg, &value);
+	} else if (size == imui_size_pixels) {
+		Ent_SetComponent (id, c_pixels_x, ctx->csys->reg, &value);
 	}
 }
 
@@ -1470,10 +1492,13 @@ IMUI_Layout_SetYSize (imui_ctx_t *ctx, imui_size_t size, int value)
 	auto pcont = View_Control (ctx->current_parent);
 	uint32_t id = ctx->current_parent.id;
 	pcont->semantic_y = size;
-	if (size == imui_size_fraction || size == imui_size_expand
-		|| size == imui_size_pixels) {
+	if (size == imui_size_fraction) {
 		Ent_SetComponent (id, c_fraction_y, ctx->csys->reg,
 						  &(imui_frac_t) { value, 100 });
+	} else if (size == imui_size_expand) {
+		Ent_SetComponent (id, c_weight_y, ctx->csys->reg, &value);
+	} else if (size == imui_size_pixels) {
+		Ent_SetComponent (id, c_pixels_y, ctx->csys->reg, &value);
 	}
 }
 
@@ -1644,8 +1669,7 @@ set_expand_x (imui_ctx_t *ctx, view_t view, int weight)
 {
 	qfZoneScoped (true);
 	View_Control (view)->semantic_x = imui_size_expand;
-	Ent_SetComponent (view.id, c_fraction_x, ctx->csys->reg,
-					  &(imui_frac_t) { weight, 100 });
+	Ent_SetComponent (view.id, c_weight_x, ctx->csys->reg, &weight);
 }
 
 int
@@ -1941,13 +1965,17 @@ sized_view (imui_ctx_t *ctx,
 	View_Control (view)->semantic_x = xsize;
 	View_Control (view)->semantic_y = ysize;
 	auto reg = ctx->csys->reg;
-	if (xsize == imui_size_fraction || xsize == imui_size_expand) {
+	if (xsize == imui_size_fraction) {
 		Ent_SetComponent (view.id, c_fraction_x, reg,
 						  &(imui_frac_t) { xvalue, 100 });
+	} else if (xsize == imui_size_expand) {
+		Ent_SetComponent (view.id, c_weight_x, reg, &xvalue);
 	}
-	if (ysize == imui_size_fraction || ysize == imui_size_expand) {
+	if (ysize == imui_size_fraction) {
 		Ent_SetComponent (view.id, c_fraction_y, reg,
 						  &(imui_frac_t) { yvalue, 100 });
+	} else if (ysize == imui_size_expand) {
+		Ent_SetComponent (view.id, c_weight_y, reg, &yvalue);
 	}
 	return view;
 }
@@ -2436,10 +2464,9 @@ IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name)
 		.semantic_y = imui_size_expand,
 		.active = 0,
 	};
-	Ent_SetComponent (anchor_view.id, c_fraction_x, ctx->csys->reg,
-					  &(imui_frac_t) { 100, 100 });
-	Ent_SetComponent (anchor_view.id, c_fraction_y, ctx->csys->reg,
-					  &(imui_frac_t) { 100, 100 });
+	auto reg = ctx->csys->reg;
+	Ent_SetComponent (anchor_view.id, c_weight_x, reg, &(int) { 100 });
+	Ent_SetComponent (anchor_view.id, c_weight_y, reg, &(int) { 100 });
 
 	auto panel = ctx->windows.a[ctx->windows.size - 1];
 
@@ -2569,12 +2596,15 @@ IMUI_ScrollBar (imui_ctx_t *ctx, const char *name)
 		}
 	}
 	View_SetPos (tt_view, tt_state->pos.x, tt_state->pos.y);
-	imui_frac_t efrac = { 100, 100 };
 	imui_frac_t tfrac = tt_state->fraction;
-	Ent_SetComponent (tt_view.id, c_fraction_x, ctx->csys->reg,
-					  vertical ? &efrac : &tfrac);
-	Ent_SetComponent (tt_view.id, c_fraction_y, ctx->csys->reg,
-					  vertical ? &tfrac : &efrac);
+	auto reg = ctx->csys->reg;
+	if (vertical) {
+		Ent_SetComponent (tt_view.id, c_weight_x, reg, &(int) { 100 });
+		Ent_SetComponent (tt_view.id, c_fraction_y, reg, &tfrac);
+	} else {
+		Ent_SetComponent (tt_view.id, c_fraction_x, reg, &tfrac);
+		Ent_SetComponent (tt_view.id, c_weight_y, reg, &(int) { 100 });
+	}
 }
 
 int
@@ -2593,8 +2623,7 @@ IMUI_StartScroller (imui_ctx_t *ctx)
 		.scroll = 1,
 	};
 	auto reg = ctx->csys->reg;
-	Ent_SetComponent (anchor_view.id, c_fraction_x, reg,
-					  &(imui_frac_t) { 100, 100 });
+	Ent_SetComponent (anchor_view.id, c_weight_x, reg, &(int) { 100 });
 
 	uint32_t    parent = ctx->current_parent.id;
 	const char *name = nullptr;
