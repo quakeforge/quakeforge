@@ -316,22 +316,38 @@ ECS_PrintEntity (ecs_registry_t *registry, uint32_t ent)
 }
 
 VISIBLE void
-ECS_PrintRegistry (ecs_registry_t *registry)
+ECS_PrintRegistry (ecs_registry_t *reg)
 {
-	printf ("%s %d\n", registry->name, registry->entities.num_ids);
-	for (size_t i = 0; i < registry->components.size; i++) {
-		printf ("%3zd %7d %s\n", i, registry->comp_pools[i].count,
-				registry->components.a[i].name);
-		auto subpool = &registry->subpools[i];
+	printf ("%s %d\n", reg->name, reg->entities.num_ids);
+	for (uint32_t i = 0; i < reg->groups.groups.num_ranges; i++) {
+		uint32_t gid = reg->groups.groups.rangeids[i];
+		auto range = ecs_get_subpool_range (&reg->groups.groups, gid);
+		auto group_components = &reg->groups.group_components;
+		printf ("Group %d:\n", gid);
+		ecs_grpcomp_t *gc = Component_Address (&ecs_group_components,
+											   group_components->data,
+											   range.start);
+		uint32_t count = range.end - range.start;
+		for (uint32_t j = 0; j < count; j++, gc++) {
+			printf ("   %5d: %3d.%-3d %s\n", j, gc->component, gc->rangeid,
+					reg->components.a[gc->component].name);
+		}
+	}
+	printf ("Components:\n");
+	for (size_t i = 0; i < reg->components.size; i++) {
+		printf ("%3zd %7d %s\n", i, reg->comp_pools[i].count,
+				reg->components.a[i].name);
+		auto subpool = &reg->subpools[i];
 		if (subpool->num_ranges) {
 			printf ("   next     : %x\n", subpool->next);
 			printf ("   available: %x\n", subpool->available);
+			printf ("           range_id si st-end\n");
 			for (uint32_t j = 0; j < subpool->num_ranges; j++) {
 				uint32_t rid = subpool->rangeids[j];
 				uint32_t sind = subpool->sorted[j];
 				uint32_t end = subpool->ranges[sind];
 				uint32_t start = sind ? subpool->ranges[sind - 1] : 0;
-				printf ("   %5x: %3x.%05x %d %d-%d\n", j,
+				printf ("   %5x: %3x.%05x %2d %d-%d\n", j,
 						Ent_Generation (rid) >> ENT_IDBITS, Ent_Index (rid),
 						sind, start, end);
 			}
