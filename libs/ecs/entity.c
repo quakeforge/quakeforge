@@ -227,6 +227,7 @@ void Ent_AddGroup (uint32_t ent, uint32_t group, ecs_registry_t *reg)
 			}
 		} else {
 			uint32_t id = Ent_Index (ent);
+			ecs_expand_sparse (pool, id);
 			ind = ecs_expand_pool (pool, 1, c);
 			pool->sparse[id] = ind;
 			pool->dense[ind] = ent;
