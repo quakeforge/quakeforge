@@ -357,7 +357,7 @@ main ()
 
 	auto graph = ctx->render_context->graph;
 	auto job = QFV_FindJob ("prefixsum", graph);
-	QFV_RunRenderJob (ctx, job);
+	QFV_RunRenderJob (ctx, job, 0);
 
 	print_time ("", job->label.name, job->time);
 	for (uint32_t i = 0; i < job->num_steps; i++) {
