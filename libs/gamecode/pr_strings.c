@@ -60,6 +60,7 @@ typedef struct fmt_item_s {
 	unsigned    flags;
 	int         minFieldWidth;
 	int         precision;
+	int         components;
 	union {
 		const char *string_var;
 		pr_int_t    int_var;
@@ -68,7 +69,7 @@ typedef struct fmt_item_s {
 		double      double_var;
 		pr_long_t   long_var;
 		pr_ulong_t  ulong_var;
-	}           data;
+	};
 	struct fmt_item_s *next;
 } fmt_item_t;
 
@@ -792,18 +793,18 @@ PR_FreeTempStrings (progs_t *pr)
 	switch ((doWidth << 1) | doPrecision) {							\
 		case 3:														\
 			hasprintf (result, tmp->str, current->minFieldWidth,	\
-					   current->precision, current->data.t##_var);	\
+					   current->precision, current->t##_var);		\
 			break;													\
 		case 2:														\
 			hasprintf (result, tmp->str, current->minFieldWidth,	\
-					   current->data.t##_var);						\
+					   current->t##_var);							\
 			break;													\
 		case 1:														\
 			hasprintf (result, tmp->str, current->precision,		\
-					   current->data.t##_var);						\
+					   current->t##_var);							\
 			break;													\
 		case 0:														\
-			hasprintf (result, tmp->str, current->data.t##_var);	\
+			hasprintf (result, tmp->str, current->t##_var);			\
 			break;													\
 	}
 
@@ -920,6 +921,7 @@ new_fmt_item (prstr_resources_t *res)
 	res->free_fmt_items = fi->next;
 	memset (fi, 0, sizeof (*fi));
 	fi->precision = -1;
+	fi->components = 1;
 	return fi;
 }
 
@@ -930,8 +932,9 @@ free_fmt_item (prstr_resources_t *res, fmt_item_t *fi)
 	res->free_fmt_items = fi;
 }
 
-struct fmt_state_s;
-typedef void (*fmt_state_f) (struct fmt_state_s *);
+typedef struct fmt_state_s fmt_state_t;
+typedef void (*fmt_state_f) (fmt_state_t *);
+typedef void (*fmt_value_f) (fmt_state_t *, int ind);
 
 typedef struct fmt_state_s {
 	fmt_state_f state;
@@ -1008,11 +1011,12 @@ fmt_state_flags (fmt_state_t *state)
 		switch (*state->c) {
 			case '%':
 				state->c++;
-				(*state->fi)->flags = 0;
-				(*state->fi)->precision = 1;
-				(*state->fi)->minFieldWidth = 0;
-				(*state->fi)->type = 's';
-				(*state->fi)->data.string_var = "%";
+				**state->fi = (fmt_item_t) {
+					.type = 's',
+					.precision = 1,
+					.components = 1,
+					.string_var = "%",
+				};
 
 				fmt_append_item (state);
 				state->state = fmt_state_format;
@@ -1114,7 +1118,6 @@ fmt_state_fixed_precision (fmt_state_t *state)
 static void
 fmt_state_modifiers (fmt_state_t *state)
 {
-	// no modifiers supported
 	if (state->c[0] == 'l'
 		&& (state->c[1] == 'i' || state->c[1] == 'd' || state->c[1] == 'x'
 			|| state->c[1] == 'u' || state->c[1] == 'o'
@@ -1122,7 +1125,99 @@ fmt_state_modifiers (fmt_state_t *state)
 		(*state->fi)->flags |= FMT_LONG;
 		state->c++;
 	}
+	if (state->c[0] == 'v' && state->c[1] >= '2' && state->c[1] <= '4') {
+		// v followed by 2, 3 or 4 means a generic vector item while
+		// v followed by anything else is `vector` (`vec3`)
+		(*state->fi)->components = state->c[1] - '0';
+		state->c += 2;
+	}
 	state->state = fmt_state_conversion;
+}
+
+static void
+fmt_do_vector (fmt_state_t *state, char conv, fmt_value_f func)
+{
+	int         count = (*state->fi)->components;
+	int         flags = (*state->fi)->flags;
+	int         precision = (*state->fi)->precision;
+	unsigned    minWidth = (*state->fi)->minFieldWidth;
+
+	if (count > 1) {
+		(*state->fi)->flags = 0;
+		(*state->fi)->precision = -1;
+		(*state->fi)->minFieldWidth = 0;
+	} else {
+		(*state->fi)->type = conv;
+	}
+
+	for (int i = 0; i < count; i++) {
+		if (count > 1) {
+			if (i == 0) {
+				(*state->fi)->type = 's';
+				(*state->fi)->string_var = "'";
+			} else {
+				(*state->fi)->type = 's';
+				(*state->fi)->string_var = " ";
+			}
+			fmt_append_item (state);
+			**state->fi = (fmt_item_t) {
+				.type = conv,
+				.flags = flags,
+				.minFieldWidth = minWidth,
+				.precision = precision,
+			};
+		}
+
+		func (state, i);
+
+		if (count > 1) {
+			fmt_append_item (state);
+		}
+	}
+	if ((flags & FMT_LONG) && count > 2) {
+		state->fmt_count++;
+	}
+
+	if (count > 1) {
+		(*state->fi)->type = 's';
+		(*state->fi)->string_var = "'";
+	}
+
+	state->fmt_count++;
+	fmt_append_item (state);
+}
+
+static void
+fmt_do_int (fmt_state_t *state, int ind)
+{
+	int         flags = (*state->fi)->flags;
+	if (flags & FMT_LONG) {
+		(*state->fi)->ulong_var = (&P_var (pr, state->fmt_count, long))[ind];
+	} else {
+		(*state->fi)->uint_var = (&P_var (pr, state->fmt_count, int))[ind];
+	}
+}
+
+static void
+fmt_do_float (fmt_state_t *state, int ind)
+{
+	int         flags = (*state->fi)->flags;
+	if (flags & FMT_LONG) {
+		(*state->fi)->double_var = (&P_var (pr, state->fmt_count, double))[ind];
+	} else {
+		(*state->fi)->float_var = (&P_var (pr, state->fmt_count, float))[ind];
+	}
+}
+
+static void
+fmt_do_uint (fmt_state_t *state, int ind)
+{
+	int         flags = (*state->fi)->flags;
+	if (flags & FMT_LONG) {
+		(*state->fi)->ulong_var = (&P_var (pr, state->fmt_count, ulong))[ind];
+	} else {
+		(*state->fi)->uint_var = (&P_var (pr, state->fmt_count, uint))[ind];
+	}
 }
 
 static void
@@ -1132,7 +1227,7 @@ fmt_state_conversion (fmt_state_t *state)
 	if (state->fmt_count >= state->argc) {
 		// avoid accessing outside the supplied args pointers
 		state->fmt_count++;		// increment so "too many" check is done
-		state->state = 0;
+		state->state = nullptr;
 		return;
 	}
 	switch (char conv = *state->c++) {
@@ -1143,19 +1238,19 @@ fmt_state_conversion (fmt_state_t *state)
 				const char *at_str = state->at_handler (pr, at_param,
 														state->at_handler_data);
 				(*state->fi)->type = 's';
-				(*state->fi)->data.string_var = at_str;
+				(*state->fi)->string_var = at_str;
 			} else {
 				(*state->fi)->type = 's';
-				(*state->fi)->data.string_var = "[";
+				(*state->fi)->string_var = "[";
 				fmt_append_item (state);
 
 				(*state->fi)->flags |= FMT_ALTFORM;
 				(*state->fi)->type = 'x';
-				(*state->fi)->data.uint_var = at_param;
+				(*state->fi)->uint_var = at_param;
 				fmt_append_item (state);
 
 				(*state->fi)->type = 's';
-				(*state->fi)->data.string_var = "]";
+				(*state->fi)->string_var = "]";
 			}
 			state->fmt_count++;
 			fmt_append_item (state);
@@ -1163,7 +1258,7 @@ fmt_state_conversion (fmt_state_t *state)
 		case 'e':
 			// entity
 			(*state->fi)->type = 'i';
-			(*state->fi)->data.int_var = P_EDICTNUM (pr, state->fmt_count);
+			(*state->fi)->int_var = P_EDICTNUM (pr, state->fmt_count);
 
 			state->fmt_count++;
 			fmt_append_item (state);
@@ -1171,40 +1266,22 @@ fmt_state_conversion (fmt_state_t *state)
 		case 'i':
 		case 'd':
 		case 'c':
-			// int
-			(*state->fi)->type = conv;
-			if ((*state->fi)->flags & FMT_LONG) {
-				(*state->fi)->data.long_var = P_LONG (pr, state->fmt_count);
-			} else {
-				(*state->fi)->data.int_var = P_INT (pr, state->fmt_count);
-			}
-
-			state->fmt_count++;
-			fmt_append_item (state);
+			fmt_do_vector (state, conv, fmt_do_int);
 			break;
 		case 'f':
-			// float or double
 		case 'g':
-			// float or double, no trailing zeroes, trim "."
-			// if nothing after
-			(*state->fi)->type = conv;
-			if (pr->float_promoted) {
+			if (pr->float_promoted && (*state->fi)->components == 1) {
+				// only scalar float is promoted: vec3 etc is not promoted
+				// to dvec3 etc.
 				(*state->fi)->flags |= FMT_LONG;
-				(*state->fi)->data.double_var
-					= P_DOUBLE (pr, state->fmt_count);
-			} else {
-				(*state->fi)->data.float_var
-					= P_FLOAT (pr, state->fmt_count);
 			}
-
-			state->fmt_count++;
-			fmt_append_item (state);
+			fmt_do_vector (state, conv, fmt_do_float);
 			break;
 		case 'p':
 			// pointer
 			(*state->fi)->flags |= FMT_ALTFORM;
 			(*state->fi)->type = 'x';
-			(*state->fi)->data.uint_var = P_UINT (pr, state->fmt_count);
+			(*state->fi)->uint_var = P_UINT (pr, state->fmt_count);
 
 			state->fmt_count++;
 			fmt_append_item (state);
@@ -1212,75 +1289,24 @@ fmt_state_conversion (fmt_state_t *state)
 		case 's':
 			// string
 			(*state->fi)->type = conv;
-			(*state->fi)->data.string_var = P_GSTRING (pr, state->fmt_count);
+			(*state->fi)->string_var = P_GSTRING (pr, state->fmt_count);
 
 			state->fmt_count++;
 			fmt_append_item (state);
 			break;
 		case 'v':
 		case 'q':
-			// vector
-			{
-				int         i, count = 3;
-				int         flags = (*state->fi)->flags;
-				int         precision = (*state->fi)->precision;
-				unsigned    minWidth = (*state->fi)->minFieldWidth;
-
-				(*state->fi)->flags = 0;
-				(*state->fi)->precision = -1;
-				(*state->fi)->minFieldWidth = 0;
-
-				if (conv == 'q')
-					count = 4;
-
-				for (i = 0; i < count; i++) {
-					if (i == 0) {
-						(*state->fi)->type = 's';
-						(*state->fi)->data.string_var = "'";
-					} else {
-						(*state->fi)->type = 's';
-						(*state->fi)->data.string_var = " ";
-					}
-					fmt_append_item (state);
-
-					(*state->fi)->flags = flags;
-					(*state->fi)->precision = precision;
-					(*state->fi)->minFieldWidth = minWidth;
-					(*state->fi)->type = 'g';
-					if (flags & FMT_LONG) {
-						(*state->fi)->data.double_var
-							= (&P_var (pr, state->fmt_count, double))[i];
-					} else {
-						(*state->fi)->data.float_var =
-							P_VECTOR (pr, state->fmt_count)[i];
-					}
-
-					fmt_append_item (state);
-				}
-				if (flags & FMT_LONG) {
-					state->fmt_count++;
-				}
+			if (conv == 'v') {
+				(*state->fi)->components = 3;
+			} else {
+				(*state->fi)->components = 4;
 			}
-
-			(*state->fi)->type = 's';
-			(*state->fi)->data.string_var = "'";
-
-			state->fmt_count++;
-			fmt_append_item (state);
+			fmt_do_vector (state, 'g', fmt_do_float);
 			break;
 		case 'u':
 		case 'x':
 		case 'o':
-			// int, unsigned, octal or hex notation
-			(*state->fi)->type = conv;
-			if ((*state->fi)->flags & FMT_LONG) {
-				(*state->fi)->data.ulong_var = P_ULONG (pr, state->fmt_count);
-			} else {
-				(*state->fi)->data.uint_var = P_UINT (pr, state->fmt_count);
-			}
-
-			state->fmt_count++;
-			fmt_append_item (state);
+			fmt_do_vector (state, conv, fmt_do_uint);
 			break;
 	}
 	if (*state->c) {
@@ -1299,9 +1325,12 @@ fmt_state_format (fmt_state_t *state)
 	}
 	if (state->c != l) {
 		// have some unformatted text to print
-		(*state->fi)->precision = state->c - l;
-		(*state->fi)->type = 's';
-		(*state->fi)->data.string_var = l;
+		**state->fi = (fmt_item_t) {
+			.type = 's',
+			.precision = state->c - l,
+			.components = 1,
+			.string_var = l,
+		};
 		if (*state->c) {
 			fmt_append_item (state);
 		}
