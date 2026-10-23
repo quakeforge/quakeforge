@@ -2511,8 +2511,8 @@ flow_find_loops (flowgraph_t *graph)
 				loop = make_loop (graph, node->id, succ->element);
 				for (l = loop_list; l; l = l->next) {
 					if (l->head == loop->head
-						&& !set_is_subset (l->nodes, loop->nodes)
-						&& !set_is_subset (loop->nodes, l->nodes)) {
+						&& set_is_overlapping (l->nodes, loop->nodes)) {
+						// the two loops have nodes not in the other
 						set_union (l->nodes, loop->nodes);
 						delete_loop (loop);
 						loop = 0;
