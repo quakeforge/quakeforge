@@ -651,6 +651,12 @@ set_is_intersecting (const set_t *s1, const set_t *s2)
 }
 
 int
+set_is_overlapping (const set_t *s1, const set_t *s2)
+{
+	return set_test (s1, s2) == (set_differ | set_intersect);
+}
+
+int
 set_is_equivalent (const set_t *s1, const set_t *s2)
 {
 	return !(set_test (s1, s2) & set_differ);

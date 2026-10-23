@@ -173,6 +173,34 @@ make_not_1_2 (void)
 }
 
 static set_t *
+make_1_2 (void)
+{
+	set_t      *set = set_new ();
+	set_add (set, 1);
+	set_add (set, 2);
+	return set;
+}
+
+static set_t *
+make_1_2_3 (void)
+{
+	set_t      *set = set_new ();
+	set_add (set, 1);
+	set_add (set, 2);
+	set_add (set, 3);
+	return set;
+}
+
+static set_t *
+make_2_3 (void)
+{
+	set_t      *set = set_new ();
+	set_add (set, 2);
+	set_add (set, 3);
+	return set;
+}
+
+static set_t *
 expand_3xSIZEm1 (set_t *set, const set_t *x)
 {
 	set_expand (set, 3 * SIZE - 1);
@@ -367,6 +395,25 @@ struct {
 	T(make_SIZE, make_empty, 0, set_is_superset, 0, 0),
 	T(make_empty, make_SIZE, 0, set_is_subset,   0, 0),
 	T(make_empty, make_SIZE, 0, set_is_superset, 1, 0),
+
+	T(make_1_2,   make_1_2_3, 0, set_is_subset,       0, 0),
+	T(make_1_2,   make_1_2_3, 0, set_is_superset,     1, 0),
+	T(make_1_2,   make_1_2_3, 0, set_is_equivalent,   0, 0),
+	T(make_1_2,   make_1_2_3, 0, set_is_intersecting, 1, 0),
+	T(make_1_2,   make_1_2_3, 0, set_is_overlapping,  0, 0),
+	T(make_1_2,   make_1_2_3, 0, set_is_disjoint,     0, 0),
+	T(make_1_2_3, make_1_2,   0, set_is_subset,       1, 0),
+	T(make_1_2_3, make_1_2,   0, set_is_superset,     0, 0),
+	T(make_1_2_3, make_1_2,   0, set_is_equivalent,   0, 0),
+	T(make_1_2_3, make_1_2,   0, set_is_intersecting, 1, 0),
+	T(make_1_2_3, make_1_2,   0, set_is_overlapping,  0, 0),
+	T(make_1_2_3, make_1_2,   0, set_is_disjoint,     0, 0),
+	T(make_1_2,   make_2_3,   0, set_is_subset,       0, 0),
+	T(make_1_2,   make_2_3,   0, set_is_superset,     0, 0),
+	T(make_1_2,   make_2_3,   0, set_is_equivalent,   0, 0),
+	T(make_1_2,   make_2_3,   0, set_is_intersecting, 1, 0),
+	T(make_1_2,   make_2_3,   0, set_is_overlapping,  1, 0),
+	T(make_1_2,   make_2_3,   0, set_is_disjoint,     0, 0),
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 

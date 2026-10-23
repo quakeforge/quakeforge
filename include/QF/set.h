@@ -379,6 +379,17 @@ int set_is_disjoint (const set_t *s1, const set_t *s2) __attribute__((pure));
 */
 int set_is_intersecting (const set_t *s1, const set_t *s2) __attribute__((pure));
 
+/** Test if two sets partially overlap.
+
+	\param s1		The first set to test.
+	\param s2		The second set to test.
+	\return			1 if \a s2 partialy overplaps \a s1, 0 if not.
+
+	\note	The two sets must differ but still interesect: neither set is the
+	subset or superset of the other.
+*/
+int set_is_overlapping (const set_t *s1, const set_t *s2) __attribute__((pure));
+
 /** Test if two sets are equivalent.
 
 	\param s1		The first set to test.
@@ -393,8 +404,9 @@ int set_is_equivalent (const set_t *s1, const set_t *s2) __attribute__((pure));
 
 	\param set		The potential super-set.
 	\param sub		The potential subset.
-	\return			1 if \a sup is a superset of \a set, or if the sets are
+	\return			1 if \a sub is a subset of \a set, or if the sets are
 					equivalent.
+	\note	This is the reverse of standard mathematical notation.
 */
 int set_is_subset (const set_t *set, const set_t *sub) __attribute__((pure));
 
@@ -404,8 +416,9 @@ int set_is_subset (const set_t *set, const set_t *sub) __attribute__((pure));
 
 	\param set		The potential subset.
 	\param sup		The potential super-set.
-	\return			1 if \a sub is a subset of \a set, or if the sets are
+	\return			1 if \a sup is a superset of \a set, or if the sets are
 					equivalent.
+	\note	This is the reverse of standard mathematical notation.
 */
 int set_is_superset (const set_t *set, const set_t *sup) __attribute__((pure));
 
