@@ -600,6 +600,7 @@ canvas_href_cmp (const void *_a, const void *_b, void *arg)
 	return diff > 0 ? 1 : diff < 0 ? -1 : 0;
 }
 
+// use canvas_* enum for component
 void
 Canvas_SortComponentPool (canvas_system_t *canvas_sys, uint32_t ent,
 						  uint32_t component)

@@ -116,6 +116,7 @@ void Canvas_InitSys (canvas_system_t *canvas_sys, ecs_registry_t *reg);
 void Canvas_AddToEntity (canvas_system_t *canvas_sys, uint32_t ent);
 uint32_t Canvas_New (canvas_system_t *canvas_sys);
 void Canvas_Draw (canvas_system_t *canvas_sys);
+// use canvas_* enum for component
 void Canvas_SortComponentPool (canvas_system_t *canvas_sys, uint32_t ent,
 							   uint32_t component);
 void Canvas_SetLen (canvas_system_t *canvas_sys, uint32_t ent, view_pos_t len);
