@@ -650,11 +650,17 @@ center (uint v, uint len)
 		UI_Layout(false) {
 			IMUI_Layout_SetXSize (IMUI_context, imui_size_none, 0);
 			IMUI_Layout_SetYSize (IMUI_context, imui_size_none, 0);
-			ivec2 cpos = (cursor - base) * X_size - ivec2(1,0);
-			IMUI_SetViewPos (IMUI_context, cpos);
-			IMUI_SetViewLen (IMUI_context, {3, X_size.y});
+			IMUI_SetViewPos (IMUI_context, {0, 0});
 			IMUI_SetViewFree (IMUI_context, {true, true});
-			IMUI_SetFill (IMUI_context, 0x0e);
+			UI_Layout(false) {
+				IMUI_Layout_SetXSize (IMUI_context, imui_size_none, 0);
+				IMUI_Layout_SetYSize (IMUI_context, imui_size_none, 0);
+				ivec2 cpos = (cursor - base) * X_size - ivec2(1,0);
+				IMUI_SetViewPos (IMUI_context, cpos);
+				IMUI_SetViewLen (IMUI_context, {3, X_size.y});
+				IMUI_SetViewFree (IMUI_context, {true, true});
+				IMUI_SetFill (IMUI_context, 0x0e);
+			}
 		}
 	}
 	return self;

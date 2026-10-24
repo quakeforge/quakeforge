@@ -1431,6 +1431,7 @@ IMUI_Draw (imui_ctx_t *ctx)
 		auto scroller = ctx->scrollboxes.a[i];
 		auto view = View_FromEntity (ctx->vsys, scroller->entity);
 		scroller->len = View_GetLen (view);
+		Canvas_SortComponentPool (ctx->csys, scroller->entity, canvas_fill);
 	}
 
 	ctx->frame_end = Sys_LongTime ();
