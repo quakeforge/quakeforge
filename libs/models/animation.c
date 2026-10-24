@@ -352,6 +352,8 @@ qfa_extract_root_motion (model_t *mod)
 		uint32_t j = channels[i].data / sizeof (qfm_joint_t);
 		if (j == 0) {
 			if (last_joint != 0) {
+				// If the root channels aren't grouped together, removing them
+				// from the original model is more complicated.
 				Sys_Printf ("%s: root channels dispersed", mod->name);
 				goto no_extract;
 			}
