@@ -110,7 +110,7 @@ typedef struct imui_ctx_s {
 	struct DARRAY_TYPE(imui_state_t *) state_stack;
 	struct DARRAY_TYPE(imui_state_t *) windows;
 	struct DARRAY_TYPE(imui_state_t *) links;
-	struct DARRAY_TYPE(imui_state_t *) scrollers;
+	struct DARRAY_TYPE(imui_state_t *) scrollboxes;
 	struct DARRAY_TYPE(imui_state_map_t *) state_map_ptrs;
 	struct DARRAY_TYPE(imui_window_t *) registered_windows;
 	struct DARRAY_TYPE(imui_window_t *) modal_stack;
@@ -336,7 +336,7 @@ IMUI_NewContext (canvas_system_t *csys, const char *font, float fontsize)
 		.state_stack = DARRAY_STATIC_INIT (8),
 		.windows = DARRAY_STATIC_INIT (8),
 		.links = DARRAY_STATIC_INIT (8),
-		.scrollers = DARRAY_STATIC_INIT (8),
+		.scrollboxes = DARRAY_STATIC_INIT (8),
 		.state_map_ptrs = DARRAY_STATIC_INIT (8),
 		.registered_windows = DARRAY_STATIC_INIT (8),
 		.modal_stack = DARRAY_STATIC_INIT (8),
@@ -444,7 +444,7 @@ clear_items (imui_ctx_t *ctx)
 	DARRAY_RESIZE (&ctx->state_stack, 0);
 	DARRAY_RESIZE (&ctx->windows, 0);
 	DARRAY_RESIZE (&ctx->links, 0);
-	DARRAY_RESIZE (&ctx->scrollers, 0);
+	DARRAY_RESIZE (&ctx->scrollboxes, 0);
 	DARRAY_RESIZE (&ctx->style_stack, 0);
 	DARRAY_RESIZE (&ctx->modal_stack, 0);
 }
@@ -470,7 +470,7 @@ IMUI_DestroyContext (imui_ctx_t *ctx)
 	DARRAY_CLEAR (&ctx->state_stack);
 	DARRAY_CLEAR (&ctx->windows);
 	DARRAY_CLEAR (&ctx->links);
-	DARRAY_CLEAR (&ctx->scrollers);
+	DARRAY_CLEAR (&ctx->scrollboxes);
 	DARRAY_CLEAR (&ctx->style_stack);
 	DARRAY_CLEAR (&ctx->key_attr);
 	dstring_delete (ctx->dstr);
@@ -1269,9 +1269,7 @@ check_inside (imui_ctx_t *ctx, hierref_t href, int level)
 	auto mp = ctx->mouse_position;
 
 	// links might have zero size but should still be followed (FIXME
-	// this is probably a design issue with scrollers and automatic sizing
-	// but it works for now because scrollers have two links and the outer
-	// one is correctly sized)
+	// this is probably a design issue with scrollboxes)
 	if (c.is_link && (!len.x || !len.y || is_inside (mp, abs, len))) {
 		imui_reference_t *sub = Ent_GetComponent (ent, c_reference, reg);
 		auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
@@ -1429,8 +1427,8 @@ IMUI_Draw (imui_ctx_t *ctx)
 		IN_UpdateFocus (is_focused);
 	}
 
-	for (uint32_t i = 0; i < ctx->scrollers.size; i++) {
-		auto scroller = ctx->scrollers.a[i];
+	for (uint32_t i = 0; i < ctx->scrollboxes.size; i++) {
+		auto scroller = ctx->scrollboxes.a[i];
 		auto view = View_FromEntity (ctx->vsys, scroller->entity);
 		scroller->len = View_GetLen (view);
 	}
@@ -2498,7 +2496,7 @@ IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name)
 	DARRAY_APPEND (&ctx->links, state);
 	panel->num_links++;
 
-	DARRAY_APPEND (&ctx->scrollers, state);
+	DARRAY_APPEND (&ctx->scrollboxes, state);
 
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
 
@@ -2650,7 +2648,6 @@ IMUI_StartScroller (imui_ctx_t *ctx)
 	DARRAY_APPEND (&ctx->state_stack, ctx->current_state);
 	auto state = imui_get_state (ctx, va ("%s#content", name), anchor_view.id);
 	update_hot_active (ctx, state);
-	DARRAY_APPEND (&ctx->scrollers, state);
 
 	// Position the content based on the scroll inputs: pos is the content's
 	// pixel in the top-left corner of the scroll box
