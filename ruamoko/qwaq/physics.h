@@ -8,6 +8,8 @@ enum {
 	qent_collider,
 	qent_grav,
 
+	qent_anim,
+
 	qent_comp_count
 };
 

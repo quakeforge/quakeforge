@@ -273,5 +273,7 @@
 		entqueue = pixpal;
 		texture = pixpal.meta;
 		target = true;
+		extract_root_motion = true;
+		anim = "rig|standing idle_RM";
 	},
 )

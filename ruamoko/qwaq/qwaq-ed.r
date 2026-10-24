@@ -163,6 +163,10 @@ static component_t qwaq_components[] = {
 		.size = sizeof (bool),
 		.name = "grav",
 	},
+	[qent_anim] = {
+		.size = sizeof (animstate_t),
+		.name = "anim",
+	},
 };
 
 imui_ctx_t imui_ctx;
@@ -780,6 +784,8 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key,
 	string mesh;
 	string entqueue;
 	string texture;
+	string anim;
+	bool extract_root_motion;
 	bool mesh_flag;
 	bool grav_flag;
 	uint submesh_mask;
@@ -940,6 +946,24 @@ load_scene (plitem_t *scene_item, scene_t scene)
 			}
 			if (texture != ~0u) {
 				Entity_SetTextureID (ent, texture);
+			}
+			if (ent_init.extract_root_motion) {
+				int num_clips = Model_NumClips (model);
+				qfa_extract_root_motion (model);
+				for (int i = 0; i < num_clips; i++) {
+					auto clipinfo = Model_GetClipInfo (model, i);
+					printf ("%s %2d %3d %d %s\n", Model_Name (model),
+							i, clipinfo.num_frames,
+							clipinfo.num_channels, clipinfo.name);
+				}
+			}
+			if (ent_init.anim) {
+				string mod_name = Model_Name (model);
+				string clipname = mod_name + ":" + ent_init.anim;
+				auto clip = qfa_find_clip (clipname);
+				auto arma = qfa_find_armature (mod_name);
+				auto anim = qfa_create_animation (&clip, 1, arma, nil);
+				set_component (e, qent_anim, &anim);
 			}
 		}
 		if (ent_init.target) {
