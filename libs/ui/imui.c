@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "QF/cvar.h"
 #include "QF/darray.h"
 #include "QF/dstring.h"
 #include "QF/ecs.h"
@@ -150,6 +151,15 @@ typedef struct imui_ctx_s {
 	uint32_t    fg_palette[64];
 	uint32_t    bg_palette[64];
 } imui_ctx_t;
+
+static uint32_t imui_dump_tree;
+static cvar_t imui_dump_tree_cvar = {
+	.name = "imui_dump_tree",
+	.description =
+		"Control dumping imui hierary tree",
+	.default_value = "0",
+	.value = { .type = &cexpr_uint, .value = &imui_dump_tree },
+};
 
 static void
 imui_reference_destroy (void *_ref, ecs_registry_t *reg, uint32_t ent,
@@ -323,6 +333,9 @@ imui_ctx_t *
 IMUI_NewContext (canvas_system_t *csys, const char *font, float fontsize)
 {
 	qfZoneScoped (true);
+	if (!(imui_dump_tree_cvar.flags & CVAR_REGISTERED)) {
+		Cvar_Register (&imui_dump_tree_cvar, nullptr, nullptr);
+	}
 	imui_ctx_t *ctx = malloc (sizeof (imui_ctx_t));
 	uint32_t canvas = Canvas_New (csys);
 	*ctx = (imui_ctx_t) {
@@ -1246,12 +1259,16 @@ layout_objects (imui_ctx_t *ctx, view_t root_view)
 	calc_upwards_dependent (ctx, href, down_depend);
 	calc_downwards_dependent (ctx, href);
 	calc_expansions (ctx, href);
-	//dump_tree (href, 0, ctx);
+	if (imui_dump_tree & 2) {
+		dump_tree (href, 0, ctx);
+	}
 	// resolve conflicts
 	//fflush (stdout);
 
 	position_views (ctx, root_view);
-	//dump_tree (href, 0, ctx);
+	if (imui_dump_tree & 1) {
+		dump_tree (href, 0, ctx);
+	}
 }
 
 static void
