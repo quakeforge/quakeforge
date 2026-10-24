@@ -1589,7 +1589,7 @@ check_drag_delta (imui_ctx_t *ctx, uint32_t entity)
 	return delta;
 }
 
-static void
+static view_pos_t
 setup_text (imui_ctx_t *ctx, view_t text)
 {
 	qfZoneScoped (true);
@@ -1597,7 +1597,6 @@ setup_text (imui_ctx_t *ctx, view_t text)
 	int ascender = ctx->font->face->size->metrics.ascender / 64;
 	int descender = ctx->font->face->size->metrics.descender / 64;
 	auto len = View_GetLen (text);
-	View_SetLen (text, len.x, ascender - descender);
 	// text is positioned such that 0 is the baseline, and +y offset moves
 	// the text down. The font's global ascender is used to find the baseline
 	// relative to the top of the view.
@@ -1611,6 +1610,8 @@ setup_text (imui_ctx_t *ctx, view_t text)
 	View_SetVisible (text, 1);
 	Ent_SetComponent (text.id, c_glyphs, reg,
 					  Ent_GetComponent (text.id, t_passage_glyphs, reg));
+	len.y = ascender - descender;
+	return len;
 }
 
 static view_t
@@ -1620,9 +1621,8 @@ add_text_str_len (imui_ctx_t *ctx, view_t view, const char *str, int length,
 	qfZoneScoped (true);
 	auto text = Text_StringView (ctx->tsys, view, ctx->font, ctx->ptsize,
 								 str, length, 0, 0, ctx->shaper);
-	setup_text (ctx, text);
 
-	auto len = View_GetLen (text);
+	auto len = setup_text (ctx, text);
 	View_SetLen (view, len.x, len.y);
 
 	uint32_t color = ctx->style.text.color[mode];
@@ -1797,24 +1797,26 @@ IMUI_Label32Attr (imui_ctx_t *ctx, const uint32_t *str, const uint32_t *attr,
 	set_control (ctx, view, false);
 
 	for (uint32_t i = 0, ind = 0; i < num_counts; ind += counts[i++]) {
-		auto text = Text_String32View (ctx->tsys, view, ctx->font, ctx->ptsize,
+		auto fill = View_New (ctx->vsys, view);
+		set_control (ctx, fill, false);
+		auto text = Text_String32View (ctx->tsys, fill, ctx->font, ctx->ptsize,
 									   &str[ind], counts[i], 0, 0,
 									   ctx->shaper);
 
-		setup_text (ctx, text);
-
-		auto tpos = View_GetPos (text);
-		auto tlen = View_GetLen (text);
+		auto flen = setup_text (ctx, text);
+		auto fpos = View_GetPos (fill);
 		auto vlen = View_GetLen (view);
-		tpos.x = vlen.x;
-		View_SetPos (text, tpos.x, tpos.y);
-		View_SetLen (view, tpos.x + tlen.x, tlen.y);
+
+		fpos.x = vlen.x;
+		View_SetPos (fill, fpos.x, fpos.y);
+		View_SetLen (fill, flen.x, flen.y);
+
+		View_SetLen (view, fpos.x + flen.x, flen.y);
 
 		uint32_t color = ctx->fg_palette [attr[ind] & 077];
 		Ent_SetComponent (text.id, c_color, ctx->tsys.reg, &color);
-		//Ent_SetComponent (text.id, c_outline, ctx->tsys.reg, &color);
 		if (attr[ind] & (1 << 12)) {
-			set_fill (ctx, text, ctx->bg_palette[(attr[ind] >> 6) & 077]);
+			set_fill (ctx, fill, ctx->bg_palette[(attr[ind] >> 6) & 077]);
 		}
 	}
 }
