@@ -315,6 +315,7 @@ camera_lookat (point_t eye, point_t target, point_t up)
 				IMUI_Labelf (IMUI_context, "%s##camWindow_aim_de", decl_str);
 			}
 		}
+		UI_FlexibleSpace ();//FIXME why here and not in the UI_Vertical?
 	}
 	return self;
 }
