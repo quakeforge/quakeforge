@@ -130,6 +130,7 @@ ECS_CreateComponentPools (ecs_registry_t *registry)
 		= &registry->component_groups_sparse_hack;
 	registry->groups.component_groups.sparse
 		= &registry->component_groups_sparse_hack;
+	// All components get a group subrange
 	for (uint32_t i = 0; i < count; i++) {
 		uint32_t id = ecs_new_subpool_range (&registry->groups.components);
 		if (id != i) {

@@ -211,6 +211,7 @@ ecs_group_type (ecs_registry_t *reg, uint32_t *components,
 	set_t groups = SET_STATIC_INIT (num_groups, alloca);
 	set_empty (&groups);
 
+	// build the set of all groups on the components in the list
 	for (uint32_t i = 0; i < num_components; i++) {
 		auto range = ecs_get_subpool_range (&reg->groups.components,
 											components[i]);
@@ -223,6 +224,10 @@ ecs_group_type (ecs_registry_t *reg, uint32_t *components,
 		}
 	}
 	printf ("groups: %s\n", set_as_string (&groups));
+	// Test the proposed group against each of the groups already associated
+	// with the components in the proposed group
+	// FIXME incomplete: need to figure out the conditions and finish the
+	// implementation
 	for (auto g = set_first (&groups); g; g = set_next (g)) {
 		auto range = ecs_get_subpool_range (&reg->groups.groups, g->element);
 		auto gcmp = &reg->groups.group_components;
@@ -242,6 +247,9 @@ ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
 {
 	ecs_group_type (reg, components, num_components);
 	uint32_t gid = ecs_new_subpool_range (&reg->groups.groups);
+	// Create subpool ranges for the group in each of the components' pools
+	// records { component_id, range_id }, maintaining the order of the
+	// components in the provided list
 	for (uint32_t i = 0; i < num_components; i++) {
 		if (reg->components.a[components[i]].rangeid) {
 			Sys_Error ("adding component with subpools to group");
@@ -252,6 +260,7 @@ ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
 		ind = ecs_move_component (&reg->groups.group_components,
 								  &reg->groups.groups, gid, ind,
 								  &ecs_group_components);
+		// create subpool range for the group in the component's pool
 		ecs_grpcomp_t grpcomp = {
 			.component = components[i],
 			.rangeid = ECS_NewSubpoolRange (reg, components[i]),
@@ -260,10 +269,13 @@ ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
 								reg->groups.group_components.data, ind,
 								&grpcomp, 0, 1);
 	}
+	// add the new group id to each of the components
 	for (uint32_t i = 0; i < num_components; i++) {
 		uint32_t ind = ecs_expand_pool (&reg->groups.component_groups,
 										1, &ecs_component_groups);
 		reg->groups.component_groups.dense[ind] = 0;//FIXME see commit message
+		// the component id is the subrange id. The subrange was created when
+		// the component pools were finalized in ECS_CreateComponentPools
 		ind = ecs_move_component (&reg->groups.component_groups,
 								  &reg->groups.components, components[i], ind,
 								  &ecs_component_groups);
