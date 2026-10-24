@@ -282,6 +282,7 @@ ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
 		Component_CopyElements (&ecs_component_groups,
 								reg->groups.component_groups.data, ind,
 								&gid, 0, 1);
+		set_add (&reg->groups.grouped_components, components[i]);
 	}
 
 	return gid;

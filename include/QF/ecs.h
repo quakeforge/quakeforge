@@ -36,6 +36,7 @@
 
 #include "QF/darray.h"
 #include "QF/qtypes.h"
+#include "QF/set.h"
 
 #include "QF/ecs/component.h"
 #include "QF/ecs/hierarchy.h"
@@ -112,6 +113,7 @@ typedef struct ecs_groups_s {
 
 	ecs_subpool_t nonown_groups;
 	ecs_pool_t  nonown_entities;
+	set_t       grouped_components;
 } ecs_groups_t;
 
 typedef struct ecs_registry_s {

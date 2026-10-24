@@ -137,6 +137,7 @@ ECS_CreateComponentPools (ecs_registry_t *registry)
 			Sys_Error ("components rangeid != component: %d != %d", id, i);
 		}
 	}
+	registry->groups.grouped_components = SET_STATIC_INIT (count, malloc);
 }
 
 typedef struct {

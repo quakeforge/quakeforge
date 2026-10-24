@@ -191,6 +191,16 @@ main (void)
 		uint32_t cgc = i < base ? 0 : comp_group_counts[i - base];
 		ok &= check_component_groups (reg, i, cg, cgc);
 	}
+
+	auto comp_set = set_new ();
+	// all the test components must be in the grouped_components set, but
+	// no other components
+	set_add_range (comp_set, base, test_num_components);
+	bool eq = set_is_equivalent (comp_set, &reg->groups.grouped_components);
+	printf ("%s%s"DFL"\n", eq ? GRN : RED,
+			set_as_string (&reg->groups.grouped_components));
+	ok &= eq;
+
 	uint32_t ent1 = ECS_NewEntity (reg);
 	uint32_t ent2 = ECS_NewEntity (reg);
 	uint32_t ent3 = ECS_NewEntity (reg);
