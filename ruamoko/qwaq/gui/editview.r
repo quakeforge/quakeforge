@@ -47,6 +47,13 @@ center (uint v, uint len)
 
 -scrollTo:(uint)target
 {
+	if (target + size.y > line_count) {
+		if (line_count > size.y) {
+			target = line_count - size.y;
+		} else {
+			target = 0;
+		}
+	}
 	if (target > base.y) {
 		base_index = [buffer nextLine:base_index :target - base.y];
 	} else if (target < base.y) {

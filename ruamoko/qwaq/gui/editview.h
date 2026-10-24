@@ -16,6 +16,7 @@
 
 	uvec2       X_size;
 	ivec2       scroll_pos;
+	bvec2       override_scroll;
 
 	EditBuffer *buffer;
 	uint        line_count;
@@ -23,7 +24,6 @@
 	string      filepath;
 
 	uvec2       sel;
-	bvec2       override_scroll;
 	uvec2       size;
 	uvec2       cursor;
 	uvec2       base;			// top left corner (cell)
