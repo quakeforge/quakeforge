@@ -138,6 +138,7 @@ ECS_CreateComponentPools (ecs_registry_t *registry)
 		}
 	}
 	registry->groups.grouped_components = SET_STATIC_INIT (count, malloc);
+	set_empty (&registry->groups.grouped_components);
 }
 
 typedef struct {

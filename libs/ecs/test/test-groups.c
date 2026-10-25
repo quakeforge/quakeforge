@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "QF/backtrace.h"
 #include "QF/heapsort.h"
 #include "QF/simd/types.h"
 #include "QF/mathlib.h"
@@ -55,17 +56,27 @@ static const component_t test_components[] = {
 	},
 };
 
+static const char *type_names[] = {
+	"fully-owning",
+	"partially-owning",
+	"non-owning",
+};
+
 static bool
 check_group (ecs_registry_t *reg, uint32_t gid,
-			 ecs_grpcomp_t *grpcomp, uint32_t num_grpcomp)
+			 ecs_grpcomp_t *grpcomp, uint32_t num_grpcomp, ecs_grpown_t type)
 {
 	auto range = ecs_get_subpool_range (&reg->groups.groups, gid);
 	ecs_grpcomp_t *gc = Component_Address (&ecs_group_components,
 										   reg->groups.group_components.data,
 										   range.start);
 	uint32_t count = range.end - range.start;
-	printf ("group %d: %s%d" DFL "\n", gid, count == num_grpcomp ? GRN : RED,
-			count);
+	auto gtype = *(ecs_grpown_t *) ecs_get_component (gid,
+													  &reg->groups.group_type,
+													  &ecs_group_type);
+	printf ("group %d: %s%d"DFL" %s%s"DFL"\n", gid,
+			count == num_grpcomp ? GRN : RED, count,
+			type == gtype ? GRN : RED, type_names[gtype]);
 	if (count != num_grpcomp) {
 		return false;
 	}
@@ -106,6 +117,7 @@ check_component_groups (ecs_registry_t *reg, uint32_t comp,
 	printf ("component: %s%d %s %d" DFL ":", count == num_groups ? GRN : RED,
 			comp, name, count);
 	if (count != num_groups) {
+		printf ("\n");
 		return false;
 	}
 	bool ok = true;
@@ -127,9 +139,39 @@ check_component_groups (ecs_registry_t *reg, uint32_t comp,
 	return ok;
 }
 
-int
-main (void)
+static bool
+check_group_ents (ecs_registry_t *reg, uint32_t gid, uint32_t num_ents)
 {
+	auto range = ecs_get_subpool_range (&reg->groups.groups, gid);
+	ecs_grpcomp_t *gc = Component_Address (&ecs_group_components,
+										   reg->groups.group_components.data,
+										   range.start);
+	bool ok = true;
+	uint32_t count = range.end - range.start;
+	uint32_t last_count = num_ents;
+	for (uint32_t i = 0; i < count; i++, gc++) {
+		auto subpool = &reg->subpools[gc->component];
+		if (gc->rangeid != nullent) {
+			auto crange = ecs_get_subpool_range (subpool, gc->rangeid);
+			uint32_t count = crange.end - crange.start;
+			// all components in a group must have the same number of entities
+			// in the group's subpool range
+			bool same = count == last_count;
+			last_count = count;
+			const char *name = reg->components.a[gc->component].name;
+			printf ("%d %s %d: %s%d"DFL"\n", gc->component, name, gc->rangeid,
+					same ? GRN : RED, count);
+			ok &= same;
+		}
+	}
+	printf ("\n");
+	return ok;
+}
+
+int
+main (int argc, char **argv)
+{
+	BT_Init (argv[0]);
 	ecs_registry_t *reg = ECS_NewRegistry ("groups");
 	uint32_t base = ECS_RegisterComponents (reg, test_components,
 											test_num_components);
@@ -153,6 +195,11 @@ main (void)
 			base + test_b1,
 			base + test_b2,
 		}, 2, ecs_fullown);
+	uint32_t g5 = ECS_DefineGroup (reg, (uint32_t[]) {
+			base + test_a1,
+			base + test_b1,
+			base + test_c1,
+		}, 3, ecs_fullown);
 
 	ecs_grpcomp_t g1_grpcomps[] = {
 		{ base + test_a1, 0 },
@@ -164,28 +211,35 @@ main (void)
 		{ base + test_a3, 0 },
 	};
 	ecs_grpcomp_t g3_grpcomps[] = {
-		{ base + test_a1, 2 },
+		{ base + test_a1, nullent },
 		{ base + test_c1, 0 },
 	};
 	ecs_grpcomp_t g4_grpcomps[] = {
 		{ base + test_b1, 0 },
 		{ base + test_b2, 0 },
 	};
+	ecs_grpcomp_t g5_grpcomps[] = {
+		{ base + test_a1, nullent },
+		{ base + test_b1, nullent },
+		{ base + test_c1, nullent },
+	};
 	bool ok = true;
-	ok &= check_group (reg, g1, g1_grpcomps, countof (g1_grpcomps));
-	ok &= check_group (reg, g2, g2_grpcomps, countof (g2_grpcomps));
-	ok &= check_group (reg, g3, g3_grpcomps, countof (g3_grpcomps));
-	ok &= check_group (reg, g4, g4_grpcomps, countof (g4_grpcomps));
+#define grp(g) g, g##_grpcomps, countof (g##_grpcomps)
+	ok &= check_group (reg, grp (g1), ecs_fullown);
+	ok &= check_group (reg, grp (g2), ecs_fullown);
+	ok &= check_group (reg, grp (g3), ecs_partown);
+	ok &= check_group (reg, grp (g4), ecs_fullown);
+	ok &= check_group (reg, grp (g5), ecs_nonown);
 
 	uint32_t *comp_groups[] = {
-		(uint32_t []) {0, 1, 2},
+		(uint32_t []) {0, 1, 2, 4},
 		(uint32_t []) {0, 1},
 		(uint32_t []) {1},
+		(uint32_t []) {3, 4},
 		(uint32_t []) {3},
-		(uint32_t []) {3},
-		(uint32_t []) {2},
+		(uint32_t []) {2, 4},
 	};
-	uint32_t comp_group_counts[] = { 3, 2, 1, 1, 1, 1 };
+	uint32_t comp_group_counts[] = { 4, 2, 1, 2, 1, 2 };
 	for (uint32_t i = 0; i < reg->components.size; i++) {
 		uint32_t *cg = i < base ? nullptr : comp_groups[i - base];
 		uint32_t cgc = i < base ? 0 : comp_group_counts[i - base];
@@ -204,13 +258,27 @@ main (void)
 	uint32_t ent1 = ECS_NewEntity (reg);
 	uint32_t ent2 = ECS_NewEntity (reg);
 	uint32_t ent3 = ECS_NewEntity (reg);
+	uint32_t ent4 = ECS_NewEntity (reg);
 
 	Ent_AddGroup (ent1, g1, reg);
 	Ent_AddGroup (ent2, g2, reg);
 	Ent_AddGroup (ent1, g4, reg);
-	Ent_SetComponent (ent3, base + test_a1, reg, nullptr);
-	Ent_AddGroup (ent3, g3, reg);
+	//Ent_SetComponent (ent3, base + test_a1, reg, nullptr);
+	//Ent_AddGroup (ent3, g3, reg);
+	Ent_SetComponent (ent4, base + test_a1, reg, nullptr);
+	Ent_SetComponent (ent4, base + test_c1, reg, nullptr);
 
+	ok &= check_group_ents (reg, g1, 1);
+	ok &= check_group_ents (reg, g2, 1);
+	ok &= check_group_ents (reg, g3, 1);
+	ok &= check_group_ents (reg, g4, 1);
+
+	//ECS_PrintEntity (reg, ent1);
+	//ECS_PrintEntity (reg, ent2);
+	ECS_PrintEntity (reg, ent3);
+	ECS_PrintEntity (reg, ent4);
+
+	//ECS_PrintRegistry (reg);
 	ECS_DelRegistry (reg);
-	return !ok;
+	return 1 + !ok; //incomplete
 }

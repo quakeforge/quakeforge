@@ -65,6 +65,20 @@ ecs_expand_pool (ecs_pool_t *pool, uint32_t count, const component_t *comp)
 	return ind;
 }
 
+uint32_t
+ecs_set_component (uint32_t ent, ecs_pool_t *pool, const component_t *c,
+				   void *data)
+{
+	uint32_t    id = Ent_Index (ent);
+	ecs_expand_sparse (pool, id);
+	uint32_t    ind = ecs_expand_pool (pool, 1, c);
+	pool->sparse[id] = ind;
+	pool->dense[ind] = ent;
+	auto dst = Component_Address (c, pool->data, ind);
+	Component_CopyElements (c, dst, 0, data, 0, 1);
+	return ind;
+}
+
 static void swap_inds (uint32_t *a, uint32_t *b)
 {
 	uint32_t    t = *a;
@@ -97,11 +111,11 @@ ecs_move_component (ecs_pool_t *pool, ecs_subpool_t *subpool, uint32_t rangeid,
 }
 
 VISIBLE void *
-Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
+Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 {
-	ecs_pool_t *pool = &registry->comp_pools[comp];
-	ecs_subpool_t *subpool = &registry->subpools[comp];
-	component_t *c = &registry->components.a[comp];
+	ecs_pool_t *pool = &reg->comp_pools[comp];
+	ecs_subpool_t *subpool = &reg->subpools[comp];
+	component_t *c = &reg->components.a[comp];
 	uint32_t    id = Ent_Index (ent);
 	ecs_expand_sparse (pool, id);
 	uint32_t    ind = pool->sparse[id];
@@ -109,13 +123,44 @@ Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 		uint32_t    ind = ecs_expand_pool (pool, 1, c);
 		pool->sparse[id] = ind;
 		pool->dense[ind] = ent;
-		uint32_t    rind = subpool->num_ranges - subpool->available;
-		if (rind && c->rangeid) {
-			uint32_t    rangeid = c->rangeid (registry, ent, comp);
+		uint32_t    rangeid = nullent;
+		if (set_is_member (&reg->groups.grouped_components, comp)) {
+			auto groups = &reg->groups.groups;
+			auto components = &reg->groups.components;
+			auto comp_grps = &reg->groups.component_groups;
+			auto grp_comp = &reg->groups.group_components;
+			auto range = ecs_get_subpool_range (components, comp);
+			//FIXME get owning group
+			uint32_t *gid = Component_Address (&ecs_component_groups,
+											   comp_grps->data, range.start);
+			//FIXME need fast access by component, probably part of geting
+			//the owning group
+			range = ecs_get_subpool_range (groups, *gid);
+			ecs_grpcomp_t *gc = Component_Address (&ecs_group_components,
+												   grp_comp->data, range.start);
+			uint32_t rid = nullent;
+			bool complete = true;
+			for (uint32_t i = range.end - range.start; i-- > 0; gc++) {
+				if (gc->component == comp) {
+					rid = gc->rangeid;
+				} else {
+					complete &= Ent_HasComponent (ent, gc->component, reg);
+				}
+			}
+			if (complete) {
+				rangeid = rid;
+			}
+		} else {
+			uint32_t    rind = subpool->num_ranges - subpool->available;
+			if (rind && c->rangeid) {
+				rangeid = c->rangeid (reg, ent, comp);
+			}
+		}
+		if (rangeid != nullent) {
 			ecs_move_component (pool, subpool, rangeid, ind, c);
 		}
 	}
-	return Ent_GetComponent (ent, comp, registry);
+	return Ent_GetComponent (ent, comp, reg);
 }
 
 static int

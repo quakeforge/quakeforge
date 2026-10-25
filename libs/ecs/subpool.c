@@ -179,6 +179,11 @@ const component_t ecs_group_components = {
 	.name = "components in group",
 };
 
+const component_t ecs_group_type = {
+	.size = sizeof (ecs_grpown_t),
+	.name = "Group type",
+};
+
 const component_t ecs_component_groups = {
 	.size = sizeof (uint32_t),
 	.name = "groups component is in",
@@ -187,7 +192,7 @@ const component_t ecs_component_groups = {
 static set_flags_t
 ecs_test_groups (uint32_t *components, uint32_t num_components,
 				 ecs_grpcomp_t *grpcomps, uint32_t num_grpcomps,
-				 ecs_registry_t *reg)
+				 set_t *owned, ecs_registry_t *reg)
 {
 	set_t a = SET_STATIC_INIT (reg->components.size, alloca);
 	set_t b = SET_STATIC_INIT (reg->components.size, alloca);
@@ -198,13 +203,14 @@ ecs_test_groups (uint32_t *components, uint32_t num_components,
 	}
 	for (uint32_t i = 0; i < num_grpcomps; i++) {
 		set_add (&b, grpcomps[i].component);
+		set_remove (owned, grpcomps[i].component);
 	}
 	return set_test (&a, &b);
 }
 
-static int
-ecs_group_type (ecs_registry_t *reg, uint32_t *components,
-				uint32_t num_components)
+static ecs_grpown_t
+ecs_calc_group_type (ecs_registry_t *reg, uint32_t *components,
+					 uint32_t num_components, set_t *owned_components)
 {
 	auto grps = &reg->groups.groups;
 	uint32_t num_groups = grps->num_ranges - grps->available;
@@ -222,12 +228,14 @@ ecs_group_type (ecs_registry_t *reg, uint32_t *components,
 		while (count-- > 0) {
 			set_add (&groups, *g++);
 		}
+		set_add (owned_components, components[i]);
 	}
-	printf ("groups: %s\n", set_as_string (&groups));
 	// Test the proposed group against each of the groups already associated
 	// with the components in the proposed group
 	// FIXME incomplete: need to figure out the conditions and finish the
 	// implementation
+	bool dup = false;
+	bool full = true;
 	for (auto g = set_first (&groups); g; g = set_next (g)) {
 		auto range = ecs_get_subpool_range (&reg->groups.groups, g->element);
 		auto gcmp = &reg->groups.group_components;
@@ -235,18 +243,30 @@ ecs_group_type (ecs_registry_t *reg, uint32_t *components,
 											   gcmp->data, range.start);
 		uint32_t count = range.end - range.start;
 		auto test = ecs_test_groups (components, num_components,
-									 gc, count, reg);
-		printf ("group: %d, %d\n", g->element, test);
+									 gc, count, owned_components, reg);
+		dup |= !(test & set_differ);
+		full &= !(test == (set_differ | set_intersect));
 	}
-	return 0;
+	if (dup) {
+		Sys_Error ("group duplicates another group");
+	}
+	// can't checked owned_components for full ownership because nested
+	// groups will remove some or all components
+	return full ? ecs_fullown
+				: set_count (owned_components) ? ecs_partown
+												: ecs_nonown;
 }
 
 uint32_t
 ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
 				 uint32_t num_components, ecs_grpown_t ownership)
 {
-	ecs_group_type (reg, components, num_components);
+	set_t owned_components = SET_STATIC_INIT (num_components, alloca);
+	set_empty (&owned_components);
+	auto type = ecs_calc_group_type (reg, components, num_components,
+									 &owned_components);
 	uint32_t gid = ecs_new_subpool_range (&reg->groups.groups);
+	ecs_set_component (gid, &reg->groups.group_type, &ecs_group_type, &type);
 	// Create subpool ranges for the group in each of the components' pools
 	// records { component_id, range_id }, maintaining the order of the
 	// components in the provided list
@@ -261,9 +281,16 @@ ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
 								  &reg->groups.groups, gid, ind,
 								  &ecs_group_components);
 		// create subpool range for the group in the component's pool
+		uint32_t rangeid = nullent;
+		// fully-owning groups will have had components removed from
+		// owned_components if they're nested
+		if (type == ecs_fullown
+			|| set_is_member (&owned_components, components[i])) {
+			rangeid = ECS_NewSubpoolRange (reg, components[i]);
+		}
 		ecs_grpcomp_t grpcomp = {
 			.component = components[i],
-			.rangeid = ECS_NewSubpoolRange (reg, components[i]),
+			.rangeid = rangeid,
 		};
 		Component_CopyElements (&ecs_group_components,
 								reg->groups.group_components.data, ind,

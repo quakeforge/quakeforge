@@ -86,7 +86,7 @@ enum {
 	ecs_comp_count
 };
 
-typedef enum {
+typedef enum ecs_grpown_e : byte {
 	ecs_fullown,
 	ecs_partown,
 	ecs_nonown,
@@ -106,10 +106,21 @@ typedef struct ecs_grpcomp_s {
 } ecs_grpcomp_t;
 
 typedef struct ecs_groups_s {
+	// track ranges in group_components for each group (group id)
 	ecs_subpool_t groups;
+	// track ranges in component_groups for each component (component id)
 	ecs_subpool_t components;
+	// ecs_grpcomp_t pool, ranges are for each group id. order of grpcomp
+	// is maintained relative to the list of components provided to
+	// ECS_DefineGroup
 	ecs_pool_t  group_components;
+	// the type for each group
+	ecs_pool_t  group_type;
+	// group id pool, ranges are for each compont listing the group ids
+	// that reference the component
 	ecs_pool_t  component_groups;
+	// group id pool: owning group of the component (no ranges)
+	ecs_pool_t  component_owner;
 
 	ecs_subpool_t nonown_groups;
 	ecs_pool_t  nonown_entities;
@@ -154,6 +165,7 @@ typedef struct archetype_map_s {
 	uint32_t    id;
 } archetype_map_t;
 
+extern const component_t ecs_group_type;
 extern const component_t ecs_group_components;
 extern const component_t ecs_component_groups;
 
@@ -190,6 +202,9 @@ void ECS_DelEntity (ecs_registry_t *registry, uint32_t ent);
 void ECS_RemoveEntities (ecs_registry_t *registry, uint32_t component);
 void ECS_PrintEntity (ecs_registry_t *registry, uint32_t ent);
 void ECS_PrintRegistry (ecs_registry_t *registry);
+
+ECSINLINE void *ecs_get_component (uint32_t ent, ecs_pool_t *pool,
+								   const component_t *c);
 
 uint32_t ECS_NewSubpoolRange (ecs_registry_t *registry, uint32_t component);
 void ECS_DelSubpoolRange (ecs_registry_t *registry, uint32_t component,
@@ -292,12 +307,18 @@ Ent_HasComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 }
 
 ECSINLINE void *
+ecs_get_component (uint32_t ent, ecs_pool_t *pool, const component_t *c)
+{
+	uint32_t    ind = pool->sparse[Ent_Index (ent)];
+	byte       *data = pool->data;
+	return Component_Address (c, data, ind);
+}
+
+ECSINLINE void *
 Ent_GetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 {
 	const component_t *component = &reg->components.a[comp];
-	uint32_t    ind = reg->comp_pools[comp].sparse[Ent_Index (ent)];
-	byte       *data = reg->comp_pools[comp].data;
-	return Component_Address (component, data, ind);
+	return ecs_get_component (ent, &reg->comp_pools[comp], component);
 }
 
 ECSINLINE void *
@@ -312,6 +333,8 @@ Ent_SafeGetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 void ecs_expand_sparse (ecs_pool_t *pool, uint32_t id);
 uint32_t ecs_expand_pool (ecs_pool_t *pool, uint32_t count,
 						  const component_t *comp);
+uint32_t ecs_set_component (uint32_t ent, ecs_pool_t *pool,
+							const component_t *c, void *data);
 uint32_t ecs_move_component (ecs_pool_t *pool, ecs_subpool_t *subpool,
 							 uint32_t rangeid, uint32_t ind,
 							 const component_t *c);
