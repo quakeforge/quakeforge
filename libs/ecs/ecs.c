@@ -340,7 +340,9 @@ ECS_PrintRegistry (ecs_registry_t *reg)
 	for (size_t i = 0; i < reg->components.size; i++) {
 		printf ("%3zd %7d %s\n", i, reg->comp_pools[i].count,
 				reg->components.a[i].name);
+		auto pool = &reg->comp_pools[i];
 		auto subpool = &reg->subpools[i];
+		uint32_t subpool_end = 0;
 		if (subpool->num_ranges) {
 			printf ("   next     : %x\n", subpool->next);
 			printf ("   available: %x\n", subpool->available);
@@ -353,6 +355,20 @@ ECS_PrintRegistry (ecs_registry_t *reg)
 				printf ("   %5x: %3x.%05x %2d %d-%d\n", j,
 						Ent_Generation (rid) >> ENT_IDBITS, Ent_Index (rid),
 						sind, start, end);
+				for (uint32_t k = start; k < end; k++) {
+					uint32_t ent = pool->dense[k];
+					printf ("          %3x.%05x\n",
+							Ent_Generation (ent) >> ENT_IDBITS,
+							Ent_Index (ent));
+				}
+				subpool_end = end;
+			}
+			printf ("   -----: ---.----- -- %d-%d\n", subpool_end, pool->count);
+			for (uint32_t k = subpool_end; k < pool->count; k++) {
+				uint32_t ent = pool->dense[k];
+				printf ("          %3x.%05x\n",
+						Ent_Generation (ent) >> ENT_IDBITS,
+						Ent_Index (ent));
 			}
 			printf ("\n");
 		}
