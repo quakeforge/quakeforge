@@ -174,7 +174,7 @@ extern const component_t ecs_component_groups;
 uint32_t ECS_NewId (ecs_idpool_t *idpool);
 bool ECS_DelId (ecs_idpool_t *idpool, uint32_t id);
 ECSINLINE void ECS_IdPool_Reset (ecs_idpool_t *idpool);
-ECSINLINE int ECS_IdValid (ecs_idpool_t *idpool, uint32_t id);
+ECSINLINE bool ECS_IdValid (ecs_idpool_t *idpool, uint32_t id);
 ECSINLINE uint32_t Ent_Index (uint32_t id);
 ECSINLINE uint32_t Ent_Generation (uint32_t id);
 ECSINLINE uint32_t Ent_NextGen (uint32_t id);
@@ -219,8 +219,8 @@ void ECS_MoveSubpoolLast (ecs_registry_t *registry, uint32_t component,
 uint32_t ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
 						  uint32_t num_components, ecs_grpown_t ownership);
 
-ECSINLINE int ECS_EntValid (uint32_t id, ecs_registry_t *reg);
-ECSINLINE int Ent_HasComponent (uint32_t ent, uint32_t comp,
+ECSINLINE bool ECS_EntValid (uint32_t id, ecs_registry_t *reg);
+ECSINLINE bool Ent_HasComponent (uint32_t ent, uint32_t comp,
 								ecs_registry_t *reg);
 ECSINLINE void *Ent_GetComponent (uint32_t ent, uint32_t comp,
 								  ecs_registry_t *reg);
@@ -244,7 +244,7 @@ void ECS_IdPool_Reset (ecs_idpool_t *idpool)
 	idpool->num_ids = 0;
 }
 
-ECSINLINE int
+ECSINLINE bool
 ECS_IdValid (ecs_idpool_t *idpool, uint32_t id)
 {
 	uint32_t    ind = Ent_Index (id);
@@ -288,13 +288,13 @@ ECS_GetSubpoolRange (ecs_registry_t *registry, uint32_t component, uint32_t id)
 	return ecs_get_subpool_range (subpool, id);
 }
 
-ECSINLINE int
+ECSINLINE bool
 ECS_EntValid (uint32_t id, ecs_registry_t *reg)
 {
 	return ECS_IdValid (&reg->entities, id);
 }
 
-ECSINLINE int
+ECSINLINE bool
 Ent_HasComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 {
 	ecs_pool_t *pool = &reg->comp_pools[comp];
