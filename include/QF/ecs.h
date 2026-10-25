@@ -222,6 +222,7 @@ void ECS_MoveSubpoolLast (ecs_registry_t *registry, uint32_t component,
 
 uint32_t ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
 						  uint32_t num_components, ecs_grpown_t ownership);
+void ECS_SortGroups (ecs_registry_t *reg);
 
 ECSINLINE bool ECS_EntValid (uint32_t id, ecs_registry_t *reg);
 ECSINLINE bool Ent_HasComponent (uint32_t ent, uint32_t comp,

@@ -86,10 +86,13 @@ check_group (ecs_registry_t *reg, uint32_t gid,
 		// the group is defined as this will affect the order of component
 		// pointers when fetching a group SOA
 		const char *name = reg->components.a[gc->component].name;
+		auto subpool = &reg->subpools[gc->component];
 		bool match = gc->component == grpcomp->component
 					&& gc->rangeid == grpcomp->rangeid;
-		printf ("%s%d %s %d" DFL "\n", match ? GRN : RED, gc->component, name,
-				gc->rangeid);
+		printf ("%s%d %s %d"DFL" %d\n", match ? GRN : RED,
+				gc->component, name, gc->rangeid,
+				gc->rangeid != nullent ? subpool->sorted[gc->rangeid]
+									   : nullent);
 		ok &= match;
 	}
 	printf ("\n");
@@ -255,6 +258,8 @@ main (int argc, char **argv)
 			base + test_c1,
 		}, 3, ecs_fullown);
 
+	ECS_SortGroups (reg);
+
 	ecs_grpcomp_t g1_grpcomps[] = {
 		{ base + test_a1, 0 },
 		{ base + test_a2, 0 },
@@ -346,7 +351,7 @@ main (int argc, char **argv)
 	//ECS_PrintEntity (reg, ent3);
 	//ECS_PrintEntity (reg, ent4);
 
-	//ECS_PrintRegistry (reg);
+	ECS_PrintRegistry (reg);
 	ECS_DelRegistry (reg);
 	return !ok;
 }

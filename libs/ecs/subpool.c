@@ -29,6 +29,7 @@
 #endif
 
 #include "QF/ecs.h"
+#include "QF/heapsort.h"
 #include "QF/set.h"
 #include "QF/sys.h"
 
@@ -133,14 +134,18 @@ ECS_MoveSubpoolLast (ecs_registry_t *registry, uint32_t component, uint32_t id)
 	uint32_t    count = end - start;
 	uint32_t    srcIndex = start;
 	uint32_t    dstIndex = last - count;
+	// remove the specified range from the list of ranges, moving all later
+	// ranges down one slot
 	for (uint32_t i = range; i < last_range; i++) {
 		subpool->ranges[i] = subpool->ranges[i + 1] - count;
 	}
+	// update the indices of all range ids that point past the moved range
 	for (uint32_t i = 0; i < num_ranges; i++) {
 		if (subpool->sorted[i] > range) {
 			subpool->sorted[i]--;
 		}
 	}
+	// point the specified range at the last range
 	subpool->sorted[ind] = last_range;
 	Component_RotateElements (c, pool->data, dstIndex, srcIndex, count);
 
@@ -329,4 +334,114 @@ ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
 	}
 
 	return gid;
+}
+
+static ecs_grpown_t
+ecs_get_group_type (uint32_t gid, ecs_registry_t *reg)
+{
+	auto g = &reg->groups;
+	return *(ecs_grpown_t *) ecs_get_component (gid, &g->group_type,
+												&ecs_group_type);
+}
+
+static int
+ecs_range_cmp (const void *_a, const void *_b, void *_subpool)
+{
+	const uint32_t *a = _a;
+	const uint32_t *b = _b;
+	ecs_subpool_t *subpool = _subpool;
+	return subpool->sorted[*a] - subpool->sorted[*b];
+}
+
+typedef struct ecs_grpctx_s {
+	uint32_t *groups;
+	ecs_subpool_t *subpool;
+	ecs_registry_t *reg;
+} ecs_grpctx_t;
+
+static int
+ecs_group_cmp (const void *_a, const void *_b, void *_ctx)
+{
+	const uint32_t *a = _a;
+	const uint32_t *b = _b;
+	ecs_grpctx_t *ctx = _ctx;
+	auto g = &ctx->reg->groups;
+	auto ra = ecs_get_subpool_range (&g->groups, *a);
+	auto rb = ecs_get_subpool_range (&g->groups, *b);
+	return (rb.end - rb.start) - (ra.end - ra.start);
+}
+
+static void
+swap_uint32 (uint32_t *a, uint32_t *b)
+{
+	uint32_t t = *a;
+	*a = *b;
+	*b = t;
+}
+
+static void
+ecs_group_swp (void *_a, void *_b, void *_ctx)
+{
+	uint32_t *a = _a;
+	uint32_t *b = _b;
+	ecs_grpctx_t *ctx = _ctx;
+
+	swap_uint32 (a, b);
+	swap_uint32 (&ctx->subpool->sorted[*a], &ctx->subpool->sorted[*b]);
+}
+
+void
+ECS_SortGroups (ecs_registry_t *reg)
+{
+	auto g = &reg->groups;
+	uint32_t num_groups = g->groups.num_ranges - g->groups.available;
+	set_t sorted_groups = SET_STATIC_INIT (num_groups, alloca);
+	set_t groups = SET_STATIC_INIT (num_groups, alloca);
+
+	set_empty (&sorted_groups);
+	for (uint32_t gid = 0; gid < num_groups; gid++) {
+		if (ecs_get_group_type (gid, reg) != ecs_fullown) {
+			continue;
+		}
+		if (set_is_member (&sorted_groups, gid)) {
+			continue;
+		}
+
+		set_empty (&groups);
+		auto range = ecs_get_subpool_range (&g->groups, gid);
+		ecs_grpcomp_t *gc = Component_Address (&ecs_group_components,
+											   g->group_components.data,
+											   range.start);
+		uint32_t count = range.end - range.start;
+		for (uint32_t i = 0; i < count; i++) {
+			uint32_t comp = gc[i].component;
+			auto subpool = &reg->subpools[comp];
+			auto crange = ecs_get_subpool_range (&g->components, comp);
+			auto cg = &g->component_groups;
+			uint32_t *grp = Component_Address (&ecs_component_groups, cg->data,
+											   range.start);
+			for (uint32_t c = crange.end - crange.start; c-- > 0; grp++) {
+				if (ecs_get_group_type (*grp, reg) != ecs_fullown) {
+					continue;
+				}
+				set_add (&groups, *grp);
+			}
+			uint32_t group_ids[set_count (&groups)];
+			auto gp = group_ids;
+			for (auto gi = set_first (&groups); gi; gi = set_next (gi)) {
+				*gp++ = gi->element;
+			}
+			heapsort_r (group_ids, set_count (&groups), sizeof (uint32_t),
+						ecs_range_cmp, subpool);
+			ecs_grpctx_t ctx = {
+				.groups = group_ids,
+				.subpool = subpool,
+				.reg = reg,
+			};
+			heapsort_s (group_ids, set_count (&groups), sizeof (uint32_t),
+						ecs_group_cmp, ecs_group_swp, &ctx);
+		}
+
+		set_union (&sorted_groups, &groups);
+	}
 }
