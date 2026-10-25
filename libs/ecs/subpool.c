@@ -184,6 +184,16 @@ const component_t ecs_group_type = {
 	.name = "Group type",
 };
 
+const component_t ecs_group_nonown_range = {
+	.size = sizeof (uint32_t),
+	.name = "Group nonown range",
+};
+
+const component_t ecs_group_nonown_entity = {
+	.size = sizeof (uint32_t),
+	.name = "Group nonown entity",
+};
+
 const component_t ecs_component_groups = {
 	.size = sizeof (uint32_t),
 	.name = "groups component is in",
@@ -295,6 +305,12 @@ ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
 		Component_CopyElements (&ecs_group_components,
 								reg->groups.group_components.data, ind,
 								&grpcomp, 0, 1);
+	}
+	if (type == ecs_nonown) {
+		uint32_t nid = ecs_new_subpool_range (&reg->groups.nonown_groups);
+		ecs_expand_sparse (&reg->groups.nonown_ranges, gid);
+		ecs_set_component (gid, &reg->groups.nonown_ranges,
+						   &ecs_group_nonown_range, &nid);
 	}
 	// add the new group id to each of the components
 	for (uint32_t i = 0; i < num_components; i++) {

@@ -122,8 +122,10 @@ typedef struct ecs_groups_s {
 	// group id pool: owning group of the component (no ranges)
 	ecs_pool_t  component_owner;
 
+	ecs_pool_t  nonown_ranges;
 	ecs_subpool_t nonown_groups;
 	ecs_pool_t  nonown_entities;
+
 	set_t       grouped_components;
 } ecs_groups_t;
 
@@ -167,6 +169,8 @@ typedef struct archetype_map_s {
 
 extern const component_t ecs_group_type;
 extern const component_t ecs_group_components;
+extern const component_t ecs_group_nonown_range;
+extern const component_t ecs_group_nonown_entity;
 extern const component_t ecs_component_groups;
 
 #define ECSINLINE GNU89INLINE inline
