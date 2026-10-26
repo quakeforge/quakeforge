@@ -344,6 +344,8 @@ ECS_PrintRegistry (ecs_registry_t *reg)
 		auto subpool = &reg->subpools[i];
 		uint32_t subpool_end = 0;
 		if (subpool->num_ranges) {
+			uint32_t num_ranges = subpool->num_ranges - subpool->available;
+			subpool_end = subpool->ranges[num_ranges - 1];
 			printf ("   next     : %x\n", subpool->next);
 			printf ("   available: %x\n", subpool->available);
 			printf ("           range_id si st-end\n");
@@ -357,20 +359,19 @@ ECS_PrintRegistry (ecs_registry_t *reg)
 						sind, start, end);
 				for (uint32_t k = start; k < end; k++) {
 					uint32_t ent = pool->dense[k];
-					printf ("          %3x.%05x\n",
+					printf ("          %3x.%05x %d\n",
 							Ent_Generation (ent) >> ENT_IDBITS,
-							Ent_Index (ent));
+							Ent_Index (ent), k);
 				}
-				subpool_end = end;
 			}
-			printf ("   -----: ---.----- -- %d-%d\n", subpool_end, pool->count);
-			for (uint32_t k = subpool_end; k < pool->count; k++) {
-				uint32_t ent = pool->dense[k];
-				printf ("          %3x.%05x\n",
-						Ent_Generation (ent) >> ENT_IDBITS,
-						Ent_Index (ent));
-			}
-			printf ("\n");
 		}
+		printf ("   -----: ---.----- -- %d-%d\n", subpool_end, pool->count);
+		for (uint32_t k = subpool_end; k < pool->count; k++) {
+			uint32_t ent = pool->dense[k];
+			printf ("          %3x.%05x %d\n",
+					Ent_Generation (ent) >> ENT_IDBITS,
+					Ent_Index (ent), k);
+		}
+		printf ("\n");
 	}
 }

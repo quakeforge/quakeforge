@@ -129,10 +129,11 @@ check_obj_comps (ecs_registry_t *reg, uint32_t comp, uint32_t *expect,
 		const char **en = Ent_GetComponent (ent_expect[i], t_name, reg);
 		bool ent_ok = dense[i] == ent_expect[i]
 					&& i == sparse[Ent_Index(ent_expect[i])];
-		printf ("val[%d]: %2d %2d %s %s %d %d%s\n", i,
+		printf ("val[%d]: %s%2d"DFL" %2d %s %s %d %d%s\n", i,
+				val[i] == expect[i] ? GRN : RED,
 				val[i], expect[i], *n, *en,
 				dense[i], sparse[Ent_Index(dense[i])],
-				ent_ok ? "" : RED "***" DFL);
+				ent_ok ? "" : RED"***"DFL);
 		if (val[i] != expect[i] || !ent_ok) {
 			fail = 1;
 		}
@@ -399,6 +400,60 @@ main (void)
 	if (check_obj_comps (reg, base + test_obj,
 						 (uint32_t[]) { 9, 8, 10, 11, 12 },
 						 (uint32_t[]) { 4, 3,  2,  5,  6 },
+						 base + test_name)) {
+		printf ("oops\n");
+		return 1;
+	}
+
+	// e is known to be at index 0
+	puts (ONG "move e to sp2" DFL);
+	ecs_move_component (&reg->comp_pools[base + test_obj],
+						&reg->subpools[base + test_obj],
+						sp2, 0, &test_components[test_obj]);
+	if (check_subpool_ranges (&reg->subpools[base + test_obj],
+							  (uint32_t[]) { 1, 5 })) {
+		printf ("oops\n");
+		return 1;
+	}
+	if (check_obj_comps (reg, base + test_obj,
+						 (uint32_t[]) { 8, 9, 10, 11, 12 },
+						 (uint32_t[]) { 3, 4,  2,  5,  6 },
+						 base + test_name)) {
+		printf ("oops\n");
+		return 1;
+	}
+
+	// f is known to be at index 3
+	puts (ONG "move f to sp3" DFL);
+	ecs_move_component (&reg->comp_pools[base + test_obj],
+						&reg->subpools[base + test_obj],
+						sp3, 3, &test_components[test_obj]);
+	if (check_subpool_ranges (&reg->subpools[base + test_obj],
+							  (uint32_t[]) { 2, 5 })) {
+		printf ("oops\n");
+		return 1;
+	}
+	if (check_obj_comps (reg, base + test_obj,
+						 (uint32_t[]) { 8, 11, 10, 9, 12 },
+						 (uint32_t[]) { 3,  5,  2, 4,  6 },
+						 base + test_name)) {
+		printf ("oops\n");
+		return 1;
+	}
+
+	// g is known to be at index 4
+	puts (ONG "move g out of the pools" DFL);
+	ecs_move_component (&reg->comp_pools[base + test_obj],
+						&reg->subpools[base + test_obj],
+						nullent, 4, &test_components[test_obj]);
+	if (check_subpool_ranges (&reg->subpools[base + test_obj],
+							  (uint32_t[]) { 2, 4 })) {
+		printf ("oops\n");
+		return 1;
+	}
+	if (check_obj_comps (reg, base + test_obj,
+						 (uint32_t[]) { 8, 11, 10, 9, 12 },
+						 (uint32_t[]) { 3,  5,  2, 4,  6 },
 						 base + test_name)) {
 		printf ("oops\n");
 		return 1;
