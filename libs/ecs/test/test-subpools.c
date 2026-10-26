@@ -463,6 +463,61 @@ main (void)
 		return 1;
 	}
 
+	// c is known to be at index 2, should be a no-op
+	puts (ONG "move c to sp2" DFL);
+	ecs_move_component (&reg->comp_pools[base + test_obj],
+						&reg->subpools[base + test_obj],
+						sp2, 2, &test_components[test_obj]);
+	ECS_PrintRegistry(reg);
+	if (check_subpool_ranges (&reg->subpools[base + test_obj],
+							  (uint32_t[]) { 2, 4 })) {
+		printf ("oops\n");
+		return 1;
+	}
+	if (check_obj_comps (reg, base + test_obj,
+						 (uint32_t[]) { 8, 11, 10, 9, 12 },
+						 (uint32_t[]) { 3,  5,  2, 4,  6 },
+						 base + test_name)) {
+		printf ("oops\n");
+		return 1;
+	}
+
+	// e is known to be at index 3, should be a no-op
+	puts (ONG "move e to sp2" DFL);
+	ecs_move_component (&reg->comp_pools[base + test_obj],
+						&reg->subpools[base + test_obj],
+						sp2, 3, &test_components[test_obj]);
+	if (check_subpool_ranges (&reg->subpools[base + test_obj],
+							  (uint32_t[]) { 2, 4 })) {
+		printf ("oops\n");
+		return 1;
+	}
+	if (check_obj_comps (reg, base + test_obj,
+						 (uint32_t[]) { 8, 11, 10, 9, 12 },
+						 (uint32_t[]) { 3,  5,  2, 4,  6 },
+						 base + test_name)) {
+		printf ("oops\n");
+		return 1;
+	}
+
+	// g is known to be at index 4, should be a no-op
+	puts (ONG "move g out of the pools again" DFL);
+	ecs_move_component (&reg->comp_pools[base + test_obj],
+						&reg->subpools[base + test_obj],
+						nullent, 4, &test_components[test_obj]);
+	if (check_subpool_ranges (&reg->subpools[base + test_obj],
+							  (uint32_t[]) { 2, 4 })) {
+		printf ("oops\n");
+		return 1;
+	}
+	if (check_obj_comps (reg, base + test_obj,
+						 (uint32_t[]) { 8, 11, 10, 9, 12 },
+						 (uint32_t[]) { 3,  5,  2, 4,  6 },
+						 base + test_name)) {
+		printf ("oops\n");
+		return 1;
+	}
+
 	ECS_DelRegistry (reg);
 	return 0;
 }
