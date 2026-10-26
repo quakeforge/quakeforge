@@ -55,6 +55,7 @@ ecs_new_subpool_range (ecs_subpool_t *subpool)
 			size_t      rsize = subpool->max_ranges * sizeof (uint32_t);
 			subpool->rangeids = realloc (subpool->rangeids, idsize);
 			subpool->sorted = realloc (subpool->sorted, idsize);
+			subpool->dense = realloc (subpool->dense, rsize);
 			subpool->ranges = realloc (subpool->ranges, rsize);
 		}
 		id = subpool->num_ranges++;
@@ -67,6 +68,7 @@ ecs_new_subpool_range (ecs_subpool_t *subpool)
 		end = subpool->ranges[num_ranges - 1];
 	}
 	subpool->ranges[subpool->sorted[Ent_Index (id)]] = end;
+	subpool->dense[subpool->sorted[Ent_Index (id)]] = id;
 	return id;
 }
 
@@ -93,6 +95,7 @@ ECS_DelSubpoolRange (ecs_registry_t *registry, uint32_t component, uint32_t id)
 	subpool->available++;
 	for (uint32_t i = range; i < subpool->num_ranges - 1; i++) {
 		subpool->ranges[i] = subpool->ranges[i + 1] - delta;
+		subpool->dense[i] = subpool->dense[i + 1];
 	}
 	for (uint32_t i = 0; i < subpool->num_ranges; i++) {
 		if (subpool->sorted[i] > range) {
@@ -138,7 +141,10 @@ ECS_MoveSubpoolLast (ecs_registry_t *registry, uint32_t component, uint32_t id)
 	// ranges down one slot
 	for (uint32_t i = range; i < last_range; i++) {
 		subpool->ranges[i] = subpool->ranges[i + 1] - count;
+		subpool->dense[i] = subpool->dense[i + 1];
 	}
+	// ranges[last_range] doesn't change
+	subpool->dense[last_range] = id;
 	// update the indices of all range ids that point past the moved range
 	for (uint32_t i = 0; i < num_ranges; i++) {
 		if (subpool->sorted[i] > range) {
@@ -387,6 +393,7 @@ ecs_group_swp (void *_a, void *_b, void *_ctx)
 	ecs_grpctx_t *ctx = _ctx;
 
 	swap_uint32 (a, b);
+	swap_uint32 (&ctx->subpool->dense[*a], &ctx->subpool->dense[*b]);
 	swap_uint32 (&ctx->subpool->sorted[*a], &ctx->subpool->sorted[*b]);
 }
 

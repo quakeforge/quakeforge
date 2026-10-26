@@ -359,11 +359,13 @@ ECS_PrintRegistry (ecs_registry_t *reg)
 					continue;
 				}
 				uint32_t sind = subpool->sorted[j];
+				uint32_t did = subpool->dense[sind];
 				uint32_t end = subpool->ranges[sind];
 				uint32_t start = sind ? subpool->ranges[sind - 1] : 0;
-				printf ("   %5x: %3x.%05x %2d %d-%d\n", j,
+				printf ("   %5x: %3x.%05x %2d %2d-%-3d %3x.%05x\n", j,
 						Ent_Generation (rid) >> ENT_IDBITS, Ent_Index (rid),
-						sind, start, end);
+						sind, start, end,
+						Ent_Generation (did) >> ENT_IDBITS, Ent_Index (did));
 				for (uint32_t k = start; k < end; k++) {
 					uint32_t ent = pool->dense[k];
 					printf ("          %3x.%05x %d\n",

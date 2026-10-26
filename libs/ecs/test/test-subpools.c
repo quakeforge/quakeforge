@@ -75,8 +75,12 @@ check_subpool_ranges (ecs_subpool_t *subpool, uint32_t *expect)
 	while (count--) {
 		uint32_t   *r = range++;
 		uint32_t    e = *expect++;
-		printf ("%2d: %2d %2d\n", (int)(r - subpool->ranges), *r, e);
-		if (*r != e++) {
+		uint32_t    ind = r - subpool->ranges;
+		uint32_t    did = subpool->dense[ind];
+		bool        valid = did == subpool->rangeids[Ent_Index (did)];
+		printf ("%s%2d: %2d %2d"DFL"\n", valid ? DFL : RED,
+				(int)(r - subpool->ranges), *r, e);
+		if (!valid || *r != e++) {
 			ret = 1;
 		}
 	}

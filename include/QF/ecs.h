@@ -54,8 +54,8 @@
 
 typedef struct ecs_pool_s {
 	uint32_t   *sparse;		// indexed by entity id, holds index to dense/data
-	uint32_t   *dense;		// holds entity id
-	void       *data;		// component data
+	uint32_t   *dense;		// holds entity id (indexed by sparse[])
+	void       *data;		// component data (indexed by sparse[])
 	uint32_t    count;		// number of components/dense entity ids
 	uint32_t    max_count;	// current capacity for components/entity ids
 	uint32_t    max_entind;	// maximum possible entity id in sparse
@@ -71,7 +71,9 @@ typedef struct ecs_range_s {
 typedef struct ecs_subpool_s {
 	uint32_t   *rangeids;
 	uint32_t   *sorted;		// indexed by range id, holdes index to ranges
+	uint32_t   *dense;		// holds rangeid id (indexed by sorted[])
 	uint32_t   *ranges;		// holds one past end of range. implicit beginning
+							// (indexed by sorted[])
 	uint32_t    next;
 	uint32_t    available;
 	uint32_t    num_ranges;

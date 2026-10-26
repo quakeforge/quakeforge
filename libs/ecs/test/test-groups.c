@@ -89,11 +89,19 @@ check_group (ecs_registry_t *reg, uint32_t gid,
 		auto subpool = &reg->subpools[gc->component];
 		bool match = gc->component == grpcomp->component
 					&& gc->rangeid == grpcomp->rangeid;
-		printf ("%s%d %s %d"DFL" %d\n", match ? GRN : RED,
+		bool valid = true;
+		uint32_t reverse_id = nullent;
+		if (gc->rangeid != nullent) {
+			auto ind = subpool->sorted[gc->rangeid];
+			reverse_id = subpool->dense[ind];
+		}
+		valid = reverse_id == gc->rangeid;
+		printf ("%s%d %s %d"DFL" %d %s%d"DFL"\n", match ? GRN : RED,
 				gc->component, name, gc->rangeid,
 				gc->rangeid != nullent ? subpool->sorted[gc->rangeid]
-									   : nullent);
-		ok &= match;
+									   : nullent,
+				valid ? GRN : RED, reverse_id);
+		ok &= match & valid;
 	}
 	printf ("\n");
 	return ok;
