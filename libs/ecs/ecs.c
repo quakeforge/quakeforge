@@ -351,6 +351,13 @@ ECS_PrintRegistry (ecs_registry_t *reg)
 			printf ("           range_id si st-end\n");
 			for (uint32_t j = 0; j < subpool->num_ranges; j++) {
 				uint32_t rid = subpool->rangeids[j];
+				uint32_t ind = Ent_Index (rid);
+				if (ind >= subpool->num_ranges
+					|| subpool->rangeids[ind] != rid) {
+					printf ("   %5x: %3x.%05x invalid\n", j,
+							Ent_Generation (rid) >> ENT_IDBITS, ind);
+					continue;
+				}
 				uint32_t sind = subpool->sorted[j];
 				uint32_t end = subpool->ranges[sind];
 				uint32_t start = sind ? subpool->ranges[sind - 1] : 0;
