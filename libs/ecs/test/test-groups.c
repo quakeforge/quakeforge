@@ -7,7 +7,6 @@
 #include <unistd.h>
 
 #include "QF/backtrace.h"
-#include "QF/heapsort.h"
 #include "QF/simd/types.h"
 #include "QF/mathlib.h"
 #include "QF/ecs.h"
@@ -107,14 +106,6 @@ check_group (ecs_registry_t *reg, uint32_t gid,
 	return ok;
 }
 
-static int
-grp_cmp (const void *_a, const void *_b)
-{
-	const uint32_t *a = _a;
-	const uint32_t *b = _b;
-	return *a - *b;
-}
-
 static bool
 check_component_groups (ecs_registry_t *reg, uint32_t comp,
 						uint32_t *groups, uint32_t num_groups)
@@ -134,13 +125,6 @@ check_component_groups (ecs_registry_t *reg, uint32_t comp,
 	}
 	bool ok = true;
 	if (count) {
-		// component_groups can be in any order as the data is just a list
-		// of the groups the component is in
-		uint32_t sorted_groups[count];
-		memcpy (sorted_groups, gid, count * sizeof (uint32_t));
-		heapsort (sorted_groups, count, sizeof (uint32_t), grp_cmp);
-		gid = sorted_groups;
-
 		for (; count-- > 0; gid++, groups++) {
 			bool match = *gid == *groups;
 			printf (" %s%d" DFL, match ? GRN : RED, *gid);
@@ -299,8 +283,8 @@ main (int argc, char **argv)
 	ok &= check_group (reg, grp (g5), ecs_nonown);
 
 	uint32_t *comp_groups[] = {
-		(uint32_t []) {0, 1, 2, 4},
-		(uint32_t []) {0, 1},
+		(uint32_t []) {1, 0, 2, 4},
+		(uint32_t []) {1, 0},
 		(uint32_t []) {1},
 		(uint32_t []) {3, 4},
 		(uint32_t []) {3},

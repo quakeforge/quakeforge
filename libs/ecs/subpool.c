@@ -377,6 +377,29 @@ ecs_group_cmp (const void *_a, const void *_b, void *_ctx)
 	return (rb.end - rb.start) - (ra.end - ra.start);
 }
 
+static int
+ecs_comp_group_cmp (const void *_a, const void *_b, void *_g)
+{
+	const uint32_t *gida = _a;
+	const uint32_t *gidb = _b;
+	ecs_groups_t *g = _g;
+	auto typea = *(ecs_grpown_t *) ecs_get_component (*gida, &g->group_type,
+													  &ecs_group_type);
+	auto typeb = *(ecs_grpown_t *) ecs_get_component (*gidb, &g->group_type,
+													  &ecs_group_type);
+	auto rangea = ecs_get_subpool_range (&g->groups, *gida);
+	auto rangeb = ecs_get_subpool_range (&g->groups, *gidb);
+	if (typea == typeb) {
+		uint32_t counta = rangea.end - rangea.start;
+		uint32_t countb = rangeb.end - rangeb.start;
+		if (counta == countb) {
+			return gida - gidb;		// doesn't matter, just for stability
+		}
+		return countb - counta;		// want larger first
+	}
+	return typea - typeb;			// want fully-owning first
+}
+
 static void
 swap_uint32 (uint32_t *a, uint32_t *b)
 {
@@ -450,5 +473,15 @@ ECS_SortGroups (ecs_registry_t *reg)
 		}
 
 		set_union (&sorted_groups, &groups);
+	}
+
+	for (auto ci = set_first (&g->grouped_components); ci; ci = set_next (ci)) {
+		uint32_t comp = ci->element;
+		auto range = ecs_get_subpool_range (&g->components, comp);
+		uint32_t *gid = Component_Address (&ecs_component_groups,
+										   g->component_groups.data,
+										   range.start);
+		uint32_t count = range.end - range.start;
+		heapsort_r (gid, count, sizeof (uint32_t), ecs_comp_group_cmp, g);
 	}
 }
