@@ -174,6 +174,54 @@ ecs_move_component (ecs_pool_t *pool, ecs_subpool_t *subpool, uint32_t rangeid,
 	return ind;
 }
 
+static void
+ent_try_add_group (ecs_registry_t *reg, uint32_t gid, uint32_t ent)
+{
+	auto g = &reg->groups;
+	auto range = ecs_get_subpool_range (&g->groups, gid);
+	ecs_grpcomp_t *gc = Component_Address (&ecs_group_components,
+										   g->group_components.data,
+										   range.start);
+	for (uint32_t i = range.end - range.start; i-- > 0; gc++) {
+		if (!Ent_HasComponent (ent, gc->component, reg)) {
+			return;
+		}
+	}
+	auto type = *(ecs_grpown_t *) ecs_get_component (gid, &g->group_type,
+													 &ecs_group_type);
+	if (type == ecs_nonown) {
+		// the group doesn't own any of the components, so record the entity
+		// in the group's list of entities so it can be iterated by group
+		auto nid = *(uint32_t *) ecs_get_component (gid, &g->nonown_ranges,
+													&ecs_group_nonown_range);
+		auto pool = &g->nonown_entities;
+		auto subpool = &g->nonown_groups;
+		auto c = &ecs_group_nonown_entity;
+		uint32_t ind = ecs_expand_pool (pool, 1, c);
+		auto dst = Component_Address (c, pool->data, ind);
+		Component_CopyElements (c, dst, 0, &ent, 0, 1);
+		ecs_move_component (pool, subpool, nid, ind, c);
+	} else {
+		auto range = ecs_get_subpool_range (&g->groups, gid);
+		ecs_grpcomp_t *gc = Component_Address (&ecs_group_components,
+											   g->group_components.data,
+											   range.start);
+		uint32_t count = range.end - range.start;
+		for (uint32_t i = 0; i < count; i++) {
+			if (gc[i].rangeid == nullent) {
+				// group doesn't own the component, so can't move it
+				continue;
+			}
+			uint32_t comp = gc[i].component;
+			auto c = &reg->components.a[comp];
+			auto pool = &reg->comp_pools[comp];
+			auto subpool = &reg->subpools[comp];
+			uint32_t ind = pool->sparse[Ent_Index (ent)];
+			ecs_move_component (pool, subpool, gc[i].rangeid, ind, c);
+		}
+	}
+}
+
 VISIBLE void *
 Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 {
@@ -189,27 +237,16 @@ Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 		pool->dense[ind] = ent;
 		uint32_t    rangeid = nullent;
 		if (set_is_member (&reg->groups.grouped_components, comp)) {
-			auto groups = &reg->groups.groups;
-			auto components = &reg->groups.components;
-			auto comp_grps = &reg->groups.component_groups;
-			auto grp_comp = &reg->groups.group_components;
-			auto range = ecs_get_subpool_range (components, comp);
+			auto g = &reg->groups;
+			auto range = ecs_get_subpool_range (&g->components, comp);
 			uint32_t *gid = Component_Address (&ecs_component_groups,
-											   comp_grps->data, range.start);
-			for (uint32_t i = range.end - range.start; i-- > 0; gid++) {
-				auto gcrange = ecs_get_subpool_range (groups, *gid);
-				ecs_grpcomp_t *gc = Component_Address (&ecs_group_components,
-													   grp_comp->data,
-													   gcrange.start);
-				bool complete = true;
-				for (uint32_t i = gcrange.end - gcrange.start; i-- > 0; gc++) {
-					if (gc->component != comp) {
-						complete &= Ent_HasComponent (ent, gc->component, reg);
-					}
-				}
-				if (complete) {
-					Ent_AddGroup (ent, *gid, reg);
-				}
+											   g->component_groups.data,
+											   range.start);
+			// go through the groups in reverse order so partially or fully
+			// owning groups are done from smallest to largest and non-owning
+			// groups are done first
+			for (uint32_t i = range.end - range.start; i-- > 0; ) {
+				ent_try_add_group (reg, gid[i], ent);
 			}
 		} else {
 			uint32_t    rind = subpool->num_ranges - subpool->available;

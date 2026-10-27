@@ -117,7 +117,7 @@ check_component_groups (ecs_registry_t *reg, uint32_t comp,
 									   range.start);
 	const char *name = reg->components.a[comp].name;
 	uint32_t count = range.end - range.start;
-	printf ("component: %s%d %s %d" DFL ":", count == num_groups ? GRN : RED,
+	printf ("component: %s%d %s %d"DFL":", count == num_groups ? GRN : RED,
 			comp, name, count);
 	if (count != num_groups) {
 		printf ("\n");
@@ -164,9 +164,7 @@ check_group_ents (ecs_registry_t *reg, uint32_t gid, uint32_t num_ents)
 				uint32_t cmp = gc[i].component;
 				complete &= Ent_HasComponent (*ent, cmp, reg);
 			}
-			printf (" %3x.%05x: %s",
-					Ent_Generation (*ent) >> ENT_IDBITS, Ent_Index (*ent),
-					complete ? GRN : RED);
+			printf (" %3x.%05x: %s", prent (*ent), complete ? GRN : RED);
 			for (uint32_t i = 0; i < cmp_count; i++) {
 				uint32_t cmp = gc[i].component;
 				if (Ent_HasComponent (*ent, cmp, reg)) {
@@ -203,9 +201,7 @@ check_group_ents (ecs_registry_t *reg, uint32_t gid, uint32_t num_ents)
 				if (count) {
 					printf ("%s", same_ents ? GRN : RED);
 					for (; count-- > 0; dense++) {
-						printf (" %x.%05x",
-								Ent_Generation (*dense) >> ENT_IDBITS,
-								Ent_Index (*dense));
+						printf (" %x.%05x", prent (*dense));
 					}
 				}
 				printf (DFL"\n");
@@ -226,7 +222,7 @@ main (int argc, char **argv)
 											test_num_components);
 	ECS_CreateComponentPools (reg);
 
-	printf (ONG "setup" DFL ": %u\n", base);
+	printf (ONG "setup"DFL": %u\n", base);
 	uint32_t g1 = ECS_DefineGroup (reg, (uint32_t[]) {
 			base + test_a1,
 			base + test_a2,
@@ -314,6 +310,9 @@ main (int argc, char **argv)
 	uint32_t ent4 = ECS_NewEntity (reg);
 	uint32_t ent5 = ECS_NewEntity (reg);
 	uint32_t ent6 = ECS_NewEntity (reg);
+	uint32_t ent7 = ECS_NewEntity (reg);
+	uint32_t ent8 = ECS_NewEntity (reg);
+	uint32_t ent9 = ECS_NewEntity (reg);
 
 	Ent_AddGroup (ent1, g1, reg);
 	Ent_AddGroup (ent2, g2, reg);
@@ -338,12 +337,52 @@ main (int argc, char **argv)
 	ok &= check_group_ents (reg, g4, 1);
 	ok &= check_group_ents (reg, g5, 2);
 
+	printf (ONG "all components on ent7"DFL" %3x.%05x\n", prent (ent7));
+	Ent_SetComponent (ent7, base + test_a1, reg, nullptr);
+	Ent_SetComponent (ent7, base + test_a2, reg, nullptr);
+	Ent_SetComponent (ent7, base + test_a3, reg, nullptr);
+	Ent_SetComponent (ent7, base + test_b1, reg, nullptr);
+	Ent_SetComponent (ent7, base + test_b2, reg, nullptr);
+	Ent_SetComponent (ent7, base + test_c1, reg, nullptr);
+
+	ok &= check_group_ents (reg, g1, 1);
+	ok &= check_group_ents (reg, g2, 2);
+	ok &= check_group_ents (reg, g3, 5);//g5 includes g3!!
+	ok &= check_group_ents (reg, g4, 2);
+	ok &= check_group_ents (reg, g5, 3);
+
+	printf (ONG "all components on ent8"DFL" %3x.%05x\n", prent (ent8));
+	Ent_SetComponent (ent8, base + test_c1, reg, nullptr);
+	Ent_SetComponent (ent8, base + test_b2, reg, nullptr);
+	Ent_SetComponent (ent8, base + test_b1, reg, nullptr);
+	Ent_SetComponent (ent8, base + test_a3, reg, nullptr);
+	Ent_SetComponent (ent8, base + test_a2, reg, nullptr);
+	Ent_SetComponent (ent8, base + test_a1, reg, nullptr);
+
+	ok &= check_group_ents (reg, g1, 1);
+	ok &= check_group_ents (reg, g2, 3);
+	ok &= check_group_ents (reg, g3, 6);//g5 includes g3!!
+	ok &= check_group_ents (reg, g4, 3);
+	ok &= check_group_ents (reg, g5, 4);
+
+	printf (ONG "some groups on ent9"DFL" %3x.%05x\n", prent (ent9));
+	Ent_SetComponent (ent9, base + test_b2, reg, nullptr);
+	Ent_SetComponent (ent9, base + test_b1, reg, nullptr);
+	Ent_SetComponent (ent9, base + test_a2, reg, nullptr);
+	Ent_SetComponent (ent9, base + test_a1, reg, nullptr);
+
+	ok &= check_group_ents (reg, g1, 2);
+	ok &= check_group_ents (reg, g2, 3);
+	ok &= check_group_ents (reg, g3, 6);//g5 includes g3!!
+	ok &= check_group_ents (reg, g4, 4);
+	ok &= check_group_ents (reg, g5, 4);
+
 	//ECS_PrintEntity (reg, ent1);
 	//ECS_PrintEntity (reg, ent2);
 	//ECS_PrintEntity (reg, ent3);
 	//ECS_PrintEntity (reg, ent4);
 
-	ECS_PrintRegistry (reg);
+	//ECS_PrintRegistry (reg);
 	ECS_DelRegistry (reg);
 	return !ok;
 }
