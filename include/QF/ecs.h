@@ -236,6 +236,8 @@ ECSINLINE void *Ent_SafeGetComponent (uint32_t ent, uint32_t comp,
 ECSINLINE void *Ent_SetComponent (uint32_t ent, uint32_t comp,
 								  ecs_registry_t *registry, const void *data);
 
+ECSINLINE ecs_grpown_t ecs_get_group_type (uint32_t gid, ecs_registry_t *reg);
+
 #undef ECSINLINE
 #ifndef IMPLEMENT_ECS_Funcs
 #define ECSINLINE GNU89INLINE inline
@@ -369,6 +371,15 @@ Ent_SetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry,
 		return Component_CreateElements (&registry->components.a[comp],
 										 dst, 0, 1, &ent, registry);
 	}
+}
+
+ECSINLINE
+ecs_grpown_t
+ecs_get_group_type (uint32_t gid, ecs_registry_t *reg)
+{
+	auto g = &reg->groups;
+	return *(ecs_grpown_t *) ecs_get_component (gid, &g->group_type,
+												&ecs_group_type);
 }
 
 #undef ECSINLINE

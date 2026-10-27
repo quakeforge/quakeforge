@@ -174,8 +174,8 @@ ecs_move_component (ecs_pool_t *pool, ecs_subpool_t *subpool, uint32_t rangeid,
 	return ind;
 }
 
-static void
-ent_try_add_group (ecs_registry_t *reg, uint32_t gid, uint32_t ent)
+static bool
+ent_test_group (ecs_registry_t *reg, uint32_t gid, uint32_t ent)
 {
 	auto g = &reg->groups;
 	auto range = ecs_get_subpool_range (&g->groups, gid);
@@ -184,11 +184,20 @@ ent_try_add_group (ecs_registry_t *reg, uint32_t gid, uint32_t ent)
 										   range.start);
 	for (uint32_t i = range.end - range.start; i-- > 0; gc++) {
 		if (!Ent_HasComponent (ent, gc->component, reg)) {
-			return;
+			return false;
 		}
 	}
-	auto type = *(ecs_grpown_t *) ecs_get_component (gid, &g->group_type,
-													 &ecs_group_type);
+	return true;
+}
+
+static void
+ent_try_add_group (ecs_registry_t *reg, uint32_t gid, uint32_t ent)
+{
+	if (!ent_test_group (reg, gid, ent)) {
+		return;
+	}
+	auto g = &reg->groups;
+	auto type = ecs_get_group_type (gid, reg);
 	if (type == ecs_nonown) {
 		// the group doesn't own any of the components, so record the entity
 		// in the group's list of entities so it can be iterated by group
@@ -262,9 +271,13 @@ Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 }
 
 static void
-ent_remove_group (ecs_registry_t *reg, uint32_t gid, uint32_t ind, uint32_t id,
+ent_remove_group (ecs_registry_t *reg, uint32_t gid, uint32_t ent, uint32_t ind,
 				  set_t *done_components)
 {
+	if (!ent_test_group (reg, gid, ent)) {
+		return;
+	}
+	uint32_t id = Ent_Index (ent);
 	auto g = &reg->groups;
 	// move other owned components out of group
 	auto range = ecs_get_subpool_range (&g->groups, gid);
@@ -321,6 +334,9 @@ ent_remove_raw_component (uint32_t ind, const component_t *c,
 static void
 ent_remove_nonown_group (ecs_registry_t *reg, uint32_t gid, uint32_t ent)
 {
+	if (!ent_test_group (reg, gid, ent)) {
+		return;
+	}
 	auto g = &reg->groups;
 	auto pool = &g->nonown_entities;
 	auto subpool = &g->nonown_groups;
@@ -358,34 +374,35 @@ ent_remove_component (uint32_t ent, ecs_registry_t *reg, uint32_t comp)
 		// prevent this component from getting moved so it can be handled
 		// by the non-grouped component code
 		set_add (&done_components, comp);
-		if (ind < subpool->ranges[range_count - 1]) {
-			// the component/entity is in an owning group
-			uint32_t rind = find_range (subpool, ind) - subpool->ranges;
-			uint32_t gid = subpool->dense[rind];
-			ent_remove_group (reg, gid, ind, id, &done_components);
-		}
-		// get the last group (in nested groups) that owns this component
-		uint32_t last_gid = subpool->dense[range_count - 1];
 		// get the list of all groups using this component
 		auto range = ecs_get_subpool_range (&g->components, comp);
 		uint32_t *cg = Component_Address (&ecs_component_groups,
 										 g->component_groups.data,
 										 range.start);
-		// skip to the group owning this component
-		uint32_t count = range.end - range.start;
-		for (; count-- > 0 && *cg != last_gid; cg++) continue;
-		if (!count && *cg != last_gid) {
-			Sys_Error ("group not in component group list");
+		if (ind < subpool->ranges[range_count - 1]) {
+			// the component/entity is in an owning group
+			uint32_t rind = find_range (subpool, ind) - subpool->ranges;
+			// component groups are sorted such that fully owning groups
+			// come first and are sorted by size, same as the ranges in
+			// the pools, thus the range index also indexes the group
+			uint32_t gid = cg[rind];
+			ent_remove_group (reg, gid, ent, ind, &done_components);
 		}
-		// go through all partially non-owning groups
+		uint32_t count = range.end - range.start;
+		if (count < range_count) {
+			Sys_Error ("extra ranges on grouped component");
+		}
+		// skip over owning groups
+		cg += range_count;
+		count -= range_count;
+		// go through all partially and non-owning groups
 		for (; count-- > 0; cg++) {
 			uint32_t gid = *cg;
-			auto type = *(ecs_grpown_t *) ecs_get_component (gid, &g->group_type,
-															 &ecs_group_type);
+			auto type = ecs_get_group_type (gid, reg);
 			if (type == ecs_nonown) {
 				ent_remove_nonown_group (reg, gid, ent);
 			} else {
-				ent_remove_group (reg, gid, ind, id, &done_components);
+				ent_remove_group (reg, gid, ent, ind, &done_components);
 			}
 		}
 	}
@@ -429,8 +446,7 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 void Ent_AddGroup (uint32_t ent, uint32_t group, ecs_registry_t *reg)
 {
 	auto g = &reg->groups;
-	auto gtype = *(ecs_grpown_t *) ecs_get_component (group, &g->group_type,
-													  &ecs_group_type);
+	auto gtype = ecs_get_group_type (group, reg);
 	if (gtype == ecs_nonown) {
 		// the group doesn't own any of the components, so record the entity
 		// in the group's list of entities so it can be iterated by group

@@ -174,7 +174,6 @@ check_group_ents (ecs_registry_t *reg, uint32_t gid, uint32_t num_ents)
 			printf (DFL"\n");
 		}
 	} else {
-		uint32_t last_count = num_ents;
 		uint32_t *ents = nullptr;
 		for (uint32_t i = 0; i < cmp_count; i++, gc++) {
 			auto pool = &reg->comp_pools[gc->component];
@@ -187,8 +186,7 @@ check_group_ents (ecs_registry_t *reg, uint32_t gid, uint32_t num_ents)
 				}
 				// all components in a group must have the same number of
 				// entities in the group's subpool range
-				bool same_count = count == last_count;
-				last_count = count;
+				bool same_count = count == num_ents;
 				bool same_ents = false;
 				auto dense = pool->dense + crange.start;
 				if (same_count) {
@@ -373,6 +371,24 @@ main (int argc, char **argv)
 
 	ok &= check_group_ents (reg, g1, 2);
 	ok &= check_group_ents (reg, g2, 3);
+	ok &= check_group_ents (reg, g3, 6);//g5 includes g3!!
+	ok &= check_group_ents (reg, g4, 4);
+	ok &= check_group_ents (reg, g5, 4);
+
+	printf (ONG "remove a1 from ent9"DFL" %3x.%05x\n", prent (ent9));
+	Ent_RemoveComponent (ent9, base + test_a1, reg);
+
+	ok &= check_group_ents (reg, g1, 1);
+	ok &= check_group_ents (reg, g2, 3);
+	ok &= check_group_ents (reg, g3, 6);//g5 includes g3!!
+	ok &= check_group_ents (reg, g4, 4);
+	ok &= check_group_ents (reg, g5, 4);
+
+	printf (ONG "remove a3 from ent2"DFL" %3x.%05x\n", prent (ent2));
+	Ent_RemoveComponent (ent2, base + test_a3, reg);
+
+	ok &= check_group_ents (reg, g1, 2);
+	ok &= check_group_ents (reg, g2, 2);
 	ok &= check_group_ents (reg, g3, 6);//g5 includes g3!!
 	ok &= check_group_ents (reg, g4, 4);
 	ok &= check_group_ents (reg, g5, 4);

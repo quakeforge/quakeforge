@@ -342,14 +342,6 @@ ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
 	return gid;
 }
 
-static ecs_grpown_t
-ecs_get_group_type (uint32_t gid, ecs_registry_t *reg)
-{
-	auto g = &reg->groups;
-	return *(ecs_grpown_t *) ecs_get_component (gid, &g->group_type,
-												&ecs_group_type);
-}
-
 static int
 ecs_range_cmp (const void *_a, const void *_b, void *_subpool)
 {

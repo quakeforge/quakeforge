@@ -332,8 +332,8 @@ ECS_PrintRegistry (ecs_registry_t *reg)
 											   range.start);
 		uint32_t count = range.end - range.start;
 		for (uint32_t j = 0; j < count; j++, gc++) {
-			printf ("   %5d: %3d.%-3d %s\n", j, gc->component, gc->rangeid,
-					reg->components.a[gc->component].name);
+			printf ("   %5d: %3d.%-3d %3d %s\n", j, gc->component, gc->rangeid,
+					gc->component, reg->components.a[gc->component].name);
 		}
 	}
 	printf ("Components:\n");
