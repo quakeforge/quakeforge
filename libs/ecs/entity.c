@@ -225,8 +225,37 @@ Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 }
 
 static void
-ent_remove_component (ecs_pool_t *pool, ecs_subpool_t *subpool,
-					  uint32_t id, uint32_t ind, const component_t *c)
+ent_remove_group (ecs_registry_t *reg, uint32_t gid, uint32_t ind, uint32_t id,
+				  set_t *done_components)
+{
+	auto g = &reg->groups;
+	// move other owned components out of group
+	auto range = ecs_get_subpool_range (&g->groups, gid);
+	ecs_grpcomp_t *gc = Component_Address (&ecs_group_components,
+										   g->group_components.data,
+										   range.start);
+	uint32_t count = range.end - range.start;
+	for (; count-- > 0; gc++) {
+		if (gc->rangeid != nullent) {
+			// the component is owned by this group
+			if (set_is_member (done_components, gc->component)) {
+				continue;
+			}
+			set_add (done_components, gc->component);
+			auto p = &reg->comp_pools[gc->component];
+			auto sp = &reg->subpools[gc->component];
+			auto c = &reg->components.a[gc->component];
+			if (ind != p->sparse[id]) {
+				Sys_Error ("misaligned components in owning group");
+			}
+			ecs_move_component (p, sp, nullent, ind, c);
+		}
+	}
+}
+
+static void
+ent_remove_raw_component (uint32_t ind, const component_t *c,
+						  ecs_pool_t *pool, ecs_subpool_t *subpool)
 {
 	uint32_t    range_count = subpool->num_ranges - subpool->available;
 	// if ind >= the last range, then it is outside the subpools
@@ -250,25 +279,99 @@ ent_remove_component (ecs_pool_t *pool, ecs_subpool_t *subpool,
 		Component_MoveElements (c, pool->data, ind, last, 1);
 	}
 	pool->count--;
+}
+
+static void
+ent_remove_nonown_group (ecs_registry_t *reg, uint32_t gid, uint32_t ent)
+{
+	auto g = &reg->groups;
+	auto pool = &g->nonown_entities;
+	auto subpool = &g->nonown_groups;
+	auto nid = *(uint32_t *) ecs_get_component (gid, &g->nonown_ranges,
+												&ecs_group_nonown_range);
+	auto ent_range = ecs_get_subpool_range (subpool, nid);
+	auto c = &ecs_group_nonown_entity;
+	uint32_t ent_count = ent_range.end - ent_range.start;
+	uint32_t *ent_list = Component_Address (c, pool->data, ent_range.start);
+	for (uint32_t i = 0; i < ent_count; i++) {
+		if (ent_list[i] == ent) {
+			uint32_t ind = ent_range.start + i;
+			ent_remove_raw_component (ind, c, pool, subpool);
+			return;
+		}
+	}
+	Sys_Error ("entity not in non-owning group");
+}
+
+static void
+ent_remove_component (uint32_t ent, ecs_registry_t *reg, uint32_t comp)
+{
+	auto pool = &reg->comp_pools[comp];
+	auto subpool = &reg->subpools[comp];
+	auto g = &reg->groups;
+	uint32_t    id = Ent_Index (ent);
+	uint32_t    ind = pool->sparse[id];
+	uint32_t    range_count = subpool->num_ranges - subpool->available;
+	if (set_is_member (&reg->groups.grouped_components, comp)) {
+		if (!range_count) {
+			Sys_Error ("no ranges on grouped component");
+		}
+		set_t done_components = SET_STATIC_INIT (reg->components.size, alloca);
+		set_empty (&done_components);
+		// prevent this component from getting moved so it can be handled
+		// by the non-grouped component code
+		set_add (&done_components, comp);
+		if (ind < subpool->ranges[range_count - 1]) {
+			// the component/entity is in an owning group
+			uint32_t rind = find_range (subpool, ind) - subpool->ranges;
+			uint32_t gid = subpool->dense[rind];
+			ent_remove_group (reg, gid, ind, id, &done_components);
+		}
+		// get the last group (in nested groups) that owns this component
+		uint32_t last_gid = subpool->dense[range_count - 1];
+		// get the list of all groups using this component
+		auto range = ecs_get_subpool_range (&g->components, comp);
+		uint32_t *cg = Component_Address (&ecs_component_groups,
+										 g->component_groups.data,
+										 range.start);
+		// skip to the group owning this component
+		uint32_t count = range.end - range.start;
+		for (; count-- > 0 && *cg != last_gid; cg++) continue;
+		if (!count && *cg != last_gid) {
+			Sys_Error ("group not in component group list");
+		}
+		// go through all partially non-owning groups
+		for (; count-- > 0; cg++) {
+			uint32_t gid = *cg;
+			auto type = *(ecs_grpown_t *) ecs_get_component (gid, &g->group_type,
+															 &ecs_group_type);
+			if (type == ecs_nonown) {
+				ent_remove_nonown_group (reg, gid, ent);
+			} else {
+				ent_remove_group (reg, gid, ind, id, &done_components);
+			}
+		}
+	}
+	component_t *c = &reg->components.a[comp];
+	ent_remove_raw_component (ind, c, pool, subpool);
 	pool->sparse[id] = nullent;
 }
 
 VISIBLE void
-Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
+Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 {
-	if (registry->locked) {
+	if (reg->locked) {
 		// the registry is being deleted and mass entity and component
 		// deletions are going on
 		return;
 	}
 	uint32_t    id = Ent_Index (ent);
-	ecs_pool_t *pool = &registry->comp_pools[comp];
+	ecs_pool_t *pool = &reg->comp_pools[comp];
 	if (id >= pool->max_entind) {
 		return;
 	}
-	ecs_subpool_t *subpool = &registry->subpools[comp];
 	uint32_t    ind = pool->sparse[id];
-	component_t *c = &registry->components.a[comp];
+	component_t *c = &reg->components.a[comp];
 	if (ind < pool->count && pool->dense[ind] == ent) {
 		// copy the component out of the pool so that it can be overwritten
 		// now, thus removing it from the pool, before actually destroying
@@ -278,11 +381,11 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 		byte        tmp_comp[c->size];
 		Component_CopyElements (c, tmp_comp, 0, pool->data, ind, 1);
 
-		ent_remove_component (pool, subpool, id, ind, c);
+		ent_remove_component (ent, reg, comp);
 
 		// the component has been fully removed from the pool so it is now
 		// safe to destroy it
-		Component_DestroyElements (c, tmp_comp, 0, 1, &ent, registry);
+		Component_DestroyElements (c, tmp_comp, 0, 1, &ent, reg);
 	}
 }
 
@@ -351,8 +454,6 @@ Ent_RemoveGroup (uint32_t ent, uint32_t group, ecs_registry_t *reg)
 		uint32_t comp = gc[i].component;
 		auto c = &reg->components.a[comp];
 		auto pool = &reg->comp_pools[comp];
-		auto subpool = &reg->subpools[comp];
-		uint32_t id = Ent_Index (ent);
 		uint32_t ind;
 		if (!Ent_HasComponent (ent, comp, reg)) {
 			Sys_Error ("component %d (%s) not on entity", comp, c->name);
@@ -362,7 +463,7 @@ Ent_RemoveGroup (uint32_t ent, uint32_t group, ecs_registry_t *reg)
 		byte        tmp_comp[c->size];
 		Component_CopyElements (c, tmp_comp, 0, pool->data, ind, 1);
 
-		ent_remove_component (pool, subpool, id, ind, c);
+		ent_remove_component (ent, reg, comp);
 		ind = ecs_expand_pool (pool, 1, c);
 		Component_CopyElements (c, pool->data, ind, tmp_comp, 0, 1);
 	}
