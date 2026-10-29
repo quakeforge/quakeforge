@@ -318,6 +318,8 @@ ECS_PrintEntity (ecs_registry_t *registry, uint32_t ent)
 	}
 }
 
+#define prent(ent) Ent_Generation (ent) >> ENT_IDBITS, Ent_Index (ent)
+
 VISIBLE void
 ECS_PrintRegistry (ecs_registry_t *reg)
 {
@@ -348,13 +350,12 @@ ECS_PrintRegistry (ecs_registry_t *reg)
 			subpool_end = subpool->ranges[num_ranges - 1];
 			printf ("   next     : %x\n", subpool->next);
 			printf ("   available: %x\n", subpool->available);
-			printf ("           range_id si st-end\n");
 			for (uint32_t j = 0; j < subpool->num_ranges; j++) {
 				uint32_t rid = subpool->rangeids[j];
 				uint32_t ind = Ent_Index (rid);
 				if (ind >= subpool->num_ranges
 					|| subpool->rangeids[ind] != rid) {
-					printf ("   %5x: %3x.%05x invalid\n", j,
+					printf ("   "MAG"%5x: %3x.%05x invalid"DFL"\n", j,
 							Ent_Generation (rid) >> ENT_IDBITS, ind);
 					continue;
 				}
@@ -362,24 +363,18 @@ ECS_PrintRegistry (ecs_registry_t *reg)
 				uint32_t did = subpool->dense[sind];
 				uint32_t end = subpool->ranges[sind];
 				uint32_t start = sind ? subpool->ranges[sind - 1] : 0;
-				printf ("   %5x: %3x.%05x %2d %2d-%-3d %3x.%05x\n", j,
-						Ent_Generation (rid) >> ENT_IDBITS, Ent_Index (rid),
-						sind, start, end,
-						Ent_Generation (did) >> ENT_IDBITS, Ent_Index (did));
+				printf ("   "ONG"%5x: %3x.%05x %2d %2d-%-3d %3x.%05x"DFL"\n",
+						j, prent (rid), sind, start, end, prent (did));
 				for (uint32_t k = start; k < end; k++) {
 					uint32_t ent = pool->dense[k];
-					printf ("          %3x.%05x %d\n",
-							Ent_Generation (ent) >> ENT_IDBITS,
-							Ent_Index (ent), k);
+					printf ("          %3x.%05x %d\n", prent (ent), k);
 				}
 			}
 		}
 		printf ("   -----: ---.----- -- %d-%d\n", subpool_end, pool->count);
 		for (uint32_t k = subpool_end; k < pool->count; k++) {
 			uint32_t ent = pool->dense[k];
-			printf ("          %3x.%05x %d\n",
-					Ent_Generation (ent) >> ENT_IDBITS,
-					Ent_Index (ent), k);
+			printf ("          %3x.%05x %d\n", prent (ent), k);
 		}
 		printf ("\n");
 	}
