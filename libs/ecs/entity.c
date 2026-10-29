@@ -271,34 +271,60 @@ Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 }
 
 static void
-ent_remove_group (ecs_registry_t *reg, uint32_t gid, uint32_t ent, uint32_t ind,
-				  set_t *done_components)
+ent_move_group (ecs_registry_t *reg, uint32_t tgt, uint32_t gid,
+				uint32_t ent, uint32_t ind, uint32_t comp,
+				set_t *done_components)
 {
-	if (!ent_test_group (reg, gid, ent)) {
-		return;
-	}
 	uint32_t id = Ent_Index (ent);
-	auto g = &reg->groups;
-	// move other owned components out of group
-	auto range = ecs_get_subpool_range (&g->groups, gid);
-	ecs_grpcomp_t *gc = Component_Address (&ecs_group_components,
-										   g->group_components.data,
-										   range.start);
-	uint32_t count = range.end - range.start;
-	for (; count-- > 0; gc++) {
-		if (gc->rangeid != nullent) {
-			// the component is owned by this group
-			if (set_is_member (done_components, gc->component)) {
+	// move other owned components out of group to destination (maybe no group)
+	auto src = ecs_get_grpcomplist (gid, reg);
+	// sort the destination group components into the same order as the source
+	// group components so they don't need to be searched every time
+	// (simplifies the logic)
+	ecs_grpcomplist_t dst = {};
+	if (tgt != nullent) {
+		dst = ecs_get_grpcomplist (tgt, reg);
+	}
+	// add an extra group component entry so one past the list means
+	// the component needs to be moved out of the subpools entirely
+	ecs_grpcomp_t local_dst_gc[dst.count + 1];
+	local_dst_gc[dst.count] = (ecs_grpcomp_t) { nullent, nullent };
+	if (tgt != nullent) {
+		uint32_t k = 0;
+		for (uint32_t i = 0; i < src.count; i++) {
+			if (src.gc[i].component == comp) {
 				continue;
 			}
-			set_add (done_components, gc->component);
-			auto p = &reg->comp_pools[gc->component];
-			auto sp = &reg->subpools[gc->component];
-			auto c = &reg->components.a[gc->component];
+			for (uint32_t j = 0; j < dst.count; j++) {
+				if (src.gc[i].component == dst.gc[j].component) {
+					local_dst_gc[k++] = dst.gc[j];
+				}
+			}
+		}
+	}
+	dst.gc = local_dst_gc;
+
+	uint32_t j = 0;
+	for (uint32_t i = 0; i < src.count; i++) {
+		if (src.gc[i].rangeid != nullent) {
+			// the component is owned by this group
+			if (set_is_member (done_components, src.gc[i].component)) {
+				continue;
+			}
+			while (j < dst.count
+				   && dst.gc[j].component != src.gc[i].component) {
+				j++;
+			}
+			set_add (done_components, src.gc[i].component);
+			auto p = &reg->comp_pools[src.gc[i].component];
+			auto sp = &reg->subpools[src.gc[i].component];
+			auto c = &reg->components.a[src.gc[i].component];
 			if (ind != p->sparse[id]) {
 				Sys_Error ("misaligned components in owning group");
 			}
-			ecs_move_component (p, sp, nullent, ind, c);
+			// if j is past the end of the destination group components,
+			// dst.gc[j].rangeid will be nullent (see local_dst_gc above)
+			ecs_move_component (p, sp, dst.gc[j].rangeid, ind, c);
 		}
 	}
 }
@@ -356,12 +382,28 @@ ent_remove_nonown_group (ecs_registry_t *reg, uint32_t gid, uint32_t ent)
 	Sys_Error ("entity not in non-owning group");
 }
 
+static bool
+grp_has_component (ecs_registry_t *reg, uint32_t gid, uint32_t comp)
+{
+	auto g = &reg->groups;
+	auto range = ecs_get_subpool_range (&g->groups, comp);
+	ecs_grpcomp_t *gc = Component_Address (&ecs_group_components,
+										   g->group_components.data,
+										   range.start);
+	uint32_t count = range.end - range.start;
+	for (uint32_t i = 0; i < count; i++) {
+		if (gc[i].component == comp) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static void
 ent_remove_component (uint32_t ent, ecs_registry_t *reg, uint32_t comp)
 {
 	auto pool = &reg->comp_pools[comp];
 	auto subpool = &reg->subpools[comp];
-	auto g = &reg->groups;
 	uint32_t    id = Ent_Index (ent);
 	uint32_t    ind = pool->sparse[id];
 	uint32_t    range_count = subpool->num_ranges - subpool->available;
@@ -374,35 +416,66 @@ ent_remove_component (uint32_t ent, ecs_registry_t *reg, uint32_t comp)
 		// prevent this component from getting moved so it can be handled
 		// by the non-grouped component code
 		set_add (&done_components, comp);
+
 		// get the list of all groups using this component
-		auto range = ecs_get_subpool_range (&g->components, comp);
-		uint32_t *cg = Component_Address (&ecs_component_groups,
-										 g->component_groups.data,
-										 range.start);
+		auto cg_list = ecs_get_compgrplist (comp, reg);
+
 		if (ind < subpool->ranges[range_count - 1]) {
 			// the component/entity is in an owning group
 			uint32_t rind = find_range (subpool, ind) - subpool->ranges;
 			// component groups are sorted such that fully owning groups
 			// come first and are sorted by size, same as the ranges in
 			// the pools, thus the range index also indexes the group
-			uint32_t gid = cg[rind];
-			ent_remove_group (reg, gid, ent, ind, &done_components);
+			uint32_t gid = cg_list.grp[rind];
+
+			// go over the other components in the group to find the group
+			// to which they need to be moved
+			auto gc_list = ecs_get_grpcomplist (gid, reg);
+			for (uint32_t i = 0; i < gc_list.count; i++) {
+				if (set_is_member (&done_components, gc_list.gc[i].component)) {
+					// the component was already moved (or is the component
+					// being removed: see set_add() above)
+					continue;
+				}
+				if (gc_list.gc[i].rangeid == nullent) {
+					// the component isn't owned by this group
+					continue;
+				}
+				auto list = ecs_get_compgrplist (gc_list.gc[i].component, reg);
+				if (rind >= list.count || list.grp[rind] != gid) {
+					Sys_Error ("group not in expected place in components");
+				}
+
+				uint32_t tgt = nullent;
+				for (uint32_t i = rind + 1; i < list.count; i++) {
+					if (!grp_has_component (reg, cg_list.grp[i], comp)) {
+						tgt = cg_list.grp[i];
+						break;
+					}
+				}
+				ent_move_group (reg, tgt, gid, ent, ind, comp,
+								&done_components);
+			}
 		}
-		uint32_t count = range.end - range.start;
-		if (count < range_count) {
+		if (cg_list.count < range_count) {
 			Sys_Error ("extra ranges on grouped component");
 		}
 		// skip over owning groups
-		cg += range_count;
-		count -= range_count;
+		cg_list.grp += range_count;
+		cg_list.count -= range_count;
 		// go through all partially and non-owning groups
-		for (; count-- > 0; cg++) {
-			uint32_t gid = *cg;
+		for (; cg_list.count-- > 0; cg_list.grp++) {
+			uint32_t gid = *cg_list.grp;
+			if (!ent_test_group (reg, gid, ent)) {
+				continue;
+			}
 			auto type = ecs_get_group_type (gid, reg);
 			if (type == ecs_nonown) {
 				ent_remove_nonown_group (reg, gid, ent);
 			} else {
-				ent_remove_group (reg, gid, ent, ind, &done_components);
+				uint32_t tgt = nullent;
+				ent_move_group (reg, tgt, gid, ent, ind, comp,
+								&done_components);
 			}
 		}
 	}

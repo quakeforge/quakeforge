@@ -387,7 +387,7 @@ main (int argc, char **argv)
 	printf (ONG "remove a3 from ent2"DFL" %3x.%05x\n", prent (ent2));
 	Ent_RemoveComponent (ent2, base + test_a3, reg);
 
-	ok &= check_group_ents (reg, g1, 2);
+	ok &= check_group_ents (reg, g1, 1);
 	ok &= check_group_ents (reg, g2, 2);
 	ok &= check_group_ents (reg, g3, 6);//g5 includes g3!!
 	ok &= check_group_ents (reg, g4, 4);

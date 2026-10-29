@@ -107,6 +107,16 @@ typedef struct ecs_grpcomp_s {
 	uint32_t    rangeid;
 } ecs_grpcomp_t;
 
+typedef struct ecs_grpcomplist_s {
+	ecs_grpcomp_t *gc;
+	uint32_t       count;
+} ecs_grpcomplist_t;
+
+typedef struct ecs_compgrplist_s {
+	uint32_t      *grp;
+	uint32_t       count;
+} ecs_compgrplist_t;
+
 typedef struct ecs_groups_s {
 	// track ranges in group_components for each group (group id)
 	ecs_subpool_t groups;
@@ -237,6 +247,10 @@ ECSINLINE void *Ent_SetComponent (uint32_t ent, uint32_t comp,
 								  ecs_registry_t *registry, const void *data);
 
 ECSINLINE ecs_grpown_t ecs_get_group_type (uint32_t gid, ecs_registry_t *reg);
+ECSINLINE ecs_grpcomplist_t ecs_get_grpcomplist (uint32_t gid,
+												 ecs_registry_t *reg);
+ECSINLINE ecs_compgrplist_t ecs_get_compgrplist (uint32_t comp,
+												 ecs_registry_t *reg);
 
 #undef ECSINLINE
 #ifndef IMPLEMENT_ECS_Funcs
@@ -380,6 +394,34 @@ ecs_get_group_type (uint32_t gid, ecs_registry_t *reg)
 	auto g = &reg->groups;
 	return *(ecs_grpown_t *) ecs_get_component (gid, &g->group_type,
 												&ecs_group_type);
+}
+
+ECSINLINE
+ecs_grpcomplist_t
+ecs_get_grpcomplist (uint32_t gid, ecs_registry_t *reg)
+{
+	auto g = &reg->groups;
+	auto range = ecs_get_subpool_range (&g->groups, gid);
+	ecs_grpcomplist_t gc_list = {
+		.gc = Component_Address (&ecs_group_components,
+								 g->group_components.data, range.start),
+		.count = range.end - range.start,
+	};
+	return gc_list;
+}
+
+ECSINLINE
+ecs_compgrplist_t
+ecs_get_compgrplist (uint32_t comp, ecs_registry_t *reg)
+{
+	auto g = &reg->groups;
+	auto range = ecs_get_subpool_range (&g->components, comp);
+	ecs_compgrplist_t cg_list = {
+		.grp = Component_Address (&ecs_component_groups,
+								  g->component_groups.data, range.start),
+		.count = range.end - range.start,
+	};
+	return cg_list;
 }
 
 #undef ECSINLINE
