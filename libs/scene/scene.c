@@ -295,6 +295,13 @@ static leafmap_t empty_leaf_map[] = {
 
 static uint32_t empty_cluster_map[] = { 0, 1 };
 
+static ent_aabb_t emtpy_cluster_aabb[] = {
+	[1] = {
+		.mins = {-INFINITY, -INFINITY, -INFINITY},
+		.maxs = { INFINITY,  INFINITY,  INFINITY},
+	},
+};
+
 static uint32_t empty_cluster_surfs[] = { 0 };
 
 static cluster_t empty_clusters[] = {
@@ -380,6 +387,7 @@ static mod_brush_t empty_brush = {
 		.cluster_map = empty_cluster_map,
 		.cluster_offs = empty_leaf_offs,
 		.cluster_nodes = empty_nodes,
+		.cluster_aabb = emtpy_cluster_aabb,
 		.cluster_surfs = empty_cluster_surfs,
 		.clusters = empty_clusters,
 		.cluster_heads = empty_cluster_heads,
