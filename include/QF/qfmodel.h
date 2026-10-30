@@ -3,8 +3,8 @@
 
 #ifdef __QFCC__
 typedef uint uint32_t;
-typedef uint uint16_t;	//FIXME
-typedef uint uint8_t;	//FIXME
+typedef ushort uint16_t;
+typedef byte uint8_t;
 typedef int  int32_t;
 typedef vec4 vec4f_t;
 typedef vec3 vec3_t;
