@@ -355,19 +355,19 @@ qio_gzip_seek (QFile *file, off_t offset, int whence)
 static long
 qio_gzip_tell (QFile *file)
 {
-	return ftell (file->file);
+	return gztell (file->file);
 }
 
 static int
 qio_gzip_flush (QFile *file)
 {
-	return fflush (file->file);
+	return gzflush (file->file, Z_SYNC_FLUSH);
 }
 
 static int
 qio_gzip_eof (QFile *file)
 {
-	return feof (file->file);
+	return gzeof (file->file);
 }
 
 static void
