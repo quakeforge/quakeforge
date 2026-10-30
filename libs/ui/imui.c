@@ -1846,8 +1846,8 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 	IMUI_StartScroller (ctx);
 	auto anchor_view = ctx->current_parent;
 
-	auto psg_view = Text_PassageView (ctx->tsys, nullview,
-									  ctx->font, passage, ctx->shaper);
+	auto psg_view = Text_PassageView (ctx->tsys, nullview, ctx->font,
+									  ctx->ptsize, passage, ctx->shaper);
 	Canvas_SetReference (ctx->csys, psg_view.id,
 						 Canvas_Entity (ctx->csys,
 										View_GetRoot (anchor_view).id));

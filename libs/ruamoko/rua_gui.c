@@ -334,9 +334,10 @@ bi (Text_PassageView)
 	gui_resources_t *res = _res;
 	view_t      parent = View_FromEntity (res->vsys, P_INT (pr, 0));
 	rua_font_t *font = get_font (res, P_INT (pr, 1));
-	rua_passage_t *psg = get_passage (res, P_INT (pr, 2));
+	float       ptsize = P_FLOAT (pr, 2);
+	rua_passage_t *psg = get_passage (res, P_INT (pr, 3));
 	view_t      view = Text_PassageView (res->tsys, parent,
-										 font->font, psg->passage,
+										 font->font, ptsize * 64, psg->passage,
 										 res->shaper);
 	R_INT (pr) = view.id;//FIXME
 }

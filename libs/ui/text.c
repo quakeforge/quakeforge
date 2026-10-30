@@ -263,8 +263,8 @@ set_shaping (shaping_t *shaping, uint32_t ent, text_system_t textsys)
 }
 
 view_t
-Text_PassageView (text_system_t textsys, view_t parent,
-				  font_t *font, passage_t *passage, text_shaper_t *shaper)
+Text_PassageView (text_system_t textsys, view_t parent, font_t *font,
+				  int16_t ptsize, passage_t *passage, text_shaper_t *shaper)
 {
 	qfZoneScoped (true);
 	auto reg = textsys.reg;
@@ -285,6 +285,7 @@ Text_PassageView (text_system_t textsys, view_t parent,
 	featureset_t psg_features = DARRAY_STATIC_INIT (0);
 	shaping_t   psg_shaping = {
 		.script = &psg_script,
+		.ptsize = ptsize,
 		.features = &psg_features,
 		.font = font,
 	};
