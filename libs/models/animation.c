@@ -805,7 +805,9 @@ qfa_update_anim (animstate_t *anim, float dt)
 
 	memset (local_pose, 0, sizeof (qfm_joint_t[anim->num_joints]));
 	for (uint32_t i = 0; i < anim->clip_states.count; i++) {
-		qfa_do_clip_weighted (&ctx, i);
+		if (!(clip_states[i].flags & qfc_disabled)) {
+			qfa_do_clip_weighted (&ctx, i);
+		}
 	}
 	for (uint32_t j = 0; j < anim->num_joints; j++) {
 		local_pose[j].rotate = normalf (local_pose[j].rotate);
