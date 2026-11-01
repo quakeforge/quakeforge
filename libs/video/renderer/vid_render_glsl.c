@@ -30,6 +30,7 @@
 
 #include "QF/cvar.h"
 #include "QF/image.h"
+#include "QF/plist.h"
 
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
@@ -42,6 +43,7 @@
 #include "QF/GLSL/qf_main.h"
 #include "QF/GLSL/qf_mesh.h"
 #include "QF/GLSL/qf_particles.h"
+#include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 #include "QF/GLSL/qf_warp.h"
 
@@ -62,6 +64,40 @@ static void
 glsl_vid_render_create_context (void *data)
 {
 	glsl_ctx->create_context (glsl_ctx, 1);
+}
+
+static uint32_t
+glsl_load_resource (const char *name, plitem_t *res)
+{
+	const char *type = PL_String (PL_ObjectForKey (res, "resource_type"));
+	if (!type || strcmp (type, "texture") != 0) {
+		Sys_Error ("invalid resource type");
+	}
+
+	return 0;
+}
+
+static uint32_t
+glsl_find_resource (const char *name)
+{
+	return 0;
+}
+
+static bool
+glsl_res_is_cubemap (uint32_t id)
+{
+	return false;
+}
+
+static uint32_t
+glsl_get_skinid (uint32_t id)
+{
+	return 0;
+}
+
+static void
+glsl_set_skinid (uint32_t id, uint32_t skind)
+{
 }
 
 static vid_model_funcs_t model_funcs = {
@@ -86,8 +122,15 @@ static vid_model_funcs_t model_funcs = {
 
 	.skin_set                = Skin_Set,
 	.texture_set             = Skin_Texture,
+	.texture_id_set          = Skin_TextureID,
 	.skin_setupskin          = glsl_Skin_SetupSkin,
 	.skin_destroy            = glsl_Skin_Destroy,
+
+	.load_resource = glsl_load_resource,
+	.find_resource = glsl_find_resource,
+	.res_is_cubemap = glsl_res_is_cubemap,
+	.get_skinid = glsl_get_skinid,
+	.set_skinid = glsl_set_skinid,
 };
 
 static void
@@ -458,14 +501,6 @@ glsl_capture_screen (capfunc_t callback, void *data)
 	callback (tex, data);
 }
 
-static uint32_t
-glsl_make_atlas (const char *name, const tex_t *tex, int num_rects,
-				 const scrapbox_t *rects)
-{
-	//FIXME implement
-	return nullent;
-}
-
 vid_render_funcs_t glsl_vid_render_funcs = {
 	.init = glsl_vid_render_init,
 
@@ -502,6 +537,9 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 		.ResetClip         = glsl_Draw_ResetClip,
 
 		.make_atlas        = glsl_make_atlas,
+		.atlas_prepare_update = glsl_atlas_prepare_update,
+		.atlas_finish_update = glsl_atlas_finish_update,
+
 	},
 
 	.ParticleSystem   = glsl_ParticleSystem,
@@ -509,6 +547,8 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	.R_Init           = glsl_R_Init,
 	.R_ClearState     = glsl_R_ClearState,
 	.R_LoadSkys       = glsl_R_LoadSkys,
+	.R_SetSkyId       = glsl_R_SetSkyId,
+	.R_SetSkyRotation = glsl_R_SetSkyRotation,
 	.R_NewScene       = glsl_R_NewScene,
 	.R_LineGraph      = glsl_LineGraph,
 	.begin_frame      = glsl_begin_frame,

@@ -1593,3 +1593,13 @@ glsl_R_LoadSkys (const char *sky)
 	qfeglTexParameteri (tex_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	qfeglGenerateMipmap (tex_type);
 }
+
+void
+glsl_R_SetSkyId (uint32_t id)
+{
+}
+
+void
+glsl_R_SetSkyRotation (vec4f_t rot)
+{
+}

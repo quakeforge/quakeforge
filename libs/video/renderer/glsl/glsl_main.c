@@ -40,7 +40,9 @@
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/hash.h"
 #include "QF/image.h"
+#include "QF/plist.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
@@ -68,6 +70,85 @@ mat4f_t glsl_projection;
 mat4f_t glsl_inv_projection;
 mat4f_t glsl_view;
 mat4f_t glsl_inv_view;
+
+static plitem_t *glsl_entqueue_item;
+static int glsl_entqueue_count;
+static int *glsl_entqueue_values;
+static exprtab_t glsl_entqueue_symtab;
+static exprtype_t glsl_entqueue_type;
+static exprenum_t glsl_entqueue_enum = {
+	.type = &glsl_entqueue_type,
+	.symtab = &glsl_entqueue_symtab,
+};
+static exprtype_t glsl_entqueue_type = {
+	.name = "entqueue",
+	.size = sizeof (int),
+	.binops = cexpr_enum_binops,
+	.get_string = cexpr_enum_get_string,
+	.data = &glsl_entqueue_enum,
+};
+
+static void
+glsl_LoadEntqueueInfo (plitem_t *item, plitem_t *messages)
+{
+	static const char *modtype_names[] = {
+		"mod_brush",
+		"mod_sprite",
+		"mod_mesh",
+		"mod_light",
+	};
+	static_assert(countof (modtype_names) == mod_num_types);
+
+	auto queues = PL_ObjectForKey (item, "queues");
+	if (!queues) {
+		PL_Message (messages, item, "no queues member");
+		return;
+	}
+	if (PL_Type (queues) != QFArray) {
+		PL_Message (messages, item, "queues not an array");
+		return;
+	}
+	if (PL_A_NumObjects (queues) < 1) {
+		PL_Message (messages, queues, "queues empty");
+		return;
+	}
+	int num_syms = mod_num_types + PL_A_NumObjects (queues);
+	glsl_entqueue_symtab = (exprtab_t) {
+		.symbols = malloc (sizeof (exprsym_t[num_syms])),
+		.tab = Hash_NewTable (61, cexpr_getkey, 0, 0, nullptr),
+	};
+	glsl_entqueue_values = malloc (sizeof (int[num_syms]));
+	auto symbols = glsl_entqueue_symtab.symbols;
+	for (int i = 0; i < mod_num_types; i++) {
+		symbols[i] = (exprsym_t) {
+			.name = modtype_names[i],
+			.type = &glsl_entqueue_type,
+			.value = &glsl_entqueue_values[i],
+		};
+		glsl_entqueue_values[i] = i;
+		Hash_Add (glsl_entqueue_symtab.tab, &symbols[i]);
+	}
+	for (int i = mod_num_types; i < num_syms; i++) {
+		auto eq = PL_ObjectAtIndex (queues, i - mod_num_types);
+		const char *name = PL_String (eq);
+		if (!name) {
+			PL_Message (messages, eq, "queues[%d] not a string",
+						i - mod_num_types);
+		}
+		if (Hash_Find (glsl_entqueue_symtab.tab, name)) {
+			PL_Message (messages, eq, "duplicate entqueue name: %s", name);
+		}
+		symbols[i] = (exprsym_t) {
+			.name = name,
+			.type = &glsl_entqueue_type,
+			.value = &glsl_entqueue_values[i],
+		};
+		glsl_entqueue_values[i] = i;
+		Hash_Add (glsl_entqueue_symtab.tab, &symbols[i]);
+	}
+	glsl_entqueue_count = num_syms;
+	glsl_entqueue_item = PL_Retain (item);
+}
 
 static void
 R_SetupView (void)
@@ -182,10 +263,26 @@ glsl_R_TimeRefresh_f (void)
 }
 
 void
-glsl_R_Init (memhunk_t *hunk, struct plitem_s *config)
+glsl_R_Init (memhunk_t *hunk, plitem_t *config)
 {
 	if (config) {
-		Sys_Printf (ONG"WARNING"DFL": glsl_R_Init: render config ignored\n");
+		auto entqueues = PL_ObjectForKey (config, "entqueues");
+		if (entqueues) {
+			auto messages = PL_NewArray ();
+			glsl_LoadEntqueueInfo (entqueues, messages);
+			if (PL_A_NumObjects (messages)) {
+				for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+					Sys_Printf ("%s\n",
+								PL_String (PL_ObjectAtIndex (messages, i)));
+				}
+				Sys_Error ("invalid entqueues");
+			}
+			PL_Release (messages);
+		}
+
+		if (!entqueues) {
+			Sys_Printf (ONG"WARNING"DFL":glsl_R_Init:render config ignored\n");
+		}
 	}
 	Cmd_AddCommand ("timerefresh", glsl_R_TimeRefresh_f,
 					"Test the current refresh rate for the current location.");
@@ -223,6 +320,12 @@ glsl_R_NewScene (scene_t *scene)
 
 	for (i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
+
+	if (glsl_entqueue_count > scene->ent_queue->num_queues) {
+		EntQueue_Delete (scene->ent_queue);
+		scene->ent_queue = EntQueue_New (glsl_entqueue_count);
+		scene->entqueue_enum = &glsl_entqueue_enum;
+	}
 
 	r_refdef.worldmodel = scene->worldmodel;
 

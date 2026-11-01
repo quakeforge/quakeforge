@@ -44,6 +44,7 @@
 #include "QF/model.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/zone.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
@@ -51,6 +52,7 @@
 
 #include "QF/ui/vrect.h"
 
+#include "r_internal.h"
 #include "r_scrap.h"
 
 struct scrap_s {
@@ -521,4 +523,30 @@ GLSL_ScrapFlush (scrap_t *scrap)
 					   scrap->data + rect->y * size * scrap->bpp);
 	VRect_Delete (rect);
 	scrap->batch = 0;
+}
+
+uint32_t __attribute__((const))
+glsl_make_atlas (const char *name, const tex_t *tex, int num_rects,
+				 const scrapbox_t *rects)
+{
+	//FIXME implement
+	return nullent;
+}
+
+atlas_update_t
+glsl_atlas_prepare_update (uint32_t atlasid, uint32_t num_rects,
+						   uint32_t tex_bytes)
+{
+	size_t size = sizeof (scrapbox_t[num_rects]) + tex_bytes;
+	auto hunk = r_refdef.hunk;
+	scrapbox_t *rects = Hunk_TempAlloc (hunk, size);
+	return (atlas_update_t) {
+		.rects = rects,
+		.texels = (byte *) &rects[num_rects],
+	};
+}
+
+void
+glsl_atlas_finish_update (void)
+{
 }

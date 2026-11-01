@@ -75,5 +75,7 @@ void glsl_R_BuildDisplayLists (struct model_s **models, int num_models);
 void glsl_R_InitBsp (void);
 void glsl_R_ShutdownBsp (void);
 void glsl_R_LoadSkys (const char *sky);
+void glsl_R_SetSkyId (uint32_t id);
+void glsl_R_SetSkyRotation (vec4f_t rot);
 
 #endif//__QF_GLSL_qf_bsp_h
