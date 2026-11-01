@@ -198,6 +198,10 @@ glsl_R_RenderEntities (entqueue_t *queue)
 
 	RE_LOOP (mesh, Mesh);
 	RE_LOOP (sprite, Sprite);
+	// FIXME any additional entity queues are assumed to be mesh
+	for (int q = 0; q < glsl_entqueue_count - mod_num_types; q++) {
+		RE_LOOP (num_types + q, Mesh);
+	}
 }
 
 static void
