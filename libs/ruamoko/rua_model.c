@@ -482,8 +482,9 @@ bi (qfa_create_animation)
 	auto res = (rua_model_resources_t *) _res;
 	uint32_t   *clips = &P_STRUCT (pr, uint32_t, 0);
 	uint32_t    num_clips = P_UINT (pr, 1);
-	uint32_t    armature = P_UINT (pr, 2);
-	int         model_handle = P_INT (pr, 3);
+	bool        create_weights = P_INT (pr, 2);
+	uint32_t    armature = P_UINT (pr, 3);
+	int         model_handle = P_INT (pr, 4);
 	model_t    *mod = nullptr;
 	qf_model_t *model = nullptr;
 	bool        cached = false;
@@ -500,7 +501,8 @@ bi (qfa_create_animation)
 		}
 	}
 
-	auto anim = qfa_create_animation (clips, num_clips, armature, model);
+	auto anim = qfa_create_animation (clips, num_clips, create_weights,
+									  armature, model);
 	R_INT (pr) = alloc_animstate (res, anim);
 
 	if (cached) {

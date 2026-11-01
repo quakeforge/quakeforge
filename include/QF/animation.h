@@ -78,7 +78,7 @@ typedef struct animstate_s {
 	qfm_loc_t   clip_states;		// clipstate_t[]
 	qfm_loc_t   morph_states;		// clipstate_t[]
 	//qfm_loc_t   blend_spec;
-	//qfm_loc_t   joint_weights;
+	qfm_loc_t   joint_weights;		// float[][num_joints] (0 or clip_states)
 	uint32_t    armature_id;
 	uint32_t    num_joints;
 	uint32_t    local_pose;			// qfm_joint_t[num_joints] armature space
@@ -94,7 +94,7 @@ typedef struct animstate_s {
 ANIMINLINE clipstate_t *qfa_clip_states (animstate_t *anim);
 ANIMINLINE clipstate_t *qfa_morph_states (animstate_t *anim);
 //ANIMINLINE void *qfa_blend_spec (animstate_t *anim);
-//ANIMINLINE float *qfa_jointweights (animstate_t *anim);
+ANIMINLINE float *qfa_jointweights (animstate_t *anim);
 ANIMINLINE qfm_joint_t *qfa_local_pose (animstate_t *anim);
 ANIMINLINE qfm_motor_t *qfa_global_pose (animstate_t *anim);
 ANIMINLINE qfm_motor_t *qfa_matrix_palette (animstate_t *anim);
@@ -121,11 +121,11 @@ qfa_morph_states (animstate_t *anim)
 
 //ANIMINLINE void *qfa_blend_spec (animstate_t *anim);
 
-//ANIMINLINE float *
-//qfa_jointweights (animstate_t *anim)
-//{
-//	return (float *) ((byte *) anim + anim->joint_weights.offset);
-//}
+ANIMINLINE float *
+qfa_jointweights (animstate_t *anim)
+{
+	return (float *) ((byte *) anim + anim->joint_weights.offset);
+}
 
 ANIMINLINE qfm_joint_t *
 qfa_local_pose (animstate_t *anim)
@@ -159,7 +159,8 @@ int qfa_find_clip (const char *name);
 int qfa_find_armature (const char *name);
 
 animstate_t *qfa_create_animation (uint32_t *clips, uint32_t num_clips,
-								   uint32_t armature, qf_model_t *model);
+								   bool create_weighs, uint32_t armature,
+								   qf_model_t *model);
 void qfa_free_animation (animstate_t *anim);
 void qfa_update_anim (animstate_t *anim, float dt);
 void qfa_reset_anim (animstate_t *anim);
