@@ -959,14 +959,14 @@ load_scene (plitem_t *scene_item, scene_t scene)
 			if (ent_init.extract_root_motion) {
 				int num_joints = Model_NumJoints (model);
 				printf ("%d joints\n", num_joints);
-				int num_clips = Model_NumClips (model);
 				qfa_extract_root_motion (model);
-				for (int i = 0; i < num_clips; i++) {
-					auto clipinfo = Model_GetClipInfo (model, i);
-					printf ("%s %2d %3d %d %s\n", Model_Name (model),
-							i, clipinfo.num_frames,
-							clipinfo.num_channels, clipinfo.name);
-				}
+			}
+			int num_clips = Model_NumClips (model);
+			for (int i = 0; i < num_clips; i++) {
+				auto clipinfo = Model_GetClipInfo (model, i);
+				printf ("%s %2d %3d %d %s\n", Model_Name (model),
+						i, clipinfo.num_frames,
+						clipinfo.num_channels, clipinfo.name);
 			}
 			if (ent_init.anim) {
 				string mod_name = Model_Name (model);

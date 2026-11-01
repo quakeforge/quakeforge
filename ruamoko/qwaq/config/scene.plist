@@ -276,4 +276,11 @@
 		extract_root_motion = true;
 		anim = "rig|standing idle_RM";
 	},
+	{
+		name = "Mr Fixit";
+		model = progs/mrfixit.iqm;
+		position = (0.5, 0.5, 0, 1);
+		target = true;
+		anim = idle;
+	},
 )
