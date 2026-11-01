@@ -75,15 +75,15 @@ typedef enum : uint32_t {
 } qfa_op_code_t;
 
 typedef struct animstate_s {
-	qfm_loc_t   clip_states;
-	qfm_loc_t   morph_states;
+	qfm_loc_t   clip_states;		// clipstate_t[]
+	qfm_loc_t   morph_states;		// clipstate_t[]
 	//qfm_loc_t   blend_spec;
 	//qfm_loc_t   joint_weights;
 	uint32_t    armature_id;
 	uint32_t    num_joints;
-	uint32_t    local_pose;
-	uint32_t    global_pose;
-	uint32_t    matrix_palette;
+	uint32_t    local_pose;			// qfm_joint_t[num_joints] armature space
+	uint32_t    global_pose;		// qfm_motor_t[num_joints] model space
+	uint32_t    matrix_palette;		// qfm_motor_t[num_joints] global * inverse
 	uint32_t    materials;
 	float       play_rate;
 	double      time;

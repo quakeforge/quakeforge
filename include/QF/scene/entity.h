@@ -58,7 +58,7 @@ typedef struct sprite_frame_s {
 	float       end_time;
 } sprite_frame_t;
 
-// simple binary mesh lerp (for alias models)
+// simple binary mesh lerp (absolute, for alias models)
 // not compatible with skeletal meshes (for simplicity)
 typedef struct mesh_lerp_s {
 	uint32_t    pose1;

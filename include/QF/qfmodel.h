@@ -27,11 +27,13 @@ typedef struct keyframe_s {
 	uint32_t    data;
 } keyframe_t;
 
+// for skin and morph animations, the offsets are from the owning mesh
+// for joint animations, the offsets are from the model
 typedef struct anim_s {
 	uint32_t    numclips;
-	uint32_t    clips;
-	uint32_t    keyframes;
-	uint32_t    data;
+	uint32_t    clips;		// offset
+	uint32_t    keyframes;	// offset
+	uint32_t    data;		// offset
 } anim_t;
 
 typedef struct qfm_loc_s {
