@@ -820,6 +820,14 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key,
 }
 @end
 
+static void
+update_anim (uint ent)
+{
+	animstate_t anim;
+	get_component (ent, qent_anim, &anim);
+	qfa_update_anim (anim, frametime);
+}
+
 void
 load_scene (plitem_t *scene_item, scene_t scene)
 {
@@ -949,6 +957,8 @@ load_scene (plitem_t *scene_item, scene_t scene)
 				Entity_SetTextureID (ent, texture);
 			}
 			if (ent_init.extract_root_motion) {
+				int num_joints = Model_NumJoints (model);
+				printf ("%d joints\n", num_joints);
 				int num_clips = Model_NumClips (model);
 				qfa_extract_root_motion (model);
 				for (int i = 0; i < num_clips; i++) {
@@ -963,8 +973,14 @@ load_scene (plitem_t *scene_item, scene_t scene)
 				string clipname = mod_name + ":" + ent_init.anim;
 				auto clip = qfa_find_clip (clipname);
 				auto arma = qfa_find_armature (mod_name);
-				auto anim = qfa_create_animation (&clip, 1, arma, nil);
+				auto anim = qfa_create_animation (&clip, 1, true, arma, nil);
+				qfa_set_clip_loop (anim, 0, true);
 				set_component (e, qent_anim, &anim);
+				set_update (e, update_anim);
+				Entity_SetAnimstate (ent, anim);
+				auto a = Entity_GetAnimation (ent);
+				a.debug_bone = ~0u;
+				Entity_SetAnimation (ent, a);
 			}
 		}
 		if (ent_init.target) {
