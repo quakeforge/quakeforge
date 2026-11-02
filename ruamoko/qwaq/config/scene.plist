@@ -280,7 +280,17 @@
 		name = "Mr Fixit";
 		model = progs/mrfixit.iqm;
 		position = (0.5, 0.5, 0, 1);
+		rotation = (0, 0, 1, 0);
+		scale = (0.03125, 0.03125, 0.03125);
 		target = true;
 		anim = idle;
+	},
+	{
+		name = "QPlayer";
+		model = progs/player.mdl;
+		position = (0.5, -2.5, 1, 1);
+		rotation = (0, 0, 1, 0);
+		scale = (0.03125, 0.03125, 0.03125);
+		target = true;
 	},
 )
