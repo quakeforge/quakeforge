@@ -189,6 +189,27 @@ static imui_window_t renderer_menu = {
 	.auto_fit = true,
 };
 
+static imui_window_t system_info_window = {
+	.name = "System Info##window",
+	.xpos = 50,
+	.ypos = 50,
+	.auto_fit = true,
+};
+
+static imui_window_t cam_window = {
+	.name = "Debug Camera",
+	.xpos = 50,
+	.ypos = 50,
+	.auto_fit = true,
+};
+
+static imui_window_t inp_window = {
+	.name = "Debug Input",
+	.xpos = 50,
+	.ypos = 50,
+	.auto_fit = true,
+};
+
 static void
 con_debug_f (void *data, const cvar_t *cvar)
 {
@@ -311,6 +332,9 @@ Con_Debug_Init (void)
 								  deb_fontname, deb_fontsize);
 	IMUI_RegisterWindow (debug_imui, &debug_menu);
 	IMUI_RegisterWindow (debug_imui, &renderer_menu);
+	IMUI_RegisterWindow (debug_imui, &system_info_window);
+	IMUI_RegisterWindow (debug_imui, &cam_window);
+	IMUI_RegisterWindow (debug_imui, &inp_window);
 	IMUI_SetVisible (debug_imui, con_debug);
 	IMUI_Style_Fetch (debug_imui, &current_style);
 
@@ -503,27 +527,6 @@ hs (void)
 {
 	IMUI_Spacer (debug_imui, imui_size_pixels, 10, imui_size_expand, 100);
 }
-
-static imui_window_t system_info_window = {
-	.name = "System Info##window",
-	.xpos = 50,
-	.ypos = 50,
-	.auto_fit = true,
-};
-
-static imui_window_t cam_window = {
-	.name = "Debug Camera",
-	.xpos = 50,
-	.ypos = 50,
-	.auto_fit = true,
-};
-
-static imui_window_t inp_window = {
-	.name = "Debug Input",
-	.xpos = 50,
-	.ypos = 50,
-	.auto_fit = true,
-};
 
 static void
 menu_bar (void)
