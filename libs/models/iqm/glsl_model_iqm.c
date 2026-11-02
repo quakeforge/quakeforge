@@ -188,7 +188,7 @@ glsl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 		meshes[i].indices = iqm_ctx->meshes[i].first_triangle * index_size * 3;
 		meshes[i].attributes = (qfm_loc_t) {
 			.offset = (byte *) attribs - (byte *) &meshes[i],
-			.count = 4,
+			.count = iqm->num_vertexarrays,
 		};
 		meshes[i].vertex_stride = vertex_size;
 		meshes[i].skin = (anim_t) {
