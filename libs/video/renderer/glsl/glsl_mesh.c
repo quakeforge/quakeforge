@@ -61,7 +61,8 @@
 
 static const char *mesh_vert_effects[] =
 {
-	"QuakeForge.Vertex.mdl",
+	"QuakeForge.version.130",
+	"QuakeForge.Vertex.mesh",
 	0
 };
 

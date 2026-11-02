@@ -285,21 +285,25 @@ sky_color (vec3 dir, float time, int control)
 	}
 }
 
--- Vertex.mdl
+-- Vertex.mesh
 
 uniform mat4 mvp_mat;
 uniform mat3 norm_mat;
 uniform vec2 skin_size;
 uniform float blend;
+uniform uint enabled_mask;
+uniform mat3x4 bonemats[80];
 
-attribute vec3 vertexa, vertexb;
-attribute vec3 vnormala, vnormalb;
-attribute vec2 vsta, vstb;
-attribute vec4 vcolora, vcolorb;
+in vec3 vertexa, vertexb;
+in vec3 vnormala, vnormalb;
+in vec2 vsta, vstb;
+in vec4 vcolora, vcolorb;
+in uvec4 joints;
+in vec4 weights;
 
-varying vec3 normal;
-varying vec2 st;
-varying vec4 color;
+out vec3 normal;
+out vec2 st;
+out vec4 color;
 
 void
 main (void)
@@ -309,6 +313,22 @@ main (void)
 
 	vertex = mix (vertexa, vertexb, blend);
 	vnormal = mix (vnormala, vnormalb, blend);
+	if ((enabled_mask & (1u << 5u)) != 0u) { //FIXME qfm_joints
+		mat3x4      m;
+
+		m  = bonemats[joints.x] * weights.x;
+		m += bonemats[joints.y] * weights.y;
+		m += bonemats[joints.z] * weights.z;
+		m += bonemats[joints.w] * weights.w;
+		m += mat3x4(1,0,0,0,
+				    0,1,0,0,
+				    0,0,1,0) * (1 - dot(weights, vec4(1,1,1,1)));
+		//mat3 nm = mat3 (cross (m[1].xyz, m[2].xyz),
+		//				cross (m[2].xyz, m[0].xyz),
+		//				cross (m[0].xyz, m[1].xyz));
+		vertex = (vec4 (vertex, 1.0) * m).xyz;
+		//vnormal = normalize (vnormal * nm);	// nm is transposed
+	}
 	gl_Position = mvp_mat * vec4 (vertex, 1.0);
 	st = mix (vsta, vstb, blend) / skin_size;
 	normal = norm_mat * vnormal;
