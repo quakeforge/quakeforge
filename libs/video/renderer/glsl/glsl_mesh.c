@@ -80,6 +80,8 @@ static struct {
 	shaderparam_t norm_matrix;
 	shaderparam_t skin_size;
 	shaderparam_t blend;
+	shaderparam_t enabled_mask;
+	shaderparam_t bonemats;
 	shaderparam_t colora;
 	shaderparam_t colorb;
 	shaderparam_t sta;
@@ -88,6 +90,8 @@ static struct {
 	shaderparam_t normalb;
 	shaderparam_t vertexa;
 	shaderparam_t vertexb;
+	shaderparam_t joints;
+	shaderparam_t weights;
 	shaderparam_t colormap;
 	shaderparam_t skin;
 	shaderparam_t ambient;
@@ -99,6 +103,8 @@ static struct {
 	.norm_matrix = {"norm_mat",   1},
 	.skin_size   = {"skin_size",  1},
 	.blend       = {"blend",      1},
+	.enabled_mask= {"enabled_mask",1},
+	.bonemats    = {"bonemats",   1},
 	.colora      = {"vcolora",    0},
 	.colorb      = {"vcolorb",    0},
 	.sta         = {"vsta",       0},
@@ -107,6 +113,8 @@ static struct {
 	.normalb     = {"vnormalb",   0},
 	.vertexa     = {"vertexa",    0},
 	.vertexb     = {"vertexb",    0},
+	.joints      = {"joints",     0},
+	.weights     = {"weights",    0},
 	.colormap    = {"colormap",   1},
 	.skin        = {"skin",       1},
 	.ambient     = {"ambient",    1},
@@ -121,9 +129,18 @@ static shaderparam_t *mesh_attr_map[] = {
 //	[qfm_tangent]  = &meshprog.tangenta,
 	[qfm_texcoord] = &meshprog.sta,
 	[qfm_color]    = &meshprog.colora,
-//	[qfm_joints]   = &meshprog.jointsa,
-//	[qfm_weights]  = &meshprog.weightsa,
-	[qfm_weights]  = nullptr,
+	[qfm_joints]   = &meshprog.joints,
+	[qfm_weights]  = &meshprog.weights,
+};
+
+static bool mesh_attr_iptr[] = {
+	[qfm_position] = false,
+	[qfm_normal]   = false,
+//	[qfm_tangent]  = false,
+	[qfm_texcoord] = false,
+	[qfm_color]    = false,
+	[qfm_joints]   = true,
+	[qfm_weights]  = false,
 };
 
 static struct {
@@ -168,6 +185,8 @@ glsl_R_InitMesh (void)
 	GLSL_ResolveShaderParam (meshprog.program, &meshprog.norm_matrix);
 	GLSL_ResolveShaderParam (meshprog.program, &meshprog.skin_size);
 	GLSL_ResolveShaderParam (meshprog.program, &meshprog.blend);
+	GLSL_ResolveShaderParam (meshprog.program, &meshprog.enabled_mask);
+	GLSL_ResolveShaderParam (meshprog.program, &meshprog.bonemats);
 	GLSL_ResolveShaderParam (meshprog.program, &meshprog.colora);
 	GLSL_ResolveShaderParam (meshprog.program, &meshprog.colorb);
 	GLSL_ResolveShaderParam (meshprog.program, &meshprog.sta);
@@ -176,6 +195,8 @@ glsl_R_InitMesh (void)
 	GLSL_ResolveShaderParam (meshprog.program, &meshprog.normalb);
 	GLSL_ResolveShaderParam (meshprog.program, &meshprog.vertexa);
 	GLSL_ResolveShaderParam (meshprog.program, &meshprog.vertexb);
+	GLSL_ResolveShaderParam (meshprog.program, &meshprog.joints);
+	GLSL_ResolveShaderParam (meshprog.program, &meshprog.weights);
 	GLSL_ResolveShaderParam (meshprog.program, &meshprog.colormap);
 	GLSL_ResolveShaderParam (meshprog.program, &meshprog.skin);
 	GLSL_ResolveShaderParam (meshprog.program, &meshprog.ambient);
@@ -208,12 +229,21 @@ set_arrays (const qfm_attrdesc_t *attrs, uint32_t num_attr, int attr_offs,
 			// unsupported attribute
 			continue;
 		}
+		if (attrs[i].attr >= qfm_joints) {
+			attr_offs = 0;
+		}
 		attr_mask |= 1 << attrs[i].attr;
 		auto param = mesh_attr_map[attrs[i].attr][attr_offs];
 		auto type = mesh_type_map[attrs[i].type];
-		qfeglVertexAttribPointer (param.location, attrs[i].components,
-								  type.type, type.norm, attrs[i].stride,
-								  pose_offs + attrs[i].offset);
+		if (mesh_attr_iptr[attrs[i].attr]) {
+			qfeglVertexAttribIPointer (param.location, attrs[i].components,
+									   type.type, attrs[i].stride,
+									   pose_offs + attrs[i].offset);
+		} else {
+			qfeglVertexAttribPointer (param.location, attrs[i].components,
+									  type.type, type.norm, attrs[i].stride,
+									  pose_offs + attrs[i].offset);
+		}
 	}
 	return attr_mask;
 }
@@ -231,10 +261,14 @@ enable_attributes (uint32_t attr_mask)
 			auto param = mesh_attr_map[i];
 			if (attr_mask & (1 << i)) {
 				qfeglEnableVertexAttribArray (param[0].location);
-				qfeglEnableVertexAttribArray (param[1].location);
+				if (i < qfm_joints) {
+					qfeglEnableVertexAttribArray (param[1].location);
+				}
 			} else {
 				qfeglDisableVertexAttribArray (param[0].location);
-				qfeglDisableVertexAttribArray (param[1].location);
+				if (i < qfm_joints) {
+					qfeglDisableVertexAttribArray (param[1].location);
+				}
 			}
 		}
 	}
@@ -288,6 +322,24 @@ glsl_R_DrawMesh (entity_t ent)
 	auto model_name = renderer->model->name;
 	qfeglPushDebugGroup (GL_DEBUG_SOURCE_APPLICATION, 0,
 						 strlen (model_name), model_name);
+	uint32_t c_matrix_palette = ent.base + scene_matrix_palette;
+	if (Ent_HasComponent (ent.id, c_matrix_palette, ent.reg)) {
+		uint32_t num_joints = min (model->joints.count, 80);
+		auto mp = *(qfm_motor_t **) Ent_GetComponent (ent.id, c_matrix_palette,
+													  ent.reg);
+		vec4f_t    *bone_data;
+		bone_data = Hunk_TempAlloc (r_refdef.hunk,
+									sizeof(vec4f_t[num_joints*3]));
+		for (uint32_t i = 0; i < num_joints; i++) {
+			auto b = bone_data + i * 3;
+			mat4f_t f;
+			qfm_motor_to_mat (f, mp[i]);
+			mat4ftranspose (f, f);
+			memcpy (b, f, 3 * sizeof (vec4f_t));
+		}
+		qfeglUniformMatrix3x4fv (meshprog.bonemats.location, num_joints,
+				                           false, (float *) bone_data);
+	}
 
 	transform_t transform = Entity_Transform (ent);
 	Transform_GetWorldMatrix (transform, worldMatrix);
@@ -371,6 +423,7 @@ glsl_R_DrawMesh (entity_t ent)
 		attr_mask |= set_arrays (attr, meshes[i].attributes.count, 0, pose1);
 		attr_mask |= set_arrays (attr, meshes[i].attributes.count, 1, pose2);
 		enable_attributes (attr_mask);
+		qfeglUniform1ui (meshprog.enabled_mask.location, attr_mask);
 
 		uint32_t index_count = 3 * meshes[i].triangle_count;
 		uint32_t first_index = meshes[i].indices;
@@ -400,6 +453,8 @@ glsl_R_MeshBegin (void)
 	qfeglDisableVertexAttribArray (meshprog.stb.location);
 	qfeglDisableVertexAttribArray (meshprog.colora.location);
 	qfeglDisableVertexAttribArray (meshprog.colorb.location);
+	qfeglDisableVertexAttribArray (meshprog.joints.location);
+	qfeglDisableVertexAttribArray (meshprog.weights.location);
 	attr_state = 0;
 
 	Fog_GetColor (fog);
