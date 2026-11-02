@@ -900,7 +900,7 @@ load_scene (plitem_t *scene_item, scene_t scene)
 			collider.box.extent = ent_init.collider.extent;
 		}
 		uint e = ~0u;//FIXME
-		if (mesh || have_collider) {
+		if (mesh || have_collider || ent_init.anim) {
 			e = new_entity ();
 			set_component (e, qent_transform, &xform);
 		}
