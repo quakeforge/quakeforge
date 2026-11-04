@@ -22,6 +22,8 @@ typedef struct askinset_s DARRAY_TYPE (mod_alias_skin_t) askinset_t;
 
 typedef struct wssched_s wssched_t;
 
+typedef struct vulkan_ctx_s vulkan_ctx_t;
+
 typedef struct mod_brush_ctx_s {
 	model_t    *mod;
 	mod_brush_t *brush;
@@ -158,6 +160,13 @@ void Vulkan_Mod_ProcessTexture (model_t *mod, struct texture_s *tx,
 								struct vulkan_ctx_s *ctx);
 void Vulkan_Mod_FinalizeBrushModel (mod_brush_ctx_t *brush_ctx,
 									struct vulkan_ctx_s *ctx);
+void Vulkan_MeshAddBones (vulkan_ctx_t *ctx, qf_model_t *model);
+void Vulkan_MeshRemoveBones (vulkan_ctx_t *ctx, qf_model_t *model);
+
+size_t Vulkan_animstate_size (vulkan_ctx_t *ctx) __attribute__((pure));
+void Vulkan_animstate_create (animstate_t *animstate, vulkan_ctx_t *ctx);
+void Vulkan_animstate_destroy (animstate_t *animstate, vulkan_ctx_t *ctx);
+
 
 void Mod_LoadSpriteFrame (mspriteframe_t *frame, const dspriteframe_t *dframe);
 void gl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx);

@@ -277,6 +277,16 @@
 		anim = "rig|standing idle_RM";
 	},
 	{
+		name = "Girl2";
+		model = progs/girl14.iqm;
+		position = (0.5, 2.5, 0, 1);
+		entqueue = pixpal;
+		texture = pixpal.meta;
+		target = true;
+		extract_root_motion = true;
+		anim = "rig|standing taunt battlecry_RM";
+	},
+	{
 		name = "Mr Fixit";
 		model = progs/mrfixit.iqm;
 		position = (0.5, 0.5, 0, 1);

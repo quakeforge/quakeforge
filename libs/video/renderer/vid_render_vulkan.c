@@ -738,6 +738,24 @@ vulkan_set_skinid (uint32_t id, uint32_t skind)
 	QFV_TexSetSkinId (vulkan_ctx, id, skind);
 }
 
+static size_t
+vulkan_animstate_size (void)
+{
+	return Vulkan_animstate_size (vulkan_ctx);
+}
+
+static void
+vulkan_animstate_create (animstate_t *animstate)
+{
+	Vulkan_animstate_create (animstate, vulkan_ctx);
+}
+
+static void
+vulkan_animstate_destroy (animstate_t *animstate)
+{
+	Vulkan_animstate_destroy (animstate, vulkan_ctx);
+}
+
 static void
 set_palette (void *data, const byte *palette)
 {
@@ -808,6 +826,10 @@ static vid_model_funcs_t model_funcs = {
 	.res_is_cubemap = vulkan_res_is_cubemap,
 	.get_skinid = vulkan_get_skinid,
 	.set_skinid = vulkan_set_skinid,
+
+	.animstate_size    = vulkan_animstate_size,
+	.animstate_create  = vulkan_animstate_create,
+	.animstate_destroy = vulkan_animstate_destroy,
 };
 
 static void

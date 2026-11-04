@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "QF/animation.h"
 #include "QF/skin.h"
 
 #include "QF/scene/entity.h"
@@ -1004,11 +1005,12 @@ gl_R_DrawAliasModel (entity_t e)
 	size_t size = get_size (rmesh->numverts);
 	vert_order_t *vo = nullptr;
 	mat4f_t *palette = nullptr;
-	uint32_t c_matrix_palette = e.base + scene_matrix_palette;
+	uint32_t c_animstate = e.base + scene_animstate;
 	if (rmesh->palette_size
-		&& Ent_HasComponent (e.id, c_matrix_palette, e.reg)) {
-		auto mp = *(qfm_motor_t **) Ent_GetComponent (e.id, c_matrix_palette,
-													  e.reg);
+		&& Ent_HasComponent (e.id, c_animstate, e.reg)) {
+		auto anim = *(animstate_t **) Ent_GetComponent (e.id, c_animstate,
+														e.reg);
+		auto mp = qfa_matrix_palette (anim);
 		auto blend_palette = (qfm_blend_t *) ((byte *) model
 											  + rmesh->blend_palette);
 		palette = Mod_BlendPalette (blend_palette, rmesh->palette_size,

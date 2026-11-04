@@ -171,11 +171,6 @@ static const component_t scene_components[scene_comp_count] = {
 		.create = 0,//create_animstate,
 		.name = "animstate",
 	},
-	[scene_matrix_palette] = {
-		.size = sizeof (qfm_motor_t *),
-		.create = 0,//create_matrix_palette,
-		.name = "matrix_palette",
-	},
 	[scene_animation] = {
 		.size = sizeof (animation_t),
 		.create = 0,//create_animation,

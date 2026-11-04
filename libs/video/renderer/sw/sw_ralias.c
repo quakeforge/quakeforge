@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "QF/animation.h"
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/skin.h"
@@ -1153,11 +1154,12 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting, int trivial_accept)
 				+ sizeof (auxvert_t) * rmesh->numverts;
 	finalvert_t *finalverts;
 	mat4f_t *palette = nullptr;
-	uint32_t c_matrix_palette = ent.base + scene_matrix_palette;
+	uint32_t c_animstate = ent.base + scene_animstate;
 	if (rmesh->palette_size
-		&& Ent_HasComponent (ent.id, c_matrix_palette, ent.reg)) {
-		auto mp = *(qfm_motor_t **) Ent_GetComponent (ent.id, c_matrix_palette,
-													  ent.reg);
+		&& Ent_HasComponent (ent.id, c_animstate, ent.reg)) {
+		auto anim = *(animstate_t **) Ent_GetComponent (ent.id, c_animstate,
+														ent.reg);
+		auto mp = qfa_matrix_palette (anim);
 		auto blend_palette = (qfm_blend_t *) ((byte *) model
 											  + rmesh->blend_palette);
 		palette = Mod_BlendPalette (blend_palette, rmesh->palette_size,

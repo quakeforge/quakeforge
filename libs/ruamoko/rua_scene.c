@@ -548,11 +548,8 @@ bi (Entity_SetAnimstate)
 	pr_ulong_t  ent_id = P_ULONG (pr, 0);
 	entity_t    ent = rua_entity_get (res, ent_id);
 	auto animstate = Model_GetAnimstate (pr, P_INT (pr, 1));
-	uint32_t c_matrix_palette = ent.base + scene_matrix_palette;
 	uint32_t c_animstate = ent.base + scene_animstate;
 	Ent_SetComponent (ent.id, c_animstate, ent.reg, &animstate);
-	auto motors = qfa_matrix_palette (animstate);
-	Ent_SetComponent (ent.id, c_matrix_palette, ent.reg, &motors);
 }
 
 bi (Transform_ChildCount)

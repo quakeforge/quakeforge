@@ -40,6 +40,7 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/animation.h"
 #include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/skin.h"
@@ -322,11 +323,12 @@ glsl_R_DrawMesh (entity_t ent)
 	auto model_name = renderer->model->name;
 	qfeglPushDebugGroup (GL_DEBUG_SOURCE_APPLICATION, 0,
 						 strlen (model_name), model_name);
-	uint32_t c_matrix_palette = ent.base + scene_matrix_palette;
-	if (Ent_HasComponent (ent.id, c_matrix_palette, ent.reg)) {
+	uint32_t c_animstate = ent.base + scene_animstate;
+	if (Ent_HasComponent (ent.id, c_animstate, ent.reg)) {
 		uint32_t num_joints = min (model->joints.count, 80);
-		auto mp = *(qfm_motor_t **) Ent_GetComponent (ent.id, c_matrix_palette,
-													  ent.reg);
+		auto anim = *(animstate_t **) Ent_GetComponent (ent.id, c_animstate,
+														ent.reg);
+		auto mp = qfa_matrix_palette (anim);
 		vec4f_t    *bone_data;
 		bone_data = Hunk_TempAlloc (r_refdef.hunk,
 									sizeof(vec4f_t[num_joints*3]));

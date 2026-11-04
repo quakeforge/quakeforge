@@ -57,6 +57,8 @@ struct framebuffer_s;
 struct vrect_s;
 struct texture_s;
 
+typedef struct animstate_s animstate_t;
+
 /*
 	All video plugins must export these functions
 */
@@ -98,6 +100,10 @@ typedef struct vid_model_funcs_s {
 	bool (*res_is_cubemap) (uint32_t id);
 	uint32_t (*get_skinid) (uint32_t id);
 	void (*set_skinid) (uint32_t id, uint32_t skinid);
+
+	size_t (*animstate_size) (void);
+	void (*animstate_create) (animstate_t *animstate);
+	void (*animstate_destroy) (animstate_t *animstate);
 } vid_model_funcs_t;
 
 typedef struct tex_s tex_t;

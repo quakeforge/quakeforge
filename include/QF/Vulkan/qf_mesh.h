@@ -62,6 +62,13 @@ typedef struct qfv_mesh_s {
 	uint32_t    bone_descriptors;
 } qfv_mesh_t;
 
+typedef struct qfv_anim_s {
+	uint32_t    descriptors;	// offset to VkDescriptorSet[]
+	uint32_t    resource;		// offset to qfv_resource_t
+	VkBuffer    bones_buffer;
+	double      anim_time;		// must update buffer if != animstate.time
+} qfv_anim_t;
+
 typedef struct qfv_skin_s {
 	struct qfv_resource_s *resource;
 	struct qfv_tex_s *tex;
@@ -115,9 +122,6 @@ void Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx,
 											void *_m, int _s, int extra,
 											vulkan_ctx_t *ctx);
 void Vulkan_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx, vulkan_ctx_t *ctx);
-
-void Vulkan_MeshAddBones (vulkan_ctx_t *ctx, qf_model_t *model);
-void Vulkan_MeshRemoveBones (vulkan_ctx_t *ctx, qf_model_t *model);
 
 void Vulkan_MeshAddSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin);
 void Vulkan_MeshRemoveSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin);

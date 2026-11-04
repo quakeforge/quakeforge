@@ -35,6 +35,7 @@
 
 #include <string.h>
 
+#include "QF/animation.h"
 #include "QF/cvar.h"
 #include "QF/va.h"
 
@@ -46,12 +47,14 @@
 #include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_texture.h"
+#include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
+#include "QF/Vulkan/staging.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
@@ -71,78 +74,6 @@ mesh_depth_range (qfv_taskctx_t *taskctx, float minDepth, float maxDepth)
 	viewport.maxDepth = maxDepth;
 
 	dfunc->vkCmdSetViewport (taskctx->cmd, 0, 1, &viewport);
-}
-
-static VkWriteDescriptorSet base_buffer_write = {
-	VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-	0, 0, 1,
-	VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-	0, 0, 0
-};
-
-void
-Vulkan_MeshAddBones (vulkan_ctx_t *ctx, qf_model_t *model)
-{
-	qfZoneNamed (zone, true);
-	qfvPushDebug (ctx, "Vulkan_MeshAddBones");
-
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto rctx = ctx->render_context;
-	auto mctx = ctx->mesh_context;
-	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
-	auto bone_descs = (VkDescriptorSet *) ((byte *) rmesh
-										   + rmesh->bone_descriptors);
-	int  num_sets = rctx->frames.size;
-
-	if (!mctx->dsmanager) {
-		mctx->dsmanager = QFV_Render_DSManager (ctx, "bone_set");
-	}
-
-	for (int i = 0; i < num_sets; i++) {
-		auto set = QFV_DSManager_AllocSet (mctx->dsmanager);
-		bone_descs[i] = set;
-	}
-
-	VkDescriptorBufferInfo bufferInfo[num_sets];
-	size_t      bones_size = sizeof (vec4f_t[model->joints.count * 3]);
-	if (!bones_size) {
-		bones_size = sizeof (vec4f_t[3]);
-	}
-	auto bones_buffer = rmesh->bones_buffer;
-	if (!bones_buffer) {
-		bones_buffer = mctx->null_bone;
-	}
-	for (int i = 0; i < num_sets; i++) {
-		bufferInfo[i].buffer = bones_buffer;
-		bufferInfo[i].offset = i * bones_size;
-		bufferInfo[i].range = bones_size;
-	};
-	VkWriteDescriptorSet write[num_sets];
-	for (int i = 0; i < num_sets; i++) {
-		write[i] = base_buffer_write;
-		write[i].dstSet = bone_descs[i];
-		write[i].pBufferInfo = &bufferInfo[i];
-	}
-	dfunc->vkUpdateDescriptorSets (device->dev, num_sets, write, 0, 0);
-
-	qfvPopDebug (ctx);
-}
-
-void
-Vulkan_MeshRemoveBones (vulkan_ctx_t *ctx, qf_model_t *model)
-{
-	qfZoneNamed (zone, true);
-	auto rctx = ctx->render_context;
-	auto mctx = ctx->mesh_context;
-	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
-	auto bone_descs = (VkDescriptorSet *) ((byte *) rmesh
-										   + rmesh->bone_descriptors);
-	int  num_sets = rctx->frames.size;
-
-	for (int i = 0; i < num_sets; i++) {
-		QFV_DSManager_FreeSet (mctx->dsmanager, bone_descs[i]);
-	}
 }
 
 void
@@ -443,16 +374,19 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	auto anim = Entity_GetAnimation (ent);
 
 	uint32_t enabled_mask = set_vertex_attributes (meshes, cmd, ctx);
-	uint32_t c_matrix_palette = ent.base + scene_matrix_palette;
-	if (Ent_HasComponent (ent.id, c_matrix_palette, ent.reg)) {
-		auto mp = *(qfm_motor_t **) Ent_GetComponent (ent.id, c_matrix_palette,
-													  ent.reg);
-		vec4f_t    *bone_data;
-		dfunc->vkMapMemory (device->dev, rmesh->bones_memory, 0, VK_WHOLE_SIZE,
-							0, (void **)&bone_data);
+	uint32_t c_animstate = ent.base + scene_animstate;
+	if (Ent_HasComponent (ent.id, c_animstate, ent.reg)) {
+		auto anim = *(animstate_t **) Ent_GetComponent (ent.id, c_animstate,
+														ent.reg);
+		auto rd = (qfv_anim_t *) ((byte *) anim + anim->render_data);
+		bone_descs = (VkDescriptorSet *) ((byte *) rd + rd->descriptors);
+		auto mp = qfa_matrix_palette (anim);
 		uint32_t num_joints = model->joints.count;
+		size_t size = sizeof (vec4f_t[num_joints * 3]);
+		auto packet = QFV_PacketAcquire (ctx->staging, "animstate update");
+		vec4f_t *bone_data = QFV_PacketExtend (packet, size);
 		for (uint32_t i = 0; i < num_joints; i++) {
-			auto    b = bone_data + (ctx->curFrame * num_joints + i) * 3;
+			auto    b = &bone_data[i * 3];
 			mat4f_t f;
 			qfm_motor_to_mat (f, mp[i]);
 			// R_IQMBlendFrames sets up the frame as a 4x4 matrix for m * v,
@@ -462,16 +396,11 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 			// copy only the first 3 columns
 			memcpy (b, f, 3 * sizeof (vec4f_t));
 		}
-#define a(x) ((x) & ~0x3f)
-		VkMappedMemoryRange range = {
-			VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-			rmesh->bones_memory,
-			a(3 * ctx->curFrame * num_joints * sizeof (vec4f_t)),
-			a(3 * num_joints * sizeof (vec4f_t) + 0x3f),
-		};
-#undef a
-		dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
-		dfunc->vkUnmapMemory (device->dev, rmesh->bones_memory);
+		VkDeviceSize offset = size * ctx->curFrame;
+		QFV_PacketCopyBuffer (packet, rd->bones_buffer, offset,
+						  &bufferBarriers[qfv_BB_ShaderRO_to_TransferWrite],
+						  &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
+		QFV_PacketSubmit (packet);
 	} else {
 		enabled_mask &= ~((1 << qfm_joints) | (1 << qfm_weights));
 	}

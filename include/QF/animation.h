@@ -85,6 +85,7 @@ typedef struct animstate_s {
 	uint32_t    global_pose;		// qfm_motor_t[num_joints] model space
 	uint32_t    matrix_palette;		// qfm_motor_t[num_joints] global * inverse
 	uint32_t    materials;
+	uint32_t    render_data;
 	float       play_rate;
 	double      time;
 } __attribute__((aligned (16))) animstate_t;

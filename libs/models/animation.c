@@ -39,6 +39,8 @@
 #define IMPLEMENT_ANIMATION_Funcs
 #include "QF/animation.h"
 
+#include "mod_internal.h"
+
 typedef struct qfa_item_s {
 	struct qfa_item_s *next;
 	struct qfa_item_s **prev;
@@ -581,19 +583,25 @@ qfa_create_animation (uint32_t *clips, uint32_t num_clips, bool create_weights,
 	auto arm = get_armature (armature);
 
 	uint32_t num_weights = create_weights ? num_clips * arm->joints.count : 0;
+	size_t animstate_size = 0;
+	if (mod_funcs && mod_funcs->animstate_size) {
+		animstate_size = mod_funcs->animstate_size ();
+	}
 	size_t size = sizeof (animstate_t)
 				+ sizeof (clipstate_t[num_clips])
 				+ sizeof (qfm_joint_t[arm->joints.count])
 				+ sizeof (qfm_joint_t[arm->joints.count])
 				+ sizeof (qfm_motor_t[arm->joints.count])
 				+ sizeof (qfm_motor_t[arm->joints.count])
+				+ animstate_size
 				+ sizeof (float[num_weights]);
 	animstate_t *anim = malloc (size);
 	auto clip_states = (clipstate_t *) &anim[1];
 	auto local_pose = (qfm_joint_t *) &clip_states[arm->joints.count];
 	auto global_pose = (qfm_motor_t *) &local_pose[arm->joints.count];
 	auto matrix_palette = (qfm_motor_t *) &global_pose[arm->joints.count];
-	auto joint_weights = (float *) &matrix_palette[arm->joints.count];
+	auto render_data = (byte *) &matrix_palette[arm->joints.count];
+	auto joint_weights = (float *) &render_data[animstate_size];
 	*anim = (animstate_t) {
 		.clip_states = {
 			.offset = (byte *) clip_states - (byte *) anim,
@@ -609,12 +617,16 @@ qfa_create_animation (uint32_t *clips, uint32_t num_clips, bool create_weights,
 		.local_pose = (byte *) local_pose - (byte *) anim,
 		.global_pose = (byte *) global_pose - (byte *) anim,
 		.matrix_palette = (byte *) matrix_palette - (byte *) anim,
+		.render_data = (byte *) render_data - (byte *) anim,
 		.play_rate = 1,
 	};
 	if (create_weights) {
 		for (uint32_t i = 0; i < num_weights; i++) {
 			joint_weights[i] = 1;
 		};
+	}
+	if (mod_funcs && mod_funcs->animstate_size && mod_funcs->animstate_create) {
+		mod_funcs->animstate_create (anim);
 	}
 	release_armature (armature);
 
@@ -635,6 +647,10 @@ void
 qfa_free_animation (animstate_t *anim)
 {
 	qfZoneScoped (true);
+	if (mod_funcs && mod_funcs->animstate_size
+		&& mod_funcs->animstate_destroy) {
+		mod_funcs->animstate_destroy (anim);
+	}
 	free (anim);
 }
 
