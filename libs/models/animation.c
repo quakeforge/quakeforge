@@ -576,7 +576,9 @@ release_armature (uint32_t armature_id)
 }
 
 animstate_t *
-qfa_create_animation (uint32_t *clips, uint32_t num_clips, bool create_weights,
+qfa_create_animation (uint32_t *clips, uint32_t num_clips,
+					  uint32_t *evclips, uint32_t num_evclips,
+					  bool create_weights,
 					  uint32_t armature, qf_model_t *model)
 {
 	qfZoneScoped (true);
@@ -589,6 +591,7 @@ qfa_create_animation (uint32_t *clips, uint32_t num_clips, bool create_weights,
 	}
 	size_t size = sizeof (animstate_t)
 				+ sizeof (clipstate_t[num_clips])
+				+ sizeof (clipstate_t[num_evclips])
 				+ sizeof (qfm_joint_t[arm->joints.count])
 				+ sizeof (qfm_joint_t[arm->joints.count])
 				+ sizeof (qfm_motor_t[arm->joints.count])
@@ -597,7 +600,8 @@ qfa_create_animation (uint32_t *clips, uint32_t num_clips, bool create_weights,
 				+ sizeof (float[num_weights]);
 	animstate_t *anim = malloc (size);
 	auto clip_states = (clipstate_t *) &anim[1];
-	auto local_pose = (qfm_joint_t *) &clip_states[arm->joints.count];
+	auto evclip_states = &clip_states[num_clips];
+	auto local_pose = (qfm_joint_t *) &evclip_states[num_evclips];
 	auto global_pose = (qfm_motor_t *) &local_pose[arm->joints.count];
 	auto matrix_palette = (qfm_motor_t *) &global_pose[arm->joints.count];
 	auto render_data = (byte *) &matrix_palette[arm->joints.count];
@@ -606,6 +610,10 @@ qfa_create_animation (uint32_t *clips, uint32_t num_clips, bool create_weights,
 		.clip_states = {
 			.offset = (byte *) clip_states - (byte *) anim,
 			.count = num_clips,
+		},
+		.event_states = {
+			.offset = (byte *) evclip_states - (byte *) anim,
+			.count = num_evclips,
 		},
 		.joint_weights = {
 			.offset = (byte *) joint_weights - (byte *) anim,
@@ -742,6 +750,10 @@ typedef struct {
 	qfm_joint_t *pose_joints;
 	qfm_joint_t *raw_pose;
 	qfm_joint_t *local_pose;
+
+	qfa_item_t **event_items;
+	clipstate_t *event_states;
+	eventspan_t *event_spans;
 } qfa_ctx_t;
 
 static void
@@ -820,16 +832,56 @@ qfa_do_clip_joint_weighted (qfa_ctx_t *ctx, int clip_ind, float *joint_weights)
 	}
 }
 
+static void
+qfa_do_event_clip (qfa_ctx_t *ctx, int clip_ind)
+{
+	qfZoneScoped (true);
+	auto item = ctx->event_items[clip_ind];
+	bool cached = false;
+	auto model = item->mod->model;
+	if (!model) {
+		model = Cache_Get (&item->mod->cache);
+		cached = true;
+	}
+
+	auto event_state = &ctx->event_states[clip_ind];
+	float start_frac = event_state->frac;
+	uint32_t start_frame = event_state->frame;
+	auto clipdesc = qfm_clipdesc (model, item->id);
+	auto keyframes = qfm_keyframe (model, clipdesc->firstframe);
+	qfa_update_clip (event_state, clipdesc, keyframes, ctx->anim->time);
+	float end_frac = event_state->frac;
+	uint32_t end_frame = event_state->frame;
+
+	auto event_span = &ctx->event_spans[clip_ind];
+	*event_span = (eventspan_t) {
+		.first_event = start_frame,
+		.num_events = end_frame - start_frame + 1,
+		.first_frac = start_frac,
+		.last_frac = end_frac,
+	};
+
+	if (cached) {
+		Cache_Release (&item->mod->cache);
+	}
+}
+
 void
 qfa_update_anim (animstate_t *anim, float dt)
 {
 	qfZoneScoped (true);
 	anim->time += anim->play_rate * dt;
 
-	qfa_item_t *items[anim->clip_states.count];
+	qfa_item_t *items[anim->clip_states.count ?: 1];
 	auto clip_states = qfa_clip_states (anim);
 	for (uint32_t i = 0; i < anim->clip_states.count; i++) {
 		items[i] = qfa_clip_get (anim_registry, clip_states[i].clip_id);
+	}
+
+	qfa_item_t *event_items[anim->event_states.count ?: 1];
+	auto event_states = qfa_event_states (anim);
+	for (uint32_t i = 0; i < anim->event_states.count; i++) {
+		event_items[i] = qfa_clip_get (anim_registry, event_states[i].clip_id);
 	}
 
 	auto arm_item = qfa_armature_get (anim_registry, anim->armature_id);
@@ -843,6 +895,7 @@ qfa_update_anim (animstate_t *anim, float dt)
 	auto local_pose = qfa_local_pose (anim);
 	auto global_pose = qfa_global_pose (anim);
 	auto matrix_palette = qfa_matrix_palette (anim);
+	auto event_spans = qfa_event_spans (anim);
 	auto arm = arm_model;
 	auto inv_motors = (qfm_motor_t *) ((byte *) arm + arm->inverse.offset);
 	auto pose_joints = (qfm_joint_t *) ((byte *) arm + arm->pose.offset);
@@ -854,6 +907,10 @@ qfa_update_anim (animstate_t *anim, float dt)
 
 		.pose_joints = pose_joints,
 		.local_pose = local_pose,
+
+		.event_items = event_items,
+		.event_states = event_states,
+		.event_spans = event_spans,
 	};
 
 	memset (local_pose, 0, sizeof (qfm_joint_t[anim->num_joints]));
@@ -870,6 +927,11 @@ qfa_update_anim (animstate_t *anim, float dt)
 			if (!(clip_states[i].flags & qfc_disabled)) {
 				qfa_do_clip_weighted (&ctx, i);
 			}
+		}
+	}
+	for (uint32_t i = 0; i < anim->event_states.count; i++) {
+		if (!(event_states[i].flags & qfc_disabled)) {
+			qfa_do_event_clip (&ctx, i);
 		}
 	}
 	for (uint32_t j = 0; j < anim->num_joints; j++) {

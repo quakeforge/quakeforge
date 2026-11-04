@@ -415,7 +415,8 @@ static int axis_colors[] = { 12, 10, 9 };
 	};
 	int num_clips = countof (clips);
 	armhandle_t arma = qfa_find_armature ("girl11a");
-	animstate_t anim = qfa_create_animation (clips, nil, num_clips, arma, nil);
+	animstate_t anim = qfa_create_animation (clips, num_clips, nil, 0, false,
+											 arma, nil);
 	for (int i = 0; i < num_clips; i++) {
 		qfa_set_clip_loop (anim, i, true);
 	}
@@ -427,8 +428,8 @@ static int axis_colors[] = { 12, 10, 9 };
 	};
 	armhandle_t root_arma = qfa_find_armature ("rm|girl11a");
 	if (root_arma) {
-		animstate_t root_anim = qfa_create_animation (root_clips, nil,
-													  num_clips,
+		animstate_t root_anim = qfa_create_animation (root_clips, num_clips,
+													  nil, 0, false,
 													  root_arma, nil);
 		for (int i = 0; i < num_clips; i++) {
 			qfa_set_clip_loop (root_anim, i, true);
@@ -973,7 +974,8 @@ load_scene (plitem_t *scene_item, scene_t scene)
 				string clipname = mod_name + ":" + ent_init.anim;
 				auto clip = qfa_find_clip (clipname);
 				auto arma = qfa_find_armature (mod_name);
-				auto anim = qfa_create_animation (&clip, 1, true, arma, nil);
+				auto anim = qfa_create_animation (&clip, 1, nil, 0, true,
+												  arma, nil);
 				qfa_set_clip_loop (anim, 0, true);
 				set_component (e, qent_anim, &anim);
 				set_update (e, update_anim);

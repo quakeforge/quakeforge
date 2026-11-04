@@ -25,6 +25,8 @@ typedef struct clipdesc_s {
 // for skin channels, data points to the skin data (texture, etc)
 // for morph channels, data points to the vertex data for the frame
 // for joint channels, data points the joint channel data for the frame
+// for event channels, data is either 0 (null event) or points to a single
+//                     event's data.
 typedef struct keyframe_s {
 	float       endtime;		// immediate event if same as previous frame
 	uint32_t    data;			// pointer to channel-specific data
