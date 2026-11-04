@@ -101,7 +101,7 @@ ANIMINLINE qfm_motor_t *qfa_matrix_palette (animstate_t *anim);
 //ANIMINLINE void *qfa_materials (animstate_t *anim);
 
 #undef ANIMINLINE
-#ifndef IMPLEMENT_ENTITY_Funcs
+#ifndef IMPLEMENT_ANIMATION_Funcs
 #define ANIMINLINE GNU89INLINE inline
 #else
 #define ANIMINLINE VISIBLE

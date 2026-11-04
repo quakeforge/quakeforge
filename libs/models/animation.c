@@ -36,7 +36,7 @@
 #include "QF/qfmodel.h"
 #include "QF/va.h"
 
-#define IMPLEMENT_ENTITY_Funcs
+#define IMPLEMENT_ANIMATION_Funcs
 #include "QF/animation.h"
 
 typedef struct qfa_item_s {
