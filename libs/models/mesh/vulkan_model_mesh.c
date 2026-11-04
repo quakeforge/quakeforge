@@ -365,18 +365,20 @@ setup_bone_descriptors (VkDescriptorSet *bone_descs, int num_sets,
 		bones_buffer = mctx->null_bone;
 	}
 
+	VkDescriptorBufferInfo bufferInfo[num_sets];
 	VkWriteDescriptorSet write[num_sets];
 	for (int i = 0; i < num_sets; i++) {
+		bufferInfo[i] = (VkDescriptorBufferInfo) {
+			.buffer = bones_buffer,
+			.offset = i * bones_size,
+			.range = bones_size,
+		};
 		write[i] = (VkWriteDescriptorSet) {
 			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 			.dstSet = bone_descs[i],
 			.descriptorCount = 1,
 			.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-			.pBufferInfo = &(VkDescriptorBufferInfo) {
-				.buffer = bones_buffer,
-				.offset = i * bones_size,
-				.range = bones_size,
-			},
+			.pBufferInfo = &bufferInfo[i],
 		};
 	}
 	dfunc->vkUpdateDescriptorSets (device->dev, num_sets, write, 0, 0);
