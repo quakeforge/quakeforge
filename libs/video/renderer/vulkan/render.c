@@ -447,31 +447,48 @@ QFV_RunRenderPass (qfv_taskctx_t *taskctx, qfv_renderpass_t *renderpass,
 }
 
 static void
+do_deletion (vulkan_ctx_t *ctx, qfv_delete_t del)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	if (del.swapchain) {
+		dfunc->vkDestroySwapchainKHR (device->dev, del.swapchain, 0);
+	}
+	QFV_DestroyResource (device, del.resources);
+	if (del.free_resources) {
+		free (del.resources);
+	}
+	if (del.framebuffer) {
+		dfunc->vkDestroyFramebuffer (device->dev, del.framebuffer, 0);
+	}
+	if (del.semaphore) {
+		dfunc->vkDestroySemaphore (device->dev, del.semaphore, 0);
+	}
+	if (del.image_view) {
+		dfunc->vkDestroyImageView (device->dev, del.image_view, 0);
+	}
+}
+
+static void
 run_deletion_queue (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
 	auto rctx = ctx->render_context;
 	uint64_t frame = ctx->frameNumber;
 	while (!PQUEUE_IS_EMPTY (&rctx->deletion_queue)) {
 		if (frame < PQUEUE_PEEK (&rctx->deletion_queue).deletion_frame) {
 			break;
 		}
-		auto del = PQUEUE_REMOVE (&rctx->deletion_queue);
-		if (del.swapchain) {
-			dfunc->vkDestroySwapchainKHR (device->dev, del.swapchain, 0);
-		}
-		QFV_DestroyResource (device, del.resources);
-		if (del.framebuffer) {
-			dfunc->vkDestroyFramebuffer (device->dev, del.framebuffer, 0);
-		}
-		if (del.semaphore) {
-			dfunc->vkDestroySemaphore (device->dev, del.semaphore, 0);
-		}
-		if (del.image_view) {
-			dfunc->vkDestroyImageView (device->dev, del.image_view, 0);
-		}
+		do_deletion (ctx, PQUEUE_REMOVE (&rctx->deletion_queue));
+	}
+}
+
+static void
+flush_deletion_queue (vulkan_ctx_t *ctx)
+{
+	auto rctx = ctx->render_context;
+	while (!PQUEUE_IS_EMPTY (&rctx->deletion_queue)) {
+		do_deletion (ctx, PQUEUE_REMOVE (&rctx->deletion_queue));
 	}
 }
 
@@ -654,12 +671,13 @@ QFV_QueueSwapchainDelete (vulkan_ctx_t *ctx, VkSwapchainKHR swapchain)
 }
 
 void
-QFV_QueueResourceDelete (vulkan_ctx_t *ctx, qfv_resource_t *res)
+QFV_QueueResourceDelete (vulkan_ctx_t *ctx, qfv_resource_t *res, bool free_res)
 {
 	auto rctx = ctx->render_context;
 	uint32_t frames = rctx->frames.size;
 	qfv_delete_t del = {
 		.resources = res,
+		.free_resources = free_res,
 		.deletion_frame = ctx->frameNumber + frames,
 	};
 	PQUEUE_INSERT (&rctx->deletion_queue, del);
@@ -764,7 +782,7 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 				auto fbr = &graph->framebuffer_resources[i];
 				auto res = &fbr->array[fbr->active];
 				if (res->memory) {
-					QFV_QueueResourceDelete (ctx, res);
+					QFV_QueueResourceDelete (ctx, res, false);
 					qfv_resourcearray_next (fbr);
 				}
 			}
@@ -1455,6 +1473,9 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	auto rctx = ctx->render_context;
+
+	flush_deletion_queue (ctx);
+
 	if (rctx->graph) {
 		auto graph = rctx->graph;
 		qfv_taskctx_t taskctx = {

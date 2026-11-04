@@ -67,7 +67,7 @@ trans_delete_buffers (vulkan_ctx_t *ctx)
 
 	auto resources = &tctx->resources.array[tctx->resources.active];
 	if (resources->memory) {
-		QFV_QueueResourceDelete (ctx, resources);
+		QFV_QueueResourceDelete (ctx, resources, false);
 		qfv_resourcearray_next (&tctx->resources);
 	}
 }

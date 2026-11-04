@@ -629,6 +629,7 @@ typedef struct qfv_renderframe_s {
 
 typedef struct qfv_delete_s {
 	qfv_resource_t *resources;
+	bool        free_resources;//FIXME kinda ick
 	VkFramebuffer framebuffer;
 	VkSemaphore semaphore;
 	VkImageView image_view;
@@ -725,7 +726,8 @@ void QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 							VkExtent2D extent);
 
 void QFV_QueueSwapchainDelete (vulkan_ctx_t *ctx, VkSwapchainKHR swapchain);
-void QFV_QueueResourceDelete (vulkan_ctx_t *ctx, qfv_resource_t *res);
+void QFV_QueueResourceDelete (vulkan_ctx_t *ctx, qfv_resource_t *res,
+							  bool free_res);
 void QFV_QueueImageViewDelete (vulkan_ctx_t *ctx, VkImageView view);
 void QFV_QueueFramebufferDelete (vulkan_ctx_t *ctx, VkFramebuffer framebuffer);
 
