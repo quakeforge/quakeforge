@@ -16,29 +16,32 @@ typedef vec3 vec3_t;
 #endif
 
 typedef struct clipdesc_s {
-	uint32_t    firstframe;
+	uint32_t    firstframe;		// index into keyframe array
 	uint32_t    numframes;		// 1 for single frames
 	uint32_t    flags;
-	uint32_t    name;
+	uint32_t    name;			// offset into model's text region
 } clipdesc_t;
 
+// for skin channels, data points to the skin data (texture, etc)
+// for morph channels, data points to the vertex data for the frame
+// for joint channels, data points the joint channel data for the frame
 typedef struct keyframe_s {
-	float       endtime;		// 0 for single frames
-	uint32_t    data;
+	float       endtime;		// immediate event if same as previous frame
+	uint32_t    data;			// pointer to channel-specific data
 } keyframe_t;
 
 // for skin and morph animations, the offsets are from the owning mesh
 // for joint animations, the offsets are from the model
 typedef struct anim_s {
 	uint32_t    numclips;
-	uint32_t    clips;		// offset
-	uint32_t    keyframes;	// offset
+	uint32_t    clips;		// offset to clipdesc_t array
+	uint32_t    keyframes;	// offset to keyframe_t array
 	uint32_t    data;		// offset
 } anim_t;
 
 typedef struct qfm_loc_s {
-	uint32_t    offset;
-	uint32_t    count;
+	uint32_t    offset;		// offset relative to owning object (mesh/model)
+	uint32_t    count;		// number of array elements
 } qfm_loc_t;
 
 typedef enum : uint32_t {
@@ -117,18 +120,25 @@ typedef struct qfm_blend_s {
 	uint8_t		weights[4];
 } qfm_blend_t;
 
+// value comes from keyframe_t.data
+// values are layout out per channel in a single frame's block of data
+// currently, values are always uint16_t (as per IQM format)
+// *(base + data) = channel.base + channel.scale * value[channel]
 typedef struct qfm_channel_s {
-	uint32_t    data;
-	float       base;
-	float       scale;
+	uint32_t    data;			// relative offset to field being updated
+	float       base;			// base value
+	float       scale;			// scale
 } qfm_channel_t;
 
 typedef struct qfm_frame_s {
-	uint32_t    name;
-	uint32_t    data;
-	vec3_t      bounds_min;
-	vec3_t      bounds_max;
+	uint32_t    name;			// alias only, not iqm
+	uint32_t    data;			// not used?
+	vec3_t      bounds_min;		// from loaded model data
+	vec3_t      bounds_max;		// from loaded model data
 } qfm_frame_t;
+
+/* adjacency information
+*/
 
 typedef struct halfedge_s {
 	int         twin;
@@ -160,10 +170,10 @@ typedef struct qf_mesh_s {
 	uint32_t    triangle_count;
 	qfm_type_t  index_type;
 	uint32_t    indices;
-	qfm_loc_t   adjacency;
-	qfm_loc_t   attributes;
+	qfm_loc_t   adjacency;			// halfedge_t or quarteredge_t
+	qfm_loc_t   attributes;			// qfm_attrdesc_t
 	qfm_loc_t   vertices;			// count is per morph
-	qfm_loc_t   morph_attributes;
+	qfm_loc_t   morph_attributes;	// qfm_attrdesc_t
 	uint32_t    vertex_stride;
 	uint32_t    morph_stride;
 	uint32_t    material;
@@ -180,9 +190,9 @@ typedef struct qf_model_s {
 	qfm_loc_t   joints;		// joint definitions (qfm_joint_t)
 	qfm_loc_t   inverse;	// inverse joint motors (qfm_motor_t)
 	qfm_loc_t   pose;		// (qfm_joint_t) base pose for animation
-	qfm_loc_t   channels;
-	qfm_loc_t   text;
-	anim_t      anim;
+	qfm_loc_t   channels;	// qfm_channel_t
+	qfm_loc_t   text;		// all text data for the model
+	anim_t      anim;		// joint animations
 	uint16_t    crc;
 	uint32_t    render_data;
 } __attribute__((aligned (16))) qf_model_t;

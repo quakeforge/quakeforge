@@ -56,13 +56,18 @@ typedef enum : uint32_t {
 
 typedef struct clipstate_s {
 	qfc_type_t  type;
+	float       end_time;	// animstate_t relative time clip ends
+	uint32_t    frame;		// current frame in clip
+	uint32_t    clip_id;	// handle for actual clip data
+	float       frac;		// progress through frame for inter-frame blending
+	float       weight;		// weight for blending between channels
 	float       end_time;
 	uint32_t    frame;
 	uint32_t    clip_id;
 	float       frac;
 	float       weight;
 	qfc_flags_t flags;
-	float       pad;
+	float       pad;		// padding
 } clipstate_t;
 
 typedef enum : uint32_t {
@@ -79,8 +84,8 @@ typedef struct animstate_s {
 	qfm_loc_t   morph_states;		// clipstate_t[]
 	//qfm_loc_t   blend_spec;
 	qfm_loc_t   joint_weights;		// float[][num_joints] (0 or clip_states)
-	uint32_t    armature_id;
-	uint32_t    num_joints;
+	uint32_t    armature_id;		// handle for affected armature
+	uint32_t    num_joints;			// number of joints in armature (local copy)
 	uint32_t    local_pose;			// qfm_joint_t[num_joints] armature space
 	uint32_t    global_pose;		// qfm_motor_t[num_joints] model space
 	uint32_t    matrix_palette;		// qfm_motor_t[num_joints] global * inverse
