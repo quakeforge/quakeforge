@@ -323,9 +323,9 @@ Mod_LoadIQM (model_t *mod, void *buffer, memhunk_t *hunk)
 	auto clips     = (clipdesc_t *)     &pose[hdr->num_poses];
 	auto keyframes = (keyframe_t *)     &clips[hdr->num_anims];
 	auto channels  = (qfm_channel_t *)  &keyframes[hdr->num_frames];
-	auto framedata = (uint16_t *)       &channels[hdr->num_framechannels];
-	auto bounds    = (qfm_frame_t *)    &framedata[frame_data_count];
-	auto text      = (char *)           &bounds[hdr->num_frames];
+	auto bounds    = (qfm_frame_t *)    &channels[hdr->num_framechannels];
+	auto framedata = (uint16_t *)       &bounds[hdr->num_frames];
+	auto text      = (char *)           &framedata[frame_data_count];
 
 	iqm.qf_model = model;
 	iqm.qf_meshes = meshes;
