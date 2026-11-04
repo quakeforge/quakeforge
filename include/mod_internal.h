@@ -160,8 +160,6 @@ void Vulkan_Mod_ProcessTexture (model_t *mod, struct texture_s *tx,
 								struct vulkan_ctx_s *ctx);
 void Vulkan_Mod_FinalizeBrushModel (mod_brush_ctx_t *brush_ctx,
 									struct vulkan_ctx_s *ctx);
-void Vulkan_MeshAddBones (vulkan_ctx_t *ctx, qf_model_t *model);
-void Vulkan_MeshRemoveBones (vulkan_ctx_t *ctx, qf_model_t *model);
 
 size_t Vulkan_animstate_size (vulkan_ctx_t *ctx) __attribute__((pure));
 void Vulkan_animstate_create (animstate_t *animstate, vulkan_ctx_t *ctx);

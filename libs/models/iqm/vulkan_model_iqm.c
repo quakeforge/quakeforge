@@ -87,9 +87,6 @@ vulkan_iqm_clear (model_t *mod, void *data)
 
 	QFV_DeviceWaitIdle (device);
 
-	//FIXME doesn't belong here (per-instance)
-	Vulkan_MeshRemoveBones (ctx, model);
-
 	mod->needload = true;	//FIXME is this right?
 	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
 	auto resources = (qfv_resource_t *) ((byte *) rmesh + rmesh->resources);
@@ -99,7 +96,6 @@ vulkan_iqm_clear (model_t *mod, void *data)
 		res->objects = (qfv_resobj_t *) ((byte *) res + offset);
 	}
 	QFV_DestroyResource (device, &resources[0]);
-	QFV_DestroyResource (device, &resources[1]);
 }
 
 static void
@@ -300,67 +296,6 @@ vulkan_iqm_load_arrays (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 }
 
 static void
-vulkan_iqm_init_bones (mod_iqm_ctx_t *iqm_ctx, qfv_resource_t *bones,
-					   vulkan_ctx_t *ctx)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	auto rctx = ctx->render_context;
-
-	auto model = iqm_ctx->qf_model;
-	auto iqm = iqm_ctx->hdr;
-
-	if (bones->objects[0].buffer.size) {
-		vec4f_t    *bone_data;
-		dfunc->vkMapMemory (device->dev, bones->memory, 0, VK_WHOLE_SIZE,
-							0, (void **)&bone_data);
-		for (size_t i = 0; i < rctx->frames.size * iqm->num_joints; i++) {
-			vec4f_t    *bone = bone_data + i * 3;
-			bone[0] = (vec4f_t) {1, 0, 0, 0};
-			bone[1] = (vec4f_t) {0, 1, 0, 0};
-			bone[2] = (vec4f_t) {0, 0, 1, 0};
-		}
-		VkMappedMemoryRange range = {
-			VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-			bones->memory, 0, VK_WHOLE_SIZE,
-		};
-		dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
-
-		dfunc->vkUnmapMemory (device->dev, bones->memory);
-	}
-
-	Vulkan_MeshAddBones (ctx, model);//FIXME doesn't belong here (per-instance)
-}
-
-static void
-setup_bone_resources (qfv_resource_t *bones, qfv_resobj_t *bone_obj,
-					  uint32_t num_frames, vulkan_ctx_t *ctx,
-					  mod_iqm_ctx_t *iqm_ctx)
-{
-	const char *name = iqm_ctx->mod->name;
-	auto model = iqm_ctx->qf_model;
-
-	bones[0] = (qfv_resource_t) {
-		.name = name,
-		.va_ctx = ctx->va_ctx,
-		.memory_properties = VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-		.num_objects = 1,
-		.objects = bone_obj,
-	};
-
-	size_t joint_size = 3 * sizeof (vec4f_t);
-	bone_obj[0] = (qfv_resobj_t) {
-		.name = "bones",
-		.type = qfv_res_buffer,
-		.buffer = {
-			.size = num_frames * model->joints.count * joint_size,
-			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-		},
-	};
-}
-
-static void
 setup_mesh_resources (qfv_resource_t *mesh_res, qfv_resobj_t *mesh_objs,
 					  uint32_t num_objects, uint32_t strides[3],
 					  uint32_t num_verts, uint32_t num_indices,
@@ -463,11 +398,9 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 	auto skins = (qfv_skin_t *) &attribs[iqm->num_vertexarrays];
 	auto skinclips = (clipdesc_t *) &skins[model->meshes.count];
 	auto skinframes = (keyframe_t *) &skinclips[model->meshes.count];
-	auto bone_descs = (VkDescriptorSet *) &skinframes[model->meshes.count];
-	auto resources = (qfv_resource_t *) &bone_descs[rctx->frames.size];
-	auto bones = &resources[0];
-	auto mesh = &resources[1];
-	auto resobj = (qfv_resobj_t *) &resources[2];
+	auto resources = (qfv_resource_t *) &skinframes[model->meshes.count];
+	auto mesh = resources;
+	auto resobj = (qfv_resobj_t *) &mesh[1];
 
 	uint32_t offsets[3] = {};
 	for (uint32_t i = 0; i < iqm->num_vertexarrays; i++) {
@@ -489,25 +422,17 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 		attribs[i].stride = offsets[attribs[i].set];
 	}
 
-	setup_bone_resources (bones, &resobj[0], rctx->frames.size,
-						  ctx, iqm_ctx);
 	setup_mesh_resources (mesh, &resobj[1], num_objects - 1, offsets,
 						  iqm->num_vertexes, iqm->num_triangles * 3,
 						  rctx->frames.size, ctx, iqm_ctx);
 	QFV_CreateResource (device, mesh);
-	if (bones->objects[0].buffer.size) {
-		QFV_CreateResource (device, bones);
-	}
 
 	model->render_data = (byte *) rmesh - (byte *) model;
 	*rmesh = (qfv_mesh_t) {
 		.geom_buffer = mesh->objects[0].buffer.buffer,
 		.rend_buffer = mesh->objects[1].buffer.buffer,
 		.index_buffer = mesh->objects[2].buffer.buffer,
-		.bones_buffer = bones->objects[0].buffer.buffer,
-		.bones_memory = bones->memory,
 		.resources = (byte *) resources - (byte *) rmesh,
-		.bone_descriptors = (byte *) bone_descs - (byte *) rmesh,
 	};
 
 	uint32_t index_type = mesh_index_type (iqm->num_vertexes);
@@ -538,7 +463,6 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 	auto index_bytes = pack_indices (indices, indices, index_count, index_type);
 	vulkan_iqm_load_arrays (iqm_ctx, rmesh, attribs, offsets,
 							indices, index_bytes, ctx);
-	vulkan_iqm_init_bones (iqm_ctx, bones, ctx);
 	vulkan_iqm_load_textures (iqm_ctx, rmesh, skins, &mesh->objects[3], ctx);
 
 	for (int i = 0; i < 2; i++) {

@@ -98,9 +98,6 @@ vulkan_alias_clear (model_t *m, void *data)
 			Vulkan_Skin_Clear (skin, ctx);
 		}
 	}
-
-	//FIXME doesn't belong here (per-instance)
-	Vulkan_MeshRemoveBones (ctx, model);
 }
 
 #define SKIN_LAYERS 3
@@ -461,8 +458,6 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	QFV_PacketScatterBuffer (packet, rmesh->index_buffer, 1, &ind_scatter,
 							 sb, ir);
 	QFV_PacketSubmit (packet);
-
-	Vulkan_MeshAddBones (ctx, model);//FIXME doesn't belong here (per-instance)
 }
 
 void
@@ -477,27 +472,23 @@ Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	auto mdl = alias_ctx->mdl;
 	auto model = alias_ctx->model;
 	auto mesh = alias_ctx->mesh;
-	auto rctx = ctx->render_context;
 
 	if (mdl->ident == HEADER_MDL16)
 		VectorScale (mdl->scale, 1/256.0, mdl->scale);
 
 	size_t size = sizeof (qfv_mesh_t)
 				+ sizeof (qfm_attrdesc_t[5])
-				+ sizeof (VkDescriptorSet[rctx->frames.size])
 				+ sizeof (qfv_resource_t)
 				+ sizeof (qfv_resobj_t[3]);
 
 	const char *name = alias_ctx->mod->name;
 	qfv_mesh_t *rmesh = Hunk_AllocName (alias_ctx->hunk, size, name);
 	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
-	auto bone_descs = (VkDescriptorSet *) &attribs[5];
-	auto resources = (qfv_resource_t *) &bone_descs[rctx->frames.size];
+	auto resources = (qfv_resource_t *) &attribs[5];
 
 	model->render_data = (byte *) rmesh - (byte *) model;
 	*rmesh = (qfv_mesh_t) {
 		.resources = (byte *) resources - (byte *) model,
-		.bone_descriptors = (byte *) bone_descs - (byte *) rmesh,
 	};
 
 	mesh->attributes = (qfm_loc_t) {

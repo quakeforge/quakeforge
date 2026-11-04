@@ -70,9 +70,6 @@ vulkan_mesh_clear (model_t *mod, void *data)
 
 	QFV_DeviceWaitIdle (device);
 
-	//FIXME doesn't belong here (per-instance)
-	Vulkan_MeshRemoveBones (ctx, model);
-
 	mod->needload = true;	//FIXME is this right?
 	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
 	auto resources = (qfv_resource_t *) ((byte *) rmesh + rmesh->resources);
@@ -326,10 +323,7 @@ Vulkan_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx, vulkan_ctx_t *ctx)
 		.geom_buffer = mesh->objects[0].buffer.buffer,
 		.rend_buffer = mesh->objects[1].buffer.buffer,
 		.index_buffer = mesh->objects[2].buffer.buffer,
-		.bones_buffer = bones->objects[0].buffer.buffer,
-		.bones_memory = bones->memory,
 		.resources = (byte *) resources - (byte *) rmesh,
-		.bone_descriptors = (byte *) bone_descs - (byte *) rmesh,
 	};
 
 	auto index_type = mesh_index_type (num_vertices);
@@ -356,9 +350,6 @@ Vulkan_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx, vulkan_ctx_t *ctx)
 		auto res = &resources[i];
 		res->objects = (qfv_resobj_t *)((byte *) res->objects - (byte *) res);
 	}
-
-	//FIXME doesn't belong here (per-instance)
-	Vulkan_MeshAddBones (ctx, qf_model);
 }
 
 static void
@@ -389,54 +380,6 @@ setup_bone_descriptors (VkDescriptorSet *bone_descs, int num_sets,
 		};
 	}
 	dfunc->vkUpdateDescriptorSets (device->dev, num_sets, write, 0, 0);
-}
-
-void
-Vulkan_MeshAddBones (vulkan_ctx_t *ctx, qf_model_t *model)
-{
-	qfZoneNamed (zone, true);
-
-	auto mctx = ctx->mesh_context;
-	auto rctx = ctx->render_context;
-	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
-	auto bone_descs = (VkDescriptorSet *) ((byte *) rmesh
-										   + rmesh->bone_descriptors);
-	int  num_sets = rctx->frames.size;
-
-	if (!mctx->dsmanager) {
-		mctx->dsmanager = QFV_Render_DSManager (ctx, "bone_set");
-	}
-	for (int i = 0; i < num_sets; i++) {
-		auto set = QFV_DSManager_AllocSet (mctx->dsmanager);
-		bone_descs[i] = set;
-	}
-
-	size_t      bones_size = sizeof (vec4f_t[model->joints.count * 3]);
-	if (!bones_size) {
-		bones_size = sizeof (vec4f_t[3]);
-	}
-	auto bones_buffer = rmesh->bones_buffer;
-	if (!bones_buffer) {
-		bones_buffer = mctx->null_bone;
-	}
-	setup_bone_descriptors (bone_descs, num_sets, bones_buffer, bones_size,
-							ctx);
-}
-
-void
-Vulkan_MeshRemoveBones (vulkan_ctx_t *ctx, qf_model_t *model)
-{
-	qfZoneNamed (zone, true);
-	auto rctx = ctx->render_context;
-	auto mctx = ctx->mesh_context;
-	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
-	auto bone_descs = (VkDescriptorSet *) ((byte *) rmesh
-										   + rmesh->bone_descriptors);
-	int  num_sets = rctx->frames.size;
-
-	for (int i = 0; i < num_sets; i++) {
-		QFV_DSManager_FreeSet (mctx->dsmanager, bone_descs[i]);
-	}
 }
 
 size_t
@@ -479,9 +422,6 @@ Vulkan_animstate_create (animstate_t *animstate, vulkan_ctx_t *ctx)
 
 	int num_sets = frames;
 
-	if (!mctx->dsmanager) {
-		mctx->dsmanager = QFV_Render_DSManager (ctx, "bone_set");
-	}
 	for (int i = 0; i < num_sets; i++) {
 		auto set = QFV_DSManager_AllocSet (mctx->dsmanager);
 		bone_descs[i] = set;
