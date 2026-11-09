@@ -415,6 +415,7 @@ Mod_LoadIQM (model_t *mod, void *buffer, memhunk_t *hunk)
 		for (int k = 0; k < 3; k++) {
 			pose[id].translate[k] = p->channeloffset[k + 0];
 			if (p->mask & (1 << (k + 0))) {
+				pose[id].translate[k] += p->channelscale[k + 0] * framedata[j];
 				auto translate = (float *) &pose[id].translate;
 				channels[j++] = (qfm_channel_t) {
 					.data = (byte *) (translate + k) - (byte *) pose,
@@ -426,6 +427,7 @@ Mod_LoadIQM (model_t *mod, void *buffer, memhunk_t *hunk)
 		for (int k = 0; k < 4; k++) {
 			pose[id].rotate[k] = p->channeloffset[k + 3];
 			if (p->mask & (1 << (k + 3))) {
+				pose[id].rotate[k] += p->channelscale[k + 3] * framedata[j];
 				auto rotate = (float *) &pose[id].rotate;
 				channels[j++] = (qfm_channel_t) {
 					.data = (byte *) (rotate + k) - (byte *) pose,
@@ -437,6 +439,7 @@ Mod_LoadIQM (model_t *mod, void *buffer, memhunk_t *hunk)
 		for (int k = 0; k < 3; k++) {
 			pose[id].scale[k] = p->channeloffset[k + 7];
 			if (p->mask & (1 << (k + 7))) {
+				pose[id].scale[k] += p->channelscale[k + 7] * framedata[j];
 				auto scale = (float *) &pose[id].scale;
 				channels[j++] = (qfm_channel_t) {
 					.data = (byte *) (scale + k) - (byte *) pose,
