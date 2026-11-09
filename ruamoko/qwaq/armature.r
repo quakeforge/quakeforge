@@ -84,8 +84,10 @@ make_armature (model_t model)
 	for (int i = 0; i < num_joints; i++) {
 		arm.pose[i].m = make_motor (vec4(arm.joints[i].translate, 0),
 									arm.joints[i].rotate);
+		arm.pose[i].scale = arm.joints[i].scale;
 		if (arm.joints[i].parent >= 0) {
 			arm.pose[i].m = arm.pose[arm.joints[i].parent].m * arm.pose[i].m;
+			arm.pose[i].scale *= arm.pose[arm.joints[i].parent].scale;
 		}
 		string name = *(string *)&arm.joints[i].name;//FIXME
 		bool IK = str_str (name, "IK") >= 0;
@@ -136,6 +138,42 @@ make_armature (model_t model)
 			arm.points[i * JOINT_POINTS + j] = (vec4) p;
 		}
 	}
+
+	qfm_joint_t *pose = obj_malloc (num_joints * sizeof (qfm_joint_t));
+	arm_motor_t *inv = obj_malloc (num_joints * sizeof (arm_motor_t));
+	Model_GetInverseMotors (model, inv);
+	if (Model_GetPoseJoints (model, pose)) {
+		for (int i = 0; i < num_joints; i++) {
+			arm_motor_t p = {
+				.m = make_motor (vec4(pose[i].translate, 0), pose[i].rotate),
+				.scale = pose[i].scale,
+			};
+			arm.pose[i] = p;
+			int parent = pose[i].parent;
+			if (parent >= 0) {
+				arm.pose[i].m = arm.pose[parent].m * arm.pose[i].m;
+				arm.pose[i].scale *= arm.pose[parent].scale;
+			}
+		}
+		for (int i = 0; i < num_joints; i++) {
+			arm.pose[i].m = arm.pose[i].m * inv[i].m;
+			arm.pose[i].scale *= inv[i].scale;
+		}
+	} else {
+		for (int i = 0; i < num_joints; i++) {
+			arm.pose[i] = {
+				.m = {
+					.scalar = 1,
+					.bvect = '0 0 0',
+					.bvecp = '0 0 0',
+					.qvec = 0,
+				},
+				.scale = '1 1 1',
+			};
+		}
+	}
+	obj_free (pose);
+	obj_free (inv);
 	return arm;
 }
 

@@ -167,6 +167,10 @@ static component_t qwaq_components[] = {
 		.size = sizeof (animstate_t),
 		.name = "anim",
 	},
+	[qent_armature] = {
+		.size = sizeof (armature_t *),
+		.name = "armature",
+	},
 };
 
 imui_ctx_t imui_ctx;
@@ -788,6 +792,7 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key,
 	string texture;
 	string anim;
 	bool extract_root_motion;
+	bool show_armature;
 	bool mesh_flag;
 	bool grav_flag;
 	uint submesh_mask;
@@ -822,11 +827,47 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key,
 @end
 
 static void
+update_show_armature (uint ent)
+{
+	armature_t *arm;
+	transform_t trans;
+	get_component (ent, qent_armature, &arm);
+	auto cam = Entity_GetTransform ([[camera_system camera] entity]);
+	get_component (ent, qent_transform, &trans);
+	auto E = make_motor (Transform_GetWorldPosition (trans),
+					  Transform_GetWorldRotation (trans));
+	arm_motor_t M = { .m = E, .scale = '1 1 1' };
+	draw_armature (cam, arm, M);
+	for (int i = 0; i < 3; i++) {
+		auto p1 = E * (point_t) axis_points[i][0] * ~E;
+		auto p2 = E * (point_t) axis_points[i][1] * ~E;
+		draw_3dline (cam, (vec4) p1, (vec4) p2, axis_colors[i]);
+	}
+}
+
+static void
 update_anim (uint ent)
 {
 	animstate_t anim;
 	get_component (ent, qent_anim, &anim);
 	qfa_update_anim (anim, frametime);
+	if (has_component (ent, qent_armature)) {
+		armature_t *arm;
+		transform_t trans;
+		get_component (ent, qent_armature, &arm);
+		qfa_get_pose_motors (anim, arm.pose);
+		auto cam = Entity_GetTransform ([[camera_system camera] entity]);
+		get_component (ent, qent_transform, &trans);
+		auto E = make_motor (Transform_GetWorldPosition (trans),
+						  Transform_GetWorldRotation (trans));
+		arm_motor_t M = { .m = E, .scale = '1 1 1' };
+		draw_armature (cam, arm, M);
+		for (int i = 0; i < 3; i++) {
+			auto p1 = E * (point_t) axis_points[i][0] * ~E;
+			auto p2 = E * (point_t) axis_points[i][1] * ~E;
+			draw_3dline (cam, (vec4) p1, (vec4) p2, axis_colors[i]);
+		}
+	}
 }
 
 void
@@ -900,11 +941,8 @@ load_scene (plitem_t *scene_item, scene_t scene)
 			collider.box.offset = ent_init.collider.offset;
 			collider.box.extent = ent_init.collider.extent;
 		}
-		uint e = ~0u;//FIXME
-		if (mesh || have_collider || ent_init.anim) {
-			e = new_entity ();
-			set_component (e, qent_transform, &xform);
-		}
+		uint e = new_entity ();
+		set_component (e, qent_transform, &xform);
 		if (have_collider) {
 			max_collider_ents++;
 			set_component (e, qent_collider, &collider);
@@ -963,12 +1001,12 @@ load_scene (plitem_t *scene_item, scene_t scene)
 				qfa_extract_root_motion (model);
 			}
 			int num_clips = Model_NumClips (model);
-			for (int i = 0; i < num_clips; i++) {
-				auto clipinfo = Model_GetClipInfo (model, i);
-				printf ("%s %2d %3d %d %s\n", Model_Name (model),
-						i, clipinfo.num_frames,
-						clipinfo.num_channels, clipinfo.name);
-			}
+			//for (int i = 0; i < num_clips; i++) {
+			//	auto clipinfo = Model_GetClipInfo (model, i);
+			//	printf ("%s %2d %3d %d %s\n", Model_Name (model),
+			//			i, clipinfo.num_frames,
+			//			clipinfo.num_channels, clipinfo.name);
+			//}
 			if (ent_init.anim) {
 				string mod_name = Model_Name (model);
 				string clipname = mod_name + ":" + ent_init.anim;
@@ -983,6 +1021,14 @@ load_scene (plitem_t *scene_item, scene_t scene)
 				auto a = Entity_GetAnimation (ent);
 				a.debug_bone = ~0u;
 				Entity_SetAnimation (ent, a);
+			}
+			if (e != ~0 && ent_init.show_armature) {
+				printf ("show_armature: %x\n", e);
+				armature_t *arm = make_armature (model);
+				set_component (e, qent_armature, &arm);
+				if (!ent_init.anim) {
+					set_update (e, update_show_armature);
+				}
 			}
 		}
 		if (ent_init.target) {

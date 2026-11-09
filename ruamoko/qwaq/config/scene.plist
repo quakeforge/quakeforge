@@ -274,6 +274,7 @@
 		texture = pixpal.meta;
 		target = true;
 		extract_root_motion = true;
+		show_armature = true;
 		anim = "rig|standing idle_RM";
 	},
 	{
@@ -284,6 +285,7 @@
 		texture = pixpal.meta;
 		target = true;
 		extract_root_motion = true;
+		show_armature = true;
 		anim = "rig|standing taunt battlecry_RM";
 	},
 	{

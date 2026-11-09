@@ -9,6 +9,7 @@ enum {
 	qent_grav,
 
 	qent_anim,
+	qent_armature,
 
 	qent_comp_count
 };

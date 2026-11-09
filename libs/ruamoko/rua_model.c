@@ -276,7 +276,32 @@ bi (Model_GetJoints)
 		auto name = text + joints[i].name;
 		joints[i].name = PR_SetString (pr, name);
 	}
-	R_INT (pr) = 1;
+	R_INT (pr) = -1;
+}
+
+bi (Model_GetPoseJoints)
+{
+	qfZoneScoped (true);
+	auto res = (rua_model_resources_t *) _res;
+	int  handle = P_INT (pr, 0);
+	auto h = rua_model_handle_get (res, handle);
+	auto mod = h->model;
+	auto model = mod->model;
+	auto pose = (qfm_joint_t *) P_GPOINTER (pr, 1);
+
+	if (mod->type != mod_mesh || !model->pose.count) {
+		R_INT (pr) = 0;
+		return;
+	}
+	auto j = (qfm_joint_t *) ((byte *) model + model->pose.offset);
+
+	memcpy (pose, j, model->pose.count * sizeof (qfm_joint_t));
+	auto text = (const char *) ((byte *) model + model->text.offset);
+	for (uint32_t i = 0; i < model->pose.count; i++) {
+		auto name = text + pose[i].name;
+		pose[i].name = PR_SetString (pr, name);
+	}
+	R_INT (pr) = -1;
 }
 
 bi (Model_NumClips)
@@ -331,12 +356,13 @@ bi (Model_GetInverseMotors)
 	qfZoneScoped (true);
 
 	auto model = rua_model_get_model (pr, _res);
+	R_INT (pr) = 0;
 	if (model) {
 		auto motors = (qfm_motor_t *) P_GPOINTER (pr, 1);
 		auto m = (qfm_motor_t *) ((byte *) model + model->inverse.offset);
 		memcpy (motors, m, model->inverse.count * sizeof (motors[0]));
 
-		R_INT (pr) = 1;
+		R_INT (pr) = -1;
 	}
 }
 
@@ -631,6 +657,7 @@ static builtin_t builtins[] = {
 	bi(Model_Name,             1, p(int)),
 	bi(Model_NumJoints,        1, p(int)),
 	bi(Model_GetJoints,        2, p(int), p(ptr)),
+	bi(Model_GetPoseJoints,    2, p(int), p(ptr)),
 	bi(Model_NumClips,         1, p(int)),
 	bi(Model_GetInverseMotors, 2, p(int), p(ptr)),
 	bi(Model_GetClipInfo,      2, p(int), p(uint)),
