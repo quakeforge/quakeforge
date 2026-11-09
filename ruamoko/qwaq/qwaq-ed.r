@@ -1018,9 +1018,6 @@ load_scene (plitem_t *scene_item, scene_t scene)
 				set_component (e, qent_anim, &anim);
 				set_update (e, update_anim);
 				Entity_SetAnimstate (ent, anim);
-				auto a = Entity_GetAnimation (ent);
-				a.debug_bone = ~0u;
-				Entity_SetAnimation (ent, a);
 			}
 			if (e != ~0 && ent_init.show_armature) {
 				printf ("show_armature: %x\n", e);
@@ -1030,6 +1027,9 @@ load_scene (plitem_t *scene_item, scene_t scene)
 					set_update (e, update_show_armature);
 				}
 			}
+			auto a = Entity_GetAnimation (ent);
+			a.debug_bone = ~0u;
+			Entity_SetAnimation (ent, a);
 		}
 		if (ent_init.target) {
 			add_target (ent);
