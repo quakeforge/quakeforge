@@ -347,7 +347,7 @@ qfa_extract_root_motion (model_t *mod)
 	auto text = ((char *) model + model->text.offset);
 	uint16_t last_joint = channels[0].data / sizeof (qfm_joint_t);
 	if (last_joint != 0) {
-		Sys_Printf ("%s: first channel doesn't affect root", mod->name);
+		Sys_Printf ("%s: first channel doesn't affect root\n", mod->name);
 		goto no_extract;
 	}
 	for (uint32_t i = 0; i < model->channels.count; i++) {
@@ -356,7 +356,7 @@ qfa_extract_root_motion (model_t *mod)
 			if (last_joint != 0) {
 				// If the root channels aren't grouped together, removing them
 				// from the original model is more complicated.
-				Sys_Printf ("%s: root channels dispersed", mod->name);
+				Sys_Printf ("%s: root channels dispersed\n", mod->name);
 				goto no_extract;
 			}
 			num_channels++;
