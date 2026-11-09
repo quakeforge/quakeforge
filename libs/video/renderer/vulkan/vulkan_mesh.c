@@ -368,7 +368,7 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	}
 
 	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
-	auto bone_descs = mctx->null_bone_sets;
+	auto bone_desc = mctx->null_bone_set;
 
 	auto anim = Entity_GetAnimation (ent);
 
@@ -378,7 +378,8 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 		auto anim = *(animstate_t **) Ent_GetComponent (ent.id, c_animstate,
 														ent.reg);
 		auto rd = (qfv_anim_t *) ((byte *) anim + anim->render_data);
-		bone_descs = (VkDescriptorSet *) ((byte *) rd + rd->descriptors);
+		auto descs = (VkDescriptorSet *) ((byte *) rd + rd->descriptors);
+		bone_desc = descs[ctx->curFrame];
 		auto mp = qfa_matrix_palette (anim);
 		uint32_t num_joints = model->joints.count;
 		size_t size = sizeof (vec4f_t[num_joints * 3]);
@@ -400,6 +401,8 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 						  &bufferBarriers[qfv_BB_ShaderRO_to_TransferWrite],
 						  &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
 		QFV_PacketSubmit (packet);
+	} else if (rmesh->def_pose) {
+		bone_desc = rmesh->def_pose;
 	} else {
 		enabled_mask &= ~((1 << qfm_joints) | (1 << qfm_weights));
 	}
@@ -423,7 +426,7 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, bindingCount, buffers, offsets);
 	dfunc->vkCmdBindIndexBuffer (cmd, rmesh->index_buffer, 0, index_type);
 	VkDescriptorSet sets[] = {
-		bone_descs[ctx->curFrame],
+		bone_desc,
 		skin ? skin->descriptor : nullptr,
 	};
 	auto bound_skin = skin;
@@ -574,8 +577,6 @@ mesh_startup (exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	auto rctx = ctx->render_context;
-	uint32_t frames = rctx->frames.size;
 	auto mctx = ctx->mesh_context;
 	mctx->sampler = QFV_Render_Sampler (ctx, "qskin_sampler");
 
@@ -610,9 +611,7 @@ mesh_startup (exprctx_t *ectx)
 				.range = VK_WHOLE_SIZE,
 			},
 		}, 0, 0);
-	for (uint32_t i = 0; i < frames; i++) {
-		mctx->null_bone_sets[i] = bone_desc;
-	}
+	mctx->null_bone_set = bone_desc;
 
 	uint32_t default_skin = QFV_TexFindTexture (ctx, "default_skin");
 	mctx->default_skin = (qfv_skin_t) {
@@ -627,22 +626,17 @@ mesh_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto rctx = ctx->render_context;
-	uint32_t frames = rctx->frames.size;
 
 	qfvPushDebug (ctx, "mesh init");
 
 	QFV_Render_AddShutdown (ctx, mesh_shutdown);
 	QFV_Render_AddStartup (ctx, mesh_startup);
 
-	size_t size = sizeof (meshctx_t)
-				+ sizeof (VkDescriptorSet[frames]);
+	size_t size = sizeof (meshctx_t);
 	meshctx_t *mctx = malloc (size);
 	ctx->mesh_context = mctx;
 
 	*mctx = (meshctx_t) {
-		.null_bone_sets = (VkDescriptorSet *) &mctx[1],
-
 		.matrix_base  = QFV_GetBlackboardVar (ctx, "MatrixBase"),
 		.mat          = QFV_GetBlackboardVar (ctx, "Model"),
 		.enabled_mask = QFV_GetBlackboardVar (ctx, "enabled_mask"),

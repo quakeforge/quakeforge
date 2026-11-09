@@ -56,6 +56,7 @@ typedef struct qfv_mesh_s {
 	VkBuffer    geom_buffer;
 	VkBuffer    rend_buffer;
 	VkBuffer    index_buffer;
+	VkDescriptorSet def_pose;
 	uint32_t    resources;
 } qfv_mesh_t;
 
@@ -90,7 +91,7 @@ typedef struct meshctx_s {
 	struct qfv_dsmanager_s *dsmanager;
 	struct qfv_resource_s *resource;
 	VkBuffer     null_bone;
-	VkDescriptorSet *null_bone_sets;
+	VkDescriptorSet null_bone_set;
 	qfv_skin_t   default_skin;
 
 	uint32_t   *matrix_base;

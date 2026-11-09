@@ -172,6 +172,76 @@ static void
 vulkan_mesh_init_bones (mod_mesh_ctx_t *mesh_ctx, qfv_resource_t *bones,
 					   vulkan_ctx_t *ctx)
 {
+	auto model = mesh_ctx->qf_model;
+	uint32_t num_bones = model->pose.count;
+	if (!num_bones) {
+		return;
+	}
+	auto joints = (qfm_joint_t *)((byte *) model + model->pose.offset);
+	auto inv = (qfm_motor_t *)((byte *) model + model->inverse.offset);
+	qfm_motor_t pose[num_bones];
+	for (uint32_t i = 0; i < num_bones; i++) {
+		pose[i] = qfm_make_motor (joints[i]);
+		if (joints[i].parent >= 0) {
+			pose[i] = qfm_motor_mul (pose[joints[i].parent], pose[i]);
+		}
+	}
+	for (uint32_t i = 0; i < num_bones; i++) {
+		pose[i] = qfm_motor_mul (pose[i], inv[i]);
+	}
+	//FIXME use motors in the shader
+	size_t size = sizeof (vec4f_t[num_bones * 3]);
+	auto packet = QFV_PacketAcquire (ctx->staging, "defaul pose");
+	vec4f_t *bone_data = QFV_PacketExtend (packet, size);
+	for (uint32_t i = 0; i < num_bones; i++) {
+		auto    b = &bone_data[i * 3];
+		mat4f_t f;
+		qfm_motor_to_mat (f, pose[i]);
+		mat4ftranspose (f, f);
+		memcpy (b, f, 3 * sizeof (vec4f_t));
+	}
+	auto buffer = bones->objects[0].buffer.buffer;
+	QFV_PacketCopyBuffer (packet, buffer, 0,
+						  &bufferBarriers[qfv_BB_ShaderRO_to_TransferWrite],
+						  &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRO]);
+	QFV_PacketSubmit (packet);
+}
+
+static void
+setup_bone_descriptors (VkDescriptorSet *bone_descs, int num_sets,
+						VkBuffer bones_buffer, uint32_t num_bones,
+						vulkan_ctx_t *ctx)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto mctx = ctx->mesh_context;
+
+	size_t      bones_size = sizeof (vec4f_t[num_bones * 3]);
+	if (!bones_size) {
+		bones_size = sizeof (vec4f_t[3]);
+	}
+
+	if (!bones_buffer) {
+		bones_buffer = mctx->null_bone;
+	}
+
+	VkDescriptorBufferInfo bufferInfo[num_sets];
+	VkWriteDescriptorSet write[num_sets];
+	for (int i = 0; i < num_sets; i++) {
+		bufferInfo[i] = (VkDescriptorBufferInfo) {
+			.buffer = bones_buffer,
+			.offset = i * bones_size,
+			.range = bones_size,
+		};
+		write[i] = (VkWriteDescriptorSet) {
+			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = bone_descs[i],
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+			.pBufferInfo = &bufferInfo[i],
+		};
+	}
+	dfunc->vkUpdateDescriptorSets (device->dev, num_sets, write, 0, 0);
 }
 
 static void
@@ -186,6 +256,10 @@ setup_bone_resources (qfv_resource_t *bones, qfv_resobj_t *bone_obj,
 		.num_objects = 1,
 		.objects = bone_obj,
 	};
+
+	if (!num_joints) {
+		num_joints = 1;
+	}
 
 	size_t joint_size = 3 * sizeof (vec4f_t);
 	bone_obj[0] = (qfv_resobj_t) {
@@ -249,6 +323,7 @@ void
 Vulkan_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
+	auto mctx = ctx->mesh_context;
 	auto rctx = ctx->render_context;
 
 	mesh_ctx->mod->clear = vulkan_mesh_clear;
@@ -314,8 +389,14 @@ Vulkan_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx, vulkan_ctx_t *ctx)
 						  num_vertices, num_indices,
 						  rctx->frames.size, ctx, mesh_ctx);
 	QFV_CreateResource (device, mesh);
+	VkDescriptorSet def_pose = 0;
 	if (bones[0].objects[0].buffer.size) {
 		QFV_CreateResource (device, bones);
+
+		auto bones_buffer = bones[0].objects[0].buffer.buffer;
+		def_pose = QFV_DSManager_AllocSet (mctx->dsmanager);
+		setup_bone_descriptors (&def_pose, 1, bones_buffer,
+								qf_model->pose.count, ctx);
 	}
 
 	qf_model->render_data = (byte *) rmesh - (byte *) qf_model;
@@ -323,6 +404,7 @@ Vulkan_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx, vulkan_ctx_t *ctx)
 		.geom_buffer = mesh->objects[0].buffer.buffer,
 		.rend_buffer = mesh->objects[1].buffer.buffer,
 		.index_buffer = mesh->objects[2].buffer.buffer,
+		.def_pose = def_pose,
 		.resources = (byte *) resources - (byte *) rmesh,
 	};
 
@@ -350,38 +432,6 @@ Vulkan_Mod_MeshFinish (mod_mesh_ctx_t *mesh_ctx, vulkan_ctx_t *ctx)
 		auto res = &resources[i];
 		res->objects = (qfv_resobj_t *)((byte *) res->objects - (byte *) res);
 	}
-}
-
-static void
-setup_bone_descriptors (VkDescriptorSet *bone_descs, int num_sets,
-						VkBuffer bones_buffer, size_t bones_size,
-						vulkan_ctx_t *ctx)
-{
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto mctx = ctx->mesh_context;
-
-	if (!bones_buffer) {
-		bones_buffer = mctx->null_bone;
-	}
-
-	VkDescriptorBufferInfo bufferInfo[num_sets];
-	VkWriteDescriptorSet write[num_sets];
-	for (int i = 0; i < num_sets; i++) {
-		bufferInfo[i] = (VkDescriptorBufferInfo) {
-			.buffer = bones_buffer,
-			.offset = i * bones_size,
-			.range = bones_size,
-		};
-		write[i] = (VkWriteDescriptorSet) {
-			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = bone_descs[i],
-			.descriptorCount = 1,
-			.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-			.pBufferInfo = &bufferInfo[i],
-		};
-	}
-	dfunc->vkUpdateDescriptorSets (device->dev, num_sets, write, 0, 0);
 }
 
 size_t
@@ -423,18 +473,12 @@ Vulkan_animstate_create (animstate_t *animstate, vulkan_ctx_t *ctx)
 	};
 
 	int num_sets = frames;
-
 	for (int i = 0; i < num_sets; i++) {
 		auto set = QFV_DSManager_AllocSet (mctx->dsmanager);
 		bone_descs[i] = set;
 	}
-
-	size_t      bones_size = sizeof (vec4f_t[animstate->num_joints * 3]);
-	if (!bones_size) {
-		bones_size = sizeof (vec4f_t[3]);
-	}
-	setup_bone_descriptors (bone_descs, num_sets, bones_buffer, bones_size,
-							ctx);
+	setup_bone_descriptors (bone_descs, num_sets, bones_buffer,
+							animstate->num_joints, ctx);
 }
 
 void
