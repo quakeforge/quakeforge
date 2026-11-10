@@ -35,6 +35,19 @@ dump_model (model_t model, string name)
 	obj_free (joints);
 }
 
+arm_motor_t
+scaled_mul (arm_motor_t a, arm_motor_t b)
+{
+	float s = a.scale.x;
+	auto m = b.m;
+	m.bvecp *= s;
+	m.qvec *= s;
+	return {
+		.m = a.m * m,
+		.scale = a.scale * b.scale,
+	};
+}
+
 armature_t *
 make_armature (model_t model)
 {
@@ -85,9 +98,9 @@ make_armature (model_t model)
 		arm.pose[i].m = make_motor (vec4(arm.joints[i].translate, 0),
 									arm.joints[i].rotate);
 		arm.pose[i].scale = arm.joints[i].scale;
-		if (arm.joints[i].parent >= 0) {
-			arm.pose[i].m = arm.pose[arm.joints[i].parent].m * arm.pose[i].m;
-			arm.pose[i].scale *= arm.pose[arm.joints[i].parent].scale;
+		int parent = arm.joints[i].parent;
+		if (parent >= 0) {
+			arm.pose[i] = scaled_mul (arm.pose[parent], arm.pose[i]);
 		}
 		string name = *(string *)&arm.joints[i].name;//FIXME
 		bool IK = str_str (name, "IK") >= 0;
@@ -151,13 +164,11 @@ make_armature (model_t model)
 			arm.pose[i] = p;
 			int parent = pose[i].parent;
 			if (parent >= 0) {
-				arm.pose[i].m = arm.pose[parent].m * arm.pose[i].m;
-				arm.pose[i].scale *= arm.pose[parent].scale;
+				arm.pose[i] = scaled_mul (arm.pose[parent], arm.pose[i]);
 			}
 		}
 		for (int i = 0; i < num_joints; i++) {
-			arm.pose[i].m = arm.pose[i].m * inv[i].m;
-			arm.pose[i].scale *= inv[i].scale;
+			arm.pose[i] = scaled_mul (arm.pose[i], inv[i]);
 		}
 	} else {
 		for (int i = 0; i < num_joints; i++) {

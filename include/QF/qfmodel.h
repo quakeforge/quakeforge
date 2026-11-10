@@ -279,16 +279,20 @@ qfm_motor_mul (qfm_motor_t m1, qfm_motor_t m2)
 	auto  b1 = loadxyzf (m1.q);
 	auto  c1 = loadxyzf (m1.t);
 	float d1 = m1.t[3];
+	auto  s1 = loadvec3f (m1.s);
 	float a2 = m2.q[3];
 	auto  b2 = loadxyzf (m2.q);
-	auto  c2 = loadxyzf (m2.t);
-	float d2 = m2.t[3];
+	// scale translation (c2 and d2) (FIXME assumes uniform scale (though
+	// non-uniform can never be perfect due to shear))
+	auto  c2 = loadxyzf (m2.t) * s1[0];
+	float d2 = m2.t[3] * s1[0];
+	auto  s2 = loadvec3f (m2.s);
 
 	float a = a1*a2 - dotf (b1,b2)[3];
 	auto  b = a1*b2 + a2*b1 - crossf (b1,b2);
 	auto  c = a1*c2 + a2*c1 - crossf (b1,c2) - crossf (c1,b2) - d1*b2 - d2*b1;
 	float d = a1*d2 + a2*d1 + dotf(b1,c2)[3] + dotf(c1,b2)[3];
-	auto s = loadvec3f (m1.s) * loadvec3f (m2.s);
+	auto  s = s1 * s2;
 	return (qfm_motor_t) {
 		.q = { VectorExpand (b), a },
 		.t = { VectorExpand (c), d },
