@@ -222,20 +222,43 @@ QFV_GenerateMipMaps (qfv_device_t *device, VkCommandBuffer cmd,
 		.pImageMemoryBarriers = &fnl,
 	};
 
-	VkImageBlit blit = {
-		{VK_IMAGE_ASPECT_COLOR_BIT, first_mip, 0, layers},
-		{{0, 0, 0}, {width, height, 1}},
-		{VK_IMAGE_ASPECT_COLOR_BIT, first_mip + 1, 0, layers},
-		{{0, 0, 0}, {max (width >> 1, 1), max (height >> 1, 1), 1}},
+	VkImageBlit2 blit = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2,
+		.srcSubresource = {
+			.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			.mipLevel = first_mip,
+			.layerCount = layers
+		},
+		.srcOffsets = {
+			[1] = { .x = width, .y = height, .z = 1},
+		},
+		.dstSubresource = {
+			.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			.mipLevel = first_mip + 1,
+			.layerCount = layers
+		},
+		.dstOffsets = {
+			[1] = {
+				.x = max (width >> 1, 1),
+				.y = max (height >> 1, 1),
+				.z = 1},
+		},
+	};
+
+	VkBlitImageInfo2 blit_info = {
+		.sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
+		.srcImage = image,
+		.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		.dstImage = image,
+		.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		.regionCount = 1,
+		.pRegions = &blit,
+		.filter = VK_FILTER_LINEAR,
 	};
 
 	while (--mips > 0) {
 		dfunc->vkCmdPipelineBarrier2 (cmd, &pre_dep);
-		dfunc->vkCmdBlitImage (cmd,
-							   image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-							   image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-							   1, &blit, VK_FILTER_LINEAR);
-
+		dfunc->vkCmdBlitImage2 (cmd, &blit_info);
 		dfunc->vkCmdPipelineBarrier2 (cmd, &pst_dep);
 
 		blit.srcSubresource.mipLevel++;
