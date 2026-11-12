@@ -434,9 +434,15 @@ Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator,
 		case IDHEADER_SP2:			// Type 2: Quake 2 .sp2
 //			Mod_LoadSP2 (mod, buf);
 			break;
-		default:					// Version 29: Quake 1 .bsp
-									// Version 38: Quake 2 .bsp
+		case 29:					// Version 29: Quake 1 .bsp
+		case 38:					// Version 38: Quake 2 .bsp
 			Mod_LoadBrushModel (mod, buf, model_registry->sched, hunk);
+			break;
+		default:
+			if (mod_funcs) {
+				//FIXME
+				mod_funcs->Mod_LoadMesh (mod, (byte*)buf, qfs_filesize, hunk);
+			}
 			break;
 	}
 	free (buf);
