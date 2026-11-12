@@ -274,7 +274,7 @@
 		texture = pixpal.meta;
 		target = true;
 		extract_root_motion = true;
-		show_armature = true;
+		//show_armature = true;
 		anim = "rig|standing idle_RM";
 	},
 	{
@@ -287,6 +287,28 @@
 		extract_root_motion = true;
 		show_armature = true;
 		anim = "rig|standing taunt battlecry_RM";
+	},
+	{
+		name = "Girl3";
+		model = progs/girl18.qfm;
+		position = (2.5, 2.5, 0, 1);
+		entqueue = pixpal;
+		texture = pixpal.meta;
+		target = true;
+		extract_root_motion = true;
+		show_armature = true;
+		//anim = "rigAction";
+	},
+	{
+		name = "Girl4";
+		model = progs/girl19.qfm;
+		position = (2.5, 0.5, 0, 1);
+		entqueue = pixpal;
+		texture = pixpal.meta;
+		target = true;
+		extract_root_motion = true;
+		show_armature = true;
+		anim = "rigAction";
 	},
 	{
 		name = "Mr Fixit";
