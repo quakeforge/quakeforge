@@ -448,8 +448,19 @@ class Mesh:
         self.raw_joints = []
         self.raw_weights = []
 
+        self.POS    = struct.Struct('<3f')
+        self.NORM   = struct.Struct('<3f')
+        self.TANG   = struct.Struct('<4f')
+        self.UV     = struct.Struct('<2f')
+        self.JOINT  = struct.Struct('<4B')
+        self.WEIGHT = struct.Struct('<4B')
+        if skel and len(skel.joints) > 256:
+            self.JOINT  = struct.Struct('<4H')
+
         self.vertex_groups = m_obj.vertex_groups
-        self.wmat = skel.armature.matrix_world.inverted() @ m_obj.matrix_world
+        self.wmat = Matrix.Identity(4)
+        if skel:
+            self.wmat = skel.armature.matrix_world.inverted() @ m_obj.matrix_world
         self.tmat = self.wmat.to_3x3()
         # Use the cofactor matrix instead of the inverse transpose so scaling
         # to 0 on one axis doesn't result in broken normals
@@ -495,24 +506,25 @@ class Mesh:
         tang = tang.normalized() if tang else tang
         bitang_sign = loop.bitangent_sign
         uv = Vector((uv.x, 1 - uv.y))
-        j_idx, w_val = self.make_joints(v, skel)
-        v_key = (tuple(pos), tuple(norm), tuple(uv),
-                 tuple(j_idx), tuple(w_val))
+        v_key = (tuple(pos), tuple(norm), tuple(uv))
+        if skel:
+            j_idx, w_val = self.make_joints(v, skel)
+            v_key = v_key + (tuple(j_idx), tuple(w_val))
         if v_key not in self.unique_verts:
             self.unique_verts[v_key] = self.vert_counter
             self.bounds.min = vmin (self.bounds.min, pos)
             self.bounds.max = vmax (self.bounds.max, pos)
-            self.pos_bytes.extend(struct.pack('<3f', *pos))
-            self.norm_bytes.extend(struct.pack('<3f', *norm))
-            self.tang_bytes.extend(struct.pack('<4f', *tang, bitang_sign))
-            self.uv_bytes.extend(struct.pack('<2f', uv[0], uv[1]))
-            self.joint_bytes.extend(struct.pack('<4B', *j_idx))
-            self.weight_bytes.extend(struct.pack('<4B', *w_val))
+            self.pos_bytes.extend(self.POS.pack(*pos))
+            self.norm_bytes.extend(self.NORM.pack(*norm))
+            self.tang_bytes.extend(self.TANG.pack(*tang, bitang_sign))
+            self.uv_bytes.extend(self.UV.pack(*uv))
+            if skel:
+                self.joint_bytes.extend(self.JOINT.pack(*j_idx))
+                self.weight_bytes.extend(self.WEIGHT.pack(*w_val))
+                self.raw_joints.append(tuple(j_idx))
+                self.raw_weights.append(tuple(w / 255.0 for w in w_val))
             self.vert_counter += 1
-
             self.raw_positions.append(tuple(pos))
-            self.raw_joints.append(tuple(j_idx))
-            self.raw_weights.append(tuple(w / 255.0 for w in w_val))
         return self.unique_verts[v_key]
 
     def compile_mesh(self, skel, mesh_data):
@@ -561,25 +573,24 @@ class PackedMesh:
 
 def export_qfm(context, filepath, fps=30.0):
     """Main pipeline execution wrapper loops over selected components with animations."""
-    objs = context.selected_objects
-    armature = next((o for o in objs if o.type == 'ARMATURE'), None)
-    #FIXME support exporting meshes without an armature
-    if not armature:
-        print("Error: No armature highlighted in selection.")
-        return
 
     text = TextBlock()
-    skel = Skeleton(armature, text)
 
-    anim_data = armature.animation_data
-    old_action = anim_data.action if anim_data else None
-    old_frame = context.scene.frame_current
-    try:
-        anim = Animation(skel, fps, context)
-    finally:
-        if anim_data:
-            anim_data.action = old_action
-        context.scene.frame_current = old_frame
+    objs = context.selected_objects
+    armature = next((o for o in objs if o.type == 'ARMATURE'), None)
+    skel = None
+    anim = None
+    if armature:
+        skel = Skeleton(armature, text)
+        anim_data = armature.animation_data
+        old_action = anim_data.action if anim_data else None
+        old_frame = context.scene.frame_current
+        try:
+            anim = Animation(skel, fps, context)
+        finally:
+            if anim_data:
+                anim_data.action = old_action
+            context.scene.frame_current = old_frame
 
     mesh_objects = [o for o in objs if o.type == 'MESH']
     packed_meshes = []
@@ -601,12 +612,17 @@ def export_qfm(context, filepath, fps=30.0):
         if (pm):
             packed_meshes.append(pm)
         m_obj.to_mesh_clear()
-    model_frame = skel.compute_bounds(packed_meshes, anim.frames)
     def_pose_bounds = DynObj()
-    def_pose_bounds.min = model_frame.min[0]
-    def_pose_bounds.max = model_frame.max[0]
-    model_frame.min = model_frame.min[1:]
-    model_frame.max = model_frame.max[1:]
+    if skel and packed_meshes:
+        model_frame = skel.compute_bounds(packed_meshes, anim.frames)
+        def_pose_bounds.min = model_frame.min[0]
+        def_pose_bounds.max = model_frame.max[0]
+        model_frame.min = model_frame.min[1:]
+        model_frame.max = model_frame.max[1:]
+    else:
+        model_frame = None
+        def_pose_bounds.min = Vector((0, 0, 0))
+        def_pose_bounds.max = Vector((0, 0, 0))
 
     binary_payload = bytearray()
 
@@ -616,70 +632,82 @@ def export_qfm(context, filepath, fps=30.0):
     binary_payload = bytearray(pad_bytes(binary_payload))
 
     # Joints Chunk
-    ofs_joints = MODEL.size + len(binary_payload)
-    for j in skel.joints:
-        binary_payload.extend(JOINT.pack(*j))
-    binary_payload = bytearray(pad_bytes(binary_payload))
+    ofs_joints = 0
+    num_joints = 0
+    ofs_inverse = 0
+    ofs_pose = 0
+    if skel:
+        ofs_joints = MODEL.size + len(binary_payload)
+        num_joints = len(skel.joints)
+        for j in skel.joints:
+            binary_payload.extend(JOINT.pack(*j))
+        binary_payload = bytearray(pad_bytes(binary_payload))
 
-    # Inverse Bind Motors Chunk
-    ofs_inverse = MODEL.size + len(binary_payload)
-    for inv in skel.inverse:
-        binary_payload.extend(pack_motor(inv))
-    binary_payload = bytearray(pad_bytes(binary_payload))
+        # Inverse Bind Motors Chunk
+        ofs_inverse = MODEL.size + len(binary_payload)
+        for inv in skel.inverse:
+            binary_payload.extend(pack_motor(inv))
+        binary_payload = bytearray(pad_bytes(binary_payload))
 
-    # Rest Posture Base Pose Chunk
-    ofs_pose = MODEL.size + len(binary_payload)
-    for idx, p in enumerate(skel.poses):
-        loc, rot, scale = p
-        joint_name = skel.joints[idx][3]
-        joint_parent = skel.joints[idx][11]
-        binary_payload.extend(JOINT.pack(
-            loc.x, loc.y, loc.z, joint_name,
-            rot.x, rot.y, rot.z, rot.w,
-            scale.x, scale.y, scale.z, joint_parent
-        ))
-    binary_payload = bytearray(pad_bytes(binary_payload))
+        # Rest Posture Base Pose Chunk
+        ofs_pose = MODEL.size + len(binary_payload)
+        for idx, p in enumerate(skel.poses):
+            loc, rot, scale = p
+            joint_name = skel.joints[idx][3]
+            joint_parent = skel.joints[idx][11]
+            binary_payload.extend(JOINT.pack(
+                loc.x, loc.y, loc.z, joint_name,
+                rot.x, rot.y, rot.z, rot.w,
+                scale.x, scale.y, scale.z, joint_parent
+            ))
+        binary_payload = bytearray(pad_bytes(binary_payload))
 
     # Quantized Animation Scalar Channels map chunk
-    ofs_channels = MODEL.size + len(binary_payload) if len(anim.channels_bin) > 0 else 0
-    binary_payload.extend(anim.channels_bin)
-    binary_payload = bytearray(pad_bytes(binary_payload))
+    ofs_channels = 0
+    num_channels = 0
+    if anim and len(anim.channels_list):
+        ofs_channels = MODEL.size + len(binary_payload)
+        num_channels = len(anim.channels_list)
+        binary_payload.extend(anim.channels_bin)
+        binary_payload = bytearray(pad_bytes(binary_payload))
 
     # Animation structures alignment tracking
     ofs_clips = 0
     ofs_keyframes = 0
     ofs_framedata = 0
     ofs_frames = 0
-    if len(anim.clips_bin) > 0:
+    num_clips = 0
+    if anim and len(anim.framedata_bin) > 0:
+        num_clips = len(anim.actions)
         ofs_framedata = MODEL.size + len(binary_payload)
-    binary_payload.extend(anim.framedata_bin)
-    binary_payload = bytearray(pad_bytes(binary_payload))
-
-    ofs_clips = MODEL.size + len(binary_payload)
-    binary_payload.extend(anim.clips_bin)
-    binary_payload = bytearray(pad_bytes(binary_payload))
-
-    ofs_keyframes = MODEL.size + len(binary_payload)
-    # Shift keyframe payload tracking offsets relative to global file position
-    mutable_keyframes = bytearray(anim.keyframes_bin)
-    for i in range(0, len(mutable_keyframes), KEYFRAME.size):
-        etime, kf_offset = KEYFRAME.unpack(mutable_keyframes[i:i+KEYFRAME.size])
-        mutable_keyframes[i:i+KEYFRAME.size] = KEYFRAME.pack(etime, ofs_framedata + kf_offset)
-    binary_payload.extend(mutable_keyframes)
-    binary_payload = bytearray(pad_bytes(binary_payload))
-
-    frames = [FRAME.pack(0, 0, *min, *max)
-              for min,max in zip(model_frame.min, model_frame.max)]
-    if frames:
-        ofs_frames = MODEL.size + len(binary_payload)
-        binary_payload.extend(b"".join(frames))
+        binary_payload.extend(anim.framedata_bin)
         binary_payload = bytearray(pad_bytes(binary_payload))
+        ofs_clips = MODEL.size + len(binary_payload)
+        binary_payload.extend(anim.clips_bin)
+        binary_payload = bytearray(pad_bytes(binary_payload))
+
+        ofs_keyframes = MODEL.size + len(binary_payload)
+        # Shift keyframe payload tracking offsets relative to global file position
+        mutable_keyframes = bytearray(anim.keyframes_bin)
+        for i in range(0, len(mutable_keyframes), KEYFRAME.size):
+            etime, kf_offset = KEYFRAME.unpack(mutable_keyframes[i:i+KEYFRAME.size])
+            mutable_keyframes[i:i+KEYFRAME.size] = KEYFRAME.pack(etime, ofs_framedata + kf_offset)
+        binary_payload.extend(mutable_keyframes)
+        binary_payload = bytearray(pad_bytes(binary_payload))
+
+    if model_frame:
+        frames = [FRAME.pack(0, 0, *min, *max)
+                  for min,max in zip(model_frame.min, model_frame.max)]
+        if frames:
+            ofs_frames = MODEL.size + len(binary_payload)
+            binary_payload.extend(b"".join(frames))
+            binary_payload = bytearray(pad_bytes(binary_payload))
 
     # Process individual Mesh Chunks internally
     mesh_headers = []
     local_mesh_payloads = bytearray()
 
-    geom_stride = 20
+    geom_stride = 20 if skel else 12
     render_stride = 36
     for pm in packed_meshes:
         local_mesh_stream = bytearray()
@@ -707,17 +735,24 @@ def export_qfm(context, filepath, fps=30.0):
 
         ofs_render_base = len(geom_stream)
 
-        descriptors = [
-            # Set 0: Geometry Stream (Stride = 20)
+        # Set 0: Geometry Stream (Stride = 12 or 20)
+        pdesc = [
             qfm_attrdesc( 0, geom_stride, qfm_position, 0, 0, qfm_f32, 3),
-            qfm_attrdesc(12, geom_stride, qfm_joints,   0, 0, qfm_u8,  4),#FIXME support u16
-            qfm_attrdesc(16, geom_stride, qfm_weights,  0, 0, qfm_u8n, 4),
-
-            # Set 2: Rendering Stream (Stride = 36)
+        ]
+        jdesc = []
+        if skel:
+            jtype = qfm_u16 if len(skel.joints) > 256 else qfm_u8
+            jdesc = [
+                qfm_attrdesc(12, geom_stride, qfm_joints,   0, 0, jtype,  4),
+                qfm_attrdesc(16, geom_stride, qfm_weights,  0, 0, qfm_u8n, 4),
+            ]
+        # Set 2: Rendering Stream (Stride = 36)
+        rdesc = [
             qfm_attrdesc(ofs_render_base + 0,  render_stride, qfm_normal,   2, 0, qfm_f32, 3),
             qfm_attrdesc(ofs_render_base + 12, render_stride, qfm_tangent,  2, 0, qfm_f32, 4),
             qfm_attrdesc(ofs_render_base + 28, render_stride, qfm_texcoord, 2, 0, qfm_f32, 2),
         ]
+        descriptors = pdesc + jdesc + rdesc
         desc_bytes = b"".join(ATTRDESC.pack(*d) for d in descriptors)
 
         # --- PHASE 3: CONCATENATE CHUNKS WITH RELATIVE DISPLACEMENTS ---
@@ -777,12 +812,12 @@ def export_qfm(context, filepath, fps=30.0):
     # Compile dynamic structural header table layout allocations
     header_bytes = MODEL.pack(
         ofs_meshes, len(packed_meshes),
-        ofs_joints, len(skel.joints),
-        ofs_inverse, len(skel.joints),
-        ofs_pose, len(skel.joints),
-        ofs_channels, len(anim.channels_list) if anim.channels_bin else 0,
+        ofs_joints, num_joints,
+        ofs_inverse, num_joints,
+        ofs_pose, num_joints,
+        ofs_channels, num_channels,
         ofs_text, len(text.buffer),
-        len(anim.actions), ofs_clips, ofs_keyframes, ofs_frames,
+        num_clips, ofs_clips, ofs_keyframes, ofs_frames,
         *def_pose_bounds.min, *def_pose_bounds.max,
         0, 0 # crc, render_data
     )
