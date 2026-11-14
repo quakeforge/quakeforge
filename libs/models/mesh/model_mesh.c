@@ -183,7 +183,9 @@ Mod_LoadMeshModel (model_t *mod, byte *buffer, size_t buf_size, memhunk_t *hunk)
 		.hunk = hunk,
 		.in = in,
 	};
-	m_funcs->Mod_MeshFinish (&mesh_ctx);
+	if (model->meshes.count) {
+		m_funcs->Mod_MeshFinish (&mesh_ctx);
+	}
 
 	memset (&mod->cache, 0, sizeof (mod->cache));
 
