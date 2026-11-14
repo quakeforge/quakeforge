@@ -104,6 +104,7 @@ string Model_Name (model_t model);
 int Model_NumJoints (model_t model);
 bool Model_GetJoints (model_t model, void *joints);
 bool Model_GetPoseJoints (model_t model, void *joints);
+mat2x3 Model_GetPoseBounds (model_t model);
 int Model_NumClips (model_t model);
 bool Model_GetInverseMotors (model_t model, void *motors);
 clipinfo_t Model_GetClipInfo (model_t model, uint clip);
@@ -125,5 +126,6 @@ void qfa_set_clip_weight (animstate_t anim, uint clip, float weight);
 void qfa_set_clip_loop (animstate_t anim, uint clip, bool loop);
 void qfa_set_clip_disabled (animstate_t anim, uint clip, bool disabled);
 void qfa_get_pose_motors (animstate_t anim, void *motors);
+mat2x3 qfa_get_pose_bounds (animstate_t anim);
 
 #endif//__ruamoko_scene_h

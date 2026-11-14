@@ -106,6 +106,8 @@ typedef struct animstate_s {
 	uint32_t    event_spans;		// eventspan_t[]
 	uint32_t    materials;
 	uint32_t    render_data;
+	vec3_t      mins;
+	vec3_t      maxs;
 	float       play_rate;
 	double      time;
 } __attribute__((aligned (16))) animstate_t;

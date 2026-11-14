@@ -195,6 +195,8 @@ typedef struct qf_model_s {
 	qfm_loc_t   channels;	// qfm_channel_t
 	qfm_loc_t   text;		// all text data for the model
 	anim_t      anim;		// joint animations
+	vec3_t      bounds_min;	// bounds for default pose
+	vec3_t      bounds_max;
 	uint16_t    crc;
 	uint32_t    render_data;
 } __attribute__((aligned (16))) qf_model_t;
@@ -207,6 +209,7 @@ typedef struct qf_model_s {
 
 QFMINLINE clipdesc_t *qfm_clipdesc (qf_model_t *model, uint32_t clip);
 QFMINLINE keyframe_t *qfm_keyframe (qf_model_t *model, uint32_t frame);
+QFMINLINE qfm_frame_t *qfm_frame (qf_model_t *model, uint32_t frame);
 
 QFMINLINE uint32_t qfm_uniform_scale (const vec3_t s)
 	__attribute__((const));
@@ -235,6 +238,12 @@ QFMINLINE keyframe_t *
 qfm_keyframe (qf_model_t *model, uint32_t frame)
 {
 	return &((keyframe_t *) ((byte *) model + model->anim.keyframes))[frame];
+}
+
+QFMINLINE qfm_frame_t *
+qfm_frame (qf_model_t *model, uint32_t frame)
+{
+	return &((qfm_frame_t *) ((byte *) model + model->anim.data))[frame];
 }
 
 QFMINLINE uint32_t

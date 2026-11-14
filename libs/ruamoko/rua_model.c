@@ -43,6 +43,7 @@
 #include "QF/sizebuf.h"
 
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/entity.h"
 
 #include "rua_internal.h"
 
@@ -302,6 +303,25 @@ bi (Model_GetPoseJoints)
 		pose[i].name = PR_SetString (pr, name);
 	}
 	R_INT (pr) = -1;
+}
+
+bi (Model_GetPoseBounds)
+{
+	qfZoneScoped (true);
+	auto res = (rua_model_resources_t *) _res;
+	int  handle = P_INT (pr, 0);
+	auto h = rua_model_handle_get (res, handle);
+	auto mod = h->model;
+	auto model = mod->model;
+
+	if (mod->type != mod_mesh || !model->pose.count) {
+		R_PACKED (pr, ent_aabb_t) = (ent_aabb_t) {};
+		return;
+	}
+	R_PACKED (pr, ent_aabb_t) = (ent_aabb_t) {
+		{ VectorExpand (model->bounds_min) },
+		{ VectorExpand (model->bounds_max) },
+	};
 }
 
 bi (Model_NumClips)
@@ -638,6 +658,19 @@ bi (qfa_get_pose_motors)
 	memcpy (pose, motors, anim->num_joints * sizeof (pose[0]));
 }
 
+bi (qfa_get_pose_bounds)
+{
+	qfZoneScoped (true);
+	auto res = (rua_model_resources_t *) _res;
+	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
+	auto anim = rua_anim->animstate;
+
+	R_PACKED (pr, ent_aabb_t) = (ent_aabb_t) {
+		{ VectorExpand (anim->mins) },
+		{ VectorExpand (anim->maxs) },
+	};
+}
+
 animstate_t *
 Model_GetAnimstate (progs_t *pr, pr_int_t handle)
 {
@@ -658,6 +691,7 @@ static builtin_t builtins[] = {
 	bi(Model_NumJoints,        1, p(int)),
 	bi(Model_GetJoints,        2, p(int), p(ptr)),
 	bi(Model_GetPoseJoints,    2, p(int), p(ptr)),
+	bi(Model_GetPoseBounds,    2, p(int)),
 	bi(Model_NumClips,         1, p(int)),
 	bi(Model_GetInverseMotors, 2, p(int), p(ptr)),
 	bi(Model_GetClipInfo,      2, p(int), p(uint)),
@@ -676,6 +710,7 @@ static builtin_t builtins[] = {
 	bi(qfa_set_clip_loop,      2, p(int), p(int)),
 	bi(qfa_set_clip_disabled,  2, p(int), p(int)),
 	bi(qfa_get_pose_motors,    2, p(int), p(ptr)),
+	bi(qfa_get_pose_bounds,    1, p(int)),
 
 	{0}
 };

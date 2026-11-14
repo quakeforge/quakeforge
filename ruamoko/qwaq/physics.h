@@ -10,6 +10,7 @@ enum {
 
 	qent_anim,
 	qent_armature,
+	qent_bounds,
 
 	qent_comp_count
 };

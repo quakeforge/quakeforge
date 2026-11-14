@@ -36,6 +36,8 @@
 #include "QF/qfmodel.h"
 #include "QF/va.h"
 
+#include "QF/scene/entity.h"
+
 #define IMPLEMENT_ANIMATION_Funcs
 #include "QF/animation.h"
 
@@ -756,7 +758,7 @@ typedef struct {
 	eventspan_t *event_spans;
 } qfa_ctx_t;
 
-static void
+static ent_aabb_t
 qfa_do_clip (qfa_ctx_t *ctx, int clip_ind)
 {
 	qfZoneScoped (true);
@@ -771,6 +773,7 @@ qfa_do_clip (qfa_ctx_t *ctx, int clip_ind)
 	auto clip_state = &ctx->clip_states[clip_ind];
 	auto clipdesc = qfm_clipdesc (model, item->id);
 	auto keyframes = qfm_keyframe (model, clipdesc->firstframe);
+	auto frames = qfm_frame (model, clipdesc->firstframe);
 	qfa_update_clip (clip_state, clipdesc, keyframes, ctx->anim->time);
 	size_t pose_size = sizeof (qfm_joint_t[ctx->anim->num_joints]);
 	// initialize the raw pose before applying the animation data. pose_joints
@@ -783,23 +786,31 @@ qfa_do_clip (qfa_ctx_t *ctx, int clip_ind)
 	if (frame1 > 0) {
 		frame1 -= 1;
 	}
-	frame1 = keyframes[frame1].data;
-	frame2 = keyframes[frame2].data;
+	uint32_t framedata_1 = keyframes[frame1].data;
+	uint32_t framedata_2 = keyframes[frame2].data;
 	float blend = clip_state->frac;
-	qfa_apply_channels (ctx->raw_pose, model, frame1, frame2, blend);
+	qfa_apply_channels (ctx->raw_pose, model, framedata_1, framedata_2, blend);
 
 	if (cached) {
 		Cache_Release (&item->mod->cache);
 	}
+	vec4f_t fmins1 = loadvec3f (frames[frame1].bounds_min);
+	vec4f_t fmaxs1 = loadvec3f (frames[frame1].bounds_max);
+	vec4f_t fmins2 = loadvec3f (frames[frame2].bounds_min);
+	vec4f_t fmaxs2 = loadvec3f (frames[frame2].bounds_max);
+	return (ent_aabb_t) {
+		.mins = { VectorExpand(minv4f (fmins1, fmins2)) },
+		.maxs = { VectorExpand(maxv4f (fmaxs1, fmaxs2)) },
+	};
 }
 
-static void
+static ent_aabb_t
 qfa_do_clip_weighted (qfa_ctx_t *ctx, int clip_ind)
 {
 	qfZoneScoped (true);
 	qfm_joint_t raw_pose[ctx->anim->num_joints];
 	ctx->raw_pose = raw_pose;
-	qfa_do_clip (ctx, clip_ind);
+	auto aabb = qfa_do_clip (ctx, clip_ind);
 	auto cs = &ctx->clip_states[clip_ind];
 	auto weight = ((vec4f_t) { 1, 1, 1, 1 }) * cs->weight;
 	for (uint32_t j = 0; j < ctx->anim->num_joints; j++) {
@@ -810,15 +821,16 @@ qfa_do_clip_weighted (qfa_ctx_t *ctx, int clip_ind)
 		lp[2] += weight * loadxyzf (rp[2]);
 		ctx->local_pose[j].parent = ctx->raw_pose[j].parent;
 	}
+	return aabb;
 }
 
-static void
+static ent_aabb_t
 qfa_do_clip_joint_weighted (qfa_ctx_t *ctx, int clip_ind, float *joint_weights)
 {
 	qfZoneScoped (true);
 	qfm_joint_t raw_pose[ctx->anim->num_joints];
 	ctx->raw_pose = raw_pose;
-	qfa_do_clip (ctx, clip_ind);
+	auto aabb = qfa_do_clip (ctx, clip_ind);
 	auto cs = &ctx->clip_states[clip_ind];
 	auto base_weight = ((vec4f_t) { 1, 1, 1, 1 }) * cs->weight;
 	for (uint32_t j = 0; j < ctx->anim->num_joints; j++) {
@@ -830,6 +842,7 @@ qfa_do_clip_joint_weighted (qfa_ctx_t *ctx, int clip_ind, float *joint_weights)
 		lp[2] += weight * loadxyzf (rp[2]);
 		ctx->local_pose[j].parent = ctx->raw_pose[j].parent;
 	}
+	return aabb;
 }
 
 static void
@@ -914,21 +927,31 @@ qfa_update_anim (animstate_t *anim, float dt)
 	};
 
 	memset (local_pose, 0, sizeof (qfm_joint_t[anim->num_joints]));
+	vec4f_t frame_aabb[] = {
+		{ INFINITY, INFINITY, INFINITY },
+		{-INFINITY,-INFINITY,-INFINITY },
+	};
 	if (anim->joint_weights.count) {
 		float *joint_weights = qfa_jointweights (anim);
 		for (uint32_t i = 0; i < anim->clip_states.count; i++) {
 			if (!(clip_states[i].flags & qfc_disabled)) {
 				float *jw = joint_weights + i * anim->num_joints;
-				qfa_do_clip_joint_weighted (&ctx, i, jw);
+				auto aabb = qfa_do_clip_joint_weighted (&ctx, i, jw);
+				frame_aabb[0] = minv4f (frame_aabb[0], loadvec3f (aabb.mins));
+				frame_aabb[1] = maxv4f (frame_aabb[1], loadvec3f (aabb.maxs));
 			}
 		}
 	} else {
 		for (uint32_t i = 0; i < anim->clip_states.count; i++) {
 			if (!(clip_states[i].flags & qfc_disabled)) {
-				qfa_do_clip_weighted (&ctx, i);
+				auto aabb = qfa_do_clip_weighted (&ctx, i);
+				frame_aabb[0] = minv4f (frame_aabb[0], loadvec3f (aabb.mins));
+				frame_aabb[1] = maxv4f (frame_aabb[1], loadvec3f (aabb.maxs));
 			}
 		}
 	}
+	storevec3f (anim->mins, frame_aabb[0]);
+	storevec3f (anim->maxs, frame_aabb[1]);
 	for (uint32_t i = 0; i < anim->event_states.count; i++) {
 		if (!(event_states[i].flags & qfc_disabled)) {
 			qfa_do_event_clip (&ctx, i);

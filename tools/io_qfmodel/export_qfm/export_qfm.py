@@ -3,6 +3,8 @@ import struct
 from mathutils import Vector, Quaternion, Matrix
 from ..qfmodel import *
 import re
+import numpy as np
+from pprint import pprint
 
 # Specific sub-string targets for Rigify limb segments prone to non-uniform
 # stretch drivers
@@ -11,6 +13,12 @@ RIGIFY_FACE_NAMES = [
     "face", "eye", "lid", "brow", "lip", "cheek", "nose",
     "ear", "jaw", "tongue", "teeth", "forehead", "temple", "chin", "mouth"
 ]
+
+def vmin(a, b):
+    return Vector(( min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)))
+
+def vmax(a, b):
+    return Vector(( max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)))
 
 class DynObj:
     pass
@@ -172,32 +180,9 @@ class Skeleton:
             p_name = parent_map_names.get(bname, -1)
             self.virtual_parents[bname] = self.bone_to_index.get(p_name, -1)
 
-    def split_anim_local(self, bname, loc_rest, rot_rest, p_idx, anim_local):
-        arm_data = self.armature.data
-        world_matrix = self.armature.matrix_world.copy()
-        u_factor = self.scale_split_registry[bname]['uniform_factor']
-        scale_rest = Vector((u_factor, u_factor, u_factor))
-
-        # Rebuild uniform local matrix definition
-        mat_loc = Matrix.Translation(loc_rest)
-        mat_rot = rot_rest.to_matrix().to_4x4()
-        mat_sca = Matrix.Diagonal(scale_rest).to_4x4()
-        rest_local = mat_loc @ mat_rot @ mat_sca
-
-        if p_idx != -1:
-            rest_world = (world_matrix @ arm_data.bones[self.def_names[p_idx]].matrix_local) @ rest_local
-        else:
-            rest_world = rest_local
-
-        # Mirror uniform scaling constraint onto animated tracking array
-        loc_a, rot_a, scale_a = anim_local.decompose()
-        rot_a.normalize()
-        scale_a = Vector((scale_a.y, scale_a.y, scale_a.y))
-        return Matrix.Translation(loc_a) @ rot_a.to_matrix().to_4x4() @ Matrix.Diagonal(scale_a).to_4x4()
-
     def calculate_matrices(self):
         arm_data = self.armature.data
-        world_matrix = self.armature.matrix_world.copy()
+        motors = {}
         for idx, bname in enumerate(self.def_names):
             # Handle virtual scale leaf bones
             if bname.endswith(".qfscale"):
@@ -212,22 +197,27 @@ class Skeleton:
                 # The virtual leaf bone has identity transform, so its rest transform is
                 # just a copy of the parent bone's transform
                 data_bone_p = arm_data.bones[parent_origin_name]
-                rest_world_p = world_matrix @ data_bone_p.matrix_local
+                rest_world_p = data_bone_p.matrix_local
                 rest_world = rest_world_p
             else:
                 data_bone = arm_data.bones.get(bname)
                 pose_bone = self.armature.pose.bones.get(bname)
                 p_idx = self.virtual_parents[bname]
-                rest_world = world_matrix @ data_bone.matrix_local
+                rest_world = data_bone.matrix_local
                 if p_idx != -1:
                     parent_name = self.def_names[p_idx]
-                    parent_data_bone = arm_data.bones.get(parent_name)
-                    rest_parent_world = world_matrix @ parent_data_bone.matrix_local
-                    rest_local = rest_parent_world.inverted() @ rest_world
+                    data_bone_p = arm_data.bones.get(parent_name)
+                    rest_world_p = data_bone_p.matrix_local
+                    rest_local = rest_world_p.inverted() @ rest_world
                 else:
                     rest_local = rest_world
                 loc_rest, rot_rest, scale_rest = rest_local.decompose()
                 rot_rest.normalize()
+
+            motors[bname] = Motor.from_trs(loc_rest, rot_rest, scale_rest)
+            if p_idx != -1:
+                p_name = self.def_names[p_idx]
+                motors[bname] = motors[p_name] @ motors[bname]
 
             bname_clean = self.clean_name(bname, "DEF-")
             self.joints.append((
@@ -238,11 +228,11 @@ class Skeleton:
                 p_idx
             ))
 
-            self.inverse.append(rest_world.inverted())
-            anim_local = self.get_TRS(bname, world_matrix)
+            self.inverse.append(motors[bname].inverted())
+            anim_local = self.get_TRS(bname)
             self.poses.append(anim_local)
 
-    def get_TRS(self, bname, world_matrix):
+    def get_TRS(self, bname):
         # Skip virtual joints on the first pass; we compute them from their parents
         pose = self.armature.pose
         if bname.endswith(".qfscale"):
@@ -251,10 +241,10 @@ class Skeleton:
             pose_bone = pose.bones.get(bname)
         p_idx = self.virtual_parents[bname]
 
-        local_mat = world_matrix @ pose_bone.matrix
+        local_mat = pose_bone.matrix
         if p_idx != -1:
             p_bone = pose.bones[self.def_names[p_idx]]
-            local_mat = (world_matrix @ p_bone.matrix).inverted() @ local_mat
+            local_mat = (p_bone.matrix).inverted() @ local_mat
 
         loc, rot, scale = local_mat.decompose()
         rot.normalize()
@@ -271,6 +261,67 @@ class Skeleton:
             pass
         return loc, rot, scale
 
+    def compute_bounds(self, packed_meshes, anim_frames):
+        # Gather all frame TRS lists: default pose + every frame of every action
+        all_trs_frames = [self.poses]
+        for act_frames in anim_frames.values():
+            for flat_frame in act_frames:
+                # Unpack flat 10-float-per-bone list back into (loc, rot, scale)
+                trs = []
+                for b_idx in range(len(self.def_names)):
+                    base = b_idx * 10
+                    loc = Vector(flat_frame[base : base + 3])
+                    rx, ry, rz, rw = flat_frame[base + 3 : base + 7]
+                    rot = Quaternion((rw, rx, ry, rz)) # Blender Quaternion is (w, x, y, z)
+                    scale = Vector(flat_frame[base + 7 : base + 10])
+                    trs.append((loc, rot, scale))
+                all_trs_frames.append(trs)
+
+        # Precompute (num_frames, num_joints, 4, 4) skinning matrix palette
+        num_frames = len(all_trs_frames)
+        num_joints = len(self.def_names)
+        all_skin_mats = np.empty((num_frames, num_joints, 4, 4), dtype=np.float32)
+
+        model_frame = DynObj()
+        inf = float('inf')
+        model_frame.min = [Vector((inf, inf, inf)) for _ in range(num_frames)]
+        model_frame.max = [Vector((-inf, -inf, -inf)) for _ in range(num_frames)]
+
+        for f_idx, frame_trs in enumerate(all_trs_frames):
+            motors = [None] * num_joints
+            for j_idx, (loc, rot, scale) in enumerate(frame_trs):
+                motors[j_idx] = Motor.from_trs(loc, rot, scale)
+                p_idx = self.virtual_parents[self.def_names[j_idx]]
+                if p_idx != -1:
+                    motors[j_idx] = motors[p_idx] @ motors[j_idx]
+
+                skin_mot = motors[j_idx] @ self.inverse[j_idx]
+                all_skin_mats[f_idx, j_idx] = skin_mot.to_matrix()
+
+        # Deform each mesh across all frames in vectorized batches
+        for pm in packed_meshes:
+            mesh = pm.mesh
+            N = len(mesh.raw_positions)
+            if N == 0:
+                continue
+
+            verts = np.ones((N, 4), dtype=np.float32)
+            verts[:, :3] = np.array(mesh.raw_positions, dtype=np.float32)
+            joints = np.array(mesh.raw_joints, dtype=np.int32)     # (N, 4)
+            weights = np.array(mesh.raw_weights, dtype=np.float32) # (N, 4)
+
+            for f_idx in range(num_frames):
+                mats = all_skin_mats[f_idx] # (num_joints, 4, 4)
+                # Blend 4 matrices per vertex -> (N, 4, 4)
+                blended = np.einsum('ni,nij->nj', weights, mats[joints].reshape(N, 4, 16)).reshape(N, 4, 4)
+                deformed = np.einsum('nij,nj->ni', blended, verts)[:, :3]
+
+                f_min = Vector(deformed.min(axis=0))
+                f_max = Vector(deformed.max(axis=0))
+                model_frame.min[f_idx] = vmin(model_frame.min[f_idx], f_min)
+                model_frame.max[f_idx] = vmax(model_frame.max[f_idx], f_max)
+        return model_frame
+
 class Animation:
     def __init__(self, skel, fps, context):
         self.skel = skel
@@ -283,6 +334,7 @@ class Animation:
         self.actions = []
         self.channels_list = []
         self.channels_bin = b""
+        self.frames={}
 
         self.compile_animations(fps)
 
@@ -292,7 +344,6 @@ class Animation:
         limits.min = [float('inf')] * channel_count
         limits.max = [-float('inf')] * channel_count
 
-        world_matrix = self.armature.matrix_world.copy()
         # Cache for pre-evaluated frame data blocks
         # Format: action_name -> list of frame data components
         frames = {}
@@ -307,7 +358,7 @@ class Animation:
                 temp_frame_data = {}
 
                 for bname in self.def_names:
-                    loc, rot, scale = self.skel.get_TRS(bname, world_matrix)
+                    loc, rot, scale = self.skel.get_TRS(bname)
                     temp_frame_data[bname] = (
                         loc.x, loc.y, loc.z,
                         rot.x, rot.y, rot.z, rot.w, #NOTE component order!
@@ -379,9 +430,9 @@ class Animation:
         if not self.actions:
             return
 
-        frames, limits = self.collect_frames()
+        self.frames, limits = self.collect_frames()
         self.pack_channels(limits)
-        self.pack_frames(frames, fps)
+        self.pack_frames(self.frames, fps)
 
 class Mesh:
     def __init__(self, skel, m_obj, mesh_data):
@@ -393,9 +444,12 @@ class Mesh:
         self.joint_bytes = bytearray()
         self.weight_bytes = bytearray()
         self.indices_bytes = bytearray()
+        self.raw_positions = []
+        self.raw_joints = []
+        self.raw_weights = []
 
         self.vertex_groups = m_obj.vertex_groups
-        self.wmat = m_obj.matrix_world
+        self.wmat = skel.armature.matrix_world.inverted() @ m_obj.matrix_world
         self.tmat = self.wmat.to_3x3()
         # Use the cofactor matrix instead of the inverse transpose so scaling
         # to 0 on one axis doesn't result in broken normals
@@ -446,16 +500,8 @@ class Mesh:
                  tuple(j_idx), tuple(w_val))
         if v_key not in self.unique_verts:
             self.unique_verts[v_key] = self.vert_counter
-            self.bounds.min = Vector((
-                min(self.bounds.min.x, pos.x),
-                min(self.bounds.min.y, pos.y),
-                min(self.bounds.min.z, pos.z)
-            ))
-            self.bounds.max = Vector((
-                max(self.bounds.max.x, pos.x),
-                max(self.bounds.max.y, pos.y),
-                max(self.bounds.max.z, pos.z)
-            ))
+            self.bounds.min = vmin (self.bounds.min, pos)
+            self.bounds.max = vmax (self.bounds.max, pos)
             self.pos_bytes.extend(struct.pack('<3f', *pos))
             self.norm_bytes.extend(struct.pack('<3f', *norm))
             self.tang_bytes.extend(struct.pack('<4f', *tang, bitang_sign))
@@ -463,6 +509,10 @@ class Mesh:
             self.joint_bytes.extend(struct.pack('<4B', *j_idx))
             self.weight_bytes.extend(struct.pack('<4B', *w_val))
             self.vert_counter += 1
+
+            self.raw_positions.append(tuple(pos))
+            self.raw_joints.append(tuple(j_idx))
+            self.raw_weights.append(tuple(w / 255.0 for w in w_val))
         return self.unique_verts[v_key]
 
     def compile_mesh(self, skel, mesh_data):
@@ -495,6 +545,7 @@ class PackedMesh:
         if not mesh_data.loop_triangles:
             return None
         mesh = Mesh(skel, m_obj, mesh_data)
+        self.mesh = mesh
         clean_mname = m_obj.name
         self.name_ofs = text.add(clean_mname)
         self.tri_count = len(mesh_data.loop_triangles)
@@ -550,28 +601,34 @@ def export_qfm(context, filepath, fps=30.0):
         if (pm):
             packed_meshes.append(pm)
         m_obj.to_mesh_clear()
+    model_frame = skel.compute_bounds(packed_meshes, anim.frames)
+    def_pose_bounds = DynObj()
+    def_pose_bounds.min = model_frame.min[0]
+    def_pose_bounds.max = model_frame.max[0]
+    model_frame.min = model_frame.min[1:]
+    model_frame.max = model_frame.max[1:]
 
     binary_payload = bytearray()
 
     # Text Chunk
-    ofs_text = HEADER.size + len(binary_payload)
+    ofs_text = MODEL.size + len(binary_payload)
     binary_payload.extend(text.buffer)
     binary_payload = bytearray(pad_bytes(binary_payload))
 
     # Joints Chunk
-    ofs_joints = HEADER.size + len(binary_payload)
+    ofs_joints = MODEL.size + len(binary_payload)
     for j in skel.joints:
         binary_payload.extend(JOINT.pack(*j))
     binary_payload = bytearray(pad_bytes(binary_payload))
 
     # Inverse Bind Motors Chunk
-    ofs_inverse = HEADER.size + len(binary_payload)
+    ofs_inverse = MODEL.size + len(binary_payload)
     for inv in skel.inverse:
         binary_payload.extend(pack_motor(inv))
     binary_payload = bytearray(pad_bytes(binary_payload))
 
     # Rest Posture Base Pose Chunk
-    ofs_pose = HEADER.size + len(binary_payload)
+    ofs_pose = MODEL.size + len(binary_payload)
     for idx, p in enumerate(skel.poses):
         loc, rot, scale = p
         joint_name = skel.joints[idx][3]
@@ -584,7 +641,7 @@ def export_qfm(context, filepath, fps=30.0):
     binary_payload = bytearray(pad_bytes(binary_payload))
 
     # Quantized Animation Scalar Channels map chunk
-    ofs_channels = HEADER.size + len(binary_payload) if len(anim.channels_bin) > 0 else 0
+    ofs_channels = MODEL.size + len(binary_payload) if len(anim.channels_bin) > 0 else 0
     binary_payload.extend(anim.channels_bin)
     binary_payload = bytearray(pad_bytes(binary_payload))
 
@@ -592,16 +649,17 @@ def export_qfm(context, filepath, fps=30.0):
     ofs_clips = 0
     ofs_keyframes = 0
     ofs_framedata = 0
+    ofs_frames = 0
     if len(anim.clips_bin) > 0:
-        ofs_framedata = HEADER.size + len(binary_payload)
+        ofs_framedata = MODEL.size + len(binary_payload)
     binary_payload.extend(anim.framedata_bin)
     binary_payload = bytearray(pad_bytes(binary_payload))
 
-    ofs_clips = HEADER.size + len(binary_payload)
+    ofs_clips = MODEL.size + len(binary_payload)
     binary_payload.extend(anim.clips_bin)
     binary_payload = bytearray(pad_bytes(binary_payload))
 
-    ofs_keyframes = HEADER.size + len(binary_payload)
+    ofs_keyframes = MODEL.size + len(binary_payload)
     # Shift keyframe payload tracking offsets relative to global file position
     mutable_keyframes = bytearray(anim.keyframes_bin)
     for i in range(0, len(mutable_keyframes), KEYFRAME.size):
@@ -609,6 +667,13 @@ def export_qfm(context, filepath, fps=30.0):
         mutable_keyframes[i:i+KEYFRAME.size] = KEYFRAME.pack(etime, ofs_framedata + kf_offset)
     binary_payload.extend(mutable_keyframes)
     binary_payload = bytearray(pad_bytes(binary_payload))
+
+    frames = [FRAME.pack(0, 0, *min, *max)
+              for min,max in zip(model_frame.min, model_frame.max)]
+    if frames:
+        ofs_frames = MODEL.size + len(binary_payload)
+        binary_payload.extend(b"".join(frames))
+        binary_payload = bytearray(pad_bytes(binary_payload))
 
     # Process individual Mesh Chunks internally
     mesh_headers = []
@@ -704,20 +769,21 @@ def export_qfm(context, filepath, fps=30.0):
         ))
 
     # Append complete mesh layouts to file execution buffer stack
-    ofs_meshes = HEADER.size + len(binary_payload)
+    ofs_meshes = MODEL.size + len(binary_payload)
     for mh in mesh_headers:
         binary_payload.extend(mh)
     binary_payload.extend(local_mesh_payloads)
 
     # Compile dynamic structural header table layout allocations
-    header_bytes = HEADER.pack(
+    header_bytes = MODEL.pack(
         ofs_meshes, len(packed_meshes),
         ofs_joints, len(skel.joints),
         ofs_inverse, len(skel.joints),
         ofs_pose, len(skel.joints),
         ofs_channels, len(anim.channels_list) if anim.channels_bin else 0,
         ofs_text, len(text.buffer),
-        len(anim.actions), ofs_clips, ofs_keyframes, 0,
+        len(anim.actions), ofs_clips, ofs_keyframes, ofs_frames,
+        *def_pose_bounds.min, *def_pose_bounds.max,
         0, 0 # crc, render_data
     )
     with open(filepath, "wb") as f:

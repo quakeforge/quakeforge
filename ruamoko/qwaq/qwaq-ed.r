@@ -171,6 +171,10 @@ static component_t qwaq_components[] = {
 		.size = sizeof (armature_t *),
 		.name = "armature",
 	},
+	[qent_bounds] = {
+		.size = sizeof (mat2x3),
+		.name = "bounds",
+	},
 };
 
 imui_ctx_t imui_ctx;
@@ -827,11 +831,30 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key,
 @end
 
 static void
+draw_line_box (mat2x3 aabb, transform_t cam, motor_t E)
+{
+	aabb[1] -= aabb[0];
+	for (uint x = 0o7421; x; x >>= 3) {
+		uint v1 = x & 7;
+		for (uint i = 0; i < 3; i++) {
+			uint v2 = v1 ^ (1 << i);
+			vec3 s1 = {((v1>>0)&1)*1f, ((v1>>1)&1)*1f, ((v1>>2)&1)*1f};
+			vec3 s2 = {((v2>>0)&1)*1f, ((v2>>1)&1)*1f, ((v2>>2)&1)*1f};
+			auto p1 = E * point_t (aabb[0] + s1 * aabb[1], 1) * ~E;
+			auto p2 = E * point_t (aabb[0] + s2 * aabb[1], 1) * ~E;
+			draw_3dline (cam, (vec4) p1, (vec4) p2, 0xbf);
+		}
+	}
+}
+
+static void
 update_show_armature (uint ent)
 {
 	armature_t *arm;
 	transform_t trans;
+	mat2x3 bounds;
 	get_component (ent, qent_armature, &arm);
+	get_component (ent, qent_bounds, &bounds);
 	auto cam = Entity_GetTransform ([[camera_system camera] entity]);
 	get_component (ent, qent_transform, &trans);
 	auto E = make_motor (Transform_GetWorldPosition (trans),
@@ -843,6 +866,7 @@ update_show_armature (uint ent)
 		auto p2 = E * (point_t) axis_points[i][1] * ~E;
 		draw_3dline (cam, (vec4) p1, (vec4) p2, axis_colors[i]);
 	}
+	draw_line_box (bounds, cam, E);
 }
 
 static void
@@ -867,6 +891,8 @@ update_anim (uint ent)
 			auto p2 = E * (point_t) axis_points[i][1] * ~E;
 			draw_3dline (cam, (vec4) p1, (vec4) p2, axis_colors[i]);
 		}
+		mat2x3 aabb = qfa_get_pose_bounds (anim);
+		draw_line_box (aabb, cam, E);
 	}
 }
 
@@ -1025,6 +1051,8 @@ load_scene (plitem_t *scene_item, scene_t scene)
 				set_component (e, qent_armature, &arm);
 				if (!ent_init.anim) {
 					set_update (e, update_show_armature);
+					mat2x3 bounds = Model_GetPoseBounds (model);
+					set_component (e, qent_bounds, &bounds);
 				}
 			}
 			auto a = Entity_GetAnimation (ent);

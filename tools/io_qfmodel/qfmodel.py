@@ -1,6 +1,7 @@
 # vim:ts=4:et
 # Custom Python Binary Layout Module for QuakeForge Model Assets
 
+from mathutils import Vector, Quaternion
 from struct import Struct, pack, unpack
 
 qfm_s8   = 0
@@ -82,6 +83,10 @@ CLIPDESC = Struct('<4I')
 # 8 bytes
 KEYFRAME = Struct('<fI')
 
+# qfm_frame_t: name(I), data(I), bounds_min(3f), bounds_max(3f)
+# 32 bytes
+FRAME = Struct('<2I3f3f')
+
 # qfm_attrdesc_t: offset, bitfields
 # 8 bytes
 ATTRDESC = Struct('<2I')
@@ -110,9 +115,9 @@ MESH = Struct(
     '4x'    # aligned (16) padding
 )
 
-# qf_model_t Header
-# 80 bytes
-HEADER = Struct(
+# qf_model_t
+# 96 bytes
+MODEL = Struct(
     '<'
     '2I'    # meshes(LOC)
     '2I'    # joints(LOC)
@@ -121,32 +126,90 @@ HEADER = Struct(
     '2I'    # channels(LOC)
     '2I'    # text(LOC)
     '4I'    # anim(ANIM)
+    '3f'    # vec3_t     bounds_min
+    '3f'    # vec3_t     bounds_max
     'H'     # crc
     '2x'    # alignment padding
     'I'     # render_data (must be 0)
-    '8x'    # aligned (16) padding
 )
 
 def pad_bytes(data, alignment=16):
     padding = (alignment - (len(data) % alignment)) % alignment
     return data + (b'\x00' * padding)
 
-def pack_motor(matrix):
-    """Encodes a 4x4 matrix into a motor structure (qfm_motor_t)."""
-    loc, rot, scale = matrix.decompose()
-    q = rot.normalized()
-
-    qx, qy, qz, qw = -q.x, -q.y, -q.z, q.w
-    tx, ty, tz = loc.x * 0.5, loc.y * 0.5, loc.z * 0.5
-
-    px = (ty * qz - tz * qy) - (qw * tx)
-    py = (tz * qx - tx * qz) - (qw * ty)
-    pz = (tx * qy - ty * qx) - (qw * tz)
-    pw = -(tx * qx + ty * qy + tz * qz)
-
-    is_nonuniform = 1 if (abs(scale.x - scale.y) > 1e-4
-                          or abs(scale.x - scale.z) > 1e-4) else 0
-    return MOTOR.pack(qx, qy, qz, qw, px, py, pz, pw,
-                      scale.x, scale.y, scale.z, is_nonuniform)
+def pack_motor(motor):
+    is_nonuniform = 1 if (abs(motor.s.x - motor.s.y) > 1e-4
+                          or abs(motor.s.x - motor.s.z) > 1e-4) else 0
+    return MOTOR.pack(*motor.q, *motor.t, *motor.s, is_nonuniform)
 
 del Struct, pack, unpack
+
+class Motor:
+    """mirror of qfm_motor_t from qfmodel.h."""
+    def __init__(self, q, t, s):
+        self.q = q # (x, y, z, w)
+        self.t = t # (x, y, z, w)
+        self.s = s # Vector((sx, sy, sz))
+
+    @classmethod
+    def from_trs(cls, loc, rot, scale):
+        # q = qconjf(joint.rotate) -> Blender rot is (w, x, y, z)
+        qx, qy, qz, qw = -rot.x, -rot.y, -rot.z, rot.w
+        tx, ty, tz = loc.x * 0.5, loc.y * 0.5, loc.z * 0.5
+
+        # p = crossf(t, sa) - c * t; p[3] = -dotf(t, sa)
+        px = (ty * qz - tz * qy) - (qw * tx)
+        py = (tz * qx - tx * qz) - (qw * ty)
+        pz = (tx * qy - ty * qx) - (qw * tz)
+        pw = -(tx * qx + ty * qy + tz * qz)
+        return cls((qx, qy, qz, qw), (px, py, pz, pw), Vector(scale))
+
+    def inverted(self):
+        qx, qy, qz, qw = self.q
+        tx, ty, tz, tw = self.t
+        inv_s = Vector((1.0 / self.s.x, 1.0 / self.s.y, 1.0 / self.s.z))
+        return Motor((-qx, -qy, -qz, qw), (-tx, -ty, -tz, tw), inv_s)
+
+    def __matmul__(self, other):
+        b1x, b1y, b1z, a1 = self.q
+        c1x, c1y, c1z, d1 = self.t
+        s1 = self.s
+
+        b2x, b2y, b2z, a2 = other.q
+        # Scale child translation by s1.x (matches c2 = loadxyzf(m2.t) * s1[0])
+        c2x = other.t[0] * s1.x
+        c2y = other.t[1] * s1.x
+        c2z = other.t[2] * s1.x
+        d2  = other.t[3] * s1.x
+
+        a  = a1 * a2 - (b1x * b2x + b1y * b2y + b1z * b2z)
+        bx = a1 * b2x + a2 * b1x - (b1y * b2z - b1z * b2y)
+        by = a1 * b2y + a2 * b1y - (b1z * b2x - b1x * b2z)
+        bz = a1 * b2z + a2 * b1z - (b1x * b2y - b1y * b2x)
+
+        cx = a1 * c2x + a2 * c1x - (b1y * c2z - b1z * c2y) - (c1y * b2z - c1z * b2y) - d1 * b2x - d2 * b1x
+        cy = a1 * c2y + a2 * c1y - (b1z * c2x - b1x * c2z) - (c1z * b2x - c1x * b2z) - d1 * b2y - d2 * b1y
+        cz = a1 * c2z + a2 * c1z - (b1x * c2y - b1y * c2x) - (c1x * b2y - c1y * b2x) - d1 * b2z - d2 * b1z
+        d  = a1 * d2 + a2 * d1 + (b1x * c2x + b1y * c2y + b1z * c2z) + (c1x * b2x + c1y * b2y + c1z * b2z)
+
+        s = Vector((s1.x * other.s.x, s1.y * other.s.y, s1.z * other.s.z))
+        return Motor((bx, by, bz, a), (cx, cy, cz, d), s)
+
+    def to_matrix(self):
+        qx, qy, qz, qw = self.q
+        tx, ty, tz, tw = self.t
+
+        # q = qconjf(m.q) -> (-qx, -qy, -qz, qw)
+        rot = Quaternion((qw, -qx, -qy, -qz))
+
+        # t = -2 * qmulf(m.t, m.q) (quaternion product of t and q)
+        rx = -2.0 * (tw * qx + tx * qw + ty * qz - tz * qy)
+        ry = -2.0 * (tw * qy - tx * qz + ty * qw + tz * qx)
+        rz = -2.0 * (tw * qz + tx * qy - ty * qx + tz * qw)
+
+        mat = rot.to_matrix().to_4x4()
+        mat.col[0] *= self.s.x
+        mat.col[1] *= self.s.y
+        mat.col[2] *= self.s.z
+        mat.translation = Vector((rx, ry, rz))
+        return mat

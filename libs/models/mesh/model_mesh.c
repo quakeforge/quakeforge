@@ -141,6 +141,8 @@ Mod_LoadMeshModel (model_t *mod, byte *buffer, size_t buf_size, memhunk_t *hunk)
 			.keyframes = (byte *) keyframes - (byte *) model,
 			.data = (byte *) bounds - (byte *) model,
 		},
+		.bounds_min = { VectorExpand (in->bounds_min) },
+		.bounds_max = { VectorExpand (in->bounds_max) },
 		.crc = in->crc,
 	};
 
