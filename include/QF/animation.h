@@ -62,7 +62,7 @@ typedef struct clipstate_s {
 	float       frac;		// progress through frame for inter-frame blending
 	float       weight;		// weight for blending between channels
 	qfc_flags_t flags;
-	float       pad;		// padding
+	float       time_scale;	// smaller = faster
 } clipstate_t;
 
 // Describes a span of events in an event channel.

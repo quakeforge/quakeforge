@@ -646,6 +646,7 @@ qfa_create_animation (uint32_t *clips, uint32_t num_clips,
 			.type = clips[i] < cm->anim.numclips ? qfc_channel : qfc_morph,
 			.clip_id = clips[i],
 			.weight = 1.0 / num_clips,
+			.time_scale = 1,
 		};
 		release_clip (clips[i]);
 	}
@@ -689,7 +690,7 @@ qfa_update_clip (clipstate_t *clipstate, clipdesc_t *clipdesc,
 	qfZoneScoped (true);
 	auto last_frame = &keyframes[clipdesc->numframes - 1];
 	auto first_frame = &keyframes[0];
-	float duration = last_frame->endtime;
+	float duration = last_frame->endtime * clipstate->time_scale;
 
 	if (time >= clipstate->end_time || time < clipstate->end_time - duration) {
 		if (!clipstate->end_time) {
@@ -711,7 +712,7 @@ qfa_update_clip (clipstate_t *clipstate, clipdesc_t *clipdesc,
 		clipstate->frac = 1;
 		return;
 	}
-	float clip_time = t * duration;
+	float clip_time = t * last_frame->endtime;
 	if (__builtin_expect (clip_time < first_frame->endtime, 0)) {
 		clipstate->frame = 0;
 	} else {
