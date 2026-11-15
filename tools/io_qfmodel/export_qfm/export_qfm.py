@@ -411,12 +411,12 @@ class Animation:
             )
             clip_time = 0.0
             for frame_components in frames[act.name]:
-                clip_time += frame_time_step
                 # keyframe data offset is relative to the model, but
                 # the offsets will be adjusted for that later so for now
                 # they're relative to the beginning of the frame data
                 offset = len(self.framedata_bin)
                 self.keyframes_bin += KEYFRAME.pack(clip_time, offset)
+                clip_time += frame_time_step
 
                 for i, ch in enumerate(self.channels_list):
                     val = frame_components[ch['ch_idx']]
@@ -571,10 +571,13 @@ class PackedMesh:
         self.weight_bytes = mesh.weight_bytes
         self.bounds = mesh.bounds
 
-def export_qfm(context, filepath, fps=30.0):
+def export_qfm(context, filepath, fps=None):
     """Main pipeline execution wrapper loops over selected components with animations."""
 
     text = TextBlock()
+
+    if fps is None:
+        fps = context.scene.render.fps
 
     objs = context.selected_objects
     armature = next((o for o in objs if o.type == 'ARMATURE'), None)
