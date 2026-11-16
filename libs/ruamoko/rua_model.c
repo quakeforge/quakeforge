@@ -620,6 +620,20 @@ bi (qfa_set_clip_weight)
 	}
 }
 
+bi (qfa_set_clip_time_scale)
+{
+	qfZoneScoped (true);
+	auto res = (rua_model_resources_t *) _res;
+	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
+	uint32_t clip = P_UINT (pr, 1);
+	float time_scale = P_FLOAT (pr, 2);
+
+	auto clip_states = qfa_clip_states (rua_anim->animstate);
+	if (clip < rua_anim->animstate->clip_states.count) {
+		clip_states[clip].time_scale = time_scale;
+	}
+}
+
 bi (qfa_set_clip_loop)
 {
 	qfZoneScoped (true);
@@ -750,6 +764,7 @@ static builtin_t builtins[] = {
 	bi(qfa_reset_anim,         2, p(int)),
 	bi(qfa_set_anim_clip,      3, p(int), p(uint), p(uint)),
 	bi(qfa_set_clip_weight,    2, p(int), p(float)),
+	bi(qfa_set_clip_time_scale, 2, p(int), p(float)),
 	bi(qfa_set_clip_loop,      2, p(int), p(int)),
 	bi(qfa_set_clip_disabled,  2, p(int), p(int)),
 	bi(qfa_get_pose_motors,    2, p(int), p(ptr)),
