@@ -796,6 +796,7 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key,
 	string texture;
 	string anim;
 	bool extract_root_motion;
+	bool create_events;
 	bool show_armature;
 	bool mesh_flag;
 	bool grav_flag;
@@ -893,6 +894,16 @@ update_anim (uint ent)
 		}
 		mat2x3 aabb = qfa_get_pose_bounds (anim);
 		draw_line_box (aabb, cam, E);
+	}
+
+	int num_events;
+	auto events = qfa_get_events (anim, &num_events);
+	if (num_events) {
+		for (int i = 0; i < num_events; i++) {
+			printf ("%d %g %g\n", events[i].data, events[i].start_frac,
+					events[i].end_frac);
+		}
+		printf ("\n");
 	}
 }
 
@@ -1027,6 +1038,12 @@ load_scene (plitem_t *scene_item, scene_t scene)
 				qfa_extract_root_motion (model);
 			}
 			int num_clips = Model_NumClips (model);
+			if (ent_init.create_events) {
+				auto evt = create_event_tracks (model);
+				string mod_name = Model_Name (model);
+				Model_LoadMesh ("ev|" + mod_name, evt);
+				MsgBuf_Delete (evt);
+			}
 			//for (int i = 0; i < num_clips; i++) {
 			//	auto clipinfo = Model_GetClipInfo (model, i);
 			//	printf ("%s %2d %3d %d %s\n", Model_Name (model),
@@ -1038,8 +1055,18 @@ load_scene (plitem_t *scene_item, scene_t scene)
 				string clipname = mod_name + ":" + ent_init.anim;
 				auto clip = qfa_find_clip (clipname);
 				auto arma = qfa_find_armature (mod_name);
-				auto anim = qfa_create_animation (&clip, 1, nil, 0, true,
-												  arma, nil);
+				animstate_t anim;
+				printf("%s\n", clipname);
+				if (ent_init.create_events) {
+					string evtname = "ev|" + clipname;
+					auto evt = qfa_find_clip (evtname);
+					anim = qfa_create_animation (&clip, 1, &evt, 1, true,
+												 arma, nil);
+					qfa_set_clip_loop (anim, 1, true);
+				} else {
+					anim = qfa_create_animation (&clip, 1, nil, 0, true,
+												 arma, nil);
+				}
 				qfa_set_clip_loop (anim, 0, true);
 				set_component (e, qent_anim, &anim);
 				set_update (e, update_anim);

@@ -196,6 +196,7 @@ bi (Model_LoadMesh)
 	model->name[sizeof(model->name) - 1] = 0;
 	mod_funcs->Mod_LoadMesh (model, sizebuf->data, sizebuf->cursize,
 							 pr->pr_hunk);
+	qfa_register (model);
 	if (!(R_INT (pr) = alloc_handle (res, model))) {
 		Mod_UnloadModel (model);
 	}
@@ -515,6 +516,13 @@ bi (qfa_find_clip)
 	R_INT (pr) = qfa_find_clip (name);
 }
 
+bi (qfa_clip_duration)
+{
+	qfZoneScoped (true);
+	int clip = P_INT (pr, 0);
+	R_FLOAT (pr) = qfa_clip_duration (clip);
+}
+
 bi (qfa_find_armature)
 {
 	qfZoneScoped (true);
@@ -626,6 +634,15 @@ bi (qfa_set_clip_loop)
 		if (loop) {
 			clip_states[clip].flags |= qfc_loop;
 		}
+	} else {
+		auto event_states = qfa_event_states (rua_anim->animstate);
+		clip -= rua_anim->animstate->clip_states.count;
+		if (clip < rua_anim->animstate->event_states.count) {
+			event_states[clip].flags &= ~qfc_loop;
+			if (loop) {
+				event_states[clip].flags |= qfc_loop;
+			}
+		}
 	}
 }
 
@@ -671,6 +688,31 @@ bi (qfa_get_pose_bounds)
 	};
 }
 
+bi (qfa_get_events)
+{
+	qfZoneScoped (true);
+	auto res = (rua_model_resources_t *) _res;
+	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
+	auto anim = rua_anim->animstate;
+
+	R_POINTER (pr) = 0;
+
+	uint32_t num_events = 0;
+	auto spans = qfa_event_spans (anim);
+	for (uint32_t i = 0; i < anim->event_states.count; i++) {
+		num_events += spans[i].num_events;
+	}
+
+	if (num_events) {
+		size_t size = sizeof (qfa_event_t[num_events]);
+		pr_string_t event_blk = PR_AllocTempBlock (pr, size);
+		auto evt_ptr = (qfa_event_t *) PR_GetString (pr, event_blk);
+		qfa_get_events (anim, evt_ptr);
+		RETURN_POINTER (pr, evt_ptr);
+	}
+	*(uint32_t *)P_GPOINTER (pr, 1) = num_events;
+}
+
 animstate_t *
 Model_GetAnimstate (progs_t *pr, pr_int_t handle)
 {
@@ -700,6 +742,7 @@ static builtin_t builtins[] = {
 
 	bi(qfa_extract_root_motion, 1, p(int)),
 	bi(qfa_find_clip,          1, p(string)),
+	bi(qfa_clip_duration,      1, p(int)),
 	bi(qfa_find_armature,      1, p(string)),
 	bi(qfa_create_animation,   4, p(ptr), p(uint), p(uint), p(int)),
 	bi(qfa_free_animation,     1, p(int)),
@@ -711,6 +754,7 @@ static builtin_t builtins[] = {
 	bi(qfa_set_clip_disabled,  2, p(int), p(int)),
 	bi(qfa_get_pose_motors,    2, p(int), p(ptr)),
 	bi(qfa_get_pose_bounds,    1, p(int)),
+	bi(qfa_get_events,         1, p(int), p(ptr)),
 
 	{0}
 };

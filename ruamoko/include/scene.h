@@ -36,6 +36,12 @@ typedef @handle(int) cliphandle_h cliphandle_t;
 typedef @handle(int) armhandle_h armhandle_t;
 typedef @handle(int) animstate_h animstate_t;
 
+typedef struct qfa_event_s {
+	uint        data;
+	float       start_frac;
+	float       end_frac;
+} qfa_event_t;
+
 scene_t Scene_NewScene (void);
 void Scene_DeleteScene (scene_t scene);
 entity_t Scene_CreateEntity (scene_t scene);
@@ -113,6 +119,7 @@ void *Model_GetFrameData (model_t model, uint clip, void *data);
 
 bool qfa_extract_root_motion (model_t model);
 cliphandle_t qfa_find_clip (string name);
+float qfa_clip_duration (cliphandle_t clip);
 armhandle_t qfa_find_armature (string name);
 animstate_t qfa_create_animation (cliphandle_t *clips, uint num_clips,
 								  cliphandle_t *evclips, uint num_evclips,
@@ -127,5 +134,6 @@ void qfa_set_clip_loop (animstate_t anim, uint clip, bool loop);
 void qfa_set_clip_disabled (animstate_t anim, uint clip, bool disabled);
 void qfa_get_pose_motors (animstate_t anim, void *motors);
 mat2x3 qfa_get_pose_bounds (animstate_t anim);
+qfa_event_t *qfa_get_events (animstate_t anim, int *num_events);
 
 #endif//__ruamoko_scene_h

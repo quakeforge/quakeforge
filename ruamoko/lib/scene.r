@@ -73,6 +73,7 @@ void *Model_GetFrameData (model_t model, uint clip, void *data) = #0;
 
 bool qfa_extract_root_motion (model_t model) = #0;
 cliphandle_t qfa_find_clip (string name) = #0;
+float qfa_clip_duration (cliphandle_t clip) = #0;
 armhandle_t qfa_find_armature (string name) = #0;
 animstate_t qfa_create_animation (cliphandle_t *clips, uint num_clips,
 								  cliphandle_t *evclips, uint num_evclips,
@@ -87,3 +88,4 @@ void qfa_set_clip_loop (animstate_t anim, uint clip, bool loop) = #0;
 void qfa_set_clip_disabled (animstate_t anim, uint clip, bool disabled) = #0;
 void qfa_get_pose_motors (animstate_t anim, void *motors) = #0;
 mat2x3 qfa_get_pose_bounds (animstate_t anim) = #0;//FIXME ent_aabb_t
+qfa_event_t *qfa_get_events (animstate_t anim, int *num_events) = #0;//FIXME ug

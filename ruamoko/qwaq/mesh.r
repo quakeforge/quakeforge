@@ -1049,3 +1049,78 @@ create_quadsphere (bool do_colors)
 
 	return msg;
 }
+
+msgbuf_t
+create_event_tracks (model_t mdl)
+{
+	string mod_name = Model_Name (mdl);
+	int num_clips = Model_NumClips (mdl);
+
+	int text_size = 1;
+	for (int i = 0; i < num_clips; i++) {
+		auto clipinfo = Model_GetClipInfo (mdl, i);
+		text_size += strlen (clipinfo.name) + 1;
+	}
+
+	qf_model_t model = {
+		.text = {
+			.count = text_size,
+		},
+		.anim = {
+			.numclips = num_clips,
+		},
+	};
+
+	uint size = sizeof (qf_model_t)
+			  + sizeof (clipdesc_t) * num_clips
+			  + sizeof (keyframe_t) * num_clips * 2
+			  + text_size;
+	auto msg = MsgBuf_New (size);
+
+	MsgBuf_WriteBytes (msg, &model, sizeof (model));
+
+	model.anim.clips = MsgBuf_WriteSeek (msg, 0, msg_cur);
+	int text_offs = 1;
+	for (int i = 0; i < num_clips; i++) {
+		clipdesc_t clip = {
+			.firstframe = i * 2,
+			.numframes = 2,
+			.name = text_offs,
+		};
+		MsgBuf_WriteBytes (msg, &clip, sizeof (clip));
+
+		auto clipinfo = Model_GetClipInfo (mdl, i);
+		text_offs += strlen (clipinfo.name) + 1;
+	}
+
+	model.anim.keyframes = MsgBuf_WriteSeek (msg, 0, msg_cur);
+	for (int i = 0; i < num_clips; i++) {
+		auto clipinfo = Model_GetClipInfo (mdl, i);
+		string clipname = mod_name + ":" + clipinfo.name;
+		auto clip = qfa_find_clip (clipname);
+		float duration = qfa_clip_duration (clip);
+		printf ("%s %g\n", clipname, duration);
+		keyframe_t frames[2] = {
+			{ .endtime = duration, .data = 0 },
+			{ .endtime = duration, .data = 1 }, //FIXME end-of-animation
+		};
+		MsgBuf_WriteBytes (msg, &frames, sizeof (frames));
+	}
+
+	model.text.offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
+	MsgBuf_WriteString (msg, "");
+	for (int i = 0; i < num_clips; i++) {
+		auto clipinfo = Model_GetClipInfo (mdl, i);
+		MsgBuf_WriteString (msg, clipinfo.name);
+	}
+
+	MsgBuf_WriteSeek (msg, 0, msg_set);
+	MsgBuf_WriteBytes (msg, &model, sizeof (model));
+	MsgBuf_WriteSeek (msg, 0, msg_end);
+
+	//QFile f = Qopen (sprintf("%s.qfm", mod_name), "wb");
+	//MsgBuf_ToFile (f, msg);
+	//Qclose (f);
+
+	return msg;
+}

@@ -19,6 +19,7 @@ ulong Render_BufferSize (string name);
 msgbuf_t create_ico();
 msgbuf_t create_block(vec3 block_size);
 msgbuf_t create_quadsphere(bool do_colors);
+msgbuf_t create_event_tracks (model_t model);
 body_t calc_inertia_tensor (msgbuf_t model_buf, float inv_density);
 void leafnode();
 

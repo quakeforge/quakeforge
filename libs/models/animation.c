@@ -577,6 +577,27 @@ release_armature (uint32_t armature_id)
 	}
 }
 
+float
+qfa_clip_duration (int clip)
+{
+	auto item = qfa_clip_get (anim_registry, clip);
+	bool cached = false;
+	auto model = item->mod->model;
+	if (!model) {
+		model = Cache_Get (&item->mod->cache);
+		cached = true;
+	}
+	auto clipdesc = qfm_clipdesc (model, item->id);
+	auto keyframes = qfm_keyframe (model, clipdesc->firstframe);
+	auto last_frame = &keyframes[clipdesc->numframes - 1];
+	float duration = last_frame->endtime;
+
+	if (cached) {
+		Cache_Release (&item->mod->cache);
+	}
+	return duration;
+}
+
 animstate_t *
 qfa_create_animation (uint32_t *clips, uint32_t num_clips,
 					  uint32_t *evclips, uint32_t num_evclips,
@@ -598,6 +619,7 @@ qfa_create_animation (uint32_t *clips, uint32_t num_clips,
 				+ sizeof (qfm_joint_t[arm->joints.count])
 				+ sizeof (qfm_motor_t[arm->joints.count])
 				+ sizeof (qfm_motor_t[arm->joints.count])
+				+ sizeof (eventspan_t[num_evclips])
 				+ animstate_size
 				+ sizeof (float[num_weights]);
 	animstate_t *anim = malloc (size);
@@ -606,7 +628,8 @@ qfa_create_animation (uint32_t *clips, uint32_t num_clips,
 	auto local_pose = (qfm_joint_t *) &evclip_states[num_evclips];
 	auto global_pose = (qfm_motor_t *) &local_pose[arm->joints.count];
 	auto matrix_palette = (qfm_motor_t *) &global_pose[arm->joints.count];
-	auto render_data = (byte *) &matrix_palette[arm->joints.count];
+	auto evspans = (eventspan_t *) &matrix_palette[arm->joints.count];
+	auto render_data = (byte *) &evspans[num_evclips];
 	auto joint_weights = (float *) &render_data[animstate_size];
 	*anim = (animstate_t) {
 		.clip_states = {
@@ -627,6 +650,7 @@ qfa_create_animation (uint32_t *clips, uint32_t num_clips,
 		.local_pose = (byte *) local_pose - (byte *) anim,
 		.global_pose = (byte *) global_pose - (byte *) anim,
 		.matrix_palette = (byte *) matrix_palette - (byte *) anim,
+		.event_spans = (byte *) evspans - (byte *) anim,
 		.render_data = (byte *) render_data - (byte *) anim,
 		.play_rate = 1,
 	};
@@ -646,6 +670,16 @@ qfa_create_animation (uint32_t *clips, uint32_t num_clips,
 			.type = clips[i] < cm->anim.numclips ? qfc_channel : qfc_morph,
 			.clip_id = clips[i],
 			.weight = 1.0 / num_clips,
+			.time_scale = 1,
+		};
+		release_clip (clips[i]);
+	}
+
+	for (uint32_t i = 0; i < num_evclips; i++) {
+		evclip_states[i] = (clipstate_t) {
+			.type = qfc_event,
+			.clip_id = evclips[i],
+			.weight = 1,
 			.time_scale = 1,
 		};
 		release_clip (clips[i]);
@@ -683,7 +717,7 @@ qfa_keyframe_cmp (const void *_a, const void *_b)
 	return diff < 0 ? -1 : diff > 0 ? 1 : 0;
 }
 
-static void
+static int
 qfa_update_clip (clipstate_t *clipstate, clipdesc_t *clipdesc,
 				 keyframe_t *keyframes, float time)
 {
@@ -692,6 +726,7 @@ qfa_update_clip (clipstate_t *clipstate, clipdesc_t *clipdesc,
 	auto first_frame = &keyframes[0];
 	float duration = last_frame->endtime * clipstate->time_scale;
 
+	int cycles = 0;
 	if (time >= clipstate->end_time || time < clipstate->end_time - duration) {
 		if (!clipstate->end_time) {
 			// first run through the clip so start it now
@@ -701,8 +736,9 @@ qfa_update_clip (clipstate_t *clipstate, clipdesc_t *clipdesc,
 				clipstate->end_time = time + duration;
 			} else {
 				// the clip is looping, so try to keep it smooth
-				int cycles = (time - clipstate->end_time) / duration;
+				cycles = (time - clipstate->end_time) / duration;
 				clipstate->end_time += (cycles + 1) * duration;
+				cycles += 1;
 			}
 		}
 	}
@@ -710,7 +746,7 @@ qfa_update_clip (clipstate_t *clipstate, clipdesc_t *clipdesc,
 	if (__builtin_expect (t >= 1, 0)) {
 		clipstate->frame = clipdesc->numframes - 1;
 		clipstate->frac = 1;
-		return;
+		return cycles;
 	}
 	float clip_time = t * last_frame->endtime;
 	if (__builtin_expect (clip_time < first_frame->endtime, 0)) {
@@ -726,6 +762,7 @@ qfa_update_clip (clipstate_t *clipstate, clipdesc_t *clipdesc,
 		frame_len -= keyframes[clipstate->frame - 1].endtime;
 	}
 	clipstate->frac = calc_t (cur_frame->endtime, frame_len, clip_time);
+	return cycles;
 }
 
 static void
@@ -863,9 +900,10 @@ qfa_do_event_clip (qfa_ctx_t *ctx, int clip_ind)
 	uint32_t start_frame = event_state->frame;
 	auto clipdesc = qfm_clipdesc (model, item->id);
 	auto keyframes = qfm_keyframe (model, clipdesc->firstframe);
-	qfa_update_clip (event_state, clipdesc, keyframes, ctx->anim->time);
+	int cycles = qfa_update_clip (event_state, clipdesc, keyframes,
+								  ctx->anim->time);
 	float end_frac = event_state->frac;
-	uint32_t end_frame = event_state->frame;
+	uint32_t end_frame = event_state->frame + cycles * clipdesc->numframes;
 
 	auto event_span = &ctx->event_spans[clip_ind];
 	*event_span = (eventspan_t) {
@@ -1013,4 +1051,60 @@ qfa_set_anim_clip (animstate_t *anim, uint32_t slot, uint32_t clip)
 		.weight = 1.0 / anim->clip_states.count,
 	};
 	release_clip (clip);
+}
+
+static qfa_event_t *
+copy_events (qfa_event_t *events, qfa_item_t **event_items, eventspan_t *spans,
+			 uint32_t clip_ind)
+{
+	auto span = spans[clip_ind];
+	auto item = event_items[clip_ind];
+	bool cached = false;
+	auto model = item->mod->model;
+	if (!model) {
+		model = Cache_Get (&item->mod->cache);
+		cached = true;
+	}
+
+	float start_frac = span.first_frac;
+	float end_frac = 1;
+
+	auto clipdesc = qfm_clipdesc (model, item->id);
+	auto keyframes = qfm_keyframe (model, clipdesc->firstframe);
+
+	for (uint32_t i = 0; i < span.num_events; i++) {
+		if (i == span.num_events - 1) {
+			end_frac = span.last_frac;
+		}
+		uint32_t ind = (span.first_event + i) % clipdesc->numframes;
+		events[i] = (qfa_event_t) {
+			.data = keyframes[ind].data,
+			.start_frac = start_frac,
+			.end_frac = end_frac,
+		};
+		start_frac = 0;
+	}
+
+	if (cached) {
+		Cache_Release (&item->mod->cache);
+	}
+
+	return events + span.num_events;
+}
+
+void
+qfa_get_events (animstate_t *anim, qfa_event_t *events)
+{
+	qfa_item_t *event_items[anim->event_states.count ?: 1];
+	auto event_states = qfa_event_states (anim);
+	for (uint32_t i = 0; i < anim->event_states.count; i++) {
+		event_items[i] = qfa_clip_get (anim_registry, event_states[i].clip_id);
+	}
+
+	auto spans = qfa_event_spans (anim);
+	for (uint32_t i = 0; i < anim->event_states.count; i++) {
+		if (spans[i].num_events) {
+			events = copy_events (events, event_items, spans, i);
+		}
+	}
 }

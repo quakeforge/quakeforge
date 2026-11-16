@@ -285,7 +285,7 @@
 		texture = pixpal.meta;
 		target = true;
 		extract_root_motion = true;
-		show_armature = true;
+		//show_armature = true;
 		anim = "rig|standing taunt battlecry_RM";
 	},
 	{
@@ -296,7 +296,7 @@
 		texture = pixpal.meta;
 		target = true;
 		extract_root_motion = true;
-		show_armature = true;
+		//show_armature = true;
 		//anim = "rigAction";
 	},
 	{
@@ -307,8 +307,31 @@
 		texture = pixpal.meta;
 		target = true;
 		extract_root_motion = true;
-		show_armature = true;
+		//show_armature = true;
 		anim = "rigAction";
+	},
+	{
+		name = "Girl5";
+		model = progs/girl20.qfm;
+		position = (-1.5, 0.5, 0, 1);
+		entqueue = pixpal;
+		texture = pixpal.meta;
+		target = true;
+		create_events = true;
+		//extract_root_motion = true;
+		//show_armature = true;
+		anim = "step.RL";
+	},
+	{
+		name = "Girl6";
+		model = progs/girl20.qfm;
+		position = (-1.5,-1.5, 0, 1);
+		entqueue = pixpal;
+		texture = pixpal.meta;
+		target = true;
+		//extract_root_motion = true;
+		//show_armature = true;
+		anim = "step.LR";
 	},
 	{
 		name = "Mr Fixit";

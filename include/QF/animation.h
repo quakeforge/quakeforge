@@ -83,6 +83,12 @@ typedef struct eventspan_s {
 	float       last_frac;	// position of ent time in last event
 } eventspan_t;
 
+typedef struct qfa_event_s {
+	uint32_t    data;
+	float       start_frac;
+	float       end_frac;
+} qfa_event_t;
+
 typedef enum : uint32_t {
 	qfa_op_clip,
 	qfa_op_clip_weighted,
@@ -193,6 +199,7 @@ void qfa_deregister (model_t *mod);
 bool qfa_extract_root_motion (model_t *mod);
 
 int qfa_find_clip (const char *name);
+float qfa_clip_duration (int clip);
 int qfa_find_armature (const char *name);
 
 animstate_t *qfa_create_animation (uint32_t *clips, uint32_t num_clips,
@@ -203,6 +210,9 @@ void qfa_free_animation (animstate_t *anim);
 void qfa_update_anim (animstate_t *anim, float dt);
 void qfa_reset_anim (animstate_t *anim);
 void qfa_set_anim_clip (animstate_t *anim, uint32_t slot, uint32_t clip);
+
+// events must be pre-allocated
+void qfa_get_events (animstate_t *anim, qfa_event_t *events);
 ///@}
 
 #endif//__QF_scene_animation_h
