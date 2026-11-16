@@ -156,8 +156,11 @@ Mod_LoadMeshModel (model_t *mod, byte *buffer, size_t buf_size, memhunk_t *hunk)
 			in->pose.count * sizeof (qfm_joint_t));
 	memcpy (clips, buffer + in->anim.clips,
 			in->anim.numclips * sizeof (clipdesc_t));
-	int32_t frame_data_delta = (byte *) framedata - (byte *) model;
-	frame_data_delta -= (byte *) in_framedata - (byte *) in;
+	int32_t frame_data_delta = 0;
+	if (frame_data_count) {
+		frame_data_delta = (byte *) framedata - (byte *) model;
+		frame_data_delta -= (byte *) in_framedata - (byte *) in;
+	}
 	for (uint32_t i = 0; i < num_keyframes; i++) {
 		auto ik = &((keyframe_t *) ((byte *) in + in->anim.keyframes))[i];
 		auto ok = &((keyframe_t *) ((byte *) model + model->anim.keyframes))[i];
