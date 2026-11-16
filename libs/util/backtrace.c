@@ -33,13 +33,12 @@
 
 #include <inttypes.h>
 #include <string.h>
-#include <backtrace.h>
-
-#include "QF/backtrace.h"
 #include "QF/dstring.h"
 #include "QF/sys.h"
-
 #ifdef HAVE_BACKTRACE
+#include <backtrace.h>
+#include "QF/backtrace.h"
+
 static struct backtrace_state *bt_state;
 
 static void bt_error (void *data, const char *msg, int errnum)
