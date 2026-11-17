@@ -11,7 +11,7 @@
 
 @implementation Type
 
-static hashtab_t *registered_types;
+static hashtab_t registered_types;
 
 static string get_type_key (void *type, void *unused)
 {

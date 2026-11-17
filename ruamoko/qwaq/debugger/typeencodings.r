@@ -8,9 +8,9 @@
 
 // these are encodings that we already have so don't need to copy them from
 // the target
-static hashtab_t *static_encodings;
+static hashtab_t static_encodings;
 // these are codings that had to be copied from the target
-static hashtab_t *dynamic_encodings;
+static hashtab_t dynamic_encodings;
 
 static qfot_type_t *
 next_type (qfot_type_t *type)

@@ -35,8 +35,8 @@ void fprintf (QFile file, string format, ...)
 	Qputs (file, vsprintf (format, va_copy (@args)));
 }
 
-hashtab_t *available_types;
-hashtab_t *processed_types;
+hashtab_t available_types;
+hashtab_t processed_types;
 Array *queue;
 Array *output_types;
 
