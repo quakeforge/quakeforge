@@ -1031,6 +1031,10 @@ qfa_reset_anim (animstate_t *anim)
 	for (uint32_t i = 0; i < anim->clip_states.count; i++) {
 		clip_states[i].end_time = 0;
 	}
+	auto evclip_states = qfa_event_states (anim);
+	for (uint32_t i = 0; i < anim->event_states.count; i++) {
+		evclip_states[i].end_time = 0;
+	}
 	anim->time = -anim->play_rate;
 	qfa_update_anim (anim, 1);
 }
