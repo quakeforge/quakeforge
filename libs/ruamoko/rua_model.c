@@ -631,6 +631,12 @@ bi (qfa_set_clip_time_scale)
 	auto clip_states = qfa_clip_states (rua_anim->animstate);
 	if (clip < rua_anim->animstate->clip_states.count) {
 		clip_states[clip].time_scale = time_scale;
+	} else {
+		auto event_states = qfa_event_states (rua_anim->animstate);
+		clip -= rua_anim->animstate->clip_states.count;
+		if (clip < rua_anim->animstate->event_states.count) {
+			event_states[clip].time_scale = time_scale;
+		}
 	}
 }
 
