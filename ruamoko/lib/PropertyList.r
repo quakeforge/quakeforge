@@ -932,6 +932,9 @@ serialize_value (qfot_type_t *type, void *ptr, PLArchive *ctx)
 		[ty_bool] = s_basic_func,
 	};
 	type = unalias_type (type);
+	if (!meta_funcs[type.meta]) {
+		return nil;
+	}
 	auto obj = meta_funcs[type.meta] (type, ptr, ctx);
 	return obj;
 }
