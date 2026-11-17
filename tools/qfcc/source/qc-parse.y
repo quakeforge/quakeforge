@@ -221,7 +221,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %type	<expr>		const string
 
-%type   <expr>		decl
+%type   <expr>		cond_decl decl
 %type	<param>		param_list parameter_list parameter
 %type	<symbol>	methoddef
 %type	<expr>		var_initializer local_def
@@ -882,6 +882,25 @@ id_symbol_expr (symbol_t *id)
 		error (0, "unexpected object name `id` in expression");
 	}
 	return new_nil_expr ();
+}
+
+static const expr_t *
+extract_symbol (const expr_t *expr)
+{
+	if (expr->type != ex_decl) {
+		internal_error (expr, "not a decl expr");
+	}
+	auto assign = expr->decl.list.head->expr;
+	if (assign->type != ex_assign) {
+		return error (assign, "declaration in the controlling expression must"
+					  " have an initializer");
+	}
+	auto sym_expr = assign->assign.dst;
+	if (sym_expr->type != ex_symbol) {
+		internal_error (sym_expr, "not a symbol expr");
+	}
+	auto sym = sym_expr->symbol;
+	return new_symbol_expr (sym);
 }
 
 %}
@@ -2178,6 +2197,11 @@ array_decl
 	| '[' ']'					{ $$ = 0; }
 	;
 
+cond_decl
+	: declspecs_ts local_expr initdecl			{ $$ = $3; }
+	| declspecs_nots local_expr notype_initdecl	{ $$ = $3; }
+	;
+
 decl
 	: declspecs_ts local_expr initdecls ';'
 		{
@@ -2326,7 +2350,7 @@ new_scope
 	;
 
 end_scope
-	: /* empty */
+	: /* empty */ %prec IFX
 		{
 			if (!options.traditional) {
 				clear_proxies (current_symtab);
@@ -2434,16 +2458,56 @@ statement
 			const expr_t *label = named_label_expr ($2);
 			$$ = goto_expr (label);
 		}
-	| IF not line '(' expr[test] ')' statement[true] %prec IFX
+	//NOTE: dangling else resolved by %prec in end_scope
+	| IF new_scope not line '(' expr[test] ')' statement[true]
+			end_scope
 		{
 			scoped_src_loc ($line);
 			$$ = new_select_expr ($not, $test, $true, nullptr, nullptr);
 		}
-	| IF not line '(' expr[test]')' statement[true]
-			else statement[false]
+	| IF new_scope not line '(' cond_decl[init] ')' statement[true]
+			end_scope
+		{
+			scoped_src_loc ($line);
+			auto test = extract_symbol ($init);
+			auto sel = new_select_expr ($not, test, $true, nullptr, nullptr);
+			auto block = $new_scope;
+			append_expr (block, $init);
+			$$ = append_expr (block, sel);
+		}
+	| IF new_scope not line '(' decl[init] expr[test] ')' statement[true]
+			end_scope
+		{
+			scoped_src_loc ($line);
+			auto sel = new_select_expr ($not, $test, $true, nullptr, nullptr);
+			auto block = $new_scope;
+			append_expr (block, $init);
+			$$ = append_expr (block, sel);
+		}
+	| IF new_scope not line '(' expr[test] ')' statement[true]
+			else statement[false] end_scope
 		{
 			scoped_src_loc ($line);
 			$$ = new_select_expr ($not, $test, $true, $else, $false);
+		}
+	| IF new_scope not line '(' cond_decl[init] ')' statement[true]
+			else statement[false] end_scope
+		{
+			scoped_src_loc ($line);
+			auto test = extract_symbol ($init);
+			auto sel = new_select_expr ($not, test, $true, $else, $false);
+			auto block = $new_scope;
+			append_expr (block, $init);
+			$$ = append_expr (block, sel);
+		}
+	| IF new_scope not line '(' decl[init] expr[test] ')' statement[true]
+			else statement[false] end_scope
+		{
+			scoped_src_loc ($line);
+			auto sel = new_select_expr ($not, $test, $true, $else, $false);
+			auto block = $new_scope;
+			append_expr (block, $init);
+			$$ = append_expr (block, sel);
 		}
 	| FOR new_scope break_label continue_label
 			'(' opt_init_semi[init] opt_expr[test] ';' opt_expr[cont] ')'

@@ -1197,7 +1197,7 @@ proc_xvalue (const expr_t *expr, rua_ctx_t *ctx)
 const expr_t *
 expr_process (const expr_t *expr, rua_ctx_t *ctx)
 {
-	if (!expr) {
+	if (!expr || is_error (expr)) {
 		return expr;
 	}
 	static process_f funcs[ex_count] = {
