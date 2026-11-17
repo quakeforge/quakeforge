@@ -447,6 +447,12 @@ d_ptr_func (void *ptr, plitem_t *item, qfot_type_t *type, PLArchive *ctx)
 {
 	type = unalias_type (type.fldptr.aux_type);
 	id obj = nil;
+	if (type.encoding == ":") {
+		string name = PL_String (item);
+		auto p = (SEL *) ptr;
+		*p++ = sel_get_uid (name);
+		return p;
+	}
 	if (type.meta == ty_class) {
 		auto class = obj_lookup_class (type.class);
 		obj = [[class fromPropertyList:item withArchive:ctx] retain];
@@ -774,6 +780,9 @@ static plitem_t *
 s_ptr_func (void *ptr, qfot_type_t *type, PLArchive *ctx)
 {
 	type = unalias_type (type.fldptr.aux_type);
+	if (type.encoding == ":") {
+		return PL_NewString (sel_get_name (*(SEL*) ptr));
+	}
 	if (type.meta != ty_class) {
 		return nil;
 	}
