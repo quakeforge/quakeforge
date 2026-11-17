@@ -126,7 +126,7 @@ bi_get_hash (const void *key, void *_ht)
 	P_INT (pr, 0) = (intptr_t) (key);
 	P_INT (pr, 1) = ht->ud;
 	PR_ExecuteProgram (pr, ht->gh);
-	int         hash = R_INT (pr);
+	int         hash = R_ULONG (pr);
 	PR_RestoreParams (pr, params);
 	PR_PopFrame (pr);
 	return hash;
@@ -364,14 +364,14 @@ static void
 bi_Hash_String (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
-	R_INT (pr) = Hash_String (P_GSTRING (pr, 0));
+	R_ULONG (pr) = Hash_String (P_GSTRING (pr, 0));
 }
 
 static void
 bi_Hash_Buffer (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
-	R_INT (pr) = Hash_Buffer (P_GPOINTER (pr, 0), P_INT (pr, 1));
+	R_ULONG (pr) = Hash_Buffer (P_GPOINTER (pr, 0), P_INT (pr, 1));
 }
 
 static void
