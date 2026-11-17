@@ -786,6 +786,14 @@ proc_cond (const expr_t *expr, rua_ctx_t *ctx)
 		true_expr = pointer_deref (true_expr);
 	}
 	auto false_type = get_type (false_expr);
+	if (is_void (false_type) && is_nil (false_expr) && !is_nil (true_expr)) {
+		false_type = true_type;
+		false_expr = convert_nil (false_expr, false_type);
+	} else if (is_void (true_type) && is_nil (true_expr)
+			   && !is_nil (false_expr)) {
+		true_type = false_type;
+		true_expr = convert_nil (true_expr, true_type);
+	}
 	if (is_reference (false_type)) {
 		false_type = dereference_type (false_type);
 		false_expr = pointer_deref (false_expr);
