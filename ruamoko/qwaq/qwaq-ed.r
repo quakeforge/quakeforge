@@ -10,6 +10,7 @@
 #include "gui/window.h"
 #include "armature.h"
 #include "camerasystem.h"
+#include "fsm.h"
 #include "gizmo.h"
 #include "mainmenu.h"
 #include "physics.h"
@@ -167,6 +168,10 @@ static component_t qwaq_components[] = {
 		.size = sizeof (animstate_t),
 		.name = "anim",
 	},
+	[qent_fsm] = {
+		.size = sizeof (id),
+		.name = "fsm",
+	},
 	[qent_armature] = {
 		.size = sizeof (armature_t *),
 		.name = "armature",
@@ -176,6 +181,155 @@ static component_t qwaq_components[] = {
 		.name = "bounds",
 	},
 };
+
+@interface AnimFSM : FSM
+{
+	transform_t trans;
+	entity_t ent;
+	animstate_t anim[4];
+	animstate_t rmanim[4];
+
+	motor_t E;
+	float dt;
+	bool clip_ended;
+	animstate_t current_anim;
+	animstate_t current_rmanim;
+}
+-init:(model_t) model ent:(entity_t) ent;
+@end
+
+@implementation AnimFSM
+
+-init:(model_t) model ent:(entity_t) ent
+{
+	if (!(self = [super init])) {
+		return nil;
+	}
+	self.ent = ent;
+	trans = Entity_GetTransform (ent);
+	string mod_name = Model_Name (model);
+	cliphandle_t clips[] = {
+		qfa_find_clip (mod_name + ":idle.R"),
+		qfa_find_clip (mod_name + ":step.RL"),
+		qfa_find_clip (mod_name + ":idle.L"),
+		qfa_find_clip (mod_name + ":step.LR"),
+	};
+	cliphandle_t evclips[] = {
+		qfa_find_clip ("ev|" + mod_name + ":idle.R"),
+		qfa_find_clip ("ev|" + mod_name + ":step.RL"),
+		qfa_find_clip ("ev|" + mod_name + ":idle.L"),
+		qfa_find_clip ("ev|" + mod_name + ":step.LR"),
+	};
+	cliphandle_t rmclips[] = {
+		qfa_find_clip ("rm|" + mod_name + ":idle.R"),
+		qfa_find_clip ("rm|" + mod_name + ":step.RL"),
+		qfa_find_clip ("rm|" + mod_name + ":idle.L"),
+		qfa_find_clip ("rm|" + mod_name + ":step.LR"),
+	};
+	auto arma = qfa_find_armature (mod_name);
+	auto rmarma = qfa_find_armature ("rm|" + mod_name);
+	for (int i = 0; i < 4; i++) {
+		anim[i] = qfa_create_animation (&clips[i], 1, &evclips[i], 1,
+										false, arma, model);
+		qfa_set_clip_loop (anim[i], 0, false);
+		qfa_set_clip_loop (anim[i], 1, false);
+
+		rmanim[i] = qfa_create_animation (&rmclips[i], 1, nil, 0,
+										  false, rmarma, model);
+		qfa_set_clip_loop (rmanim[i], 0, false);
+	}
+	auto c = [FSMAction actionWithTarget:self selector:@selector(check)];
+	auto e = [FSMAction actionWithTarget:self selector:@selector(enter)];
+	auto s0 = [FSMState stateWithName:"idle.R"];
+	auto s1 = [FSMState stateWithName:"step.RL"];
+	auto s2 = [FSMState stateWithName:"idle.L"];
+	auto s3 = [FSMState stateWithName:"step.LR"];
+	auto e0 = [FSMEvent eventWithName:"" targetState:s1];
+	auto e1 = [FSMEvent eventWithName:"" targetState:s2];
+	auto e2 = [FSMEvent eventWithName:"" targetState:s3];
+	auto e3 = [FSMEvent eventWithName:"" targetState:s0];
+	e0.checkCondition = [c retain];
+	e1.checkCondition = [c retain];
+	e2.checkCondition = [c retain];
+	e3.checkCondition = [c retain];
+	[s0 addEvent:e0];
+	[s1 addEvent:e1];
+	[s2 addEvent:e2];
+	[s3 addEvent:e3];
+	s0.onEnter = [e retain];
+	s1.onEnter = [e retain];
+	s2.onEnter = [e retain];
+	s3.onEnter = [e retain];
+	[self addState:s0];
+	[self addState:s1];
+	[self addState:s2];
+	[self addState:s3];
+	[self start];
+	return self;
+}
+
+-(bool)check
+{
+	return clip_ended;
+}
+
+-(void)update:(float)dt
+{
+	//printf ("fsm update %s %g\n", [current_state name], dt);
+	animstate_t anim = current_anim;
+	animstate_t rmanim = current_rmanim;
+	qfa_update_anim (anim, dt);
+
+	qfa_update_anim (rmanim, dt);
+	arm_motor_t M;
+	qfa_get_pose_motors (rmanim, &M);
+	set_transform (M.m * E, trans);
+
+
+	int num_events;
+	auto events = qfa_get_events (anim, &num_events);
+	if (num_events) {
+		for (int i = 0; i < num_events; i++) {
+			//printf ("%d %g %g\n", events[i].data, events[i].start_frac,
+			//		events[i].end_frac);
+			if (events[i].data == 1) {
+				clip_ended = true;
+			}
+		}
+	}
+
+	[super update:dt];
+}
+
+-(void)enter
+{
+	string name = currentState.name;
+	int ind = 0;
+	if (str_char (name, 0) == 'i') {
+		if (str_char(name, 5) == 'R') {
+			ind = 0;
+		} else {
+			ind = 2;
+		}
+	} else {
+		if (str_char(name, 5) == 'R') {
+			ind = 1;
+		} else {
+			ind = 3;
+		}
+	}
+	printf ("fsm enter %7s %d\n", name, ind);
+	current_anim = anim[ind];
+	current_rmanim = rmanim[ind];
+	qfa_reset_anim (current_anim);
+	qfa_reset_anim (current_rmanim);
+	Entity_SetAnimstate (ent, current_anim);
+	E = make_motor (Transform_GetWorldPosition (trans),
+					Transform_GetWorldRotation (trans));
+	clip_ended = false;
+}
+
+@end
 
 imui_ctx_t imui_ctx;
 #define IMUI_context imui_ctx
@@ -797,6 +951,7 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key,
 	string anim;
 	bool extract_root_motion;
 	bool create_events;
+	bool attach_fsm;
 	bool show_armature;
 	bool mesh_flag;
 	bool grav_flag;
@@ -846,6 +1001,14 @@ draw_line_box (mat2x3 aabb, transform_t cam, motor_t E)
 			draw_3dline (cam, (vec4) p1, (vec4) p2, 0xbf);
 		}
 	}
+}
+
+static void
+update_fsm (uint ent)
+{
+	AnimFSM *fsm;
+	get_component (ent, qent_fsm, &fsm);
+	[fsm update:frametime];
 }
 
 static void
@@ -910,11 +1073,13 @@ update_anim (uint ent)
 void
 load_scene (plitem_t *scene_item, scene_t scene)
 {
+	auto ctx = [PLArchive archive];
 	id scene_plist = [[PLItem fromItem:scene_item] retain];
 	int count = [scene_plist count];
 	for (int i = 0; i < count; i++) {
 		id ent_item = [scene_plist getObjectAtIndex:i];
-		EntityInit *ent_init = [EntityInit fromPropertyList:[ent_item item]];
+		EntityInit *ent_init = [EntityInit fromPropertyList:[ent_item item]
+												withArchive:ctx];
 		//printf ("name: %s\n", ent_init.name);
 		//printf ("model: %s\n", ent_init.model);
 		//printf ("position: %q\n", ent_init.position);
@@ -1081,6 +1246,11 @@ load_scene (plitem_t *scene_item, scene_t scene)
 					mat2x3 bounds = Model_GetPoseBounds (model);
 					set_component (e, qent_bounds, &bounds);
 				}
+			}
+			if (ent_init.attach_fsm) {
+				id fsm = [[[AnimFSM alloc] init:model ent:ent] retain];
+				set_component (e, qent_fsm, &fsm);
+				set_update (e, update_fsm);
 			}
 			auto a = Entity_GetAnimation (ent);
 			a.debug_bone = ~0u;

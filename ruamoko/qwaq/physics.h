@@ -9,6 +9,7 @@ enum {
 	qent_grav,
 
 	qent_anim,
+	qent_fsm,
 	qent_armature,
 	qent_bounds,
 

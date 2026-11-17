@@ -172,11 +172,12 @@ qwaq_ed_dat_src= \
 	ruamoko/qwaq/armature.r \
 	ruamoko/qwaq/camera.r \
 	ruamoko/qwaq/camerasystem.r \
-	ruamoko/qwaq/physics.r \
+	ruamoko/qwaq/fsm.r \
 	ruamoko/qwaq/leafnode.r \
 	ruamoko/qwaq/mainmenu.r \
 	ruamoko/qwaq/mesh.r \
 	ruamoko/qwaq/pga3d.r \
+	ruamoko/qwaq/physics.r \
 	ruamoko/qwaq/planetary.r \
 	ruamoko/qwaq/player.r \
 	ruamoko/qwaq/playercam.r \
@@ -419,6 +420,7 @@ EXTRA_DIST += \
 	ruamoko/qwaq/armature.h \
 	ruamoko/qwaq/camera.h \
 	ruamoko/qwaq/camerasystem.h \
+	ruamoko/qwaq/fsm.h \
 	ruamoko/qwaq/gizmo.h \
 	ruamoko/qwaq/input-app.h \
 	ruamoko/qwaq/mainmenu.h \
