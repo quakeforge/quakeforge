@@ -87,14 +87,24 @@
 + (PLNull *) new;
 @end
 
+typedef @handle _hashtab_t hashtab_t;
+
+@interface PLArchive : Object
+{
+	hashtab_t   obj_refs;
+	ulong       id;
+}
++(PLArchive *)archive;
+@end
+
 @interface Object (PLItem)
-+(id)fromPropertyList:(plitem_t *)plitem;
--(plitem_t *)serialize;
++(id)fromPropertyList:(plitem_t *)plitem withArchive:(PLArchive *)ctx;
+-(plitem_t *)serialize:(PLArchive *)ctx;
 @end
 
 @interface Array (PLItem)
-+(id)fromPropertyList:(plitem_t *)plitem;
--(plitem_t *)serialize;
++(id)fromPropertyList:(plitem_t *)plitem withArchive:(PLArchive *)ctx;
+-(plitem_t *)serialize:(PLArchive *)ctx;
 @end
 
 #endif//__ruamoko_PropertyList_h

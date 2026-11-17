@@ -1,3 +1,4 @@
+#include <hash.h>
 #include <PropertyList.h>
 #include <types.h>
 #include <string.h>
@@ -322,6 +323,88 @@
 }
 @end
 
+@implementation PLArchive
+
+typedef struct pla_ref_s {
+	void *obj;
+	string id;
+} pla_ref_t;
+
+static ulong
+pla_get_hash_ptr (void *ele, void *data)
+{
+	pla_ref_t *ref = ele;
+	return (ulong) (uint) ref.obj;
+}
+
+static bool
+pla_compare_ptr (void *ele1, void *ele2, void *data)
+{
+	pla_ref_t *ref1 = ele1;
+	pla_ref_t *ref2 = ele2;
+	return ref1.obj == ref2.obj;
+}
+
+static string
+pla_get_key (void *ele, void *data)
+{
+	pla_ref_t *ref = ele;
+	return ref.id;
+}
+
+-init
+{
+	if (!(self = [super init])) {
+		return self;
+	}
+	obj_refs = Hash_NewTable (1021, pla_get_key, nil, nil);
+	Hash_SetHashCompare (obj_refs, pla_get_hash_ptr, pla_compare_ptr);
+	return self;
+}
+
++(PLArchive *)archive
+{
+	return [[[self alloc] init] autorelease];
+}
+
+-(string)id:(void *)ptr
+{
+	pla_ref_t ref = { .obj = ptr };
+	pla_ref_t *r = Hash_FindElement (obj_refs, &ref);
+	return r ? r.id : "";
+}
+
+-(string)add:(void *)ptr
+{
+	pla_ref_t ref = { .obj = ptr };
+	pla_ref_t *r = Hash_FindElement (obj_refs, &ref);
+	if (r) {
+		return r.id;
+	}
+	r = obj_malloc (sizeof (pla_ref_t));
+	*r = { .obj = ptr, .id = str_hold (sprintf ("%lx", ++id)) };
+	Hash_Add (obj_refs, r);
+	Hash_AddElement (obj_refs, r);
+	return r.id;
+}
+
+-(void *)add:(void *)ptr withId:(string)id
+{
+	pla_ref_t *r = obj_malloc (sizeof (pla_ref_t));
+	*r = { .obj = ptr, .id = str_hold (id) };
+	Hash_Add (obj_refs, r);
+	Hash_AddElement (obj_refs, r);
+	return ptr;
+}
+
+-(void *)ptr:(string)id
+{
+	pla_ref_t *r = Hash_Find (obj_refs, id);
+	return r ? r.obj : nil;
+}
+
+@end
+
 string PR_FunctionName (uint func) = #0;
 int PR_FindFunction (string name) = #0;
 
@@ -335,7 +418,7 @@ unalias_type (qfot_type_t *type)
 }
 
 static void *
-d_string_func (void *ptr, plitem_t *item)
+d_string_func (void *ptr, plitem_t *item, PLArchive *ctx)
 {
 	auto p = (string *) ptr;
 	*p++ = str_hold (PL_String (item));
@@ -343,7 +426,7 @@ d_string_func (void *ptr, plitem_t *item)
 }
 
 static void *
-d_float_func (void *ptr, plitem_t *item)
+d_float_func (void *ptr, plitem_t *item, PLArchive *ctx)
 {
 	auto p = (float *) ptr;
 	*p++ = (float) PL_Number (item);
@@ -351,7 +434,7 @@ d_float_func (void *ptr, plitem_t *item)
 }
 
 static void *
-d_func_func (void *ptr, plitem_t *item)
+d_func_func (void *ptr, plitem_t *item, PLArchive *ctx)
 {
 	auto p = (int *) ptr;
 	string name = PL_String (item);
@@ -360,13 +443,13 @@ d_func_func (void *ptr, plitem_t *item)
 }
 
 static void *
-d_ptr_func (void *ptr, plitem_t *item, qfot_type_t *type)
+d_ptr_func (void *ptr, plitem_t *item, qfot_type_t *type, PLArchive *ctx)
 {
 	type = unalias_type (type.fldptr.aux_type);
 	id obj = nil;
 	if (type.meta == ty_class) {
 		auto class = obj_lookup_class (type.class);
-		obj = [[class fromPropertyList:item] retain];
+		obj = [[class fromPropertyList:item withArchive:ctx] retain];
 	}
 	auto p = (id *) ptr;
 	*p++ = obj;
@@ -374,7 +457,7 @@ d_ptr_func (void *ptr, plitem_t *item, qfot_type_t *type)
 }
 
 static void *
-d_double_func (void *ptr, plitem_t *item)
+d_double_func (void *ptr, plitem_t *item, PLArchive *ctx)
 {
 	auto p = (double *) ptr;
 	*p++ = (double) PL_Number (item);
@@ -382,7 +465,7 @@ d_double_func (void *ptr, plitem_t *item)
 }
 
 static void *
-d_int_func (void *ptr, plitem_t *item)
+d_int_func (void *ptr, plitem_t *item, PLArchive *ctx)
 {
 	auto p = (int *) ptr;
 	*p++ = (int) PL_Number (item);
@@ -390,7 +473,7 @@ d_int_func (void *ptr, plitem_t *item)
 }
 
 static void *
-d_uint_func (void *ptr, plitem_t *item)
+d_uint_func (void *ptr, plitem_t *item, PLArchive *ctx)
 {
 	auto p = (uint *) ptr;
 	*p++ = (uint) PL_Number (item);
@@ -398,7 +481,7 @@ d_uint_func (void *ptr, plitem_t *item)
 }
 
 static void *
-d_long_func (void *ptr, plitem_t *item)
+d_long_func (void *ptr, plitem_t *item, PLArchive *ctx)
 {
 	auto p = (long *) ptr;
 	*p++ = (long) PL_Number (item);
@@ -406,7 +489,7 @@ d_long_func (void *ptr, plitem_t *item)
 }
 
 static void *
-d_ulong_func (void *ptr, plitem_t *item)
+d_ulong_func (void *ptr, plitem_t *item, PLArchive *ctx)
 {
 	auto p = (ulong *) ptr;
 	*p++ = (ulong) PL_Number (item);
@@ -414,7 +497,7 @@ d_ulong_func (void *ptr, plitem_t *item)
 }
 
 static void *
-d_bool_func (void *ptr, plitem_t *item)
+d_bool_func (void *ptr, plitem_t *item, PLArchive *ctx)
 {
 	auto p = (bool *) ptr;
 	*p++ = PL_Bool (item);
@@ -422,7 +505,7 @@ d_bool_func (void *ptr, plitem_t *item)
 }
 
 static void *
-d_lbool_func (void *ptr, plitem_t *item)
+d_lbool_func (void *ptr, plitem_t *item, PLArchive *ctx)
 {
 	auto p = (bool *) ptr;
 	*p++ = PL_Bool (item);
@@ -430,16 +513,16 @@ d_lbool_func (void *ptr, plitem_t *item)
 }
 
 static void
-d_basic_func (qfot_type_t *type, void *ptr, plitem_t *item)
+d_basic_func (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
 {
 	if (str_char(type.encoding, 0) == '@') {
-		*(id *)ptr = [[Object fromPropertyList:item] retain];
+		*(id *)ptr = [[Object fromPropertyList:item withArchive:ctx] retain];
 		return;
 	}
 	if (type.type == ev_ptr) {
-		d_ptr_func (ptr, item, type);
+		d_ptr_func (ptr, item, type, ctx);
 	}
-	static void *(*type_funcs[])(void *ptr, plitem_t *item) = {
+	static void *(*type_funcs[])(void *ptr, plitem_t *item, PLArchive *ctx) = {
 		[ev_string] = d_string_func,
 		[ev_float] = d_float_func,
 		[ev_vector] = d_float_func,
@@ -487,24 +570,25 @@ d_basic_func (qfot_type_t *type, void *ptr, plitem_t *item)
 			auto vec = PL_ObjectAtIndex (item, i);
 			int count = PL_A_NumObjects (vec);
 			for (int j = 0; j < width && j < count; j++) {
-				ptr = func (ptr, PL_ObjectAtIndex (vec, j));
+				ptr = func (ptr, PL_ObjectAtIndex (vec, j), ctx);
 			}
 			ptr = (void *)((int)ptr + type_sizes[type.type]);
 		}
 	} else if (width > 1) {
 		int count = PL_A_NumObjects (item);
 		for (int j = 0; j < width && j < count; j++) {
-			ptr = func (ptr, PL_ObjectAtIndex (item, j));
+			ptr = func (ptr, PL_ObjectAtIndex (item, j), ctx);
 		}
 	} else {
-		func (ptr, item);
+		func (ptr, item, ctx);
 	}
 }
 
-static void deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item);
+static void deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item,
+							   PLArchive *ctx);
 
 static void
-d_struct_func (qfot_type_t *type, void *ptr, plitem_t *item)
+d_struct_func (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
 {
 	for (int i = 0; i < type.strct.num_fields; i++) {
 		auto field = &type.strct.fields[i];
@@ -516,13 +600,13 @@ d_struct_func (qfot_type_t *type, void *ptr, plitem_t *item)
 		auto val = PL_ObjectForKey (item, field.name);
 		if (val) {
 			auto p = (int *)ptr + field.offset;
-			deserialize_value (field.type, p, val);
+			deserialize_value (field.type, p, val, ctx);
 		}
 	}
 }
 
 static void
-d_enum_func (qfot_type_t *type, void *ptr, plitem_t *item)
+d_enum_func (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
 {
 	int val = 0;
 	if (PL_Type (item) == QFString) {
@@ -540,14 +624,15 @@ d_enum_func (qfot_type_t *type, void *ptr, plitem_t *item)
 }
 
 static void
-d_array_func (qfot_type_t *type, void *ptr, plitem_t *item)
+d_array_func (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
 {
 }
 
 static void
-deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item)
+deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
 {
-	static void (*meta_funcs[])(qfot_type_t *type, void *ptr, plitem_t *item)={
+	static void (*meta_funcs[])(qfot_type_t *type, void *ptr, plitem_t *item,
+								PLArchive *ctx)={
 		[ty_basic] = d_basic_func,
 		[ty_struct] = d_struct_func,
 		[ty_enum] = d_enum_func,
@@ -555,7 +640,7 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item)
 		[ty_bool] = d_basic_func,
 	};
 	type = unalias_type (type);
-	meta_funcs[type.meta] (type, ptr, item);
+	meta_funcs[type.meta] (type, ptr, item, ctx);
 }
 
 @implementation Object (PLItem)
@@ -563,9 +648,12 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item)
 {
 }
 
-+(id)fromPropertyList:(plitem_t *)plitem
++(id)fromPropertyList:(plitem_t *)plitem withArchive:(PLArchive *)ctx
 {
 	if (PL_Type (plitem) == QFDictionary) {
+		if (auto ref = PL_ObjectForKey (plitem, "@ref")) {
+			return (id) [ctx ptr:PL_String (ref)];
+		}
 		auto classname = PL_ObjectForKey (plitem, "@classname");
 		if (classname) {
 			string c = PL_String (classname);
@@ -577,6 +665,9 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item)
 		}
 		// emulate Object init
 		id obj = [[[self alloc] retain] autorelease];
+		if (auto id = PL_ObjectForKey (plitem, "@id")) {
+			[ctx add:obj withId:PL_String (id)];
+		}
 		[obj setDefaultIvars];
 
 		Class class = [self class];
@@ -588,7 +679,7 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item)
 				auto item = PL_ObjectForKey (plitem, ivar.ivar_name);
 				if (item) {
 					deserialize_value (ivar.ivar_type, obj + ivar.ivar_offset,
-									   item);
+									   item, ctx);
 				}
 			}
 			class = class.super_class;
@@ -599,7 +690,7 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item)
 		int count = PL_A_NumObjects (plitem);
 		for (int i = 0; i < count; i++) {
 			auto obj = PL_ObjectAtIndex (plitem, i);
-			[arr addObject:[Object fromPropertyList:obj]];
+			[arr addObject:[Object fromPropertyList:obj withArchive:ctx]];
 		}
 		return arr;
 	}
@@ -607,7 +698,7 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item)
 }
 
 static plitem_t *
-s_string_func (@inout void *ptr)
+s_string_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (string *) ptr;
 	auto item = PL_NewString (*p++);
@@ -616,7 +707,7 @@ s_string_func (@inout void *ptr)
 }
 
 static plitem_t *
-s_float_func (@inout void *ptr)
+s_float_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (float *) ptr;
 	auto item = PL_NewNumber (*p++);
@@ -625,7 +716,7 @@ s_float_func (@inout void *ptr)
 }
 
 static plitem_t *
-s_func_func (@inout void *ptr)
+s_func_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (int *) ptr;
 	string name = PR_FunctionName (*p++);
@@ -635,7 +726,7 @@ s_func_func (@inout void *ptr)
 }
 
 static plitem_t *
-s_double_func (@inout void *ptr)
+s_double_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (double *) ptr;
 	auto item = PL_NewNumber (*p++);
@@ -644,7 +735,7 @@ s_double_func (@inout void *ptr)
 }
 
 static plitem_t *
-s_int_func (@inout void *ptr)
+s_int_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (int *) ptr;
 	auto item = PL_NewNumber (*p++);
@@ -653,7 +744,7 @@ s_int_func (@inout void *ptr)
 }
 
 static plitem_t *
-s_uint_func (@inout void *ptr)
+s_uint_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (uint *) ptr;
 	auto item = PL_NewNumber (*p++);
@@ -662,7 +753,7 @@ s_uint_func (@inout void *ptr)
 }
 
 static plitem_t *
-s_long_func (@inout void *ptr)
+s_long_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (long *) ptr;
 	auto item = PL_NewNumber (*p++);
@@ -671,7 +762,7 @@ s_long_func (@inout void *ptr)
 }
 
 static plitem_t *
-s_ulong_func (@inout void *ptr)
+s_ulong_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (ulong *) ptr;
 	auto item = PL_NewNumber (*p++);
@@ -680,14 +771,15 @@ s_ulong_func (@inout void *ptr)
 }
 
 static plitem_t *
-s_ptr_func (void *ptr, qfot_type_t *type)
+s_ptr_func (void *ptr, qfot_type_t *type, PLArchive *ctx)
 {
 	type = unalias_type (type.fldptr.aux_type);
 	if (type.meta != ty_class) {
 		return nil;
 	}
-	auto obj = [*(id*)ptr serialize];
-	if (obj && type.class != class_get_class_name ([*(id*)ptr class])) {
+	auto obj = [*(id*)ptr serialize:ctx];
+	if (obj && !PL_ObjectForKey (obj, "@ref")
+		&& type.class != class_get_class_name ([*(id*)ptr class])) {
 		auto clsname = object_get_class_name (*(id*)ptr);
 		auto str = PL_NewString (clsname);
 		PL_D_AddObject (obj, "@classname", str);
@@ -696,7 +788,7 @@ s_ptr_func (void *ptr, qfot_type_t *type)
 }
 
 static plitem_t *
-s_bool_func (@inout void *ptr)
+s_bool_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (bool *) ptr;
 	auto item = PL_NewBool (*p++);
@@ -705,7 +797,7 @@ s_bool_func (@inout void *ptr)
 }
 
 static plitem_t *
-s_lbool_func (@inout void *ptr)
+s_lbool_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (lbool *) ptr;
 	auto item = PL_NewBool (*p++);
@@ -715,22 +807,22 @@ s_lbool_func (@inout void *ptr)
 
 
 static plitem_t *
-s_basic_func (qfot_type_t *type, void *ptr)
+s_basic_func (qfot_type_t *type, void *ptr, PLArchive *ctx)
 {
 	if (str_char(type.encoding, 0) == '@') {
 		// id
-		auto obj = [*(id*)ptr serialize];
-		if (obj) {
+		auto obj = [*(id*)ptr serialize:ctx];
+		if (obj && !PL_ObjectForKey (obj, "@ref")) {
 			auto clsname = object_get_class_name (*(id*)ptr);
 			PL_D_AddObject (obj, "@classname", PL_NewString (clsname));
 		}
 		return obj;
 	}
 	if (type.type == ev_ptr) {
-		return s_ptr_func (ptr, type);
+		return s_ptr_func (ptr, type, ctx);
 	}
 	//FIXME qfcc doesn't typecheck the function initializers properly
-	static plitem_t *(*type_funcs[])(@inout void *ptr) = {
+	static plitem_t *(*type_funcs[])(@inout void *ptr, PLArchive *ctx) = {
 		[ev_string] = s_string_func,
 		[ev_float] = s_float_func,
 		[ev_vector] = s_float_func,
@@ -765,7 +857,7 @@ s_basic_func (qfot_type_t *type, void *ptr)
 		for (int i = 0; i < columns; i++) {
 			auto vec = PL_NewArray ();
 			for (int i = 0; i < width; i++) {
-				PL_A_AddObject (vec, func (ptr));
+				PL_A_AddObject (vec, func (ptr, ctx));
 			}
 			PL_A_AddObject (mat, vec);
 		}
@@ -773,18 +865,18 @@ s_basic_func (qfot_type_t *type, void *ptr)
 	} else if (width > 1) {
 		auto vec = PL_NewArray ();
 		for (int i = 0; i < width; i++) {
-			PL_A_AddObject (vec, func (ptr));
+			PL_A_AddObject (vec, func (ptr, ctx));
 		}
 		return vec;
 	} else {
-		return func (ptr);
+		return func (ptr, ctx);
 	}
 }
 
-static plitem_t *serialize_value (qfot_type_t *type, void *ptr);
+static plitem_t *serialize_value (qfot_type_t *type, void *ptr, PLArchive *ctx);
 
 static plitem_t *
-s_struct_func (qfot_type_t *type, void *ptr)
+s_struct_func (qfot_type_t *type, void *ptr, PLArchive *ctx)
 {
 	auto strct = PL_NewDictionary ();
 	for (int i = 0; i < type.strct.num_fields; i++) {
@@ -794,7 +886,7 @@ s_struct_func (qfot_type_t *type, void *ptr)
 			// NOTE: unions are UB
 			continue;
 		}
-		auto obj = serialize_value (field.type, (int *)ptr + field.offset);
+		auto obj = serialize_value (field.type, (int *)ptr + field.offset, ctx);
 		if (obj) {
 			PL_D_AddObject (strct, field.name, obj);
 		}
@@ -803,7 +895,7 @@ s_struct_func (qfot_type_t *type, void *ptr)
 }
 
 static plitem_t *
-s_enum_func (qfot_type_t *type, void *ptr)
+s_enum_func (qfot_type_t *type, void *ptr, PLArchive *ctx)
 {
 	for (int i = 0; i < type.strct.num_fields; i++) {
 		if (type.strct.fields[i].offset == *(int *) ptr) {
@@ -814,15 +906,16 @@ s_enum_func (qfot_type_t *type, void *ptr)
 }
 
 static plitem_t *
-s_array_func (qfot_type_t *type, void *ptr)
+s_array_func (qfot_type_t *type, void *ptr, PLArchive *ctx)
 {
 	return nil;
 }
 
 static plitem_t *
-serialize_value (qfot_type_t *type, void *ptr)
+serialize_value (qfot_type_t *type, void *ptr, PLArchive *ctx)
 {
-	static plitem_t *(*meta_funcs[]) (qfot_type_t *type, void *ptr) = {
+	static plitem_t *(*meta_funcs[]) (qfot_type_t *type, void *ptr,
+									  PLArchive *ctx) = {
 		[ty_basic] = s_basic_func,
 		[ty_struct] = s_struct_func,
 		[ty_enum] = s_enum_func,
@@ -830,15 +923,21 @@ serialize_value (qfot_type_t *type, void *ptr)
 		[ty_bool] = s_basic_func,
 	};
 	type = unalias_type (type);
-	auto obj = meta_funcs[type.meta] (type, ptr);
+	auto obj = meta_funcs[type.meta] (type, ptr, ctx);
 	return obj;
 }
 
--(plitem_t *)serialize
+-(plitem_t *)serialize:(PLArchive *)ctx
 {
+	if (string ref = [ctx id:self]) {
+		plitem_t *pl = PL_NewDictionary ();
+		PL_D_AddObject (pl, "@ref", PL_NewString (ref));
+		return pl;
+	}
 	plitem_t *pl = PL_NewDictionary ();
 	auto clsname = object_get_class_name (self);
 	PL_D_AddObject (pl, "@classname", PL_NewString (clsname));
+	PL_D_AddObject (pl, "@id", PL_NewString ([ctx add:self]));
 
 	Class cls = [self class];
 	while (cls && cls != [Object class]) {
@@ -846,7 +945,8 @@ serialize_value (qfot_type_t *type, void *ptr)
 		int ivar_count = *ivar_ptr;
 		auto ivar = (struct obj_ivar *) (ivar_ptr + 1);
 		for (int i = 0; i < ivar_count; i++, ivar++) {
-			auto o = serialize_value (ivar.ivar_type, self + ivar.ivar_offset);
+			auto o = serialize_value (ivar.ivar_type, self + ivar.ivar_offset,
+									  ctx);
 			if (o) {
 				PL_D_AddObject (pl, ivar.ivar_name, o);
 			}
@@ -858,23 +958,28 @@ serialize_value (qfot_type_t *type, void *ptr)
 @end
 
 @implementation Array (PLItem)
-+(id)fromPropertyList:(plitem_t *)plitem
++(id)fromPropertyList:(plitem_t *)plitem withArchive:(PLArchive *)ctx
 {
 	uint count = PL_A_NumObjects (plitem);
 	auto array = [Array arrayWithCapacity:count];
 	for (uint i = 0; i < count; i++) {
 		auto obj = PL_ObjectAtIndex (plitem, i);
-		[array addObject: [Object fromPropertyList:obj]];
+		[array addObject: [Object fromPropertyList:obj withArchive:ctx]];
 	}
 	return array;
 }
 
--(plitem_t *)serialize
+-(plitem_t *)serialize:(PLArchive *)ctx
 {
+	if (string ref = [ctx id:self]) {
+		plitem_t *pl = PL_NewDictionary ();
+		PL_D_AddObject (pl, "@ref", PL_NewString (ref));
+		return pl;
+	}
 	auto array = PL_NewArray ();
 	for (uint i = 0; i < count; i++) {
 		id obj = _objs[i];
-		auto item = [obj serialize];
+		auto item = [obj serialize:ctx];
 		PL_A_AddObject (array, item);
 	}
 	return array;
