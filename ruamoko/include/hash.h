@@ -3,6 +3,8 @@
 
 typedef @handle _hashtab_t hashtab_t;
 
+typedef void (*hash_action_t) (void *ele, void *data);
+
 @extern hashtab_t Hash_NewTable (int size, string gk (void *ele, void *data), void f (void *ele, void *data), void *ud);
 @extern void Hash_SetHashCompare (hashtab_t tab, ulong gh (void *ele, void *data), bool cmp (void *ele1, void *ele2, void *data));
 @extern void Hash_DelTable (hashtab_t tab);
@@ -20,5 +22,6 @@ typedef @handle _hashtab_t hashtab_t;
 @extern ulong Hash_Buffer (void *buf, int len);
 @extern void **Hash_GetList (hashtab_t tab);
 @extern void Hash_Stats (hashtab_t tab);
+@extern void Hash_ForEach (hashtab_t tab, hash_action_t action, void *data);
 
 #endif	// __ruamoko_hash_h

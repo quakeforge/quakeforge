@@ -405,6 +405,42 @@ bi_Hash_Stats (progs_t *pr, void *_res)
 	Hash_Stats (ht->tab);
 }
 
+typedef struct bi_hashact_s {
+	progs_t    *pr;
+	pr_func_t   func;
+	pr_ptr_t    data;
+} bi_hashact_t;
+
+static void
+bi_hash_action (void *ele, void *data)
+{
+	bi_hashact_t *action = data;
+
+	progs_t    *pr = action->pr;
+	PR_PushFrame (pr);
+	auto params = PR_SaveParams (pr);
+	PR_SetupParams (pr, 2, 1);
+	P_INT (pr, 0) = (intptr_t) (ele);
+	P_INT (pr, 1) = action->data;
+	PR_ExecuteProgram (pr, action->func);
+	PR_RestoreParams (pr, params);
+	PR_PopFrame (pr);
+}
+
+static void
+bi_Hash_ForEach (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	bi_hashtab_t *ht = get_table (pr, _res, __FUNCTION__, P_INT (pr, 0));
+	bi_hashact_t action = {
+		.pr = pr,
+		.func = P_FUNCTION (pr, 1),
+		.data = P_POINTER (pr, 2),
+	};
+
+	Hash_ForEach (ht->tab, bi_hash_action, &action);
+}
+
 static void
 bi_hash_clear (progs_t *pr, void *_res)
 {
@@ -449,6 +485,7 @@ static builtin_t builtins[] = {
 	bi(Hash_Buffer,          2, p(ptr), p(int)),
 	bi(Hash_GetList,         1, p(ptr)),
 	bi(Hash_Stats,           1, p(ptr)),
+	bi(Hash_ForEach,         1, p(ptr), p(func), p(ptr)),
 	{0}
 };
 

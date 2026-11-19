@@ -17,3 +17,4 @@ ulong Hash_String (string str) = #0;
 ulong Hash_Buffer (void *buf, int len) = #0;
 void **Hash_GetList (hashtab_t tab) = #0;
 void Hash_Stats (hashtab_t tab) = #0;
+void Hash_ForEach (hashtab_t tab, hash_action_t action, void *data) = #0;
