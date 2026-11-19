@@ -92,14 +92,19 @@ typedef @handle _hashtab_t hashtab_t;
 @interface PLArchive : Object
 {
 	hashtab_t   obj_refs;
-	ulong       id;
+	hashtab_t   undef_refs;
+	Array      *obj_queue;
+	ulong       obj_id;
+	bool        unresolved;
 }
 +(PLArchive *)archive;
+-(bool)finalize;
 @end
 
 @interface Object (PLItem)
 +(id)fromPropertyList:(plitem_t *)plitem withArchive:(PLArchive *)ctx;
 -(plitem_t *)serialize:(PLArchive *)ctx;
+-(void)awakeFromArchive;
 @end
 
 @interface Array (PLItem)

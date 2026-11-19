@@ -3,6 +3,7 @@
 #include <types.h>
 #include <string.h>
 #include <Array.h>
+#include <runtime.h>
 
 @implementation PLItem
 
@@ -326,8 +327,8 @@
 @implementation PLArchive
 
 typedef struct pla_ref_s {
-	void *obj;
 	string id;
+	void *obj;
 } pla_ref_t;
 
 static ulong
@@ -352,14 +353,35 @@ pla_get_key (void *ele, void *data)
 	return ref.id;
 }
 
+static void
+pla_free (void *ele, void *data)
+{
+	pla_ref_t *ref = ele;
+	int rc = obj_decrement_retaincount ((id) ref);
+	if (rc == 0) {
+		str_free (ref.id);
+		obj_free (ref);
+	}
+}
+
 -init
 {
 	if (!(self = [super init])) {
 		return self;
 	}
-	obj_refs = Hash_NewTable (1021, pla_get_key, nil, nil);
+	obj_refs = Hash_NewTable (1021, pla_get_key, pla_free, nil);
 	Hash_SetHashCompare (obj_refs, pla_get_hash_ptr, pla_compare_ptr);
+	undef_refs = Hash_NewTable (1021, pla_get_key, pla_free, nil);
+	obj_queue = [[Array array] retain];
 	return self;
+}
+
+-(void)dealloc
+{
+	[obj_queue release];
+	Hash_DelTable (undef_refs);
+	Hash_DelTable (obj_refs);
+	[super dealloc];
 }
 
 +(PLArchive *)archive
@@ -382,25 +404,68 @@ pla_get_key (void *ele, void *data)
 		return r.id;
 	}
 	r = obj_malloc (sizeof (pla_ref_t));
-	*r = { .obj = ptr, .id = str_hold (sprintf ("%lx", ++id)) };
+	*r = { .obj = ptr, .id = str_hold (sprintf ("%lx", ++obj_id)) };
 	Hash_Add (obj_refs, r);
+	obj_increment_retaincount ((id) r);
+
 	Hash_AddElement (obj_refs, r);
+	obj_increment_retaincount ((id) r);
 	return r.id;
 }
 
--(void *)add:(void *)ptr withId:(string)id
+-(void)queueObj:obj
+{
+	[obj_queue addObject:obj];
+}
+
+-(void *)add:(void *)ptr withId:(string)obj_id
 {
 	pla_ref_t *r = obj_malloc (sizeof (pla_ref_t));
-	*r = { .obj = ptr, .id = str_hold (id) };
+	*r = { .id = str_hold (obj_id), .obj = ptr };
 	Hash_Add (obj_refs, r);
+	obj_increment_retaincount ((id) r);
 	Hash_AddElement (obj_refs, r);
+	obj_increment_retaincount ((id) r);
 	return ptr;
+}
+
+-(void)addUndef:(plitem_t *)item at:(void **)loc
+{
+	if (auto ref = PL_ObjectForKey (item, "@ref")) {
+		string obj_id = PL_String (ref);
+		pla_ref_t *r = obj_malloc (sizeof (pla_ref_t));
+		*r = { .id = str_hold (obj_id), .obj = loc };
+		Hash_Add (undef_refs, r);
+		obj_increment_retaincount ((id) r);
+	}
 }
 
 -(void *)ptr:(string)id
 {
 	pla_ref_t *r = Hash_Find (obj_refs, id);
 	return r ? r.obj : nil;
+}
+
+static void
+resolve_ref (void *ele, void *data)
+{
+	PLArchive *ctx = (PLArchive *) data;
+	pla_ref_t *ref = ele;
+	void *ptr = [ctx ptr:ref.id];
+	*(void **)ref.obj = ptr;
+	if (!ptr) {
+		ctx.unresolved = true;
+	}
+}
+
+-(bool)finalize
+{
+	Hash_ForEach (undef_refs, resolve_ref, self);
+	if (!unresolved) {
+		[obj_queue makeObjectsPerformSelector:@selector(awakeFromArchive)];
+	}
+	[obj_queue removeAllObjects];
+	return !unresolved;
 }
 
 @end
@@ -463,6 +528,9 @@ d_ptr_func (void *ptr, plitem_t *item, qfot_type_t *type, PLArchive *ctx)
 			class = obj_lookup_class (type.class);
 		}
 		obj = [[class fromPropertyList:item withArchive:ctx] retain];
+		if (!obj) {
+			[ctx addUndef:item at:ptr];
+		}
 	}
 	auto p = (id *) ptr;
 	*p++ = obj;
@@ -658,6 +726,10 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
 {
 }
 
+-(void)awakeFromArchive
+{
+}
+
 +(id)fromPropertyList:(plitem_t *)plitem withArchive:(PLArchive *)ctx
 {
 	if (PL_Type (plitem) == QFDictionary) {
@@ -694,6 +766,7 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
 			}
 			class = class.super_class;
 		}
+		[ctx queueObj:obj];
 		return obj;
 	} else if (PL_Type (plitem) == QFArray) {
 		return [Array fromPropertyList:plitem withArchive:ctx];
@@ -777,10 +850,10 @@ s_ulong_func (@inout void *ptr, PLArchive *ctx)
 static plitem_t *
 s_ptr_func (void *ptr, qfot_type_t *type, PLArchive *ctx)
 {
-	type = unalias_type (type.fldptr.aux_type);
 	if (type.encoding == ":") {
 		return PL_NewString (sel_get_name (*(SEL*) ptr));
 	}
+	type = unalias_type (type.fldptr.aux_type);
 	if (type.meta != ty_class) {
 		return nil;
 	}
@@ -974,7 +1047,14 @@ serialize_value (qfot_type_t *type, void *ptr, PLArchive *ctx)
 	auto array = [Array arrayWithCapacity:count];
 	for (uint i = 0; i < count; i++) {
 		auto obj = PL_ObjectAtIndex (plitem, i);
-		[array addObject: [Object fromPropertyList:obj withArchive:ctx]];
+		id new = [Object fromPropertyList:obj withArchive:ctx];
+		[array addObject: new];
+		if (!new) {
+			// array was created pre-sized so the pointer is stable
+			// while deserializing
+			void *ptr = &array._objs[i];
+			[ctx addUndef:obj at:ptr];
+		}
 	}
 	return array;
 }
