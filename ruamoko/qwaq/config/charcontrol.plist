@@ -5,61 +5,103 @@
 	clip_ended = false;
 	states = (
 		{
-			@classname = FSMState;
+			@classname = AnimState;
+			clipname = "girl20:idle.R";
 			@id = 2;
 			name = idle.R;
 			onEnter = { @id = 3; selector = enter; target = { @ref = 1 } };
 			events = (
 				{
 					@classname = FSMEvent;
-					@id = 4;
-					targetState = { @ref = 5 } ;
+					targetState = { @ref = 10 } ;
 					checkCondition = { @ref = b }
 				}
 			)
 		},
 		{
-			@classname = FSMState;
+			@classname = AnimState;
+			clipname = "girl20:step.RL";
 			@id = 5;
 			name = step.RL;
 			onEnter = { @ref = 3 };
 			events = (
 				{
 					@classname = FSMEvent;
-					@id = 6;
 					targetState = { @ref = 7 };
 					checkCondition = { @ref = b }
 				}
 			)
 		},
 		{
-			@classname = FSMState;
+			@classname = AnimState;
+			clipname = "girl20:idle.L";
 			@id = 7;
 			name = idle.L;
 			onEnter = { @ref = 3 };
 			events = (
 				{
 					@classname = FSMEvent;
-					@id = 8;
 					targetState = { @ref = 9 };
 					checkCondition = { @ref = b }
 				}
 			)
 		},
 		{
-			@classname = FSMState;
+			@classname = AnimState;
+			clipname = "girl20:step.LR";
 			@id = 9;
 			name = step.LR;
 			onEnter = { @ref = 3 };
 			events = (
 				{
 					@classname = FSMEvent;
-					@id = a;
 					targetState = { @ref = 2 };
 					checkCondition = { @id = b; selector = check; target = { @ref = 1 } }
 				}
 			)
-		}
+		},
+		{
+			@classname = AnimState;
+			clipname = "girl20:walk";
+			@id = 10;
+			name = walk;
+			onEnter = { @ref = 3 };
+			events = (
+				{
+					@classname = FSMEvent;
+					targetState = { @ref = 11 };
+					checkCondition = { @ref = b; }
+				}
+			)
+		},
+		{
+			@classname = AnimState;
+			clipname = "girl20:run";
+			@id = 11;
+			name = run;
+			onEnter = { @ref = 3 };
+			events = (
+				{
+					@classname = FSMEvent;
+					targetState = { @ref = 12 };
+					checkCondition = { @ref = b; }
+				}
+			)
+		},
+		{
+			@classname = AnimState;
+			clipname = "girl20:walk";
+			@id = 12;
+			name = walk;
+			onEnter = { @ref = 3 };
+			events = (
+				{
+					@classname = FSMEvent;
+					targetState = { @ref = 5 };
+					checkCondition = { @ref = b; }
+				}
+			)
+		},
 	);
 	globalEvents = ();
 	initialState = { @ref = 2 };

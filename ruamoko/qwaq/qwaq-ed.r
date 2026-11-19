@@ -186,12 +186,41 @@ static component_t qwaq_components[] = {
 	},
 };
 
+@interface AnimState : FSMState
+{
+@public
+	string clipname;
+	animstate_t anim;
+	animstate_t rmanim;
+}
+@end
+
+@implementation AnimState
+
+-(void)awakeFromArchive
+{
+	auto clip = qfa_find_clip (clipname);
+	auto evclip = qfa_find_clip ("ev|" + clipname);
+	auto rmclip = qfa_find_clip ("rm|" + clipname);
+	int ind = strchr (clipname, ':');
+	string mod_name = str_mid (clipname, 0, ind);
+	auto arma = qfa_find_armature (mod_name);
+	auto rmarma = qfa_find_armature ("rm|" + mod_name);
+
+	anim = qfa_create_animation (&clip, 1, &evclip, 1, false, arma);
+	qfa_set_clip_loop (anim, 0, false);
+	qfa_set_clip_loop (anim, 1, false);
+
+	rmanim = qfa_create_animation (&rmclip, 1, nil, 0, false, rmarma);
+	qfa_set_clip_loop (rmanim, 0, false);
+}
+
+@end
+
 @interface AnimFSM : FSM
 {
 	transform_t trans;
 	entity_t ent;
-	animstate_t anim[4];
-	animstate_t rmanim[4];
 
 	motor_t E;
 	float dt;
@@ -199,79 +228,9 @@ static component_t qwaq_components[] = {
 	animstate_t current_anim;
 	animstate_t current_rmanim;
 }
--init:(model_t) model ent:(entity_t) ent;
 @end
 
 @implementation AnimFSM
-
--init:(model_t) model ent:(entity_t) ent
-{
-	if (!(self = [super init])) {
-		return nil;
-	}
-	self.ent = ent;
-	trans = Entity_GetTransform (ent);
-	string mod_name = Model_Name (model);
-	cliphandle_t clips[] = {
-		qfa_find_clip (mod_name + ":idle.R"),
-		qfa_find_clip (mod_name + ":step.RL"),
-		qfa_find_clip (mod_name + ":idle.L"),
-		qfa_find_clip (mod_name + ":step.LR"),
-	};
-	cliphandle_t evclips[] = {
-		qfa_find_clip ("ev|" + mod_name + ":idle.R"),
-		qfa_find_clip ("ev|" + mod_name + ":step.RL"),
-		qfa_find_clip ("ev|" + mod_name + ":idle.L"),
-		qfa_find_clip ("ev|" + mod_name + ":step.LR"),
-	};
-	cliphandle_t rmclips[] = {
-		qfa_find_clip ("rm|" + mod_name + ":idle.R"),
-		qfa_find_clip ("rm|" + mod_name + ":step.RL"),
-		qfa_find_clip ("rm|" + mod_name + ":idle.L"),
-		qfa_find_clip ("rm|" + mod_name + ":step.LR"),
-	};
-	auto arma = qfa_find_armature (mod_name);
-	auto rmarma = qfa_find_armature ("rm|" + mod_name);
-	for (int i = 0; i < 4; i++) {
-		anim[i] = qfa_create_animation (&clips[i], 1, &evclips[i], 1,
-										false, arma);
-		qfa_set_clip_loop (anim[i], 0, false);
-		qfa_set_clip_loop (anim[i], 1, false);
-
-		rmanim[i] = qfa_create_animation (&rmclips[i], 1, nil, 0,
-										  false, rmarma);
-		qfa_set_clip_loop (rmanim[i], 0, false);
-	}
-	auto c = [FSMAction actionWithTarget:self selector:@selector(check)];
-	auto e = [FSMAction actionWithTarget:self selector:@selector(enter)];
-	auto s0 = [FSMState stateWithName:"idle.R"];
-	auto s1 = [FSMState stateWithName:"step.RL"];
-	auto s2 = [FSMState stateWithName:"idle.L"];
-	auto s3 = [FSMState stateWithName:"step.LR"];
-	auto e0 = [FSMEvent eventWithName:"" targetState:s1];
-	auto e1 = [FSMEvent eventWithName:"" targetState:s2];
-	auto e2 = [FSMEvent eventWithName:"" targetState:s3];
-	auto e3 = [FSMEvent eventWithName:"" targetState:s0];
-	e0.checkCondition = [c retain];
-	e1.checkCondition = [c retain];
-	e2.checkCondition = [c retain];
-	e3.checkCondition = [c retain];
-	[s0 addEvent:e0];
-	[s1 addEvent:e1];
-	[s2 addEvent:e2];
-	[s3 addEvent:e3];
-	s0.onEnter = [e retain];
-	s1.onEnter = [e retain];
-	s2.onEnter = [e retain];
-	s3.onEnter = [e retain];
-	[self addState:s0];
-	[self addState:s1];
-	[self addState:s2];
-	[self addState:s3];
-	[self start];
-	return self;
-}
-
 -setEntity:(entity_t) ent
 {
 	self.ent = ent;
@@ -281,25 +240,6 @@ static component_t qwaq_components[] = {
 
 -(void)awakeFromArchive
 {
-	int count = [states count];
-	for (int i = 0; i < count; i++) {
-		FSMState *st = [states objectAtIndex:i];
-		string name = st.name;
-
-		string mod_name = "girl20";//FIXME
-		auto clip = qfa_find_clip (sprintf("%s:%s", mod_name, st.name));
-		auto evclip = qfa_find_clip (sprintf("ev|%s:%s", mod_name, st.name));
-		auto rmclip = qfa_find_clip (sprintf("rm|%s:%s", mod_name, st.name));
-		auto arma = qfa_find_armature (mod_name);
-		auto rmarma = qfa_find_armature ("rm|" + mod_name);
-
-		anim[i] = qfa_create_animation (&clip, 1, &evclip, 1, false, arma);
-		qfa_set_clip_loop (anim[i], 0, false);
-		qfa_set_clip_loop (anim[i], 1, false);
-
-		rmanim[i] = qfa_create_animation (&rmclip, 1, nil, 0, false, rmarma);
-		qfa_set_clip_loop (rmanim[i], 0, false);
-	}
 }
 
 -(bool)check
@@ -337,24 +277,10 @@ static component_t qwaq_components[] = {
 
 -(void)enter
 {
-	string name = currentState.name;
-	int ind = 0;
-	if (str_char (name, 0) == 'i') {
-		if (str_char(name, 5) == 'R') {
-			ind = 0;
-		} else {
-			ind = 2;
-		}
-	} else {
-		if (str_char(name, 5) == 'R') {
-			ind = 1;
-		} else {
-			ind = 3;
-		}
-	}
-	printf ("fsm enter %7s %d\n", name, ind);
-	current_anim = anim[ind];
-	current_rmanim = rmanim[ind];
+	auto state = (AnimState *)currentState;
+	printf ("fsm enter %7s\n", state.name);
+	current_anim = state.anim;
+	current_rmanim = state.rmanim;
 	qfa_reset_anim (current_anim);
 	qfa_reset_anim (current_rmanim);
 	Entity_SetAnimstate (ent, current_anim);
