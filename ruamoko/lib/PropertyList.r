@@ -445,7 +445,6 @@ d_func_func (void *ptr, plitem_t *item, PLArchive *ctx)
 static void *
 d_ptr_func (void *ptr, plitem_t *item, qfot_type_t *type, PLArchive *ctx)
 {
-	type = unalias_type (type.fldptr.aux_type);
 	id obj = nil;
 	if (type.encoding == ":") {
 		string name = PL_String (item);
@@ -453,8 +452,16 @@ d_ptr_func (void *ptr, plitem_t *item, qfot_type_t *type, PLArchive *ctx)
 		*p++ = sel_get_uid (name);
 		return p;
 	}
-	if (type.meta == ty_class) {
-		auto class = obj_lookup_class (type.class);
+	// catches @<protocols> and @
+	bool is_id = str_char(type.encoding, 0) == '@';
+	type = unalias_type (type.fldptr.aux_type);
+	if (is_id || type.meta == ty_class) {
+		Class class;
+		if (is_id) {
+			class = [Object class];
+		} else {
+			class = obj_lookup_class (type.class);
+		}
 		obj = [[class fromPropertyList:item withArchive:ctx] retain];
 	}
 	auto p = (id *) ptr;
@@ -521,12 +528,9 @@ d_lbool_func (void *ptr, plitem_t *item, PLArchive *ctx)
 static void
 d_basic_func (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
 {
-	if (str_char(type.encoding, 0) == '@') {
-		*(id *)ptr = [[Object fromPropertyList:item withArchive:ctx] retain];
-		return;
-	}
 	if (type.type == ev_ptr) {
 		d_ptr_func (ptr, item, type, ctx);
+		return;
 	}
 	static void *(*type_funcs[])(void *ptr, plitem_t *item, PLArchive *ctx) = {
 		[ev_string] = d_string_func,
@@ -692,13 +696,7 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
 		}
 		return obj;
 	} else if (PL_Type (plitem) == QFArray) {
-		id arr = [Array array];
-		int count = PL_A_NumObjects (plitem);
-		for (int i = 0; i < count; i++) {
-			auto obj = PL_ObjectAtIndex (plitem, i);
-			[arr addObject:[Object fromPropertyList:obj withArchive:ctx]];
-		}
-		return arr;
+		return [Array fromPropertyList:plitem withArchive:ctx];
 	}
 	return nil;
 }
