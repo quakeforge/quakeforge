@@ -41,6 +41,10 @@ static string input_cfg =
 #embed "config/qwaq-ed-in.cfg"
 ;
 
+static string char_controller_cfg =
+#embed "config/charcontrol.plist"
+;
+
 static string atmosphere_shader =
 #embed "ruamoko/qwaq/shader/atmosphere.r.spv"
 ;
@@ -266,6 +270,36 @@ static component_t qwaq_components[] = {
 	[self addState:s3];
 	[self start];
 	return self;
+}
+
+-setEntity:(entity_t) ent
+{
+	self.ent = ent;
+	trans = Entity_GetTransform (ent);
+	return self;
+}
+
+-(void)awakeFromArchive
+{
+	int count = [states count];
+	for (int i = 0; i < count; i++) {
+		FSMState *st = [states objectAtIndex:i];
+		string name = st.name;
+
+		string mod_name = "girl20";//FIXME
+		auto clip = qfa_find_clip (sprintf("%s:%s", mod_name, st.name));
+		auto evclip = qfa_find_clip (sprintf("ev|%s:%s", mod_name, st.name));
+		auto rmclip = qfa_find_clip (sprintf("rm|%s:%s", mod_name, st.name));
+		auto arma = qfa_find_armature (mod_name);
+		auto rmarma = qfa_find_armature ("rm|" + mod_name);
+
+		anim[i] = qfa_create_animation (&clip, 1, &evclip, 1, false, arma);
+		qfa_set_clip_loop (anim[i], 0, false);
+		qfa_set_clip_loop (anim[i], 1, false);
+
+		rmanim[i] = qfa_create_animation (&rmclip, 1, nil, 0, false, rmarma);
+		qfa_set_clip_loop (rmanim[i], 0, false);
+	}
 }
 
 -(bool)check
@@ -1058,15 +1092,6 @@ update_anim (uint ent)
 		draw_line_box (aabb, cam, E);
 	}
 
-	int num_events;
-	auto events = qfa_get_events (anim, &num_events);
-	if (num_events) {
-		for (int i = 0; i < num_events; i++) {
-			printf ("%d %g %g\n", events[i].data, events[i].start_frac,
-					events[i].end_frac);
-		}
-		printf ("\n");
-	}
 }
 
 void
@@ -1247,7 +1272,12 @@ load_scene (plitem_t *scene_item, scene_t scene)
 				}
 			}
 			if (ent_init.attach_fsm) {
-				id fsm = [[[AnimFSM alloc] init:model ent:ent] retain];
+				auto ctrlr = PL_GetPropertyList (char_controller_cfg);
+				auto ctx = [PLArchive archive];
+				id fsm = [[AnimFSM fromPropertyList:ctrlr withArchive:ctx]
+						  retain];
+				[ctx finalize];
+				[[fsm setEntity:ent] start];
 				set_component (e, qent_fsm, &fsm);
 				set_update (e, update_fsm);
 			}
@@ -1262,6 +1292,7 @@ load_scene (plitem_t *scene_item, scene_t scene)
 		arp_end ();
 		arp_start ();
 	}
+	[ctx release];
 
 	collider_ents = obj_malloc (sizeof (uint) * max_collider_ents);
 }

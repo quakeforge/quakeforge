@@ -21,6 +21,12 @@
 	return self;
 }
 
+-(void)awakeFromArchive
+{
+	[super awakeFromArchive];
+	[self bind];
+}
+
 - (void)bind
 {
 	if (target && selector) {
@@ -30,7 +36,6 @@
 
 - (void)invoke
 {
-	if (!imp) [self bind];
 	if (target && imp) {
 		imp (target, selector);
 	}
@@ -38,13 +43,11 @@
 
 - (bool)test
 {
-	if (!imp) [self bind];
 	return @bitcast(bool (*)(id, SEL), imp) (target, selector);
 }
 
 - (void)invokeWithObject:(id)arg
 {
-	if (!imp) [self bind];
 	if (target && imp) {
 		@bitcast(void (*)(id, SEL, id),imp)(target, selector, arg);
 	}
