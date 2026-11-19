@@ -77,8 +77,8 @@ float qfa_clip_duration (cliphandle_t clip) = #0;
 armhandle_t qfa_find_armature (string name) = #0;
 animstate_t qfa_create_animation (cliphandle_t *clips, uint num_clips,
 								  cliphandle_t *evclips, uint num_evclips,
-								  int create_weights, armhandle_t armature,
-								  model_t model) = #0;
+								  int create_weights,
+								  armhandle_t armature) = #0;
 void qfa_free_animation (animstate_t anim) = #0;
 void qfa_update_anim (animstate_t anim, float dt) = #0;
 void qfa_reset_anim (animstate_t anim) = #0;

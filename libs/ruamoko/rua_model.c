@@ -540,30 +540,10 @@ bi (qfa_create_animation)
 	uint32_t    num_evclips = P_UINT (pr, 3);
 	bool        create_weights = P_INT (pr, 4);
 	uint32_t    armature = P_UINT (pr, 5);
-	int         model_handle = P_INT (pr, 6);
-	model_t    *mod = nullptr;
-	qf_model_t *model = nullptr;
-	bool        cached = false;
-
-	if (model_handle) {
-		auto h = rua_model_handle_get (res, model_handle);
-		mod = h->model;
-	}
-	if (mod) {
-		model = mod->model;
-		if (!model) {
-			model = Cache_Get (&mod->cache);
-			cached = true;
-		}
-	}
 
 	auto anim = qfa_create_animation (clips, num_clips, evclips, num_evclips,
-									  create_weights, armature, model);
+									  create_weights, armature);
 	R_INT (pr) = alloc_animstate (res, anim);
-
-	if (cached) {
-		Cache_Release (&mod->cache);
-	}
 }
 
 bi (qfa_free_animation)

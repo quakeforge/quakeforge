@@ -601,8 +601,7 @@ qfa_clip_duration (int clip)
 animstate_t *
 qfa_create_animation (uint32_t *clips, uint32_t num_clips,
 					  uint32_t *evclips, uint32_t num_evclips,
-					  bool create_weights,
-					  uint32_t armature, qf_model_t *model)
+					  bool create_weights, uint32_t armature)
 {
 	qfZoneScoped (true);
 	auto arm = get_armature (armature);

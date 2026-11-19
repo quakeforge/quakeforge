@@ -204,8 +204,7 @@ int qfa_find_armature (const char *name);
 
 animstate_t *qfa_create_animation (uint32_t *clips, uint32_t num_clips,
 								   uint32_t *evclips, uint32_t num_evclilps,
-								   bool create_weighs, uint32_t armature,
-								   qf_model_t *model);
+								   bool create_weighs, uint32_t armature);
 void qfa_free_animation (animstate_t *anim);
 void qfa_update_anim (animstate_t *anim, float dt);
 void qfa_reset_anim (animstate_t *anim);

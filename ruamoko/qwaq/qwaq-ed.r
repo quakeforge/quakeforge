@@ -230,12 +230,12 @@ static component_t qwaq_components[] = {
 	auto rmarma = qfa_find_armature ("rm|" + mod_name);
 	for (int i = 0; i < 4; i++) {
 		anim[i] = qfa_create_animation (&clips[i], 1, &evclips[i], 1,
-										false, arma, model);
+										false, arma);
 		qfa_set_clip_loop (anim[i], 0, false);
 		qfa_set_clip_loop (anim[i], 1, false);
 
 		rmanim[i] = qfa_create_animation (&rmclips[i], 1, nil, 0,
-										  false, rmarma, model);
+										  false, rmarma);
 		qfa_set_clip_loop (rmanim[i], 0, false);
 	}
 	auto c = [FSMAction actionWithTarget:self selector:@selector(check)];
@@ -578,7 +578,7 @@ static int axis_colors[] = { 12, 10, 9 };
 	int num_clips = countof (clips);
 	armhandle_t arma = qfa_find_armature ("girl11a");
 	animstate_t anim = qfa_create_animation (clips, num_clips, nil, 0, false,
-											 arma, nil);
+											 arma);
 	for (int i = 0; i < num_clips; i++) {
 		qfa_set_clip_loop (anim, i, true);
 	}
@@ -591,8 +591,7 @@ static int axis_colors[] = { 12, 10, 9 };
 	armhandle_t root_arma = qfa_find_armature ("rm|girl11a");
 	if (root_arma) {
 		animstate_t root_anim = qfa_create_animation (root_clips, num_clips,
-													  nil, 0, false,
-													  root_arma, nil);
+													  nil, 0, false, root_arma);
 		for (int i = 0; i < num_clips; i++) {
 			qfa_set_clip_loop (root_anim, i, true);
 		}
@@ -1073,7 +1072,7 @@ update_anim (uint ent)
 void
 load_scene (plitem_t *scene_item, scene_t scene)
 {
-	auto ctx = [PLArchive archive];
+	auto ctx = [[PLArchive archive] retain];
 	id scene_plist = [[PLItem fromItem:scene_item] retain];
 	int count = [scene_plist count];
 	for (int i = 0; i < count; i++) {
@@ -1226,11 +1225,11 @@ load_scene (plitem_t *scene_item, scene_t scene)
 					string evtname = "ev|" + clipname;
 					auto evt = qfa_find_clip (evtname);
 					anim = qfa_create_animation (&clip, 1, &evt, 1, true,
-												 arma, nil);
+												 arma);
 					qfa_set_clip_loop (anim, 1, true);
 				} else {
 					anim = qfa_create_animation (&clip, 1, nil, 0, true,
-												 arma, nil);
+												 arma);
 				}
 				qfa_set_clip_loop (anim, 0, true);
 				set_component (e, qent_anim, &anim);
