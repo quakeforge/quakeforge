@@ -707,6 +707,14 @@ d_array_func (qfot_type_t *type, void *ptr, plitem_t item, PLArchive *ctx)
 }
 
 static void
+d_handle_func (qfot_type_t *type, void *ptr, plitem_t item, PLArchive *ctx)
+{
+	if (type.encoding == "{tag plitem_h$}") {
+		*(plitem_t *) ptr = PL_Retain (item);
+	}
+}
+
+static void
 deserialize_value (qfot_type_t *type, void *ptr, plitem_t item, PLArchive *ctx)
 {
 	static void (*meta_funcs[])(qfot_type_t *type, void *ptr, plitem_t item,
@@ -715,6 +723,7 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t item, PLArchive *ctx)
 		[ty_struct] = d_struct_func,
 		[ty_enum] = d_enum_func,
 		[ty_array] = d_array_func,
+		[ty_handle] = d_handle_func,
 		[ty_bool] = d_basic_func,
 	};
 	type = unalias_type (type);
@@ -992,6 +1001,15 @@ s_array_func (qfot_type_t *type, void *ptr, PLArchive *ctx)
 }
 
 static plitem_t
+s_handle_func (qfot_type_t *type, void *ptr, PLArchive *ctx)
+{
+	if (type.encoding == "{tag plitem_h$}") {
+		return *(plitem_t *) ptr;
+	}
+	return nil;
+}
+
+static plitem_t
 serialize_value (qfot_type_t *type, void *ptr, PLArchive *ctx)
 {
 	static plitem_t (*meta_funcs[]) (qfot_type_t *type, void *ptr,
@@ -1000,6 +1018,7 @@ serialize_value (qfot_type_t *type, void *ptr, PLArchive *ctx)
 		[ty_struct] = s_struct_func,
 		[ty_enum] = s_enum_func,
 		[ty_array] = s_array_func,
+		[ty_handle] = s_handle_func,
 		[ty_bool] = s_basic_func,
 	};
 	type = unalias_type (type);
