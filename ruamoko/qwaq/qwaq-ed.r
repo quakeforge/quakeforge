@@ -908,8 +908,8 @@ check_keys (int key_devid, int lctrl_key, int lalt_key, int q_key, int e_key,
 	string entqueue;
 	string texture;
 	string anim;
+	plitem_t anim_events;
 	bool extract_root_motion;
-	bool create_events;
 	bool attach_fsm;
 	bool show_armature;
 	bool mesh_flag;
@@ -1153,8 +1153,8 @@ load_scene (plitem_t scene_item, scene_t scene)
 				qfa_extract_root_motion (model);
 			}
 			int num_clips = Model_NumClips (model);
-			if (ent_init.create_events) {
-				auto evt = create_event_tracks (model);
+			if (ent_init.anim_events) {
+				auto evt = create_event_tracks (model, ent_init.anim_events);
 				string mod_name = Model_Name (model);
 				Model_LoadMesh ("ev|" + mod_name, evt);
 				MsgBuf_Delete (evt);
@@ -1172,7 +1172,7 @@ load_scene (plitem_t scene_item, scene_t scene)
 				auto arma = qfa_find_armature (mod_name);
 				animstate_t anim;
 				printf("%s\n", clipname);
-				if (ent_init.create_events) {
+				if (ent_init.anim_events) {
 					string evtname = "ev|" + clipname;
 					auto evt = qfa_find_clip (evtname);
 					anim = qfa_create_animation (&clip, 1, &evt, 1, true,

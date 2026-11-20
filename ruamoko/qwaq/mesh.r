@@ -1,6 +1,7 @@
 #include <math.h>
 #include <scene.h>
 #include <msgbuf.h>
+#include <Set.h>
 
 #include <QF/qfmodel.h>
 
@@ -1051,15 +1052,50 @@ create_quadsphere (bool do_colors)
 }
 
 msgbuf_t
-create_event_tracks (model_t mdl)
+create_event_tracks (model_t mdl, plitem_t events_item)
 {
 	string mod_name = Model_Name (mdl);
-	int num_clips = Model_NumClips (mdl);
+	int num_keys = PL_D_NumKeys (events_item);
+	if (!num_keys) {
+		printf ("no tracks");
+		return nil;
+	}
 
+	set_t *invalid_tracks = set_new ();
+	int num_events = 0;
 	int text_size = 1;
-	for (int i = 0; i < num_clips; i++) {
-		auto clipinfo = Model_GetClipInfo (mdl, i);
-		text_size += strlen (clipinfo.name) + 1;
+	int num_clips = 0;
+	for (int i = 0; i < num_keys; i++) {
+		string name = PL_KeyAtIndex (events_item, i);
+		plitem_t events = PL_ObjectForKey (events_item, name);
+		if (PL_String (events) == "@auto") {
+			// auto events need to know the length of the source clip, so
+			// the clip needs to exist
+			string clipname = mod_name + ":" + name;
+			auto clip = qfa_find_clip (clipname);
+			if (clip) {
+				num_events += 2;	// null event + end of anim event
+				num_clips++;
+			} else {
+				printf ("could not find clip %s in %s for @auto\n", name,
+						mod_name);
+				name = nil;		// don't allocate space for the name
+			}
+		} else if (int count = PL_A_NumObjects (events)) {
+			num_events += count;	// assume all events are specified
+			num_clips++;
+		} else {
+			printf ("invalid event track %s\n", name);
+			name = nil;		// don't allocate space for the name
+		}
+		text_size += strlen (name) + 1;
+		if (!name) {
+			set_add (invalid_tracks, i);
+		}
+	}
+	if (!num_clips) {
+		printf ("no clips");
+		return nil;
 	}
 
 	qf_model_t model = {
@@ -1073,7 +1109,7 @@ create_event_tracks (model_t mdl)
 
 	uint size = sizeof (qf_model_t)
 			  + sizeof (clipdesc_t) * num_clips
-			  + sizeof (keyframe_t) * num_clips * 2
+			  + sizeof (keyframe_t) * num_events
 			  + text_size;
 	auto msg = MsgBuf_New (size);
 
@@ -1081,42 +1117,77 @@ create_event_tracks (model_t mdl)
 
 	model.anim.clips = MsgBuf_WriteSeek (msg, 0, msg_cur);
 	int text_offs = 1;
-	for (int i = 0; i < num_clips; i++) {
+	int firstframe = 0;
+	for (int i = 0; i < num_keys; i++) {
+		if (set_is_member (invalid_tracks, i)) {
+			continue;
+		}
+		string name = PL_KeyAtIndex (events_item, i);
+		plitem_t events = PL_ObjectForKey (events_item, name);
+		int numframes;
+		// any invalid event tracks have been removed
+		if (PL_String (events) == "@auto") {
+			numframes = 2;
+		} else {
+			numframes = PL_A_NumObjects (events);
+		}
 		clipdesc_t clip = {
-			.firstframe = i * 2,
-			.numframes = 2,
+			.firstframe = firstframe,
+			.numframes = numframes,
 			.name = text_offs,
 		};
 		MsgBuf_WriteBytes (msg, &clip, sizeof (clip));
 
-		auto clipinfo = Model_GetClipInfo (mdl, i);
-		text_offs += strlen (clipinfo.name) + 1;
+		firstframe += numframes;
+		text_offs += strlen (name) + 1;
 	}
 
 	model.anim.keyframes = MsgBuf_WriteSeek (msg, 0, msg_cur);
-	for (int i = 0; i < num_clips; i++) {
-		auto clipinfo = Model_GetClipInfo (mdl, i);
-		string clipname = mod_name + ":" + clipinfo.name;
+	for (int i = 0; i < num_keys; i++) {
+		if (set_is_member (invalid_tracks, i)) {
+			continue;
+		}
+		string name = PL_KeyAtIndex (events_item, i);
+		plitem_t events = PL_ObjectForKey (events_item, name);
+
+		string clipname = mod_name + ":" + name;
 		auto clip = qfa_find_clip (clipname);
 		float duration = qfa_clip_duration (clip);
 		printf ("%s %g\n", clipname, duration);
-		keyframe_t frames[2] = {
-			{ .endtime = duration, .data = 0 },
-			{ .endtime = duration, .data = 1 }, //FIXME end-of-animation
-		};
-		MsgBuf_WriteBytes (msg, &frames, sizeof (frames));
+		if (PL_String (events) == "@auto") {
+			keyframe_t frames[2] = {
+				{ .endtime = duration, .data = 0 },
+				{ .endtime = duration, .data = 1 }, //FIXME end-of-animation
+			};
+			MsgBuf_WriteBytes (msg, &frames, sizeof (frames));
+		} else {
+			int count = PL_A_NumObjects (events);
+			for (int i = 0; i < count; i++) {
+				plitem_t ev = PL_ObjectAtIndex (events, i);
+				keyframe_t frame = {
+					.endtime = (float) PL_Number (PL_ObjectForKey (ev, "time")),
+					.data = (uint) PL_Number (PL_ObjectForKey (ev, "id")),
+				};
+				MsgBuf_WriteBytes (msg, &frame, sizeof (frame));
+			}
+		}
 	}
 
 	model.text.offset = MsgBuf_WriteSeek (msg, 0, msg_cur);
 	MsgBuf_WriteString (msg, "");
-	for (int i = 0; i < num_clips; i++) {
-		auto clipinfo = Model_GetClipInfo (mdl, i);
-		MsgBuf_WriteString (msg, clipinfo.name);
+	for (int i = 0; i < num_keys; i++) {
+		if (set_is_member (invalid_tracks, i)) {
+			continue;
+		}
+		string name = PL_KeyAtIndex (events_item, i);
+		MsgBuf_WriteString (msg, name);
 	}
 
 	MsgBuf_WriteSeek (msg, 0, msg_set);
 	MsgBuf_WriteBytes (msg, &model, sizeof (model));
 	MsgBuf_WriteSeek (msg, 0, msg_end);
+
+	set_delete (invalid_tracks);
 
 	//QFile f = Qopen (sprintf("%s.qfm", mod_name), "wb");
 	//MsgBuf_ToFile (f, msg);

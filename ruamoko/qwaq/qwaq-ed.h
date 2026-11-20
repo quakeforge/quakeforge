@@ -6,6 +6,8 @@
 
 #include "pga3d.h"
 
+typedef @handle plitem_h plitem_t;
+
 void printf (string fmt, ...);
 
 [no_va_list] void Render_SetJobBlackboardVar (string job, string name, ...);
@@ -19,7 +21,7 @@ ulong Render_BufferSize (string name);
 msgbuf_t create_ico();
 msgbuf_t create_block(vec3 block_size);
 msgbuf_t create_quadsphere(bool do_colors);
-msgbuf_t create_event_tracks (model_t model);
+msgbuf_t create_event_tracks (model_t model, plitem_t events_item);
 body_t calc_inertia_tensor (msgbuf_t model_buf, float inv_density);
 void leafnode();
 
