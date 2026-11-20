@@ -34,7 +34,7 @@ void_function PR_FindFunction (string func) = #0;
 	return self;
 }
 
-- (id) initWithEntity: (entity)e fromPlist: (plitem_t *) dict
+- (id) initWithEntity: (entity)e fromPlist: (plitem_t ) dict
 {
 	self = [self initWithEntity: e];
 	return self;
@@ -50,7 +50,7 @@ void_function PR_FindFunction (string func) = #0;
 	return [[[self alloc] initWithEntity: e] autorelease];
 }
 
-+(Entity *) withEntity: (entity) e fromPlist: (plitem_t *) dict
++(Entity *) withEntity: (entity) e fromPlist: (plitem_t ) dict
 {
 	return [[[self alloc] initWithEntity: e fromPlist: dict] autorelease];
 }
@@ -72,14 +72,14 @@ void_function PR_FindFunction (string func) = #0;
 	//XXX EntityParseFunction (ParseEntities);
 }
 
-+ createFromPlist:(plitem_t *) dict
++ createFromPlist:(plitem_t ) dict
 {
 	local string classname;
 	local id class;
 	local entity ent;
 	local int count;
 	local string field, value;
-	local plitem_t *keys;
+	local plitem_t keys;
 	local void_function func;
 	local Entity *e;
 
@@ -118,7 +118,7 @@ void_function PR_FindFunction (string func) = #0;
 @static void ParseEntities (string ent_data)
 {
 	local script_t script;
-	local plitem_t *plist, *ent, *key, *value;
+	local plitem_t plist, ent, key, value;
 	local string token;
 	local int anglehack, i, count;
 

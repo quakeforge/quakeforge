@@ -29,7 +29,7 @@ bool draw_editor_overlay = true;
 bool quit_editor = false;
 
 typedef struct component_s component_t;
-void init_graphics (plitem_t *config, int num_components,
+void init_graphics (plitem_t config, int num_components,
 					component_t *components) = #0;
 float refresh (scene_t scene) = #0;
 void refresh_2d (void (func)(void)) = #0;
@@ -514,7 +514,7 @@ main (int argc, string *argv)
 
 	arp.start ();
 
-	plitem_t *config = PL_GetPropertyList (render_graph_cfg);
+	plitem_t config = PL_GetPropertyList (render_graph_cfg);
 	init_graphics (config, 0, nil);
 	PL_Release (config);
 

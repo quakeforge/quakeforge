@@ -1,6 +1,6 @@
 #include "input.h"
 
-void IN_LoadConfig (struct plitem_s *config) = #0;
+void IN_LoadConfig (@handle plitem_h config) = #0;
 in_button_t *IN_CreateButton (string name, string description) = #0;
 in_axis_t *IN_CreateAxis (string name, string description) = #0;
 string *IN_ListButtons () = #0;

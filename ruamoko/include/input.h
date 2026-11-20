@@ -4,8 +4,8 @@
 #include <QF/input.h>
 #include <QF/input/event.h>
 
-struct plitem_s;
-void IN_LoadConfig (struct plitem_s *config);
+@handle plitem_h;
+void IN_LoadConfig (@handle plitem_h config);
 in_button_t *IN_CreateButton (string name, string description);
 in_axis_t *IN_CreateAxis (string name, string description);
 string *IN_ListButtons ();

@@ -27,7 +27,7 @@
 	return [PLString new:str];
 }
 
-+ itemClass:(plitem_t *) item
++ itemClass:(plitem_t) item
 {
 	local string classname = nil;
 	local id class;
@@ -64,12 +64,12 @@
 	return [[PLItem itemClass: PL_GetFromFile (file)] autorelease];
 }
 
-+ (PLItem *) fromItem:(plitem_t *) item
++ (PLItem *) fromItem:(plitem_t) item
 {
 	return [[PLItem itemClass: item] autorelease];
 }
 
-- initWithItem:(plitem_t *) item
+- initWithItem:(plitem_t) item
 {
 	if (!(self = [super init]))
 		return self;
@@ -84,7 +84,7 @@
 	[super dealloc];
 }
 
-- (plitem_t *) item
+- (plitem_t) item
 {
 	return item;
 }
@@ -429,7 +429,7 @@ pla_free (void *ele, void *data)
 	return ptr;
 }
 
--(void)addUndef:(plitem_t *)item at:(void **)loc
+-(void)addUndef:(plitem_t)item at:(void **)loc
 {
 	if (auto ref = PL_ObjectForKey (item, "@ref")) {
 		string obj_id = PL_String (ref);
@@ -483,7 +483,7 @@ unalias_type (qfot_type_t *type)
 }
 
 static void *
-d_string_func (void *ptr, plitem_t *item, PLArchive *ctx)
+d_string_func (void *ptr, plitem_t item, PLArchive *ctx)
 {
 	auto p = (string *) ptr;
 	*p++ = str_hold (PL_String (item));
@@ -491,7 +491,7 @@ d_string_func (void *ptr, plitem_t *item, PLArchive *ctx)
 }
 
 static void *
-d_float_func (void *ptr, plitem_t *item, PLArchive *ctx)
+d_float_func (void *ptr, plitem_t item, PLArchive *ctx)
 {
 	auto p = (float *) ptr;
 	*p++ = (float) PL_Number (item);
@@ -499,7 +499,7 @@ d_float_func (void *ptr, plitem_t *item, PLArchive *ctx)
 }
 
 static void *
-d_func_func (void *ptr, plitem_t *item, PLArchive *ctx)
+d_func_func (void *ptr, plitem_t item, PLArchive *ctx)
 {
 	auto p = (int *) ptr;
 	string name = PL_String (item);
@@ -508,7 +508,7 @@ d_func_func (void *ptr, plitem_t *item, PLArchive *ctx)
 }
 
 static void *
-d_ptr_func (void *ptr, plitem_t *item, qfot_type_t *type, PLArchive *ctx)
+d_ptr_func (void *ptr, plitem_t item, qfot_type_t *type, PLArchive *ctx)
 {
 	id obj = nil;
 	if (type.encoding == ":") {
@@ -538,7 +538,7 @@ d_ptr_func (void *ptr, plitem_t *item, qfot_type_t *type, PLArchive *ctx)
 }
 
 static void *
-d_double_func (void *ptr, plitem_t *item, PLArchive *ctx)
+d_double_func (void *ptr, plitem_t item, PLArchive *ctx)
 {
 	auto p = (double *) ptr;
 	*p++ = (double) PL_Number (item);
@@ -546,7 +546,7 @@ d_double_func (void *ptr, plitem_t *item, PLArchive *ctx)
 }
 
 static void *
-d_int_func (void *ptr, plitem_t *item, PLArchive *ctx)
+d_int_func (void *ptr, plitem_t item, PLArchive *ctx)
 {
 	auto p = (int *) ptr;
 	*p++ = (int) PL_Number (item);
@@ -554,7 +554,7 @@ d_int_func (void *ptr, plitem_t *item, PLArchive *ctx)
 }
 
 static void *
-d_uint_func (void *ptr, plitem_t *item, PLArchive *ctx)
+d_uint_func (void *ptr, plitem_t item, PLArchive *ctx)
 {
 	auto p = (uint *) ptr;
 	*p++ = (uint) PL_Number (item);
@@ -562,7 +562,7 @@ d_uint_func (void *ptr, plitem_t *item, PLArchive *ctx)
 }
 
 static void *
-d_long_func (void *ptr, plitem_t *item, PLArchive *ctx)
+d_long_func (void *ptr, plitem_t item, PLArchive *ctx)
 {
 	auto p = (long *) ptr;
 	*p++ = (long) PL_Number (item);
@@ -570,7 +570,7 @@ d_long_func (void *ptr, plitem_t *item, PLArchive *ctx)
 }
 
 static void *
-d_ulong_func (void *ptr, plitem_t *item, PLArchive *ctx)
+d_ulong_func (void *ptr, plitem_t item, PLArchive *ctx)
 {
 	auto p = (ulong *) ptr;
 	*p++ = (ulong) PL_Number (item);
@@ -578,7 +578,7 @@ d_ulong_func (void *ptr, plitem_t *item, PLArchive *ctx)
 }
 
 static void *
-d_bool_func (void *ptr, plitem_t *item, PLArchive *ctx)
+d_bool_func (void *ptr, plitem_t item, PLArchive *ctx)
 {
 	auto p = (bool *) ptr;
 	*p++ = PL_Bool (item);
@@ -586,7 +586,7 @@ d_bool_func (void *ptr, plitem_t *item, PLArchive *ctx)
 }
 
 static void *
-d_lbool_func (void *ptr, plitem_t *item, PLArchive *ctx)
+d_lbool_func (void *ptr, plitem_t item, PLArchive *ctx)
 {
 	auto p = (bool *) ptr;
 	*p++ = PL_Bool (item);
@@ -594,13 +594,13 @@ d_lbool_func (void *ptr, plitem_t *item, PLArchive *ctx)
 }
 
 static void
-d_basic_func (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
+d_basic_func (qfot_type_t *type, void *ptr, plitem_t item, PLArchive *ctx)
 {
 	if (type.type == ev_ptr) {
 		d_ptr_func (ptr, item, type, ctx);
 		return;
 	}
-	static void *(*type_funcs[])(void *ptr, plitem_t *item, PLArchive *ctx) = {
+	static void *(*type_funcs[])(void *ptr, plitem_t item, PLArchive *ctx) = {
 		[ev_string] = d_string_func,
 		[ev_float] = d_float_func,
 		[ev_vector] = d_float_func,
@@ -662,11 +662,11 @@ d_basic_func (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
 	}
 }
 
-static void deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item,
+static void deserialize_value (qfot_type_t *type, void *ptr, plitem_t item,
 							   PLArchive *ctx);
 
 static void
-d_struct_func (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
+d_struct_func (qfot_type_t *type, void *ptr, plitem_t item, PLArchive *ctx)
 {
 	for (int i = 0; i < type.strct.num_fields; i++) {
 		auto field = &type.strct.fields[i];
@@ -684,7 +684,7 @@ d_struct_func (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
 }
 
 static void
-d_enum_func (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
+d_enum_func (qfot_type_t *type, void *ptr, plitem_t item, PLArchive *ctx)
 {
 	int val = 0;
 	if (PL_Type (item) == QFString) {
@@ -702,14 +702,14 @@ d_enum_func (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
 }
 
 static void
-d_array_func (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
+d_array_func (qfot_type_t *type, void *ptr, plitem_t item, PLArchive *ctx)
 {
 }
 
 static void
-deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
+deserialize_value (qfot_type_t *type, void *ptr, plitem_t item, PLArchive *ctx)
 {
-	static void (*meta_funcs[])(qfot_type_t *type, void *ptr, plitem_t *item,
+	static void (*meta_funcs[])(qfot_type_t *type, void *ptr, plitem_t item,
 								PLArchive *ctx)={
 		[ty_basic] = d_basic_func,
 		[ty_struct] = d_struct_func,
@@ -730,7 +730,7 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
 {
 }
 
-+(id)fromPropertyList:(plitem_t *)plitem withArchive:(PLArchive *)ctx
++(id)fromPropertyList:(plitem_t)plitem withArchive:(PLArchive *)ctx
 {
 	if (PL_Type (plitem) == QFDictionary) {
 		if (auto ref = PL_ObjectForKey (plitem, "@ref")) {
@@ -774,7 +774,7 @@ deserialize_value (qfot_type_t *type, void *ptr, plitem_t *item, PLArchive *ctx)
 	return nil;
 }
 
-static plitem_t *
+static plitem_t
 s_string_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (string *) ptr;
@@ -783,7 +783,7 @@ s_string_func (@inout void *ptr, PLArchive *ctx)
 	return item;
 }
 
-static plitem_t *
+static plitem_t
 s_float_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (float *) ptr;
@@ -792,7 +792,7 @@ s_float_func (@inout void *ptr, PLArchive *ctx)
 	return item;
 }
 
-static plitem_t *
+static plitem_t
 s_func_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (int *) ptr;
@@ -802,7 +802,7 @@ s_func_func (@inout void *ptr, PLArchive *ctx)
 	return item;
 }
 
-static plitem_t *
+static plitem_t
 s_double_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (double *) ptr;
@@ -811,7 +811,7 @@ s_double_func (@inout void *ptr, PLArchive *ctx)
 	return item;
 }
 
-static plitem_t *
+static plitem_t
 s_int_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (int *) ptr;
@@ -820,7 +820,7 @@ s_int_func (@inout void *ptr, PLArchive *ctx)
 	return item;
 }
 
-static plitem_t *
+static plitem_t
 s_uint_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (uint *) ptr;
@@ -829,7 +829,7 @@ s_uint_func (@inout void *ptr, PLArchive *ctx)
 	return item;
 }
 
-static plitem_t *
+static plitem_t
 s_long_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (long *) ptr;
@@ -838,7 +838,7 @@ s_long_func (@inout void *ptr, PLArchive *ctx)
 	return item;
 }
 
-static plitem_t *
+static plitem_t
 s_ulong_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (ulong *) ptr;
@@ -847,7 +847,7 @@ s_ulong_func (@inout void *ptr, PLArchive *ctx)
 	return item;
 }
 
-static plitem_t *
+static plitem_t
 s_ptr_func (void *ptr, qfot_type_t *type, PLArchive *ctx)
 {
 	if (type.encoding == ":") {
@@ -867,7 +867,7 @@ s_ptr_func (void *ptr, qfot_type_t *type, PLArchive *ctx)
 	return obj;
 }
 
-static plitem_t *
+static plitem_t
 s_bool_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (bool *) ptr;
@@ -876,7 +876,7 @@ s_bool_func (@inout void *ptr, PLArchive *ctx)
 	return item;
 }
 
-static plitem_t *
+static plitem_t
 s_lbool_func (@inout void *ptr, PLArchive *ctx)
 {
 	auto p = (lbool *) ptr;
@@ -886,7 +886,7 @@ s_lbool_func (@inout void *ptr, PLArchive *ctx)
 }
 
 
-static plitem_t *
+static plitem_t
 s_basic_func (qfot_type_t *type, void *ptr, PLArchive *ctx)
 {
 	if (str_char(type.encoding, 0) == '@') {
@@ -902,7 +902,7 @@ s_basic_func (qfot_type_t *type, void *ptr, PLArchive *ctx)
 		return s_ptr_func (ptr, type, ctx);
 	}
 	//FIXME qfcc doesn't typecheck the function initializers properly
-	static plitem_t *(*type_funcs[])(@inout void *ptr, PLArchive *ctx) = {
+	static plitem_t (*type_funcs[])(@inout void *ptr, PLArchive *ctx) = {
 		[ev_string] = s_string_func,
 		[ev_float] = s_float_func,
 		[ev_vector] = s_float_func,
@@ -953,9 +953,9 @@ s_basic_func (qfot_type_t *type, void *ptr, PLArchive *ctx)
 	}
 }
 
-static plitem_t *serialize_value (qfot_type_t *type, void *ptr, PLArchive *ctx);
+static plitem_t serialize_value (qfot_type_t *type, void *ptr, PLArchive *ctx);
 
-static plitem_t *
+static plitem_t
 s_struct_func (qfot_type_t *type, void *ptr, PLArchive *ctx)
 {
 	auto strct = PL_NewDictionary ();
@@ -974,7 +974,7 @@ s_struct_func (qfot_type_t *type, void *ptr, PLArchive *ctx)
 	return strct;
 }
 
-static plitem_t *
+static plitem_t
 s_enum_func (qfot_type_t *type, void *ptr, PLArchive *ctx)
 {
 	for (int i = 0; i < type.strct.num_fields; i++) {
@@ -985,16 +985,16 @@ s_enum_func (qfot_type_t *type, void *ptr, PLArchive *ctx)
 	return PL_NewNumber (*(int *) ptr);
 }
 
-static plitem_t *
+static plitem_t
 s_array_func (qfot_type_t *type, void *ptr, PLArchive *ctx)
 {
 	return nil;
 }
 
-static plitem_t *
+static plitem_t
 serialize_value (qfot_type_t *type, void *ptr, PLArchive *ctx)
 {
-	static plitem_t *(*meta_funcs[]) (qfot_type_t *type, void *ptr,
+	static plitem_t (*meta_funcs[]) (qfot_type_t *type, void *ptr,
 									  PLArchive *ctx) = {
 		[ty_basic] = s_basic_func,
 		[ty_struct] = s_struct_func,
@@ -1010,14 +1010,14 @@ serialize_value (qfot_type_t *type, void *ptr, PLArchive *ctx)
 	return obj;
 }
 
--(plitem_t *)serialize:(PLArchive *)ctx
+-(plitem_t)serialize:(PLArchive *)ctx
 {
 	if (string ref = [ctx id:self]) {
-		plitem_t *pl = PL_NewDictionary ();
+		plitem_t pl = PL_NewDictionary ();
 		PL_D_AddObject (pl, "@ref", PL_NewString (ref));
 		return pl;
 	}
-	plitem_t *pl = PL_NewDictionary ();
+	plitem_t pl = PL_NewDictionary ();
 	auto clsname = object_get_class_name (self);
 	PL_D_AddObject (pl, "@classname", PL_NewString (clsname));
 	PL_D_AddObject (pl, "@id", PL_NewString ([ctx add:self]));
@@ -1041,7 +1041,7 @@ serialize_value (qfot_type_t *type, void *ptr, PLArchive *ctx)
 @end
 
 @implementation Array (PLItem)
-+(id)fromPropertyList:(plitem_t *)plitem withArchive:(PLArchive *)ctx
++(id)fromPropertyList:(plitem_t)plitem withArchive:(PLArchive *)ctx
 {
 	uint count = PL_A_NumObjects (plitem);
 	auto array = [Array arrayWithCapacity:count];
@@ -1059,10 +1059,10 @@ serialize_value (qfot_type_t *type, void *ptr, PLArchive *ctx)
 	return array;
 }
 
--(plitem_t *)serialize:(PLArchive *)ctx
+-(plitem_t)serialize:(PLArchive *)ctx
 {
 	if (string ref = [ctx id:self]) {
-		plitem_t *pl = PL_NewDictionary ();
+		plitem_t pl = PL_NewDictionary ();
 		PL_D_AddObject (pl, "@ref", PL_NewString (ref));
 		return pl;
 	}

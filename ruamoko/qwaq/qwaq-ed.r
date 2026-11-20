@@ -89,7 +89,7 @@ typedef struct component_s {
 	void (*ui) (void *comp, uint ent);
 } component_t;
 
-void init_graphics (plitem_t *config, int num_components,
+void init_graphics (plitem_t config, int num_components,
 					component_t *components) = #0;
 uint load_resource (string name) = #0;
 uint find_resource (string name) = #0;
@@ -769,7 +769,7 @@ setup_bindings (void)
 	[CameraSystem create_bindings];
 	[Player create_bindings];
 
-	plitem_t *config = PL_GetPropertyList (input_cfg);
+	plitem_t config = PL_GetPropertyList (input_cfg);
 	IN_LoadConfig (config);
 	PL_Release (config);
 }
@@ -1021,7 +1021,7 @@ update_anim (uint ent)
 }
 
 void
-load_scene (plitem_t *scene_item, scene_t scene)
+load_scene (plitem_t scene_item, scene_t scene)
 {
 	auto ctx = [[PLArchive archive] retain];
 	id scene_plist = [[PLItem fromItem:scene_item] retain];
@@ -1314,7 +1314,7 @@ main (int argc, string *argv)
 
 	arp_start ();
 
-	plitem_t *config = PL_GetPropertyList (render_graph_cfg);
+	plitem_t config = PL_GetPropertyList (render_graph_cfg);
 	if (!config) {
 		return 1;
 	}

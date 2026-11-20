@@ -38,7 +38,7 @@
 
 @interface PLItem: Object <PLDictionary, PLArray, PLString, PLNumber, PLBool>
 {
-	plitem_t   *item;
+	plitem_t    item;
 }
 + (PLItem *) newDictionary;
 + (PLItem *) newArray;
@@ -46,10 +46,10 @@
 + (PLItem *) newString:(string) str;
 + (PLItem *) fromString:(string) str;
 + (PLItem *) fromFile:(QFile) file;
-+ (PLItem *) fromItem:(plitem_t *) item;
++ (PLItem *) fromItem:(plitem_t ) item;
 
-- initWithItem:(plitem_t *) item;
-- (plitem_t *) item;
+- initWithItem:(plitem_t ) item;
+- (plitem_t ) item;
 - (string) write;
 - (pltype_t) type;
 - (int) line;
@@ -102,14 +102,14 @@ typedef @handle _hashtab_t hashtab_t;
 @end
 
 @interface Object (PLItem)
-+(id)fromPropertyList:(plitem_t *)plitem withArchive:(PLArchive *)ctx;
--(plitem_t *)serialize:(PLArchive *)ctx;
++(id)fromPropertyList:(plitem_t )plitem withArchive:(PLArchive *)ctx;
+-(plitem_t )serialize:(PLArchive *)ctx;
 -(void)awakeFromArchive;
 @end
 
 @interface Array (PLItem)
-+(id)fromPropertyList:(plitem_t *)plitem withArchive:(PLArchive *)ctx;
--(plitem_t *)serialize:(PLArchive *)ctx;
++(id)fromPropertyList:(plitem_t )plitem withArchive:(PLArchive *)ctx;
+-(plitem_t )serialize:(PLArchive *)ctx;
 @end
 
 #endif//__ruamoko_PropertyList_h
