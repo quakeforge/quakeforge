@@ -99,6 +99,7 @@ typedef @handle _hashtab_t hashtab_t;
 }
 +(PLArchive *)archive;
 -(bool)finalize;
+-(void *)add:(void *)ptr withId:(string)obj_id;
 @end
 
 @interface Object (PLItem)
