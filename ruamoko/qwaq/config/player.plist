@@ -8,12 +8,12 @@
 		idle.R = @auto;
 		run = (
 			{ time = 0;            id = 2;  },	// left contact
-			{ time = 0.0833333358; id = 3;  },	// left heal
+			{ time = 0.0833333358; id = 3;  },	// left heel
 			{ time = 0.0833333358; id = 4;  },	// left flat
 			{ time = 0.166666672;  id = 5;  },	// left toes
 			{ time = 0.333333343;  id = 10; },	// flight
 			{ time = 0.333333343;  id = 6;  },	// right contact
-			{ time = 0.416666657;  id = 7;  },	// right heal
+			{ time = 0.416666657;  id = 7;  },	// right heel
 			{ time = 0.416666657;  id = 8;  },	// right flat
 			{ time = 0.5;          id = 9;  },	// right toes
 			{ time = 0.666666687;  id = 11; },	// flight
@@ -23,11 +23,11 @@
 		step.RL = @auto;
 		walk = (
 			{ time = 0;           id = 2; },	// left contact
-			{ time = 0.166666672; id = 3; },	// left heal
+			{ time = 0.166666672; id = 3; },	// left heel
 			{ time = 0.333333343; id = 4; },	// left flat
 			{ time = 0.5;         id = 5; },	// left toes
 			{ time = 0.5;         id = 6; },	// right contact
-			{ time = 0.666666687; id = 7; },	// right heal
+			{ time = 0.666666687; id = 7; },	// right heel
 			{ time = 0.833333313; id = 8; },	// right flat
 			{ time = 1;           id = 9; },	// right toes
 			{ time = 1;           id = 1; },	// end of animation
