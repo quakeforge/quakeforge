@@ -52,7 +52,7 @@
 	qfa_update_anim (rmanim, dt);
 	arm_motor_t M;
 	qfa_get_pose_motors (rmanim, &M);
-	set_transform (M.m * E, trans);
+	set_transform (E * M.m, trans);
 
 
 	int num_events;
