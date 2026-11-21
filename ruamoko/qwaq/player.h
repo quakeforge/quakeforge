@@ -38,6 +38,9 @@ quaternion fromtorot(vector a, vector b);
 	PlayerCam *camera;
 
 	vector wish_vel;
+	float turn_frac;	// amount of turning that can be applied
+	bool left_contact;
+	bool right_contact;
 }
 +player:(scene_t) scene;
 +(void)create_bindings;

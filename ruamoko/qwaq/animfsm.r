@@ -1,7 +1,10 @@
 #include <string.h>
+#include <Array.h>
 
 #include "animfsm.h"
 #include "armature.h"
+
+void printf(string fmt, ...);
 
 @implementation AnimState
 
@@ -33,8 +36,10 @@
 	return self;
 }
 
--(void)awakeFromArchive
+-pivotRoot:(motor_t) m
 {
+	root_anchor = m * root_anchor;
+	return self;
 }
 
 -(bool)check
@@ -52,16 +57,18 @@
 	qfa_update_anim (rmanim, dt);
 	arm_motor_t M;
 	qfa_get_pose_motors (rmanim, &M);
-	set_transform (E * M.m, trans);
-
+	root_motion = M.m;
+	set_transform (root_anchor * root_motion, trans);
 
 	int num_events;
 	auto events = qfa_get_events (anim, &num_events);
 	if (num_events) {
 		for (int i = 0; i < num_events; i++) {
-			//printf ("%d %g %g\n", events[i].data, events[i].start_frac,
-			//		events[i].end_frac);
-			if (events[i].data == 1) {
+			int id = events[i].data;
+			float start = events[i].start_frac;
+			float end = events[i].end_frac;
+			[[anim_events objectAtIndex:id] invoke:self, id, start, end];
+			if (id == 1) {//FIXME shouldn't hardcode
 				clip_ended = true;
 			}
 		}
@@ -79,7 +86,7 @@
 	qfa_reset_anim (current_anim);
 	qfa_reset_anim (current_rmanim);
 	Entity_SetAnimstate (ent, current_anim);
-	E = make_motor (Transform_GetWorldPosition (trans),
+	root_anchor = make_motor (Transform_GetWorldPosition (trans),
 					Transform_GetWorldRotation (trans));
 	clip_ended = false;
 }

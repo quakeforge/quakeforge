@@ -863,14 +863,6 @@ draw_line_box (mat2x3 aabb, transform_t cam, motor_t E)
 }
 
 static void
-update_fsm (uint ent)
-{
-	AnimFSM *fsm;
-	get_component (ent, qent_fsm, &fsm);
-	[fsm update:frametime];
-}
-
-static void
 update_show_armature (uint ent)
 {
 	armature_t *arm;
@@ -1099,7 +1091,6 @@ load_entity (id ent_item, scene_t scene, PLArchive *ctx)
 			id fsm = [[AnimFSM fromPropertyList:ctrlr withArchive:ctx]
 					  retain];
 			set_component (e, qent_fsm, &fsm);
-			set_update (e, update_fsm);
 		}
 		auto a = Entity_GetAnimation (ent);
 		a.debug_bone = ~0u;

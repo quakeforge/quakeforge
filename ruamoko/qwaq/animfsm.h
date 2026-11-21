@@ -16,16 +16,19 @@
 
 @interface AnimFSM : FSM
 {
+	Array *anim_events;
 	transform_t trans;
 	entity_t ent;
 
-	motor_t E;
+	motor_t root_anchor;	// entity motor at start of animation
+	motor_t root_motion;	// relative motor from root motion track
 	float dt;
 	bool clip_ended;
 	animstate_t current_anim;
 	animstate_t current_rmanim;
 }
 -setEntity:(entity_t) ent;
+-pivotRoot:(motor_t) m;
 @end
 
 #endif//__animfsm_h

@@ -1,8 +1,20 @@
 {
 	@classname = AnimFSM;
 	@id = 1;
-	dt = 0;
-	clip_ended = false;
+	anim_events = (
+		nil,
+		{ @classname = FSMAction; selector = clip_end:id:start:end:; target = { @ref = player; }; @id = event0 },
+		{ @classname = FSMAction; selector = contact:id:start:end:; target = { @ref = player; }; @id = event0 },//left
+		{ @classname = FSMAction; selector = heel:id:start:end:; target = { @ref = player; }; @id = event0 },	//left
+		{ @classname = FSMAction; selector = flat:id:start:end:; target = { @ref = player; }; @id = event0 },	//left
+		{ @classname = FSMAction; selector = toes:id:start:end:; target = { @ref = player; }; @id = event0 },	//left
+		{ @classname = FSMAction; selector = contact:id:start:end:; target = { @ref = player; }; @id = event0 },//right
+		{ @classname = FSMAction; selector = heel:id:start:end:; target = { @ref = player; }; @id = event0 },	//right
+		{ @classname = FSMAction; selector = flat:id:start:end:; target = { @ref = player; }; @id = event0 },	//right
+		{ @classname = FSMAction; selector = toes:id:start:end:; target = { @ref = player; }; @id = event0 },	//right
+		{ @classname = FSMAction; selector = flight:id:start:end:; target = { @ref = player; }; @id = event0 },	//left
+		{ @classname = FSMAction; selector = flight:id:start:end:; target = { @ref = player; }; @id = event0 },	//right
+	);
 	states = (
 		{
 			@classname = AnimState;

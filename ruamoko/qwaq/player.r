@@ -37,6 +37,29 @@ void add_target (entity_t tgt)
 	}
 }
 
+@overload vector log (quaternion q)
+{
+	float a = (q * ~q).w;
+	if (!a) {
+		return '0 0 0';
+	}
+	float s = sqrt (a);
+	float b = atan2 (s, q.s) / s;
+	return q.v * b;
+}
+
+static @overload quaternion exp (vector v)
+{
+	float l = v • v;
+	if (l == 0) {
+		return '0 0 0 1';
+	}
+	float a = sqrt (l);
+	auto sc = sincos (a);
+	sc[0] /= a;
+	return [v * sc[0], sc[1]];
+}
+
 @implementation Player
 +(void)create_bindings
 {
@@ -119,6 +142,7 @@ void add_target (entity_t tgt)
 	get_component (q_ent, qent_fsm, &fsm);
 	get_component (q_ent, qent_entity, &s_ent);
 	get_component (q_ent, qent_transform, &xform);
+	//FIXME rotation
 	Transform_SetLocalRotation(xform, { 0, 0, 0.707106769, 0.707106769});
 	Transform_SetLocalPosition(xform, {-5, 0, 0, 1});
 	[[fsm setEntity:s_ent] start];
@@ -181,10 +205,7 @@ fromtorot(vector a, vector b)
 point_t
 Player_move (Player *self, float frametime)
 {
-	vector dpos = {};
-	dpos.x -= IN_UpdateAxis (move_forward);
-	dpos.y -= IN_UpdateAxis (move_side);
-	dpos *= 2;
+	vector dpos = self.wish_vel;
 
 	float r = self.view_dist * self.pitch.x;
 	float v = fabs (dpos.y) * frametime;
@@ -222,16 +243,25 @@ Player_move (Player *self, float frametime)
 	}
 	self.velocity += a * frametime;
 	pos += (self.velocity - 0.5 * a * frametime) * frametime;
-	auto p = vec4 (pos, 1);
-	Transform_SetLocalPosition (self.xform, p);
+	auto p = point_t (pos, 1);
+	//FIXME currently handled by root motion in AnimFSM, but need to control
+	//root motion using onground so the player can jump
+	//Transform_SetLocalPosition (self.xform, p);
 
 	if (dp • dp) {
-		vector fwd = Transform_Forward (self.xform).xyz;
+		//FIXME rotation
+		vector fwd = Transform_Right (self.xform).xyz;
+		//vector fwd = Transform_Forward (xform).xyz;
 		quaternion drot = fromtorot (fwd, vector (dp, 0));
+		drot = exp (self.turn_frac * log (drot));
 		quaternion rot = Transform_GetLocalRotation (self.xform);
 		Transform_SetLocalRotation (self.xform, drot * rot);
+
+		auto r = ~(rotor_t) drot;
+		auto m = (r • p) * ~p;
+		[self.fsm pivotRoot:m];
 	}
-	return (point_t)p;
+	return p;
 }
 
 void
@@ -287,6 +317,61 @@ Player_freecam (Player *self, float frametime)
 	return self;
 }
 
+//FIXME [exact_types] attribute (functions and methods) so floats can be
+//passed through ...
+//FIXME instant events at the beginning of an animation get lost
+//for now, doubles as left-contact
+-(void)clip_end:(id)sender id:(uint)id start:(double)start end:(double)end
+{
+	//printf ("%@ %@ %d %g %g\n", self, sender, id, start, end);
+}
+
+-(void)contact:(id)sender id:(uint)id start:(double)start end:(double)end
+{
+	//printf ("contact %s\n", id < 6 ? "left" : "right");
+}
+
+-(void)heel:(id)sender id:(uint)id start:(double)start end:(double)end
+{
+	//printf ("heel %s\n", id < 6 ? "left" : "right");
+	if (id < 6) {
+		left_contact = true;
+	} else {
+		right_contact = true;
+	}
+	turn_frac = float (end - start) * ((left_contact && right_contact) ? 1 : 0.2f);
+}
+
+-(void)flat:(id)sender id:(uint)id start:(double)start end:(double)end
+{
+	//printf ("flat %s\n", id < 6 ? "left" : "right");
+	if (id < 6) {
+		left_contact = true;
+	} else {
+		right_contact = true;
+	}
+	turn_frac = float(end - start) * ((left_contact && right_contact) ? 1 : 0.5f);
+}
+
+-(void)toes:(id)sender id:(uint)id start:(double)start end:(double)end
+{
+	//printf ("toes %s\n", id < 6 ? "left" : "right");
+	if (id < 6) {
+		left_contact = true;
+	} else {
+		right_contact = true;
+	}
+	turn_frac = float (end - start) * ((left_contact && right_contact) ? 1 : 0.2f);
+}
+
+-(void)flight:(id)sender id:(uint)id start:(double)start end:(double)end
+{
+	//printf ("flight %s\n", !(id & 1) ? "left" : "right");
+	turn_frac = 0;
+	left_contact = false;
+	right_contact = false;
+}
+
 -think:(float)frametime
 {
 	[self collect_input];
@@ -305,6 +390,7 @@ Player_freecam (Player *self, float frametime)
 	} else {
 		Player_freecam (self, frametime);
 	}
+	[fsm update:frametime];
 	auto pos = Player_move (self, frametime);
 
 	[camera setFocus:view];
