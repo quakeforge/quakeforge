@@ -25,6 +25,9 @@ msgbuf_t create_event_tracks (model_t model, plitem_t events_item);
 body_t calc_inertia_tensor (msgbuf_t model_buf, float inv_density);
 void leafnode();
 
+@class PLArchive;
+entity_t load_entity (id ent_item, scene_t scene, PLArchive *ctx);
+
 extern bool physics_paused;
 
 extern int in_context;

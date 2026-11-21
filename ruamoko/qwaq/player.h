@@ -6,8 +6,6 @@
 
 #include "pga3d.h"
 
-#include <input.h>
-
 void add_target (entity_t tgt);
 quaternion fromtorot(vector a, vector b);
 
@@ -34,6 +32,8 @@ quaternion fromtorot(vector a, vector b);
 	float view_dist;
 
 	PlayerCam *camera;
+
+	vector wish_vel;
 }
 +player:(scene_t) scene;
 +(void)create_bindings;

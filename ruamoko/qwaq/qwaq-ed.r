@@ -278,7 +278,7 @@ static component_t qwaq_components[] = {
 -(void)enter
 {
 	auto state = (AnimState *)currentState;
-	printf ("fsm enter %7s\n", state.name);
+	//printf ("fsm enter %7s\n", state.name);
 	current_anim = state.anim;
 	current_rmanim = state.rmanim;
 	qfa_reset_anim (current_anim);
@@ -1020,6 +1020,198 @@ update_anim (uint ent)
 
 }
 
+entity_t
+load_entity (id ent_item, scene_t scene, PLArchive *ctx)
+{
+	EntityInit *ent_init = [EntityInit fromPropertyList:[ent_item item]
+											withArchive:nil];
+	//printf ("name: %s\n", ent_init.name);
+	//printf ("model: %s\n", ent_init.model);
+	//printf ("position: %q\n", ent_init.position);
+	//printf ("rotation: %q\n", ent_init.rotation);
+	//printf ("scale: %q\n", ent_init.scale);
+	//printf ("target: %s\n", ent_init.target ? "true" : "false");
+	//printf ("invDensity: %g\n", ent_init.invDensity);
+
+	entity_t ent = Scene_CreateEntity (scene);
+	transform_t xform = Entity_GetTransform (ent);
+	Transform_SetLocalTransform (xform, ent_init.scale,
+								 ent_init.rotation, ent_init.position);
+	msgbuf_t mesh = nil;
+	model_t model = nil;
+	uint entqueue = Scene_Entqueue (scene, ent_init.entqueue);
+	uint texture = find_resource (ent_init.texture);
+	switch (ent_init.mesh) {
+	case "create_quadsphere":
+		mesh = create_quadsphere (ent_init.mesh_flag);
+		break;
+	case "create_ico":
+		mesh = create_ico ();
+		break;
+	case "create_block":
+		mesh = create_block (ent_init.mesh_param.xyz);
+		break;
+	default:
+		if (ent_init.model) {
+			model = Model_Load (ent_init.model);
+		}
+		break;
+	}
+	bool have_collider = false;
+	collider_t collider = {
+		.type = ent_init.collider.type,
+	};
+	switch (ent_init.collider.type) {
+	case col_plane:
+		auto plane = (plane_t) ent_init.collider.plane;
+		// if the normal is 0, then no collider was specified
+		if (plane • plane) {
+			have_collider = true;
+			collider.plane = plane;
+			// force infinite mass
+			ent_init.invDensity = 0;
+		}
+		break;
+	case col_ball:
+		have_collider = true;
+		collider.ball.offset = ent_init.collider.offset;
+		collider.ball.radius = ent_init.collider.radius;
+		break;
+	case col_capsule:
+		have_collider = true;
+		collider.capsule.offset = ent_init.collider.offset;
+		collider.capsule.radius = ent_init.collider.radius;
+		collider.capsule.axis = ent_init.collider.axis;
+		break;
+	case col_box:
+		have_collider = true;
+		collider.box.offset = ent_init.collider.offset;
+		collider.box.extent = ent_init.collider.extent;
+	}
+	uint e = new_entity ();
+	set_component (e, qent_transform, &xform);
+	if (have_collider) {
+		max_collider_ents++;
+		set_component (e, qent_collider, &collider);
+		body_t body = {};//infinite mass
+		body.R = 1;
+		if (ent_init.from_shape) {
+			switch (collider.type) {
+			case col_plane:
+				body = calc_inertia_plane (collider, ent_init.invDensity);
+				break;
+			case col_ball:
+				body = calc_inertia_ball (collider, ent_init.invDensity);
+				break;
+			case col_capsule:
+				body = calc_inertia_capsule (collider, ent_init.invDensity);
+				break;
+			case col_box:
+				body = calc_inertia_box (collider, ent_init.invDensity);
+				break;
+			}
+		} else if (mesh) {
+			// create body data from mesh
+			body = calc_inertia_tensor (mesh, ent_init.invDensity);
+		} else {
+			//FIXME build from model?
+		}
+		set_component (e, qent_body, &body);
+		state_t state = {
+			.M = make_motor (ent_init.position, ent_init.rotation),
+			.B = (PGA.bvect) ent_init.avel + (PGA.bvecp) ent_init.vel,
+		};
+		state.M = state.M * ~body.R;
+		state.B = body.R * state.B * ~body.R;
+		set_component (e, qent_state, &state);
+		set_update (e, update_physics);
+	}
+	if (e != ~0u && ent_init.grav_flag) {
+		set_component (e, qent_grav, &ent_init.grav_flag);
+	}
+	if (mesh) {
+		model = Model_LoadMesh (ent_init.name, mesh);
+		MsgBuf_Delete (mesh);
+	}
+	if (model) {
+		Entity_SetModel (ent, model);
+		Entity_SetSubmeshMask (ent, ent_init.submesh_mask);
+		if (entqueue != ~0u) {
+			Entity_SetEntqueue (ent, entqueue);
+		}
+		if (texture != ~0u) {
+			Entity_SetTextureID (ent, texture);
+		}
+		if (ent_init.extract_root_motion) {
+			int num_joints = Model_NumJoints (model);
+			printf ("%d joints\n", num_joints);
+			qfa_extract_root_motion (model);
+		}
+		int num_clips = Model_NumClips (model);
+		if (ent_init.anim_events) {
+			auto evt = create_event_tracks (model, ent_init.anim_events);
+			string mod_name = Model_Name (model);
+			Model_LoadMesh ("ev|" + mod_name, evt);
+			MsgBuf_Delete (evt);
+		}
+		//for (int i = 0; i < num_clips; i++) {
+		//	auto clipinfo = Model_GetClipInfo (model, i);
+		//	printf ("%s %2d %3d %d %s\n", Model_Name (model),
+		//			i, clipinfo.num_frames,
+		//			clipinfo.num_channels, clipinfo.name);
+		//}
+		if (ent_init.anim) {
+			string mod_name = Model_Name (model);
+			string clipname = mod_name + ":" + ent_init.anim;
+			auto clip = qfa_find_clip (clipname);
+			auto arma = qfa_find_armature (mod_name);
+			animstate_t anim;
+			printf("%s\n", clipname);
+			if (ent_init.anim_events) {
+				string evtname = "ev|" + clipname;
+				auto evt = qfa_find_clip (evtname);
+				anim = qfa_create_animation (&clip, 1, &evt, 1, true,
+											 arma);
+				qfa_set_clip_loop (anim, 1, true);
+			} else {
+				anim = qfa_create_animation (&clip, 1, nil, 0, true,
+											 arma);
+			}
+			qfa_set_clip_loop (anim, 0, true);
+			set_component (e, qent_anim, &anim);
+			set_update (e, update_anim);
+			Entity_SetAnimstate (ent, anim);
+		}
+		if (e != ~0 && ent_init.show_armature) {
+			printf ("show_armature: %x\n", e);
+			armature_t *arm = make_armature (model);
+			set_component (e, qent_armature, &arm);
+			if (!ent_init.anim) {
+				set_update (e, update_show_armature);
+				mat2x3 bounds = Model_GetPoseBounds (model);
+				set_component (e, qent_bounds, &bounds);
+			}
+		}
+		if (ctx && ent_init.attach_fsm) {
+			auto ctrlr = PL_GetPropertyList (char_controller_cfg);
+			//auto ctx = [PLArchive archive];
+			id fsm = [[AnimFSM fromPropertyList:ctrlr withArchive:ctx]
+					  retain];
+			[ctx finalize];
+			[[fsm setEntity:ent] start];
+			set_component (e, qent_fsm, &fsm);
+			set_update (e, update_fsm);
+		}
+		auto a = Entity_GetAnimation (ent);
+		a.debug_bone = ~0u;
+		Entity_SetAnimation (ent, a);
+	}
+	if (ent_init.target) {
+		add_target (ent);
+	}
+	return ent;
+}
+
 void
 load_scene (plitem_t scene_item, scene_t scene)
 {
@@ -1028,193 +1220,7 @@ load_scene (plitem_t scene_item, scene_t scene)
 	int count = [scene_plist count];
 	for (int i = 0; i < count; i++) {
 		id ent_item = [scene_plist getObjectAtIndex:i];
-		EntityInit *ent_init = [EntityInit fromPropertyList:[ent_item item]
-												withArchive:ctx];
-		//printf ("name: %s\n", ent_init.name);
-		//printf ("model: %s\n", ent_init.model);
-		//printf ("position: %q\n", ent_init.position);
-		//printf ("rotation: %q\n", ent_init.rotation);
-		//printf ("scale: %q\n", ent_init.scale);
-		//printf ("target: %s\n", ent_init.target ? "true" : "false");
-		//printf ("invDensity: %g\n", ent_init.invDensity);
-
-		entity_t ent = Scene_CreateEntity (scene);
-		transform_t xform = Entity_GetTransform (ent);
-		Transform_SetLocalTransform (xform, ent_init.scale,
-									 ent_init.rotation, ent_init.position);
-		msgbuf_t mesh = nil;
-		model_t model = nil;
-		uint entqueue = Scene_Entqueue (scene, ent_init.entqueue);
-		uint texture = find_resource (ent_init.texture);
-		switch (ent_init.mesh) {
-		case "create_quadsphere":
-			mesh = create_quadsphere (ent_init.mesh_flag);
-			break;
-		case "create_ico":
-			mesh = create_ico ();
-			break;
-		case "create_block":
-			mesh = create_block (ent_init.mesh_param.xyz);
-			break;
-		default:
-			if (ent_init.model) {
-				model = Model_Load (ent_init.model);
-			}
-			break;
-		}
-		bool have_collider = false;
-		collider_t collider = {
-			.type = ent_init.collider.type,
-		};
-		switch (ent_init.collider.type) {
-		case col_plane:
-			auto plane = (plane_t) ent_init.collider.plane;
-			// if the normal is 0, then no collider was specified
-			if (plane • plane) {
-				have_collider = true;
-				collider.plane = plane;
-				// force infinite mass
-				ent_init.invDensity = 0;
-			}
-			break;
-		case col_ball:
-			have_collider = true;
-			collider.ball.offset = ent_init.collider.offset;
-			collider.ball.radius = ent_init.collider.radius;
-			break;
-		case col_capsule:
-			have_collider = true;
-			collider.capsule.offset = ent_init.collider.offset;
-			collider.capsule.radius = ent_init.collider.radius;
-			collider.capsule.axis = ent_init.collider.axis;
-			break;
-		case col_box:
-			have_collider = true;
-			collider.box.offset = ent_init.collider.offset;
-			collider.box.extent = ent_init.collider.extent;
-		}
-		uint e = new_entity ();
-		set_component (e, qent_transform, &xform);
-		if (have_collider) {
-			max_collider_ents++;
-			set_component (e, qent_collider, &collider);
-			body_t body = {};//infinite mass
-			body.R = 1;
-			if (ent_init.from_shape) {
-				switch (collider.type) {
-				case col_plane:
-					body = calc_inertia_plane (collider, ent_init.invDensity);
-					break;
-				case col_ball:
-					body = calc_inertia_ball (collider, ent_init.invDensity);
-					break;
-				case col_capsule:
-					body = calc_inertia_capsule (collider, ent_init.invDensity);
-					break;
-				case col_box:
-					body = calc_inertia_box (collider, ent_init.invDensity);
-					break;
-				}
-			} else if (mesh) {
-				// create body data from mesh
-				body = calc_inertia_tensor (mesh, ent_init.invDensity);
-			} else {
-				//FIXME build from model?
-			}
-			set_component (e, qent_body, &body);
-			state_t state = {
-				.M = make_motor (ent_init.position, ent_init.rotation),
-				.B = (PGA.bvect) ent_init.avel + (PGA.bvecp) ent_init.vel,
-			};
-			state.M = state.M * ~body.R;
-			state.B = body.R * state.B * ~body.R;
-			set_component (e, qent_state, &state);
-			set_update (e, update_physics);
-		}
-		if (e != ~0u && ent_init.grav_flag) {
-			set_component (e, qent_grav, &ent_init.grav_flag);
-		}
-		if (mesh) {
-			model = Model_LoadMesh (ent_init.name, mesh);
-			MsgBuf_Delete (mesh);
-		}
-		if (model) {
-			Entity_SetModel (ent, model);
-			Entity_SetSubmeshMask (ent, ent_init.submesh_mask);
-			if (entqueue != ~0u) {
-				Entity_SetEntqueue (ent, entqueue);
-			}
-			if (texture != ~0u) {
-				Entity_SetTextureID (ent, texture);
-			}
-			if (ent_init.extract_root_motion) {
-				int num_joints = Model_NumJoints (model);
-				printf ("%d joints\n", num_joints);
-				qfa_extract_root_motion (model);
-			}
-			int num_clips = Model_NumClips (model);
-			if (ent_init.anim_events) {
-				auto evt = create_event_tracks (model, ent_init.anim_events);
-				string mod_name = Model_Name (model);
-				Model_LoadMesh ("ev|" + mod_name, evt);
-				MsgBuf_Delete (evt);
-			}
-			//for (int i = 0; i < num_clips; i++) {
-			//	auto clipinfo = Model_GetClipInfo (model, i);
-			//	printf ("%s %2d %3d %d %s\n", Model_Name (model),
-			//			i, clipinfo.num_frames,
-			//			clipinfo.num_channels, clipinfo.name);
-			//}
-			if (ent_init.anim) {
-				string mod_name = Model_Name (model);
-				string clipname = mod_name + ":" + ent_init.anim;
-				auto clip = qfa_find_clip (clipname);
-				auto arma = qfa_find_armature (mod_name);
-				animstate_t anim;
-				printf("%s\n", clipname);
-				if (ent_init.anim_events) {
-					string evtname = "ev|" + clipname;
-					auto evt = qfa_find_clip (evtname);
-					anim = qfa_create_animation (&clip, 1, &evt, 1, true,
-												 arma);
-					qfa_set_clip_loop (anim, 1, true);
-				} else {
-					anim = qfa_create_animation (&clip, 1, nil, 0, true,
-												 arma);
-				}
-				qfa_set_clip_loop (anim, 0, true);
-				set_component (e, qent_anim, &anim);
-				set_update (e, update_anim);
-				Entity_SetAnimstate (ent, anim);
-			}
-			if (e != ~0 && ent_init.show_armature) {
-				printf ("show_armature: %x\n", e);
-				armature_t *arm = make_armature (model);
-				set_component (e, qent_armature, &arm);
-				if (!ent_init.anim) {
-					set_update (e, update_show_armature);
-					mat2x3 bounds = Model_GetPoseBounds (model);
-					set_component (e, qent_bounds, &bounds);
-				}
-			}
-			if (ent_init.attach_fsm) {
-				auto ctrlr = PL_GetPropertyList (char_controller_cfg);
-				auto ctx = [PLArchive archive];
-				id fsm = [[AnimFSM fromPropertyList:ctrlr withArchive:ctx]
-						  retain];
-				[ctx finalize];
-				[[fsm setEntity:ent] start];
-				set_component (e, qent_fsm, &fsm);
-				set_update (e, update_fsm);
-			}
-			auto a = Entity_GetAnimation (ent);
-			a.debug_bone = ~0u;
-			Entity_SetAnimation (ent, a);
-		}
-		if (ent_init.target) {
-			add_target (ent);
-		}
-
+		load_entity (ent_item, scene, nil);
 		arp_end ();
 		arp_start ();
 	}

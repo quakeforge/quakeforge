@@ -1,6 +1,15 @@
 #include <math.h>
+#include <input.h>
+#include <PropertyList.h>
 #include "player.h"
 #include "playercam.h"
+#include "qwaq-ed.h"
+
+void printf(string fmt, ...);
+
+static string player_plist =
+#embed "config/player.plist"
+;
 
 in_axis_t *move_forward;
 in_axis_t *move_side;
@@ -99,21 +108,13 @@ void add_target (entity_t tgt)
 	}
 	self.scene = scene;
 
-	ent = Scene_CreateEntity (scene);
-	auto body = Scene_CreateEntity (scene);
-	auto mask = Scene_CreateEntity (scene);
-	Entity_SetModel (body, Model_Load ("progs/Capsule.mdl"));
-	Entity_SetModel (mask, Model_Load ("progs/Cube.mdl"));
+	auto ctx = [PLArchive archive];
+	[ctx add:self withId:"player"];
+	auto player_item = [PLItem fromString:player_plist];
+	ent = load_entity (player_item, scene, ctx);
 
 	xform = Entity_GetTransform (ent);
-	auto body_xform = Entity_GetTransform (body);
-	auto mask_xform = Entity_GetTransform (mask);
-	Transform_SetParent (body_xform, xform);
-	Transform_SetParent (mask_xform, body_xform);
 	Transform_SetLocalPosition(xform, {-5, 0, 0, 1});
-	Transform_SetLocalPosition(body_xform, {0, 0, 1, 1});
-	Transform_SetLocalPosition(mask_xform, {0.5, 0, 0.5, 1});
-	Transform_SetLocalScale(mask_xform, {0.25, 0.5, 0.125, 1});
 
 	hexhair = Model_Load ("progs/hexhair.mdl");
 
@@ -265,8 +266,24 @@ Player_freecam (Player *self, float frametime)
 	self.view = (point_t) vec4(self.yaw * self.pitch.x, -self.pitch.y, 0);
 }
 
+-collect_input
+{
+	vector dpos = {};
+	dpos.x -= IN_UpdateAxis (move_forward);
+	dpos.y -= IN_UpdateAxis (move_side);
+	dpos.z -= IN_UpdateAxis (move_up);
+	float mag = sqrt(dpos • dpos);
+	if (mag < 1) {
+		mag = 1;
+	}
+	wish_vel = dpos / mag;
+	return self;
+}
+
 -think:(float)frametime
 {
+	[self collect_input];
+
 	if (marker) {
 		auto mx = Entity_GetTransform (marker);
 		auto mp = (point_t) Transform_GetWorldPosition (mx);
@@ -304,5 +321,23 @@ Player_freecam (Player *self, float frametime)
 {
 	self.camera = camera;
 	return self;
+}
+
+-(bool)checkIdle
+{
+	float wv2 = wish_vel • wish_vel;
+	return wv2 < 0.015625;
+}
+
+-(bool)checkWalk
+{
+	float wv2 = wish_vel • wish_vel;
+	return wv2 >= 0.015625 && wv2 < 0.25;
+}
+
+-(bool)checkRun
+{
+	float wv2 = wish_vel • wish_vel;
+	return wv2 >= 0.25;
 }
 @end

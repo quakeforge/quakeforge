@@ -8,98 +8,63 @@
 			@classname = AnimState;
 			clipname = "girl20:idle.R";
 			@id = 2;
-			name = idle.R;
+			name = idle;
 			onEnter = { @id = 3; selector = enter; target = { @ref = 1 } };
 			events = (
+				{ @ref = cw_e; },
+				{ @ref = cr_e; },
 				{
 					@classname = FSMEvent;
-					targetState = { @ref = 10 } ;
+					targetState = { @ref = 2 } ;
 					checkCondition = { @ref = b }
-				}
-			)
-		},
-		{
-			@classname = AnimState;
-			clipname = "girl20:step.RL";
-			@id = 5;
-			name = step.RL;
-			onEnter = { @ref = 3 };
-			events = (
-				{
-					@classname = FSMEvent;
-					targetState = { @ref = 7 };
-					checkCondition = { @ref = b }
-				}
-			)
-		},
-		{
-			@classname = AnimState;
-			clipname = "girl20:idle.L";
-			@id = 7;
-			name = idle.L;
-			onEnter = { @ref = 3 };
-			events = (
-				{
-					@classname = FSMEvent;
-					targetState = { @ref = 9 };
-					checkCondition = { @ref = b }
-				}
-			)
-		},
-		{
-			@classname = AnimState;
-			clipname = "girl20:step.LR";
-			@id = 9;
-			name = step.LR;
-			onEnter = { @ref = 3 };
-			events = (
-				{
-					@classname = FSMEvent;
-					targetState = { @ref = 2 };
-					checkCondition = { @id = b; selector = check; target = { @ref = 1 } }
-				}
+				},
 			)
 		},
 		{
 			@classname = AnimState;
 			clipname = "girl20:walk";
-			@id = 10;
+			@id = 5;
 			name = walk;
 			onEnter = { @ref = 3 };
 			events = (
+				{ @ref = ci_e; },
 				{
 					@classname = FSMEvent;
-					targetState = { @ref = 11 };
-					checkCondition = { @ref = b; }
-				}
+					@id = cr_e;
+					targetState = { @ref = 7 };
+					checkCondition = { @id = cr; selector = checkRun; target = { @ref = player } }
+				},
+				{
+					@classname = FSMEvent;
+					targetState = { @ref = 5 };
+					checkCondition = { @ref = b }
+				},
 			)
 		},
 		{
 			@classname = AnimState;
 			clipname = "girl20:run";
-			@id = 11;
+			@id = 7;
 			name = run;
 			onEnter = { @ref = 3 };
 			events = (
 				{
 					@classname = FSMEvent;
-					targetState = { @ref = 12 };
-					checkCondition = { @ref = b; }
-				}
-			)
-		},
-		{
-			@classname = AnimState;
-			clipname = "girl20:walk";
-			@id = 12;
-			name = walk;
-			onEnter = { @ref = 3 };
-			events = (
+					@id = ci_e;
+					targetState = { @ref = 2 };
+					checkCondition = { @id = ci; selector = checkIdle; target = { @ref = player } }
+				},
 				{
 					@classname = FSMEvent;
+					@id = cw_e;
 					targetState = { @ref = 5 };
-					checkCondition = { @ref = b; }
-				}
+					checkCondition = { @id = cw; selector = checkWalk; target = { @ref = player } }
+				},
+				{
+					@classname = FSMEvent;
+					targetState = { @ref = 7 };
+					checkCondition = { @id = b; selector = check; target = { @ref = 1 } }
+				},
 			)
 		},
 	);
