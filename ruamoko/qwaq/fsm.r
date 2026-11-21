@@ -41,6 +41,21 @@
 	}
 }
 
+- (void)invoke:(id)sender, ...
+{
+	// Need to modify @args so it can include the dummy receiver and cmd
+	// parameters plust sender along with the original variadic parameters.
+	// Because of sender, @args.list is 4 pamameters into the full parameters
+	// block, so there's room for the 3 extra args.
+	@va_list args = @args;
+	args.list -= 3;
+	args.count += 3;
+	//params 0 and 1 will be replaced target and selector by obj_msg_sendv
+	//param 3 points at the first parameter in ...
+	args.list[2].pointer_val = sender;
+	obj_msg_sendv (target, selector, args);
+}
+
 - (bool)test
 {
 	return @bitcast(bool (*)(id, SEL), imp) (target, selector);

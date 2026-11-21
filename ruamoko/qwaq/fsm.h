@@ -17,6 +17,7 @@
 - (id)initWithTarget:(id)aTarget selector:(SEL)aSelector;
 - (void)bind;
 - (void)invoke;
+- (void)invoke:(id)sender, ...;
 - (bool)test;
 - (void)invokeWithObject:(id)arg;
 @end
