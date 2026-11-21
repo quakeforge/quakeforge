@@ -42,6 +42,12 @@ void printf(string fmt, ...);
 	return self;
 }
 
+-enableRootMotion:(bool)enabled
+{
+	root_enabled = enabled;
+	return self;
+}
+
 -(bool)check
 {
 	return clip_ended;
@@ -58,7 +64,9 @@ void printf(string fmt, ...);
 	arm_motor_t M;
 	qfa_get_pose_motors (rmanim, &M);
 	root_motion = M.m;
-	set_transform (root_anchor * root_motion, trans);
+	if (root_enabled) {
+		set_transform (root_anchor * root_motion, trans);
+	}
 
 	int num_events;
 	auto events = qfa_get_events (anim, &num_events);

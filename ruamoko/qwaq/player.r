@@ -244,9 +244,10 @@ Player_move (Player *self, float frametime)
 	self.velocity += a * frametime;
 	pos += (self.velocity - 0.5 * a * frametime) * frametime;
 	auto p = point_t (pos, 1);
-	//FIXME currently handled by root motion in AnimFSM, but need to control
-	//root motion using onground so the player can jump
-	//Transform_SetLocalPosition (self.xform, p);
+	[self.fsm enableRootMotion:self.onground];
+	if (!self.onground) {
+		Transform_SetLocalPosition (self.xform, (vec4)p);
+	}
 
 	if (dp • dp) {
 		//FIXME rotation
