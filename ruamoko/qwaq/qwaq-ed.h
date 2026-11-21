@@ -26,7 +26,7 @@ body_t calc_inertia_tensor (msgbuf_t model_buf, float inv_density);
 void leafnode();
 
 @class PLArchive;
-entity_t load_entity (id ent_item, scene_t scene, PLArchive *ctx);
+uint load_entity (id ent_item, scene_t scene, PLArchive *ctx);
 
 extern bool physics_paused;
 

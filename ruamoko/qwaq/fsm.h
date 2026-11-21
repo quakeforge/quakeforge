@@ -3,6 +3,7 @@
 
 #include <Object.h>
 
+@class Array;
 @class FSMState;
 
 @interface FSMAction : Object

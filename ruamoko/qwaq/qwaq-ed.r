@@ -8,6 +8,7 @@
 #include "gui/listview.h"
 #include "gui/nodepanel.h"
 #include "gui/window.h"
+#include "animfsm.h"
 #include "armature.h"
 #include "camerasystem.h"
 #include "fsm.h"
@@ -158,7 +159,11 @@ static component_t qwaq_components[] = {
 	},
 	[qent_transform] = {
 		.size = sizeof (transform_t),
-		.name = "transform",
+		.name = "transform(engine)",
+	},
+	[qent_entity] = {
+		.size = sizeof (entity_t),
+		.name = "entity(engine)",
 	},
 	[qent_collider] = {
 		.size = sizeof (collider_t),
@@ -185,111 +190,6 @@ static component_t qwaq_components[] = {
 		.name = "bounds",
 	},
 };
-
-@interface AnimState : FSMState
-{
-@public
-	string clipname;
-	animstate_t anim;
-	animstate_t rmanim;
-}
-@end
-
-@implementation AnimState
-
--(void)awakeFromArchive
-{
-	auto clip = qfa_find_clip (clipname);
-	auto evclip = qfa_find_clip ("ev|" + clipname);
-	auto rmclip = qfa_find_clip ("rm|" + clipname);
-	int ind = strchr (clipname, ':');
-	string mod_name = str_mid (clipname, 0, ind);
-	auto arma = qfa_find_armature (mod_name);
-	auto rmarma = qfa_find_armature ("rm|" + mod_name);
-
-	anim = qfa_create_animation (&clip, 1, &evclip, 1, false, arma);
-	qfa_set_clip_loop (anim, 0, false);
-	qfa_set_clip_loop (anim, 1, false);
-
-	rmanim = qfa_create_animation (&rmclip, 1, nil, 0, false, rmarma);
-	qfa_set_clip_loop (rmanim, 0, false);
-}
-
-@end
-
-@interface AnimFSM : FSM
-{
-	transform_t trans;
-	entity_t ent;
-
-	motor_t E;
-	float dt;
-	bool clip_ended;
-	animstate_t current_anim;
-	animstate_t current_rmanim;
-}
-@end
-
-@implementation AnimFSM
--setEntity:(entity_t) ent
-{
-	self.ent = ent;
-	trans = Entity_GetTransform (ent);
-	return self;
-}
-
--(void)awakeFromArchive
-{
-}
-
--(bool)check
-{
-	return clip_ended;
-}
-
--(void)update:(float)dt
-{
-	//printf ("fsm update %s %g\n", [current_state name], dt);
-	animstate_t anim = current_anim;
-	animstate_t rmanim = current_rmanim;
-	qfa_update_anim (anim, dt);
-
-	qfa_update_anim (rmanim, dt);
-	arm_motor_t M;
-	qfa_get_pose_motors (rmanim, &M);
-	set_transform (M.m * E, trans);
-
-
-	int num_events;
-	auto events = qfa_get_events (anim, &num_events);
-	if (num_events) {
-		for (int i = 0; i < num_events; i++) {
-			//printf ("%d %g %g\n", events[i].data, events[i].start_frac,
-			//		events[i].end_frac);
-			if (events[i].data == 1) {
-				clip_ended = true;
-			}
-		}
-	}
-
-	[super update:dt];
-}
-
--(void)enter
-{
-	auto state = (AnimState *)currentState;
-	//printf ("fsm enter %7s\n", state.name);
-	current_anim = state.anim;
-	current_rmanim = state.rmanim;
-	qfa_reset_anim (current_anim);
-	qfa_reset_anim (current_rmanim);
-	Entity_SetAnimstate (ent, current_anim);
-	E = make_motor (Transform_GetWorldPosition (trans),
-					Transform_GetWorldRotation (trans));
-	clip_ended = false;
-}
-
-@end
 
 imui_ctx_t imui_ctx;
 #define IMUI_context imui_ctx
@@ -1020,7 +920,7 @@ update_anim (uint ent)
 
 }
 
-entity_t
+uint
 load_entity (id ent_item, scene_t scene, PLArchive *ctx)
 {
 	EntityInit *ent_init = [EntityInit fromPropertyList:[ent_item item]
@@ -1090,6 +990,7 @@ load_entity (id ent_item, scene_t scene, PLArchive *ctx)
 	}
 	uint e = new_entity ();
 	set_component (e, qent_transform, &xform);
+	set_component (e, qent_entity, &ent);
 	if (have_collider) {
 		max_collider_ents++;
 		set_component (e, qent_collider, &collider);
@@ -1126,7 +1027,7 @@ load_entity (id ent_item, scene_t scene, PLArchive *ctx)
 		set_component (e, qent_state, &state);
 		set_update (e, update_physics);
 	}
-	if (e != ~0u && ent_init.grav_flag) {
+	if (ent_init.grav_flag) {
 		set_component (e, qent_grav, &ent_init.grav_flag);
 	}
 	if (mesh) {
@@ -1182,7 +1083,7 @@ load_entity (id ent_item, scene_t scene, PLArchive *ctx)
 			set_update (e, update_anim);
 			Entity_SetAnimstate (ent, anim);
 		}
-		if (e != ~0 && ent_init.show_armature) {
+		if (ent_init.show_armature) {
 			printf ("show_armature: %x\n", e);
 			armature_t *arm = make_armature (model);
 			set_component (e, qent_armature, &arm);
@@ -1197,8 +1098,6 @@ load_entity (id ent_item, scene_t scene, PLArchive *ctx)
 			//auto ctx = [PLArchive archive];
 			id fsm = [[AnimFSM fromPropertyList:ctrlr withArchive:ctx]
 					  retain];
-			[ctx finalize];
-			[[fsm setEntity:ent] start];
 			set_component (e, qent_fsm, &fsm);
 			set_update (e, update_fsm);
 		}
@@ -1209,7 +1108,7 @@ load_entity (id ent_item, scene_t scene, PLArchive *ctx)
 	if (ent_init.target) {
 		add_target (ent);
 	}
-	return ent;
+	return e;
 }
 
 void

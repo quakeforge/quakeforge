@@ -10,12 +10,16 @@ void add_target (entity_t tgt);
 quaternion fromtorot(vector a, vector b);
 
 @class PlayerCam;
+@class AnimFSM;;
 
 @interface Player : Object
 {
 	scene_t scene;
-	entity_t ent;
+	uint q_ent;
+	entity_t s_ent;
 	transform_t xform;
+
+	AnimFSM *fsm;
 
 	model_t hexhair;
 	entity_t marker;

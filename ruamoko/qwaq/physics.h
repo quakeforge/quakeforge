@@ -5,6 +5,7 @@ enum {
 	qent_state,
 	qent_body,
 	qent_transform,
+	qent_entity,
 	qent_collider,
 	qent_grav,
 
@@ -32,6 +33,8 @@ extern uint *collider_ents;
 //both causes qfcc to segfault
 //@overload float min (float x, float y);
 //@overload float max (float x, float y);
+typedef struct body_s body_t;
+typedef struct collider_s collider_t;
 
 body_t calc_inertia_plane (collider_t collider, float invDensity);
 body_t calc_inertia_ball (collider_t collider, float invDensity);

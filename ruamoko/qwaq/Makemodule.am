@@ -169,6 +169,7 @@ qwaq_ed_dat_src= \
 	ruamoko/qwaq/orrery/orbit.r \
 	ruamoko/qwaq/orrery/orbiter.r \
 	ruamoko/qwaq/orrery/physorbit.r \
+	ruamoko/qwaq/animfsm.r \
 	ruamoko/qwaq/armature.r \
 	ruamoko/qwaq/camera.r \
 	ruamoko/qwaq/camerasystem.r \

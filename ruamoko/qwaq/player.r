@@ -1,6 +1,8 @@
 #include <math.h>
 #include <input.h>
 #include <PropertyList.h>
+#include "animfsm.h"
+#include "physics.h"
 #include "player.h"
 #include "playercam.h"
 #include "qwaq-ed.h"
@@ -111,10 +113,15 @@ void add_target (entity_t tgt)
 	auto ctx = [PLArchive archive];
 	[ctx add:self withId:"player"];
 	auto player_item = [PLItem fromString:player_plist];
-	ent = load_entity (player_item, scene, ctx);
+	q_ent = load_entity (player_item, scene, ctx);
+	[ctx finalize];
 
-	xform = Entity_GetTransform (ent);
+	get_component (q_ent, qent_fsm, &fsm);
+	get_component (q_ent, qent_entity, &s_ent);
+	get_component (q_ent, qent_transform, &xform);
+	Transform_SetLocalRotation(xform, { 0, 0, 0.707106769, 0.707106769});
 	Transform_SetLocalPosition(xform, {-5, 0, 0, 1});
+	[[fsm setEntity:s_ent] start];
 
 	hexhair = Model_Load ("progs/hexhair.mdl");
 
@@ -144,7 +151,7 @@ void add_target (entity_t tgt)
 	IN_ButtonRemoveListener (move_jump, imp, self);
 	imp = [self methodForSelector: @selector (target_lock:)];
 	IN_ButtonRemoveListener (target_lock, imp, self);
-	Scene_DestroyEntity (ent);
+	Scene_DestroyEntity (s_ent);
 	[super dealloc];
 }
 
