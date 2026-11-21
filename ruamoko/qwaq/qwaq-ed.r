@@ -1392,6 +1392,7 @@ main (int argc, string *argv)
 	id playercam = [[PlayerCam inScene:scene] retain];
 	[player setCamera:playercam];
 	[camera_system addCamera:playercam];
+	[camera_system nextCamera];
 
 	int planetary_queue = Scene_Entqueue (scene, "planetary");
 	int pixpal_queue = Scene_Entqueue (scene, "pixpal");

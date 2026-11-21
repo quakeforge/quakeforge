@@ -171,38 +171,48 @@ camera_lookat (point_t eye, point_t target, point_t up)
 	return self;
 }
 
+-nextCamera
+{
+	uint old_cam = active_camera_index;
+	if (++active_camera_index >= [cameras count]) {
+		active_camera_index = 0;
+	}
+	if (active_camera_index != old_cam) {
+		active_camera = [cameras objectAtIndex:active_camera_index];
+		Scene_SetCamera (scene, [active_camera entity]);
+	}
+	return self;
+}
+
 -(void) nextCamera:(in_button_t *)button
 {
 	if (button.state & inb_edge_down) {
 		button.state &= inb_down;
-
-		uint old_cam = active_camera_index;
-		if (++active_camera_index >= [cameras count]) {
-			active_camera_index = 0;
-		}
-		if (active_camera_index != old_cam) {
-			active_camera = [cameras objectAtIndex:active_camera_index];
-			Scene_SetCamera (scene, [active_camera entity]);
-		}
+		[self nextCamera];
 	}
+}
+
+-prevCamera
+{
+	uint old_cam = active_camera_index;
+	if ((int) --active_camera_index < 0) {
+		active_camera_index = [cameras count] - 1;
+	}
+	if (active_camera_index < 0) {
+		[self error:"no cameras!"];
+	}
+	if (active_camera_index != old_cam) {
+		active_camera = [cameras objectAtIndex:active_camera_index];
+		Scene_SetCamera (scene, [active_camera entity]);
+	}
+	return self;
 }
 
 -(void) prevCamera:(in_button_t *)button
 {
 	if (button.state & inb_edge_down) {
 		button.state &= inb_down;
-
-		uint old_cam = active_camera_index;
-		if ((int) --active_camera_index < 0) {
-			active_camera_index = [cameras count] - 1;
-		}
-		if (active_camera_index < 0) {
-			[self error:"no cameras!"];
-		}
-		if (active_camera_index != old_cam) {
-			active_camera = [cameras objectAtIndex:active_camera_index];
-			Scene_SetCamera (scene, [active_camera entity]);
-		}
+		[self prevCamera];
 	}
 }
 

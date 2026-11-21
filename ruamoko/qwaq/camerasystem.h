@@ -46,6 +46,8 @@ typedef struct camspeed_s {
 -addCamera:(Camera *)camera;
 -(Camera *)camera;
 -updateCamera:(mousestate_t)mouse;
+-nextCamera;
+-prevCamera;
 @end
 
 #include "gui/window.h"
